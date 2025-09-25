@@ -96,16 +96,26 @@ public class MinifyLibTest {
     public void shrinkingTheLibraryClasses() throws Exception {
         enableLibShrinking(RELEASE_BUILD);
 
-        // -applymapping should never be part of AAR rules because its interaction with other rules
-        // are undefined, we use it here just for having consistent obfuscation output
+        // 1) Setup internal optimization, using existing consumer rules + mapping
+        //     -applymapping must be placed in non-consumer (internal) rules only,
+        //     since it should never be part of consumer rules
         File mappingFile = project.getSubproject(":lib").file("mapping.txt");
         TestFileUtils.appendToFile(
                 mappingFile, "com.android.tests.basic.StringProvider -> c.a.t.b.SP:\n");
         File libKeepRules = project.getSubproject(":lib").file("config.pro");
         TestFileUtils.appendToFile(libKeepRules, "-applymapping " + mappingFile.getAbsolutePath());
-        // Add the keep rule to lib, which will take effect in app to keep the obfuscated class
-        TestFileUtils.appendToFile(
-                project.getSubproject(":lib").file("config.pro"),
+
+        // 2) Create new consumer-rules, which will keep the newly obfuscated class
+        //     obfuscate the library class, so our consumer rules stay as our internal optimization
+        //     rules, but we need new consumer rules
+        TestFileUtils.searchAndReplace(
+                project.getSubproject("lib").getBuildFile(),
+                "consumerProguardFiles 'config.pro'",
+                "consumerProguardFiles 'consumer-rules.pro'"
+        );
+        //     Add the keep rule to lib, which will take effect in app to keep the obfuscated class
+        FileUtils.writeToFile(
+                project.getSubproject(":lib").file("consumer-rules.pro"),
                 "-keep public class c.a.t.b.SP { *; }");
 
         project.executor().run(":app:assembleRelease");

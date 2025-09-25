@@ -16,15 +16,16 @@
 
 package com.android.build.gradle.internal.testsuites
 
+import com.android.build.api.variant.TestSuiteBuilder
 import org.gradle.api.Incubating
 
 /**
- * Container of [TestSuiteBuilder]
+ * Container of [com.android.build.api.variant.TestSuiteBuilder]
  */
 @Incubating
 interface HasTestSuitesBuilder {
     /**
-     * Variant's [TestSuiteBuilder] configuration to configure test suites associated with this
+     * Variant's [com.android.build.api.variant.TestSuiteBuilder] configuration to configure test suites associated with this
      * variant.
      *
      * @return a [Map] which keys are unique names within the test suites

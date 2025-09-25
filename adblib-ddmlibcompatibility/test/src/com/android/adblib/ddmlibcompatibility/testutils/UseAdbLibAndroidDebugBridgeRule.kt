@@ -24,21 +24,21 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import org.junit.rules.ExternalResource
 
 /**
- * This rule should be set up when we want to redirect `AndroidDebugBrdige.delegate`
- * from `AndroidDebugBridgeImpl` to `AdbLibAndroidDebugBridge`.
+ * This rule instantiates `AdbLibAndroidDebugBridge` and redirects
+ * `AndroidDebugBrdige.delegate` to it.
  *
- * `portSuppier` and `adbSessionSupplier` are needed to feed the adb server port and `AdbSession`
- * from the outer rule like `FakeAdbServerProviderRule`.
+ * Use `adbSessionSupplier` to feed an `AdbSession` from an outer rule
+ * like `FakeAdbServerProviderRule`.
  */
 class UseAdbLibAndroidDebugBridgeRule(
-    private val portSuppier: () -> Int, private val adbSessionSupplier: () -> AdbSession
+    private val adbSessionSupplier: () -> AdbSession
 ) : ExternalResource() {
 
     public override fun before() {
         val config = MutableStateFlow(
             AdbServerConfiguration(
                 adbPath = null,
-                serverPort = portSuppier(),
+                serverPort = null,
                 isUserManaged = false,
                 isUnitTest = true,
                 envVars = emptyMap()

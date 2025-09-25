@@ -16,8 +16,8 @@
 
 package com.android.build.api.variant.impl
 
+import com.android.build.api.variant.TestSuiteTarget
 import com.android.build.gradle.internal.component.TestSuiteTargetCreationConfig
-import com.android.build.gradle.internal.testsuites.TestSuiteTarget
 import com.android.build.gradle.internal.testsuites.impl.TestSuiteTargetBuilderImpl
 
 class TestSuiteTargetImpl(

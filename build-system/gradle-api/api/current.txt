@@ -300,6 +300,40 @@ package com.android.build.api.dsl {
   @Deprecated public interface AdbOptions extends com.android.build.api.dsl.Installation {
   }
 
+  @org.gradle.api.Incubating public interface AgpTestSuite extends org.gradle.testing.base.TestSuite {
+    method @org.gradle.api.Incubating public void assets(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.TestSuiteAssetsSpec,kotlin.Unit> action);
+    method @org.gradle.api.Incubating public void configureTestTasks(kotlin.jvm.functions.Function2<? super org.gradle.api.tasks.testing.Test,? super com.android.build.api.dsl.TestTaskContext,kotlin.Unit> action);
+    method @org.gradle.api.Incubating public java.util.List<java.lang.String> getTargetVariants();
+    method @org.gradle.api.Incubating public org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.AgpTestSuiteTarget> getTargets();
+    method @org.gradle.api.Incubating public com.android.build.api.dsl.JUnitEngineSpec getUseJunitEngine();
+    method @org.gradle.api.Incubating public void hostJar(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.TestSuiteHostJarSpec,kotlin.Unit> action);
+    method @org.gradle.api.Incubating public void testApk(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.TestSuiteTestApkSpec,kotlin.Unit> action);
+    method @org.gradle.api.Incubating public void useJunitEngine(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.JUnitEngineSpec,kotlin.Unit> action);
+    property @org.gradle.api.Incubating public abstract java.util.List<java.lang.String> targetVariants;
+    property @org.gradle.api.Incubating public abstract com.android.build.api.dsl.JUnitEngineSpec useJunitEngine;
+  }
+
+  @org.gradle.api.Incubating public interface AgpTestSuiteDependencies {
+    method @org.gradle.api.Incubating public org.gradle.api.artifacts.dsl.DependencyCollector getCompileOnly();
+    method @org.gradle.api.Incubating public org.gradle.api.artifacts.dsl.DependencyCollector getImplementation();
+    method @org.gradle.api.Incubating public org.gradle.api.artifacts.dsl.DependencyCollector getRuntimeOnly();
+    property @org.gradle.api.Incubating public abstract org.gradle.api.artifacts.dsl.DependencyCollector compileOnly;
+    property @org.gradle.api.Incubating public abstract org.gradle.api.artifacts.dsl.DependencyCollector implementation;
+    property @org.gradle.api.Incubating public abstract org.gradle.api.artifacts.dsl.DependencyCollector runtimeOnly;
+  }
+
+  public enum AgpTestSuiteInputParameters {
+    method public String getPropertyName();
+    property public final String propertyName;
+    enum_constant @org.gradle.api.Incubating public static final com.android.build.api.dsl.AgpTestSuiteInputParameters ADB_EXECUTABLE;
+    enum_constant @org.gradle.api.Incubating public static final com.android.build.api.dsl.AgpTestSuiteInputParameters MERGED_MANIFEST;
+    enum_constant @org.gradle.api.Incubating public static final com.android.build.api.dsl.AgpTestSuiteInputParameters STATIC_FILES;
+    enum_constant @org.gradle.api.Incubating public static final com.android.build.api.dsl.AgpTestSuiteInputParameters TESTED_APKS;
+    enum_constant @org.gradle.api.Incubating public static final com.android.build.api.dsl.AgpTestSuiteInputParameters TESTING_APK;
+    enum_constant @org.gradle.api.Incubating public static final com.android.build.api.dsl.AgpTestSuiteInputParameters TEST_CLASSES;
+    enum_constant @org.gradle.api.Incubating public static final com.android.build.api.dsl.AgpTestSuiteInputParameters TEST_CLASSPATH;
+  }
+
   @org.gradle.api.Incubating public interface AgpTestSuiteTarget extends org.gradle.testing.base.TestSuiteTarget org.gradle.api.Named {
     method @org.gradle.api.Incubating public java.util.List<java.lang.String> getTargetDevices();
     property @org.gradle.api.Incubating public abstract java.util.List<java.lang.String> targetDevices;
@@ -1243,6 +1277,17 @@ package com.android.build.api.dsl {
     method public void setTimeOutInMs(int);
     property public abstract java.util.List<java.lang.String> installOptions;
     property public abstract int timeOutInMs;
+  }
+
+  @org.gradle.api.Incubating public interface JUnitEngineSpec {
+    method @org.gradle.api.Incubating public void addInputProperty(String propertyName, String propertyValue);
+    method @org.gradle.api.Incubating public void addInputProperty(String propertyName, org.gradle.api.provider.Provider<java.lang.String> propertyValue);
+    method @org.gradle.api.Incubating public org.gradle.api.artifacts.dsl.DependencyCollector getEnginesDependencies();
+    method @org.gradle.api.Incubating public java.util.Set<java.lang.String> getIncludeEngines();
+    method @org.gradle.api.Incubating public java.util.List<com.android.build.api.dsl.AgpTestSuiteInputParameters> getInputs();
+    property @org.gradle.api.Incubating public abstract org.gradle.api.artifacts.dsl.DependencyCollector enginesDependencies;
+    property @org.gradle.api.Incubating public abstract java.util.Set<java.lang.String> includeEngines;
+    property @org.gradle.api.Incubating public abstract java.util.List<com.android.build.api.dsl.AgpTestSuiteInputParameters> inputs;
   }
 
   @Deprecated @org.gradle.api.Incubating public interface JacocoOptions extends com.android.build.api.dsl.TestCoverage {
@@ -2226,6 +2271,21 @@ package com.android.build.api.dsl {
   public interface TestProductFlavor extends com.android.build.api.dsl.TestBaseFlavor com.android.build.api.dsl.ProductFlavor {
   }
 
+  public interface TestSuiteAssetsSpec {
+  }
+
+  @org.gradle.api.Incubating public interface TestSuiteHostJarSpec {
+    method @org.gradle.api.Incubating public void dependencies(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.AgpTestSuiteDependencies,kotlin.Unit> action);
+    method @org.gradle.api.Incubating public com.android.build.api.dsl.AgpTestSuiteDependencies getDependencies();
+    property @org.gradle.api.Incubating public abstract com.android.build.api.dsl.AgpTestSuiteDependencies dependencies;
+  }
+
+  @org.gradle.api.Incubating public interface TestSuiteTestApkSpec {
+    method @org.gradle.api.Incubating public void dependencies(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.AgpTestSuiteDependencies,kotlin.Unit> action);
+    method @org.gradle.api.Incubating public com.android.build.api.dsl.AgpTestSuiteDependencies getDependencies();
+    property @org.gradle.api.Incubating public abstract com.android.build.api.dsl.AgpTestSuiteDependencies dependencies;
+  }
+
   @org.gradle.api.Incubating public interface TestTaskContext {
     method @org.gradle.api.Incubating public String getSuiteName();
     method @org.gradle.api.Incubating public String getTargetName();
@@ -3006,6 +3066,11 @@ package com.android.build.api.variant {
     property public abstract boolean enableTestFixtures;
   }
 
+  public interface HasTestSuites {
+    method public java.util.Map<java.lang.String,com.android.build.api.variant.TestSuite> getSuites();
+    property public abstract java.util.Map<java.lang.String,com.android.build.api.variant.TestSuite> suites;
+  }
+
   public interface HasUnitTest {
     method public com.android.build.api.variant.UnitTest? getUnitTest();
     property public abstract com.android.build.api.variant.UnitTest? unitTest;
@@ -3049,6 +3114,21 @@ package com.android.build.api.variant {
     method public void setAsmFramesComputationMode(com.android.build.api.instrumentation.FramesComputationMode mode);
     method public <ParamT extends com.android.build.api.instrumentation.InstrumentationParameters> void transformClassesWith(Class<? extends com.android.build.api.instrumentation.AsmClassVisitorFactory<ParamT>> classVisitorFactoryImplClass, com.android.build.api.instrumentation.InstrumentationScope scope, kotlin.jvm.functions.Function1<? super ParamT,kotlin.Unit> instrumentationParamsConfig);
     property public abstract org.gradle.api.provider.SetProperty<java.lang.String> excludes;
+  }
+
+  @org.gradle.api.Incubating public interface JUnitEngineSpec {
+    method @org.gradle.api.Incubating public void addInputProperty(String propertyName, String propertyValue);
+    method public void addInputProperty(String propertyName, org.gradle.api.provider.Provider<java.lang.String> propertyValue);
+    method @org.gradle.api.Incubating public org.gradle.api.artifacts.dsl.DependencyCollector getEnginesDependencies();
+    method @org.gradle.api.Incubating public java.util.Set<java.lang.String> getIncludeEngines();
+    method @org.gradle.api.Incubating public java.util.List<com.android.build.api.dsl.AgpTestSuiteInputParameters> getInputs();
+    property @org.gradle.api.Incubating public abstract org.gradle.api.artifacts.dsl.DependencyCollector enginesDependencies;
+    property @org.gradle.api.Incubating public abstract java.util.Set<java.lang.String> includeEngines;
+    property @org.gradle.api.Incubating public abstract java.util.List<com.android.build.api.dsl.AgpTestSuiteInputParameters> inputs;
+  }
+
+  @org.gradle.api.Incubating public interface JUnitEngineSpecBuilder extends com.android.build.api.variant.JUnitEngineSpec {
+    property @org.gradle.api.Incubating public abstract java.util.List<com.android.build.api.dsl.AgpTestSuiteInputParameters> inputs;
   }
 
   @org.gradle.api.Incubating public interface JavaCompilation {
@@ -3251,6 +3331,39 @@ package com.android.build.api.variant {
   }
 
   @org.gradle.api.Incubating public interface TestFixtures extends com.android.build.api.variant.GeneratesAar com.android.build.api.variant.Component com.android.build.api.variant.HasAndroidResources {
+  }
+
+  public interface TestSuite extends org.gradle.api.Named {
+    method public void configureTestTasks(kotlin.jvm.functions.Function2<? super org.gradle.api.tasks.testing.Test,? super com.android.build.api.dsl.TestTaskContext,kotlin.Unit> action);
+    method @org.gradle.api.Incubating public com.android.build.api.variant.JUnitEngineSpec getJunitEngineSpec();
+    method public java.util.Map<java.lang.String,com.android.build.api.variant.TestSuiteTarget> getTargets();
+    property @org.gradle.api.Incubating public abstract com.android.build.api.variant.JUnitEngineSpec junitEngineSpec;
+    property public abstract java.util.Map<java.lang.String,com.android.build.api.variant.TestSuiteTarget> targets;
+  }
+
+  public interface TestSuiteBuilder extends org.gradle.api.Named {
+    method public boolean getEnable();
+    method public com.android.build.api.variant.JUnitEngineSpecBuilder getJunitEngineSpec();
+    method public java.util.Map<java.lang.String,com.android.build.api.variant.TestSuiteTargetBuilder> getTargets();
+    method public void setEnable(boolean);
+    property public abstract boolean enable;
+    property public abstract com.android.build.api.variant.JUnitEngineSpecBuilder junitEngineSpec;
+    property public abstract java.util.Map<java.lang.String,com.android.build.api.variant.TestSuiteTargetBuilder> targets;
+  }
+
+  @org.gradle.api.Incubating public interface TestSuiteTarget extends org.gradle.api.Named {
+    method @org.gradle.api.Incubating public boolean getEnabled();
+    method @org.gradle.api.Incubating public java.util.Collection<java.lang.String> getTargetDevices();
+    property @org.gradle.api.Incubating public abstract boolean enabled;
+    property @org.gradle.api.Incubating public abstract java.util.Collection<java.lang.String> targetDevices;
+  }
+
+  @org.gradle.api.Incubating public interface TestSuiteTargetBuilder extends org.gradle.api.Named {
+    method @org.gradle.api.Incubating public boolean getEnable();
+    method @org.gradle.api.Incubating public java.util.List<java.lang.String> getTargetDevices();
+    method @org.gradle.api.Incubating public void setEnable(boolean);
+    property @org.gradle.api.Incubating public abstract boolean enable;
+    property @org.gradle.api.Incubating public abstract java.util.List<java.lang.String> targetDevices;
   }
 
   public interface TestVariant extends com.android.build.api.variant.GeneratesTestApk com.android.build.api.variant.Variant {

@@ -18,6 +18,7 @@ package com.android.build.gradle.integration.api
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
+import com.android.build.gradle.options.BooleanOption
 import org.junit.Rule
 import org.junit.Test
 
@@ -54,6 +55,8 @@ class AddJavaResourcesTest {
         """.trimIndent()
         )
 
-        project.executor().run("processDebugJavaRes")
+        project.executor()
+            .with(BooleanOption.DISALLOW_PROVIDER_IN_ANDROID_SOURCE_SET, false)
+            .run("processDebugJavaRes")
     }
 }

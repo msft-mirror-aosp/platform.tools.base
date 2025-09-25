@@ -15,17 +15,23 @@
  */
 package com.android.build.gradle.api
 
+import groovy.lang.Closure
 import org.gradle.api.Incubating
 import org.gradle.api.file.ConfigurableFileTree
 import org.gradle.api.file.FileCollection
 import org.gradle.api.file.FileTree
+import org.gradle.api.file.FileTreeElement
+import org.gradle.api.specs.Spec
 import org.gradle.api.tasks.util.PatternFilterable
 import java.io.File
 
 /**
  * An AndroidSourceDirectorySet represents a set of directory inputs for an Android project.
  */
-@Deprecated("Use  com.android.build.api.dsl.AndroidSourceDirectorySet")
+@Deprecated(
+    message = "This interface will be removed when android.newDsl option is enabled.",
+    replaceWith = ReplaceWith("com.android.build.api.dsl.AndroidSourceDirectorySet")
+)
 interface AndroidSourceDirectorySet : PatternFilterable, com.android.build.api.dsl.AndroidSourceDirectorySet {
 
     override fun getName(): String
@@ -73,4 +79,76 @@ interface AndroidSourceDirectorySet : PatternFilterable, com.android.build.api.d
     /** Returns the [FileCollection] that represents this source sets.  */
     @Incubating
     fun getBuildableArtifact(): FileCollection
+
+    @Deprecated(
+        level = DeprecationLevel.HIDDEN,
+        message = "To be removed in 10.0",
+    ) // b/368609737
+    override fun getIncludes(): Set<String>
+
+    @Deprecated(
+        level = DeprecationLevel.HIDDEN,
+        message = "To be removed in 10.0",
+    ) // b/368609737
+    override fun getExcludes(): Set<String>
+
+    @Deprecated(
+        level = DeprecationLevel.HIDDEN,
+        message = "To be removed in 10.0",
+    ) // b/368609737
+    override fun setIncludes(includes: Iterable<String>): PatternFilterable
+
+    @Deprecated(
+        level = DeprecationLevel.HIDDEN,
+        message = "To be removed in 10.0",
+    ) // b/368609737
+    override fun setExcludes(excludes: Iterable<String>): PatternFilterable
+
+    @Deprecated(
+        level = DeprecationLevel.HIDDEN,
+        message = "To be removed in 10.0",
+    ) // b/368609737
+    override fun include(vararg includes: String): PatternFilterable
+
+    @Deprecated(
+        level = DeprecationLevel.HIDDEN,
+        message = "To be removed in 10.0",
+    ) // b/368609737
+    override fun include(includes: Iterable<String>): PatternFilterable
+
+    @Deprecated(
+        level = DeprecationLevel.HIDDEN,
+        message = "To be removed in 10.0",
+    ) // b/368609737
+    override fun include(includeSpec: Spec<FileTreeElement>): PatternFilterable
+
+    @Deprecated(
+        level = DeprecationLevel.HIDDEN,
+        message = "To be removed in 10.0",
+    ) // b/368609737
+    override fun include(includeSpec: Closure<*>): PatternFilterable
+
+    @Deprecated(
+        level = DeprecationLevel.HIDDEN,
+        message = "To be removed in 10.0",
+    ) // b/368609737
+    override fun exclude(excludes: Iterable<String>): PatternFilterable
+
+    @Deprecated(
+        level = DeprecationLevel.HIDDEN,
+        message = "To be removed in 10.0",
+    ) // b/368609737
+    override fun exclude(vararg excludes: String): PatternFilterable
+
+    @Deprecated(
+        level = DeprecationLevel.HIDDEN,
+        message = "To be removed in 10.0",
+    ) // b/368609737
+    override fun exclude(excludeSpec: Spec<FileTreeElement>): PatternFilterable
+
+    @Deprecated(
+        level = DeprecationLevel.HIDDEN,
+        message = "To be removed in 10.0",
+    ) // b/368609737
+    override fun exclude(excludeSpec: Closure<*>): PatternFilterable
 }

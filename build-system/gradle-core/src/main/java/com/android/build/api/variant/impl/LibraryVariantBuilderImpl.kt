@@ -22,13 +22,13 @@ import com.android.build.api.variant.ComponentIdentity
 import com.android.build.api.variant.DeviceTestBuilder
 import com.android.build.api.variant.HostTestBuilder
 import com.android.build.api.variant.LibraryVariantBuilder
+import com.android.build.api.variant.TestSuiteBuilder
 import com.android.build.api.variant.VariantBuilder
 import com.android.build.gradle.internal.core.dsl.LibraryVariantDslInfo
 import com.android.build.gradle.internal.errors.DeprecationReporter
 import com.android.build.gradle.internal.services.ProjectServices
 import com.android.build.gradle.internal.services.VariantBuilderServices
 import com.android.build.gradle.internal.testsuites.HasTestSuitesBuilder
-import com.android.build.gradle.internal.testsuites.TestSuiteBuilder
 import com.android.build.gradle.internal.testsuites.impl.TestSuiteBuilderImpl
 import com.google.wireless.android.sdk.stats.GradleBuildVariant
 import javax.inject.Inject

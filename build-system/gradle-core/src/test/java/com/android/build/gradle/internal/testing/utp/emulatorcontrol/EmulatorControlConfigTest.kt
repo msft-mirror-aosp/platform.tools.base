@@ -20,7 +20,6 @@ import com.android.build.gradle.internal.SdkComponentsBuildService
 import com.android.build.gradle.internal.dsl.EmulatorControl
 import com.android.build.gradle.internal.fixtures.FakeGradleProvider
 import com.android.build.gradle.internal.fixtures.FakeProviderFactory
-import com.android.build.gradle.internal.testing.utp.createEmulatorControlConfig
 import com.android.build.gradle.internal.services.DslServices
 import com.android.build.gradle.internal.services.createDslServices
 import com.android.build.gradle.options.BooleanOption

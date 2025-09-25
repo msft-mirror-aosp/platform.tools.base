@@ -36,11 +36,11 @@ import com.android.build.gradle.internal.test.recordOkInstrumentedTestRun
 import com.android.build.gradle.internal.test.report.ReportType
 import com.android.build.gradle.internal.test.report.TestReport
 import com.android.build.gradle.internal.testing.TestData
-import com.android.build.gradle.internal.testing.utp.EmulatorControlConfig
 import com.android.build.gradle.internal.testing.utp.ManagedDeviceTestRunner
 import com.android.build.gradle.internal.testing.utp.UtpDependencies
 import com.android.build.gradle.internal.testing.utp.UtpRunProfileManager
-import com.android.build.gradle.internal.testing.utp.createEmulatorControlConfig
+import com.android.build.gradle.internal.testing.utp.emulatorcontrol.EmulatorControlConfig
+import com.android.build.gradle.internal.testing.utp.emulatorcontrol.createEmulatorControlConfig
 import com.android.build.gradle.internal.testing.utp.maybeCreateUtpConfigurations
 import com.android.build.gradle.internal.testing.utp.resolveDependencies
 import com.android.build.gradle.internal.utils.setDisallowChanges

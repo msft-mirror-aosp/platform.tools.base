@@ -13,18 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.android.tools.idea.wizard.template.impl.activities.xrGlassesActivity.res.values
 
-package com.android.build.gradle.internal.testsuites
-
-import org.gradle.api.Incubating
-import org.gradle.api.Named
-
-@Incubating
-interface TestSuiteTarget: Named {
-
-    @get: Incubating
-    val enabled: Boolean
-
-    @get: Incubating
-    val targetDevices: Collection<String>
-}
+fun stringsXml() = """
+<resources>
+    <string name="app_name">Basic Glasses Activity</string>
+    <string name="welcome_android_xr_glasses">Hello Android XR.</string>
+    <string name="click_me">Click Me!</string>
+</resources>
+"""

@@ -78,7 +78,6 @@ import org.gradle.testing.base.TestSuite
  * through properties defined in `com.android.build.api.variant.AgpTestSuiteInputParameters`
  * (e.g., `STATIC_FILES`, `TEST_CLASSES`, `TESTED_APKS`). *
  */
-/** @suppress */
 @Suppress("UnstableApiUsage")
 @Incubating
 interface AgpTestSuite: TestSuite {

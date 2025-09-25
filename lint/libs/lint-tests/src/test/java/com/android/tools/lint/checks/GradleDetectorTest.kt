@@ -5300,8 +5300,8 @@ class GradleDetectorTest : AbstractCheckTest() {
           .rootDirectory(rootDirectory)
           .files(
             gradle(
-              name,
-              """
+                name,
+                """
                 apply plugin: 'com.android.application'
 
                 android {
@@ -5310,7 +5310,7 @@ class GradleDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """,
-            )
+              )
               .indented()
           )
           .issues(EDITED_TARGET_SDK_VERSION)
@@ -9544,9 +9544,21 @@ class GradleDetectorTest : AbstractCheckTest() {
           <androidx.core/>
           <androidx.slidingpanelayout/>
           <androidx.compose/>
+          <org.jetbrains.kotlin/>
         </metadata>
         """
           .trimIndent(),
+      )
+      task.networkData(
+        "https://maven.google.com/org/jetbrains/kotlin/group-index.xml",
+        // language=xml
+        "" +
+          "<?xml version='1.0' encoding='UTF-8'?>\n" +
+          "<org.jetbrains.kotlin>\n" +
+          "  <kotlin-compiler-embeddable versions=\"1.3.60-dev-withExperimentalGoogleExtensions-20191016,1.4.0-dev-withExperimentalGoogleExtensions-20200720\"/>\n" +
+          "  <kotlin-ksp versions=\"1.4.0-dev-experimental-20200828,1.4-M1-dev-experimental-20200716\"/>\n" +
+          "  <kotlin-symbol-processing-api versions=\"1.4.0-dev-experimental-20200828,,1.4-M1-dev-experimental-20200716\"/>\n" +
+          "</org.jetbrains.kotlin>",
       )
       task.networkData(
         "https://maven.google.com/com/android/application/group-index.xml",

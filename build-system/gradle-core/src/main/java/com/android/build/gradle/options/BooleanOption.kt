@@ -192,7 +192,7 @@ enum class BooleanOption(
      * Whether the legacy variant API (android.applicationVariants etc.) can be used a runtime.
      */
     ENABLE_LEGACY_VARIANT_API(
-        "android.enableLegacyVariantApi", false, FeatureStage.Supported,
+        "android.enableLegacyVariantApi", true, FeatureStage.Supported,
         FutureStage(false, FeatureStage.Enforced(Version.VERSION_10_0), Version.VERSION_10_0)
     ),
 
@@ -530,6 +530,23 @@ enum class BooleanOption(
         )
     ),
 
+    /**
+     * Global options such as `-dontoptimize` no longer supported in consumer rules in 9.0
+     *
+     * These options are only supported in app (base) modules.
+     */
+    R8_GLOBAL_OPTIONS_IN_CONSUMER_RULES_DISALLOWED(
+        "android.r8.globalOptionsInConsumerRules.disallowed",
+        false,
+        FeatureStage.Experimental,
+        FutureStage(
+            true,
+            FeatureStage.Enforced(Version.VERSION_10_0),
+            Version.VERSION_9_0
+        )
+    ),
+
+
     /** Enables R8 gradual support */
     R8_GRADUAL_API("android.r8.gradual.support", false, FeatureStage.Experimental),
 
@@ -684,6 +701,16 @@ enum class BooleanOption(
      * subsumes setting `android.enableLegacyVariantApi`
      */
     USE_NEW_DSL("android.newDsl", true, FeatureStage.SoftlyEnforced(VERSION_10_0)),
+
+    /**
+     * Disallows users to pass Provider<*> instances to the Android sources set
+     * APIs like srcDir and srcDirs.
+     *
+     * It is not supported by default because the old variant API keeps on resolving it too early,
+     * and it is not possible for Android Studio to know if the directory contains generated or
+     * static files which is important to make the files read-only or not.
+     */
+    DISALLOW_PROVIDER_IN_ANDROID_SOURCE_SET("android.sourceset.disallowProvider", true, FeatureStage.SoftlyEnforced(VERSION_10_0)),
 
     DEFAULT_ANDROIDX_TEST_RUNNER(
         propertyName = "android.default.androidx.test.runner",

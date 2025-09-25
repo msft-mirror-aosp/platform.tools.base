@@ -428,9 +428,8 @@ internal class FusedLibraryMergeArtifactsTest {
             contains("lint.jar")
             lintJar().classes {
                 // Classes are from :libraryWithLint1
-                contains("com/example/google/lintpublish/MainActivityDetector.class")
-                contains("com/example/google/lintpublish/MyIssueRegistry.class")
-                contains("META-INF/MANIFEST.MF")
+                contains("com/example/google/lintpublish/MainActivityDetector")
+                contains("com/example/google/lintpublish/MyIssueRegistry")
             }
         }
 
@@ -446,11 +445,10 @@ internal class FusedLibraryMergeArtifactsTest {
             contains("lint.jar")
             lintJar().classes {
                 // Classes from :lintPublish2
-                contains("src/main/java/com/example/google/lintpublish2/ClassFromLintPublish2.class")
+                contains("com/example/google/lintpublish2/ClassFromLintPublish2")
                 // Class from :lintPublish1 and :lintPublish2 (identical in both)
-                contains("com/example/google/lintpublish/MainActivityDetector.class")
-                contains("com/example/google/lintpublish/MyIssueRegistry.class")
-                contains("META-INF/MANIFEST.MF")
+                contains("com/example/google/lintpublish/MainActivityDetector")
+                contains("com/example/google/lintpublish/MyIssueRegistry")
             }
         }
         // Check a lint check with different contents triggers a conflict when fusing.

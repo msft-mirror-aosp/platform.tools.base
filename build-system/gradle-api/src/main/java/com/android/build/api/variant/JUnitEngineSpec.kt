@@ -14,10 +14,11 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.internal.testsuites
+package com.android.build.api.variant
 
 import com.android.build.api.dsl.AgpTestSuiteInputParameters
 import org.gradle.api.Incubating
+import org.gradle.api.artifacts.dsl.DependencyCollector
 import org.gradle.api.provider.Provider
 
 @Incubating
@@ -30,7 +31,7 @@ interface JUnitEngineSpec {
      *  located in [TestSuiteBuilder.junitEngineSpec] to add new engines.
      */
     @get:Incubating
-    val includeEngines: Set<String>
+    val includeEngines: MutableSet<String>
 
     /**
      * Adds a new key value pair property to the list of inputs for this test engine.
@@ -53,4 +54,11 @@ interface JUnitEngineSpec {
      */
     @get:Incubating
     val inputs: List<AgpTestSuiteInputParameters>
+
+    /**
+     * Returns a [DependencyCollector] that collects the set of runtime-only dependencies to find
+     * and load configured junit engines.
+     */
+    @get:Incubating
+    val enginesDependencies: DependencyCollector
 }

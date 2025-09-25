@@ -22,12 +22,8 @@ import com.android.build.gradle.api.AndroidBasePlugin
 import com.google.common.truth.Truth.assertThat
 import org.gradle.api.Action
 import org.gradle.api.GradleException
-import org.gradle.api.JavaVersion
 import org.gradle.api.Project
-import org.gradle.api.provider.Provider
-import org.gradle.jvm.toolchain.JavaLauncher
-import org.gradle.jvm.toolchain.JavaToolchainService
-import org.gradle.jvm.toolchain.JavaToolchainSpec
+import org.gradle.api.JavaVersion
 import org.gradle.util.GradleVersion
 import org.junit.Assert.assertThrows
 import org.junit.Before
@@ -67,8 +63,8 @@ class PreviewScreenshotGradlePluginTest {
         validationEngineVersion: String = PreviewScreenshotGradlePlugin.SCREENSHOT_TEST_PLUGIN_VERSION) {
         `when`(mockAndroidPlugin.pluginVersion).thenReturn(agpVersion)
         `when`(mockProject.findProperty(PreviewScreenshotGradlePlugin.VALIDATION_ENGINE_VERSION_OVERRIDE)).thenReturn(validationEngineVersion)
-        val plugin = PreviewScreenshotGradlePlugin()
 
+        val plugin = PreviewScreenshotGradlePlugin()
         plugin.apply(mockProject)
         val captor = argumentCaptor<Action<AndroidBasePlugin>>()
         Mockito.verify(mockProject.plugins, Mockito.atLeastOnce())
@@ -77,152 +73,116 @@ class PreviewScreenshotGradlePluginTest {
     }
     @Test
     fun agpVersionCheck() {
-        val unsupportedVersionsTooOld = listOf(
-                AndroidPluginVersion(8, 5, 0).alpha(8),
-                AndroidPluginVersion(8, 4),
-        )
-        val supportedVersions = listOf(
-                AndroidPluginVersion(8, 5).dev(),
-                AndroidPluginVersion(8, 5, 0).beta(1),
-                AndroidPluginVersion(8, 6, 0).alpha(1),
-                AndroidPluginVersion(8, 7, 0).alpha(1),
-                AndroidPluginVersion(8, 8, 0).alpha(1),
-                AndroidPluginVersion(8, 9, 0).alpha(1),
-                AndroidPluginVersion(8, 10, 0).alpha(1),
-                AndroidPluginVersion(8, 11, 0).alpha(1),
-                AndroidPluginVersion(8, 12, 0).alpha(1),
-                AndroidPluginVersion(8, 13, 0).alpha(1),
-                AndroidPluginVersion(9, 0, 0).alpha(1),
-                AndroidPluginVersion(9, 0, Int.MAX_VALUE),
+        // Mock the JDK to a compatible version to isolate this test from the environment.
+        Mockito.mockStatic(JavaVersion::class.java).use { mockedJava ->
+            mockedJava.`when`<JavaVersion> { JavaVersion.current() }.thenReturn(JavaVersion.VERSION_17)
+
+            val unsupportedVersionsTooOld = listOf(
+                    AndroidPluginVersion(8, 5, 0).alpha(8),
+                    AndroidPluginVersion(8, 4),
             )
-        val unsupportedVersionsTooNew = listOf(
-            AndroidPluginVersion(9, 1, 0).alpha(1),
-            AndroidPluginVersion(9, 1),
-        )
-        unsupportedVersionsTooOld.forEach {
-            val e = assertThrows(IllegalStateException::class.java) {
-                applyScreenshotPlugin(it)
+            val supportedVersions = listOf(
+                    AndroidPluginVersion(8, 5).dev(),
+                    AndroidPluginVersion(8, 5, 0).beta(1),
+                    AndroidPluginVersion(8, 6, 0).alpha(1),
+                    AndroidPluginVersion(8, 7, 0).alpha(1),
+                    AndroidPluginVersion(8, 8, 0).alpha(1),
+                    AndroidPluginVersion(8, 9, 0).alpha(1),
+                    AndroidPluginVersion(8, 10, 0).alpha(1),
+                    AndroidPluginVersion(8, 11, 0).alpha(1),
+                    AndroidPluginVersion(8, 12, 0).alpha(1),
+                    AndroidPluginVersion(8, 13, 0).alpha(1),
+                    AndroidPluginVersion(9, 0, 0).alpha(1),
+                    AndroidPluginVersion(9, 0, Int.MAX_VALUE),
+                )
+            val unsupportedVersionsTooNew = listOf(
+                AndroidPluginVersion(9, 1, 0).alpha(1),
+                AndroidPluginVersion(9, 1),
+            )
+            unsupportedVersionsTooOld.forEach {
+                val e = assertThrows(IllegalStateException::class.java) {
+                    applyScreenshotPlugin(it)
+                }
+                assertThat(e).hasMessageThat()
+                        .contains("requires Android Gradle plugin version between 8.5.0-beta01 and 9.0.")
             }
-            assertThat(e).hasMessageThat()
+            unsupportedVersionsTooNew.forEach {
+                val e = assertThrows(IllegalStateException::class.java) {
+                    applyScreenshotPlugin(it)
+                }
+                assertThat(e).hasMessageThat()
                     .contains("requires Android Gradle plugin version between 8.5.0-beta01 and 9.0.")
-        }
-        unsupportedVersionsTooNew.forEach {
-            val e = assertThrows(IllegalStateException::class.java) {
+            }
+            supportedVersions.forEach {
                 applyScreenshotPlugin(it)
             }
-            assertThat(e).hasMessageThat()
-                .contains("requires Android Gradle plugin version between 8.5.0-beta01 and 9.0.")
-        }
-        supportedVersions.forEach {
-            applyScreenshotPlugin(it)
         }
     }
 
     @Test
     fun validationEngineVersionCheck() {
-        val unsupportedVersionsTooOld = listOf(
-            "0.0.1-alpha01",
-            "0.0.1-alpha02",
-        )
-        val supportedVersions = listOf(
-            "0.0.1-dev",
-            "0.0.1-alpha03",
-        )
+        // Mock the JDK to a compatible version to isolate this test from the environment.
+        Mockito.mockStatic(JavaVersion::class.java).use { mockedJava ->
+            mockedJava.`when`<JavaVersion> { JavaVersion.current() }.thenReturn(JavaVersion.VERSION_17)
 
-        unsupportedVersionsTooOld.forEach {
-            val e = assertThrows(IllegalStateException::class.java) {
+            val unsupportedVersionsTooOld = listOf(
+                "0.0.1-alpha01",
+                "0.0.1-alpha02",
+            )
+            val supportedVersions = listOf(
+                "0.0.1-dev",
+                "0.0.1-alpha03",
+            )
+
+            unsupportedVersionsTooOld.forEach {
+                val e = assertThrows(IllegalStateException::class.java) {
+                    applyScreenshotPlugin(validationEngineVersion = it)
+                }
+                assertThat(e).hasMessageThat()
+                    .contains("Preview screenshot plugin requires the screenshot validation engine version to be at least ${PreviewScreenshotGradlePlugin.MIN_VALIDATION_ENGINE_VERSION}, ${PreviewScreenshotGradlePlugin.VALIDATION_ENGINE_VERSION_OVERRIDE} cannot be set to $it.")
+            }
+
+            supportedVersions.forEach {
                 applyScreenshotPlugin(validationEngineVersion = it)
             }
-            assertThat(e).hasMessageThat()
-                .contains("Preview screenshot plugin requires the screenshot validation engine version to be at least ${PreviewScreenshotGradlePlugin.MIN_VALIDATION_ENGINE_VERSION}, ${PreviewScreenshotGradlePlugin.VALIDATION_ENGINE_VERSION_OVERRIDE} cannot be set to $it.")
-        }
-
-        supportedVersions.forEach {
-            applyScreenshotPlugin(validationEngineVersion = it)
         }
     }
 
     @Test
-    fun jdkVersionCheck_whenJdkIsCompatible_doesNotThrow() {
-        Mockito.mockStatic(JavaVersion::class.java).use { mocked ->
-            mocked.`when`<JavaVersion> { JavaVersion.current() }.thenReturn(JavaVersion.VERSION_17)
-            applyScreenshotPlugin()
+    fun gradleVersionCheck_whenGradleIsCompatible_doesNotThrow() {
+        val compatibleGradleVersion = GradleVersion.version("8.14")
+        val requiredGradleVersion = GradleVersion.version("8.14")
+
+        Mockito.mockStatic(GradleVersion::class.java).use { mockedGradle ->
+            mockedGradle.`when`<GradleVersion> { GradleVersion.current() }.thenReturn(compatibleGradleVersion)
+            mockedGradle.`when`<GradleVersion> { GradleVersion.version("8.14") }.thenReturn(requiredGradleVersion)
+            Mockito.mockStatic(JavaVersion::class.java).use { mockedJava ->
+                mockedJava.`when`<JavaVersion> { JavaVersion.current() }.thenReturn(JavaVersion.VERSION_17)
+                applyScreenshotPlugin()
+            }
         }
     }
 
     @Test
-    fun jdkVersionCheck_whenGradleIsTooOldForToolchain_throwsIllegalStateException() {
-        // Prepare the version objects before mocking.
+    fun gradleVersionCheck_whenGradleIsTooOld_throwsIllegalStateException() {
         val oldGradleVersion = GradleVersion.version("8.13")
         val requiredGradleVersion = GradleVersion.version("8.14")
 
         Mockito.mockStatic(JavaVersion::class.java).use { mockedJava ->
             Mockito.mockStatic(GradleVersion::class.java).use { mockedGradle ->
                 mockedJava.`when`<JavaVersion> { JavaVersion.current() }.thenReturn(JavaVersion.VERSION_24)
-
-                // **THE FIX**: Stub *every* static method that will be called.
                 mockedGradle.`when`<GradleVersion> { GradleVersion.current() }.thenReturn(oldGradleVersion)
                 mockedGradle.`when`<GradleVersion> { GradleVersion.version("8.14") }.thenReturn(requiredGradleVersion)
 
                 val e = assertThrows(IllegalStateException::class.java) {
                     applyScreenshotPlugin()
                 }
-                assertThat(e).hasMessageThat().contains("requires Gradle version 8.14 or newer for screenshot tests")
-            }
-        }
-    }
-
-    @Test
-    fun jdkVersionCheck_whenJdkIsIncompatibleAndToolchainIsFound_succeeds() {
-        // Prepare the version objects before mocking.
-        val compatibleGradleVersion = GradleVersion.version("8.14")
-        val requiredGradleVersion = GradleVersion.version("8.14")
-
-        Mockito.mockStatic(JavaVersion::class.java).use { mockedJava ->
-            Mockito.mockStatic(GradleVersion::class.java).use { mockedGradle ->
-                mockedJava.`when`<JavaVersion> { JavaVersion.current() }.thenReturn(JavaVersion.VERSION_24)
-
-                // **THE FIX**: Stub *every* static method that will be called.
-                mockedGradle.`when`<GradleVersion> { GradleVersion.current() }.thenReturn(compatibleGradleVersion)
-                mockedGradle.`when`<GradleVersion> { GradleVersion.version("8.14") }.thenReturn(requiredGradleVersion)
-
-                val mockToolchainService = Mockito.mock(JavaToolchainService::class.java, Answers.RETURNS_DEEP_STUBS)
-                `when`(mockProject.extensions.getByType(eq(JavaToolchainService::class.java))).thenReturn(mockToolchainService)
-                @Suppress("UNCHECKED_CAST")
-                val mockLauncherProvider = Mockito.mock(Provider::class.java) as Provider<JavaLauncher>
-                `when`(mockToolchainService.launcherFor(any<Action<JavaToolchainSpec>>())).thenReturn(mockLauncherProvider)
-
-                applyScreenshotPlugin()
-                Mockito.verify(mockToolchainService).launcherFor(any<Action<JavaToolchainSpec>>())
-            }
-        }
-    }
-
-    @Test
-    fun jdkVersionCheck_whenJdkIsIncompatibleAndNoToolchainFound_throwsGradleException() {
-        // Prepare the version objects before mocking.
-        val compatibleGradleVersion = GradleVersion.version("8.14")
-        val requiredGradleVersion = GradleVersion.version("8.14")
-
-        Mockito.mockStatic(JavaVersion::class.java).use { mockedJava ->
-            Mockito.mockStatic(GradleVersion::class.java).use { mockedGradle ->
-                mockedJava.`when`<JavaVersion> { JavaVersion.current() }.thenReturn(JavaVersion.VERSION_24)
-                mockedGradle.`when`<GradleVersion> { GradleVersion.current() }.thenReturn(compatibleGradleVersion)
-                mockedGradle.`when`<GradleVersion> { GradleVersion.version("8.14") }.thenReturn(requiredGradleVersion)
-
-                val mockToolchainService = Mockito.mock(JavaToolchainService::class.java, Answers.RETURNS_DEEP_STUBS)
-                `when`(mockProject.extensions.getByType(eq(JavaToolchainService::class.java))).thenReturn(mockToolchainService)
-
-                `when`(mockToolchainService.launcherFor(any<Action<JavaToolchainSpec>>()))
-                    .thenThrow(RuntimeException())
-
-                val e = assertThrows(GradleException::class.java) {
-                    applyScreenshotPlugin()
-                }
-                assertThat(e).hasMessageThat().contains(
-                    "Compose Preview Screenshot Testing requires a JDK toolchain between version " +
-                            "${PreviewScreenshotGradlePlugin.MIN_SUPPORTED_JDK_MAJOR_VERSION} and " +
-                            "${PreviewScreenshotGradlePlugin.MAX_JDK_MAJOR_VERSION}, but none was found."
+                assertThat(e).hasMessageThat().isEqualTo(
+                    """
+                    Using JDK 24 requires Gradle version 8.14 or newer for screenshot tests.
+                    Current Gradle version is 8.13.
+                    Please upgrade your project's Gradle version.
+                    """.trimIndent()
                 )
             }
         }

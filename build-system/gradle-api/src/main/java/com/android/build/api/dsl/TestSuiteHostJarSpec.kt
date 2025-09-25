@@ -22,7 +22,6 @@ import org.gradle.api.Incubating
  * Definition of host test sources for a test suite. Host test source files are compiled and
  * therefore dependencies can be attached to them.
  */
-/** @suppress */
 @Incubating
 interface TestSuiteHostJarSpec {
 

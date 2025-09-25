@@ -16,6 +16,9 @@
 
 package com.android.tools.deployer;
 
+import static com.android.tools.deployer.InstallOptions.MOBILE_INSTALL_DEFAULTS;
+import static com.android.tools.deployer.InstallOptions.STUDIO_DEFAULTS;
+
 import com.android.adblib.AdbSession;
 import com.android.adblib.tools.AdbLibSessionFactoryKt;
 import com.android.annotations.NonNull;
@@ -60,10 +63,6 @@ public class DeployerRunner {
     private static final String DEX_DB_PATH = "/tmp/studio_dex.db";
     private static final String DEPLOY_DB_PATH = "/tmp/studio_deploy.db";
 
-    private static final InstallOptions STUDIO_DEFAULTS =
-            InstallOptions.builder().setAllowDebuggable().build();
-    private static final InstallOptions MOBILE_INSTALL_DEFAULTS =
-            InstallOptions.builder().setAllowDebuggable().setAllowDowngrade().build();
     private final InstallOptions defaultInstallOptions;
     private final DeploymentCacheDatabase cacheDb;
     private final SqlApkFileDatabase dexDb;

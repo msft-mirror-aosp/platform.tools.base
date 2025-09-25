@@ -617,4 +617,190 @@ class RichVersionTest {
             assertThat(version.toString()).matches("^RichVersion\\(.*\\)$")
         }
     }
+
+    // Test cases from https://maven.apache.org/pom.html#Dependency_Version_Requirement_Specification
+    @Test
+    fun testFromPomVersion1() {
+        val version = RichVersion.fromPomVersion("1.0")
+        assertThat(version.strictly).isNull()
+        assertThat(version.require).isEqualTo(VersionRange.parse("[1.0,1.0]"))
+        assertThat(version.prefer).isNull()
+        assertThat(version.exclude).isEmpty()
+        assertThat(version.toIdentifier()).isEqualTo("1.0")
+        assertThat(version.toString()).isEqualTo("1.0")
+    }
+
+    @Test
+    fun testFromPomVersion2() {
+        val version = RichVersion.fromPomVersion("[1.0]")
+        assertThat(version.strictly).isEqualTo(VersionRange.parse("[1.0,1.0]"))
+        assertThat(version.require).isNull()
+        assertThat(version.prefer).isNull()
+        assertThat(version.exclude).isEmpty()
+        assertThat(version.toIdentifier()).isEqualTo("1.0!!")
+        assertThat(version.toString()).isEqualTo("1.0!!")
+    }
+
+    @Test
+    fun testFromPomVersion3() {
+        val version = RichVersion.fromPomVersion("(,1.0]")
+        assertThat(version.strictly).isEqualTo(VersionRange.parse("(,1.0]"))
+        assertThat(version.require).isNull()
+        assertThat(version.prefer).isNull()
+        assertThat(version.exclude).isEmpty()
+        assertThat(version.toIdentifier()).isEqualTo("(,1.0]!!")
+        assertThat(version.toString()).isEqualTo("(,1.0]!!")
+    }
+
+    @Test
+    fun testFromPomVersion4() {
+        val version = RichVersion.fromPomVersion("[1.2,1.3]")
+        assertThat(version.strictly).isEqualTo(VersionRange.parse("[1.2,1.3]"))
+        assertThat(version.require).isNull()
+        assertThat(version.prefer).isNull()
+        assertThat(version.exclude).isEmpty()
+        assertThat(version.toIdentifier()).isEqualTo("[1.2,1.3]!!")
+        assertThat(version.toString()).isEqualTo("[1.2,1.3]!!")
+    }
+
+    @Test
+    fun testFromPomVersion5() {
+        val version = RichVersion.fromPomVersion("[1.2,2.0)")
+        assertThat(version.strictly).isEqualTo(VersionRange.parse("[1.2,2.0)"))
+        assertThat(version.require).isNull()
+        assertThat(version.prefer).isNull()
+        assertThat(version.exclude).isEmpty()
+        assertThat(version.toIdentifier()).isEqualTo("[1.2,2.0)!!")
+        assertThat(version.toString()).isEqualTo("[1.2,2.0)!!")
+    }
+
+    @Test
+    fun testFromPomVersion6() {
+        val version = RichVersion.fromPomVersion("[1.5,)")
+        assertThat(version.strictly).isEqualTo(VersionRange.parse("[1.5,)"))
+        assertThat(version.require).isNull()
+        assertThat(version.prefer).isNull()
+        assertThat(version.exclude).isEmpty()
+        assertThat(version.toIdentifier()).isEqualTo("[1.5,)!!")
+        assertThat(version.toString()).isEqualTo("[1.5,)!!")
+    }
+
+    @Test
+    fun testFromPomVersion7() {
+        val version = RichVersion.fromPomVersion("(,1.0],[1.2,)")
+        assertThat(version.strictly).isEqualTo(VersionRange.parse("(,)"))
+        assertThat(version.require).isNull()
+        assertThat(version.prefer).isNull()
+        // Beware: this is not the same as VersionRange.parse("(1.0,1.2)")
+        assertThat(version.exclude).containsExactly(VersionRange(Range.open(Version.parse("1.0"), Version.parse("1.2"))))
+        assertThat(version.toIdentifier()).isNull()
+        assertThat(version.toString()).startsWith("RichVersion")
+    }
+
+    @Test
+    fun testFromPomVersion8() {
+        val version = RichVersion.fromPomVersion("(,1.1),(1.1,)")
+        assertThat(version.strictly).isEqualTo(VersionRange.parse("(,)"))
+        assertThat(version.require).isNull()
+        assertThat(version.prefer).isNull()
+        // Beware: this is not the same as VersionRange.parse("1.1") or .parse("[1.1,1.1]")
+        assertThat(version.exclude).containsExactly(VersionRange(Range.closed(Version.prefixInfimum("1.1"), Version.parse("1.1"))))
+        assertThat(version.toIdentifier()).isNull()
+        assertThat(version.toString()).startsWith("RichVersion")
+    }
+
+    // Test cases derived from the behavior of maven-artifact/.../VersionRange.java
+
+    @Test
+    fun testFromPomVersionLargerRangeSets() {
+        RichVersion.fromPomVersion("[1,2],(3,4],(5,6]").let { version ->
+            assertThat(version.strictly).isEqualTo(VersionRange.parse("[1,6]"))
+            assertThat(version.exclude).containsExactly(VersionRange.parse("(2,3]"), VersionRange.parse("(4,5]"))
+        }
+    }
+
+    @Test
+    fun testFromPomVersionWhitespace() {
+        // trailing whitespace is apparently OK in all cases.
+        RichVersion.fromPomVersion("1.0 ").let { version ->
+            assertThat(version.require).isEqualTo(VersionRange.parse("1.0"))
+        }
+        RichVersion.fromPomVersion("[1.0] ").let { version ->
+            assertThat(version.strictly).isEqualTo(VersionRange.parse("1.0"))
+        }
+        // leading whitespace is not trimmed...
+        RichVersion.fromPomVersion(" 1.0").let { version ->
+            assertThat(version.require).isEqualTo(VersionRange.parse(" 1.0"))
+        }
+        // ... meaning that the special treatment of [ only applies in position 0
+        RichVersion.fromPomVersion(" [1.0]").let { version ->
+            assertThat(version.require).isEqualTo(VersionRange.parse(" [1.0]"))
+        }
+        // whitespace is trimmed from start and end of the singleton version
+        RichVersion.fromPomVersion("[ 1.0 ] ").let { version ->
+            assertThat(version.strictly).isEqualTo(VersionRange.parse("1.0"))
+        }
+        // whitespace is trimmed from both sides of each endpoint version
+        RichVersion.fromPomVersion("[1,2] , (3 , 4 ] , ( 5, 6 ] ").let { version ->
+            assertThat(version.strictly).isEqualTo(VersionRange.parse("[1,6]"))
+            assertThat(version.exclude).containsExactly(VersionRange.parse("(2,3]"), VersionRange.parse("(4,5]"))
+        }
+        // whitespace is as defined by Java String.trim() so is codepoints equal to or below U+0020
+        RichVersion.fromPomVersion("[\u00001.2\u0008,\u00103.4\u0018]\u0020").let { version ->
+            assertThat(version).isEqualTo(RichVersion.fromPomVersion("[1.2,3.4]"))
+        }
+        RichVersion.fromPomVersion("[\u00a01.2\u2002,\u20033.4\u205f]").let { version ->
+            assertThat(version).isEqualTo(RichVersion.parse("[\u00a01.2\u2002,\u20033.4\u205f]!!"))
+        }
+        // whitespace within version numbers is not trimmed
+        RichVersion.fromPomVersion("[1 .2, 3. 4] ").let { version ->
+            assertThat(version).isEqualTo(RichVersion.parse("[1 .2,3. 4]!!"))
+        }
+    }
+
+    @Test
+    fun testFromPomVersionMultipleRangesWithoutCommasWorkActually() {
+        RichVersion.fromPomVersion("[1,2](3,4)").let { version ->
+            assertThat(version).isEqualTo(RichVersion.fromPomVersion("[1,2],(3,4)"))
+        }
+    }
+
+    @Test
+    fun testFromPomVersionMultipleRangesOrderIndependent() {
+        fun <T> List<T>.permutations():List<List<T>> = when {
+            isEmpty() -> listOf(listOf())
+            else -> dropLast(1).permutations().flatMap { p -> (0..(p.size)).map { i -> p.take(i) + last() + p.drop(i) } }
+        }
+        val expected = RichVersion.fromPomVersion("[1,2],[3,4],[5,6]")
+        listOf("[1,2]", "[3,4]", "[5,6]").permutations().forEach { p ->
+            val version = RichVersion.fromPomVersion(p.joinToString(","))
+            assertThat(version).isEqualTo(expected)
+        }
+    }
+
+    @Test
+    fun testFromPomVersionExplicitSingleton() {
+        RichVersion.fromPomVersion("[1.0,1.0]").let { version ->
+            assertThat(version).isEqualTo(RichVersion.fromPomVersion("[1.0]"))
+        }
+    }
+
+    @Test
+    fun testFromPomVersionDoesNotError() {
+        val invalids = listOf("[1,1)", "(1,1)", "[3,2]", "[1", "2]", "[[3]]", "[4],", "[]", "[1)", "[1,,2]")
+        invalids.forEach {
+            val version = RichVersion.fromPomVersion(it)
+            assertThat(version).isInstanceOf(RichVersion::class.java)
+        }
+        invalids.forEach { i1 ->
+            invalids.forEach { i2 ->
+                RichVersion.fromPomVersion("$i1,$i2").let { version ->
+                    assertThat(version).isInstanceOf(RichVersion::class.java)
+                }
+                RichVersion.fromPomVersion("$i1$i2").let { version ->
+                    assertThat(version).isInstanceOf(RichVersion::class.java)
+                }
+            }
+        }
+    }
 }

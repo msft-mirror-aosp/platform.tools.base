@@ -29,10 +29,9 @@ class FullBackupContentDetectorTest : AbstractCheckTest() {
             """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android" package="my.pkg" >
                     <application
-                        android:fullBackupContent="@xml/full_backup_content">
+                        android:fullBackupContent="@xml/full_backup_content"
                         android:dataExtractionRules="@xml/data_extraction_rules"
                         android:label="@string/app_name">
-                        ...
                     </application>
                 </manifest>
                 """
@@ -316,6 +315,117 @@ class FullBackupContentDetectorTest : AbstractCheckTest() {
             """,
           )
           .indented()
+      )
+      .run()
+      .expectClean()
+  }
+
+  fun testCrossPlatformMissingPlatform() {
+    lint()
+      .files(
+        manifest(
+            """
+            <manifest xmlns:android="http://schemas.android.com/apk/res/android" package="my.pkg" >
+                <application
+                    android:fullBackupContent="@xml/legacy_backup_content"
+                    android:dataExtractionRules="@xml/data_extraction_rules"
+                    android:label="@string/app_name">
+                </application>
+            </manifest>
+            """
+          )
+          .indented(),
+        xml(
+            "res/xml/data_extraction_rules.xml",
+            """
+            <data-extraction-rules>
+              <cloud-backup>
+                <include domain="file" path="always.txt" />
+                <include domain="file" path="cloud.txt" />
+                <include domain="file" path="backup.txt" />
+              </cloud-backup>
+              <device-transfer>
+                <include domain="file" path="always.txt" />
+                <include domain="file" path="d2d.txt" />
+                <include domain="file" path="backup.txt" />
+              </device-transfer>
+              <cross-platform-transfer>
+                <include domain="file" path="always.txt" />
+                <include domain="file" path="xp.txt" />
+                <include domain="file" path="backup.txt" />
+                <platform-specific-params bundleId="com.example.app" teamId="A1B2C3D4E5" contentVersion="1.0" />
+              </cross-platform-transfer>
+            </data-extraction-rules>
+            """,
+          )
+          .indented(),
+        xml(
+            "res/xml/legacy_backup_content.xml",
+            """
+            <full-backup-content>
+                 <include domain="file" path="dd"/>
+            </full-backup-content>
+            """,
+          )
+          .indented(),
+      )
+      .run()
+      .expect(
+        """
+        res/xml/data_extraction_rules.xml:12: Error: Missing required attribute platform [FullBackupContent]
+          <cross-platform-transfer>
+           ~~~~~~~~~~~~~~~~~~~~~~~
+        1 error
+        """
+      )
+      .expectFixDiffs(
+        """
+        Fix for res/xml/data_extraction_rules.xml line 12: Set platform:
+        @@ -28 +28 @@
+        -    <cross-platform-transfer>
+        +    <cross-platform-transfer platform="[TODO]|" >
+        """
+      )
+  }
+
+  fun testCrossPlatform() {
+    lint()
+      .files(
+        manifest(
+            """
+            <manifest xmlns:android="http://schemas.android.com/apk/res/android" package="my.pkg" >
+                <application
+                    android:dataExtractionRules="@xml/data_extraction_rules"
+                    android:label="@string/app_name">
+                </application>
+            </manifest>
+            """
+          )
+          .indented(),
+        xml(
+            "res/xml/data_extraction_rules.xml",
+            """
+            <data-extraction-rules>
+              <cloud-backup>
+                <include domain="file" path="always.txt" />
+                <include domain="file" path="cloud.txt" />
+                <include domain="file" path="backup.txt" />
+              </cloud-backup>
+              <device-transfer>
+                <include domain="file" path="always.txt" />
+                <include domain="file" path="d2d.txt" />
+                <include domain="file" path="backup.txt" />
+              </device-transfer>
+              <cross-platform-transfer platform="ios">
+                <include domain="file" path="always.txt" />
+                <include domain="file" path="xp.txt" />
+                <include domain="file" path="backup.txt" />
+                <platform-specific-params bundleId="com.example.app" teamId="A1B2C3D4E5" contentVersion="1.0" />
+              </cross-platform-transfer>
+            </data-extraction-rules>
+            """,
+          )
+          .indented(),
       )
       .run()
       .expectClean()

@@ -19,21 +19,21 @@ package com.android.build.api.variant.impl
 import com.android.build.api.artifact.impl.ArtifactsImpl
 import com.android.build.api.component.impl.computeTaskName
 import com.android.build.api.dsl.TestTaskContext
+import com.android.build.api.variant.JUnitEngineSpec
+import com.android.build.api.variant.TestSuite
 import com.android.build.gradle.internal.component.TestSuiteCreationConfig
 import com.android.build.gradle.internal.component.TestSuiteTargetCreationConfig
 import com.android.build.gradle.internal.component.VariantCreationConfig
 import com.android.build.gradle.internal.services.TaskCreationServices
 import com.android.build.gradle.internal.services.VariantServices
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfig
-import com.android.build.gradle.internal.testsuites.JUnitEngineSpec
-import com.android.build.gradle.internal.testsuites.TestSuite
 import com.android.build.gradle.internal.testsuites.impl.JUnitEngineSpecForVariantBuilder
 import com.android.build.gradle.internal.testsuites.impl.TestSuiteBuilderImpl
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.api.tasks.testing.Test
 
 /**
- * Implementation of [com.android.build.gradle.internal.testsuites.TestSuite] for test suites declared via the DSL.
+ * Implementation of [TestSuite] for test suites declared via the DSL.
  */
 class TestSuiteImpl internal constructor(
     testSuiteBuilder: TestSuiteBuilderImpl,

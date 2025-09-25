@@ -419,6 +419,7 @@ class KotlinMultiplatformAndroidPlugin @Inject constructor(
 
         listOfNotNull(mainVariant, unitTest, androidTest).forEach {
             it.syncAndroidAndKmpClasspathAndSources()
+            it.addKotlinSourcesToCompilation()
         }
 
         (global.compileOptions as CompileOptions)

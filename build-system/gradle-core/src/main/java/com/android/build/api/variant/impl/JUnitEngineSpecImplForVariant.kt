@@ -17,10 +17,10 @@
 package com.android.build.api.variant.impl
 
 import com.android.build.api.dsl.AgpTestSuiteInputParameters
-import com.android.build.gradle.internal.testsuites.JUnitEngineSpec
+import com.android.build.api.variant.JUnitEngineSpec
 import com.android.build.gradle.internal.testsuites.impl.JUnitEngineSpecForVariantBuilder
 import com.android.build.gradle.internal.utils.toImmutableList
-import com.android.build.gradle.internal.utils.toImmutableSet
+import org.gradle.api.artifacts.dsl.DependencyCollector
 import org.gradle.api.provider.MapProperty
 import org.gradle.api.provider.Provider
 
@@ -29,8 +29,8 @@ internal class JUnitEngineSpecImplForVariant internal constructor(
     mapFactory: () -> MapProperty<String, String>
 ): JUnitEngineSpec {
 
-    override val includeEngines: Set<String> =
-        junitEngineSpec.includeEngines.toImmutableSet()
+    override val includeEngines: MutableSet<String> =
+        junitEngineSpec.includeEngines
 
     override val inputs: List<AgpTestSuiteInputParameters> =
         junitEngineSpec.inputs.toImmutableList()
@@ -46,4 +46,7 @@ internal class JUnitEngineSpecImplForVariant internal constructor(
     override fun addInputProperty(propertyName: String, propertyValue: Provider<String>) {
         inputProperties.put(propertyName, propertyValue)
     }
+
+    override val enginesDependencies: DependencyCollector =
+        junitEngineSpec.enginesDependencies
 }

@@ -4191,6 +4191,7 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
           gmavenRepository.hasGroupId(groupId) &&
           // Don't look for KSP on gmaven; those versions are old, it's now maintained on maven
           // central
+          groupId != "org.jetbrains.kotlin" &&
           groupId != "com.google.devtools.ksp"
       ) {
         return gmavenRepository.getVersions(groupId, artifactId).asSequence()

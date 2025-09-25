@@ -135,9 +135,12 @@ abstract class CompileArtProfileTask: NonIncrementalTask() {
             val supplier = DexFileNameSupplier()
             // Sort and rename the dex files in the same way that they are packaged in the APK
             // (DexIncrementalRenameManager) and the bundle (PerModuleBundleTask) (b/346268213)
-            val dexFiles = parameters.dexFolders.asFileTree.files.sortedWith(DexFileComparator).map {
-                DexFile(it.inputStream(), supplier.get())
-            }
+            val dexFiles =
+                parameters.dexFolders.asFileTree.files.sortedWith(DexFileComparator).map {
+                    it.inputStream().buffered().use { stream ->
+                        DexFile(stream, supplier.get())
+                    }
+                }
 
             val artProfile = if (parameters.dexMetadataDirectory.isPresent) {
                 val artProfileWithDexMetadata = buildArtProfileWithDexMetadata(

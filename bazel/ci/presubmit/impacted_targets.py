@@ -211,6 +211,10 @@ def _find_impacted_targets(
         build_env.build_target_name,
     )
     logging.info('Found reference build ID: %s', reference_bid)
+    if not reference_bid:
+      raise ImpactedTargetsNotFoundError(
+          f'Reference build ID not found for build {build_env.build_number}'
+      )
     object_name = _FILE_NAME.format(
         bid=reference_bid,
         target=build_env.build_target_name,

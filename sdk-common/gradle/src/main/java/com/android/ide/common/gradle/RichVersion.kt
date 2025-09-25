@@ -15,7 +15,9 @@
  */
 package com.android.ide.common.gradle
 
+import com.google.common.collect.BoundType
 import com.google.common.collect.Range
+import com.google.common.collect.TreeRangeSet
 
 /**
  * Represents a rich version in the sense of Gradle's dependency specifier concept, documented
@@ -144,6 +146,97 @@ data class RichVersion(
                         .takeIf { it.isNotEmpty() }
                         ?.let { Version.parse(it) }
                     RichVersion(Declaration(Kind.STRICTLY, strict), prefer)
+                }
+            }
+        }
+
+        /**
+         * Parse a string in Maven POM Dependency Requirement Format, returning a [RichVersion]
+         * expressing the requirements.  The consequences are undefined if the given string is
+         * malformed.  The semantics differ for excluded end ranges between Gradle and Maven; if
+         * this matters to you, please file a bug.
+         */
+        @JvmStatic
+        fun fromPomVersion(string: String): RichVersion {
+            fun whitespace(char: Char) = char.code <= 0x20
+            fun constituent(char: Char) = !whitespace(char)
+            fun String.indexOf(predicate: (Char) -> Boolean, startIndex: Int = 0): Int =
+                (startIndex..<length).firstOrNull { predicate(this[it]) } ?: -1
+            fun parseRangeSet(string: String): TreeRangeSet<Version> {
+                // precondition: string[start] is '[' or '('; comma is the next comma, and close is
+                // the next ']' or ')' after comma.
+                fun parseOneRange(string: String, start: Int, comma: Int, close: Int): Range<Version> {
+                    val fallback = Range.singleton(Version.parse(string.substring(start)))
+                    val lowerType = when (string[start]) {
+                        '(' -> BoundType.OPEN
+                        '[' -> BoundType.CLOSED
+                        else -> return fallback
+                    }
+                    val upperType = when (string[close]) {
+                        ')' -> BoundType.OPEN
+                        ']' -> BoundType.CLOSED
+                        else -> return fallback
+                    }
+                    val lower = string.substring(start+1, comma).trim(::whitespace).ifEmpty { null }?.let(Version::parse)
+                    val upper = string.substring(comma+1, close).trim(::whitespace).ifEmpty { null }?.let {
+                        // Strictly speaking this is not correct for Maven
+                        if (upperType == BoundType.OPEN) Version.prefixInfimum(it) else Version.parse(it)
+                    }
+                    return when {
+                        lower == null && upper == null -> Range.all()
+                        lower == null && upper != null -> Range.upTo(upper, upperType)
+                        lower != null && upper == null -> Range.downTo(lower, lowerType)
+                        lower != null && upper != null -> {
+                            when {
+                                lower > upper -> fallback
+                                lowerType == BoundType.OPEN && upperType == BoundType.OPEN && lower == upper -> fallback
+                                else -> Range.range(lower, lowerType, upper, upperType)
+                            }
+                        }
+                        else -> throw IllegalStateException("Something is neither null nor not-null")
+                    }
+                }
+                val result = TreeRangeSet.create<Version>()
+                var start = 0
+                var fallbackPos = start
+                fun fallback() = Range.singleton(Version.parse(string.substring(fallbackPos)))
+                while (start < string.length) {
+                    val comma = string.indexOf(',', startIndex = start)
+                    if (comma == -1) { result.add(fallback()); break }
+                    val close = string.indexOfAny(charArrayOf(')', ']'), startIndex = comma)
+                    if (close == -1) { result.add(fallback()); break }
+                    result.add(parseOneRange(string, start, comma, close))
+                    start = close + 1
+                    start = string.indexOf(::constituent, startIndex = start)
+                    if (start == -1) { break } // no more non-empty space
+                    fallbackPos = start
+                    if (string[start] == ',') {
+                        start = string.indexOf(::constituent, startIndex = 1 + start)
+                    }
+                    if (start == -1) { result.add(fallback()); break }
+                    when (string[start]) {
+                        '(', '[' -> fallbackPos = start
+                        else -> { result.add(fallback()); break }
+                    }
+                }
+                return result
+            }
+            fun TreeRangeSet<Version>.toSingleRangeAndExcludes(): Pair<VersionRange, List<VersionRange>> {
+                if (isEmpty) return Version.parse("").let { arb -> VersionRange(Range.closedOpen(arb, arb)) } to listOf()
+                val span = span()
+                val excludes = this.complement().asRanges().map {
+                    span.intersection(it)
+                }.toList().let { TreeRangeSet.create(it) }
+                return VersionRange(span) to excludes.asRanges().map { VersionRange(it) }
+            }
+
+            return when {
+                string.isEmpty() -> parse(string)
+                !setOf('[','(').contains(string[0]) -> parse(string.trimEnd(::whitespace))
+                string[0] == '[' && string.indexOfLast(::constituent) == string.indexOf(']') && !string.contains(',') ->
+                    strictly(Version.parse(string.substring(1, string.indexOf(']')).trim(::whitespace)))
+                else -> parseRangeSet(string).toSingleRangeAndExcludes().let { (r, e) ->
+                    RichVersion(Declaration(Kind.STRICTLY, r), exclude = e)
                 }
             }
         }

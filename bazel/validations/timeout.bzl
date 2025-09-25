@@ -3,7 +3,10 @@
 When bazel is invoked with this aspect attached, it validates that only
 the allowlisted targets below can use the eternal timeout.
 """
-APPROVED_ETERNAL_TESTS = []
+APPROVED_ETERNAL_TESTS = [
+    "@@//tools/adt/idea/sync-memory-tests:intellij.android.sync-memory-tests-mac_tests__Benchmark2000Cpu",
+    "@@//tools/adt/idea/sync-memory-tests:intellij.android.sync-memory-tests-mac_tests__Benchmark2000Memory",
+]
 
 FAILURE_MESSAGE = """Test target {} has timeout set to eternal.
 We do not want any new target with eternal timeout (b/162943254).

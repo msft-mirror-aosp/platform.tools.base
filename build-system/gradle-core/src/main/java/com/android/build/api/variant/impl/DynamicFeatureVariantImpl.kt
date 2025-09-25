@@ -16,7 +16,6 @@
 
 package com.android.build.api.variant.impl
 
-import com.android.build.api.artifact.SingleArtifact
 import com.android.build.api.artifact.impl.ArtifactsImpl
 import com.android.build.api.component.analytics.AnalyticsEnabledDynamicFeatureVariant
 import com.android.build.api.component.impl.TestFixturesImpl
@@ -24,7 +23,6 @@ import com.android.build.api.component.impl.features.DexingImpl
 import com.android.build.api.component.impl.features.OptimizationCreationConfigImpl
 import com.android.build.api.component.impl.isTestApk
 import com.android.build.api.variant.AndroidVersion
-import com.android.build.api.variant.ApkInstallGroup
 import com.android.build.api.variant.ApkOutput
 import com.android.build.api.variant.ApkOutputProviders
 import com.android.build.api.variant.Component
@@ -32,9 +30,9 @@ import com.android.build.api.variant.DeviceSpec
 import com.android.build.api.variant.DeviceTest
 import com.android.build.api.variant.DynamicFeatureVariant
 import com.android.build.api.variant.HasHostTests
+import com.android.build.api.variant.HasTestSuites
 import com.android.build.api.variant.HasUnitTest
 import com.android.build.api.variant.Renderscript
-import com.android.build.gradle.internal.LoggerWrapper
 import com.android.build.gradle.internal.component.DynamicFeatureCreationConfig
 import com.android.build.gradle.internal.component.HostTestCreationConfig
 import com.android.build.gradle.internal.component.TestSuiteCreationConfig
@@ -53,24 +51,17 @@ import com.android.build.gradle.internal.services.VariantServices
 import com.android.build.gradle.internal.tasks.ModuleMetadata
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfig
 import com.android.build.gradle.internal.tasks.featuresplit.FeatureSetMetadata
-import com.android.build.gradle.internal.testsuites.HasTestSuites
-import com.android.build.gradle.internal.utils.DefaultDeviceApkOutput
 import com.android.build.gradle.internal.utils.DynamicFeatureApkOutput
-import com.android.build.gradle.internal.utils.ViaBundleDeviceApkOutput
 import com.android.build.gradle.internal.utils.toImmutableList
 import com.android.build.gradle.internal.utils.toImmutableMap
 import com.android.build.gradle.internal.variant.BaseVariantData
 import com.android.build.gradle.internal.variant.VariantPathHelper
 import com.android.build.gradle.options.StringOption
 import com.android.builder.errors.IssueReporter
-import com.android.builder.internal.InstallUtils
 import com.google.wireless.android.sdk.stats.GradleBuildVariant
 import org.gradle.api.Task
-import org.gradle.api.file.RegularFile
-import org.gradle.api.logging.Logging
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
-import org.gradle.api.tasks.ClasspathNormalizer
 import org.gradle.api.tasks.TaskProvider
 import javax.inject.Inject
 

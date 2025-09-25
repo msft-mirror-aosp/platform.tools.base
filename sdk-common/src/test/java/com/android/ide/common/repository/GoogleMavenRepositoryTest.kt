@@ -379,7 +379,9 @@ class GoogleMavenRepositoryTest : BaseTestCase() {
             Dependency.parse("com.android.support:support-core-ui:25.3.1"),
             Dependency.parse("com.android.support:support-media-compat:25.3.1"),
             Dependency.parse("com.android.support:support-fragment:25.3.1"),
-            Dependency.parse("com.android.support:recyclerview-v7:[25.3.1.4.5,25.4.0)"),
+            // Maven dependency ranges are always hard requirements, which we map to Gradle's
+            // strictly (notated as `!!`)
+            Dependency.parse("com.android.support:recyclerview-v7:[25.3.1.4.5,25.4.0)!!"),
             Dependency.parse("androidx.recyclerview:recyclerview:2.0.0")
         )
         // TODO(xof): actually these tests are not well-founded; the special version ranges for
@@ -389,8 +391,8 @@ class GoogleMavenRepositoryTest : BaseTestCase() {
         // assertThat(dependencies[3].versionRange?.upperEndpoint()).isEqualTo(Version.prefixInfimum("25.3.2"))
         // assertThat(dependencies[5].versionRange?.lowerEndpoint()).isEqualTo(Version.parse("2.0.0"))
         // assertThat(dependencies[5].versionRange?.upperEndpoint()).isEqualTo(Version.prefixInfimum("3"))
-        assertThat(dependencies[4].version?.require?.lowerEndpoint()).isEqualTo(Version.parse("25.3.1.4.5"))
-        assertThat(dependencies[4].version?.require?.upperEndpoint()).isEqualTo(
+        assertThat(dependencies[4].version?.strictly?.lowerEndpoint()).isEqualTo(Version.parse("25.3.1.4.5"))
+        assertThat(dependencies[4].version?.strictly?.upperEndpoint()).isEqualTo(
             Version.prefixInfimum(
                 "25.4.0"
             )
@@ -471,7 +473,9 @@ class GoogleMavenRepositoryTest : BaseTestCase() {
             repo.findCompileDependencies("androidx.activity", "activity-compose", version!!)
         assertThat(dependencies).containsExactly(
             Dependency.parse("androidx.compose.runtime:runtime-saveable:1.7.0"),
-            Dependency.parse("androidx.activity:activity-ktx:[1.10.0]"),
+            // The dependency is expressed in Maven POM form as [1.10.0], which is a hard
+            // requirement, which we map to Gradle's `!!` notation indicating "strictly".
+            Dependency.parse("androidx.activity:activity-ktx:1.10.0!!"),
             Dependency.parse("androidx.compose.runtime:runtime:1.7.0"),
             Dependency.parse("androidx.compose.ui:ui:1.0.1"),
             Dependency.parse("androidx.core:core-ktx:1.13.0"),

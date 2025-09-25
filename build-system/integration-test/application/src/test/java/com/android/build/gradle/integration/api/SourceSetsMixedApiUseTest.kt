@@ -20,6 +20,7 @@ import com.android.build.gradle.integration.common.fixture.project.ApkSelector
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.plugins.LegacyApplicationCallback
 import com.android.build.gradle.internal.dsl.BaseAppModuleExtension
+import com.android.build.gradle.options.BooleanOption
 import org.gradle.api.DefaultTask
 import org.gradle.api.Project
 import org.gradle.api.file.DirectoryProperty
@@ -102,7 +103,9 @@ class SourceSetsMixedApiUseTest {
     @Test
     fun sourceRegistrationShouldBeRepresented() {
         val build = rule.build
-        build.executor.run(":app:assembleDebug")
+        build.executor
+            .with(BooleanOption.DISALLOW_PROVIDER_IN_ANDROID_SOURCE_SET, false)
+            .run(":app:assembleDebug")
         build.androidApplication().assertApk(ApkSelector.DEBUG) {
             jniLibs().containsExactly(
                 "armeabi-v7a/main-sourceset-generated.so",

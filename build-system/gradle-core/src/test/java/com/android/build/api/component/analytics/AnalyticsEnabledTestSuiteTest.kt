@@ -16,13 +16,15 @@
 
 package com.android.build.api.component.analytics
 
+import com.android.build.api.variant.JUnitEngineSpecBuilder
+import com.android.build.api.variant.TestSuite
 import com.android.build.gradle.internal.fixtures.FakeObjectFactory
-import com.android.build.gradle.internal.testsuites.TestSuite
 import com.android.tools.build.gradle.internal.profile.VariantPropertiesMethodType
 import com.google.common.truth.Truth
 import com.google.wireless.android.sdk.stats.GradleBuildVariant
 import org.junit.Rule
 import org.junit.Test
+import org.mockito.Mockito
 import org.mockito.junit.MockitoJUnit
 import org.mockito.junit.MockitoRule
 import org.mockito.kotlin.mock
@@ -43,7 +45,13 @@ class AnalyticsEnabledTestSuiteTest {
 
     @Test
     fun junitEngineSpec() {
-        proxy.junitEngineSpec
+        val junitEngineSpec = Mockito.mock<JUnitEngineSpecBuilder>()
+        Mockito.`when`(delegate.junitEngineSpec).thenReturn(junitEngineSpec)
+        val junitEngineSpecProxy = proxy.junitEngineSpec
+
+        Truth.assertThat(junitEngineSpecProxy).isInstanceOf(
+            AnalyticsEnabledJUnitEngineSpec::class.java
+        )
 
         Truth.assertThat(
             stats.variantApiAccess.variantPropertiesAccessList.first().type

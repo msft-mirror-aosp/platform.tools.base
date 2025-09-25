@@ -48,6 +48,7 @@ readonly test_targets="//prebuilts/studio/... //prebuilts/tools/... //tools/..."
   test \
   ${config_options} \
   --tool_tag="${script_name}" \
+  --test_tag_filters="-noci:studio-linux" \
   --build_metadata="ab_build_id=${BUILD_NUMBER}" \
   --build_metadata="ab_target=studio-mutation-tests" \
   --flaky_test_attempts=3 \

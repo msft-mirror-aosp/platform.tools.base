@@ -16,9 +16,9 @@
 
 package com.android.build.gradle.internal.testsuites.impl
 
+import com.android.build.api.variant.TestSuiteTargetBuilder
 import com.android.build.api.variant.impl.capitalizeFirstChar
 import com.android.build.gradle.internal.dsl.AgpTestSuiteTargetImpl
-import com.android.build.gradle.internal.testsuites.TestSuiteTargetBuilder
 
 class TestSuiteTargetBuilderImpl(
     private val dslDefinedTestSuiteTarget: AgpTestSuiteTargetImpl

@@ -23,6 +23,12 @@ import java.util.Arrays;
 import java.util.List;
 
 public final class InstallOptions {
+
+    public static final InstallOptions STUDIO_DEFAULTS =
+            InstallOptions.builder().setAllowDebuggable().build();
+    public static final InstallOptions MOBILE_INSTALL_DEFAULTS =
+            InstallOptions.builder().setAllowDebuggable().setAllowDowngrade().setGrantAllPermissions().build();
+
     // This value comes from the framework and should not be changed.
     public static final String CURRENT_USER = "current";
 

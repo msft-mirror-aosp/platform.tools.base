@@ -14,15 +14,28 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.internal.testsuites
+package com.android.build.api.variant
 
-interface HasTestSuites {
+import org.gradle.api.Incubating
+import org.gradle.api.Named
+
+/**
+ * Test suite target builder.
+ */
+@Incubating
+interface TestSuiteTargetBuilder: Named {
+
+    @get:Incubating
+    @set:Incubating
+    var enable: Boolean
 
     /**
-     * Variant's [TestSuite] configuration to configure test suites associated with this
-     * variant.
+     * Targeted devices for this test suite in this variant.
      *
-     * @return a [Map] which keys are unique names within the test suites
+     * AGP may choose to allocate multiple Test tasks for running the test suites depending on the
+     * targeted devices, so the list of devices must be fixed before the
+     * [AndroidComponentsExtension.onVariants] run.
      */
-    val suites: Map<String, TestSuite>
+    @get:Incubating
+    val targetDevices: MutableList<String>
 }

@@ -612,6 +612,7 @@ com/android/tools/build/gradle
   com/android/build/gradle/internal/testing/androidtest/
   com/android/build/gradle/internal/testing/androidtest/instrument/
   com/android/build/gradle/internal/testing/utp/
+  com/android/build/gradle/internal/testing/utp/emulatorcontrol/
   com/android/build/gradle/internal/testing/utp/worker/
   com/android/build/gradle/internal/testsuites/
   com/android/build/gradle/internal/testsuites/impl/

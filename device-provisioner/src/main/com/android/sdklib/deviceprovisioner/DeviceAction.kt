@@ -65,6 +65,7 @@ interface DeviceAction {
     val templateActivationAction: Presentation
     val repairDeviceAction: Presentation
     val pairDeviceAction: Presentation
+    val hideDeviceAction: Presentation
   }
 }
 
@@ -244,6 +245,13 @@ interface PairDeviceAction : DeviceAction {
   suspend fun pair()
 
   override fun DefaultPresentation.fromContext() = pairDeviceAction
+}
+
+interface HideDeviceAction : DeviceAction {
+  /** Attempts to hide the device from DeviceManager. */
+  suspend fun hide()
+
+  override fun DefaultPresentation.fromContext() = hideDeviceAction
 }
 
 /**

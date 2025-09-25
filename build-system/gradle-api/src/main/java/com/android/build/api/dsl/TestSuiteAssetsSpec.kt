@@ -20,6 +20,5 @@ package com.android.build.api.dsl
  * Definition of asset sources for a test suite. These source files are not compiled therefore
  * there is no notion of dependencies attached to them.
  */
-/** @suppress */
 interface TestSuiteAssetsSpec {
 }

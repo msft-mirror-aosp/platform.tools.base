@@ -43,7 +43,24 @@ class FullBackupContentDetector : ResourceXmlDetector() {
       checkSection(context, root)
     } else if (rootTag == TAG_DATA_EXTRACTION_RULES) {
       for (child in root) {
-        // <cloud-backup> and <device-transfer> sections
+        // For each <cloud-backup>, <device-transfer>, <cross-platform-transfer> section.
+
+        // Specific check for <cross-platform-transfer>.
+        if (
+          child.tagName == TAG_CROSS_PLATFORM_TRANSFER &&
+            child.getAttribute(ATTR_PLATFORM).isEmpty()
+        ) {
+          val quickfix = fix().set().todo(namespace = null, attribute = ATTR_PLATFORM).build()
+          context.report(
+            ISSUE,
+            child,
+            context.getNameLocation(child),
+            "Missing required attribute `$ATTR_PLATFORM`",
+            quickfix,
+          )
+        }
+
+        // Non-specific checks.
         checkSection(context, child)
       }
     }
@@ -60,18 +77,20 @@ class FullBackupContentDetector : ResourceXmlDetector() {
       if (child.nodeType == Node.ELEMENT_NODE) {
         val element = child as Element
         val tag = element.tagName
-        if (TAG_INCLUDE == tag) {
-          includes.add(element)
-        } else if (TAG_EXCLUDE == tag) {
-          excludes.add(element)
-        } else {
-          // See FullBackup#validateInnerTagContents
-          context.report(
-            ISSUE,
-            element,
-            context.getNameLocation(element),
-            "Unexpected element `<$tag>`",
-          )
+        // See FullBackup#validateInnerTagContents.
+        when {
+          TAG_INCLUDE == tag -> includes.add(element)
+          TAG_EXCLUDE == tag -> excludes.add(element)
+          TAG_CROSS_PLATFORM_TRANSFER == root.tagName && TAG_PLATFORM_SPECIFIC_PARAMS == tag -> {
+            // No validation of <platform-specific-params>, for now.
+          }
+          else ->
+            context.report(
+              ISSUE,
+              element,
+              context.getNameLocation(element),
+              "Unexpected element `<$tag>`",
+            )
         }
       }
       i++
@@ -227,8 +246,11 @@ class FullBackupContentDetector : ResourceXmlDetector() {
     private const val TAG_INCLUDE = "include"
     private const val TAG_FULL_BACKUP_CONTENT = "full-backup-content"
     private const val TAG_DATA_EXTRACTION_RULES = "data-extraction-rules"
+    private const val TAG_CROSS_PLATFORM_TRANSFER = "cross-platform-transfer"
+    private const val TAG_PLATFORM_SPECIFIC_PARAMS = "platform-specific-params"
     private const val ATTR_PATH = "path"
     private const val ATTR_DOMAIN = "domain"
+    private const val ATTR_PLATFORM = "platform"
 
     /** Valid domains; see FullBackup#getTokenForXmlDomain for authoritative list. */
     private val VALID_DOMAINS =

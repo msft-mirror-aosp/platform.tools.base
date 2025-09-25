@@ -136,8 +136,16 @@ fun main(args: Array<String>) {
         functionInterfaces.map { ProxySpec(r.simpleName + it.simpleName.substringAfter("Function"), r, listOf(it), /* raw types */ true) }
     }
 
+    val continuations = listOf(
+        Class.forName("kotlin.coroutines.jvm.internal.BaseContinuationImpl"),
+        Class.forName("kotlin.coroutines.jvm.internal.ContinuationImpl"),
+        Class.forName("kotlin.coroutines.jvm.internal.RestrictedContinuationImpl")
+    ).map {
+        ProxySpec(it.simpleName, it, emptyList(), false)
+    }
+
     generateProxies(
-        lambdas + refs
+        lambdas + refs + continuations
     ).let {
         val path = Paths.get(args[0]).toAbsolutePath()
         Files.write(path, "$copyright\n$it".toByteArray(Charsets.UTF_8))

@@ -29,6 +29,7 @@ import com.android.build.gradle.internal.tasks.factory.features.OptimizationTask
 import com.android.build.gradle.internal.utils.LibraryArtifactType
 import com.android.build.gradle.internal.utils.getFilteredFiles
 import com.android.build.gradle.internal.utils.setDisallowChanges
+import com.android.build.gradle.options.BooleanOption
 import com.android.buildanalyzer.common.TaskCategory
 import com.android.builder.errors.EvalIssueException
 import com.android.utils.FileUtils
@@ -70,6 +71,10 @@ abstract class ExportConsumerProguardFilesTask : NonIncrementalTask() {
     var isDynamicFeature: Boolean = false
         private set
 
+    @get:Input
+    var disallowGlobalOptions: Boolean = false
+        private set
+
     @get:InputFiles
     @get:PathSensitive(PathSensitivity.RELATIVE)
     abstract val consumerProguardFiles: ConfigurableFileCollection
@@ -97,12 +102,14 @@ abstract class ExportConsumerProguardFilesTask : NonIncrementalTask() {
     abstract val outputDir: DirectoryProperty
 
     public override fun doTaskAction() {
-        // We check for default files unless it's a base feature, which can include default files.
+        // We check consumer files for default files or global options unless it's a base feature,
+        // which can include both of those
         if (!isBaseModule) {
-            checkProguardFiles(
+            checkConsumerProguardFiles(
                 buildDirectory,
                 isDynamicFeature,
-                consumerProguardFiles.files
+                consumerProguardFiles.files,
+                disallowGlobalOptions
             ) { exception -> throw EvalIssueException(exception) }
         }
 
@@ -158,6 +165,7 @@ abstract class ExportConsumerProguardFilesTask : NonIncrementalTask() {
             task.consumerProguardFiles.from(optimizationCreationConfig.consumerProguardFiles)
             task.isBaseModule = creationConfig.componentType.isBaseModule
             task.isDynamicFeature = creationConfig.componentType.isDynamicFeature
+            task.disallowGlobalOptions = creationConfig.services.projectOptions[BooleanOption.R8_GLOBAL_OPTIONS_IN_CONSUMER_RULES_DISALLOWED]
 
             task.inputFiles.from(
                 task.consumerProguardFiles,
@@ -185,12 +193,17 @@ abstract class ExportConsumerProguardFilesTask : NonIncrementalTask() {
     }
 
     companion object {
+        /**
+         * Validate that consumer proguard file list doesn't contain default proguard files, or
+         * global options which are banned in consumer rules.
+         */
         @JvmStatic
-        fun checkProguardFiles(
+        fun checkConsumerProguardFiles(
             buildDirectory: DirectoryProperty,
             isDynamicFeature: Boolean,
             consumerProguardFiles: Collection<File>,
-            exceptionHandler: Consumer<String>
+            disallowGlobalOptions: Boolean,
+            exceptionHandler: Consumer<String>,
         ) {
             val defaultProguardFiles: Map<File, String> = ProguardFiles.KNOWN_FILE_NAMES.associateBy {
                 ProguardFiles.getDefaultProguardFile(it, buildDirectory)
@@ -205,6 +218,121 @@ abstract class ExportConsumerProguardFilesTask : NonIncrementalTask() {
                     }
                     exceptionHandler.accept(errorMessage)
                 }
+
+                if (disallowGlobalOptions) {
+                    checkConsumerProguardFileContent(it, isDynamicFeature, exceptionHandler)
+                }
+            }
+        }
+
+        /**
+         * Global keep options are not allowed in consumer rules
+         * Argument values are ignored
+         */
+        private val bannedOptions = listOf(
+            "dontoptimize",
+            "dontobfuscate",
+            "dontshrink",
+            "include",
+            "basedirectory",
+            "injars",
+            "outjars",
+            "libraryjars",
+            "renamesourcefileattribute",
+            "printconfiguration",
+            "printmapping",
+            "printusage",
+            "printseeds",
+            "allowaccessmodification",
+            "overloadaggressively",
+            "ignorewarnings",
+            "addconfigurationdebugging",
+            "applymapping",
+            "obfuscationdictionary",
+            "classobfuscationdictionary",
+            "packageobfuscationdictionary",
+        )
+
+        /**
+         * Global keep options are not allowed in consumer rules without package argument
+         */
+        private val bannedOptionWithoutPackageArg = listOf(
+            "repackageclasses",
+            "flattenpackagehierarchy"
+        )
+
+        /**
+         * A regular expression to parse a single line of a Keep rule file.
+         *
+         * Explanation:
+         * - `\s*`: Optional leading whitespace
+         * - `-`: Hyphen that proceeds option name
+         * - `([a-zA-Z0-9]+)`: Capturing Group 1 (the "option"). Matches one or more
+         *     alphanumeric characters
+         * - `(?:\s+([^#]*?))?`: An optional non-capturing group for the arguments.
+         * - `\s+`: Matches one or more whitespace characters (required separator).
+         * - `([^#]*?)`: Capturing Group 2 (the "args"). Non-greedily matches
+         *     any character that is not a '#' (comment marker).
+         * - `?`: Makes this entire "whitespace + args" group optional.
+         * - `\s*`: Matches optional trailing whitespace (between args and comment/end-of-line).
+         * - `(?:#.*)?`: An optional non-capturing group for comments. Matches '#' followed
+         * by any characters to the end of the line.
+         */
+        private val KEEP_OPTION_ARGS_REGEX =
+            """\s*-([a-zA-Z0-9]+)(?:\s+([^#]*?))?\s*(?:#.*)?""".toRegex()
+
+        /**
+         * Checks consumer proguard file for invalid global options.
+         *
+         * These checks should be guarded by
+         * [BooleanOption.R8_GLOBAL_OPTIONS_IN_CONSUMER_RULES_DISALLOWED].
+         *
+         * Note that consumer files may not exist, since
+         * [BooleanOption.FAIL_ON_MISSING_PROGUARD_FILES] may be false.
+         */
+        fun checkConsumerProguardFileContent(
+            consumerProguardFile: File,
+            isDynamicFeature: Boolean,
+            exceptionHandler: Consumer<String>
+        ) {
+            if (!consumerProguardFile.exists()) return
+
+            consumerProguardFile.forEachLine { rawLine ->
+                val match = KEEP_OPTION_ARGS_REGEX.matchEntire(rawLine)
+                if (match != null) {
+                    val option = match.groups[1]!!.value
+                    val args = match.groups[2]?.value
+
+                    val baseMessage = if (isDynamicFeature) {
+                        // Avoid term "consumerProguardFile" in feature modules, since that's not
+                        // the api where they're specified.
+                        "Global keep option -$option was specified in ${consumerProguardFile.path}. "
+                    } else {
+                        "Global keep option -$option was specified as a" +
+                                " consumerProguardFile in ${consumerProguardFile.path}. "
+                    }
+                    if (option in bannedOptions) {
+                        if (isDynamicFeature) {
+                            exceptionHandler.accept(baseMessage + "It should not be specified" +
+                                    " in this module. It can be specified in the base module" +
+                                    " instead.")
+                        } else {
+                            exceptionHandler.accept(baseMessage + "It should not be used in" +
+                                    " a consumer configuration file.")
+                        }
+                    } else if (option in bannedOptionWithoutPackageArg && args == null) {
+                        if (isDynamicFeature) {
+                            exceptionHandler.accept(baseMessage + "It should not be specified" +
+                                    " in this module without specifying a package. Add a package" +
+                                    " scope, or specify this option in the base module instead.")
+                        } else {
+                            exceptionHandler.accept(baseMessage + "It should not be used in a" +
+                                    " consumer configuration file without specifying a package.")
+                        }
+
+                    }
+                }
+
             }
         }
     }

@@ -48,15 +48,9 @@ class LayoutlibDataFromMaven(val layoutlibDataDirectory: FileCollection) {
             version: String,
             frameworkResJar: FileCollection
         ): LayoutlibDataFromMaven {
+            // Use single-string notation to avoid a Gradle deprecation that will be an error in Gradle 10.
             val configuration = project.configurations.detachedConfiguration(
-                project.dependencies.create(
-                    mapOf(
-                        "group" to MAVEN_GROUP,
-                        "name" to MAVEN_ARTIFACT,
-                        "version" to version,
-                        "classifier" to ""
-                    )
-                )
+                project.dependencies.create("$MAVEN_GROUP:$MAVEN_ARTIFACT:$version")
             )
             configuration.isCanBeConsumed = false
             configuration.isCanBeResolved = true

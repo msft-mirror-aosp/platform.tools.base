@@ -17,9 +17,9 @@
 package com.android.build.api.component.analytics
 
 import com.android.build.api.dsl.TestTaskContext
-import com.android.build.gradle.internal.testsuites.JUnitEngineSpec
-import com.android.build.gradle.internal.testsuites.TestSuite
-import com.android.build.gradle.internal.testsuites.TestSuiteTarget
+import com.android.build.api.variant.JUnitEngineSpec
+import com.android.build.api.variant.TestSuite
+import com.android.build.api.variant.TestSuiteTarget
 import com.android.tools.build.gradle.internal.profile.VariantPropertiesMethodType
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.tasks.testing.Test
@@ -40,7 +40,9 @@ open class AnalyticsEnabledTestSuite(
         get() {
             stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
                 VariantPropertiesMethodType.JUNIT_ENGINE_SPEC_VALUE
-            return delegate.junitEngineSpec
+            return AnalyticsEnabledJUnitEngineSpec(
+                delegate.junitEngineSpec,
+                stats)
         }
 
     override fun getName(): String = delegate.name
@@ -49,6 +51,8 @@ open class AnalyticsEnabledTestSuite(
         get() {
             stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
                 VariantPropertiesMethodType.TEST_SUITE_TARGETS_VALUE
-            return delegate.targets
+            return delegate.targets.mapValues { target ->
+                AnalyticsEnabledTestSuiteTarget(target.value, stats)
+            }
         }
 }
