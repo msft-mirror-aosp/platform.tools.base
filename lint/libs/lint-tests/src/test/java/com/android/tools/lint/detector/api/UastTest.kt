@@ -3416,8 +3416,7 @@ class UastTest : TestCase() {
     }
   }
 
-  // TODO(434109500): likely fixed after Kotlin 2.2.20 (or 2.3) or IJ 2025.3?
-  fun disabled_testRecursiveTypeParameterReturnedAsReifiedInlineReturnType() {
+  fun testRecursiveTypeParameterReturnedAsReifiedInlineReturnType() {
     // b/434109500
     val testFiles =
       arrayOf(
@@ -3488,9 +3487,7 @@ class UastTest : TestCase() {
           .indented(),
       )
 
-    val expected =
-      if (useFirUast()) "my.logger.LoggingApi<? extends ".repeat(6) + "java.lang.Object>>>>>>"
-      else "<ErrorType>"
+    val expected = if (useFirUast()) "CustomLoggingApi" else "<ErrorType>"
 
     check(*testFiles) { file ->
       file.accept(
@@ -4775,10 +4772,6 @@ class UastTest : TestCase() {
   fun testAnnotationOnFakePsi() {
     // b/427764853
     // https://youtrack.jetbrains.com/issue/KTIJ-34874
-    // TODO(b/427764853): needs artifact patch/update to 253
-    if (useFirUast()) {
-      return
-    }
     val source =
       kotlin(
           """
