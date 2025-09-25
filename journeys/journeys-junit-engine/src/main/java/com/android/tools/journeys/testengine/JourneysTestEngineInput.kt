@@ -41,7 +41,7 @@ object JourneysTestEngineInput {
             testDeviceDisplayNames =
                 inputProperties["com.android.junit.engine.serial.ids"].toString()
                     .substringBefore(":")
-            resultsDir = File(inputProperties["om.android.junit.engine.results.dir"].toString())
+            resultsDir = File(inputProperties["com.android.junit.engine.results.dir"].toString())
         } else {
             journeysInputDir = getFileFromSystemProperty("journeysInputDir")
             testDeviceIds = getSystemProperty("testDeviceId")
