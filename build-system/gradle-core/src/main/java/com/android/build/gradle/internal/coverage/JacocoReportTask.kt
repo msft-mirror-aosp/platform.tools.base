@@ -82,16 +82,9 @@ import org.gradle.api.provider.Provider
 @BuildAnalyzer(primaryTaskCategory = TaskCategory.TEST)
 abstract class JacocoReportTask : NonIncrementalTask() {
 
-    // PathSensitivity.NONE since only the contents of the files under the directory matter as input
-    @get:InputDirectory
+    @get:InputFiles
     @get:PathSensitive(PathSensitivity.NONE)
-    @get:Optional
-    abstract val jacocoConnectedTestsCoverageDir: DirectoryProperty
-
-    @get:InputFile
-    @get:PathSensitive(PathSensitivity.NAME_ONLY)
-    @get:Optional
-    abstract val jacocoHostTestCoverageFile: RegularFileProperty
+    abstract val coverageFiles: ConfigurableFileCollection
 
     @get:Input
     abstract val reportName: Property<String>
@@ -113,22 +106,12 @@ abstract class JacocoReportTask : NonIncrementalTask() {
     abstract val outputReportDir: DirectoryProperty
 
     override fun doTaskAction() {
-        if (!jacocoConnectedTestsCoverageDir.isPresent && !jacocoHostTestCoverageFile.isPresent) {
-            throw IOException("No coverage data found. " +
-                    "Please enable code coverage for this build type in build.gradle.")
-        }
-        val coverageFiles: Set<File> = if (jacocoHostTestCoverageFile.isPresent) {
-            // Host test coverage:
-            setOf(jacocoHostTestCoverageFile.get().asFile)
-        } else {
-            // Connected android test coverage:
-            val connectedTestJacocoFiles =
-                jacocoConnectedTestsCoverageDir.get().asFileTree.files.filter(File::isFile)
-            if (connectedTestJacocoFiles.none()) {
-                val path = jacocoConnectedTestsCoverageDir.get().asFile.absolutePath
-                throw IOException("No coverage data to process in directories [$path]")
-            }
-            connectedTestJacocoFiles.toSet()
+        val jacocoCoverageFiles = coverageFiles.asFileTree.files.filter(File::isFile)
+        if (jacocoCoverageFiles.none()) {
+            throw IOException(
+                "Test coverage report requested, but no tests were run. " +
+                        "Task '${name}' failed because no coverage data was found."
+            )
         }
 
         // Jacoco requires source set directory roots rather than source files to produce
@@ -142,7 +125,7 @@ abstract class JacocoReportTask : NonIncrementalTask() {
                 classpath.classpath.from(jacocoClasspath.files)
             }
             .submit(JacocoReportWorkerAction::class.java) {
-                it.coverageFiles.setFrom(coverageFiles)
+                it.coverageFiles.setFrom(jacocoCoverageFiles)
                 it.reportDir.set(outputReportDir)
                 it.classFolders.setFrom(classFileCollection)
                 it.sourceFolders.setFrom(sourceFolders)
@@ -208,10 +191,10 @@ abstract class JacocoReportTask : NonIncrementalTask() {
             super.configure(task)
             val testName = if (creationConfig.componentType.isForScreenshotPreview) "screenshot" else "unit"
             task.description = "Generates a Jacoco code coverage report from $testName tests."
-            creationConfig.artifacts.setTaskInputToFinalProduct(
-                internalArtifactType,
-                task.jacocoHostTestCoverageFile
+            task.coverageFiles.from(
+                creationConfig.artifacts.get(internalArtifactType)
             )
+            task.coverageFiles.disallowChanges()
             /** Jacoco coverage files are generated from [AndroidUnitTest] */
             task.dependsOn("${testTaskName}${creationConfig.name.usLocaleCapitalize()}")
         }
@@ -227,12 +210,10 @@ abstract class JacocoReportTask : NonIncrementalTask() {
             super.configure(task)
             task.description =
                 "Creates JaCoCo test coverage report from data gathered on the device."
-            creationConfig
-                .artifacts
-                .setTaskInputToFinalProduct(
-                    InternalArtifactType.CODE_COVERAGE,
-                    task.jacocoConnectedTestsCoverageDir
-                )
+            task.coverageFiles.from(
+                creationConfig.artifacts.get(InternalArtifactType.CODE_COVERAGE)
+            )
+            task.coverageFiles.disallowChanges()
         }
     }
 
@@ -249,12 +230,10 @@ abstract class JacocoReportTask : NonIncrementalTask() {
             super.configure(task)
             task.description =
                 "Creates JaCoCo test coverage report from data gathered on the Gradle managed device."
-            creationConfig
-                .artifacts
-                .setTaskInputToFinalProduct(
-                    InternalArtifactType.MANAGED_DEVICE_CODE_COVERAGE,
-                    task.jacocoConnectedTestsCoverageDir
-                )
+            task.coverageFiles.from(
+                creationConfig.artifacts.get(InternalArtifactType.MANAGED_DEVICE_CODE_COVERAGE)
+            )
+            task.coverageFiles.disallowChanges()
         }
     }
 
