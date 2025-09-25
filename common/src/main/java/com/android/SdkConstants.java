@@ -1133,8 +1133,6 @@ public final class SdkConstants {
     public static final String TAG_PURPOSE = "purpose";
     public static final String TAG_SPECIFIC_PURPOSE = "specific-purpose";
     public static final String TAG_GENERAL_PURPOSE = "general-purpose";
-    // TODO (b/442571488) - Remove once usages in lint are updated.
-    public static final String TAG_VALID_PURPOSE = "valid-purpose";
     public static final String TAG_VALID_SPECIFIC_PURPOSE = "valid-specific-purpose";
     public static final String TAG_VALID_GENERAL_PURPOSE = "valid-general-purpose";
     public static final String TAG_GRANT_PERMISSION = "grant-uri-permission";
