@@ -18,8 +18,8 @@ package com.android.tools.idea.wizard.template.impl.activities.xrGlassesActivity
 import com.android.tools.idea.wizard.template.escapeKotlinIdentifier
 
 fun mainActivityKt(activityClass: String, packageName: String) =
-    //language=kotlin
-    """
+  // language=kotlin
+  """
 package ${escapeKotlinIdentifier(packageName)}
 
 import android.os.Bundle
@@ -30,14 +30,14 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.Button
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.xr.glimmer.Button
 import androidx.xr.glimmer.GlimmerTheme
+import androidx.xr.glimmer.Text
 
 
 class $activityClass : ComponentActivity() {
