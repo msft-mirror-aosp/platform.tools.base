@@ -164,15 +164,18 @@ fun JavaCompile.configureAnnotationProcessorPath(creationConfig: ComponentCreati
     if (creationConfig is KmpComponentCreationConfig) {
         return
     }
+    options.annotationProcessorPath = creationConfig.getAnnotationProcessorJars()
+}
 
+internal fun ComponentCreationConfig.getAnnotationProcessorJars(): FileCollection {
     // Optimization: For project jars, query for JAR instead of PROCESSED_JAR as project jars are
     // currently considered already processed (unlike external jars).
-    val projectJars = creationConfig.variantDependencies
-            .getArtifactFileCollection(ANNOTATION_PROCESSOR, PROJECT, JAR)
-    val externalJars = creationConfig.variantDependencies
-            .getArtifactFileCollection(ANNOTATION_PROCESSOR, EXTERNAL,
-                    creationConfig.global.aarOrJarTypeToConsume.jar)
-    options.annotationProcessorPath = projectJars.plus(externalJars)
+    val projectJars = variantDependencies
+        .getArtifactFileCollection(ANNOTATION_PROCESSOR, PROJECT, JAR)
+    val externalJars = variantDependencies
+        .getArtifactFileCollection(ANNOTATION_PROCESSOR, EXTERNAL, global.aarOrJarTypeToConsume.jar)
+
+    return projectJars.plus( externalJars)
 }
 
 data class SerializableArtifact(
