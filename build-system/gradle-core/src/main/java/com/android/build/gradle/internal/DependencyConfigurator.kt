@@ -261,6 +261,9 @@ class DependencyConfigurator(
                 spec.parameters.projectName.setDisallowChanges(project.name)
                 spec.parameters.targetType.setDisallowChanges(transformTarget)
                 spec.parameters.namespacedSharedLibSupport.setDisallowChanges(namespacedSharedLibSupport)
+                spec.parameters.filterOutGlobalRules.setDisallowChanges(
+                    projectOptions[BooleanOption.R8_GLOBAL_OPTIONS_IN_CONSUMER_RULES_DISALLOWED]
+                )
             }
         }
         if (projectOptions[BooleanOption.PRECOMPILE_DEPENDENCIES_RESOURCES]) {
@@ -333,7 +336,13 @@ class DependencyConfigurator(
                 ExtractProGuardRulesTransform::class.java,
                 aarOrJarTypeToConsume.jar,
                 AndroidArtifacts.ArtifactType.UNFILTERED_PROGUARD_RULES
-            )
+            ) { params ->
+                params.filterOutGlobalRules.set(
+                    projectServices.projectOptions.get(
+                        BooleanOption.R8_GLOBAL_OPTIONS_IN_CONSUMER_RULES_DISALLOWED
+                    )
+                )
+            }
         }
         registerTransform(
             LibrarySymbolTableTransform::class.java,

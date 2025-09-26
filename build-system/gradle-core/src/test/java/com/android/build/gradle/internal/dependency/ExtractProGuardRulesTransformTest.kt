@@ -70,6 +70,38 @@ class ExtractProGuardRulesTransformTest {
     }
 
     @Test
+    fun testBannedGlobalRules_filtered() = verifyBannedGlobalRules(filterOutGlobalRules = true)
+
+    @Test
+    fun testBannedGlobalRules_unfiltered() = verifyBannedGlobalRules(filterOutGlobalRules = false)
+
+    fun verifyBannedGlobalRules(filterOutGlobalRules: Boolean) {
+        val initialRules = """
+            -dontoptimize
+            -repackageclasses
+            #preexisting comment -dontoptimize
+        """.trimIndent()
+        val jarFile = createZip("META-INF/proguard/foo.txt" to initialRules)
+        val transformOutputs = FakeTransformOutputs(tmp)
+        createTransform(jarFile, filterOutGlobalRules = filterOutGlobalRules)
+            .transform(transformOutputs)
+
+        assertThat(getProducedFileNames(transformOutputs.outputDirectory)).containsExactly("lib${slash}META-INF${slash}proguard${slash}foo.txt")
+        val outputFile = transformOutputs.outputDirectory.resolve("lib${slash}META-INF${slash}proguard${slash}foo.txt")
+        if (filterOutGlobalRules) {
+            assertThat(outputFile).hasContents(
+                """
+            # REMOVED CONSUMER RULE: -dontoptimize
+            # REMOVED CONSUMER RULE: -repackageclasses
+            #preexisting comment -dontoptimize
+        """.trimIndent()
+            )
+        } else {
+            assertThat(outputFile).hasContents(initialRules)
+        }
+    }
+
+    @Test
     fun testMultipleRuleFiles() {
         val jarFile = createZip(
             "META-INF/proguard/bar.txt" to "hello",
@@ -102,13 +134,18 @@ class ExtractProGuardRulesTransformTest {
         return zipFile
     }
 
-    private fun createTransform(primaryInput: File): ExtractProGuardRulesTransform {
+    private fun createTransform(
+        primaryInput: File,
+        filterOutGlobalRules: Boolean = true
+    ): ExtractProGuardRulesTransform {
         return object: ExtractProGuardRulesTransform() {
             override val inputArtifact: Provider<FileSystemLocation> = FakeGradleProvider(FakeGradleRegularFile(primaryInput))
 
-            override fun getParameters(): GenericTransformParameters {
-                return object : GenericTransformParameters {
+            override fun getParameters(): ExtractProGuardRulesTransform.Parameters {
+                return object : Parameters {
                     override val projectName: Property<String> = FakeGradleProperty("")
+                    override val filterOutGlobalRules: Property<Boolean> =
+                        FakeGradleProperty(filterOutGlobalRules)
                 }
             }
         }

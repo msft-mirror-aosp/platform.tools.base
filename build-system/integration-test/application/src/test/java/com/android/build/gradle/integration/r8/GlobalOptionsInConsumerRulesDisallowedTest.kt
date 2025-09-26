@@ -20,6 +20,8 @@ import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_APP_PATH
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_FEATURE_PATH
 import com.android.build.gradle.options.BooleanOption
+import com.android.testutils.truth.PathSubject.assertThat
+import com.android.utils.FileUtils
 import com.google.common.truth.Truth.assertThat
 import org.gradle.internal.impldep.com.amazonaws.util.Throwables
 import org.junit.Rule
@@ -113,6 +115,7 @@ class GlobalOptionsInConsumerRulesDisallowedTest(
         }
     }
 
+
     @Test
     fun `feature allowed consumer content`() {
         populateFeatureConsumerRules(
@@ -120,7 +123,7 @@ class GlobalOptionsInConsumerRulesDisallowedTest(
             #ignore commented -dontoptimize
             -keep class ClassToOptimize { *; }
         """.trimIndent())
-        rule.build.executor.run(":app:assembleDebug") // no failure
+        rule.build.executor.run(":feature:assemble", ":app:assembleDebug") // no failure
     }
 
     @Test
@@ -152,5 +155,52 @@ class GlobalOptionsInConsumerRulesDisallowedTest(
                 }
             }
         }
+    }
+
+    @Test
+    fun `app filters out global rules from jar`() {
+        validateAppGlobalRuleFilter(useLegacyJarPath = false)
+    }
+
+    @Test
+    fun `app filters out global rules from jar (legacy dir)`() {
+        validateAppGlobalRuleFilter(useLegacyJarPath = true)
+    }
+
+    private fun validateAppGlobalRuleFilter(useLegacyJarPath: Boolean) {
+        rule.build {
+            androidApplication {
+                dependencies {
+                    implementation(localJar("libfoo.jar") {
+                        // we test both paths to be thorough
+                        val proguardPath = if (useLegacyJarPath) {
+                            "META-INF/proguard"
+                        } else {
+                            "META-INF/com.android.tools/r8-from-2.0.0"
+                        }
+
+                        addTextFile("$proguardPath/rules1.txt", "-dontobfuscate #comment1")
+                        addTextFile("$proguardPath/rules2.pro", "-repackageclasses #comment2")
+                    })
+                }
+            }
+        }
+
+        rule.build.executor.run(":feature:assemble", ":app:assembleDebug")
+
+        val prefix = if (globalOptionsInConsumerRulesDisallowed) "# REMOVED CONSUMER RULE: " else ""
+        getConfigurationTxt().apply {
+            assertThat(this).containsExactlyOnce("$prefix-dontobfuscate #comment1")
+            assertThat(this).containsExactlyOnce("$prefix-repackageclasses #comment2")
+        }
+    }
+
+    private fun getConfigurationTxt() = FileUtils.join(
+        rule.build.androidApplication().outputsDir.toFile(),
+        "mapping",
+        "debug",
+        "configuration.txt"
+    ).also {
+        assertThat(it).exists()
     }
 }
