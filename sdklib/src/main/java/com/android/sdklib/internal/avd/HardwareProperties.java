@@ -20,6 +20,7 @@ import com.android.SdkConstants;
 import com.android.io.IAbstractFile;
 import com.android.io.StreamException;
 import com.android.utils.ILogger;
+
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -86,6 +87,15 @@ public class HardwareProperties {
 
     /** AVD/config.ini key for LCD height. */
     public static final String HW_LCD_HEIGHT = "hw.lcd.height";
+
+    /** AVD/config.ini key for whether touchpad is present. */
+    public static final String HW_TOUCHPAD0 = "hw.touchpad0";
+
+    /** AVD/config.ini key for touchpad width. */
+    public static final String HW_TOUCHPAD0_WIDTH = "hw.touchpad0.width";
+
+    /** AVD/config.ini key for touchpad height. */
+    public static final String HW_TOUCHPAD0_HEIGHT = "hw.touchpad0.height";
 
     /** AVD/config.ini key for the device having Open/Closed state. */
     public static final String HW_KEYBOARD_LID = "hw.keyboard.lid";
@@ -344,7 +354,8 @@ public class HardwareProperties {
         } else if (index == 1) {
             return BOOLEAN_NO;
         }
-        throw new IndexOutOfBoundsException("HardwareProperty boolean index must 0 (true) or 1 (false) but was " + index);
+        throw new IndexOutOfBoundsException(
+                "HardwareProperty boolean index must 0 (true) or 1 (false) but was " + index);
     }
 
     /**
