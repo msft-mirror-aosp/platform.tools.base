@@ -36,8 +36,10 @@ from tools.base.bazel.mutation.proto import mutation_pb2
 from google.protobuf import text_format
 
 # Default paths for picking files
-DEFAULT_PATHS = ["prebuilts/studio", "prebuilts/tools", "tools"]
-DEFAULT_IGNORE_PATHS = []
+DEFAULT_PATHS = ["tools/adt/idea", "tools/base", "tools/vendor/google", "tools/vendor/google3"]
+DEFAULT_IGNORE_PATHS = [
+    re.compile(r".*build-system/.*"),
+]
 
 # Allowed file format for mutation
 ALLOWED_FILE_FORMAT = (".kt", ".java")
@@ -59,14 +61,17 @@ class MutationRegexMatcher:
         (
             "return_exception",
             re.compile(r"(\s*)return "),
-            lambda m: f"{m.group(1)}return if (true) throw RuntimeException(\"Catch me if you can!\") else "
+            lambda m: f"{m.group(1)}return if (true) throw RuntimeException(\"Catch me if you can!\") else ",
+            lambda line: False
         ),
 
         # Rule 2: Mutate a 'val' declaration by inserting a new line before it.
+        # Exclude line which have fun, class, override or ",","(",")","{","}" in it
         (
             "val_exception",
-            re.compile(r"(\s*)val "),
-            lambda m: f"{m.group(1)}val __catch_me:Nothing = throw RuntimeException(\"Catch me if you can!\")\n{m.group(1)}val "
+            re.compile(r"^([ \t]*)val "),
+            lambda m: f"{m.group(1)}val __catch_me:Nothing = throw RuntimeException(\"Catch me if you can!\")\n{m.group(1)}val ",
+            lambda line: bool(re.search(r'\b(class|fun|override)\b|[,(){}]', line))
         ),
     ]
 
@@ -74,7 +79,8 @@ class MutationRegexMatcher:
         (
             "return_exception",
             re.compile(r"(\s*)return "),
-            lambda m: f"{m.group(1)}if (true) {{ throw new RuntimeException(\"Catch me if you can!\");}} return "
+            lambda m: f"{m.group(1)}if (true) {{ throw new RuntimeException(\"Catch me if you can!\");}} return ",
+            lambda line: False
         ),
     ]
 
@@ -124,11 +130,16 @@ def get_all_source_files(workspace_directory: str, allowed_paths: List[str], ign
 
     return sources
 
-def is_part_of_ignored_paths(path: str, ignore_paths: List[str]):
+def is_part_of_ignored_paths(path: str, ignore_paths: List[str|re.Pattern]):
     for ignore_path in ignore_paths:
-        if path.startswith(ignore_path):
-            # Same prefix, the path is part of ignored paths
-            return True
+        if isinstance(ignore_path, str):
+            # Handle simple string prefix matching
+            if path.startswith(ignore_path):
+                return True
+        elif isinstance(ignore_path, re.Pattern):
+            # Handle compiled regular expression matching
+            if ignore_path.search(path):
+                return True
     return False
 
 def inspect_tree(workspace_directory: str, allowed_paths: List[str], ignore_paths: List[str], metadata_file_path: str):
@@ -242,10 +253,13 @@ def mutate(source: str, content: str) -> Optional[List[MutationChange]]:
     # Iterate through each line with its number
     for line_number, line in enumerate(content.splitlines(), 1):
         # Try each pattern on the current line
-        for version, pattern, lambda_function in regex_patterns:
+        for version, pattern, regex_function, exclusion_function in regex_patterns:
+            # Check if the line needs to be excluded from regex matching
+            if exclusion_function(line):
+                continue
             # Use re.subn to check for a match and perform replacement in one step.
             # It returns the new string and the number of substitutions made.
-            modified_line, num_subs = pattern.subn(lambda_function, line, count=1)
+            modified_line, num_subs = pattern.subn(regex_function, line, count=1)
 
             if num_subs > 0:
                 # A mutation was successful for this line, create an MutationChange object and add it to the list
