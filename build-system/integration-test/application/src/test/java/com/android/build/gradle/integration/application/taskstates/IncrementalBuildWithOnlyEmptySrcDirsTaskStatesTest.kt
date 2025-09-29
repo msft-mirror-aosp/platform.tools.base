@@ -57,6 +57,7 @@ class IncrementalBuildWithOnlyEmptySrcDirsTaskStatesTest {
                             ":app:generateDebugAssets",
                             ":app:generateDebugResources",
                             ":app:generateDebugResValues",
+                            ":app:generateDebugRFile",
                             ":app:javaPreCompileDebug",
                             ":app:mapDebugSourceSetPaths",
                             ":app:mergeDebugAssets",

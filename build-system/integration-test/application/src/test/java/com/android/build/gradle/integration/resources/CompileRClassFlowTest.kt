@@ -74,10 +74,9 @@ class CompileRClassFlowTest {
                     public class Example {
                         public void checkLibRFilesConstant() {
                             int x = R.string.lib2String;
-                            switch(x) {
-                                // These must be constant expressions.
-                                case com.example.lib1.R.string.lib1String:
-                                case com.example.lib2.R.string.lib2String:
+                            if(x == com.example.lib1.R.string.lib1String) {
+                                 // Not constant expressions.
+                            } else if (x == com.example.lib2.R.string.lib2String) {
                             }
                         }
                     }
@@ -117,7 +116,6 @@ class CompileRClassFlowTest {
         val result = project.executor()
                 .expectFailure()
                 .with(BooleanOption.USE_NON_FINAL_RES_IDS, false)
-            .with(BooleanOption.USE_ANDROID_X, true)
             .run(tasks)
         assertThat(result.stderr)
             .contains("public static final int SUPPORT_LIB_STRING = com.google.android.material.R.string.appbar_scrolling_view_behavior;\n")
@@ -130,45 +128,15 @@ class CompileRClassFlowTest {
                 "implementation '",
                 "api '"
         )
+        TestFileUtils.searchAndReplace(
+            project.file("lib2/build.gradle"),
+            "implementation",
+            "api"
+        )
         // When compiled with the flag is enabled,
         // then the build should succeed:
         project.executor()
-                .with(BooleanOption.USE_NON_FINAL_RES_IDS, false)
-                .with(BooleanOption.USE_ANDROID_X, true)
                 .run(tasks)
-
-        // Ids should be used as constants though
-        val result2 = project.executor()
-                .expectFailure()
-                .with(BooleanOption.USE_NON_FINAL_RES_IDS, true)
-                .with(BooleanOption.USE_ANDROID_X, true)
-                .run(tasks)
-        assertThat(result2.stderr)
-                .contains("Example.java:10: error: constant expression required")
-
-        TestFileUtils.searchAndReplace(
-                project.file("app/src/main/java/com/example/app/Example.java"),
-                """
-                    switch(x) {
-                        // These must be constant expressions.
-                        case com.example.lib1.R.string.lib1String:
-                        case com.example.lib2.R.string.lib2String:
-                    }
-                    """.replaceIndent(" ".repeat(28)),
-                """
-                    if(x == com.example.lib1.R.string.lib1String) {
-                        // Not constant expressions.
-                    } else if (x == com.example.lib2.R.string.lib2String) {
-                    }
-                    """.replaceIndent(" ".repeat(28))
-        )
-
-        // Non-constant use should be OK though
-        project.executor()
-                .with(BooleanOption.USE_NON_FINAL_RES_IDS, true)
-                .with(BooleanOption.USE_ANDROID_X, true)
-                .run(tasks)
-
     }
 }
 

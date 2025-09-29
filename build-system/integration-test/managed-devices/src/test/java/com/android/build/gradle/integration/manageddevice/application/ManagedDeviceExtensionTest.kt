@@ -31,6 +31,7 @@ import com.android.build.gradle.integration.common.fixture.project.plugins.Appli
 import com.android.build.gradle.integration.common.truth.ScannerSubject.Companion.assertThat
 import com.android.build.gradle.integration.manageddevice.utils.simpleProject
 import com.android.build.gradle.internal.utils.setDisallowChanges
+import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.truth.PathSubject.assertThat
 import com.android.utils.FileUtils
 import org.gradle.api.Project
@@ -220,7 +221,10 @@ class ManagedDeviceExtensionTest {
     fun runCustomManagedDeviceWithNoTests() {
         val project = rule.build.androidApplication(":emptyAppProject")
 
-        val result = executor.run(":emptyAppProject:myCustomDeviceCheck")
+        val result = executor
+            // TODO(b/439843451) - Opt back into `android.enableAppCompileTimeRClass`
+            .with(BooleanOption.ENABLE_APP_COMPILE_TIME_R_CLASS, false)
+            .run(":emptyAppProject:myCustomDeviceCheck")
 
         result.stdout.use {
             assertThat(it).contains("No tests found, nothing to do.")

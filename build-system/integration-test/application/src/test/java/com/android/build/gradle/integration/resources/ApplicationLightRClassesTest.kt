@@ -32,7 +32,7 @@ class ApplicationLightRClassesTest {
         .appendToBuild(
             """
                 dependencies {
-                    implementation 'androidx.appcompat:appcompat:$ANDROIDX_APPCOMPAT_APPCOMPAT_VERSION'
+                    api 'androidx.appcompat:appcompat:$ANDROIDX_APPCOMPAT_APPCOMPAT_VERSION'
                 }
                 """
         )
@@ -75,12 +75,17 @@ class ApplicationLightRClassesTest {
                         public static int DEP_RES = androidx.appcompat.R.attr.actionBarDivider;
 
                         public int test(int resId) {
-                            switch(resId) {
-                                case R.styleable.my_styleable_my_attr: return 0;
-                                case R.styleable.my_styleable_android_keyHeight: return 1;
-                                case R.string.app_string: return 2;
+                            if (resId == R.styleable.my_styleable_my_attr) {
+                                return 0;
                             }
-                            return -1;
+                            else if (resId == R.styleable.my_styleable_android_keyHeight) {
+                                return 1;
+                            }
+                            else if (resId == R.string.app_string) {
+                                return 2;
+                            } else {
+                                return -1;
+                            }
                         }
                     }
                     """)
@@ -130,7 +135,6 @@ class ApplicationLightRClassesTest {
     @Test
     fun testResourcesCompiled() {
         project.executor()
-                .with(BooleanOption.USE_NON_FINAL_RES_IDS, false)
                 .run(":app:assembleDebug")
 
         // Check library resources
@@ -199,7 +203,6 @@ class ApplicationLightRClassesTest {
     @Test
     fun testAndroidTestResourcesCompiled() {
         project.executor()
-                .with(BooleanOption.USE_NON_FINAL_RES_IDS, false)
                 .run(":app:assembleDebugAndroidTest")
 
         // Application resources

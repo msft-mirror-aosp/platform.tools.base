@@ -53,6 +53,7 @@ class CleanBuildTaskStatesTest {
                 ":app:extractDeepLinksDebug",
                 ":app:generateDebugResources",
                 ":app:generateDebugResValues",
+                ":app:generateDebugRFile",
                 ":app:javaPreCompileDebug",
                 ":app:javaPreCompileDebugUnitTest",
                 ":app:mapDebugSourceSetPaths",

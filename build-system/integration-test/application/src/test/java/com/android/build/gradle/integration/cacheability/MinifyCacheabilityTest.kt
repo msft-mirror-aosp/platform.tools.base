@@ -60,6 +60,7 @@ class MinifyCacheabilityTest {
             ":extractDeepLinksMinified",
             ":generateMinifiedResources",
             ":generateMinifiedResValues",
+            ":generateMinifiedRFile",
             ":jacocoMinified",
             ":javaPreCompileMinified",
             ":mergeMinifiedResources",

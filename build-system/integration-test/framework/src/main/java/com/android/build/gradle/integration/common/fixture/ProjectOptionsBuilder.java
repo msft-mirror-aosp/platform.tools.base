@@ -70,10 +70,6 @@ public class ProjectOptionsBuilder {
             booleans.put(BooleanOption.DEFAULT_TARGET_SDK_TO_COMPILE_SDK_IF_UNSET, false);
             suppressWarnings.add(BooleanOption.DEFAULT_TARGET_SDK_TO_COMPILE_SDK_IF_UNSET);
         }
-        if (!booleans.containsKey(BooleanOption.ENABLE_APP_COMPILE_TIME_R_CLASS)) {
-            booleans.put(BooleanOption.ENABLE_APP_COMPILE_TIME_R_CLASS, false);
-            suppressWarnings.add(BooleanOption.ENABLE_APP_COMPILE_TIME_R_CLASS);
-        }
         if (!booleans.containsKey(BooleanOption.ENABLE_LEGACY_VARIANT_API)) {
             booleans.put(BooleanOption.ENABLE_LEGACY_VARIANT_API, true);
             suppressWarnings.add(BooleanOption.ENABLE_LEGACY_VARIANT_API);

@@ -76,7 +76,7 @@ class DisableLibraryResourcesTest {
                 </resources>""".trimIndent()
         )
         .withFile("src/main/res/raw/raw_file", "localLib")
-        .appendToBuild("dependencies { implementation project(':leafLib') }")
+        .appendToBuild("dependencies { api project(':leafLib') }")
 
     private val app = MinimalSubProject.app("com.example.app")
         .withFile(

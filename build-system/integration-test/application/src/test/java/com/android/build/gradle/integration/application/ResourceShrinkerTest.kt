@@ -69,6 +69,9 @@ class ResourceShrinkerTest(
     @get:Rule
     var project = builder().fromTestProject("shrink")
         .addGradleProperty(BooleanOption.USE_NON_FINAL_RES_IDS, nonFinalResIds)
+        // TODO(b/439843451) - `android.enableAppCompileTimeRClass` overrides the value set in the
+        //  deprecated flag `android.nonFinalResIds`. Update the test to accompany for this.
+        .addGradleProperty(BooleanOption.ENABLE_APP_COMPILE_TIME_R_CLASS, false)
         .addGradleProperty(BooleanOption.R8_OPTIMIZED_RESOURCE_SHRINKING, r8OptimizedShrinking)
         .disableBuiltInKotlin()
         .create()
@@ -76,6 +79,9 @@ class ResourceShrinkerTest(
     @get:Rule
     var projectWithDynamicFeatureModules = builder().fromTestProject("shrinkDynamicFeatureModules")
         .addGradleProperty(BooleanOption.USE_NON_FINAL_RES_IDS, nonFinalResIds)
+        // TODO(b/439843451) - `android.enableAppCompileTimeRClass` overrides the value set in the
+        //  deprecated flag `android.nonFinalResIds`. Update the test to accompany for this.
+        .addGradleProperty(BooleanOption.ENABLE_APP_COMPILE_TIME_R_CLASS, false)
         .addGradleProperty(BooleanOption.R8_OPTIMIZED_RESOURCE_SHRINKING, r8OptimizedShrinking)
         .create()
 

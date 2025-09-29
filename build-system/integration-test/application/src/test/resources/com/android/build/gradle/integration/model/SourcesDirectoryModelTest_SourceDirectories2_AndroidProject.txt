@@ -13,7 +13,7 @@
             - compileTaskName               = "compileDebugSources"
             - assembleTaskName              = "assembleDebug"
             - classesFolders:
-               * {PROJECT}/app/build/intermediates/compile_and_runtime_r_class_jar/debug/processDebugResources/R.jar{!}
+               * {PROJECT}/app/build/intermediates/compile_r_class_jar/debug/generateDebugRFile/R.jar{!}
                * {PROJECT}/app/build/intermediates/javac/debug/compileDebugJavaWithJavac/classes{!}
             - ideSetupTaskNames             = ["generateDebugSources"]
             - generatedSourceFolders:
@@ -46,7 +46,7 @@
             - compileTaskName               = "compileDebugAndroidTestSources"
             - assembleTaskName              = "assembleDebugAndroidTest"
             - classesFolders:
-               * {PROJECT}/app/build/intermediates/compile_and_runtime_r_class_jar/debugAndroidTest/processDebugAndroidTestResources/R.jar{!}
+               * {PROJECT}/app/build/intermediates/compile_r_class_jar/debugAndroidTest/generateDebugAndroidTestRFile/R.jar{!}
                * {PROJECT}/app/build/intermediates/javac/debugAndroidTest/compileDebugAndroidTestJavaWithJavac/classes{!}
             - ideSetupTaskNames             = ["generateDebugAndroidTestSources"]
             - generatedSourceFolders:
@@ -98,7 +98,7 @@
             - compileTaskName               = "compileReleaseSources"
             - assembleTaskName              = "assembleRelease"
             - classesFolders:
-               * {PROJECT}/app/build/intermediates/compile_and_runtime_r_class_jar/release/processReleaseResources/R.jar{!}
+               * {PROJECT}/app/build/intermediates/compile_r_class_jar/release/generateReleaseRFile/R.jar{!}
                * {PROJECT}/app/build/intermediates/javac/release/compileReleaseJavaWithJavac/classes{!}
             - ideSetupTaskNames             = ["generateReleaseSources"]
             - generatedSourceFolders:

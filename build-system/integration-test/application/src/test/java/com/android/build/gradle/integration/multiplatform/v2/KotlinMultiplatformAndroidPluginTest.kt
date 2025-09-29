@@ -23,6 +23,7 @@ import com.android.build.gradle.integration.common.output.AarSubject
 import com.android.build.gradle.integration.common.output.ZipSubject
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.build.gradle.internal.scope.InternalArtifactType
+import com.android.build.gradle.options.BooleanOption
 import com.android.utils.FileUtils
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
@@ -260,7 +261,10 @@ class KotlinMultiplatformAndroidPluginTest(private val publishLibs: Boolean) {
             """.trimIndent()
         )
 
-        executor().run(":kmpFirstLib:assembleDeviceTest")
+        executor()
+            // TODO(b/439843451) - Opt back into `android.enableAppCompileTimeRClass`
+            .with(BooleanOption.ENABLE_APP_COMPILE_TIME_R_CLASS, false)
+            .run(":kmpFirstLib:assembleDeviceTest")
 
         project.getSubproject("kmpFirstLib").assertApk(
             ApkSelector.NO_BUILD_TYPE.forTestSuite("androidTest")

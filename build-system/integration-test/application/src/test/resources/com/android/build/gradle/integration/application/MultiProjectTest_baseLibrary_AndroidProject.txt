@@ -41,7 +41,7 @@
             - compileTaskName               = "compileDebugAndroidTestSources"
             - assembleTaskName              = "assembleDebugAndroidTest"
             - classesFolders:
-               * {PROJECT}/baseLibrary/build/intermediates/compile_and_runtime_r_class_jar/debugAndroidTest/processDebugAndroidTestResources/R.jar{!}
+               * {PROJECT}/baseLibrary/build/intermediates/compile_r_class_jar/debugAndroidTest/generateDebugAndroidTestRFile/R.jar{!}
                * {PROJECT}/baseLibrary/build/intermediates/javac/debugAndroidTest/compileDebugAndroidTestJavaWithJavac/classes{!}
             - ideSetupTaskNames             = ["generateDebugAndroidTestSources"]
             - generatedSourceFolders:

@@ -21,6 +21,7 @@ import com.android.build.gradle.integration.common.fixture.GradleTestProjectBuil
 import com.android.build.gradle.integration.common.fixture.project.ApkSelector
 import com.android.build.gradle.integration.common.truth.ScannerSubject
 import com.android.build.gradle.integration.common.utils.TestFileUtils
+import com.android.build.gradle.options.BooleanOption
 import com.android.utils.FileUtils
 import org.junit.Before
 import org.junit.Rule
@@ -148,6 +149,8 @@ class KotlinMultiplatformAndroidDexingTest {
         )
 
         project.executor()
+            // TODO(b/439843451) - Opt back into `android.enableAppCompileTimeRClass`
+            .with(BooleanOption.ENABLE_APP_COMPILE_TIME_R_CLASS, false)
             .withFailOnWarning(false) // b/455891987
             .run(":kmpFirstLib:assembleDeviceTest")
 
