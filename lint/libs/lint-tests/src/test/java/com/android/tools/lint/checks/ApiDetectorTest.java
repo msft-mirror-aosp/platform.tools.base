@@ -9465,6 +9465,24 @@ public class ApiDetectorTest extends AbstractCheckTest {
     }
 
     @SuppressWarnings("all") // sample code
+    public void testBenignFieldsFullSdks() {
+        lint().files(
+                        manifest().minSdk(1),
+                        kotlin(
+                                "package test.pkg\n"
+                                    + "\n"
+                                    + "import android.os.Build.VERSION\n"
+                                    + "import android.os.Build.VERSION_CODES_FULL\n"
+                                    + "\n"
+                                    + "fun isAtleastVIC1(): Boolean {\n"
+                                    + "    return VERSION.SDK_INT_FULL >= VERSION_CODES_FULL.VANILLA_ICE_CREAM_1\n"
+                                    + "}\n"),
+                        getNewAndroidOsBuildStub())
+                .run()
+                .expectClean();
+    }
+
+    @SuppressWarnings("all") // sample code
     public void testObsoleteVersionCheckFullSdkUsingWhen() {
         lint().files(
                         manifest().minSdk(36),

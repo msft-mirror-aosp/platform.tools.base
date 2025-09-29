@@ -3804,12 +3804,12 @@ class ApiDetector : ResourceXmlDetector(), SourceCodeScanner, ResourceFolderScan
       name: String,
       owner: String,
     ): Boolean {
-      if (equivalentName(owner, "android.os.Build.VERSION_CODES")) {
+      if (
+        equivalentName(owner, "android.os.Build.VERSION_CODES") ||
+          equivalentName(owner, "android.os.Build.VERSION_CODES_FULL")
+      ) {
         // These constants are required for compilation, not execution
         // and valid code checks it even on older platforms
-        return true
-      }
-      if (equivalentName(owner, "android.os.Build.VERSION") && name == "SDK_INT") {
         return true
       }
       if (equivalentName(owner, "android.view.ViewGroup.LayoutParams") && name == "MATCH_PARENT") {
