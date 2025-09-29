@@ -75,7 +75,21 @@ void SessionsManager::BeginSession(Daemon* daemon, int64_t stream_id,
   session_started->set_type(proto::SessionData::SessionStarted::FULL);
   session_started->set_task_type(task_type);
   session_started->set_is_startup_task(data.is_startup_task());
+  session_started->set_exposure_level(data.exposure_level());
   daemon->buffer()->Add(event);
+
+  // For task-based UX, if the task type is LIVE_VIEW, send a LIVE_VIEW_STATUS
+  // event. This allows this task to be distinguished from others. This event is
+  // sent after the main SESSION event to ensure correct ordering.
+  if (is_task_based_ux_enabled &&
+      task_type == proto::ProfilerTaskType::LIVE_VIEW) {
+    proto::Event lv_event;
+    lv_event.set_group_id(session->info().session_id());
+    lv_event.set_pid(pid);
+    lv_event.set_kind(proto::Event::LIVE_VIEW_STATUS);
+    lv_event.set_timestamp(daemon->clock()->GetCurrentTime());
+    daemon->buffer()->Add(lv_event);
+  }
 
   sessions_.push_back(std::move(session));
 }

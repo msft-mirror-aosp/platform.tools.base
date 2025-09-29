@@ -70,9 +70,15 @@ service TransportService {
   // range.
   rpc GetEventGroups(GetEventGroupsRequest) returns (GetEventGroupsResponse) {}
 
-  // Studio-side only - delete events in the database that match the request's
+  // Studio-side only: Delete events in the database that match the request's
   // parameters.
   rpc DeleteEvents(DeleteEventsRequest) returns (DeleteEventsResponse) {}
+
+  // Studio-side only: Sets (or clears) the active task-specific database.
+  rpc SetTaskDb(SetTaskDbRequest) returns (SetTaskDbResponse) {};
+
+  // Studio-side only: Unsets the active task-specific database.
+  rpc UnsetTaskDb(UnsetTaskDbRequest) returns (UnsetTaskDbResponse) {};
 }
 
 message TimeRequest {
@@ -197,6 +203,29 @@ message DeleteEventsRequest {
 }
 
 message DeleteEventsResponse {}
+
+// Request message for the SetTaskDb RPC.
+message SetTaskDbRequest {
+  // The ID of the session to associate with the database.
+  int64 session_id = 1;
+  // The file path to the database.
+  string db_path = 2;
+}
+
+// Response message for the SetTaskDb RPC. It is empty as the
+// operation does not return any data.
+message SetTaskDbResponse {
+}
+
+// Request message for the UnsetTaskDb RPC.
+message UnsetTaskDbRequest {
+  // The ID of the session to disconnect the database from.
+  int64 session_id = 1;
+}
+
+// Response message for the UnsetTaskDb RPC.
+message UnsetTaskDbResponse {
+}
 
 // An event group is a collection of events that share the same group_id.
 // The events in a group should have the same |session_id| and |kind|.
