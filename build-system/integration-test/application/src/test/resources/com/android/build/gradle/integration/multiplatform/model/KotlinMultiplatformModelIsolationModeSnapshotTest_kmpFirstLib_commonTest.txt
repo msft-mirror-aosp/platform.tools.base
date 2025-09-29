@@ -380,7 +380,7 @@
                 "org.gradle.usage": "java-api"
               },
               "capabilities": [
-                "Kotlin Multiplatform.:androidLib:unspecified"
+                "Kotlin Multiplatform:androidLib:unspecified"
               ],
               "isTestFixtures": false
             },
@@ -420,7 +420,7 @@
                 "org.jetbrains.kotlin.platform.type": "androidJvm"
               },
               "capabilities": [
-                "Kotlin Multiplatform.:kmpSecondLib:unspecified"
+                "Kotlin Multiplatform:kmpSecondLib:unspecified"
               ],
               "isTestFixtures": false
             },

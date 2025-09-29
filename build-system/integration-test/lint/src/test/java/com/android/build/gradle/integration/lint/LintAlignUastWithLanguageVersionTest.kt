@@ -78,8 +78,12 @@ class LintAlignUastWithLanguageVersionTest(private val useBuiltInKotlinSupport: 
             )
         }
 
-        build.executor.run("clean", "lint")
-        val result = build.executor.run("clean", "lint")
+        build.executor
+            .withFailOnWarning(false) // b/455891987
+            .run("clean", "lint")
+        val result = build.executor
+            .withFailOnWarning(false) // b/455891987
+            .run("clean", "lint")
         result.assertConfigurationCacheHit()
     }
 
@@ -108,7 +112,9 @@ class LintAlignUastWithLanguageVersionTest(private val useBuiltInKotlinSupport: 
             )
         }
 
-        build.executor.run("clean", "lint")
+        build.executor
+            .withFailOnWarning(false) // b/455891987
+            .run("clean", "lint")
     }
 
     /**
@@ -143,6 +149,7 @@ class LintAlignUastWithLanguageVersionTest(private val useBuiltInKotlinSupport: 
 
         build.executor
             .withArgument("-Pkotlin.experimental.tryNext=true")
+            .withFailOnWarning(false) // b/455891987
             .run("clean", "lint")
     }
 
@@ -172,6 +179,7 @@ class LintAlignUastWithLanguageVersionTest(private val useBuiltInKotlinSupport: 
         }
 
         build.executor
+            .withFailOnWarning(false) // b/455891987
             .with(OptionalBooleanOption.LINT_USE_K2_UAST, true)
             .run("clean", "lint")
     }
@@ -207,7 +215,9 @@ class LintAlignUastWithLanguageVersionTest(private val useBuiltInKotlinSupport: 
             }
         }
 
-        build.executor.run("clean", "lint")
+        build.executor
+            .withFailOnWarning(false) // b/455891987
+            .run("clean", "lint")
     }
 
     /**
@@ -241,7 +251,9 @@ class LintAlignUastWithLanguageVersionTest(private val useBuiltInKotlinSupport: 
             }
         }
 
-        build.executor.run("clean", "lint")
+        build.executor
+            .withFailOnWarning(false) // b/455891987
+            .run("clean", "lint")
     }
 
     /**
@@ -270,6 +282,7 @@ class LintAlignUastWithLanguageVersionTest(private val useBuiltInKotlinSupport: 
 
         build.executor
             .with(OptionalBooleanOption.LINT_USE_K2_UAST, false)
+            .withFailOnWarning(false) // b/455891987
             .run("clean", "lint")
     }
 
@@ -303,7 +316,9 @@ class LintAlignUastWithLanguageVersionTest(private val useBuiltInKotlinSupport: 
             }
         }
 
-        build.executor.run("clean", "lint")
+        build.executor
+            .withFailOnWarning(false) // b/455891987
+            .run("clean", "lint")
     }
 
     /**
@@ -338,7 +353,9 @@ class LintAlignUastWithLanguageVersionTest(private val useBuiltInKotlinSupport: 
             disableBuiltInKotlin()
         }
 
-        build.executor.run("clean", "lint")
+        build.executor
+            .withFailOnWarning(false) // b/455891987
+            .run("clean", "lint")
     }
 
     /**

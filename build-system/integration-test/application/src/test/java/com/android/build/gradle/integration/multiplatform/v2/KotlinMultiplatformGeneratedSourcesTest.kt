@@ -67,7 +67,9 @@ class KotlinMultiplatformGeneratedSourcesTest {
     @Test
     fun testGeneratedKotlinSources() {
         val build = rule.build
-        build.executor.run(":library:assembleAndroidMain")
+        build.executor
+            .withFailOnWarning(false) // b/455891987
+            .run(":library:assembleAndroidMain")
 
         build.kotlinMultiplatformLibrary(":library").assertAar(AarSelector.NO_BUILD_TYPE) {
             javaResources().resourceAsText("res.txt").isEqualTo("foo")

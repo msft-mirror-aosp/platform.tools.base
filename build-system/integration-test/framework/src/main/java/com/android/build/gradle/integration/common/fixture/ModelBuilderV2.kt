@@ -437,7 +437,10 @@ class FileNormalizerImpl(
         mutableList.add(RootData(gradleCacheDir, "GRADLE_CACHE") {
             // Remove the actual checksum (size 32)
             // incoming string is "XXXX/..." so removing XXX leaves a leading /
-            "{CHECKSUM}${it.substring(32)}"
+            // For windows platform, also need to remove the "workspace/" which is "added" due to
+            // our bazel set up
+            val startingIndex = if (SdkConstants.currentPlatform() == SdkConstants.PLATFORM_WINDOWS) 42 else 32
+            "{CHECKSUM}${it.substring(startingIndex)}"
         })
         mutableList.add(RootData(gradleUserHome, "GRADLE"))
 

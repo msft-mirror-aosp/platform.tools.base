@@ -72,8 +72,7 @@ class KotlinMultiplatformAndroidMinificationTest {
 
     @Test
     fun testKmpLibClassesAreMinified() {
-        project.executor()
-            .run(":kmpFirstLib:assemble")
+        executor().run(":kmpFirstLib:assemble")
 
         project.getSubproject("kmpFirstLib").assertAar(AarSelector.NO_BUILD_TYPE) {
             mainJar {
@@ -85,7 +84,7 @@ class KotlinMultiplatformAndroidMinificationTest {
 
     @Test
     fun testAppClassesAreMinified() {
-        project.executor().run(":app:assembleDebug")
+        executor().run(":app:assembleDebug")
 
         project.getSubproject("app").assertApk(ApkSelector.DEBUG) {
             // only the main activity is left
@@ -110,7 +109,7 @@ class KotlinMultiplatformAndroidMinificationTest {
             """.trimIndent()
         )
 
-        project.executor().run(":kmpFirstLib:assemble")
+        executor().run(":kmpFirstLib:assemble")
 
         project.getSubproject("kmpFirstLib").assertAar(AarSelector.NO_BUILD_TYPE) {
             mainJar {
@@ -135,7 +134,7 @@ class KotlinMultiplatformAndroidMinificationTest {
             """.trimIndent()
         )
 
-        project.executor().run(":app:assembleDebug")
+        executor().run(":app:assembleDebug")
 
         project.getSubproject("app").assertApk(ApkSelector.DEBUG) {
             mainDex().containsExactly(
@@ -166,7 +165,7 @@ class KotlinMultiplatformAndroidMinificationTest {
             """.trimIndent()
         )
 
-        project.executor().run(":app:assembleDebug")
+        executor().run(":app:assembleDebug")
 
         project.getSubproject("app").assertApk(ApkSelector.DEBUG) {
             mainDex().containsExactly(
@@ -189,7 +188,7 @@ class KotlinMultiplatformAndroidMinificationTest {
             """.trimIndent()
         )
 
-        project.executor().run(":kmpFirstLib:bundleAndroidMainAar")
+        executor().run(":kmpFirstLib:bundleAndroidMainAar")
 
         project.getSubproject("kmpFirstLib").assertAar(AarSelector.NO_BUILD_TYPE) {
             textFile("proguard.txt").isEqualTo(
@@ -217,10 +216,12 @@ class KotlinMultiplatformAndroidMinificationTest {
             """.trimIndent()
         )
 
-        project.executor().run(":app:assembleDebug")
+        executor().run(":app:assembleDebug")
 
         project.getSubproject("app").assertApk(ApkSelector.DEBUG) {
             mainDex().containsExactly("com/example/kmpfirstlib/KmpAndroidActivity")
         }
     }
+
+    private fun executor() = project.executor().withFailOnWarning(false) // b/455891987
 }

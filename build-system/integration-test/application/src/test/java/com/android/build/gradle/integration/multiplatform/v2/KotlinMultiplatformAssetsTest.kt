@@ -72,7 +72,7 @@ class KotlinMultiplatformAssetsTest {
             """.trimIndent()
         )
 
-        val result = project.executor().run(":kmpFirstLib:assemble")
+        val result = executor().run(":kmpFirstLib:assemble")
         Truth.assertThat(result.didWorkTasks).doesNotContain(
             listOf(
                 ":kmpFirstLib:mergeAndroidMainAssets"
@@ -82,7 +82,7 @@ class KotlinMultiplatformAssetsTest {
 
     @Test
     fun testKmpLibraryAssetPackageTasksExecuted() {
-        val result = project.executor().run(":kmpFirstLib:assemble")
+        val result = executor().run(":kmpFirstLib:assemble")
         Truth.assertThat(result.didWorkTasks).containsAtLeastElementsIn(
             listOf(
                 ":kmpFirstLib:mergeAndroidMainAssets"
@@ -116,7 +116,7 @@ class KotlinMultiplatformAssetsTest {
             """.trimIndent()
         )
 
-        val result = project.executor().run(":kmpFirstLib:assemble")
+        val result = executor().run(":kmpFirstLib:assemble")
         Truth.assertThat(result.didWorkTasks).containsAtLeastElementsIn(
             listOf(
                 ":kmpFirstLib:mergeAndroidMainAssets"
@@ -138,7 +138,7 @@ class KotlinMultiplatformAssetsTest {
 
     @Test
     fun testAppConsumingKmpLibrary() {
-        project.executor().run(":app:assembleDebug")
+        executor().run(":app:assembleDebug")
 
         project.getSubproject("app").getApk(GradleTestProject.ApkType.DEBUG).use { apk ->
             Truth.assertThat(apk.getEntry("assets/something.json").readText()).isEqualTo(
@@ -152,4 +152,7 @@ class KotlinMultiplatformAssetsTest {
             )
         }
     }
+
+
+    private fun executor() = project.executor().withFailOnWarning(false) // b/455891987
 }

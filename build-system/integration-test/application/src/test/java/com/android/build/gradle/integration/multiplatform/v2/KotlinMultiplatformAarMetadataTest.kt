@@ -36,7 +36,9 @@ class KotlinMultiplatformAarMetadataTest {
 
     @Test
     fun testBasic() {
-        rule.build.executor.run(":shared:assembleAndroidMain")
+        rule.build.executor
+            .withFailOnWarning(false) // b/455891987
+            .run(":shared:assembleAndroidMain")
         rule.build.kotlinMultiplatformLibrary(":shared").assertAar(AarSelector.NO_BUILD_TYPE) {
             aarMetadata {
                 formatVersion().isEqualTo("1.0")
@@ -62,7 +64,9 @@ class KotlinMultiplatformAarMetadataTest {
             }
         }
 
-        build.executor.run(":shared:assembleAndroidMain")
+        build.executor
+            .withFailOnWarning(false) // b/455891987
+            .run(":shared:assembleAndroidMain")
         build.kotlinMultiplatformLibrary(":shared").assertAar(AarSelector.NO_BUILD_TYPE) {
             aarMetadata {
                 minCompileSdk().isEqualTo("27")
@@ -84,7 +88,9 @@ class KotlinMultiplatformAarMetadataTest {
             }
         }
 
-        build.executor.run(":shared:writeAndroidMainAarMetadata")
+        build.executor
+            .withFailOnWarning(false) // b/455891987
+            .run(":shared:writeAndroidMainAarMetadata")
 
         val aarMetadataFile = build.kotlinMultiplatformLibrary(":shared")
             .resolve(InternalArtifactType.AAR_METADATA)
@@ -108,7 +114,9 @@ class KotlinMultiplatformAarMetadataTest {
             }
         }
 
-        build.executor.run(":shared:assembleAndroidMain")
+        build.executor
+            .withFailOnWarning(false) // b/455891987
+            .run(":shared:assembleAndroidMain")
         build.kotlinMultiplatformLibrary(":shared").assertAar(AarSelector.NO_BUILD_TYPE) {
             aarMetadata {
                 minCompileSdk().isEqualTo("27")

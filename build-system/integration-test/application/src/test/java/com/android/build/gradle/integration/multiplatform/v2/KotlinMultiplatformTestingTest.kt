@@ -97,7 +97,7 @@ class KotlinMultiplatformTestingTest {
         )
 
         // Check that the test runs successfully
-        project.executor().run(":kmpFirstLib:testAndroidHostTest")
+        executor().run(":kmpFirstLib:testAndroidHostTest")
 
         // Check that the test fails as expected after toggling isReturnDefaultValues to false
         TestFileUtils.searchAndReplace(
@@ -105,7 +105,7 @@ class KotlinMultiplatformTestingTest {
             "isReturnDefaultValues = true",
             "isReturnDefaultValues = false"
         )
-        project.executor().expectFailure().run(":kmpFirstLib:testAndroidHostTest")
+        executor().expectFailure().run(":kmpFirstLib:testAndroidHostTest")
     }
 
     @Test
@@ -150,7 +150,9 @@ class KotlinMultiplatformTestingTest {
             """.trimIndent()
         )
 
-        val result = project.executor().withArgument("--info").run(":kmpFirstLib:testAndroidHostTest")
+        val result = executor().withArgument("--info").run(":kmpFirstLib:testAndroidHostTest")
         result.assertOutputContains("-Xmx2g")
     }
+
+    private fun executor() = project.executor().withFailOnWarning(false) // b/455891987
 }

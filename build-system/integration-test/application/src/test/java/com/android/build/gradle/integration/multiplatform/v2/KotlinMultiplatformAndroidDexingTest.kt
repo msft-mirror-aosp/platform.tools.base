@@ -92,7 +92,9 @@ class KotlinMultiplatformAndroidDexingTest {
 
     @Test
     fun testDesugaringForInstrumentedTestApk() {
-        project.executor().run(":kmpFirstLib:assembleDeviceTest")
+        project.executor()
+            .withFailOnWarning(false) // b/455891987
+            .run(":kmpFirstLib:assembleDeviceTest")
 
         project.getSubproject("kmpFirstLib").assertApk(
             ApkSelector.NO_BUILD_TYPE.forTestSuite("androidTest")
@@ -145,7 +147,9 @@ class KotlinMultiplatformAndroidDexingTest {
             """.trimIndent()
         )
 
-        project.executor().run(":kmpFirstLib:assembleDeviceTest")
+        project.executor()
+            .withFailOnWarning(false) // b/455891987
+            .run(":kmpFirstLib:assembleDeviceTest")
 
         project.getSubproject("kmpFirstLib").assertApk(ApkSelector.NO_BUILD_TYPE.forTestSuite("androidTest")) {
             classes().classDefinition("com/example/kmpfirstlib/KmpAndroidActivity")

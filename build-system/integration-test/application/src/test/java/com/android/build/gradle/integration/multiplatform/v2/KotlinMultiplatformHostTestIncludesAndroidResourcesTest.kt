@@ -85,7 +85,9 @@ class KotlinMultiplatformHostTestIncludesAndroidResourcesTest {
 
     @Test
     fun testAndroidHostTestRuns() {
-        project.executor().run(":kmpHostTestOnlyLib:testAndroidHostTest")
+        project.executor()
+            .withFailOnWarning(false) // b/455891987
+            .run(":kmpHostTestOnlyLib:testAndroidHostTest")
     }
 
     @Test
@@ -99,7 +101,9 @@ class KotlinMultiplatformHostTestIncludesAndroidResourcesTest {
                     }
                 }
             """.trimIndent())
-        project.executor().run(":kmpHostTestOnlyLib:testAndroidHostTest")
+        project.executor()
+            .withFailOnWarning(false) // b/455891987
+            .run(":kmpHostTestOnlyLib:testAndroidHostTest")
     }
 
     @Test
@@ -111,6 +115,8 @@ class KotlinMultiplatformHostTestIncludesAndroidResourcesTest {
                     androidResources.enable = true
                 }
             """.trimIndent())
-        project.executor().run(":kmpHostTestOnlyLib:testAndroidHostTest")
+        project.executor()
+            .withFailOnWarning(false) // b/455891987
+            .run(":kmpHostTestOnlyLib:testAndroidHostTest")
     }
 }

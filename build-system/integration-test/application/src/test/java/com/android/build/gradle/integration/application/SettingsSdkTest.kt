@@ -79,7 +79,9 @@ class SettingsSdkTest {
                 pluginCallbacks += KmpLibVersionCheck::class.java
             }
         }
-        build.executor.run(":help")
+        build.executor
+            .withFailOnWarning(false) // b/455891987
+            .run(":help")
         checkDslSetUpInModel(build, "$COMPILE_SDK_VERSION.$COMPILE_SDK_MINOR_VERSION")
     }
 
@@ -105,6 +107,7 @@ class SettingsSdkTest {
         val modelInfo = build.modelBuilder
             // sdk with minor api level might not exist in our test set up
             .ignoreSyncIssues()
+            .withFailOnWarning(false) // b/455891987
             .fetchModels()
             .container
             .getProject(DEFAULT_APP_PATH)
@@ -130,6 +133,7 @@ class SettingsSdkTest {
         // Then check library
         val libModelInfo = build.modelBuilder
             .ignoreSyncIssues()
+            .withFailOnWarning(false) // b/455891987
             .fetchModels()
             .container
             .getProject(DEFAULT_LIB_PATH)

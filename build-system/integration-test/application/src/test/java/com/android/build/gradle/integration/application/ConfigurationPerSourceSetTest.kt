@@ -99,7 +99,9 @@ class ConfigurationPerSourceSetTest {
             }
         }
 
-        val result = build.executor.with(BooleanOption.ENABLE_PROFILE_JSON, true).run("printFooInputs")
+        val result = build.executor
+            .withFailOnWarning(false) // b/455891987
+            .with(BooleanOption.ENABLE_PROFILE_JSON, true).run("printFooInputs")
         ScannerSubject.assertThat(result.stdout)
             .contains(
                 "androidMain: main-1.0.0.jar, other-1.0.0.jar;"

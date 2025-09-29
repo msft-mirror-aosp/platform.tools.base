@@ -69,7 +69,7 @@ class KotlinMultiplatformAndroidPluginTest(private val publishLibs: Boolean) {
             """.trimIndent()
         )
 
-        project.executor()
+        executor()
             .run(":kmpFirstLib:mergeAndroidDeviceTestJavaResource")
 
         val androidTestMergedRes = project.getSubproject("kmpFirstLib").getIntermediateFile(
@@ -95,7 +95,7 @@ class KotlinMultiplatformAndroidPluginTest(private val publishLibs: Boolean) {
             """.trimIndent()
         )
 
-        project.executor()
+        executor()
             .run(":kmpFirstLib:createAndroidHostTestCoverageReport")
 
         assertWithMessage(
@@ -152,12 +152,12 @@ class KotlinMultiplatformAndroidPluginTest(private val publishLibs: Boolean) {
 
         assertThat(packageCoveragePercentage.trimEnd('%').toInt() > 0).isTrue()
 
-        project.executor().run(":app:testDebugUnitTest")
+        executor().run(":app:testDebugUnitTest")
     }
 
     @Test
     fun testAppApkContents() {
-        project.executor().run(":app:assembleDebug")
+        executor().run(":app:assembleDebug")
 
         project.getSubproject("app").assertApk(ApkSelector.DEBUG) {
             classes().containsAtLeast(
@@ -224,7 +224,7 @@ class KotlinMultiplatformAndroidPluginTest(private val publishLibs: Boolean) {
 
             AarSubject.assertThat(file, action)
         } else {
-            project.executor().run(":kmpFirstLib:assemble")
+            executor().run(":kmpFirstLib:assemble")
             project.getSubproject("kmpFirstLib").assertAar(AarSelector.NO_BUILD_TYPE, action)
         }
 
@@ -260,7 +260,7 @@ class KotlinMultiplatformAndroidPluginTest(private val publishLibs: Boolean) {
             """.trimIndent()
         )
 
-        project.executor().run(":kmpFirstLib:assembleDeviceTest")
+        executor().run(":kmpFirstLib:assembleDeviceTest")
 
         project.getSubproject("kmpFirstLib").assertApk(
             ApkSelector.NO_BUILD_TYPE.forTestSuite("androidTest")
@@ -346,4 +346,6 @@ class KotlinMultiplatformAndroidPluginTest(private val publishLibs: Boolean) {
         assertThat(apkIdeRedirectFile.readText())
             .contains("listingFile=../../../../outputs/apk/androidTest/output-metadata.json")
     }
+
+    private fun executor() = project.executor().withFailOnWarning(false) // b/455891987
 }

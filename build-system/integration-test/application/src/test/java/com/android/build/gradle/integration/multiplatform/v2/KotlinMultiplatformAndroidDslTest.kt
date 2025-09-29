@@ -52,7 +52,9 @@ class KotlinMultiplatformAndroidDslTest {
             }
         }
 
-        build.executor.run(":library:assembleAndroidMain")
+        build.executor
+            .withFailOnWarning(false) // b/455891987
+            .run(":library:assembleAndroidMain")
     }
 
     class SdkReleaseCallback : AndroidKotlinMultiplatformLibraryComponentCallback {
@@ -84,7 +86,9 @@ class KotlinMultiplatformAndroidDslTest {
             }
         }
 
-        build.executor.run(":library:assembleAndroidMain")
+        build.executor
+            .withFailOnWarning(false) // b/455891987
+            .run(":library:assembleAndroidMain")
 
         build.kotlinMultiplatformLibrary(":library").assertAar(AarSelector.NO_BUILD_TYPE) {
             manifest().contains("android:minSdkVersion=\"36\"")
@@ -104,7 +108,9 @@ class KotlinMultiplatformAndroidDslTest {
             }
         }
 
-        build.executor.run(":library:assembleAndroidMain")
+        build.executor
+            .withFailOnWarning(false) // b/455891987
+            .run(":library:assembleAndroidMain")
 
         build.kotlinMultiplatformLibrary(":library").assertAar(AarSelector.NO_BUILD_TYPE) {
             manifest().contains("android:minSdkVersion=\"S\"")

@@ -85,7 +85,9 @@ class KotlinMultiplatformAndroidAnnotationsZipTest {
 
     @Test
     fun testExtractAnnotationsTaskRuns() {
-        val result = project.executor().run(":kmpFirstLib:bundleAndroidMainAar")
+        val result = project.executor()
+            .withFailOnWarning(false) // b/455891987
+            .run(":kmpFirstLib:bundleAndroidMainAar")
         Truth.assertThat(result.didWorkTasks).containsAtLeastElementsIn(
             listOf(
                 ":kmpFirstLib:extractAndroidMainAnnotations"
@@ -95,7 +97,9 @@ class KotlinMultiplatformAndroidAnnotationsZipTest {
 
     @Test
     fun testLibraryAarContents() {
-        project.executor().run(":kmpFirstLib:bundleAndroidMainAar")
+        project.executor()
+            .withFailOnWarning(false) // b/455891987
+            .run(":kmpFirstLib:bundleAndroidMainAar")
 
         project.getSubproject("kmpFirstLib").assertAar(AarSelector.NO_BUILD_TYPE) {
             contains("annotations.zip")

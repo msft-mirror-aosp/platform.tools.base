@@ -288,4 +288,8 @@ private data class FakeAttributeContainer(
     ): AttributeContainer {
         error("not yet implemented")
     }
+
+    override fun addAllLater(other: AttributeContainer): AttributeContainer {
+        error("not yet implemented")
+    }
 }

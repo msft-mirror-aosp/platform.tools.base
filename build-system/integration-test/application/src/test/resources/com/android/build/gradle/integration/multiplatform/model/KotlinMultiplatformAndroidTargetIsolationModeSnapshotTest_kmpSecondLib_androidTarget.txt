@@ -134,7 +134,7 @@
       "lintChecksJars": [],
       "isCoreLibraryDesugaringEnabled": false,
       "desugarLibConfig": [],
-      "groupId": "Kotlin Multiplatform.",
+      "groupId": "Kotlin Multiplatform",
       "buildToolsVersion": "DEFAULT_BUILD_TOOLS_REVISION",
       "desugaredMethodsFiles": [
         {

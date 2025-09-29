@@ -336,6 +336,7 @@ class FusedLibraryClassesVerificationTest(private val publicationOnlyMode: Boole
         )
     }
 
+    @Ignore("b/456213076")
     @Test
     fun checkNotIncludedProjectDependenciesAddedAsDependencies() {
         val build = rule.build {
@@ -544,6 +545,7 @@ class FusedLibraryClassesVerificationTest(private val publicationOnlyMode: Boole
         )
     }
 
+    @Ignore("b/456213076")
     @Test
     fun checkPlatformBomDependenciesInLibraryDependencies() {
         val build = rule.build {

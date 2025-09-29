@@ -73,7 +73,7 @@ class AarApiJarTest {
     private val consumingapp = MinimalSubProject.app("com.example.app")
         .appendToBuild(
             """
-                    dependencies { implementation name: 'publishedLib-release', ext:'aar' }"""
+                    dependencies { implementation(project.dependencyFactory.create(null, "publishedLib-release", null, null, "aar")) }"""
         )
         .withFile(
             "src/main/java/com/example/lib2/Example.java",

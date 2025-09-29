@@ -87,7 +87,9 @@ class KotlinMultiplatformPublishingTest {
         val build = rule.build
         val lib = build.androidLibrary()
 
-        build.executor.run("publishAllPublicationsToBuildDirRepository")
+        build.executor
+            .withFailOnWarning(false) // b/455891987
+            .run("publishAllPublicationsToBuildDirRepository")
 
         val mainModule =
             lib.buildDir.resolve("testRepo/com/example/lib/0.1.2/lib-0.1.2.module")

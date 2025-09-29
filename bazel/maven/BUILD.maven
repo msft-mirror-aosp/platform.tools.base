@@ -11665,12 +11665,12 @@ maven_import(
 )
 
 maven_artifact(
-    name = "org.gradle.gradle-tooling-api_8.13",
-    pom = "repository/org/gradle/gradle-tooling-api/8.13/gradle-tooling-api-8.13.pom",
+    name = "org.gradle.gradle-tooling-api_9.1.0",
+    pom = "repository/org/gradle/gradle-tooling-api/9.1.0/gradle-tooling-api-9.1.0.pom",
     repo_root_path = "repository",
-    repo_path = "org/gradle/gradle-tooling-api/8.13",
+    repo_path = "org/gradle/gradle-tooling-api/9.1.0",
     deps = [
-        "org.slf4j.slf4j-api_1.7.36",
+        "org.slf4j.slf4j-api_2.0.17",
     ],
     visibility = ["//visibility:public"],
 )
@@ -11679,17 +11679,17 @@ maven_import(
     name = "org.gradle.gradle-tooling-api",
     classifiers = [],
     jars = [
-        "repository/org/gradle/gradle-tooling-api/8.13/gradle-tooling-api-8.13.jar"
+        "repository/org/gradle/gradle-tooling-api/9.1.0/gradle-tooling-api-9.1.0.jar"
     ],
     exports = [
         "org.slf4j.slf4j-api",
     ],
     original_deps = [
-        "org.slf4j.slf4j-api_1.7.36",
+        "org.slf4j.slf4j-api_2.0.17",
     ],
-    pom = "repository/org/gradle/gradle-tooling-api/8.13/gradle-tooling-api-8.13.pom",
+    pom = "repository/org/gradle/gradle-tooling-api/9.1.0/gradle-tooling-api-9.1.0.pom",
     repo_root_path = "repository",
-    repo_path = "org/gradle/gradle-tooling-api/8.13",
+    repo_path = "org/gradle/gradle-tooling-api/9.1.0",
     visibility = ["//visibility:public"],
 )
 
@@ -15304,25 +15304,25 @@ maven_import(
 )
 
 maven_artifact(
-    name = "org.slf4j.slf4j-api_1.7.36",
-    pom = "repository/org/slf4j/slf4j-api/1.7.36/slf4j-api-1.7.36.pom",
+    name = "org.slf4j.slf4j-api_2.0.17",
+    pom = "repository/org/slf4j/slf4j-api/2.0.17/slf4j-api-2.0.17.pom",
     repo_root_path = "repository",
-    repo_path = "org/slf4j/slf4j-api/1.7.36",
-    parent = "org.slf4j.slf4j-parent_1.7.36",
+    repo_path = "org/slf4j/slf4j-api/2.0.17",
+    parent = "org.slf4j.slf4j-parent_2.0.17",
     visibility = ["//visibility:public"],
 )
 
 maven_import(
     name = "org.slf4j.slf4j-api",
     classifiers = [],
-    parent = "org.slf4j.slf4j-parent_1.7.36",
+    parent = "org.slf4j.slf4j-parent_2.0.17",
     jars = [
-        "repository/org/slf4j/slf4j-api/1.7.36/slf4j-api-1.7.36.jar"
+        "repository/org/slf4j/slf4j-api/2.0.17/slf4j-api-2.0.17.jar"
     ],
     original_deps = [],
-    pom = "repository/org/slf4j/slf4j-api/1.7.36/slf4j-api-1.7.36.pom",
+    pom = "repository/org/slf4j/slf4j-api/2.0.17/slf4j-api-2.0.17.pom",
     repo_root_path = "repository",
-    repo_path = "org/slf4j/slf4j-api/1.7.36",
+    repo_path = "org/slf4j/slf4j-api/2.0.17",
     visibility = ["//visibility:public"],
 )
 
@@ -89150,6 +89150,15 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "org.slf4j.slf4j-api_1.7.36",
+    pom = "repository/org/slf4j/slf4j-api/1.7.36/slf4j-api-1.7.36.pom",
+    repo_root_path = "repository",
+    repo_path = "org/slf4j/slf4j-api/1.7.36",
+    parent = "org.slf4j.slf4j-parent_1.7.36",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "org.slf4j.slf4j-api_2.0.16",
     pom = "repository/org/slf4j/slf4j-api/2.0.16/slf4j-api-2.0.16.pom",
     repo_root_path = "repository",
@@ -92534,6 +92543,13 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "org.slf4j.slf4j-bom_2.0.17",
+    pom = "repository/org/slf4j/slf4j-bom/2.0.17/slf4j-bom-2.0.17.pom",
+    repo_root_path = "repository",
+    repo_path = "org/slf4j/slf4j-bom/2.0.17",
+)
+
+maven_artifact(
     name = "org.slf4j.slf4j-bom_2.0.9",
     pom = "repository/org/slf4j/slf4j-bom/2.0.9/slf4j-bom-2.0.9.pom",
     repo_root_path = "repository",
@@ -92588,6 +92604,14 @@ maven_artifact(
     repo_root_path = "repository",
     repo_path = "org/slf4j/slf4j-parent/2.0.16",
     parent = "org.slf4j.slf4j-bom_2.0.16",
+)
+
+maven_artifact(
+    name = "org.slf4j.slf4j-parent_2.0.17",
+    pom = "repository/org/slf4j/slf4j-parent/2.0.17/slf4j-parent-2.0.17.pom",
+    repo_root_path = "repository",
+    repo_path = "org/slf4j/slf4j-parent/2.0.17",
+    parent = "org.slf4j.slf4j-bom_2.0.17",
 )
 
 maven_artifact(
