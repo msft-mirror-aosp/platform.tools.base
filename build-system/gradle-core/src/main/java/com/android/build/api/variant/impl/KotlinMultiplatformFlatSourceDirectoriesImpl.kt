@@ -16,9 +16,9 @@
 
 package com.android.build.api.variant.impl
 
-import com.android.build.api.dsl.KotlinMultiplatformAndroidCompilation
 import com.android.build.api.variant.SourceDirectories
 import com.android.build.gradle.internal.services.VariantServices
+import org.gradle.api.file.Directory
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.util.PatternFilterable
 
@@ -28,8 +28,7 @@ import org.gradle.api.tasks.util.PatternFilterable
 class KotlinMultiplatformFlatSourceDirectoriesImpl(
     name: String,
     val variantServices: VariantServices,
-    variantDslFilters: PatternFilterable?,
-    private val compilation: KotlinMultiplatformAndroidCompilation
+    variantDslFilters: PatternFilterable?
 ): FlatSourceDirectoriesImpl(name, variantServices, variantDslFilters) {
 
     /**
@@ -41,14 +40,16 @@ class KotlinMultiplatformFlatSourceDirectoriesImpl(
     @Deprecated("This is only to support kotlin multiplatform")
     internal fun addStaticSources(sources: Provider<out Collection<DirectoryEntry>>) {
         variantSources.addAll(sources)
-        directories.addAll(sources.map { directoryEntries ->
-            directoryEntries.flatMap { directoryEntry ->
-                directoryEntry.asFiles(
-                    variantServices.provider {
-                        variantServices.projectInfo.projectDirectory
-                    }
-                ).get()
+
+        val projectDir = variantServices.projectInfo.projectDirectory
+        val results = variantServices.newListPropertyForInternalUse(Directory::class.java)
+        val mappedResults: Provider<List<Directory>> = sources.flatMap { directoryEntries: Collection<DirectoryEntry>? ->
+            directoryEntries?.forEach { directoryEntry ->
+                directoryEntry.addTo(projectDir, results)
             }
-        })
+            return@flatMap results
+        }
+
+        directories.addAll(mappedResults)
     }
 }

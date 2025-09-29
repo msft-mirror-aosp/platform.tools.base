@@ -83,6 +83,7 @@ internal class AssetSourceDirectoriesImplTest {
         val projectInfo = mock<ProjectInfo>()
         whenever(variantServices.projectInfo).thenReturn(projectInfo)
         whenever(projectInfo.projectDirectory).thenReturn(project.layout.projectDirectory)
+        whenever(variantServices.fileCollection()).thenReturn(project.objects.fileCollection())
 
         whenever(
             variantServices.provider(capture(callableCaptor))
@@ -126,7 +127,7 @@ internal class AssetSourceDirectoriesImplTest {
         ))
 
         Truth.assertThat(testTarget.getAscendingOrderAssetSets(FakeGradleProvider("aapt_env"))).isNotNull()
-        val assetSets = testTarget.getAscendingOrderAssetSets(FakeGradleProvider("aapt_env")).get().map { it.get() }
+        val assetSets = testTarget.getAscendingOrderAssetSets(FakeGradleProvider("aapt_env")).get()
         Truth.assertThat(assetSets).hasSize(9)
         Truth.assertThat(assetSets[0].configName).isEqualTo("lowest")
         Truth.assertThat(assetSets[1].configName).isEqualTo("lowest")

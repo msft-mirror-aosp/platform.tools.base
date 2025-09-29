@@ -16,11 +16,12 @@
 
 package com.android.build.api.variant.impl
 
-import com.android.build.gradle.internal.scope.getDirectories
+import org.gradle.api.Task
+import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.ConfigurableFileTree
 import org.gradle.api.file.Directory
 import org.gradle.api.file.FileCollection
-import org.gradle.api.file.FileSystemLocation
+import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.util.PatternFilterable
 
@@ -33,12 +34,23 @@ class FileCollectionBasedDirectoryEntryImpl(
     override val isUserAdded: Boolean = true
     override val shouldBeAddedToIdeModel: Boolean = true
 
-    override fun asFiles(projectDir: Provider<Directory>): Provider<out Collection<Directory>> =
-        fileCollection.elements.zip(projectDir) {
-                elements: MutableSet<FileSystemLocation>,
-                dir: Directory ->
-            elements.map { dir.dir(it.asFile.path) }
-        }
+  override fun addTo(
+        projectDir: Directory,
+        listProperty: ListProperty<Directory>,
+    ) {
+        val map: Provider<List<Directory>> = fileCollection.elements.map { files ->
+            files
+                .filter { it.asFile.isDirectory || !it.asFile.exists() }
+                .map { projectDir.dir(it.asFile.absolutePath)}}
+        listProperty.addAll(map)
+    }
+
+    override fun addTo(
+        projectDir: Directory,
+        into: ConfigurableFileCollection,
+    ) {
+        into.from(fileCollection.elements)
+    }
 
     override fun asFileTree(fileTreeCreator: () -> ConfigurableFileTree): Provider<List<ConfigurableFileTree>> =
         fileCollection.elements.map { files ->
@@ -58,4 +70,8 @@ class FileCollectionBasedDirectoryEntryImpl(
         )
 
     override val filter: PatternFilterable? = null
+
+    override fun makeDependentOf(task: Task) {
+        task.dependsOn(fileCollection.elements)
+    }
 }

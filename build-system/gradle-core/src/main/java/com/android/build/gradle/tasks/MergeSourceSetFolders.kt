@@ -80,7 +80,7 @@ abstract class MergeSourceSetFolders : NewIncrementalTask() {
 
     // supplier of the assets set, for execution only.
     @get:Internal("for testing")
-    internal abstract val assetSets: ListProperty<Provider<AssetSet>>
+    internal abstract val assetSets: ListProperty<AssetSet>
 
     // for the dependencies
     @get:Internal("for testing")
@@ -284,9 +284,9 @@ abstract class MergeSourceSetFolders : NewIncrementalTask() {
         val assetSetsMap = mutableMapOf<String, AssetSet>()
         assetSets.get().forEach { assetSet ->
             val combinedAssetSet = assetSetsMap.getOrPut(
-                assetSet.get().configName
-            ) { AssetSet(assetSet.get().configName, aaptEnv.orNull) }
-            combinedAssetSet.addSources(assetSet.get().sourceFiles)
+                assetSet.configName
+            ) { AssetSet(assetSet.configName, aaptEnv.orNull) }
+            combinedAssetSet.addSources(assetSet.sourceFiles)
         }
 
         val assetSets =  mutableListOf<AssetSet>().also { it.addAll(assetSetsMap.values) }

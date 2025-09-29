@@ -1649,7 +1649,7 @@ abstract class SourceProviderInput {
             return getVariantSources()
                 .filter { dir -> !dir.isGenerated }
                 .forEach {
-                    into.from(it.asFiles(projectDir))
+                    it.addTo(projectDir.get(), into)
                 }
         }
 
@@ -1658,7 +1658,7 @@ abstract class SourceProviderInput {
                 dirs.directoryEntries.filter { dir ->
                     !dir.isGenerated
                 }.forEach {
-                    into.from(it.asFiles(projectDir))
+                    it.addTo(projectDir.get(), into)
                 }
             }
         }
@@ -2126,12 +2126,7 @@ abstract class AndroidArtifactInput : ArtifactInput() {
             .res { resSources ->
                 resSources.forAllSources { directoryEntry ->
                     if (directoryEntry.isUserAdded && directoryEntry.isGenerated) {
-                        fileCollection.from(
-                            directoryEntry.asFiles(
-                                component.services
-                                    .provider { component.services.projectInfo.projectDirectory }
-                            )
-                        )
+                        directoryEntry.addTo(component.services.projectInfo.projectDirectory, fileCollection)
                     }
                 }
             }

@@ -290,21 +290,11 @@ class OldVariantApiLegacySupportImpl(
             )
 
             component.sources.res { resSources ->
-                fileCollection.from(
-                    resSources.getVariantSources().map { directoryEntries ->
-                        directoryEntries.directoryEntries
-                            .map {
-                                if (it is TaskProviderBasedDirectoryEntryImpl) {
-                                    it.directoryProvider
-                                } else {
-                                    it.asFiles(
-                                      component.services.provider {
-                                          component.services.projectInfo.projectDirectory
-                                      })
-                                }
-                            }
+                resSources.getVariantSources().forEach { directoryEntries ->
+                    directoryEntries.directoryEntries.forEach {
+                        it.addTo(component.services.projectInfo.projectDirectory, fileCollection)
                     }
-                )
+                }
             }
         }
 

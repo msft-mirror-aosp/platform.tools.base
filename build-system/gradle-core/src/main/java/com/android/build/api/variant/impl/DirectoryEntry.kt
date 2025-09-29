@@ -17,8 +17,10 @@
 package com.android.build.api.variant.impl
 
 import org.gradle.api.Task
+import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.ConfigurableFileTree
 import org.gradle.api.file.Directory
+import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.util.PatternFilterable
 
@@ -49,12 +51,20 @@ interface DirectoryEntry {
     val shouldBeAddedToIdeModel: Boolean
 
     /**
-     * Return the source folder as a [Provider] of [Directory], with appropriate
-     * [org.gradle.api.Task] dependency if there is one. Can be used as a task input directly.
+     * Add all directories to the passed [ListProperty]
      */
-    fun asFiles(
-        projectDir: Provider<Directory>,
-    ): Provider<out Collection<Directory>>
+    fun addTo(
+        projectDir: Directory,
+        listProperty: ListProperty<Directory>
+    )
+
+    /**
+     * Add all directories to the passed [ConfigurableFileCollection]
+     */
+    fun addTo(
+        projectDir: Directory,
+        into: ConfigurableFileCollection
+    )
 
     /**
      * Return the source folder as a [ConfigurableFileTree] which can be used as
@@ -68,7 +78,7 @@ interface DirectoryEntry {
      * Return the source folders as a [List] of [ConfigurableFileTree] which CANNOT be used as
      * [org.gradle.api.Task] input. This method must only be called by
      * [FlatSourceDirectoriesImpl.getAsFileTreesForOldVariantAPI], all new usages should use
-     * [asFiles] or [asFileTree]
+     * [addTo]
      *
      * Remove once b/260920355 is fixed.
      */
@@ -90,7 +100,7 @@ interface DirectoryEntry {
      * @param projectDir the project directory, to be able to create a task input compatible version
      * of this [DirectoryEntry] instance.
      */
-    fun makeDependentOf(task: Task, projectDir: Provider<Directory>,) {
-        task.dependsOn(asFiles(projectDir))
+    fun makeDependentOf(task: Task) {
+        // by default do nothing, only TaskBasedDirectoryEntry can be a valid dependent
     }
 }

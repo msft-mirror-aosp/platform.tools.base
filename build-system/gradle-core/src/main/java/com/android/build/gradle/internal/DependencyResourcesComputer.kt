@@ -18,7 +18,6 @@ package com.android.build.gradle.internal
 import com.android.SdkConstants.FD_RES_VALUES
 import com.android.build.api.variant.ApplicationAndroidResources
 import com.android.build.gradle.internal.component.ComponentCreationConfig
-import com.android.build.gradle.internal.component.features.AndroidResourcesCreationConfig
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.utils.fromDisallowChanges
 import com.android.build.gradle.internal.utils.setDisallowChanges
@@ -239,13 +238,7 @@ abstract class DependencyResourcesComputer {
                         it.isUserAdded && !it.isGenerated
                     }
                     .forEach {
-                        staticResFolders.from(
-                            it.asFiles(
-                                creationConfig.services.provider {
-                                    creationConfig.services.projectInfo.projectDirectory
-                                }
-                            )
-                        )
+                        it.addTo(creationConfig.services.projectInfo.projectDirectory, staticResFolders)
                     }
             }
             staticResFolders.disallowChanges()
@@ -258,13 +251,7 @@ abstract class DependencyResourcesComputer {
                         it.isUserAdded && it.isGenerated
                     }
                     .forEach {
-                        extraGeneratedResFolders.from(
-                            it.asFiles(
-                              creationConfig.services.provider {
-                                  creationConfig.services.projectInfo.projectDirectory
-                              }
-                            )
-                        )
+                        it.addTo(creationConfig.services.projectInfo.projectDirectory, extraGeneratedResFolders)
                     }
             }
             extraGeneratedResFolders.disallowChanges()
@@ -287,12 +274,12 @@ abstract class DependencyResourcesComputer {
 
     @VisibleForTesting
     fun addResourceSets(
-        resourcesMap: Map<String, Provider<out Collection<Directory>>>,
+        resourcesMap: Map<String, FileCollection>,
         blockFactory: () -> ResourceSourceSetInput
     ) {
-        resourcesMap.forEach{(name, providerOfDirectories) ->
+        resourcesMap.forEach{(name, collectionOfDirectories) ->
             resources.put(name, blockFactory().also {
-                it.sourceDirectories.fromDisallowChanges(providerOfDirectories)
+                it.sourceDirectories.fromDisallowChanges(collectionOfDirectories)
             })
         }
     }

@@ -16,8 +16,11 @@
 
 package com.android.build.api.variant.impl
 
+import org.gradle.api.Task
+import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.ConfigurableFileTree
 import org.gradle.api.file.Directory
+import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.util.PatternFilterable
 import org.gradle.api.tasks.util.PatternSet
@@ -32,10 +35,18 @@ class ProviderBasedDirectoryEntryImpl(
 
     override val shouldBeAddedToIdeModel: Boolean = true
 
-    override fun asFiles(
-        projectDir: Provider<Directory>
-    ): Provider<out Collection<Directory>> {
-        return elements
+    override fun addTo(
+        projectDir: Directory,
+        listProperty: ListProperty<Directory>,
+    ) {
+        listProperty.addAll(elements)
+    }
+
+    override fun addTo(
+        projectDir: Directory,
+        into: ConfigurableFileCollection,
+    ) {
+        into.from(elements)
     }
 
     override fun asFileTree(
@@ -66,5 +77,9 @@ class ProviderBasedDirectoryEntryImpl(
                         configurableFileTree.exclude(filter.asExcludeSpec)
                     }
                 }
+    }
+
+    override fun makeDependentOf(task: Task) {
+        task.dependsOn(elements)
     }
 }

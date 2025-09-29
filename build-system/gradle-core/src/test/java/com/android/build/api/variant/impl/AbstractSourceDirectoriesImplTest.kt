@@ -32,6 +32,7 @@ import org.junit.rules.TemporaryFolder
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 import java.io.File
+import org.gradle.api.file.Directory
 
 internal class AbstractSourceDirectoriesImplTest {
 
@@ -64,16 +65,22 @@ internal class AbstractSourceDirectoriesImplTest {
        )
 
        Truth.assertThat(listOfSources.size).isEqualTo(1)
-       val directoryProperty = listOfSources.single().asFiles(
-         project.provider { project.layout.projectDirectory })
-       Truth.assertThat(directoryProperty.get().single().asFile.absolutePath).isEqualTo(
+       val listProperty = project.objects.listProperty(Directory::class.java)
+       listOfSources.single().addTo(
+           project.layout.projectDirectory,
+           listProperty
+       )
+       Truth.assertThat(listProperty.get().single().asFile.absolutePath).isEqualTo(
            addedSource.absolutePath
        )
 
        Truth.assertThat(listOfStaticSources.size).isEqualTo(1)
-       val staticDirectoryProperty = listOfStaticSources.single().asFiles(
-           project.provider { project.layout.projectDirectory })
-       Truth.assertThat(staticDirectoryProperty.get().single().asFile.absolutePath).isEqualTo(
+       listProperty.empty()
+       listOfStaticSources.single().addTo(
+           project.layout.projectDirectory,
+           listProperty
+       )
+       Truth.assertThat(listProperty.get().single().asFile.absolutePath).isEqualTo(
            addedSource.absolutePath
        )
    }
@@ -108,11 +115,12 @@ internal class AbstractSourceDirectoriesImplTest {
        val testTarget = createTestTarget()
        testTarget.addGeneratedSourceDirectory(taskProvider, AddingTask::output)
        Truth.assertThat(listOfSources.size).isEqualTo(1)
-       val directoryProperty = listOfSources.single().asFiles(
-         project.provider { project.layout.projectDirectory }
+       val listProperty = project.objects.listProperty(Directory::class.java)
+       listOfSources.single().addTo(
+           project.layout.projectDirectory,
+           listProperty
        )
-       Truth.assertThat(directoryProperty).isNotNull()
-
+       Truth.assertThat(listProperty.get().size).isEqualTo(1)
        Truth.assertThat(listOfStaticSources.size).isEqualTo(0)
    }
 
