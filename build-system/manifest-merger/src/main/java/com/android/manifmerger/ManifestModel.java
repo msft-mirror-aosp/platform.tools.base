@@ -709,7 +709,9 @@ public class ManifestModel implements DocumentModel<ManifestModel.NodeTypes> {
                                                 .REQUIRED_BY_PRIVACY_SANDBOX_SDK_ATTRIBUTE_NAME))
                         .setDefaultValue(SdkConstants.VALUE_FALSE)
                         .setOnReadValidator(BOOLEAN_VALIDATOR)
-                        .setMergingPolicy(AND_MERGING_POLICY)),
+                        .setMergingPolicy(AND_MERGING_POLICY),
+                AttributeModel.newModel("purposeString")
+                        .setMergingPolicy(AttributeModel.NO_MERGING_POLICY)),
 
         /**
          * Purpose (contained in uses-permission) <br>
@@ -725,6 +727,40 @@ public class ManifestModel implements DocumentModel<ManifestModel.NodeTypes> {
          * bounds.
          */
         PURPOSE(
+                MergeType.MERGE,
+                DEFAULT_NAME_ATTRIBUTE_RESOLVER,
+                AttributeModel.newModel(SdkConstants.ATTR_NAME),
+                AttributeModel.newModel("minSdkVersion")
+                        .setMergingPolicy(AttributeModel.PURPOSE_MIN_SDK_VERSION_MERGING_POLICY)
+                        .setOnReadValidator(INTEGER_VALIDATOR),
+                AttributeModel.newModel("maxSdkVersion")
+                        .setMergingPolicy(AttributeModel.PURPOSE_MAX_SDK_VERSION_MERGING_POLICY)
+                        .setOnReadValidator(INTEGER_VALIDATOR)),
+
+        /**
+         * General Purpose (contained in uses-permission) <br>
+         * <b>See also : </b> {@link <a
+         * href=http://developer.android.com/guide/topics/manifest/uses-permission-element.html>
+         * Uses-permission Xml documentation</a>}
+         */
+        GENERAL_PURPOSE(
+                MergeType.MERGE,
+                DEFAULT_NAME_ATTRIBUTE_RESOLVER,
+                AttributeModel.newModel(SdkConstants.ATTR_NAME),
+                AttributeModel.newModel("minSdkVersion")
+                        .setMergingPolicy(AttributeModel.PURPOSE_MIN_SDK_VERSION_MERGING_POLICY)
+                        .setOnReadValidator(INTEGER_VALIDATOR),
+                AttributeModel.newModel("maxSdkVersion")
+                        .setMergingPolicy(AttributeModel.PURPOSE_MAX_SDK_VERSION_MERGING_POLICY)
+                        .setOnReadValidator(INTEGER_VALIDATOR)),
+
+        /**
+         * Specific Purpose (contained in uses-permission) <br>
+         * <b>See also : </b> {@link <a
+         * href=http://developer.android.com/guide/topics/manifest/uses-permission-element.html>
+         * Uses-permission Xml documentation</a>}
+         */
+        SPECIFIC_PURPOSE(
                 MergeType.MERGE,
                 DEFAULT_NAME_ATTRIBUTE_RESOLVER,
                 AttributeModel.newModel(SdkConstants.ATTR_NAME),
