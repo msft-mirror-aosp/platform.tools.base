@@ -17,12 +17,14 @@ package com.android.build.gradle.internal.tasks
 
 import com.android.SdkConstants
 import com.android.build.api.artifact.ScopedArtifact
+import com.android.build.api.artifact.impl.ArtifactsImpl
 import com.android.build.api.artifact.impl.InternalScopedArtifacts
 import com.android.build.api.variant.Packaging
 import com.android.build.api.variant.ScopedArtifacts
 import com.android.build.gradle.internal.TaskManager
 import com.android.build.gradle.internal.component.ApkCreationConfig
 import com.android.build.gradle.internal.component.ComponentCreationConfig
+import com.android.build.gradle.internal.dependency.PluginDependencies
 import com.android.build.gradle.internal.fusedlibrary.FusedLibraryGlobalScope
 import com.android.build.gradle.internal.fusedlibrary.FusedLibraryInternalArtifactType
 import com.android.build.gradle.internal.packaging.defaultExcludes
@@ -32,6 +34,7 @@ import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.scope.InternalArtifactType.JAVA_RES
 import com.android.build.gradle.internal.tasks.MergeJavaResWorkAction.SourcedInput
 import com.android.build.gradle.internal.tasks.factory.AndroidVariantTaskCreationAction
+import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationAction
 import com.android.build.gradle.internal.tasks.factory.VariantTaskCreationAction
 import com.android.build.gradle.internal.utils.fromDisallowChanges
 import com.android.build.gradle.internal.utils.setDisallowChanges
@@ -42,7 +45,10 @@ import org.gradle.api.artifacts.ArtifactCollection
 import org.gradle.api.artifacts.component.ModuleComponentIdentifier
 import org.gradle.api.artifacts.component.ProjectComponentIdentifier
 import org.gradle.api.file.ConfigurableFileCollection
+import org.gradle.api.file.DirectoryProperty
+import org.gradle.api.file.ProjectLayout
 import org.gradle.api.file.RegularFileProperty
+import org.gradle.api.invocation.Gradle
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
@@ -62,203 +68,73 @@ import org.gradle.api.tasks.util.PatternSet
 import org.gradle.work.DisableCachingByDefault
 import org.gradle.work.Incremental
 import org.gradle.work.InputChanges
-import java.io.File
 import java.io.Serializable
 import java.util.function.Predicate
 import javax.inject.Inject
 
-/**
- * Task to merge java resources from multiple modules
- */
-@DisableCachingByDefault
-@BuildAnalyzer(primaryTaskCategory = TaskCategory.JAVA_RESOURCES, secondaryTaskCategories = [TaskCategory.MERGING])
-abstract class MergeJavaResourceTask
-@Inject constructor(objects: ObjectFactory) : NewIncrementalTask() {
-
-    /**
-     * Wrapper around an [ArtifactCollection] that's optional.
-     *
-     * There are cases where the collection is optional and not set. This makes it cumbersome
-     * to hold the artifact collection and compute on-demand the fileCollection from it. Instead,
-     * we have to set the file collection manually if the collection is set.
-     *
-     * While this is not a problem on the declaration side, it makes the setup side more
-     * awkward and error-prone. Therefore, this class attempts to encapsulate all this in a single
-     * place so that we can have all the instance behave the same reliably.
-     */
-    abstract class OptionalCollectionWithProvenance @Inject constructor(objects: ObjectFactory) :
-        Serializable {
-
-        @get:Internal
-        val artifactCollection: Property<ArtifactCollection> = objects.property(ArtifactCollection::class.java)
-
-        @get:Classpath
-        @get:Incremental
-        @get:Optional
-        val fileCollection: ConfigurableFileCollection = objects.fileCollection()
-
-        internal fun set(collection: ArtifactCollection) {
-            artifactCollection.set(collection)
-            // We cannot have the fileCollection be a getter that just queries the
-            // artifact collection in case it's not set.
-            fileCollection.from(collection.artifactFiles)
-        }
-
-        internal fun disallowChanges() {
-            artifactCollection.disallowChanges()
-            fileCollection.disallowChanges()
-        }
-
-        internal fun setDisallowChanges(collection: ArtifactCollection) {
-            set(collection)
-            disallowChanges()
-        }
-    }
+interface MergeJavaResourcesInputsOutputs {
 
     @get:InputFiles
     @get:Incremental
     @get:PathSensitive(PathSensitivity.RELATIVE)
     @get:Optional
-    abstract val projectJavaRes: ConfigurableFileCollection
+    val projectJavaRes: ConfigurableFileCollection
 
     @get:Nested
-    val subProjectJavaRes = objects.newInstance(OptionalCollectionWithProvenance::class.java)
+    val subProjectJavaRes: OptionalCollectionWithProvenance
 
     @get:Nested
-    val externalLibJavaRes = objects.newInstance(OptionalCollectionWithProvenance::class.java)
+    val externalLibJavaRes: OptionalCollectionWithProvenance
 
     @get:Classpath
     @get:Incremental
     @get:Optional
-    abstract val localDepsJavaRes: ConfigurableFileCollection
+    val localDepsJavaRes: ConfigurableFileCollection
 
     @get:Nested
-    val featureJavaRes = objects.newInstance(OptionalCollectionWithProvenance::class.java)
+    val featureJavaRes: OptionalCollectionWithProvenance
 
     @get:Input
-    abstract val mergeScopes: SetProperty<InternalScopedArtifacts.InternalScope>
+    val mergeScopes: SetProperty<InternalScopedArtifacts.InternalScope>
 
     @get:Input
-    abstract val excludes: SetProperty<String>
+    val excludes: SetProperty<String>
 
     @get:Input
-    abstract val pickFirsts: SetProperty<String>
+    val pickFirsts: SetProperty<String>
 
     @get:Input
-    abstract val merges: SetProperty<String>
+    val merges: SetProperty<String>
 
     @get:Input
     @get:Optional
-    abstract val noCompress: ListProperty<String>
-
-    private lateinit var intermediateDir: File
-
-    @get:OutputDirectory
-    lateinit var cacheDir: File
-        private set
-
-    private lateinit var incrementalStateFile: File
-
-    @get:OutputFile
-    val outputFile: RegularFileProperty = objects.fileProperty()
+    val noCompress: ListProperty<String>
 
     @get:Internal
-    abstract val hasIncludedBuilds: Property<Boolean>
+    val intermediateDir: DirectoryProperty
 
-    override fun doTaskAction(inputChanges: InputChanges) {
-        if (inputChanges.isIncremental) {
-            // TODO(b/225872980): Unify with IncrementalChanges.classpathToRelativeFileSet
-            //  (see IncrementalMergerFileUtils.collectChanges)
-            doIncrementalTaskAction(
-                    listOf(
-                            inputChanges.getChangesInSerializableForm(projectJavaRes),
-                            inputChanges.getChangesInSerializableForm(subProjectJavaRes.fileCollection),
-                            inputChanges.getChangesInSerializableForm(externalLibJavaRes.fileCollection),
-                            inputChanges.getChangesInSerializableForm(featureJavaRes.fileCollection)
-                    ).let {
-                        SerializableInputChanges(
-                                roots = it.flatMap(SerializableInputChanges::roots),
-                                changes = it.flatMap(SerializableInputChanges::changes)) }
-            )
+    @get:OutputDirectory
+    val cacheDir: DirectoryProperty
 
-        } else {
-            doFullTaskAction()
-        }
-    }
+    @get:Internal
+    val incrementalStateFile: RegularFileProperty
 
-    private fun doFullTaskAction() {
-        workerExecutor.noIsolation().submit(MergeJavaResWorkAction::class.java) {
-            it.initializeFromBaseTask(this)
-            it.projectJavaRes.from(projectJavaRes)
-            it.subProjectJavaRes.set(subProjectJavaRes.toSourcedInputs())
-            it.externalLibJavaRes.set(externalLibJavaRes.toSourcedInputs() + localDepsJavaRes.toSourcedInputs())
-            it.featureJavaRes.set(featureJavaRes.toSourcedInputs())
-            it.outputFile.set(outputFile)
-            it.incrementalStateFile.set(incrementalStateFile)
-            it.incremental.set(false)
-            it.cacheDir.set(cacheDir)
-            it.noCompress.set(noCompress)
-            it.excludes.set(excludes)
-            it.pickFirsts.set(pickFirsts)
-            it.merges.set(merges)
-        }
-    }
+    @get:OutputFile
+    val outputFile: RegularFileProperty
 
-    private fun doIncrementalTaskAction(
-            changedInputs: SerializableInputChanges,
-    ) {
-        if (!incrementalStateFile.isFile) {
-            doFullTaskAction()
-            return
-        }
-        workerExecutor.noIsolation().submit(MergeJavaResWorkAction::class.java) {
-            it.initializeFromBaseTask(this)
-            it.projectJavaRes.from(projectJavaRes)
-            it.subProjectJavaRes.set(subProjectJavaRes.toSourcedInputs())
-            it.externalLibJavaRes.set(externalLibJavaRes.toSourcedInputs() + localDepsJavaRes.toSourcedInputs())
-            it.featureJavaRes.set(featureJavaRes.toSourcedInputs())
-            it.outputFile.set(outputFile)
-            it.incrementalStateFile.set(incrementalStateFile)
-            it.incremental.set(true)
-            it.cacheDir.set(cacheDir)
-            it.changedInputs.set(changedInputs)
-            it.noCompress.set(noCompress)
-            it.excludes.set(excludes)
-            it.pickFirsts.set(pickFirsts)
-            it.merges.set(merges)
-        }
-    }
+    @get:Internal
+    val hasIncludedBuilds: Property<Boolean>
+}
 
-    private fun OptionalCollectionWithProvenance.toSourcedInputs(): List<SourcedInput> {
-        if (!artifactCollection.isPresent) {
-            return listOf()
-        }
+/**
+ * Variant Task to merge java resources from multiple modules
+ */
+@DisableCachingByDefault
+@BuildAnalyzer(primaryTaskCategory = TaskCategory.JAVA_RESOURCES, secondaryTaskCategories = [TaskCategory.MERGING])
+abstract class MergeJavaResourceTask : MergeJavaResourcesInputsOutputs, NewIncrementalTask() {
 
-        val displayBuildInfo = hasIncludedBuilds.get()
-
-        return artifactCollection.get().artifacts.map {
-            val owner = it.variant.owner
-
-            val name = when (owner) {
-                is ModuleComponentIdentifier ->
-                    // Add a file-specific name so the file merger can distinguish between multiple
-                    // files in one artifact (b/377366954)
-                    "${owner.group}:${owner.module}:${owner.version}" + "/${it.file.name}"
-                is ProjectComponentIdentifier -> {
-                    if (displayBuildInfo) {
-                        "project(\"${owner.projectPath}\") - Build: ${owner.build.buildPath}"
-                    } else {
-                        "project(\"${owner.projectPath}\")"
-                    }
-                }
-                else -> owner.displayName + "/${it.file.name}"
-            }
-            SourcedInput(it.file, name)
-        }
-    }
-
-    private fun ConfigurableFileCollection.toSourcedInputs(): List<SourcedInput> =
-        map { SourcedInput(it, it.absolutePath) }
+    override fun doTaskAction(inputChanges: InputChanges) =
+        runTaskAction(inputChanges, this, this)
 
     class CreationAction(
         private val mergeScopes: Set<InternalScopedArtifacts.InternalScope>,
@@ -315,7 +191,7 @@ abstract class MergeJavaResourceTask
 
             run {
                 if (mergeScopes.contains(InternalScopedArtifacts.InternalScope.SUB_PROJECTS)) {
-                    task.subProjectJavaRes.set(
+                    task.subProjectJavaRes.setDisallowChanges(
                         creationConfig.variantDependencies.getArtifactCollection(
                             AndroidArtifacts.ConsumedConfigType.RUNTIME_CLASSPATH,
                             AndroidArtifacts.ArtifactScope.PROJECT,
@@ -356,117 +232,17 @@ abstract class MergeJavaResourceTask
             task.excludes.setDisallowChanges(packaging.resources.excludes)
             task.pickFirsts.setDisallowChanges(packaging.resources.pickFirsts)
             task.merges.setDisallowChanges(packaging.resources.merges)
-            task.intermediateDir =
+            val intermediatesDir =
                 creationConfig.paths.getIncrementalDir("${creationConfig.name}-mergeJavaRes")
-            task.cacheDir = File(task.intermediateDir, "zip-cache")
-            task.incrementalStateFile = File(task.intermediateDir, "merge-state")
+            task.intermediateDir.set(intermediatesDir)
+            task.cacheDir.set(intermediatesDir.resolve("zip-cache"))
+            task.incrementalStateFile.set(intermediatesDir.resolve("merge-state"))
             if (creationConfig is ApkCreationConfig) {
                 task.noCompress.set(creationConfig.androidResources.noCompress)
             }
             task.noCompress.disallowChanges()
 
-            configureBuildCount(task)
-        }
-    }
-
-    class FusedLibraryCreationAction(private val creationConfig: FusedLibraryGlobalScope) :
-        AndroidVariantTaskCreationAction<MergeJavaResourceTask>() {
-
-        override val name: String
-            get() = "mergeLibraryJavaResources"
-        override val type: Class<MergeJavaResourceTask>
-            get() = MergeJavaResourceTask::class.java
-
-        override fun handleProvider(taskProvider: TaskProvider<MergeJavaResourceTask>) {
-            super.handleProvider(taskProvider)
-
-            creationConfig.artifacts.setInitialProvider(
-                    taskProvider,
-                    MergeJavaResourceTask::outputFile
-            ).withName("base.jar").on(FusedLibraryInternalArtifactType.MERGED_JAVA_RES)
-        }
-
-        override fun configure(task: MergeJavaResourceTask) {
-            super.configure(task)
-
-            task.subProjectJavaRes.setDisallowChanges(
-                    creationConfig.dependencies.getArtifactCollection(
-                            AndroidArtifacts.ConsumedConfigType.RUNTIME_CLASSPATH,
-                            AndroidArtifacts.ArtifactType.JAVA_RES
-                    )
-            )
-
-            // For configuring the merging rules (we may want to add DSL for this in the future.)
-            task.excludes.setDisallowChanges(defaultExcludes)
-            task.pickFirsts.setDisallowChanges(emptySet())
-            task.merges.setDisallowChanges(emptySet())
-
-            task.intermediateDir = creationConfig.projectLayout.buildDirectory
-                    .dir(SdkConstants.FD_INTERMEDIATES)
-                    .map { it.dir("mergeJavaRes") }.get().asFile
-            task.cacheDir = File(task.intermediateDir, "zip-cache")
-            task.incrementalStateFile = File(task.intermediateDir, "merge-state")
-
-            // External libraries can just be consumed via the subProjectJavaRes (the inputs are
-            // only intended for finer grain incremental runs.)
-            task.externalLibJavaRes.disallowChanges()
-
-            // No sources in fused library projects, so none of the below need set.
-            task.projectJavaRes.disallowChanges()
-            task.featureJavaRes.disallowChanges()
-
-            configureBuildCount(task)
-        }
-    }
-
-    class PrivacySandboxSdkCreationAction(
-            val creationConfig: PrivacySandboxSdkVariantScope
-    ) : AndroidVariantTaskCreationAction<MergeJavaResourceTask>() {
-
-        override val name: String
-            get() = "mergeLibraryJavaResources"
-        override val type: Class<MergeJavaResourceTask>
-            get() = MergeJavaResourceTask::class.java
-
-        override fun handleProvider(taskProvider: TaskProvider<MergeJavaResourceTask>) {
-            super.handleProvider(taskProvider)
-
-            creationConfig.artifacts.setInitialProvider(
-                    taskProvider,
-                    MergeJavaResourceTask::outputFile
-            ).withName("base.jar").on(FusedLibraryInternalArtifactType.MERGED_JAVA_RES)
-        }
-
-        override fun configure(task: MergeJavaResourceTask) {
-            super.configure(task)
-
-            task.subProjectJavaRes.set(
-                creationConfig.dependencies.getArtifactCollection(
-                    AndroidArtifacts.ConsumedConfigType.RUNTIME_CLASSPATH,
-                    AndroidArtifacts.ArtifactType.JAVA_RES
-                )
-            )
-
-            // For configuring the merging rules (we may want to add DSL for this in the future.)
-            task.excludes.setDisallowChanges(defaultExcludes)
-            task.pickFirsts.setDisallowChanges(emptySet())
-            task.merges.setDisallowChanges(emptySet())
-
-            task.intermediateDir = creationConfig.layout.buildDirectory
-                    .dir(SdkConstants.FD_INTERMEDIATES)
-                    .map { it.dir("mergeJavaRes") }.get().asFile
-            task.cacheDir = File(task.intermediateDir, "zip-cache")
-            task.incrementalStateFile = File(task.intermediateDir, "merge-state")
-
-            // External libraries can just be consumed via the subProjectJavaRes (the inputs are
-            // only intended for finer grain incremental runs.)
-            task.externalLibJavaRes.disallowChanges()
-
-            // No sources in fused library projects, so none of the below need set.
-            task.projectJavaRes.disallowChanges()
-            task.featureJavaRes.disallowChanges()
-
-            configureBuildCount(task)
+            configureHasIncludedBuilds(task.project.gradle, task)
         }
     }
 
@@ -490,10 +266,234 @@ abstract class MergeJavaResourceTask
     }
 }
 
-private fun configureBuildCount(task: MergeJavaResourceTask) {
-    val gradle = task.project.gradle
-    val gradle2 = gradle.parent ?: gradle
-    task.hasIncludedBuilds.setDisallowChanges(gradle2.includedBuilds.isNotEmpty())
+/*
+ * Global task to merge java resources from multiple modules
+ */
+@DisableCachingByDefault
+@BuildAnalyzer(primaryTaskCategory = TaskCategory.JAVA_RESOURCES, secondaryTaskCategories = [TaskCategory.MERGING])
+abstract class MergeJavaResourcesGlobalTask : MergeJavaResourcesInputsOutputs, NewIncrementalGlobalTask() {
+
+    override fun doTaskAction(inputChanges: InputChanges) =
+        runTaskAction(inputChanges, this, this)
+
+    abstract class CommonCreationAction(val artifacts: ArtifactsImpl, val dependencies: PluginDependencies, val projectLayout: ProjectLayout)
+        :  GlobalTaskCreationAction<MergeJavaResourcesGlobalTask>() {
+
+        override val name: String
+            get() = "mergeLibraryJavaResources"
+        override val type: Class<MergeJavaResourcesGlobalTask>
+            get() = MergeJavaResourcesGlobalTask::class.java
+
+        override fun handleProvider(taskProvider: TaskProvider<MergeJavaResourcesGlobalTask>) {
+            super.handleProvider(taskProvider)
+
+            artifacts.setInitialProvider(
+                taskProvider,
+                MergeJavaResourcesGlobalTask::outputFile
+            ).withName("base.jar").on(FusedLibraryInternalArtifactType.MERGED_JAVA_RES)
+        }
+
+        override fun configure(task: MergeJavaResourcesGlobalTask) {
+            super.configure(task)
+
+            task.subProjectJavaRes.set(
+                dependencies.getArtifactCollection(
+                    AndroidArtifacts.ConsumedConfigType.RUNTIME_CLASSPATH,
+                    AndroidArtifacts.ArtifactType.JAVA_RES
+                )
+            )
+
+            // For configuring the merging rules (we may want to add DSL for this in the future.)
+            task.excludes.setDisallowChanges(defaultExcludes)
+            task.pickFirsts.setDisallowChanges(emptySet())
+            task.merges.setDisallowChanges(emptySet())
+
+            val mergeJavaResDir = projectLayout.buildDirectory
+                .dir(SdkConstants.FD_INTERMEDIATES)
+                .map { it.dir("mergeJavaRes") }
+            task.intermediateDir.set(mergeJavaResDir)
+            task.cacheDir.set(mergeJavaResDir.map { it.dir("zip-cache") })
+            task.incrementalStateFile.set(mergeJavaResDir.map { it.file("merge-state") })
+
+            // External libraries can just be consumed via the subProjectJavaRes (the inputs are
+            // only intended for finer grain incremental runs.)
+            task.externalLibJavaRes.disallowChanges()
+
+            // No sources in fused library projects, so none of the below need set.
+            task.projectJavaRes.disallowChanges()
+            task.featureJavaRes.disallowChanges()
+
+            configureHasIncludedBuilds(task.project.gradle, task)
+        }
+    }
+
+    class FusedLibraryCreationAction(private val creationConfig: FusedLibraryGlobalScope) :
+        CommonCreationAction(
+            creationConfig.artifacts,
+            creationConfig.dependencies,
+            creationConfig.projectLayout
+        )
+
+    class PrivacySandboxSdkCreationAction(
+        val creationConfig: PrivacySandboxSdkVariantScope
+    ) : CommonCreationAction(
+        creationConfig.artifacts,
+        creationConfig.dependencies,
+        creationConfig.layout
+    )
+}
+
+private fun runTaskAction(
+    inputChanges: InputChanges,
+    inputOutputs: MergeJavaResourcesInputsOutputs,
+    baseTask: BaseTask
+) {
+    fun doFullTaskAction() {
+        with(inputOutputs) {
+
+            baseTask.workerExecutor.noIsolation().submit(MergeJavaResWorkAction::class.java) {
+                it.initializeFromBaseTask(baseTask)
+                it.projectJavaRes.from(projectJavaRes)
+                it.subProjectJavaRes.set(subProjectJavaRes.toSourcedInputs(hasIncludedBuilds.get()))
+                it.externalLibJavaRes.set(externalLibJavaRes.toSourcedInputs(hasIncludedBuilds.get()) + localDepsJavaRes.toSourcedInputs())
+                it.featureJavaRes.set(featureJavaRes.toSourcedInputs(hasIncludedBuilds.get()))
+                it.outputFile.set(outputFile)
+                it.incrementalStateFile.set(incrementalStateFile)
+                it.incremental.set(false)
+                it.cacheDir.set(cacheDir)
+                it.noCompress.set(noCompress)
+                it.excludes.set(excludes)
+                it.pickFirsts.set(pickFirsts)
+                it.merges.set(merges)
+            }
+        }
+    }
+
+    fun doIncrementalTaskAction(
+        changedInputs: SerializableInputChanges,
+    ) {
+        with(inputOutputs) {
+            if (!incrementalStateFile.get().asFile.isFile) {
+                doFullTaskAction()
+                return
+            }
+            baseTask.workerExecutor.noIsolation().submit(MergeJavaResWorkAction::class.java) {
+                it.initializeFromBaseTask(baseTask)
+                it.projectJavaRes.from(projectJavaRes)
+                it.subProjectJavaRes.set(subProjectJavaRes.toSourcedInputs(hasIncludedBuilds.get()))
+                it.externalLibJavaRes.set(externalLibJavaRes.toSourcedInputs(hasIncludedBuilds.get()) + localDepsJavaRes.toSourcedInputs())
+                it.featureJavaRes.set(featureJavaRes.toSourcedInputs(hasIncludedBuilds.get()))
+                it.outputFile.set(outputFile)
+                it.incrementalStateFile.set(incrementalStateFile)
+                it.incremental.set(true)
+                it.cacheDir.set(cacheDir)
+                it.changedInputs.set(changedInputs)
+                it.noCompress.set(noCompress)
+                it.excludes.set(excludes)
+                it.pickFirsts.set(pickFirsts)
+                it.merges.set(merges)
+            }
+        }
+    }
+    if (inputChanges.isIncremental) {
+        // TODO(b/225872980): Unify with IncrementalChanges.classpathToRelativeFileSet
+        //  (see IncrementalMergerFileUtils.collectChanges)
+        doIncrementalTaskAction(
+            with(inputOutputs) {
+                listOf(
+                    inputChanges.getChangesInSerializableForm(projectJavaRes),
+                    inputChanges.getChangesInSerializableForm(subProjectJavaRes.fileCollection),
+                    inputChanges.getChangesInSerializableForm(externalLibJavaRes.fileCollection),
+                    inputChanges.getChangesInSerializableForm(featureJavaRes.fileCollection)
+                ).let {
+                    SerializableInputChanges(
+                        roots = it.flatMap(SerializableInputChanges::roots),
+                        changes = it.flatMap(SerializableInputChanges::changes)
+                    )
+                }
+            },
+        )
+
+    } else {
+        doFullTaskAction()
+    }
+}
+
+/**
+ * Wrapper around an [ArtifactCollection] that's optional.
+ *
+ * There are cases where the collection is optional and not set. This makes it cumbersome
+ * to hold the artifact collection and compute on-demand the fileCollection from it. Instead,
+ * we have to set the file collection manually if the collection is set.
+ *
+ * While this is not a problem on the declaration side, it makes the setup side more
+ * awkward and error-prone. Therefore, this class attempts to encapsulate all this in a single
+ * place so that we can have all the instance behave the same reliably.
+ */
+abstract class OptionalCollectionWithProvenance @Inject constructor(objects: ObjectFactory) :
+    Serializable {
+
+    @get:Internal
+    val artifactCollection: Property<ArtifactCollection> = objects.property(ArtifactCollection::class.java)
+
+    @get:Classpath
+    @get:Incremental
+    @get:Optional
+    val fileCollection: ConfigurableFileCollection = objects.fileCollection()
+
+    internal fun set(collection: ArtifactCollection) {
+        artifactCollection.set(collection)
+        // We cannot have the fileCollection be a getter that just queries the
+        // artifact collection in case it's not set.
+        fileCollection.from(collection.artifactFiles)
+    }
+
+    internal fun disallowChanges() {
+        artifactCollection.disallowChanges()
+        fileCollection.disallowChanges()
+    }
+
+    internal fun setDisallowChanges(collection: ArtifactCollection) {
+        set(collection)
+        disallowChanges()
+    }
+
+    internal fun toSourcedInputs(displayBuildInfo: Boolean): List<SourcedInput> {
+        if (!artifactCollection.isPresent) {
+            return listOf()
+        }
+
+        return artifactCollection.get().artifacts.map {
+            val owner = it.variant.owner
+
+            val name = when (owner) {
+                is ModuleComponentIdentifier ->
+                    // Add a file-specific name so the file merger can distinguish between multiple
+                    // files in one artifact (b/377366954)
+                    "${owner.group}:${owner.module}:${owner.version}" + "/${it.file.name}"
+                is ProjectComponentIdentifier -> {
+                    if (displayBuildInfo) {
+                        "project(\"${owner.projectPath}\") - Build: ${owner.build.buildPath}"
+                    } else {
+                        "project(\"${owner.projectPath}\")"
+                    }
+                }
+                else -> owner.displayName + "/${it.file.name}"
+            }
+            SourcedInput(it.file, name)
+        }
+    }
+}
+
+private fun ConfigurableFileCollection.toSourcedInputs(): List<SourcedInput> =
+    map { SourcedInput(it, it.absolutePath) }
+
+private fun configureHasIncludedBuilds(
+    gradle: Gradle,
+    task: MergeJavaResourcesInputsOutputs
+) {
+    val gradle = gradle.parent ?: gradle
+    task.hasIncludedBuilds.setDisallowChanges(gradle.includedBuilds.isNotEmpty())
 }
 
 /** Returns true if anything's been added to the annotation processor configuration. */

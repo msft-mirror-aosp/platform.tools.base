@@ -26,6 +26,7 @@ import com.android.build.gradle.internal.fusedlibrary.FusedLibraryGlobalScope
 import com.android.build.gradle.internal.fusedlibrary.FusedLibraryInternalArtifactType
 import com.android.build.gradle.internal.tasks.AarMetadataTask
 import com.android.build.gradle.internal.tasks.BuildAnalyzer
+import com.android.build.gradle.internal.tasks.GlobalTask
 import com.android.build.gradle.internal.tasks.NonIncrementalGlobalTask
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationAction
 import com.android.build.gradle.internal.tasks.factory.TaskCreationAction
@@ -47,7 +48,7 @@ import org.gradle.work.DisableCachingByDefault
 
 @DisableCachingByDefault(because = "Task does not calculate anything, only creates a jar.")
 @BuildAnalyzer(primaryTaskCategory = TaskCategory.AAR_PACKAGING)
-abstract class FusedLibraryBundle: Jar() {
+abstract class FusedLibraryBundle: Jar(), GlobalTask {
 
     // We have to explicitly repeat the output file as the artifacts API expects a
     // RegularFileProperty annotated with OutputFile so proper dependency can be expressed.
@@ -64,7 +65,7 @@ abstract class FusedLibraryBundle: Jar() {
     abstract class CreationAction<T: FusedLibraryBundle>(
         val creationConfig: FusedLibraryGlobalScope,
         val artifactType: FusedLibraryInternalArtifactType<RegularFile>
-    ) : TaskCreationAction<T>() {
+    ) : GlobalTaskCreationAction<T>() {
 
         override fun handleProvider(taskProvider: TaskProvider<T>) {
             super.handleProvider(taskProvider)

@@ -40,6 +40,7 @@ import com.android.build.gradle.internal.services.Aapt2ThreadPoolBuildService
 import com.android.build.gradle.internal.services.DslServices
 import com.android.build.gradle.internal.services.SymbolTableBuildService
 import com.android.build.gradle.internal.tasks.MergeJavaResourceTask
+import com.android.build.gradle.internal.tasks.MergeJavaResourcesGlobalTask
 import com.android.build.gradle.internal.tasks.factory.TaskCreationAction
 import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.tasks.FusedLibraryBundleAar
@@ -310,7 +311,7 @@ class FusedLibraryPlugin @Inject constructor(
                         FusedLibraryBundleClasses.CreationActionClassesJar(variantScope),
                         FusedLibraryBundleClasses.CreationActionLintJar(variantScope),
                         FusedLibraryBundleAar.CreationAction(variantScope),
-                        MergeJavaResourceTask.FusedLibraryCreationAction(variantScope),
+                        MergeJavaResourcesGlobalTask.FusedLibraryCreationAction(variantScope),
                         FusedLibraryMergeResourceCompileSymbolsTask.CreationAction(variantScope),
                         FusedLibraryReportTask.CreationAction(variantScope),
                         FusedLibraryDependencyValidationTask.CreationAction(variantScope)

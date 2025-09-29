@@ -21,12 +21,39 @@ import org.gradle.work.DisableCachingByDefault
 import org.gradle.work.InputChanges
 
 /**
- * Base incremental task using the new input details APIs.
+ * Required API for all incremental task types.
+ */
+interface IncrementalTask {
+    fun doTaskAction(inputChanges: InputChanges)
+}
+
+/**
+ * Variant-specific incremental task using the new input details APIs.
  */
 @DisableCachingByDefault
-abstract class NewIncrementalTask: AndroidVariantTask() {
+abstract class NewIncrementalTask: IncrementalTask, AndroidVariantTask() {
 
-    abstract fun doTaskAction(inputChanges: InputChanges)
+    abstract override fun doTaskAction(inputChanges: InputChanges)
+
+    @TaskAction
+    fun taskAction(inputChanges: InputChanges) {
+        recordTaskAction {
+            if (!inputChanges.isIncremental) {
+                // manually remove all outputs (b/169701279)
+                cleanUpTaskOutputs()
+            }
+            doTaskAction(inputChanges)
+        }
+    }
+}
+
+/**
+ * Global (non-variant specific) incremental task using the new input details APIs.
+ */
+@DisableCachingByDefault
+abstract class NewIncrementalGlobalTask: IncrementalTask, AndroidGlobalTask() {
+
+    abstract override fun doTaskAction(inputChanges: InputChanges)
 
     @TaskAction
     fun taskAction(inputChanges: InputChanges) {

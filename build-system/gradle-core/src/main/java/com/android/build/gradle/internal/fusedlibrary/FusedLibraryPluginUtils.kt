@@ -49,6 +49,11 @@ import org.gradle.api.file.RegularFile
 import org.gradle.api.provider.Provider
 
 object FusedLibraryConstants {
+    /**
+     * Privacy sandbox doesn't have variants. However, some tasks e.g. lint may be required a variant
+     * name to be provided. In this case, we have a default name to be used when this is required.
+     */
+    const val DEFAULT_VARIANT_NAME = "main"
     const val EXTENSION_NAME = "androidFusedLibrary"
     const val INCLUDE_CONFIGURATION_NAME = "include"
     const val FUSED_API_CONFIGURATION_NAME = "fusedApi"

@@ -22,6 +22,7 @@ import com.android.build.gradle.internal.tasks.BaseTask
 import com.android.build.gradle.internal.tasks.BuildAnalyzer
 import com.android.build.gradle.internal.tasks.GeneratePrivacySandboxSdkRuntimeConfigFile
 import com.android.build.gradle.internal.tasks.AndroidGlobalTask
+import com.android.build.gradle.internal.tasks.NewIncrementalGlobalTask
 import com.android.build.gradle.internal.tasks.NewIncrementalTask
 import com.android.build.gradle.internal.tasks.NonIncrementalGlobalTask
 import com.android.build.gradle.internal.tasks.NonIncrementalTask
@@ -49,6 +50,7 @@ class BuildAnalyzerTest {
             NonIncrementalTask::class.java,
             UnsafeOutputsTask::class.java,
             AndroidGlobalTask::class.java,
+            NewIncrementalGlobalTask::class.java,
             NonIncrementalGlobalTask::class.java,
             UnsafeOutputsGlobalTask::class.java,
             AppPreBuildTask::class.java,

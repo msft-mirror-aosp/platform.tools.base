@@ -16,6 +16,7 @@
 package com.android.build.gradle.tasks
 
 import com.android.build.gradle.internal.tasks.BuildAnalyzer
+import com.android.build.gradle.internal.tasks.NonIncrementalGlobalTask
 import com.android.build.gradle.internal.tasks.NonIncrementalTask
 import com.android.buildanalyzer.common.TaskCategory
 import com.android.manifmerger.MergingReport
@@ -29,10 +30,7 @@ import org.gradle.work.DisableCachingByDefault
 import java.io.File
 import java.io.IOException
 
-/** A task that processes the manifest  */
-@DisableCachingByDefault
-@BuildAnalyzer(primaryTaskCategory = TaskCategory.MANIFEST)
-abstract class ManifestProcessorTask : NonIncrementalTask() {
+interface ManifestProcessor {
 
     @get:Optional
     @get:OutputFile
@@ -41,24 +39,31 @@ abstract class ManifestProcessorTask : NonIncrementalTask() {
     @get:Optional
     @get:OutputFile
     abstract val mergeBlameFile: RegularFileProperty
+}
 
-    companion object {
-        @Throws(IOException::class)
-        @JvmStatic
-        protected fun outputMergeBlameContents(
-            mergingReport: MergingReport, mergeBlameFile: File?
-        ) {
-            if (mergeBlameFile == null) {
-                return
-            }
-            val output =
-                mergingReport.getMergedDocument(MergingReport.MergedManifestKind.BLAME)
-                    ?: return
-            FileUtils.mkdirs(mergeBlameFile.parentFile)
-            Files.newWriter(
-                mergeBlameFile,
-                Charsets.UTF_8
-            ).use { writer -> writer.write(output) }
-        }
+/** A task that processes the manifest  */
+@DisableCachingByDefault
+@BuildAnalyzer(primaryTaskCategory = TaskCategory.MANIFEST)
+abstract class ManifestProcessorTask : NonIncrementalTask(), ManifestProcessor
+
+/** A task that processes the manifest  */
+@DisableCachingByDefault
+@BuildAnalyzer(primaryTaskCategory = TaskCategory.MANIFEST)
+abstract class ManifestProcessorGlobalTask : NonIncrementalGlobalTask(), ManifestProcessor
+
+@Throws(IOException::class)
+internal fun outputMergeBlameContents(
+    mergingReport: MergingReport, mergeBlameFile: File?
+) {
+    if (mergeBlameFile == null) {
+        return
     }
+    val output =
+        mergingReport.getMergedDocument(MergingReport.MergedManifestKind.BLAME)
+            ?: return
+    FileUtils.mkdirs(mergeBlameFile.parentFile)
+    Files.newWriter(
+        mergeBlameFile,
+        Charsets.UTF_8
+    ).use { writer -> writer.write(output) }
 }
