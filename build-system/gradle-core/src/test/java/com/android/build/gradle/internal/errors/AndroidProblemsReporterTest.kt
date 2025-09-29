@@ -19,37 +19,34 @@ package com.android.build.gradle.internal.errors
 import com.android.build.gradle.internal.fixtures.FakeGradleProperty
 import com.android.builder.errors.EvalIssueException
 import com.android.builder.errors.IssueReporter
-import com.android.builder.model.SyncIssue
 import com.google.common.truth.Truth
 import org.gradle.api.Action
 import org.gradle.api.problems.AdditionalData
-import org.gradle.api.problems.DocLink
+import org.gradle.api.problems.Problem
 import org.gradle.api.problems.ProblemGroup
 import org.gradle.api.problems.ProblemId
+import org.gradle.api.problems.ProblemReporter
+import org.gradle.api.problems.ProblemSpec
+import org.gradle.api.problems.Problems
 import org.gradle.api.problems.Severity
-import org.gradle.api.problems.internal.AdditionalDataSpec
-import org.gradle.api.problems.internal.GeneralDataSpec
-import org.gradle.api.problems.internal.InternalProblem
-import org.gradle.api.problems.internal.InternalProblemReporter
-import org.gradle.api.problems.internal.InternalProblemSpec
-import org.gradle.api.problems.internal.InternalProblems
 import org.gradle.api.provider.Property
-import org.gradle.problems.ProblemDiagnostics
 import org.junit.Test
 import org.mockito.Mockito
 import org.mockito.kotlin.any
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.same
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoMoreInteractions
 import org.mockito.kotlin.whenever
+import java.lang.reflect.Proxy
 import kotlin.test.fail
 
 class AndroidProblemsReporterTest {
 
     @Test
     fun testNoInteractionWithProblemsApiWhenFlagOff() {
-        val problemsServiceMock: InternalProblems = mock()
+        val problemsServiceMock: Problems = mock()
         val reporterProvider = object : AndroidProblemReporterProvider(problemsServiceMock) {
             override fun getParameters(): Parameters {
                 return object : Parameters {
@@ -70,11 +67,11 @@ class AndroidProblemsReporterTest {
 
     @Test
     fun testReportingCallsToProblemsApi() {
-        val problemsServiceMock = mock<InternalProblems>()
-        val reporterMock = mock<InternalProblemReporter>()
-        val problemMock = mock<InternalProblem>()
-        whenever(problemsServiceMock.internalReporter).thenReturn(reporterMock)
-        whenever(reporterMock.internalCreate(any<Action<InternalProblemSpec>>()))
+        val problemsServiceMock = mock<Problems>()
+        val reporterMock = mock<ProblemReporter>()
+        val problemMock = mock<Problem>()
+        whenever(problemsServiceMock.reporter).thenReturn(reporterMock)
+        whenever(reporterMock.create(any<ProblemId>(), any<Action<ProblemSpec>>()))
             .thenReturn(problemMock)
 
         val reporterProvider = object : AndroidProblemReporterProvider(problemsServiceMock) {
@@ -91,9 +88,13 @@ class AndroidProblemsReporterTest {
             IssueReporter.Severity.ERROR,
             EvalIssueException(RuntimeException(""))
         )
-
-        verify(problemsServiceMock).internalReporter
-        verify(reporterMock).internalCreate(any<Action<InternalProblemSpec>>())
+        val expectedId = ProblemId.create(
+            /* name = */ IssueReporter.Type.BUILD_TOOLS_TOO_LOW.type.toString(),
+            /* displayName = */ IssueReporter.Type.BUILD_TOOLS_TOO_LOW.name,
+            /* group = */ ProblemGroup.create("agp-sync-issues", "Sync Issues")
+        )
+        verify(problemsServiceMock).reporter
+        verify(reporterMock).create(eq(expectedId), any<Action<ProblemSpec>>())
         verify(reporterMock).report(same(problemMock))
         verifyNoMoreInteractions(problemsServiceMock)
         verifyNoMoreInteractions(reporterMock)
@@ -110,12 +111,10 @@ class AndroidProblemsReporterTest {
             evalIssueException
         ).execute(problemSpec)
 
+        // Note: id is now part of reporting call outside of problem spec.
         problemSpec.verifyRecordedFields(
             mapOf(
                 "severity" to Severity.ERROR,
-                "id.name" to SyncIssue.TYPE_BUILD_TOOLS_TOO_LOW.toString(),
-                "id.displayName" to "BUILD_TOOLS_TOO_LOW",
-                "id.group" to ProblemGroup.create("agp-sync-issues", "Sync Issues"),
                 // Not sure if message should actually go to contextual label or somewhere else
                 "contextualLabel" to "Error 1",
                 "exception" to evalIssueException,
@@ -134,12 +133,10 @@ class AndroidProblemsReporterTest {
             evalIssueException
         ).execute(problemSpec)
 
+        // Note: id is now part of reporting call outside of problem spec.
         problemSpec.verifyRecordedFields(
             mapOf(
                 "severity" to Severity.WARNING,
-                "id.name" to SyncIssue.TYPE_DEPRECATED_DSL.toString(),
-                "id.displayName" to "DEPRECATED_DSL",
-                "id.group" to ProblemGroup.create("agp-sync-issues", "Sync Issues"),
                 // Not sure if message should actually go to contextual label or somewhere else
                 "contextualLabel" to "Warning 1",
                 "exception" to evalIssueException,
@@ -163,23 +160,21 @@ class AndroidProblemsReporterTest {
             evalIssueException
         ).execute(problemSpec)
 
+        // Note: id is now part of reporting call outside of problem spec.
         problemSpec.verifyRecordedFields(
             mapOf(
                 "severity" to Severity.ERROR,
-                "id.name" to SyncIssue.TYPE_BUILD_TOOLS_TOO_LOW.toString(),
-                "id.displayName" to "BUILD_TOOLS_TOO_LOW",
-                "id.group" to ProblemGroup.create("agp-sync-issues", "Sync Issues"),
                 // Not sure if message should actually go to contextual label or somewhere else
                 "contextualLabel" to "Error 1",
                 "details" to "Line 1\nLine 2\nLine 3",
+                "additionalData.class" to SyncIssueData::class.java,
+                "additionalData.setData" to listOf("my-additional-data"),
                 "exception" to evalIssueException,
-                "additionalDataInternal.class" to GeneralDataSpec::class.java,
-                "additionalDataInternal.GeneralData.EvalIssueException.data" to "my-additional-data"
             )
         )
     }
 
-    class FakeProblemSpec : InternalProblemSpec {
+    class FakeProblemSpec : ProblemSpec {
 
         val records = mutableMapOf<String, Any>()
 
@@ -197,62 +192,32 @@ class AndroidProblemsReporterTest {
             }
         }
 
-        override fun <U : AdditionalDataSpec> additionalDataInternal(
-            p0: Class<out U>,
-            p1: Action<in U>
-        ): InternalProblemSpec = apply {
-            record("additionalDataInternal.class", p0)
-            val generalDataSpec = object : GeneralDataSpec {
-                override fun put(name: String, value: String): GeneralDataSpec = apply {
-                    record("additionalDataInternal.GeneralData.$name", value)
-                }
-            }
-            p1.execute(generalDataSpec as U)
+        override fun <T : AdditionalData> additionalData(
+            type: Class<T>,
+            config: Action<in T>
+        ): ProblemSpec = apply {
+//            val instance = DirectInstantiator.instantiate(type)
+            val instance = Proxy.newProxyInstance(type.classLoader, arrayOf(type)
+            ) { proxy, method, args -> record("additionalData." + method.name, args.asList())}
+            record("additionalData.class", type)
+            config.execute(instance as T)
         }
 
-        override fun <T : AdditionalData?> additionalData(
-            p0: Class<T?>,
-            p1: Action<in T>
-        ): InternalProblemSpec {
-            fail("Not expected to be called")
-        }
-
-        override fun taskLocation(buildTreePath: String): InternalProblemSpec = apply {
-            record("taskPathLocation", buildTreePath)
-        }
-
-        override fun documentedAt(p0: DocLink?): InternalProblemSpec = apply {
-            record("documentedAt.url", p0?.url ?: "null")
-        }
-
-        override fun id(id: ProblemId): InternalProblemSpec = apply {
-            record("id.name", id.name)
-            record("id.displayName", id.displayName)
-            record("id.group", id.group)
-        }
-
-        override fun id(
-            name: String,
-            displayName: String,
-            group: ProblemGroup
-        ): InternalProblemSpec =
-            id(ProblemId.create(name, displayName, group))
-
-        override fun contextualLabel(p0: String): InternalProblemSpec = apply {
+        override fun contextualLabel(p0: String): ProblemSpec = apply {
             record("contextualLabel", p0)
         }
 
-        override fun documentedAt(p0: String): InternalProblemSpec = apply {
+        override fun documentedAt(p0: String): ProblemSpec = apply {
             record("documentedAt", p0)
         }
 
-        override fun fileLocation(path: String): InternalProblemSpec =
+        override fun fileLocation(path: String): ProblemSpec =
             lineInFileLocation(path, -1, -1, -1)
 
-        override fun lineInFileLocation(path: String, line: Int): InternalProblemSpec =
+        override fun lineInFileLocation(path: String, line: Int): ProblemSpec =
             lineInFileLocation(path, line, -1, -1)
 
-        override fun lineInFileLocation(path: String, line: Int, column: Int): InternalProblemSpec =
+        override fun lineInFileLocation(path: String, line: Int, column: Int): ProblemSpec =
             lineInFileLocation(path, line, column, -1)
 
         override fun lineInFileLocation(
@@ -260,7 +225,7 @@ class AndroidProblemsReporterTest {
             line: Int,
             column: Int,
             length: Int
-        ): InternalProblemSpec = apply {
+        ): ProblemSpec = apply {
             record("lineInFileLocation.path", path)
             record("lineInFileLocation.line", line)
             record("lineInFileLocation.column", column)
@@ -271,35 +236,30 @@ class AndroidProblemsReporterTest {
             path: String,
             offset: Int,
             length: Int
-        ): InternalProblemSpec = apply {
+        ): ProblemSpec = apply {
             record("offsetInFileLocation.path", path)
             record("offsetInFileLocation.offset", offset)
             record("offsetInFileLocation.length", length)
         }
 
-        override fun stackLocation(): InternalProblemSpec {
+        override fun stackLocation(): ProblemSpec {
             fail("Not expected to be called")
         }
 
-        override fun details(p0: String): InternalProblemSpec = apply {
+        override fun details(p0: String): ProblemSpec = apply {
             record("details", p0)
         }
 
-        override fun solution(p0: String): InternalProblemSpec = apply {
+        override fun solution(p0: String): ProblemSpec = apply {
             record("solution", p0)
         }
 
-        override fun withException(p0: Throwable): InternalProblemSpec = apply {
+        override fun withException(p0: Throwable): ProblemSpec = apply {
             record("exception", p0)
         }
 
-        override fun severity(p0: Severity): InternalProblemSpec = apply {
+        override fun severity(p0: Severity): ProblemSpec = apply {
             record("severity", p0)
         }
-
-        override fun diagnostics(diagnostics: ProblemDiagnostics): InternalProblemSpec = apply {
-            record("diagnostics", diagnostics)
-        }
-
     }
 }

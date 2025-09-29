@@ -25,6 +25,7 @@ import com.android.build.gradle.integration.common.fixture.project.options.Gradl
 import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.options.Option
 import com.android.builder.model.v2.ide.SyncIssue
+import com.android.builder.model.v2.ide.SyncIssueDataView
 import com.android.builder.model.v2.models.ModelBuilderParameter
 import com.google.common.collect.Sets
 import com.google.common.truth.Truth
@@ -40,6 +41,7 @@ import org.gradle.tooling.ProjectConnection
 import org.gradle.tooling.ResultHandler
 import org.gradle.tooling.events.OperationType
 import org.gradle.tooling.events.ProgressEvent
+import org.gradle.tooling.events.problems.CustomAdditionalData
 import org.gradle.tooling.events.problems.ProblemAggregationEvent
 import org.gradle.tooling.events.problems.ProblemSummariesEvent
 import org.gradle.tooling.events.problems.Severity
@@ -284,10 +286,13 @@ class ModelBuilderV2 internal constructor(
                     else -> 0
                 }
                 val type = it.definition.id.name.toInt()
+                val additionalData = (it.additionalData as? CustomAdditionalData)
+                    ?.get(SyncIssueDataView::class.java)
+                    ?.data
                 """
 severity: $severity
 type: $type
-data: ${it.additionalData.asMap.get("EvalIssueException.data")}
+data: ${additionalData}
 message:
 ${it.contextualLabel.contextualLabel}
 multiLineMessage:
