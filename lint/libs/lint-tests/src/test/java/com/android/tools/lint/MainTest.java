@@ -164,14 +164,14 @@ public class MainTest extends AbstractCheckTest {
                 }
             }
             if (expectedError != null && !expectedError.trim().equals(stderr.trim())) {
-                // TODO: https://youtrack.jetbrains.com/issue/KT-57715
-                //  Until then, we can't assert explicit "equals" yet.
-                if (!expectedExactMatch
-                        || Arrays.stream(args).anyMatch((arg) -> arg == "--XuseK2Uast")) {
-                    assertThat(stderr).contains(expectedError);
-                } else {
+                if (expectedExactMatch
+                        && Arrays.stream(args).anyMatch((arg) -> arg == "--XuseK1Uast")) {
                     // instead of fail: get difference in output
                     assertEquals(expectedError, stderr);
+                } else {
+                    // TODO: https://youtrack.jetbrains.com/issue/KT-57715
+                    //  Until then, we can't assert explicit "equals" yet.
+                    assertThat(stderr).contains(expectedError);
                 }
             }
             assertEquals("Unexpected exit code", expectedExitCode, exitCode);

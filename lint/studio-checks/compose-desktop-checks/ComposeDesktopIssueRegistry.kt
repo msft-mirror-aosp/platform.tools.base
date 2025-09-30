@@ -24,6 +24,13 @@ class ComposeDesktopIssueRegistry : IssueRegistry() {
 
   override val api: Int = com.android.tools.lint.detector.api.CURRENT_API
 
+  // TODO(b/415360855)
+  private val ui_lint_excludes: List<Issue> = buildList {
+    add(androidx.compose.ui.lint.ModifierDeclarationDetector.ModifierFactoryExtensionFunction)
+    add(androidx.compose.ui.lint.ModifierDeclarationDetector.ModifierFactoryReturnType)
+    add(androidx.compose.ui.lint.ModifierDeclarationDetector.ModifierFactoryUnreferencedReceiver)
+  }
+
   override val issues: List<Issue> =
     buildList {
         addAll(androidx.compose.animation.core.lint.AnimationCoreIssueRegistry().issues)
@@ -35,6 +42,7 @@ class ComposeDesktopIssueRegistry : IssueRegistry() {
         addAll(androidx.compose.runtime.saveable.lint.RuntimeSaveableIssueRegistry().issues)
         addAll(androidx.compose.ui.graphics.lint.UiGraphicsIssueRegistry().issues)
         addAll(androidx.compose.ui.lint.UiIssueRegistry().issues)
+        removeAll(ui_lint_excludes) // TODO(b/415360855)
         addAll(androidx.compose.ui.test.manifest.lint.TestManifestIssueRegistry().issues)
         addAll(androidx.compose.ui.text.lint.UiTextIssueRegistry().issues)
       }

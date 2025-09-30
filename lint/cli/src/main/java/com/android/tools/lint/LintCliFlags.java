@@ -90,7 +90,7 @@ public class LintCliFlags {
     private boolean printInternalErrorStackTrace;
     private boolean allowBaselineSuppress;
     private boolean offline;
-    private boolean useK2Uast;
+    private boolean useK2Uast = true;
     private File cacheDir;
 
     public static final int ERRNO_SUCCESS = 0;
@@ -899,8 +899,8 @@ public class LintCliFlags {
     }
 
     /**
-     * Returns true if lint is using K2 UAST, formerly known as FIR UAST. K1 UAST, retroactively
-     * named as FE1.0 UAST, by default.
+     * Returns `true` if lint is using K2 UAST, formerly known as FIR UAST, by default. `false`,
+     * otherwise, i.e., K1 UAST, retroactively named as FE1.0 UAST.
      *
      * @return whether to use K2 UAST
      */

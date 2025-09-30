@@ -58,6 +58,8 @@ test --jvmopt='-Dembedded.jdk.path=prebuilts/studio/jdk/jbr-next'
 
 # Enable Kotlin K2 mode (b/373746515).
 test --jvmopt='-Didea.kotlin.plugin.use.k2=true'
+# Enable K2 UAST by default (b/448273436)
+test --jvmopt='-Dlint.use.fir.uast=true'
 
 # Local runs require longer timeouts.
 test:local --test_timeout=120,600,1800,7200

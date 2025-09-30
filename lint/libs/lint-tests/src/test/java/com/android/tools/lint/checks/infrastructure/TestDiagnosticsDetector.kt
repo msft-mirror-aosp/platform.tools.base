@@ -111,6 +111,6 @@ internal class TestDiagnosticsDetector : Detector(), SourceCodeScanner {
     const val NULLNESS_MESSAGE =
       "Only safe (?.) or non-null asserted (!!.) calls are allowed on a nullable receiver of type"
 
-    private val useK2Uast = System.getProperty(FIR_UAST_KEY, "false").toBoolean()
+    private val useK2Uast = System.getProperty(FIR_UAST_KEY, "true").toBoolean()
   }
 }

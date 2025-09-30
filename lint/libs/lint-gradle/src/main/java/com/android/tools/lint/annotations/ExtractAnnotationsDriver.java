@@ -122,7 +122,7 @@ public class ExtractAnnotationsDriver {
         boolean strictTypedefRetention = false;
         boolean sortAnnotations = true;
         List<File> sourceRoots = null;
-        boolean useK2Uast = false;
+        boolean useK2Uast = true;
 
         File output = null;
         File proguard = null;
@@ -159,6 +159,10 @@ public class ExtractAnnotationsDriver {
                     continue;
                 case "--strict-typedef-retention":
                     strictTypedefRetention = true;
+                    continue;
+                case "--XuseK1Uast":
+                    // Same CLI flag as Lint
+                    useK2Uast = false;
                     continue;
                 case "--XuseK2Uast":
                     // Same CLI flag as Lint

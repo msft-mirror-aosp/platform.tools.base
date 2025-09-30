@@ -1505,6 +1505,8 @@ public class Main {
                 } else {
                     return ERRNO_ERRORS;
                 }
+            } else if (arg.equals("--XuseK1Uast")) {
+                flags.setUseK2Uast(false);
             } else if (arg.equals("--XuseK2Uast")) {
                 flags.setUseK2Uast(true);
             } else if (arg.equals(ARG_PRINT_INTERNAL_ERROR_STACKTRACE)) {

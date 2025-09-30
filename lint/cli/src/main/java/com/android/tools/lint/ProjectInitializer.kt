@@ -705,7 +705,7 @@ private class ProjectInitializer(val client: LintClient, val file: File, var roo
     // can walk through directories/packages, including package-info.java
     // Alas, in K1, there is no counterpart inside compiler environment initialization.
     // That is, this computation of source roots is the key for K1: b/406902458.
-    val isK2 = (client as? LintCliClient)?.flags?.useK2Uast() == true || useFirUast()
+    val isK2 = (client as? LintCliClient)?.flags?.useK2Uast() == true && useFirUast()
     if (computeSourceRoots || !isK2) {
       sourceRoots = computeSourceRoots(sources)
       testSourceRoots = computeUniqueSourceRoots("test", testSources, sourceRoots)

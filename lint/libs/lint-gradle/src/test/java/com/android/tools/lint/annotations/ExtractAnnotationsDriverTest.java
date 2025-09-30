@@ -407,9 +407,9 @@ public class ExtractAnnotationsDriverTest {
                         output.getPath(),
                         "--proguard",
                         proguard.getPath());
-        if (useK2Uast) {
+        if (!useK2Uast) {
             list = new ArrayList<>(list);
-            list.add("--XuseK2Uast");
+            list.add("--XuseK1Uast");
         }
         String[] args = list.toArray(new String[0]);
         assertNotNull(args);
