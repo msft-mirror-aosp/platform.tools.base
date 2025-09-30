@@ -68434,12 +68434,12 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "com.openai.openai-java-client-okhttp_2.19.1",
-    pom = "repository/com/openai/openai-java-client-okhttp/2.19.1/openai-java-client-okhttp-2.19.1.pom",
+    name = "com.openai.openai-java-client-okhttp_4.0.0",
+    pom = "repository/com/openai/openai-java-client-okhttp/4.0.0/openai-java-client-okhttp-4.0.0.pom",
     repo_root_path = "repository",
-    repo_path = "com/openai/openai-java-client-okhttp/2.19.1",
+    repo_path = "com/openai/openai-java-client-okhttp/4.0.0",
     deps = [
-        "com.openai.openai-java-core_2.19.1",
+        "com.openai.openai-java-core_4.0.0",
         "org.jetbrains.kotlin.kotlin-stdlib-jdk8_1.8.0",
         "com.squareup.okhttp3.okhttp_4.12.0",
         "com.squareup.okhttp3.logging-interceptor_4.12.0",
@@ -68448,10 +68448,10 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "com.openai.openai-java-core_2.19.1",
-    pom = "repository/com/openai/openai-java-core/2.19.1/openai-java-core-2.19.1.pom",
+    name = "com.openai.openai-java-core_4.0.0",
+    pom = "repository/com/openai/openai-java-core/4.0.0/openai-java-core-4.0.0.pom",
     repo_root_path = "repository",
-    repo_path = "com/openai/openai-java-core/2.19.1",
+    repo_path = "com/openai/openai-java-core/4.0.0",
     deps = [
         "com.fasterxml.jackson.core.jackson-core_2.18.2",
         "com.fasterxml.jackson.core.jackson-databind_2.18.2",
@@ -68472,12 +68472,12 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "com.openai.openai-java_2.19.1",
-    pom = "repository/com/openai/openai-java/2.19.1/openai-java-2.19.1.pom",
+    name = "com.openai.openai-java_4.0.0",
+    pom = "repository/com/openai/openai-java/4.0.0/openai-java-4.0.0.pom",
     repo_root_path = "repository",
-    repo_path = "com/openai/openai-java/2.19.1",
+    repo_path = "com/openai/openai-java/4.0.0",
     deps = [
-        "com.openai.openai-java-client-okhttp_2.19.1",
+        "com.openai.openai-java-client-okhttp_4.0.0",
         "org.jetbrains.kotlin.kotlin-stdlib-jdk8_1.8.0",
     ],
     visibility = ["//visibility:public"],
