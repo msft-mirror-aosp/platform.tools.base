@@ -161,6 +161,7 @@ class PrivateResourceDetectorTest {
       .expect(expected)
   }
 
+  @Test
   fun testStyle() {
     // Regression test for https://code.google.com/p/android/issues/detail?id=221560
     lint()
@@ -190,6 +191,7 @@ class PrivateResourceDetectorTest {
       .expectClean()
   }
 
+  @Test
   fun testOverride() {
     val expected =
       """
