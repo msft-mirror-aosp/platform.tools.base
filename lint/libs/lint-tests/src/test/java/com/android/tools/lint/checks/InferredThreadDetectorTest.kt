@@ -984,6 +984,34 @@ class InferredThreadDetectorTest : AbstractCheckTest() {
       .expectClean()
   }
 
+  // Reduced test from com.google.common.reflect.TypeToken.TypeCollector
+  fun testRecursiveBranching() {
+    lint()
+      .files(
+        java(
+            """
+            public abstract class Test<T> {
+              private void f(T type) {
+                prop(type).toString();
+                T t1 = next(type);
+                f(t1);
+                T t2 = next(type);
+                f(t2);
+              }
+
+              abstract Object prop(T type);
+
+              abstract T next(T type);
+            }
+          """
+              .trimIndent()
+          )
+          .indented()
+      )
+      .run()
+      .expectClean()
+  }
+
   fun testInterpreter_bigStep() {
     lint()
       .files(

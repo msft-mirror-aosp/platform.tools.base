@@ -186,14 +186,17 @@ class TypeEffectConstraintLattice<FX>(private val fxLattice: Lattice<FX>) {
       val casesPrev = prev.asCases()
       val casesNow = now.asCases()
       val casesJoined = casesPrev + casesNow
+      val (symsPrev, constantsPrev) = casesPrev.partitionIsInstanceOf<_, Type.Sym<Nothing>>()
+      val (symsNow, constantsNow) = casesNow.partitionIsInstanceOf<_, Type.Sym<Nothing>>()
       return when {
         casesJoined.isEmpty() -> Type.None
         casesJoined.size == 1 -> casesJoined.first()
-        !casesNow.any { it is Type.Sym.Fix || it.hasFreeRec() } &&
-          casesNow.containsAll(casesPrev) -> now
+        // In simple cases where `now` contains all of `prev`, but the extra symbols in `now`
+        // don't "grow" from any in `prev`, we return `now` without widening
+        symsNow.all {
+          it !is Type.Sym.Fix && !it.hasFreeRec() && (it in symsPrev || !it.containsAny(symsPrev))
+        } && casesNow.containsAll(casesPrev) -> now
         else -> {
-          val (symsPrev, constantsPrev) = casesPrev.partitionIsInstanceOf<_, Type.Sym<Nothing>>()
-          val (symsNow, constantsNow) = casesNow.partitionIsInstanceOf<_, Type.Sym<Nothing>>()
           val summarizedConstants = (constantsPrev + constantsNow).consolidateConstants()
           Type.Union(summarizedConstants + summarize(symsPrev, symsNow))
         }
@@ -331,6 +334,16 @@ class TypeEffectConstraintLattice<FX>(private val fxLattice: Lattice<FX>) {
         else -> rec(target)
       }
     }
+
+    /** Checks [this] "grows" from any symbol in [base] */
+    private fun Type<FX>.containsAny(base: PersistentSet<Type.Sym<FX>>): Boolean =
+      when (this) {
+        is Type.Union -> cases.any { it.containsAny(base) }
+        !is Type.Sym -> false
+        in base -> true
+        is Type.Sym.Invoke -> receiver.containsAny(base) || args.any { it.containsAny(base) }
+        else -> false
+      }
 
     /** Collapse symbolic invocations of the same receiver and method */
     private fun PersistentSet<Type.Sym<FX>>.consolidateSymbols(): PersistentSet<Type.Sym<FX>> =

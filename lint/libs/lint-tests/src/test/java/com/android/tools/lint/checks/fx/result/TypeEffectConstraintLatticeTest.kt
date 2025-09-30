@@ -102,6 +102,15 @@ class TypeLatticeTest :
     val sym = y["f", Type.Application(ClassId.of<List<*>>(), listOf(x))]
     Truth.assertThat(widen(x, x join sym)).isEqualTo(x join sym)
   }
+
+  @Test
+  fun `widen growing set`() {
+    // `x ∪ y.f(x)` and `x ∪ y.f(x) ∪ y.f(x).f(x)` should get widened to `μα.x ∪ y.f(α) ∪ α.f(α)`
+    val sym = y["f", x]
+    val sym1 = sym["f", x]
+    Truth.assertThat(widen(x join sym, x join sym join sym1))
+      .isEqualTo(fix { listOf(x, y["f", it], it["f", it]) })
+  }
 }
 
 class EffectLatticeTest :
