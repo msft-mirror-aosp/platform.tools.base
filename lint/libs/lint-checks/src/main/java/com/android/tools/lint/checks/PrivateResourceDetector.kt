@@ -316,10 +316,25 @@ class PrivateResourceDetector
     val type = types[0]
     val resourceName = resourceNameToFieldName(getBaseName(file.getName()))
     if (isPrivate(context, type, resourceName)) {
+      if (isXmlFile(file)) {
+        recordOverriding(type, resourceName)
+        if (hasOverride(context)) {
+          return
+        }
+      }
       val message: String = createOverrideErrorMessage(context, type, resourceName)
       val location = Location.create(file)
       context.report(ISSUE, location, message)
     }
+  }
+
+  private fun hasOverride(context: Context): Boolean {
+    if (context is XmlContext) {
+      val element = context.document.documentElement ?: return false
+      return VALUE_TRUE == element.getAttributeNS(TOOLS_URI, ATTR_OVERRIDE)
+    }
+
+    return false
   }
 
   private fun createOverrideErrorMessage(
