@@ -690,7 +690,7 @@ DATA = [
     "com.android.tools.utp:android-test-plugin-result-listener-gradle:jar:30.2.0",
     "com.android.tools.utp:android-test-plugin-result-listener-gradle:jar:31.1.0",
     "com.android:zipflinger:8.7.0",
-    "com.anthropic:anthropic-java:2.6.0",
+    "com.anthropic:anthropic-java:2.8.1",
     "com.beust:jcommander:1.82",
     "com.charleskorn.kaml:kaml:0.72.0",
     "com.crashlytics.sdk.android:crashlytics:2.6.8",
@@ -1267,7 +1267,7 @@ DATA = [
     "androidx.lifecycle:lifecycle-viewmodel-desktop:jar:sources:2.8.5",
     "androidx.sqlite:sqlite-bundled-jvm:jar:sources:2.5.0-beta01",  # Database Inspector
     "androidx.sqlite:sqlite-jvm:jar:sources:2.5.0-beta01",  # Database Inspector
-    "com.anthropic:anthropic-java-core:jar:sources:2.6.0",
+    "com.anthropic:anthropic-java-core:jar:sources:2.8.1",
     "com.squareup.okhttp3:okhttp:jar:sources:4.12.0",
     "com.squareup.okio:okio-jvm:jar:sources:3.6.0",
     "io.grpc:grpc-all:jar:sources:1.69.1",

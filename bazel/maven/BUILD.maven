@@ -62224,12 +62224,12 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "com.anthropic.anthropic-java-client-okhttp_2.6.0",
-    pom = "repository/com/anthropic/anthropic-java-client-okhttp/2.6.0/anthropic-java-client-okhttp-2.6.0.pom",
+    name = "com.anthropic.anthropic-java-client-okhttp_2.8.1",
+    pom = "repository/com/anthropic/anthropic-java-client-okhttp/2.8.1/anthropic-java-client-okhttp-2.8.1.pom",
     repo_root_path = "repository",
-    repo_path = "com/anthropic/anthropic-java-client-okhttp/2.6.0",
+    repo_path = "com/anthropic/anthropic-java-client-okhttp/2.8.1",
     deps = [
-        "com.anthropic.anthropic-java-core_2.6.0",
+        "com.anthropic.anthropic-java-core_2.8.1",
         "org.jetbrains.kotlin.kotlin-stdlib-jdk8_1.8.0",
         "com.squareup.okhttp3.okhttp_4.12.0",
         "com.squareup.okhttp3.logging-interceptor_4.12.0",
@@ -62238,10 +62238,10 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "com.anthropic.anthropic-java-core_2.6.0",
-    pom = "repository/com/anthropic/anthropic-java-core/2.6.0/anthropic-java-core-2.6.0.pom",
+    name = "com.anthropic.anthropic-java-core_2.8.1",
+    pom = "repository/com/anthropic/anthropic-java-core/2.8.1/anthropic-java-core-2.8.1.pom",
     repo_root_path = "repository",
-    repo_path = "com/anthropic/anthropic-java-core/2.6.0",
+    repo_path = "com/anthropic/anthropic-java-core/2.8.1",
     deps = [
         "com.fasterxml.jackson.core.jackson-core_2.18.2",
         "com.fasterxml.jackson.core.jackson-databind_2.18.2",
@@ -62258,12 +62258,12 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "com.anthropic.anthropic-java_2.6.0",
-    pom = "repository/com/anthropic/anthropic-java/2.6.0/anthropic-java-2.6.0.pom",
+    name = "com.anthropic.anthropic-java_2.8.1",
+    pom = "repository/com/anthropic/anthropic-java/2.8.1/anthropic-java-2.8.1.pom",
     repo_root_path = "repository",
-    repo_path = "com/anthropic/anthropic-java/2.6.0",
+    repo_path = "com/anthropic/anthropic-java/2.8.1",
     deps = [
-        "com.anthropic.anthropic-java-client-okhttp_2.6.0",
+        "com.anthropic.anthropic-java-client-okhttp_2.8.1",
         "org.jetbrains.kotlin.kotlin-stdlib-jdk8_1.8.0",
     ],
     visibility = ["//visibility:public"],
