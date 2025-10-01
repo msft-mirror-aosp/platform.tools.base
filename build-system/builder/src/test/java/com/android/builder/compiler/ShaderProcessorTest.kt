@@ -1,0 +1,47 @@
+/*
+ * Copyright (C) 2025 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.android.builder.compiler
+
+import com.android.builder.internal.compiler.ShaderProcessor
+import org.hamcrest.core.StringStartsWith.startsWith
+import org.junit.Rule
+import org.junit.Test
+import org.junit.rules.ExpectedException
+import java.io.File
+
+class ShaderProcessorTest {
+
+    @JvmField
+    @Rule
+    var expectedEx: ExpectedException = ExpectedException.none()
+
+    @Test
+    fun testFakeNdkPath() {
+        expectedEx.expect(IllegalStateException::class.java)
+        expectedEx.expectMessage(startsWith("NDK location should point to existing directory"))
+        val file = File("/fake/path")
+        ShaderProcessor.getGlslcLocation(file, null)
+    }
+
+    @Test
+    fun testFileAsNdkPath() {
+        expectedEx.expect(IllegalStateException::class.java)
+        expectedEx.expectMessage(startsWith("NDK location should point to existing directory"))
+        val file = File.createTempFile("some","file")
+        ShaderProcessor.getGlslcLocation(file, null)
+    }
+}

@@ -53,17 +53,6 @@ public class ShaderProcessor {
     public static final String EXT_COMP = "comp";
 
     public static File getGlslcLocation(@NonNull File ndkLocation, @Nullable File customGlslc) {
-        if (ndkLocation == null) {
-            throw new IllegalStateException(
-                    "NDK location is missing. It is required to compile shaders.");
-        }
-
-        if (ndkLocation == null || !ndkLocation.isDirectory()) {
-            throw new IllegalStateException(
-                    "NDK location does not exist. It is required to compile shaders: "
-                            + ndkLocation);
-        }
-
         // trying custom location from local.properties first
         if (customGlslc != null) {
             if (customGlslc.isDirectory()) {
@@ -80,6 +69,16 @@ public class ShaderProcessor {
         }
 
         // fall back to NDK
+        if (ndkLocation == null) {
+            throw new IllegalStateException(
+                    "NDK location is missing. It is required to compile shaders.");
+        }
+
+        if (!ndkLocation.isDirectory()) {
+            throw new IllegalStateException(
+                    "NDK location should point to existing directory. Now it points to file: "
+                            + ndkLocation);
+        }
 
         // find the location of the compiler.
         File glslcRootFolder = new File(ndkLocation, SdkConstants.FD_SHADER_TOOLS);
