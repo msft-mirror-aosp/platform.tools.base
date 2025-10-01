@@ -582,6 +582,9 @@ public class DeviceManager {
     public static Map<String, String> getHardwareProperties(@NonNull State s) {
         Hardware hw = s.getHardware();
         Map<String, String> props = new HashMap<>();
+        if (hw.getScreen().getScreenType().equals(ScreenType.NOTOUCH)) {
+            props.put(HardwareProperties.HW_SCREEN, HardwareProperties.HW_SCREEN_NOTOUCH);
+        }
         props.put(
                 HardwareProperties.HW_MAINKEYS,
                 getBooleanVal(hw.getButtonType().equals(ButtonType.HARD)));

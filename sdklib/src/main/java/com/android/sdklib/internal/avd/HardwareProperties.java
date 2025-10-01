@@ -31,6 +31,10 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class HardwareProperties {
+    /** AVD/config.ini key for the type of screen */
+    public static final String HW_SCREEN = "hw.screen";
+    /** AVD/config.ini value for when the type of screen is notouch*/
+    public static final String HW_SCREEN_NOTOUCH = "no-touch";
     /** AVD/config.ini key for whether hardware buttons are present. */
     public static final String HW_MAINKEYS = "hw.mainKeys";
 
