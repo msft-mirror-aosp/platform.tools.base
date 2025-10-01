@@ -36,15 +36,15 @@ class PixelPerfect(private var imageDiffThreshold: Float = 0f) : ImageDiffer {
         val highlights = pixelDiff.first
         val numPixelsDifferent = pixelDiff.second
 
-        val percentDiff: Float = numPixelsDifferent.toFloat() / (a.width * a.height)
-        val percentDiffString = "${BigDecimal(percentDiff.toDouble() * 100).setScale(2, RoundingMode.HALF_EVEN)}%"
+        val percentDiff: Double = numPixelsDifferent.toDouble() / (a.width * a.height)
+        val percentDiffString = "${BigDecimal(percentDiff * 100).setScale(2, RoundingMode.HALF_EVEN)}%"
         val description = "Pixel percentage difference: $percentDiffString. $numPixelsDifferent of ${a.width * a.height} pixels are different"
         return if (numPixelsDifferent == 0) {
-            Similar(description, null, percentDiffString)
+            Similar(description, null, percentDiff)
         } else if (percentDiff.compareTo(imageDiffThreshold) <= 0) {
-            Similar(description, highlights, percentDiffString)
+            Similar(description, highlights, percentDiff)
         } else {
-            Different(description, highlights, percentDiffString)
+            Different(description, highlights, percentDiff)
         }
     }
 }

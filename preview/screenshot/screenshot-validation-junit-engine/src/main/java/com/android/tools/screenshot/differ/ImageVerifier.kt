@@ -22,7 +22,7 @@ import javax.imageio.ImageIO
 
 data class VerificationResult(
     val diffResult: ImageDiffer.DiffResult,
-    val diffPercent: String?
+    val diffPercent: Double?
 )
 
 class ImageVerifier(private val imageDiffer: ImageDiffer) {
@@ -62,7 +62,7 @@ class ImageVerifier(private val imageDiffer: ImageDiffer) {
         }
 
         // Extract percentDiff from the diff result
-        val diffPercentValue: String? = when (diff) {
+        val diffPercentValue: Double? = when (diff) {
             is ImageDiffer.DiffResult.Similar -> diff.percentDiff
             is ImageDiffer.DiffResult.Different -> diff.percentDiff
             else -> null
@@ -81,7 +81,7 @@ class ImageVerifier(private val imageDiffer: ImageDiffer) {
             get() = super.message + "\n" +
                 "Expected: $expectedImagePath\n" +
                 "Actual: $actualImagePath\n" +
-                (diffPercentage?.let { "Difference: ${"%.2f".format(it)}%\n"} ?: "") +
+                (diffPercentage?.let { "Difference: ${"%.2f".format(it*100)}%\n"} ?: "") +
                 (diffImagePath?.let { "Diff Image: $it\n" } ?: "")
     }
 }
