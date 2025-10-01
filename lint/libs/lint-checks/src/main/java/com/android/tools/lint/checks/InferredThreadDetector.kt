@@ -85,11 +85,11 @@ class InferredThreadDetector : ThreadConstraintDetector<Thread>(lattice, assumpt
           category = Category.CORRECTNESS,
           priority = 6,
           severity = Severity.ERROR,
-          enabledByDefault = false,
+          enabledByDefault = true,
           androidSpecific = true,
           implementation = Impl,
         )
-        .setAliases(listOf(WrongThreadInterproceduralDetector.ISSUE.id))
+        .setAliases(listOf(ThreadDetector.THREAD.id, WrongThreadInterproceduralDetector.ISSUE.id))
 
     val lattice = ThreadConstraintLattice.of<Thread>()
 
