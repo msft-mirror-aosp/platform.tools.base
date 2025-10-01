@@ -18,7 +18,18 @@ else
   exit 1
 fi
 
+startup_options=("--max_idle_secs=60")
+if [[ "${INCREMENTAL_BUILD}" == "true" ]]; then
+  # LINT.IfChange(bazel_user_root)
+  startup_options+=("--output_user_root=${WORKSPACE}/out2/bazel_user_root")
+  startup_options+=("--output_base=${WORKSPACE}/out/bazel_out")
+  startup_options+=("--install_base=${WORKSPACE}/out/bazel_install")
+  # LINT.ThenChange(/bazel/ci/bazel.py:bazel_user_root)
+fi
+
 # Add JDK to the PATH, so rules_jvm_external can find the 'java' binary.
 export PATH="${JDK_HOME}:${PYTHON3_HOME}:${PATH}"
 BAZELISK="$WORKSPACE/prebuilts/tools/$PLATFORM/bazel/bazelisk"
-"$BAZELISK" --max_idle_secs=60 run --config=ci //tools/base/bazel/ci -- $1
+"$BAZELISK" "${startup_options[@]}" run \
+  --config=ci \
+  //tools/base/bazel/ci -- $1

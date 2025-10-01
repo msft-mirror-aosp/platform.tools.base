@@ -135,9 +135,18 @@ def make_build_env(
 
   startup_options = ["--max_idle_secs=60"]
   if build_target_name and user == "android-build":  # AB environment
-    install_base = os.path.join(tmp_dir, "bazel_install", bazel_version)
+    parent_out_dir = tmp_dir
+    # When on BYOC builders, use the 'out' directory for incremental builds.
+    if os.environ.get("INCREMENTAL_BUILD") == "true":
+      parent_out_dir = os.path.join(workspace_dir, "out")
+      # LINT.IfChange(bazel_user_root)
+      incremental_user_root = os.path.join(parent_out_dir, "bazel_user_root")
+      startup_options.append(f"--output_user_root={incremental_user_root}")
+      # LINT.ThenChange(/bazel/ci/ci:bazel_user_root)
+
+    install_base = os.path.join(parent_out_dir, "bazel_install", bazel_version)
     startup_options.extend([
-        f"--output_base={os.path.join(tmp_dir, 'bazel_out')}",
+        f"--output_base={os.path.join(parent_out_dir, 'bazel_out')}",
         f"--install_base={install_base}",
     ])
 
