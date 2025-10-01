@@ -1338,6 +1338,7 @@ public final class SdkConstants {
     public static final String ATTR_PATH_PATTERN = "pathPattern";
     public static final String ATTR_PATH_SUFFIX = "pathSuffix";
     public static final String ATTR_PATH_ADVANCED_PATTERN = "pathAdvancedPattern";
+    public static final String ATTR_PURPOSE_STRING = "purposeString";
     public static final String ATTR_FRAGMENT_ADVANCED_PATTERN = "fragmentAdvancedPattern";
     public static final String ATTR_FRAGMENT_PATTERN = "fragmentPattern";
     public static final String ATTR_FRAGMENT_PREFIX = "fragmentPrefix";
