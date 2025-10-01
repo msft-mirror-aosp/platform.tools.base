@@ -20,7 +20,9 @@ import com.android.build.api.artifact.ScopedArtifact
 import com.android.build.api.artifact.impl.InternalScopedArtifacts
 import com.android.build.api.attributes.BuildTypeAttr
 import com.android.build.api.dsl.FusedLibraryExtension
+import com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryExtension
 import com.android.build.api.dsl.MinSdkVersion
+import com.android.build.api.dsl.SettingsExtension
 import com.android.build.gradle.internal.dependency.configureKotlinPlatformAttribute
 import com.android.build.gradle.internal.dsl.FusedLibraryExtensionImpl
 import com.android.build.gradle.internal.dsl.InternalFusedLibraryExtension
@@ -112,6 +114,19 @@ class FusedLibraryPlugin @Inject constructor(
         }
     }
 
+    private fun FusedLibraryExtensionImpl.initExtensionFromSettings(
+        settings: SettingsExtension
+    ) {
+        settings.minSdk?.let { minSdk ->
+            this.minSdkDelegate.setMinSdkVersion(minSdk)
+        }
+
+        settings.minSdkPreview?.let { minSdkPreview ->
+            this.minSdkDelegate.setMinSdkVersion(minSdkPreview)
+        }
+    }
+
+
     override fun configureProject(project: Project) {
         Aapt2DaemonBuildService
             .RegistrationAction(project, projectServices.projectOptions).execute()
@@ -141,6 +156,9 @@ class FusedLibraryPlugin @Inject constructor(
                 Extension::class.java,
                 fusedLibraryExtensionImpl
         )
+        settingsExtension?.let {
+            fusedLibraryExtensionImpl.initExtensionFromSettings(it)
+        }
         return fusedLibraryExtensionImpl
     }
 

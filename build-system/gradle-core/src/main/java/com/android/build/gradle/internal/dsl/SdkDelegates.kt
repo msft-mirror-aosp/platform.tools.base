@@ -247,7 +247,7 @@ interface MinSdkProperties {
     fun setMinSdkVersion(minSdkVersion: String?)
 }
 
-internal class MinSdkDelegate(
+class MinSdkDelegate(
     private val getMinSdk: () -> MinSdkVersion?,
     private val setMinSdk: (MinSdkVersion?) -> Unit,
     private val dslServices: DslServices

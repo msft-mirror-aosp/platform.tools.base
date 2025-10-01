@@ -22,6 +22,10 @@ import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.plugins.GenericCallback
 import com.android.build.gradle.integration.common.output.JarSubject
 import com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
+import com.android.build.gradle.integration.fusedlibrary.FusedLibraryTestConstants.FUSED_LIBRARY_ARTIFACT_NAME
+import com.android.build.gradle.integration.fusedlibrary.FusedLibraryTestConstants.FUSED_LIBRARY_GROUP
+import com.android.build.gradle.integration.fusedlibrary.FusedLibraryTestConstants.FUSED_LIBRARY_REPO_NAME
+import com.android.build.gradle.integration.fusedlibrary.FusedLibraryTestConstants.FUSED_LIBRARY_VERSION
 import com.android.build.gradle.options.BooleanOption
 import com.google.common.truth.Truth
 import org.gradle.api.Project
@@ -136,7 +140,7 @@ class FusedLibraryTest {
                         version = release(DEFAULT_MIN_SDK_VERSION)
                     }
                 }
-                pluginCallbacks += FusedLibCallback::class.java
+                pluginCallbacks += FusedLibPublicationCallback::class.java
                 dependencies {
                     include(project(":androidLib1"))
                     include(project(":androidLib2"))
@@ -147,29 +151,6 @@ class FusedLibraryTest {
                 add(BooleanOption.FUSED_LIBRARY_SUPPORT, true)
             }
         }
-
-    class FusedLibCallback: GenericCallback {
-        override fun handleProject(project: Project) {
-            project.plugins.apply("maven-publish")
-
-            val publishing = project.extensions.findByType(PublishingExtension::class.java)
-                ?: throw RuntimeException("Could not find extension of type PublishingExtension")
-            publishing.apply {
-                publications.create("release", MavenPublication::class.java) {
-                    it.groupId = FUSED_LIBRARY_GROUP
-                    it.artifactId = FUSED_LIBRARY_ARTIFACT_NAME
-                    it.version = FUSED_LIBRARY_VERSION
-                    it.from(project.components.getByName("fusedLibraryComponent"))
-                }
-                repositories {
-                    it.maven {
-                        it.name = "myrepo"
-                        it.url = project.uri(project.layout.buildDirectory.dir(FUSED_LIBRARY_REPO_NAME))
-                    }
-                }
-            }
-        }
-    }
 
     @Test
     fun checkAarNoPublishing() {
@@ -259,11 +240,33 @@ class FusedLibraryTest {
                 "   Recommended Action: Ensure any sources added to `:fusedLib1` are moved to an " +
                     "Android Library that is a dependency of `:fusedLib1`")
     }
+}
 
-    companion object {
-        private const val FUSED_LIBRARY_GROUP = "my-company"
-        private const val FUSED_LIBRARY_ARTIFACT_NAME = "my-fused-library"
-        private const val FUSED_LIBRARY_VERSION = "1.0"
-        private const val FUSED_LIBRARY_REPO_NAME = "repo"
+object FusedLibraryTestConstants {
+    const val FUSED_LIBRARY_GROUP = "my-company"
+    const val FUSED_LIBRARY_ARTIFACT_NAME = "my-fused-library"
+    const val FUSED_LIBRARY_VERSION = "1.0"
+    const val FUSED_LIBRARY_REPO_NAME = "repo"
+}
+class FusedLibPublicationCallback: GenericCallback {
+    override fun handleProject(project: Project) {
+        project.plugins.apply("maven-publish")
+
+        val publishing = project.extensions.findByType(PublishingExtension::class.java)
+            ?: throw RuntimeException("Could not find extension of type PublishingExtension")
+        publishing.apply {
+            publications.create("release", MavenPublication::class.java) {
+                it.groupId = FUSED_LIBRARY_GROUP
+                it.artifactId = FUSED_LIBRARY_ARTIFACT_NAME
+                it.version = FUSED_LIBRARY_VERSION
+                it.from(project.components.getByName("fusedLibraryComponent"))
+            }
+            repositories {
+                it.maven {
+                    it.name = "myrepo"
+                    it.url = project.uri(project.layout.buildDirectory.dir(FUSED_LIBRARY_REPO_NAME))
+                }
+            }
+        }
     }
 }

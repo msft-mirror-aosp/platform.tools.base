@@ -30,7 +30,7 @@ abstract class FusedLibraryExtensionImpl @Inject constructor(
 
     protected abstract var _minSdkVersion: MinSdkVersion?
 
-    private val minSdkDelegate = MinSdkDelegate(
+    internal val minSdkDelegate = MinSdkDelegate(
         getMinSdk = { _minSdkVersion },
         setMinSdk = { _minSdkVersion = it },
         dslServices = dslServices
