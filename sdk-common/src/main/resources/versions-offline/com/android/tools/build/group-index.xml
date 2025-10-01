@@ -9,7 +9,7 @@
   <builder-model versions="4.2.2,7.4.2,8.1.0-alpha10"/>
   <builder-test-api versions="4.2.2,7.4.2,8.1.0-alpha10"/>
   <bundletool versions="0.15.0,1.14.0"/>
-  <gradle versions="4.2.2,7.4.2,8.1.0-alpha10"/>
+  <gradle versions="3.0.0,3.1.4,3.3.2,3.5.0,4.0.0,4.0.0-beta04,4.0.1,4.1.0,4.2.0,4.2.2,7.0.0,7.0.4,7.1.0,7.2.0,7.3.0,7.3.1,7.4.0,7.4.1,7.4.2,8.0.0-beta03,8.0.2,8.1.0-alpha10,8.1.0,8.10.1,8.11.0,8.11.0-rc02,8.12.0,8.13.0,8.2.0,8.2.0-beta01,8.2.2,8.3.1,8.4.0,8.5.0,8.6.0,8.7.0,8.8.0,8.9.0"/>
   <gradle-api versions="4.2.2,7.4.2,8.1.0-alpha10"/>
   <gradle-core versions="3.1.4,3.2.0-alpha10"/>
   <gradle-experimental versions="0.11.1"/>
