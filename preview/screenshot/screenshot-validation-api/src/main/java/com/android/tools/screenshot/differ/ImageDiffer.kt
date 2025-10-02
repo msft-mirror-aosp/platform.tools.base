@@ -55,18 +55,18 @@ fun interface ImageDiffer {
     sealed interface DiffResult {
         val description: String
         val highlights: BufferedImage?
-        val percentDiff: String?
+        val percentDiff: Double?
 
         data class Similar(
             override val description: String,
             override val highlights: BufferedImage? = null,
-            override val percentDiff: String? = null
+            override val percentDiff: Double? = null
         ) : DiffResult
 
         data class Different(
             override val description: String,
             override val highlights: BufferedImage,
-            override val percentDiff: String? = null
+            override val percentDiff: Double? = null
         ) : DiffResult
     }
 }

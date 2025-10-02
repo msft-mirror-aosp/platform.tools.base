@@ -78,7 +78,7 @@ class ImageVerifierTest {
         )
 
         assertThat(result.diffResult).isInstanceOf(ImageDiffer.DiffResult.Similar::class.java)
-        assertThat(result.diffPercent).isEqualTo("0.00%")
+        assertThat(result.diffPercent).isEqualTo(0.0)
         assertThat(diffImage.exists()).isFalse()
     }
 
@@ -94,7 +94,8 @@ class ImageVerifierTest {
         )
 
         assertThat(result.diffResult).isInstanceOf(ImageDiffer.DiffResult.Similar::class.java)
-        assertThat(result.diffPercent).isNotEqualTo("0.00%")
+        assertThat(result.diffPercent).isNotEqualTo(0.0)
+        assertThat(result.diffPercent).isWithin(0.0001).of(0.2722)
         assertThat(diffImage.exists()).isTrue()
     }
 
@@ -110,8 +111,8 @@ class ImageVerifierTest {
 
         assertThat(result.diffResult).isInstanceOf(ImageDiffer.DiffResult.Different::class.java)
         assertNotNull(result.diffPercent)
-        assertThat(result.diffPercent).endsWith("%")
-        assertThat(result.diffPercent).isNotEqualTo("0.00%")
+        assertThat(result.diffPercent).isNotNull()
+        assertThat(result.diffPercent).isWithin(0.0001).of(0.2722)
         assertThat(diffImage.exists()).isTrue()
 
         // Verify that the generated diff image is what we expect.
@@ -122,7 +123,7 @@ class ImageVerifierTest {
         )
 
         assertThat(diffCheckResult.diffResult).isInstanceOf(ImageDiffer.DiffResult.Similar::class.java)
-        assertThat(diffCheckResult.diffPercent).isEqualTo("0.00%")
+        assertThat(diffCheckResult.diffPercent).isEqualTo(0.0)
     }
 
     @Test

@@ -81,7 +81,7 @@ class PreviewScreenshotDescriptor(
                     throw ImageVerifier.ImageComparisonAssertionError(
                         refImagePath,
                         newImagePath,
-                        verificationResult.diffPercent?.trimEnd('%')?.toDoubleOrNull(),
+                        verificationResult.diffPercent,
                         diffImagePath
                     )
                 }
@@ -90,7 +90,7 @@ class PreviewScreenshotDescriptor(
             // Always report diffPercentValue from the verification result
             verificationResult?.diffPercent?.let {
                 context.executionListener.reportingEntryPublished(
-                    this, ReportEntry.from("PreviewScreenshot.diffPercent", it)
+                    this, ReportEntry.from("PreviewScreenshot.diffPercent", it.toString())
                 )
             }
 

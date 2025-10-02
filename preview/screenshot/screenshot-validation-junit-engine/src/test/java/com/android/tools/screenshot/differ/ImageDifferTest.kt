@@ -21,6 +21,7 @@ import kotlin.test.assertIs
 import kotlin.test.assertNull
 import org.junit.Test
 import org.junit.Assert.assertEquals
+import com.google.common.truth.Truth.assertThat
 
 class ImageDifferTest {
     @Test
@@ -64,7 +65,7 @@ class ImageDifferTest {
         assertIs<ImageDiffer.DiffResult.Similar>(result)
         assertEquals("Pixel percentage difference: 0.00%. 0 of 65536 pixels are different", result.description)
         assertNull(result.highlights)
-        assertEquals(result.percentDiff, "0.00%")
+        assertThat(result.percentDiff).isEqualTo(0.0)
     }
 
     @Test
@@ -77,7 +78,7 @@ class ImageDifferTest {
         assertIs<ImageDiffer.DiffResult.Similar>(
             PixelPerfect().diff(result.highlights!!, loadTestImage("PixelPerfect_diff"))
         )
-        assertEquals(result.percentDiff, "27.22%")
+        assertThat(result.percentDiff).isWithin(0.0001).of(0.2722) // Approximate double comparison
     }
 
     @Test
@@ -89,7 +90,7 @@ class ImageDifferTest {
         assertIs<ImageDiffer.DiffResult.Similar>(
             PixelPerfect().diff(result.highlights, loadTestImage("PixelPerfect_diff"))
         )
-        assertEquals(result.percentDiff, "27.22%")
+        assertThat(result.percentDiff).isWithin(0.0001).of(0.2722) // Approximate double comparison
     }
 
     @Test
