@@ -762,6 +762,7 @@ DATA = [
     "com.google.dagger:dagger-compiler:2.6",
     "com.google.dagger.hilt.android:com.google.dagger.hilt.android.gradle.plugin:pom:2.44.2",  # Dependency of architecture-samples
     "com.google.dagger:hilt-android:2.40.1",
+    "com.google.dagger:hilt-android-compiler:2.40.1",
     "com.google.dagger:hilt-android-gradle-plugin:2.40.1",
     "com.google.dagger:hilt-android-testing:2.44.2",  # Dependency of architecture-samples
     "com.google.dagger:hilt-compiler:2.40.1",
