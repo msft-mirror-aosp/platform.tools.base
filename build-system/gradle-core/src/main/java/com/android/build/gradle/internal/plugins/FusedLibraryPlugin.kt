@@ -20,9 +20,6 @@ import com.android.build.api.artifact.ScopedArtifact
 import com.android.build.api.artifact.impl.InternalScopedArtifacts
 import com.android.build.api.attributes.BuildTypeAttr
 import com.android.build.api.dsl.FusedLibraryExtension
-import com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryExtension
-import com.android.build.api.dsl.MinSdkVersion
-import com.android.build.api.dsl.SettingsExtension
 import com.android.build.gradle.internal.dependency.configureKotlinPlatformAttribute
 import com.android.build.gradle.internal.dsl.FusedLibraryExtensionImpl
 import com.android.build.gradle.internal.dsl.InternalFusedLibraryExtension
@@ -66,7 +63,6 @@ import org.gradle.api.artifacts.Configuration
 import org.gradle.api.artifacts.Dependency
 import org.gradle.api.artifacts.ModuleVersionIdentifier
 import org.gradle.api.attributes.Bundling
-import org.gradle.api.attributes.Bundling.BUNDLING_ATTRIBUTE
 import org.gradle.api.attributes.Category
 import org.gradle.api.attributes.Category.CATEGORY_ATTRIBUTE
 import org.gradle.api.attributes.DocsType
@@ -80,9 +76,7 @@ import org.gradle.api.publish.PublishingExtension
 import org.gradle.api.publish.maven.MavenPom
 import org.gradle.api.publish.maven.MavenPublication
 import org.gradle.build.event.BuildEventsListenerRegistry
-import org.jdom2.DocType
 import shadow.bundletool.com.android.SdkConstants
-import shadow.bundletool.com.android.tools.r8.internal.tR
 import javax.inject.Inject
 
 @Suppress("UnstableApiUsage")
@@ -114,19 +108,6 @@ class FusedLibraryPlugin @Inject constructor(
         }
     }
 
-    private fun FusedLibraryExtensionImpl.initExtensionFromSettings(
-        settings: SettingsExtension
-    ) {
-        settings.minSdk?.let { minSdk ->
-            this.minSdkDelegate.setMinSdkVersion(minSdk)
-        }
-
-        settings.minSdkPreview?.let { minSdkPreview ->
-            this.minSdkDelegate.setMinSdkVersion(minSdkPreview)
-        }
-    }
-
-
     override fun configureProject(project: Project) {
         Aapt2DaemonBuildService
             .RegistrationAction(project, projectServices.projectOptions).execute()
@@ -141,10 +122,8 @@ class FusedLibraryPlugin @Inject constructor(
 
     private fun instantiateExtension(project: Project): InternalFusedLibraryExtension {
 
-        val fusedLibraryExtensionImpl = dslServices.newDecoratedInstance(
-                FusedLibraryExtensionImpl::class.java,
-                dslServices,
-        )
+        val fusedLibraryExtensionImpl =
+            FusedLibraryExtensionImpl.getDecoratedInstance(dslServices, settingsExtension)
 
         abstract class Extension(
                 val publicExtensionImpl: FusedLibraryExtensionImpl,
@@ -153,12 +132,9 @@ class FusedLibraryPlugin @Inject constructor(
         project.extensions.create(
                 FusedLibraryExtension::class.java,
                 FusedLibraryConstants.EXTENSION_NAME,
-                Extension::class.java,
+            Extension::class.java,
                 fusedLibraryExtensionImpl
         )
-        settingsExtension?.let {
-            fusedLibraryExtensionImpl.initExtensionFromSettings(it)
-        }
         return fusedLibraryExtensionImpl
     }
 
