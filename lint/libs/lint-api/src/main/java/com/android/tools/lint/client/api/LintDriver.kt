@@ -3769,6 +3769,14 @@ class LintDriver(
           // Silently abort the analysis.
           throw ProcessCanceledException(throwable)
         }
+        LintClient.isUnitTest &&
+          // In unit tests, don't try to handle exceptions (except for LintDriverCrashTest).
+          (throwable.stackTrace.isEmpty() ||
+            throwable.stackTrace.none {
+              it.className.startsWith("com.android.tools.lint.client.api.LintDriverCrashTest")
+            }) -> {
+          throw throwable
+        }
         throwable is AssertionError &&
           throwable.stackTrace.isNotEmpty() &&
           throwable.stackTrace[0].methodName == "fail" -> {

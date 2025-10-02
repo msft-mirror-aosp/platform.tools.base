@@ -115,6 +115,7 @@ public class TestLintTask {
     boolean allowCompilationErrors;
     boolean allowObsoleteLintChecks = true;
     boolean allowSystemErrors = true;
+    boolean allowManifestMergerErrors = false;
     String incrementalFileName;
     Issue[] issues;
     String[] issueIds;
@@ -181,6 +182,7 @@ public class TestLintTask {
         copy.allowCompilationErrors = allowCompilationErrors;
         copy.allowObsoleteLintChecks = allowObsoleteLintChecks;
         copy.allowSystemErrors = allowSystemErrors;
+        copy.allowManifestMergerErrors = allowManifestMergerErrors;
         copy.incrementalFileName = incrementalFileName;
         copy.issues = issues;
         copy.issueIds = issueIds;
@@ -433,6 +435,20 @@ public class TestLintTask {
     public TestLintTask allowSystemErrors(boolean allow) {
         ensurePreRun();
         this.allowSystemErrors = allow;
+        return this;
+    }
+
+    /**
+     * Sets whether the test task should ignore manifest merger errors. This is useful if you want
+     * to provide a manifest file that your lint check will still be able to visit, even if it will
+     * fail manifest merging. If your lint check gets the merged manifest, then you should not set
+     * this to true.
+     *
+     * @return this, for chaining
+     */
+    public TestLintTask allowManifestMergerErrors(boolean allow) {
+        ensurePreRun();
+        this.allowManifestMergerErrors = allow;
         return this;
     }
 

@@ -112,8 +112,9 @@ class HtmlReporterTest {
             """
                     <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                         package="test.pkg">
-                        <uses-sdk android:minSdkVersion="10" android:targetSdkVersion="31" />
-                        <uses-sdk android:minSdkVersion="10" android:targetSdkVersion="31" />
+                        <application>
+                          <uses-sdk android:minSdkVersion="10" android:targetSdkVersion="31" />
+                        </application>
                     </manifest>
                     """
           )
@@ -169,7 +170,7 @@ class HtmlReporterTest {
           .indented(),
       )
       .issues(
-        ManifestDetector.MULTIPLE_USES_SDK,
+        ManifestDetector.WRONG_PARENT,
         HardcodedValuesDetector.ISSUE,
         SdCardDetector.ISSUE,
         IconDetector.DUPLICATES_NAMES,
@@ -240,7 +241,7 @@ document.getElementById(id).style.display = 'none';
     <nav class="mdl-navigation">
       <a class="mdl-navigation__link" href="#overview"><i class="material-icons">dashboard</i>Overview</a>
       <a class="mdl-navigation__link" href="#DuplicateDefinition"><i class="material-icons error-icon">error</i>Duplicate definitions of resources (1)</a>
-      <a class="mdl-navigation__link" href="#MultipleUsesSdk"><i class="material-icons error-icon">error</i>Multiple <code>&lt;uses-sdk></code> elements in the manifest (1)</a>
+      <a class="mdl-navigation__link" href="#WrongManifestParent"><i class="material-icons error-icon">error</i>Wrong manifest parent (1)</a>
       <a class="mdl-navigation__link" href="#IconDuplicates"><i class="material-icons warning-icon">warning</i>Duplicated icons under different names (1)</a>
       <a class="mdl-navigation__link" href="#HardcodedText"><i class="material-icons warning-icon">warning</i>Hardcoded text (2)</a>
       <a class="mdl-navigation__link" href="#UnknownNullness"><i class="material-icons warning-icon">warning</i>Unknown nullness (1)</a>
@@ -263,7 +264,7 @@ document.getElementById(id).style.display = 'none';
 <a href="#DuplicateDefinition">DuplicateDefinition</a>: Duplicate definitions of resources</td></tr>
 <tr>
 <td class="countColumn">1</td><td class="issueColumn"><i class="material-icons error-icon">error</i>
-<a href="#MultipleUsesSdk">MultipleUsesSdk</a>: Multiple <code>&lt;uses-sdk></code> elements in the manifest</td></tr>
+<a href="#WrongManifestParent">WrongManifestParent</a>: Wrong manifest parent</td></tr>
 <tr><td class="countColumn"></td><td class="categoryColumn"><a href="#Usability:Icons">Usability:Icons</a>
 </td></tr>
 <tr>
@@ -335,38 +336,33 @@ You can define a resource multiple times in different resource folders; that's h
 Explain</button><button class="mdl-button mdl-js-button mdl-js-ripple-effect" id="DuplicateDefinitionCardLink" onclick="hideid('DuplicateDefinitionCard');">
 Dismiss</button>            </div>
             </div>
-          </section><a name="MultipleUsesSdk"></a>
-<section class="section--center mdl-grid mdl-grid--no-spacing mdl-shadow--2dp" id="MultipleUsesSdkCard" style="display: block;">
+          </section><a name="WrongManifestParent"></a>
+<section class="section--center mdl-grid mdl-grid--no-spacing mdl-shadow--2dp" id="WrongManifestParentCard" style="display: block;">
             <div class="mdl-card mdl-cell mdl-cell--12-col">
   <div class="mdl-card__title">
-    <h2 class="mdl-card__title-text">Multiple &lt;uses-sdk> elements in the manifest</h2>
+    <h2 class="mdl-card__title-text">Wrong manifest parent</h2>
   </div>
               <div class="mdl-card__supporting-text">
 <div class="issue">
 <div class="warningslist">
-<span class="location"><a href="app/AndroidManifest.xml">AndroidManifest.xml</a>:4</span>: <span class="message">There should only be a single <code>&lt;uses-sdk></code> element in the manifest: merge these together</span><br /><pre class="errorlines">
+<span class="location"><a href="app/AndroidManifest.xml">AndroidManifest.xml</a>:4</span>: <span class="message">The <code>&lt;uses-sdk></code> element must be a direct child of the <code>&lt;manifest></code> root element</span><br /><pre class="errorlines">
 <span class="lineno"> 1 </span><span class="tag">&lt;manifest</span><span class="attribute"> </span><span class="prefix">xmlns:</span><span class="attribute">android</span>=<span class="value">"http://schemas.android.com/apk/res/android"</span>
 <span class="lineno"> 2 </span>    <span class="attribute">package</span>=<span class="value">"test.pkg"</span>>
-<span class="lineno"> 3 </span>    <span class="tag">&lt;uses-sdk</span><span class="attribute"> </span><span class="prefix">android:</span><span class="attribute">minSdkVersion</span>=<span class="value">"10"</span> <span class="prefix">android:</span><span class="attribute">targetSdkVersion</span>=<span class="value">"31"</span> />
-<span class="caretline"><span class="lineno"> 4 </span>    <span class="tag">&lt;</span><span class="error"><span class="tag">uses-sdk</span></span><span class="attribute"> </span><span class="prefix">android:</span><span class="attribute">minSdkVersion</span>=<span class="value">"10"</span> <span class="prefix">android:</span><span class="attribute">targetSdkVersion</span>=<span class="value">"31"</span> />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
-<span class="lineno"> 5 </span><span class="tag">&lt;/manifest></span></pre>
+<span class="lineno"> 3 </span>    <span class="tag">&lt;application></span>
+<span class="caretline"><span class="lineno"> 4 </span>      <span class="tag">&lt;</span><span class="error"><span class="tag">uses-sdk</span></span><span class="attribute"> </span><span class="prefix">android:</span><span class="attribute">minSdkVersion</span>=<span class="value">"10"</span> <span class="prefix">android:</span><span class="attribute">targetSdkVersion</span>=<span class="value">"31"</span> />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
+<span class="lineno"> 5 </span>    <span class="tag">&lt;/application></span>
+<span class="lineno"> 6 </span><span class="tag">&lt;/manifest></span></pre>
 
-<ul><span class="location"><a href="app/AndroidManifest.xml">AndroidManifest.xml</a>:3</span>: <span class="message">Also appears here</span><br /><pre class="errorlines">
-<span class="lineno"> 1 </span><span class="tag">&lt;manifest</span><span class="attribute"> </span><span class="prefix">xmlns:</span><span class="attribute">android</span>=<span class="value">"http://schemas.android.com/apk/res/android"</span>
-<span class="lineno"> 2 </span>    <span class="attribute">package</span>=<span class="value">"test.pkg"</span>>
-<span class="caretline"><span class="lineno"> 3 </span>    <span class="tag">&lt;</span><span class="error"><span class="tag">uses-sdk</span></span><span class="attribute"> </span><span class="prefix">android:</span><span class="attribute">minSdkVersion</span>=<span class="value">"10"</span> <span class="prefix">android:</span><span class="attribute">targetSdkVersion</span>=<span class="value">"31"</span> />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
-<span class="lineno"> 4 </span>    <span class="tag">&lt;uses-sdk</span><span class="attribute"> </span><span class="prefix">android:</span><span class="attribute">minSdkVersion</span>=<span class="value">"10"</span> <span class="prefix">android:</span><span class="attribute">targetSdkVersion</span>=<span class="value">"31"</span> />
-<span class="lineno"> 5 </span><span class="tag">&lt;/manifest></span></pre>
-</ul></div>
-<div class="metadata"><div class="explanation" id="explanationMultipleUsesSdk" style="display: none;">
-The <code>&lt;uses-sdk></code> element should appear just once; the tools will <b>not</b> merge the contents of all the elements so if you split up the attributes across multiple elements, only one of them will take effect. To fix this, just merge all the attributes from the various elements into a single &lt;uses-sdk> element.<br/><div class="moreinfo">More info: <a href="https://developer.android.com/guide/topics/manifest/uses-sdk-element.html">https://developer.android.com/guide/topics/manifest/uses-sdk-element.html</a>
-</div>To suppress this error, use the issue id "MultipleUsesSdk" as explained in the <a href="#SuppressInfo">Suppressing Warnings and Errors</a> section.<br/>
+</div>
+<div class="metadata"><div class="explanation" id="explanationWrongManifestParent" style="display: none;">
+The <code>&lt;uses-library></code> element should be defined as a direct child of the <code>&lt;application></code> tag, not the <code>&lt;manifest></code> tag or an <code>&lt;activity></code> tag. Similarly, a <code>&lt;uses-sdk></code> tag must be declared at the root level, and so on. This check looks for incorrect declaration locations in the manifest, and complains if an element is found in the wrong place.<br/><div class="moreinfo">More info: <a href="https://developer.android.com/guide/topics/manifest/manifest-intro.html">https://developer.android.com/guide/topics/manifest/manifest-intro.html</a>
+</div>To suppress this error, use the issue id "WrongManifestParent" as explained in the <a href="#SuppressInfo">Suppressing Warnings and Errors</a> section.<br/>
 <br/></div>
 </div>
 </div>
 <div class="chips">
 <span class="mdl-chip">
-    <span class="mdl-chip__text">MultipleUsesSdk</span>
+    <span class="mdl-chip__text">WrongManifestParent</span>
 </span>
 <span class="mdl-chip">
     <span class="mdl-chip__text">Correctness</span>
@@ -380,8 +376,8 @@ The <code>&lt;uses-sdk></code> element should appear just once; the tools will <
 </div>
               </div>
               <div class="mdl-card__actions mdl-card--border">
-<button class="mdl-button mdl-js-button mdl-js-ripple-effect" id="explanationMultipleUsesSdkLink" onclick="reveal('explanationMultipleUsesSdk');">
-Explain</button><button class="mdl-button mdl-js-button mdl-js-ripple-effect" id="MultipleUsesSdkCardLink" onclick="hideid('MultipleUsesSdkCard');">
+<button class="mdl-button mdl-js-button mdl-js-ripple-effect" id="explanationWrongManifestParentLink" onclick="reveal('explanationWrongManifestParent');">
+Explain</button><button class="mdl-button mdl-js-button mdl-js-ripple-effect" id="WrongManifestParentCardLink" onclick="hideid('WrongManifestParentCard');">
 Dismiss</button>            </div>
             </div>
           </section>
@@ -777,7 +773,7 @@ document.getElementById(id).style.display = 'none';
     <nav class="mdl-navigation">
       <a class="mdl-navigation__link" href="#overview"><i class="material-icons">dashboard</i>Overview</a>
       <a class="mdl-navigation__link" href="#DuplicateDefinition"><i class="material-icons error-icon">error</i>Duplicate definitions of resources (1)</a>
-      <a class="mdl-navigation__link" href="#MultipleUsesSdk"><i class="material-icons error-icon">error</i>Multiple <code>&lt;uses-sdk></code> elements in the manifest (1)</a>
+      <a class="mdl-navigation__link" href="#WrongManifestParent"><i class="material-icons error-icon">error</i>Wrong manifest parent (1)</a>
       <a class="mdl-navigation__link" href="#IconDuplicates"><i class="material-icons warning-icon">warning</i>Duplicated icons under different names (1)</a>
       <a class="mdl-navigation__link" href="#HardcodedText"><i class="material-icons warning-icon">warning</i>Hardcoded text (2)</a>
       <a class="mdl-navigation__link" href="#UnknownNullness"><i class="material-icons warning-icon">warning</i>Unknown nullness (1)</a>
@@ -800,7 +796,7 @@ document.getElementById(id).style.display = 'none';
 <a href="#DuplicateDefinition">DuplicateDefinition</a>: Duplicate definitions of resources</td></tr>
 <tr>
 <td class="countColumn">1</td><td class="issueColumn"><i class="material-icons error-icon">error</i>
-<a href="#MultipleUsesSdk">MultipleUsesSdk</a>: Multiple <code>&lt;uses-sdk></code> elements in the manifest</td></tr>
+<a href="#WrongManifestParent">WrongManifestParent</a>: Wrong manifest parent</td></tr>
 <tr><td class="countColumn"></td><td class="categoryColumn"><a href="#Usability:Icons">Usability:Icons</a>
 </td></tr>
 <tr>
@@ -872,35 +868,30 @@ You can define a resource multiple times in different resource folders; that's h
 Explain</button><button class="mdl-button mdl-js-button mdl-js-ripple-effect" id="DuplicateDefinitionCardLink" onclick="hideid('DuplicateDefinitionCard');">
 Dismiss</button>            </div>
             </div>
-          </section><a name="MultipleUsesSdk"></a>
-<section class="section--center mdl-grid mdl-grid--no-spacing mdl-shadow--2dp" id="MultipleUsesSdkCard" style="display: block;">
+          </section><a name="WrongManifestParent"></a>
+<section class="section--center mdl-grid mdl-grid--no-spacing mdl-shadow--2dp" id="WrongManifestParentCard" style="display: block;">
             <div class="mdl-card mdl-cell mdl-cell--12-col">
   <div class="mdl-card__title">
-    <h2 class="mdl-card__title-text">Multiple &lt;uses-sdk> elements in the manifest</h2>
+    <h2 class="mdl-card__title-text">Wrong manifest parent</h2>
   </div>
               <div class="mdl-card__supporting-text">
 <div class="issue">
 <div class="warningslist">
-<span class="location"><a href="app/AndroidManifest.xml">AndroidManifest.xml</a>:4</span>: <span class="message">There should only be a single <code>&lt;uses-sdk></code> element in the manifest: merge these together</span><br /><pre class="errorlines">
-<span class="lineno"> 3 </span>    <span class="tag">&lt;uses-sdk</span><span class="attribute"> </span><span class="prefix">android:</span><span class="attribute">minSdkVersion</span>=<span class="value">"10"</span> <span class="prefix">android:</span><span class="attribute">targetSdkVersion</span>=<span class="value">"31"</span> />
-<span class="caretline"><span class="lineno"> 4 </span>    <span class="tag">&lt;</span><span class="error"><span class="tag">uses-sdk</span></span><span class="attribute"> </span><span class="prefix">android:</span><span class="attribute">minSdkVersion</span>=<span class="value">"10"</span> <span class="prefix">android:</span><span class="attribute">targetSdkVersion</span>=<span class="value">"31"</span> />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
-<span class="lineno"> 5 </span><span class="tag">&lt;/manifest></span></pre>
+<span class="location"><a href="app/AndroidManifest.xml">AndroidManifest.xml</a>:4</span>: <span class="message">The <code>&lt;uses-sdk></code> element must be a direct child of the <code>&lt;manifest></code> root element</span><br /><pre class="errorlines">
+<span class="lineno"> 3 </span>    <span class="tag">&lt;application></span>
+<span class="caretline"><span class="lineno"> 4 </span>      <span class="tag">&lt;</span><span class="error"><span class="tag">uses-sdk</span></span><span class="attribute"> </span><span class="prefix">android:</span><span class="attribute">minSdkVersion</span>=<span class="value">"10"</span> <span class="prefix">android:</span><span class="attribute">targetSdkVersion</span>=<span class="value">"31"</span> />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
+<span class="lineno"> 5 </span>    <span class="tag">&lt;/application></span></pre>
 
-<ul><span class="location"><a href="app/AndroidManifest.xml">AndroidManifest.xml</a>:3</span>: <span class="message">Also appears here</span><br /><pre class="errorlines">
-<span class="lineno"> 2 </span>    <span class="attribute">package</span>=<span class="value">"test.pkg"</span>>
-<span class="caretline"><span class="lineno"> 3 </span>    <span class="tag">&lt;</span><span class="error"><span class="tag">uses-sdk</span></span><span class="attribute"> </span><span class="prefix">android:</span><span class="attribute">minSdkVersion</span>=<span class="value">"10"</span> <span class="prefix">android:</span><span class="attribute">targetSdkVersion</span>=<span class="value">"31"</span> />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
-<span class="lineno"> 4 </span>    <span class="tag">&lt;uses-sdk</span><span class="attribute"> </span><span class="prefix">android:</span><span class="attribute">minSdkVersion</span>=<span class="value">"10"</span> <span class="prefix">android:</span><span class="attribute">targetSdkVersion</span>=<span class="value">"31"</span> />
-</pre>
-</ul></div>
-<div class="metadata"><div class="explanation" id="explanationMultipleUsesSdk" style="display: none;">
-The <code>&lt;uses-sdk></code> element should appear just once; the tools will <b>not</b> merge the contents of all the elements so if you split up the attributes across multiple elements, only one of them will take effect. To fix this, just merge all the attributes from the various elements into a single &lt;uses-sdk> element.<br/><div class="moreinfo">More info: <a href="https://developer.android.com/guide/topics/manifest/uses-sdk-element.html">https://developer.android.com/guide/topics/manifest/uses-sdk-element.html</a>
-</div>To suppress this error, use the issue id "MultipleUsesSdk" as explained in the <a href="#SuppressInfo">Suppressing Warnings and Errors</a> section.<br/>
+</div>
+<div class="metadata"><div class="explanation" id="explanationWrongManifestParent" style="display: none;">
+The <code>&lt;uses-library></code> element should be defined as a direct child of the <code>&lt;application></code> tag, not the <code>&lt;manifest></code> tag or an <code>&lt;activity></code> tag. Similarly, a <code>&lt;uses-sdk></code> tag must be declared at the root level, and so on. This check looks for incorrect declaration locations in the manifest, and complains if an element is found in the wrong place.<br/><div class="moreinfo">More info: <a href="https://developer.android.com/guide/topics/manifest/manifest-intro.html">https://developer.android.com/guide/topics/manifest/manifest-intro.html</a>
+</div>To suppress this error, use the issue id "WrongManifestParent" as explained in the <a href="#SuppressInfo">Suppressing Warnings and Errors</a> section.<br/>
 <br/></div>
 </div>
 </div>
 <div class="chips">
 <span class="mdl-chip">
-    <span class="mdl-chip__text">MultipleUsesSdk</span>
+    <span class="mdl-chip__text">WrongManifestParent</span>
 </span>
 <span class="mdl-chip">
     <span class="mdl-chip__text">Correctness</span>
@@ -914,8 +905,8 @@ The <code>&lt;uses-sdk></code> element should appear just once; the tools will <
 </div>
               </div>
               <div class="mdl-card__actions mdl-card--border">
-<button class="mdl-button mdl-js-button mdl-js-ripple-effect" id="explanationMultipleUsesSdkLink" onclick="reveal('explanationMultipleUsesSdk');">
-Explain</button><button class="mdl-button mdl-js-button mdl-js-ripple-effect" id="MultipleUsesSdkCardLink" onclick="hideid('MultipleUsesSdkCard');">
+<button class="mdl-button mdl-js-button mdl-js-ripple-effect" id="explanationWrongManifestParentLink" onclick="reveal('explanationWrongManifestParent');">
+Explain</button><button class="mdl-button mdl-js-button mdl-js-ripple-effect" id="WrongManifestParentCardLink" onclick="hideid('WrongManifestParentCard');">
 Dismiss</button>            </div>
             </div>
           </section>

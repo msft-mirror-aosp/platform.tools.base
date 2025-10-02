@@ -136,6 +136,7 @@ class ManifestDetectorTest : AbstractCheckTest() {
         strings,
       )
       .issues(ManifestDetector.MULTIPLE_USES_SDK)
+      .allowManifestMergerErrors(true)
       .run()
       .expect(expected)
   }
@@ -220,6 +221,9 @@ class ManifestDetectorTest : AbstractCheckTest() {
           .indented()
       )
       .issues(ManifestDetector.WRONG_PARENT)
+      // Many elements have missing names, which causes the manifest merger to fail, but we can
+      // still report the lint errors.
+      .allowManifestMergerErrors(true)
       .run()
       .expect(expected)
   }
@@ -294,6 +298,7 @@ class ManifestDetectorTest : AbstractCheckTest() {
         strings,
       )
       .issues(ManifestDetector.DUPLICATE_ACTIVITY)
+      .allowManifestMergerErrors(true)
       .run()
       .expect(expected)
   }
@@ -348,6 +353,7 @@ class ManifestDetectorTest : AbstractCheckTest() {
         strings,
       )
       .issues(ManifestDetector.DUPLICATE_ACTIVITY)
+      .allowManifestMergerErrors(true)
       .run()
       .expectClean()
   }
@@ -836,7 +842,8 @@ class ManifestDetectorTest : AbstractCheckTest() {
                         android:label="@string/app_name" >
                         <activity
                             android:label="@string/app_name"
-                            android:name=".Foo2Activity" >
+                            android:name=".Foo2Activity"
+                            android:exported="true">
                             <intent-filter >
                                 <action android:name="android.intent.action.MAIN" />
 
@@ -1013,7 +1020,7 @@ class ManifestDetectorTest : AbstractCheckTest() {
                         </receiver>
 
                         <!-- Specifies data -->
-                        <receiver android:name=".DeviceAdminTestReceiver"
+                        <receiver android:name=".DeviceAdminTestReceiver2"
                                   android:label="@string/app_name"
                                   android:description="@string/app_name"
                                   android:permission="android.permission.BIND_DEVICE_ADMIN">
@@ -1026,7 +1033,7 @@ class ManifestDetectorTest : AbstractCheckTest() {
                         </receiver>
 
                         <!-- Missing right intent-filter -->
-                        <receiver android:name=".DeviceAdminTestReceiver"
+                        <receiver android:name=".DeviceAdminTestReceiver3"
                                   android:label="@string/app_name"
                                   android:description="@string/app_name"
                                   android:permission="android.permission.BIND_DEVICE_ADMIN">
@@ -1038,7 +1045,7 @@ class ManifestDetectorTest : AbstractCheckTest() {
                         </receiver>
 
                         <!-- Missing intent-filter -->
-                        <receiver android:name=".DeviceAdminTestReceiver"
+                        <receiver android:name=".DeviceAdminTestReceiver4"
                                   android:label="@string/app_name"
                                   android:description="@string/app_name"
                                   android:permission="android.permission.BIND_DEVICE_ADMIN">
@@ -1047,7 +1054,7 @@ class ManifestDetectorTest : AbstractCheckTest() {
                         </receiver>
 
                         <!-- Suppressed -->
-                        <receiver android:name=".DeviceAdminTestReceiver"
+                        <receiver android:name=".DeviceAdminTestReceiver5"
                                   android:label="@string/app_name"
                                   android:description="@string/app_name"
                                   android:permission="android.permission.BIND_DEVICE_ADMIN"
@@ -1135,7 +1142,7 @@ class ManifestDetectorTest : AbstractCheckTest() {
                     compileSdkVersion 25
                     defaultConfig {
                         applicationId "com.android.tools.test"
-                        minSdkVersion 5
+                        minSdkVersion 14
                         targetSdkVersion 16
                         versionCode 2
                         versionName "MyName"
@@ -1196,7 +1203,7 @@ class ManifestDetectorTest : AbstractCheckTest() {
                 android {
                     compileSdkVersion 25
                     defaultConfig {
-                        applicationId "com.android.tools.test"
+                        applicationId "foo.bar2"
                         minSdkVersion 5
                         targetSdkVersion 16
                         versionCode 2
@@ -1213,6 +1220,7 @@ class ManifestDetectorTest : AbstractCheckTest() {
       // change a string in the error message that is just a manifestation
       // of the way it mutates the project (to lower the minSdkVersion)
       .skipTestModes(TestMode.PARTIAL)
+      .allowManifestMergerErrors(true)
       .run()
       .expect(expected)
   }
@@ -1227,38 +1235,56 @@ class ManifestDetectorTest : AbstractCheckTest() {
 
   fun testGradleOverrideManifestMergerOverride() {
     // Regression test for https://code.google.com/p/android/issues/detail?id=186762
-    lint()
-      .files(
-        manifest(
-            """
-                <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-                    xmlns:tools="http://schemas.android.com/tools"
-                    package="test.pkg">
+    val library =
+      project()
+        .files(
+          manifest(
+              """
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+              package="com.example.lib">
+            <uses-sdk android:minSdkVersion="17" />
+          </manifest>
+          """
+            )
+            .indented()
+        )
+        .type(ProjectDescription.Type.LIBRARY)
+        .name("lib")
 
-                    <uses-sdk android:minSdkVersion="14" tools:overrideLibrary="lib.pkg" />
-
-                </manifest>
-                """
-          )
-          .indented(),
-        projectProperties().library(true),
-        gradle(
-            """
+    val app =
+      project()
+        .files(
+          gradle(
+              """
                 android {
-                    compileSdkVersion 25
                     defaultConfig {
-                        applicationId "com.android.tools.test"
-                        minSdkVersion 5
-                        targetSdkVersion 16
-                        versionCode 2
-                        versionName "MyName"
+                        minSdkVersion 14
                     }
                 }
                 """
-          )
-          .indented(),
-      )
+            )
+            .indented(),
+          manifest(
+              """
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+              xmlns:tools="http://schemas.android.com/tools"
+              package="com.example.app">
+            <uses-sdk android:minSdkVersion="14" tools:overrideLibrary="com.example.lib" />
+          </manifest>
+          """
+            )
+            .indented(),
+        )
+        .type(ProjectDescription.Type.APP)
+        .name("app")
+        .dependsOn(library)
+
+    lint()
+      .projects(app, library)
       .issues(ManifestDetector.GRADLE_OVERRIDES)
+      // Partial analysis mode (in unit test mode) will fail due to the minSdkVersion mismatch.
+      // But that is what we are testing.
+      .testModes(TestMode.DEFAULT)
       .run()
       .expectClean()
   }
@@ -1315,6 +1341,7 @@ class ManifestDetectorTest : AbstractCheckTest() {
             """
                 android {
                     defaultConfig {
+                        applicationId "test.mipmap"
                         resConfigs "cs"
                     }
                     flavorDimensions  "pricing", "releaseType"

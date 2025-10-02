@@ -210,6 +210,7 @@ public class TestLintClient extends LintCliClient {
         if (task != null) {
             reporter.setFormat(task.textFormat);
             reporter.setIncludeSecondaryLineContent(task.showSecondaryLintContent);
+            setThrowOnManifestMergerFail(!task.allowManifestMergerErrors);
         }
 
         // Client should not be used outside of the check process

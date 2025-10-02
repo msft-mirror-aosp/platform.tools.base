@@ -43,8 +43,9 @@ class XmlReporterTest {
         """
             <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                 package="test.pkg" android:versionName="1.0">
+              <application>
                 <uses-sdk android:minSdkVersion="10" android:targetSdkVersion="31" />
-                <uses-sdk android:minSdkVersion="10" android:targetSdkVersion="31" />
+              </application>
             </manifest>
             """
       )
@@ -66,53 +67,48 @@ class XmlReporterTest {
     @Language("XML")
     val expected =
       """
-                <issues format="6" by="lint unittest">
+      <issues format="6" by="lint unittest">
 
-                    <issue
-                        id="MultipleUsesSdk"
-                        severity="Error"
-                        message="There should only be a single `&lt;uses-sdk>` element in the manifest: merge these together"
-                        category="Correctness"
-                        priority="6"
-                        summary="Multiple `&lt;uses-sdk>` elements in the manifest"
-                        explanation="The `&lt;uses-sdk>` element should appear just once; the tools will **not** merge the contents of all the elements so if you split up the attributes across multiple elements, only one of them will take effect. To fix this, just merge all the attributes from the various elements into a single &lt;uses-sdk> element."
-                        url="https://developer.android.com/guide/topics/manifest/uses-sdk-element.html"
-                        urls="https://developer.android.com/guide/topics/manifest/uses-sdk-element.html"
-                        errorLine1="    &lt;uses-sdk android:minSdkVersion=&quot;10&quot; android:targetSdkVersion=&quot;31&quot; />"
-                        errorLine2="     ~~~~~~~~">
-                        <location
-                            file="AndroidManifest.xml"
-                            line="4"
-                            column="6"/>
-                        <location
-                            file="AndroidManifest.xml"
-                            line="3"
-                            column="6"
-                            message="Also appears here"/>
-                    </issue>
+          <issue
+              id="WrongManifestParent"
+              severity="Error"
+              message="The `&lt;uses-sdk>` element must be a direct child of the `&lt;manifest>` root element"
+              category="Correctness"
+              priority="6"
+              summary="Wrong manifest parent"
+              explanation="The `&lt;uses-library>` element should be defined as a direct child of the `&lt;application>` tag, not the `&lt;manifest>` tag or an `&lt;activity>` tag. Similarly, a `&lt;uses-sdk>` tag must be declared at the root level, and so on. This check looks for incorrect declaration locations in the manifest, and complains if an element is found in the wrong place."
+              url="https://developer.android.com/guide/topics/manifest/manifest-intro.html"
+              urls="https://developer.android.com/guide/topics/manifest/manifest-intro.html"
+              errorLine1="    &lt;uses-sdk android:minSdkVersion=&quot;10&quot; android:targetSdkVersion=&quot;31&quot; />"
+              errorLine2="     ~~~~~~~~">
+              <location
+                  file="AndroidManifest.xml"
+                  line="4"
+                  column="6"/>
+          </issue>
 
-                    <issue
-                        id="HardcodedText"
-                        severity="Warning"
-                        message="Hardcoded string &quot;Fooo&quot;, should use `@string` resource"
-                        category="Internationalization"
-                        priority="5"
-                        summary="Hardcoded text"
-                        explanation="Hardcoding text attributes directly in layout files is bad for several reasons:&#xA;&#xA;* When creating configuration variations (for example for landscape or portrait) you have to repeat the actual text (and keep it up to date when making changes)&#xA;&#xA;* The application cannot be translated to other languages by just adding new translations for existing string resources.&#xA;&#xA;There are quickfixes to automatically extract this hardcoded string into a resource lookup."
-                        errorLine1="        android:text=&quot;Fooo&quot; />"
-                        errorLine2="        ~~~~~~~~~~~~~~~~~~~">
-                        <location
-                            file="res/layout/main.xml"
-                            line="3"
-                            column="9"/>
-                    </issue>
+          <issue
+              id="HardcodedText"
+              severity="Warning"
+              message="Hardcoded string &quot;Fooo&quot;, should use `@string` resource"
+              category="Internationalization"
+              priority="5"
+              summary="Hardcoded text"
+              explanation="Hardcoding text attributes directly in layout files is bad for several reasons:&#xA;&#xA;* When creating configuration variations (for example for landscape or portrait) you have to repeat the actual text (and keep it up to date when making changes)&#xA;&#xA;* The application cannot be translated to other languages by just adding new translations for existing string resources.&#xA;&#xA;There are quickfixes to automatically extract this hardcoded string into a resource lookup."
+              errorLine1="        android:text=&quot;Fooo&quot; />"
+              errorLine2="        ~~~~~~~~~~~~~~~~~~~">
+              <location
+                  file="res/layout/main.xml"
+                  line="3"
+                  column="9"/>
+          </issue>
 
-                </issues>
-                """
+      </issues>
+      """
 
     lint()
       .files(sampleManifest, sampleLayout)
-      .issues(ManifestDetector.MULTIPLE_USES_SDK, HardcodedValuesDetector.ISSUE)
+      .issues(ManifestDetector.WRONG_PARENT, HardcodedValuesDetector.ISSUE)
       .run()
       .expectXml(xmlPrologue + expected.trimIndent())
   }
@@ -309,41 +305,36 @@ class XmlReporterTest {
     @Language("XML")
     val expected =
       """
-            <issues format="6" by="lint unittest" type="baseline">
+      <issues format="6" by="lint unittest" type="baseline">
 
-                <issue
-                    id="MultipleUsesSdk"
-                    message="There should only be a single `&lt;uses-sdk>` element in the manifest: merge these together"
-                    errorLine1="    &lt;uses-sdk android:minSdkVersion=&quot;10&quot; android:targetSdkVersion=&quot;31&quot; />"
-                    errorLine2="     ~~~~~~~~">
-                    <location
-                        file="AndroidManifest.xml"
-                        line="4"
-                        column="6"/>
-                    <location
-                        file="AndroidManifest.xml"
-                        line="3"
-                        column="6"
-                        message="Also appears here"/>
-                </issue>
+          <issue
+              id="WrongManifestParent"
+              message="The `&lt;uses-sdk>` element must be a direct child of the `&lt;manifest>` root element"
+              errorLine1="    &lt;uses-sdk android:minSdkVersion=&quot;10&quot; android:targetSdkVersion=&quot;31&quot; />"
+              errorLine2="     ~~~~~~~~">
+              <location
+                  file="AndroidManifest.xml"
+                  line="4"
+                  column="6"/>
+          </issue>
 
-                <issue
-                    id="HardcodedText"
-                    message="Hardcoded string &quot;Fooo&quot;, should use `@string` resource"
-                    errorLine1="        android:text=&quot;Fooo&quot; />"
-                    errorLine2="        ~~~~~~~~~~~~~~~~~~~">
-                    <location
-                        file="res/layout/main.xml"
-                        line="3"
-                        column="9"/>
-                </issue>
+          <issue
+              id="HardcodedText"
+              message="Hardcoded string &quot;Fooo&quot;, should use `@string` resource"
+              errorLine1="        android:text=&quot;Fooo&quot; />"
+              errorLine2="        ~~~~~~~~~~~~~~~~~~~">
+              <location
+                  file="res/layout/main.xml"
+                  line="3"
+                  column="9"/>
+          </issue>
 
-            </issues>
-            """
+      </issues>
+      """
 
     lint()
       .files(sampleManifest, sampleLayout)
-      .issues(ManifestDetector.MULTIPLE_USES_SDK, HardcodedValuesDetector.ISSUE)
+      .issues(ManifestDetector.WRONG_PARENT, HardcodedValuesDetector.ISSUE)
       .run()
       .expectXml(xmlPrologue + expected.trimIndent() + "\n", reportType = XmlFileType.BASELINE)
   }

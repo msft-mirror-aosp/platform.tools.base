@@ -164,6 +164,9 @@ open class LintCliClient : LintClient {
 
   private var hasErrors = false
 
+  // This is set to true in TestLintClient.
+  protected var throwOnManifestMergerFail = false
+
   /** Definite incidents; these should be unconditionally reported. */
   val definiteIncidents: MutableList<Incident> = ArrayList()
 
@@ -1628,29 +1631,19 @@ open class LintCliClient : LintClient {
     val injectedXml = StringBuilder()
     val target = project.buildVariant
     if (target != null) {
-      val targetSdkVersion = target.targetSdkVersion
-      val minSdkVersion = target.minSdkVersion
+      val targetSdkVersion = target.targetSdkVersion?.majorVersion?.apiString?.takeIf { it != "0" }
+      val minSdkVersion = target.minSdkVersion?.majorVersion?.apiString?.takeIf { it != "0" }
       if (targetSdkVersion != null || minSdkVersion != null) {
-        injectedXml.append(
-          "" +
-            "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n" +
-            "    package=\"\${packageName}\">\n" +
-            "    <uses-sdk"
-        )
+        injectedXml.append("<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"")
+        // Could inject application ID (packageName) here, but this complicates existing tests.
+        injectedXml.append(">\n    <uses-sdk")
         if (minSdkVersion != null) {
-          injectedXml
-            .append(" android:minSdkVersion=\"")
-            .append(minSdkVersion.apiString)
-            .append("\"")
+          injectedXml.append(" android:minSdkVersion=\"").append(minSdkVersion).append("\"")
         }
         if (targetSdkVersion != null) {
-          injectedXml
-            .append(" android:targetSdkVersion=\"")
-            .append(targetSdkVersion.apiString)
-            .append("\"")
+          injectedXml.append(" android:targetSdkVersion=\"").append(targetSdkVersion).append("\"")
         }
         injectedXml.append(" />\n</manifest>\n")
-        manifests.add(injectedFile)
       }
     }
     var mainManifest: File? = null
@@ -1696,7 +1689,7 @@ open class LintCliClient : LintClient {
         else ManifestMerger2.MergeType.APPLICATION
       val blameFile = File.createTempFile("manifest-blame", ".txt")
       blameFile.deleteOnExit()
-      val mergeReport =
+      val manifestMerger =
         ManifestMerger2.newMerger(mainManifest!!, logger, type)
           .withFeatures(
             // TODO: How do we get the *opposite* of EXTRACT_FQCNS:
@@ -1707,6 +1700,14 @@ open class LintCliClient : LintClient {
             ManifestMerger2.Invoker.Feature.USES_SDK_IN_MANIFEST_LENIENT_HANDLING,
           )
           .addLibraryManifests(*manifests.toTypedArray())
+          .setMergeReportFile(blameFile)
+          // This hack just stops the merger failing if the main manifest has no package
+          // (application id) attribute; no placeholder replacement actually occurs.
+          .setPlaceHolderValue("packageName", "")
+
+      if (injectedXml.isNotEmpty()) {
+        manifestMerger
+          .addFlavorAndBuildTypeManifest(injectedFile)
           .withFileStreamProvider(
             object : FileStreamProvider() {
               @Throws(FileNotFoundException::class)
@@ -1721,8 +1722,10 @@ open class LintCliClient : LintClient {
               }
             }
           )
-          .setMergeReportFile(blameFile)
-          .merge()
+      }
+
+      val mergeReport = manifestMerger.merge()
+
       val xmlDocument = mergeReport.getMergedXmlDocument(MergedManifestKind.MERGED)
       if (xmlDocument != null) {
         val document = xmlDocument.xml
@@ -1733,7 +1736,16 @@ open class LintCliClient : LintClient {
           return document
         }
       } else {
-        log(Severity.WARNING, null, mergeReport.reportString)
+        val mergerFailures =
+          "Manifest merger failed:\n\n${mergeReport.loggingRecords.joinToString("\n\n")}"
+        if (throwOnManifestMergerFail) {
+          throw AssertionError(
+            "$mergerFailures\n\n" +
+              "This failure can be ignored in tests by calling " +
+              "`.allowManifestMergerErrors(true)` on the test task."
+          )
+        }
+        log(Severity.WARNING, null, mergerFailures)
       }
     } catch (e: MergeFailureException) {
       log(Severity.ERROR, e, "Couldn't parse merged manifest")

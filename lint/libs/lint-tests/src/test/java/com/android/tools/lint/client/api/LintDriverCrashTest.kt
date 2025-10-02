@@ -334,8 +334,9 @@ class LintDriverCrashTest : AbstractCheckTest() {
             """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="test.pkg" android:versionName="1.0">
-                    <uses-sdk android:minSdkVersion="10" android:targetSdkVersion="31" />
-                    <uses-sdk android:minSdkVersion="10" android:targetSdkVersion="31" />
+                    <application>
+                      <uses-sdk android:minSdkVersion="10" android:targetSdkVersion="31" />
+                    </application>
                 </manifest>
                 """
           )
@@ -347,7 +348,7 @@ class LintDriverCrashTest : AbstractCheckTest() {
       .allowSystemErrors(true)
       .allowExceptions(true)
       .testModes(TestMode.PARTIAL)
-      .issues(CrashingDetector.CRASHING_ISSUE, ManifestDetector.MULTIPLE_USES_SDK)
+      .issues(CrashingDetector.CRASHING_ISSUE, ManifestDetector.WRONG_PARENT)
       .run()
       .check({
         assertThat(it).contains("Unexpected failure during lint analysis")
@@ -359,13 +360,11 @@ class LintDriverCrashTest : AbstractCheckTest() {
         assertThat(it)
           .contains(
             """
-    AndroidManifest.xml:4: Error: There should only be a single <uses-sdk> element in the manifest: merge these together [MultipleUsesSdk]
-        <uses-sdk android:minSdkVersion="10" android:targetSdkVersion="31" />
-         ~~~~~~~~
-        AndroidManifest.xml:3: Also appears here
-        <uses-sdk android:minSdkVersion="10" android:targetSdkVersion="31" />
-         ~~~~~~~~
-                        """
+            AndroidManifest.xml:4: Error: The <uses-sdk> element must be a direct child of the <manifest> root element [WrongManifestParent]
+                  <uses-sdk android:minSdkVersion="10" android:targetSdkVersion="31" />
+                   ~~~~~~~~
+            6 errors
+            """
               .trimIndent()
           )
       })
