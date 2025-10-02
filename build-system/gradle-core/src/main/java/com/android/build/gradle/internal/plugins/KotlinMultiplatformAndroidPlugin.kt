@@ -46,6 +46,7 @@ import com.android.build.api.variant.impl.KotlinMultiplatformAndroidLibraryTarge
 import com.android.build.gradle.internal.AvdComponentsBuildService
 import com.android.build.gradle.internal.CompileOptions
 import com.android.build.gradle.internal.DependencyConfigurator
+import com.android.build.gradle.internal.LoggerWrapper
 import com.android.build.gradle.internal.SdkComponentsBuildService
 import com.android.build.gradle.internal.TaskManager
 import com.android.build.gradle.internal.VariantManager.Companion.finalizeAllComponents
@@ -94,6 +95,7 @@ import com.android.build.gradle.internal.services.VariantServices
 import com.android.build.gradle.internal.services.VariantServicesImpl
 import com.android.build.gradle.internal.services.VersionedSdkLoaderService
 import com.android.build.gradle.internal.services.getBuildService
+import com.android.build.gradle.internal.tasks.FixStackFramesDelegate
 import com.android.build.gradle.internal.tasks.KmpTaskManager
 import com.android.build.gradle.internal.tasks.SigningConfigUtils.Companion.createSigningOverride
 import com.android.build.gradle.internal.tasks.factory.BootClasspathConfig
@@ -327,15 +329,12 @@ class KotlinMultiplatformAndroidPlugin @Inject constructor(
     }
 
     private fun getCompileSdkVersion(): String =
-        androidExtension.compileSdkPreview?.let { validatePreviewTargetValue(it) }?.let { "android-$it" } ?:
-        androidExtension.compileSdkExtension?.let { "android-${androidExtension.compileSdk}-ext$it" } ?:
-        androidExtension.compileSdk?.let {"android-$it"} ?: throw RuntimeException(
+        androidExtension.compileSdkVersion.also { logger.verbose("compileSdkVersion=$it") } ?: throw RuntimeException(
             "compileSdk version is not set.\n" +
                     "Specify the compileSdk version in the module's build file like so:\n" +
                     "kotlin {\n" +
                     "    $ANDROID_EXTENSION_ON_KOTLIN_EXTENSION_NAME {\n" +
-                    "        compileSdk = ${MAX_SUPPORTED_ANDROID_PLATFORM_VERSION.apiLevel}\n" +
-                    "    }\n" +
+                    "        compileSdk { version = release(${MAX_SUPPORTED_ANDROID_PLATFORM_VERSION.majorVersion.apiLevel}) }\n" +
                     "}\n"
         )
 
@@ -764,5 +763,7 @@ class KotlinMultiplatformAndroidPlugin @Inject constructor(
 
         internal val Project.kotlinTestRegistry: KotlinTestsRegistry
             get() = extensions.getByName(KotlinTestsRegistry.PROJECT_EXTENSION_NAME) as KotlinTestsRegistry
+
+        private val logger = LoggerWrapper.getLogger(KotlinMultiplatformAndroidPlugin::class.java)
     }
 }

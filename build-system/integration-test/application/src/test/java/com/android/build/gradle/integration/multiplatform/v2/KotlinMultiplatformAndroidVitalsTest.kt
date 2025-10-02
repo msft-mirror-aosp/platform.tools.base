@@ -45,9 +45,25 @@ class KotlinMultiplatformAndroidVitalsTest {
                     "Specify the compileSdk version in the module's build file like so:\n" +
                     "kotlin {\n" +
                     "    $ANDROID_EXTENSION_ON_KOTLIN_EXTENSION_NAME {\n" +
-                    "        compileSdk = ${MAX_SUPPORTED_ANDROID_PLATFORM_VERSION.apiLevel}\n" +
-                    "    }\n" +
+                    "        compileSdk { version = release(${MAX_SUPPORTED_ANDROID_PLATFORM_VERSION.majorVersion.apiLevel}) }\n" +
                     "}\n"
+        )
+    }
+
+    @Test
+    fun testCompileSdkSet() {
+        val build = rule.build {
+            androidKotlinMultiplatformLibrary(":shared") {
+                android {
+                    compileSdk {
+                        version = release(36)
+                    }
+                }
+            }
+        }
+        val result = build.executor.run(":shared:assembleAndroidMain")
+        result.assertOutputContains(
+            "compileSdkVersion=android-36"
         )
     }
 

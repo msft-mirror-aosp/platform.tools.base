@@ -19,6 +19,7 @@ package com.android.build.gradle.integration.multiplatform.v2
 import com.android.build.api.variant.KotlinMultiplatformAndroidComponentsExtension
 import com.android.build.gradle.integration.common.fixture.project.AarSelector
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
+import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition
 import com.android.build.gradle.integration.common.fixture.project.plugins.AndroidKotlinMultiplatformLibraryComponentCallback
 import com.android.build.gradle.integration.common.output.AarMetadataSubject
 import com.android.build.gradle.internal.scope.InternalArtifactType
@@ -40,9 +41,7 @@ class KotlinMultiplatformAarMetadataTest {
             aarMetadata {
                 formatVersion().isEqualTo("1.0")
                 metadataVersion().isEqualTo("1.0")
-                // todo: fix this in follow up CL as part of the same ticket - this is wrong
-                // it should default to the compileSdk
-                minCompileSdk().isEqualTo("1")
+                minCompileSdk().isEqualTo(GradleBuildDefinition.DEFAULT_COMPILE_SDK_VERSION.toString())
                 minAgpVersion().isEqualTo("1.0.0")
                 minCompileSdkExtension().isEqualTo("0")
                 coreLibraryDesugaringEnabled().isEqualTo("false")

@@ -86,6 +86,10 @@ internal abstract class KotlinMultiplatformAndroidLibraryExtensionImpl @Inject c
         dslServices = dslServices
     )
 
+    val compileSdkVersion: String? by lazy {
+        compileSdkDelegate.compileSdkVersion
+    }
+
     override var compileSdk: Int?
         get() = compileSdkDelegate.compileSdk
         set(value) {
