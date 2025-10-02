@@ -32,10 +32,4 @@ interface ComposeOptions {
      * the default one.
      */
     var kotlinCompilerExtensionVersion: String?
-
-    /**
-     * Enables live literals in Compose
-     */
-    @Deprecated("ComposeOptions.useLiveLiterals is deprecated and will be removed in AGP 9.0.") // b/346774554
-    var useLiveLiterals: Boolean
 }

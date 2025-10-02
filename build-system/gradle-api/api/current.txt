@@ -1066,13 +1066,10 @@ package com.android.build.api.dsl {
   public interface ComposeOptions {
     method public String? getKotlinCompilerExtensionVersion();
     method @Deprecated public String? getKotlinCompilerVersion();
-    method @Deprecated public boolean getUseLiveLiterals();
     method public void setKotlinCompilerExtensionVersion(String?);
     method @Deprecated public void setKotlinCompilerVersion(String?);
-    method @Deprecated public void setUseLiveLiterals(boolean);
     property public abstract String? kotlinCompilerExtensionVersion;
     property @Deprecated public abstract String? kotlinCompilerVersion;
-    property @Deprecated public abstract boolean useLiveLiterals;
   }
 
   @org.gradle.api.Incubating public interface ConfigurableFiles {

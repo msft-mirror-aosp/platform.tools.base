@@ -219,30 +219,13 @@ private fun getLanguageVersionUnsafe(kotlinCompile: KotlinCompile): String? {
 /** Add compose compiler extension args to Kotlin compile task. */
 fun addComposeArgsToKotlinCompile(
     task: KotlinCompile,
-    creationConfig: ComponentCreationConfig,
     compilerExtension: FileCollection,
-    useLiveLiterals: Boolean
 ) {
-    val debuggable = if (creationConfig is ApkCreationConfig || creationConfig is LibraryCreationConfig) {
-        creationConfig.debuggable
-    } else {
-        false
-    }
-
     val kotlinVersion = getProjectKotlinPluginKotlinVersion(task.project)
 
     task.addPluginClasspath(kotlinVersion, compilerExtension)
 
     task.maybeAddSourceInformationOption(kotlinVersion)
-
-    if (debuggable && useLiveLiterals) {
-        task.addPluginOption(
-            kotlinVersion,
-            "androidx.compose.compiler.plugins.kotlin",
-            "liveLiterals",
-            "true"
-        )
-    }
 
     if (kotlinVersion.isVersionAtLeast(1, 8)) {
         task.compilerOptions.freeCompilerArgs.add("-Xallow-unstable-dependencies")

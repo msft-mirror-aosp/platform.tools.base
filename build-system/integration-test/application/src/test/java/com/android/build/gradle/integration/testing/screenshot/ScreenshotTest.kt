@@ -214,7 +214,6 @@ class ScreenshotTest {
                 compose = true
             }
             composeOptions {
-                useLiveLiterals = false
                 kotlinCompilerExtensionVersion = TestUtils.COMPOSE_COMPILER_FOR_TESTS
             }
             experimentalProperties["android.experimental.enableScreenshotTest"] = true

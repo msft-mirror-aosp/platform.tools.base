@@ -98,30 +98,6 @@ class ComposeHelloWorldTest(private val useComposeCompilerGradlePlugin: Boolean)
     }
 
     @Test
-    fun testLiveLiterals() {
-        // KGP 2.0+ requires Compose compiler Gradle plugin when Compose is used
-        Assume.assumeTrue(useComposeCompilerGradlePlugin)
-
-        // Run compilation with live literals on
-        TestFileUtils.appendToFile(
-            project.getSubproject("app").buildFile,
-            "android.composeOptions.useLiveLiterals = true"
-        )
-        val result = project.executor().run("assembleDebug")
-        result.assertOutputContains("ComposeOptions.useLiveLiterals is deprecated and will be removed in AGP 9.0.")
-
-        // Turn off live literals and run again
-        TestFileUtils.searchAndReplace(
-            project.getSubproject("app").buildFile,
-            "android.composeOptions.useLiveLiterals = true",
-            "android.composeOptions.useLiveLiterals = false"
-        )
-        val result2 = project.executor().run("assembleDebug")
-        assertThat(result2.didWorkTasks).contains(":app:compileDebugKotlin")
-        result2.assertOutputContains("ComposeOptions.useLiveLiterals is deprecated and will be removed in AGP 9.0.")
-    }
-
-    @Test
     fun testScreenshotTestAndTestFixturesCompilation() {
         // KGP 2.0+ requires Compose compiler Gradle plugin when Compose is used
         Assume.assumeTrue(useComposeCompilerGradlePlugin)
