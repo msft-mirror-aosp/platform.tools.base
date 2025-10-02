@@ -463,6 +463,7 @@ open class BuiltinIssueRegistry : IssueRegistry() {
           StringFormatDetector.TRIVIAL,
           SyntheticAccessorDetector.ISSUE,
           SystemPermissionsDetector.ISSUE,
+          TextConcatDetector.ISSUE,
           TextFieldDetector.ISSUE,
           TextViewDetector.ISSUE,
           TextViewDetector.SELECTABLE,
