@@ -596,6 +596,7 @@ com.android.tools.build:gradle-api
   dependencies:
     com.android.tools.build:gradle-common-api (compile)
     org.ow2.asm:asm (compile)
+    org.jetbrains.kotlin:kotlin-gradle-plugin-api (compile)
     com.android.tools.build:builder-test-api (runtime)
     com.google.guava:guava (runtime)
     org.jetbrains.kotlin:kotlin-stdlib (runtime)

@@ -15,9 +15,9 @@ dependencies {
     implementation libs.guava
     implementation libs.kotlin_stdlib
     api libs.asm
+    api libs.kotlin_gradle_plugin_api
 
     compileOnly libs.com.android.tools.annotations
-    compileOnly libs.kotlin_gradle_plugin
     compileOnly gradleApi()
     compileOnly project(':base:builder-model') // Only present for legacy reasons.
 
