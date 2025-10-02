@@ -146,9 +146,6 @@ public class CheckAll {
                     // Requires ml models to be in place
                     "mlModelBinding",
 
-                    // TODO(b/160392650): lint namespace support
-                    "namespacedApp",
-
                     // These are all right:
                     "genFolderApi", // Has a required injectable property
                     "ndkJniPureSplitLib", // Doesn't build until externalNativeBuild {} is added.

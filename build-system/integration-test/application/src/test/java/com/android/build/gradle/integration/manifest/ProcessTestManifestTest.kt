@@ -345,6 +345,7 @@ class ProcessTestManifestTest {
     fun testUnitTestManifestPlaceholdersFromTestedVariant() {
         project.buildFile.appendText("""
             android {
+                testBuildType = "release"
                 buildTypes {
                     release {
                         manifestPlaceholders = ["label": "unit test from tested variant"]
@@ -390,6 +391,7 @@ class ProcessTestManifestTest {
     fun testUnitTestManifestPlaceholdersFromVariantApi() {
         project.buildFile.appendText("""
             android {
+                testBuildType = "release"
                 testOptions {
                     unitTests {
                         includeAndroidResources = true
@@ -398,7 +400,9 @@ class ProcessTestManifestTest {
             }
             androidComponents {
                 onVariants(selector().all(), { variant ->
+                    if (variant.unitTest != null) {
                     variant.unitTest.manifestPlaceholders["label"] = "unit test from tested variant"
+                    }
                 })
             }
         """.trimIndent())
@@ -435,6 +439,7 @@ class ProcessTestManifestTest {
     fun testUnitTestManifestContainsTargetSdkVersion() {
         project.buildFile.appendText("""
             android {
+                testBuildType = "release"
                 testOptions {
                     unitTests {
                         includeAndroidResources = true
@@ -457,6 +462,7 @@ class ProcessTestManifestTest {
     fun testLibraryUnitTestManifestContainsTargetSdkVersionFromOptions() {
         project.buildFile.appendText("""
             android {
+                testBuildType = "release"
                 testOptions {
                     targetSdk = 22
                     unitTests {
@@ -475,6 +481,7 @@ class ProcessTestManifestTest {
     fun testLibraryUnitTestManifestDefaultsToCompileSdkValueIfTargetSdkIsUnset() {
         project.buildFile.appendText("""
             android {
+                testBuildType = "release"
                 compileSdk = 36
                 testOptions {
                     unitTests {
@@ -503,6 +510,7 @@ class ProcessTestManifestTest {
     fun testLibraryUnitTestManifestDefaultsToCompileSdkPreviewValueIfTargetSdkIsUnset() {
         project.buildFile.appendText("""
             android {
+                testBuildType = "release"
                 compileSdkPreview = "Baklava"
                 testOptions {
                     unitTests {

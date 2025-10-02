@@ -136,7 +136,6 @@ TEST_DATA = [
     "//tools/base/build-system/integration-test:test-projects/multiDexWithLib",
     "//tools/base/build-system/integration-test:test-projects/multiproject",
     "//tools/base/build-system/integration-test:test-projects/multires",
-    "//tools/base/build-system/integration-test:test-projects/namespacedApp",
     "//tools/base/build-system/integration-test:test-projects/navigation",
     "//tools/base/build-system/integration-test:test-projects/ndkJniLib",
     "//tools/base/build-system/integration-test:test-projects/ndkLibPrebuilts",
@@ -868,7 +867,10 @@ gradle_integration_test(
         "//tools/base/build-system/integration-test:kotlin_gradle_plugin_prebuilts",
     ],
     shard_count = 2,
-    tags = ["noci:studio-win"],  # b/374358308
+    tags = [
+        "manual",  # b/447352360
+        "noci:studio-win",  # b/374358308
+    ],
     deps = TEST_DEPS,
 )
 

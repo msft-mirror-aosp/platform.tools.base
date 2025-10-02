@@ -1,9 +1,7 @@
 load("//tools/base/bazel:bazel.bzl", "iml_module")
 load("//tools/base/bazel:kotlin.bzl", "kotlin_test")
 load("//tools/base/bazel:maven.bzl", "maven_library")
-load("//tools/base/bazel:coverage.bzl", "coverage_java_test")
 load("//tools/base/common:version.bzl", "BASE_VERSION")
-load("//tools/base/bazel:proto.bzl", "java_proto_library")
 
 # managed by go/iml_to_build
 iml_module(
@@ -23,7 +21,6 @@ iml_module(
     # do not sort: must match IML order
     deps = [
         "@intellij//:intellij-sdk",
-        "@intellij//:com.intellij.java",
         "//tools/adt/idea/.idea/libraries:libadb-server-proto",
     ],
 )

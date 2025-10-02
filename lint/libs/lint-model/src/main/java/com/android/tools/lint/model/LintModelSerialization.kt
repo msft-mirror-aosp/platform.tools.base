@@ -784,9 +784,6 @@ private class LintModelVariantWriter(
     if (buildFeatures.viewBinding) {
       printer.printAttribute("viewBinding", VALUE_TRUE, indent)
     }
-    if (buildFeatures.namespacingMode != LintModelNamespacingMode.DISABLED) {
-      printer.printAttribute("namespacing", buildFeatures.namespacingMode.name, indent)
-    }
     printer.println("/>")
   }
 
@@ -1493,15 +1490,11 @@ private class LintModelVariantReader(
     expectTag("buildFeatures")
     val coreLibraryDesugaringEnabled = getOptionalBoolean("coreLibraryDesugaring", false)
     val viewBinding = getOptionalBoolean("viewBinding", false)
-    val namespacingMode =
-      getOptionalAttribute("nameSpacingMode")?.let { LintModelNamespacingMode.valueOf(it) }
-        ?: LintModelNamespacingMode.DISABLED
 
     finishTag("buildFeatures")
     return DefaultLintModelBuildFeatures(
       viewBinding = viewBinding,
       coreLibraryDesugaringEnabled = coreLibraryDesugaringEnabled,
-      namespacingMode = namespacingMode,
     )
   }
 

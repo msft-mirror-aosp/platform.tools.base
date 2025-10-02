@@ -63,7 +63,8 @@ enum class TemplateConstraint {
   Material3,
   // Compose is used as a Constraint since it implies the need of a specific Kotlin Compiler version
   Compose,
-  Aidl
+  Aidl,
+  TestSuite
 }
 
 /**

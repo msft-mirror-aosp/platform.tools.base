@@ -30,6 +30,7 @@ import java.util.Objects;
  */
 public class BasicTextValueResourceItem extends BasicValueResourceItem implements TextResourceValue {
   private final String myRawXmlValue;
+  private final String myRenderingValue;
 
   /**
    * Initializes the resource.
@@ -40,15 +41,18 @@ public class BasicTextValueResourceItem extends BasicValueResourceItem implement
    * @param visibility the visibility of the resource
    * @param textValue the text value associated with the resource
    * @param rawXmlValue the raw xml value associated with the resource (see {@link ResourceValue#getRawXmlValue()})
+   * @param renderingValue the rendering value associated with the resource (see {@link ResourceValue#getRenderingValue()})
    */
   public BasicTextValueResourceItem(@NonNull ResourceType type,
                                     @NonNull String name,
                                     @NonNull ResourceSourceFile sourceFile,
                                     @NonNull ResourceVisibility visibility,
                                     @Nullable String textValue,
-                                    @Nullable String rawXmlValue) {
+                                    @Nullable String rawXmlValue,
+                                    @Nullable String renderingValue) {
     super(type, name, sourceFile, visibility, textValue);
     myRawXmlValue = rawXmlValue;
+    myRenderingValue = renderingValue;
   }
 
   @Override
@@ -58,15 +62,21 @@ public class BasicTextValueResourceItem extends BasicValueResourceItem implement
   }
 
   @Override
+  @Nullable
+  public String getRenderingValue() {
+    return myRenderingValue == null ? getRawXmlValue() : myRenderingValue;
+  }
+
+  @Override
   public boolean equals(@Nullable Object obj) {
     if (this == obj) return true;
     if (!super.equals(obj)) return false;
     BasicTextValueResourceItem other = (BasicTextValueResourceItem) obj;
-    return Objects.equals(myRawXmlValue, other.myRawXmlValue);
+    return Objects.equals(myRawXmlValue, other.myRawXmlValue) && Objects.equals(myRenderingValue, other.myRenderingValue);
   }
 
   @Override
   public int hashCode() {
-    return HashCodes.mix(super.hashCode(), Objects.hashCode(myRawXmlValue));
+    return HashCodes.mix(super.hashCode(), Objects.hashCode(myRawXmlValue),  Objects.hashCode(myRenderingValue));
   }
 }

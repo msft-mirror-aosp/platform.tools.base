@@ -17,13 +17,10 @@
 package com.android.build.gradle.integration.application
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.builder.model.AndroidProject
 import com.android.testutils.AbstractReturnGivenBuildResultTest
 import com.google.common.truth.Truth
 import org.junit.Rule
 import org.junit.Test
-import org.junit.runner.RunWith
-import org.junit.runners.Parameterized
 
 class AndroidComponentsFilteringTest
     : AbstractReturnGivenBuildResultTest<String,
@@ -47,6 +44,7 @@ class AndroidComponentsFilteringTest
         expect {
             variant {
                 name = "release"
+                unitTest = false
                 androidTest = false
             }
             variant {
@@ -69,6 +67,7 @@ class AndroidComponentsFilteringTest
         expect {
             variant {
                 name = "release"
+                unitTest = false
                 androidTest = false
             }
             variant {
@@ -91,6 +90,7 @@ class AndroidComponentsFilteringTest
         expect {
             variant {
                 name = "release"
+                unitTest = false
                 androidTest = false
                 testFixtures = false
             }
@@ -135,10 +135,12 @@ class AndroidComponentsFilteringTest
             }
             variant {
                 name = "flavor1Release"
+                unitTest = false
                 androidTest = false
             }
             variant {
                 name = "flavor2Release"
+                unitTest = false
                 androidTest = false
             }
             variant {
@@ -181,10 +183,12 @@ class AndroidComponentsFilteringTest
             }
             variant {
                 name = "flavor1Release"
+                unitTest = false
                 androidTest = false
             }
             variant {
                 name = "flavor2Release"
+                unitTest = false
                 androidTest = false
             }
             variant { name = "flavor2Debug" }
@@ -227,11 +231,13 @@ class AndroidComponentsFilteringTest
             variant {
                 name = "flavor1Release"
                 testFixtures = true
+                unitTest = false
                 androidTest = false
             }
             variant {
                 name = "flavor2Release"
                 testFixtures = true
+                unitTest = false
                 androidTest = false
             }
             variant {

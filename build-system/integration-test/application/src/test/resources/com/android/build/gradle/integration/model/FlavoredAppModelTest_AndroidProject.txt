@@ -13,7 +13,7 @@
             - compileTaskName               = "compileProDebugSources"
             - assembleTaskName              = "assembleProDebug"
             - classesFolders:
-               * {PROJECT}/app/build/intermediates/compile_and_runtime_not_namespaced_r_class_jar/proDebug/processProDebugResources/R.jar{!}
+               * {PROJECT}/app/build/intermediates/compile_and_runtime_r_class_jar/proDebug/processProDebugResources/R.jar{!}
                * {PROJECT}/app/build/intermediates/javac/proDebug/compileProDebugJavaWithJavac/classes{!}
             - ideSetupTaskNames             = ["generateProDebugSources"]
             - generatedSourceFolders:
@@ -45,7 +45,7 @@
             - compileTaskName               = "compileProDebugAndroidTestSources"
             - assembleTaskName              = "assembleProDebugAndroidTest"
             - classesFolders:
-               * {PROJECT}/app/build/intermediates/compile_and_runtime_not_namespaced_r_class_jar/proDebugAndroidTest/processProDebugAndroidTestResources/R.jar{!}
+               * {PROJECT}/app/build/intermediates/compile_and_runtime_r_class_jar/proDebugAndroidTest/processProDebugAndroidTestResources/R.jar{!}
                * {PROJECT}/app/build/intermediates/javac/proDebugAndroidTest/compileProDebugAndroidTestJavaWithJavac/classes{!}
             - ideSetupTaskNames             = ["generateProDebugAndroidTestSources"]
             - generatedSourceFolders:
@@ -77,7 +77,7 @@
             - compileTaskName       = "compileProDebugUnitTestSources"
             - assembleTaskName      = "assembleProDebugUnitTest"
             - classesFolders:
-               * {PROJECT}/app/build/intermediates/compile_and_runtime_not_namespaced_r_class_jar/proDebug/processProDebugResources/R.jar{!}
+               * {PROJECT}/app/build/intermediates/compile_and_runtime_r_class_jar/proDebug/processProDebugResources/R.jar{!}
                * {PROJECT}/app/build/intermediates/javac/proDebugUnitTest/compileProDebugUnitTestJavaWithJavac/classes{!}
             - ideSetupTaskNames     = ["createMockableJar"]
             - generatedSourceFolders:

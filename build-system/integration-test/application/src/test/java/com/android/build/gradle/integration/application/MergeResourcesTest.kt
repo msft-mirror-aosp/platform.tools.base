@@ -681,7 +681,7 @@ class MergeResourcesTest {
             .run(":app:assembleDebug")
 
         val rJar = build.androidApplication()
-            .resolve(InternalArtifactType.COMPILE_AND_RUNTIME_NOT_NAMESPACED_R_CLASS_JAR)
+            .resolve(InternalArtifactType.COMPILE_AND_RUNTIME_R_CLASS_JAR)
             .resolve(
                 "debug/processDebugResources/${SdkConstants.FN_R_CLASS_JAR}"
             ).toFile()

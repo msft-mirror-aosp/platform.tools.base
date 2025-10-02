@@ -96,6 +96,9 @@ abstract class AarTransform : TransformAction<AarTransform.Parameters> {
 
         @get:Input
         val namespacedSharedLibSupport: Property<Boolean>
+
+        @get:Input
+        val filterOutGlobalRules: Property<Boolean>
     }
 
     @get:InputArtifact
@@ -151,7 +154,9 @@ abstract class AarTransform : TransformAction<AarTransform.Parameters> {
             RENDERSCRIPT -> outputIfExists(FD_RENDERSCRIPT)
             UNFILTERED_PROGUARD_RULES -> {
                 val targetedR8Rules = TargetedR8RulesReadWriter.readFromJar(
-                    extractedAarDir.resolve("$FD_JARS/$FN_CLASSES_JAR"), isClassesJarInAar = true
+                    extractedAarDir.resolve("$FD_JARS/$FN_CLASSES_JAR"),
+                    isClassesJarInAar = true,
+                    shouldRemoveBannedGlobals = parameters.filterOutGlobalRules.get()
                 )
                 if (targetedR8Rules.r8Rules.isNotEmpty()) {
                     writeTargetedR8Rules(targetedR8Rules, transformOutputs, isClassesJarInAar = true)

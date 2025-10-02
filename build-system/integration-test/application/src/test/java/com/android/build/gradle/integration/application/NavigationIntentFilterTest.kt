@@ -196,30 +196,6 @@ class NavigationIntentFilterTest {
         PathSubject.assertThat(mergedManifest).doesNotContain("APP_ACTION")
     }
 
-    @Test
-    fun testFailureWhenNamespacedAndroidResourcesEnabled() {
-        val navAppFile =
-            project.getSubproject(":app").file("src/main/res/navigation/nav_app.xml")
-        FileUtils.writeToFile(
-            navAppFile,
-            """
-                <navigation xmlns:app="http://schemas.android.com/apk/res-auto">
-                </navigation>
-            """.trimIndent()
-        )
-        TestFileUtils.appendToFile(
-            project.getSubproject(":app").buildFile,
-            """
-                android.androidResources.namespaced = true
-            """.trimIndent()
-        )
-        val result = project.executor().expectFailure().run(":app:assembleDebug")
-        ScannerSubject.assertThat(result.stderr).contains(
-            "Namespaced Android resources cannot be enabled when specifying navigation files in " +
-            "the manifest."
-        )
-    }
-
     private val expectedMergedManifestContent: String =
         """
             <?xml version="1.0" encoding="utf-8"?>

@@ -162,9 +162,6 @@ https://issuetracker.google.com/328748732
 https://issuetracker.google.com/328748734
   * com.android.build.api.variant.CanMinifyCode
   * com.android.build.api.variant.CanMinifyCode.isMinifyEnabled: boolean ()
-https://issuetracker.google.com/328748747
-  * com.android.build.api.dsl.AndroidResources.getNamespaced: boolean ()
-  * com.android.build.api.dsl.AndroidResources.setNamespaced: void (boolean)
 https://issuetracker.google.com/328748766
   * com.android.build.api.dsl.DynamicFeatureBuildType.isCrunchPngs: java.lang.Boolean ()
   * com.android.build.api.dsl.DynamicFeatureBuildType.setCrunchPngs: void (java.lang.Boolean)

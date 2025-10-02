@@ -48,13 +48,12 @@ import org.gradle.api.attributes.java.TargetJvmEnvironment
 import org.gradle.api.file.RegularFile
 import org.gradle.api.provider.Provider
 
-const val NAMESPACED_ANDROID_RESOURCES_FOR_PRIVACY_SANDBOX_ENABLED = false
-
 object FusedLibraryConstants {
     const val EXTENSION_NAME = "androidFusedLibrary"
     const val INCLUDE_CONFIGURATION_NAME = "include"
     const val FUSED_API_CONFIGURATION_NAME = "fusedApi"
     const val FUSED_RUNTIME_CONFIGURATION_NAME = "fusedRuntime"
+    const val FUSED_SOURCES_CONFIGURATION_NAME = "fusedSources"
     const val VALIDATE_DEPENDENCIES_TASK_NAME = "validateDependencies"
     const val FUSED_LIBRARY_PUBLICATION_COMPONENT_NAME = "fusedLibraryComponent"
 }
@@ -104,11 +103,7 @@ internal fun configureTransformsForFusedLibrary(
         }
     }
     return DependencyConfigurator(project, projectServices).configureGeneralTransforms(
-        NAMESPACED_ANDROID_RESOURCES_FOR_PRIVACY_SANDBOX_ENABLED,
-        getAarOrJarTypeToConsume(
-            projectServices.projectOptions,
-            NAMESPACED_ANDROID_RESOURCES_FOR_PRIVACY_SANDBOX_ENABLED
-        )
+        getAarOrJarTypeToConsume(projectServices.projectOptions)
     )
 }
 

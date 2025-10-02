@@ -167,28 +167,7 @@
             - custom                  = []
          < sourceProvider
          - androidTestSourceProvider  = (null)
-         > unitTestSourceProvider:
-            - name                    = "testRelease"
-            - manifestFile            = {INCLUDED_BUILD(:other-build:nested-build)}/anotherLib/src/testRelease/AndroidManifest.xml{!}
-            - javaDirectories:
-               * {INCLUDED_BUILD(:other-build:nested-build)}/anotherLib/src/testRelease/java{!}
-            - kotlinDirectories:
-               * {INCLUDED_BUILD(:other-build:nested-build)}/anotherLib/src/testRelease/java{!}
-               * {INCLUDED_BUILD(:other-build:nested-build)}/anotherLib/src/testRelease/kotlin{!}
-            - resourcesDirectories:
-               * {INCLUDED_BUILD(:other-build:nested-build)}/anotherLib/src/testRelease/resources{!}
-            - aidlDirectories         = (null)
-            - renderscriptDirectories = (null)
-            - resDirectories:
-               * {INCLUDED_BUILD(:other-build:nested-build)}/anotherLib/src/testRelease/res{!}
-            - assetsDirectories:
-               * {INCLUDED_BUILD(:other-build:nested-build)}/anotherLib/src/testRelease/assets{!}
-            - jniLibsDirectories:
-               * {INCLUDED_BUILD(:other-build:nested-build)}/anotherLib/src/testRelease/jniLibs{!}
-            - shadersDirectories      = (null)
-            - mlModelsDirectories     = (null)
-            - custom                  = []
-         < unitTestSourceProvider
+         - unitTestSourceProvider     = (null)
          - testFixturesSourceProvider = (null)
       < release
    < buildTypes
@@ -219,9 +198,7 @@
             - variantSourceProvider     = (null)
             - multiFlavorSourceProvider = (null)
          - androidTestArtifact  = (null)
-         - unitTestArtifact:
-            - variantSourceProvider     = (null)
-            - multiFlavorSourceProvider = (null)
+         - unitTestArtifact     = (null)
          - testFixturesArtifact = (null)
       < release
    < variants

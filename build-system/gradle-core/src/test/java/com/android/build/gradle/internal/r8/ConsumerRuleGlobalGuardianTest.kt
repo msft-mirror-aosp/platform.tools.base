@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 The Android Open Source Project
+ * Copyright (C) 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,14 +14,18 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.internal.tasks
+package com.android.build.gradle.internal.r8
 
 import com.google.common.truth.Truth.assertThat
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
+import kotlin.test.assertEquals
 
-internal class BannedConsumerKeepOptionTest {
+/**
+ * Test exceptions and filtering behavior from ConsumerRuleGlobalGuardian
+ */
+internal class ConsumerRuleGlobalGuardianTest {
     @get: Rule
     val temporaryFolder = TemporaryFolder()
 
@@ -40,6 +44,9 @@ internal class BannedConsumerKeepOptionTest {
     fun `exception with missing package arguments`() {
         assertThat(
             getExceptionsFromConsumerContent("-repackageclasses").single()
+        ).contains("without specifying a package")
+        assertThat(
+            getExceptionsFromConsumerContent("-repackageclasses # comment but no arg").single()
         ).contains("without specifying a package")
         assertThat(
             getExceptionsFromConsumerContent("-flattenpackagehierarchy").single()
@@ -94,12 +101,23 @@ internal class BannedConsumerKeepOptionTest {
             it.writeText(content)
         }
         val errors = mutableListOf<String>()
-        ExportConsumerProguardFilesTask.checkConsumerProguardFileContent(
+        ConsumerRuleGlobalGuardian.validateConsumerRulesHasNoBannedGlobals(
             consumerFile,
             isDynamicFeature = isDynamicFeature
         ) { exceptionMessage ->
             errors.add(exceptionMessage)
         }
+
+        content.byteInputStream().use {
+            assertEquals(
+                errors.size,
+                ConsumerRuleGlobalGuardian.readConsumerKeepRulesRemovingBannedGlobals(
+                    it,
+                    shouldRemoveBannedGlobals = true,
+                ).split("# REMOVED CONSUMER RULE: ").size - 1
+            )
+        }
+
         return errors
     }
 }

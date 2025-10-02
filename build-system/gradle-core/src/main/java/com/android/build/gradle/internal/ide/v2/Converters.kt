@@ -33,6 +33,7 @@ import com.android.builder.core.DefaultApiVersion
 import com.android.builder.model.TestOptions
 import com.android.builder.model.v2.CustomSourceDirectory
 import com.android.builder.model.v2.dsl.ClassField
+import com.android.builder.model.v2.ide.AaptOptions
 import com.android.builder.model.v2.ide.AaptOptions.Namespacing.DISABLED
 import com.android.builder.model.v2.ide.AaptOptions.Namespacing.REQUIRED
 import com.android.builder.model.v2.ide.CodeShrinker
@@ -249,9 +250,21 @@ private fun variantSourcesForModel(sourceDirectories: SourceDirectoriesImpl?) =
 private fun variantSourcesForList(sourceDirectoriesList: List<SourceDirectoriesImpl>) =
     sourceDirectoriesList.flatMap { sourceDir -> sourceDir.variantSourcesForModel { it.shouldBeAddedToIdeModel && !it.isGenerated } }
 
-internal fun AndroidResources.convert() = AaptOptionsImpl(
-    namespacing = if (namespaced) REQUIRED else DISABLED
-)
+internal fun AndroidResources.convert(): AaptOptions {
+    var namespaced = DISABLED
+    try {
+        // We removed namespaced from AGP at v9.0.
+        // It's no longer in current AndroidResources class
+        // We use reflection for older AGP versions
+        val method = this.javaClass.getMethod("getNamespaced")
+        if (method != null) {
+            namespaced = method.invoke(this) as AaptOptions.Namespacing
+        }
+    } catch (_: Exception) {
+        // ignore exception
+    }
+    return AaptOptionsImpl(namespaced)
+}
 
 internal fun Installation.convert() = InstallationImpl(
     timeOutInMs = timeOutInMs,

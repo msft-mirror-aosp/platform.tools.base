@@ -76,12 +76,6 @@ import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
 import com.google.common.util.concurrent.MoreExecutors
 import com.google.common.util.concurrent.ThreadFactoryBuilder
-import kotlinx.coroutines.Deferred
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
-import kotlinx.coroutines.cancel
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.runInterruptible
 import java.io.IOException
 import java.net.InetAddress
 import java.net.InetSocketAddress
@@ -93,6 +87,12 @@ import java.util.concurrent.Future
 import java.util.concurrent.RejectedExecutionException
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
+import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.runInterruptible
 
 /** See `FakeAdbServerTest#testInteractiveServer()` for example usage.  */
 class FakeAdbServer private constructor(var features: Set<String> = DEFAULT_FEATURES) :
@@ -102,6 +102,7 @@ class FakeAdbServer private constructor(var features: Set<String> = DEFAULT_FEAT
 
     private val mServerSocket: ServerSocketChannel
     private var mServerSocketLocalAddress: InetSocketAddress? = null
+    private val emulatorConsoles = mutableMapOf<Int, FakeEmulatorConsole>()
 
     /**
      * The [CommandHandler]s have internal state. To allow for reentrancy, instead of using a
@@ -213,6 +214,8 @@ class FakeAdbServer private constructor(var features: Set<String> = DEFAULT_FEAT
                 mServerKeepAccepting = false
                 deviceChangeHub.stop()
                 mdnsChangeHub.stop()
+                emulatorConsoles.values.forEach { it.close() }
+                emulatorConsoles.clear()
                 mDevices.forEach { (id: String?, device: DeviceState) -> device.stop() }
                 mConnectionHandlerTask!!.cancel(true)
                 try {
@@ -287,6 +290,15 @@ class FakeAdbServer private constructor(var features: Set<String> = DEFAULT_FEAT
             negotiatedSpeedMbps
         )
         return connectDevice(device)
+    }
+
+    fun connectEmulatorConsole(avdName: String, avdPath: String): Future<FakeEmulatorConsole> {
+        return mMainServerThreadExecutor.submit<FakeEmulatorConsole> {
+            val newEmulatorConsole = FakeEmulatorConsole(avdName, avdPath)
+            newEmulatorConsole.start()
+            emulatorConsoles[newEmulatorConsole.port] = newEmulatorConsole
+            newEmulatorConsole
+        }
     }
 
     private fun connectDevice(device: DeviceState): Future<DeviceState> {

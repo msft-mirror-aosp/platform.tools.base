@@ -31,21 +31,26 @@ import com.android.builder.model.v2.ide.SourceSetContainer;
 import com.android.builder.model.v2.ide.Variant;
 import com.android.utils.FileUtils;
 import com.android.utils.StringHelper;
+
 import com.google.common.truth.Truth;
+
+import org.junit.Rule;
+import org.junit.Test;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import org.junit.Rule;
-import org.junit.Test;
 
 /** Tests for the unit-tests related parts of the builder model. */
 public class UnitTestingModelTest {
 
     @Rule
     public GradleTestProject project =
-            GradleTestProject.builder().fromTestProject("unitTestingComplexProject")
-                    .addGradleProperties(BooleanOption.PRIVACY_SANDBOX_SDK_SUPPORT.getPropertyName() + "=false")
+            GradleTestProject.builder()
+                    .fromTestProject("unitTestingComplexProject")
+                    .addGradleProperties(
+                            BooleanOption.PRIVACY_SANDBOX_SDK_SUPPORT.getPropertyName() + "=false")
                     .create();
 
     @Test
@@ -60,6 +65,9 @@ public class UnitTestingModelTest {
                 .getProject(":app", ":");
 
         for (Variant variant : model.getAndroidProject().getVariants()) {
+            // Unit tests are only enabled for the tested build type.
+            if (variant.getUnitTestArtifact() == null) continue;
+
             List<File> expectedClassesFolders = new ArrayList<>();
             String processResourcesTask =
                     (variant.getName().equals("release"))
@@ -69,7 +77,7 @@ public class UnitTestingModelTest {
                     new File(
                             ArtifactTypeUtil.getOutputDir(
                                     InternalArtifactType
-                                            .COMPILE_AND_RUNTIME_NOT_NAMESPACED_R_CLASS_JAR
+                                            .COMPILE_AND_RUNTIME_R_CLASS_JAR
                                             .INSTANCE,
                                     project.getSubproject("app").getBuildDir()),
                             variant.getName() + "/" + processResourcesTask + "/" + FN_R_CLASS_JAR));
@@ -112,7 +120,7 @@ public class UnitTestingModelTest {
                                             + variant.getName()
                                             + "UnitTest"),
                             project.file(
-                                    "app/build/intermediates/compile_and_runtime_not_namespaced_r_class_jar/"
+                                    "app/build/intermediates/compile_and_runtime_r_class_jar/"
                                             + variant.getName()
                                             + "/"
                                             + processResourcesTask

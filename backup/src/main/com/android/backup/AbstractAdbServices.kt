@@ -338,12 +338,34 @@ abstract class AbstractAdbServices(
       return
     }
     totalSteps++
-    setTransport(transport)
+    setTransportWithTimeout(transport)
     try {
       block()
     } finally {
       reportProgress("Restoring backup transport")
       restoreTransport(oldTransport)
+    }
+  }
+
+  private suspend fun setTransportWithTimeout(transport: BackupTransport) {
+    var lastException: BackupException? = null
+
+    try {
+      withTimeout(5.seconds) {
+        while (true) {
+          try {
+            setTransport(transport)
+            break
+          } catch (e: BackupException) {
+            lastException = e
+            logger.warn("Failed to set transport, retrying...", e)
+            delay(1.seconds)
+          }
+        }
+      }
+    } catch (_: TimeoutCancellationException) {
+      throw lastException
+        ?: BackupException(TRANSPORT_NOT_SELECTED, "Timed out when setting transport")
     }
   }
 

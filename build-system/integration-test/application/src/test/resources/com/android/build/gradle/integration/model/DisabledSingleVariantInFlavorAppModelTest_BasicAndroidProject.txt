@@ -2,5 +2,6 @@
    - productFlavors:
       - one:
          - androidTestSourceProvider{REMOVED} = (null)
+         - unitTestSourceProvider{REMOVED}    = (null)
    - variants:
       - oneDebug{REMOVED} = (null)

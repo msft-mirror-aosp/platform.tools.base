@@ -78,13 +78,4 @@ interface AndroidResources {
     /** Adds additional parameters to be passed to `aapt`. */
     @Deprecated("Replaced with property additionalParameters")
     fun additionalParameters(vararg params: String)
-
-    /**
-     * Indicates whether the resources in this sub-project are fully namespaced.
-     *
-     * This property is incubating and may change in a future release.
-     */
-    @get:Incubating
-    @set:Incubating
-    var namespaced: Boolean
 }

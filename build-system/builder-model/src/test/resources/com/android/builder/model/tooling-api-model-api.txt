@@ -4,7 +4,7 @@ ATTENTION REVIEWER: If this needs to be changed, please make sure changes
 below are backwards compatible.
 -------------------------------------------------------------------------
 Sha256 of below classes:
-352e6af76e89bdd31f257e34afdecf20139c46f6074fb54fa1f433635a48efa8
+d029f4d267103f610e718a1f26ef9b952e814b387e78ce55f58e9a361c4981f0
 -------------------------------------------------------------------------
 com.android.builder.model.AaptOptions
 com.android.builder.model.AaptOptions$Namespacing extends java.lang.Enum
@@ -788,6 +788,8 @@ com.android.builder.model.v2.ide.SyncIssue.getMessage: java.lang.String ()
 com.android.builder.model.v2.ide.SyncIssue.getMultiLineMessage: java.util.List<java.lang.String> ()
 com.android.builder.model.v2.ide.SyncIssue.getSeverity: int ()
 com.android.builder.model.v2.ide.SyncIssue.getType: int ()
+com.android.builder.model.v2.ide.SyncIssueDataView
+com.android.builder.model.v2.ide.SyncIssueDataView.getData: java.lang.String ()
 com.android.builder.model.v2.ide.TestInfo implements com.android.builder.model.v2.AndroidModel
 com.android.builder.model.v2.ide.TestInfo$Execution extends java.lang.Enum
 com.android.builder.model.v2.ide.TestInfo$Execution.getEntries: kotlin.enums.EnumEntries<com.android.builder.model.v2.ide.TestInfo$Execution> ()

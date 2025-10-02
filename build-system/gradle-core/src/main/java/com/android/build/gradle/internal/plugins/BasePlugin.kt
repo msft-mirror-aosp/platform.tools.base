@@ -17,7 +17,6 @@
 package com.android.build.gradle.internal.plugins
 
 import com.android.SdkConstants
-import com.android.build.api.dsl.BuildFeatures
 import com.android.build.api.dsl.CommonExtension
 import com.android.build.api.dsl.LibraryExtension
 import com.android.build.api.dsl.SettingsExtension
@@ -55,10 +54,13 @@ import com.android.build.gradle.internal.dependency.SourceSetManager
 import com.android.build.gradle.internal.dependency.VariantDependencies
 import com.android.build.gradle.internal.dsl.BuildType
 import com.android.build.gradle.internal.dsl.CommonExtensionImpl
+import com.android.build.gradle.internal.dsl.CompileSdkVersionImpl
 import com.android.build.gradle.internal.dsl.DefaultConfig
+import com.android.build.gradle.internal.dsl.MinSdkVersionImpl
 import com.android.build.gradle.internal.dsl.ModulePropertyKey
 import com.android.build.gradle.internal.dsl.ProductFlavor
 import com.android.build.gradle.internal.dsl.SigningConfig
+import com.android.build.gradle.internal.dsl.TargetSdkVersionImpl
 import com.android.build.gradle.internal.errors.DeprecationReporterImpl
 import com.android.build.gradle.internal.errors.IncompatibleProjectOptionsReporter
 import com.android.build.gradle.internal.getManagedDeviceAvdFolder
@@ -750,7 +752,7 @@ To learn more, go to https://d.android.com/r/tools/java-8-support-message.html
         )
             .configureDependencySubstitutions()
             .configureDependencyChecks()
-            .configureGeneralTransforms(globalConfig.namespacedAndroidResources, globalConfig.aarOrJarTypeToConsume)
+            .configureGeneralTransforms(globalConfig.aarOrJarTypeToConsume)
             .configureVariantTransforms(
                 variants,
                 variantManager.nestedComponents,
@@ -885,45 +887,58 @@ To learn more, go to https://d.android.com/r/tools/java-8-support-message.html
     }
 
     protected open fun AndroidT.doInitExtensionFromSettings(settings: SettingsExtension) {
-        settings.compileSdk?.let { compileSdk ->
-            this.compileSdk = compileSdk
-
-            settings.compileSdkExtension?.let { compileSdkExtension ->
-                this.compileSdkExtension = compileSdkExtension
+        settings.compileSdk compileSdkSettings@{
+            this@doInitExtensionFromSettings.compileSdk {
+                val settingsCompileSdkVersion = this@compileSdkSettings.version
+                settingsCompileSdkVersion?.let {
+                    this.version = CompileSdkVersionImpl(
+                        apiLevel = it.apiLevel,
+                        minorApiLevel = it.minorApiLevel,
+                        sdkExtension = it.sdkExtension,
+                        codeName = it.codeName,
+                        addonName = it.addonName,
+                        vendorName = it.vendorName
+                    )
+                }
             }
         }
 
-        settings.compileSdkPreview?.let { compileSdkPreview ->
-            this.compileSdkPreview = compileSdkPreview
-        }
-
-        settings.minSdk?.let { minSdk ->
-            this.defaultConfig.minSdk = minSdk
-        }
-
-        settings.minSdkPreview?.let { minSdkPreview ->
-            this.defaultConfig.minSdkPreview = minSdkPreview
-        }
-
-        // For libraries, set testOptions.targetSdk and lint.targetSdk instead of the deprecated
-        // LibraryBaseFlavor.targetSdk
-        settings.targetSdk?.let {targetSdk ->
-            if (this is LibraryExtension) {
-                this.testOptions.targetSdk = targetSdk
-                this.lint.targetSdk = targetSdk
-            } else {
-                (this.defaultConfig as DefaultConfig).targetSdk = targetSdk
+        settings.minSdk minSdkSettings@ {
+            this@doInitExtensionFromSettings.defaultConfig.minSdk {
+                val settingsMinSdkVersion = this@minSdkSettings.version
+                settingsMinSdkVersion?.let {
+                    this.version = MinSdkVersionImpl(
+                        apiLevel = it.apiLevel,
+                        codeName = it.codeName
+                    )
+                }
             }
         }
 
-        // For libraries, set testOptions.targetSdkPreview and lint.targetSdkPreview instead of the
-        // deprecated LibraryBaseFlavor.targetSdkPreview
-        settings.targetSdkPreview?.let { targetSdkPreview ->
-            if (this is LibraryExtension) {
-                this.testOptions.targetSdkPreview = targetSdkPreview
-                this.lint.targetSdkPreview = targetSdkPreview
+        settings.targetSdk targetSdkSettings@ {
+            val settingsTargetSdkVersion =
+                this@targetSdkSettings.version ?: return@targetSdkSettings
+            val commonExtension = this@doInitExtensionFromSettings
+            // For libraries, set targetSdk and targetSdkPreview via testOptions and lint because
+            // LibraryBaseFlavor doesn't expose api to set targetSdk and targetSdkPreview
+            if (commonExtension is LibraryExtension) {
+                settingsTargetSdkVersion.apiLevel?.let {
+                    commonExtension.testOptions.targetSdk = it
+                    commonExtension.lint.targetSdk = it
+                }
+                settingsTargetSdkVersion.codeName?.let {
+                    commonExtension.testOptions.targetSdkPreview = it
+                    commonExtension.lint.targetSdkPreview = it
+                }
             } else {
-                (this.defaultConfig as DefaultConfig).targetSdkPreview = targetSdkPreview
+                (commonExtension.defaultConfig as DefaultConfig).targetSdk {
+                    settingsTargetSdkVersion.let {
+                        this.version = TargetSdkVersionImpl(
+                            apiLevel = it.apiLevel,
+                            codeName = it.codeName,
+                        )
+                    }
+                }
             }
         }
 

@@ -180,9 +180,6 @@ class GlobalTaskCreationConfigImpl(
     override val testServers: List<TestServer>
         get() = oldExtension.testServers
 
-    override val namespacedAndroidResources: Boolean
-        get() = extension.androidResources.namespaced
-
     override val testOptionExecutionEnum: com.android.builder.model.TestOptions.Execution? by lazy {
         androidTestOptions.execution.toExecutionEnum()
     }
@@ -249,7 +246,7 @@ class GlobalTaskCreationConfigImpl(
     override val taskNames: GlobalTaskNames = GlobalTaskNamesImpl
 
     override val aarOrJarTypeToConsume: AarOrJarTypeToConsume
-        get() = getAarOrJarTypeToConsume(services.projectOptions, namespacedAndroidResources)
+        get() = getAarOrJarTypeToConsume(services.projectOptions)
 
     override val avoidTaskRegistration: Boolean = services.projectOptions.run {
         get(BooleanOption.IDE_AVOID_TASK_REGISTRATION) &&

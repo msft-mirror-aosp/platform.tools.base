@@ -41,6 +41,8 @@ import java.util.zip.ZipInputStream
  *     + If a library has both [VersionedR8Rules] and [LegacyProguardRules], R8 will consume
  *       [VersionedR8Rules] and ignore [LegacyProguardRules]. Note that older R8 versions that are
  *       not able to consume [VersionedR8Rules] will continue to consume [LegacyProguardRules].
+ *
+ * Any filtering for that should occur is done during extraction from the relevant JAR/AAR.
  */
 data class TargetedR8Rules(
     val r8Rules: List<VersionedR8Rules>,
@@ -152,7 +154,9 @@ object TargetedR8RulesReadWriter {
      *   [LegacyProguardRules]. This is because for an AAR, the location of the legacy Proguard
      *   rules is outside classes.jar (see [LegacyProguardRules.PROGUARD_TXT_FOR_AAR]).
      */
-    fun TargetedR8Rules.createJarContents(isClassesJarInAar: Boolean = false): Map<String, ByteArray> {
+    fun TargetedR8Rules.createJarContents(
+        isClassesJarInAar: Boolean = false
+    ): Map<String, ByteArray> {
         return r8Rules.associate {
             it.relativeFilePath to it.r8Rules.toByteArray()
         } + if (isClassesJarInAar) emptyMap() else legacyProguardRules.associate {
@@ -166,8 +170,15 @@ object TargetedR8RulesReadWriter {
      *   - For classes.jar of an AAR ([isClassesJarInAar] = true), read all contents except
      *   [LegacyProguardRules]. This is because for an AAR, the location of the legacy Proguard
      *   rules is outside classes.jar (see [LegacyProguardRules.PROGUARD_TXT_FOR_AAR]).
+     *
+     *  Filtering out banned global options may be performed at read time by specifying
+     *  [shouldRemoveBannedGlobals].
      */
-    fun readFromJar(jarFile: File, isClassesJarInAar: Boolean = false): TargetedR8Rules {
+    fun readFromJar(
+        jarFile: File,
+        isClassesJarInAar: Boolean,
+        shouldRemoveBannedGlobals: Boolean
+    ): TargetedR8Rules {
         val r8Rules = mutableListOf<VersionedR8Rules>()
         val legacyProguardRules = mutableListOf<LegacyProguardRules>()
 
@@ -181,7 +192,10 @@ object TargetedR8RulesReadWriter {
                             minVersion = matchResult.groups["minVersion"]?.value?.let { ShrinkerVersion.tryParse(it) },
                             maxVersionExclusive = matchResult.groups["maxVersionExclusive"]?.value?.let { ShrinkerVersion.tryParse(it) },
                             fileName = matchResult.groups["fileName"]!!.value,
-                            r8Rules = zipInputStream.readBytes().decodeToString()
+                            r8Rules = ConsumerRuleGlobalGuardian.readConsumerKeepRulesRemovingBannedGlobals(
+                                zipInputStream,
+                                shouldRemoveBannedGlobals = shouldRemoveBannedGlobals
+                            )
                         )
                     )
                 } ?: if (isClassesJarInAar) null else {
@@ -189,7 +203,10 @@ object TargetedR8RulesReadWriter {
                         legacyProguardRules.add(
                             LegacyProguardRules(
                                 fileName = matchResult.groups["fileName"]!!.value,
-                                legacyProguardRules = zipInputStream.readBytes().decodeToString()
+                                legacyProguardRules = ConsumerRuleGlobalGuardian.readConsumerKeepRulesRemovingBannedGlobals(
+                                    zipInputStream,
+                                    shouldRemoveBannedGlobals = shouldRemoveBannedGlobals
+                                )
                             )
                         )
                     }

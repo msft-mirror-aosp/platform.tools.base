@@ -253,7 +253,6 @@ enum class BooleanOption(
     CONSUME_DEPENDENCIES_AS_SHARED_LIBRARIES("android.consumeDependenciesAsSharedLibraries", false, FeatureStage.Experimental),
     SUPPORT_OEM_TOKEN_LIBRARIES("android.enableOemTokenLibraries", false, FeatureStage.Experimental),
     DISABLE_EARLY_MANIFEST_PARSING("android.disableEarlyManifestParsing", false, FeatureStage.Experimental),
-    ENABLE_RESOURCE_NAMESPACING_DEFAULT("android.enableResourceNamespacingDefault", false, FeatureStage.Experimental),
     CONDITIONAL_KEEP_RULES("android.useConditionalKeepRules", false, FeatureStage.Experimental),
     KEEP_SERVICES_BETWEEN_BUILDS("android.keepWorkerActionServicesBetweenBuilds", false, FeatureStage.Experimental),
     ENABLE_PARTIAL_R_INCREMENTAL_BUILDS("android.enablePartialRIncrementalBuilds", false, FeatureStage.Experimental),
@@ -288,9 +287,6 @@ enum class BooleanOption(
     ENABLE_ADDITIONAL_ANDROID_TEST_OUTPUT("android.enableAdditionalTestOutput", true, FeatureStage.Experimental),
 
     ENABLE_EXTRACT_ANNOTATIONS("android.enableExtractAnnotations", true, FeatureStage.Experimental),
-
-    // Marked as stable to avoid reporting deprecation twice.
-    CONVERT_NON_NAMESPACED_DEPENDENCIES("android.convertNonNamespacedDependencies", true, FeatureStage.Experimental),
 
     /** Set to true to build native .so libraries only for the device it will be run on. */
     BUILD_ONLY_TARGET_ABI("android.buildOnlyTargetAbi", true, FeatureStage.Experimental),
@@ -530,23 +526,6 @@ enum class BooleanOption(
         )
     ),
 
-    /**
-     * Global options such as `-dontoptimize` no longer supported in consumer rules in 9.0
-     *
-     * These options are only supported in app (base) modules.
-     */
-    R8_GLOBAL_OPTIONS_IN_CONSUMER_RULES_DISALLOWED(
-        "android.r8.globalOptionsInConsumerRules.disallowed",
-        false,
-        FeatureStage.Experimental,
-        FutureStage(
-            true,
-            FeatureStage.Enforced(Version.VERSION_10_0),
-            Version.VERSION_9_0
-        )
-    ),
-
-
     /** Enables R8 gradual support */
     R8_GRADUAL_API("android.r8.gradual.support", false, FeatureStage.Experimental),
 
@@ -726,6 +705,18 @@ enum class BooleanOption(
         true,
         FeatureStage.SoftlyEnforced(VERSION_10_0)
     ),
+
+    /**
+     * Global options such as `-dontoptimize` no longer supported in consumer rules in 9.0
+     *
+     * These options are only supported in app (base) modules.
+     */
+    R8_GLOBAL_OPTIONS_IN_CONSUMER_RULES_DISALLOWED(
+        "android.r8.globalOptionsInConsumerRules.disallowed",
+        true,
+        FeatureStage.SoftlyEnforced(VERSION_10_0)
+    ),
+
 
     /* -------------------
      * DEPRECATED API
@@ -1129,6 +1120,25 @@ enum class BooleanOption(
     /* ----------------
      * REMOVED API
      */
+
+    ENABLE_RESOURCE_NAMESPACING_DEFAULT(
+        "android.enableResourceNamespacingDefault",
+        false,
+        ApiStage.Removed(
+            Version.VERSION_9_0,
+            "The android.enableResourceNamespacingDefault property has no effect"
+        )
+    ),
+    // flag does not work without namespace that's been removed
+    CONVERT_NON_NAMESPACED_DEPENDENCIES(
+        "android.convertNonNamespacedDependencies",
+        false,
+        ApiStage.Removed(
+            Version.VERSION_9_0,
+            "The android.convertNonNamespacedDependencies property has no effect"
+        )
+    ),
+
     BUILD_FEATURE_RENDERSCRIPT(
         "android.defaults.buildfeatures.renderscript",
         false,

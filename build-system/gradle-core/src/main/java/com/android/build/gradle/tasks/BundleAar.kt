@@ -178,16 +178,7 @@ abstract class BundleAar : Zip(), VariantTask {
                 prependToCopyPath(SdkConstants.FD_RES)
             )
 
-            if (!creationConfig.global.namespacedAndroidResources) {
-                // In non-namespaced projects bundle the library manifest straight to the AAR.
-                task.from(artifacts.get(SingleArtifact.MERGED_MANIFEST))
-            } else {
-                // In namespaced projects the bundled manifest needs to have stripped resource
-                // references for backwards compatibility.
-                task.from(artifacts.get(
-                    InternalArtifactType.NON_NAMESPACED_LIBRARY_MANIFEST))
-                task.from(artifacts.get(InternalArtifactType.RES_STATIC_LIBRARY))
-            }
+            task.from(artifacts.get(SingleArtifact.MERGED_MANIFEST))
 
             if (buildFeatures.androidResources) {
                 task.from(artifacts.get(InternalArtifactType.PUBLIC_RES))

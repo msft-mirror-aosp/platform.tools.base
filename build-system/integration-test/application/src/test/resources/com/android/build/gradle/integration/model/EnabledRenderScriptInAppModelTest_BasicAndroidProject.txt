@@ -26,8 +26,5 @@
          - sourceProvider:
             - renderscriptDirectories:
                * {PROJECT}/app/src/release/rs{!}{ADDED}
-         - unitTestSourceProvider:
-            - renderscriptDirectories:
-               * {PROJECT}/app/src/testRelease/rs{!}{ADDED}
    < buildTypes
 < BasicAndroidProject

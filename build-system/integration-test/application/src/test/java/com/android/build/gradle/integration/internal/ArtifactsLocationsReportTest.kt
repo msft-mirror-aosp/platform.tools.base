@@ -55,7 +55,7 @@ class ArtifactsLocationsReportTest {
 
         // extract one record and verify that the location points to an existing file.
         val artifactData = data["single"]?.single {
-            it["artifact"] == "COMPILE_AND_RUNTIME_NOT_NAMESPACED_R_CLASS_JAR"
+            it["artifact"] == "COMPILE_AND_RUNTIME_R_CLASS_JAR"
         }
         Truth.assertThat(artifactData).isNotNull()
         val artifactFile = artifactData!!["location"]

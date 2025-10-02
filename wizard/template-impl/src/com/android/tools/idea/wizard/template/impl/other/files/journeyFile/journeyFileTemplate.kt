@@ -16,18 +16,23 @@
 
 package com.android.tools.idea.wizard.template.impl.other.files.journeyFile
 
+import com.android.tools.idea.flags.StudioFlags
 import com.android.tools.idea.wizard.template.Category
 import com.android.tools.idea.wizard.template.Constraint.JOURNEY
 import com.android.tools.idea.wizard.template.Constraint.NONEMPTY
 import com.android.tools.idea.wizard.template.Constraint.UNIQUE
 import com.android.tools.idea.wizard.template.FormFactor
+import com.android.tools.idea.wizard.template.LabelWidget
 import com.android.tools.idea.wizard.template.ModuleTemplateData
+import com.android.tools.idea.wizard.template.TemplateConstraint
 import com.android.tools.idea.wizard.template.TemplateData
+import com.android.tools.idea.wizard.template.TestSuiteWidget
 import com.android.tools.idea.wizard.template.TextFieldWidget
 import com.android.tools.idea.wizard.template.WizardUiContext
 import com.android.tools.idea.wizard.template.impl.activities.common.MIN_API
 import com.android.tools.idea.wizard.template.stringParameter
 import com.android.tools.idea.wizard.template.template
+import com.intellij.icons.AllIcons
 import com.intellij.openapi.util.io.FileUtil
 import com.intellij.webSymbols.utils.NameCaseUtils
 import java.io.File
@@ -41,6 +46,19 @@ val journeyFileTemplate
     category = Category.Test
     formFactor = FormFactor.Mobile
     screens = listOf(WizardUiContext.MenuEntry)
+    constraints = listOf(TemplateConstraint.TestSuite)
+
+    val showTestSuiteOptions =
+      StudioFlags.AGP_TEST_SUITES_ENABLED.get() && StudioFlags.JOURNEYS_WITH_GEMINI_TEST_SUITE.get()
+
+    val testSuiteName = stringParameter {
+      name = "Test Suite Name"
+      default = "journeysTest"
+      help =
+        "The name of the Test Suite configured in the Android Gradle Plugin to run the Journey test"
+      constraints = listOf(NONEMPTY)
+      loggable = true
+    }
 
     val journeyName = stringParameter {
       name = "Journey Name"
@@ -54,7 +72,7 @@ val journeyFileTemplate
       name = "Journey Description"
       default = "A Journey that tests ..."
       help = "A high-level description of the Journey"
-      constraints = listOf(NONEMPTY)
+      constraints = emptyList()
       loggable = true
     }
 
@@ -68,9 +86,19 @@ val journeyFileTemplate
     }
 
     widgets(
-      TextFieldWidget(journeyName),
-      TextFieldWidget(journeyDescription),
-      TextFieldWidget(journeyFileName),
+      *listOfNotNull(
+          if (showTestSuiteOptions)
+            LabelWidget(
+              "Journeys requires the module to be configured with a Journeys Test Suite. Test Suite support in the Android Gradle Plugin (AGP) is in preview, and could change in the future. This could impact your ability to upgrade to later AGP versions.",
+              AllIcons.General.Warning,
+            )
+          else null,
+          if (showTestSuiteOptions) TestSuiteWidget(testSuiteName) else null,
+          TextFieldWidget(journeyName),
+          TextFieldWidget(journeyDescription),
+          TextFieldWidget(journeyFileName),
+        )
+        .toTypedArray()
     )
 
     thumb {
@@ -83,7 +111,9 @@ val journeyFileTemplate
         data as ModuleTemplateData,
         journeyName.value,
         journeyDescription.value,
-        journeyFileName.value
+        journeyFileName.value,
+        testSuiteName.value,
+        data.currentVariant,
       )
     }
   }

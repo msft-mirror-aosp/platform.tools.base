@@ -187,19 +187,12 @@ abstract class BundleAllClasses : NonIncrementalTask() {
                         creationConfig.oldVariantApiLegacySupport?.variantData?.allPostJavacGeneratedBytecode
                     )
                 )
-                if (creationConfig.global.namespacedAndroidResources) {
-                    task.inputJars.fromDisallowChanges(
-                        creationConfig.artifacts.get(
-                            InternalArtifactType.COMPILE_R_CLASS_JAR
-                        )
+
+                task.inputJars.fromDisallowChanges(
+                    creationConfig.artifacts.get(
+                        InternalArtifactType.COMPILE_AND_RUNTIME_R_CLASS_JAR
                     )
-                } else {
-                    task.inputJars.fromDisallowChanges(
-                        creationConfig.artifacts.get(
-                            InternalArtifactType.COMPILE_AND_RUNTIME_NOT_NAMESPACED_R_CLASS_JAR
-                        )
-                    )
-                }
+                )
             }
             task.inputDirs.disallowChanges()
             task.inputJars.disallowChanges()

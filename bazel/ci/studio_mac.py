@@ -51,6 +51,8 @@ def studio_mac(build_env: bazel.BuildEnv) -> None:
       )
     if result.exit_code != bazel.EXITCODE_NO_TESTS_FOUND:
       return
+  else:
+    studio.copy_bazel_logs(build_env)
 
   raise studio.BazelTestError(exit_code=result.exit_code)
 
@@ -59,8 +61,10 @@ def studio_mac_arm(build_env: bazel.BuildEnv) -> None:
   """Runs studio-mac-arm target."""
   flags = build_flags(
       build_env,
-      'ci:studio-mac-arm',
+      test_tag_filters='ci:studio-mac-arm',
   )
+  flags.append('--discard_analysis_cache')
+  flags.append('--nokeep_state_after_build')
   targets = [
       '//tools/...',
       '-//tools/vendor/google/aswb/...',
@@ -95,6 +99,8 @@ def studio_mac_arm(build_env: bazel.BuildEnv) -> None:
       )
     if result.exit_code != bazel.EXITCODE_NO_TESTS_FOUND:
       return
+  else:
+    studio.copy_bazel_logs(build_env)
 
   raise studio.BazelTestError(exit_code=result.exit_code)
 

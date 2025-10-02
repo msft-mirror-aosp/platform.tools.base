@@ -1129,9 +1129,10 @@ public final class SdkConstants {
     public static final String TAG_PACKAGE = "package";
     public static final String TAG_PROPERTY = "property";
     public static final String TAG_PROVIDER = "provider";
+    // TODO (b/442571488) - Remove once usages are updated to use specific and general purposes
     public static final String TAG_PURPOSE = "purpose";
-    // TODO (b/442571488) - Remove once usages in lint are updated.
-    public static final String TAG_VALID_PURPOSE = "valid-purpose";
+    public static final String TAG_SPECIFIC_PURPOSE = "specific-purpose";
+    public static final String TAG_GENERAL_PURPOSE = "general-purpose";
     public static final String TAG_VALID_SPECIFIC_PURPOSE = "valid-specific-purpose";
     public static final String TAG_VALID_GENERAL_PURPOSE = "valid-general-purpose";
     public static final String TAG_GRANT_PERMISSION = "grant-uri-permission";
@@ -1321,7 +1322,6 @@ public final class SdkConstants {
     public static final String ATTR_PROCESS = "process";
     public static final String ATTR_MIN_SDK_VERSION = "minSdkVersion";
     public static final String ATTR_MAX_SDK_VERSION = "maxSdkVersion";
-    public static final String ATTR_PURPOSE = "purpose";
     public static final String ATTR_TARGET_SDK_VERSION = "targetSdkVersion";
     public static final String ATTR_ICON = "icon";
     public static final String ATTR_RESOURCE = "resource";

@@ -26,8 +26,5 @@
          - sourceProvider:
             - aidlDirectories:
                * {PROJECT}/app/src/release/aidl{!}{ADDED}
-         - unitTestSourceProvider:
-            - aidlDirectories:
-               * {PROJECT}/app/src/testRelease/aidl{!}{ADDED}
    < buildTypes
 < BasicAndroidProject

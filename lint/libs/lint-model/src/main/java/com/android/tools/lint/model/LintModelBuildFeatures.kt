@@ -19,11 +19,9 @@ package com.android.tools.lint.model
 interface LintModelBuildFeatures {
   val viewBinding: Boolean
   val coreLibraryDesugaringEnabled: Boolean
-  val namespacingMode: LintModelNamespacingMode
 }
 
 class DefaultLintModelBuildFeatures(
   override val viewBinding: Boolean,
   override val coreLibraryDesugaringEnabled: Boolean,
-  override val namespacingMode: LintModelNamespacingMode,
 ) : LintModelBuildFeatures

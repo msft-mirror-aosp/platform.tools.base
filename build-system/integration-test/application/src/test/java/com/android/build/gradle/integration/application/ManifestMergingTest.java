@@ -352,32 +352,6 @@ public class ManifestMergingTest {
     }
 
     @Test
-    public void checkFailureForLibraryAndroidTestWithNavigationFilesAndNamespacedResources()
-            throws Exception {
-        TestFileUtils.searchAndReplace(
-                new File(
-                        navigation.getSubproject("library").getMainSrcDir().getParent(),
-                        "AndroidManifest.xml"),
-                "</activity>",
-                "        <nav-graph android:value=\"@navigation/nav1\"/>\n    </activity>");
-
-        TestFileUtils.appendToFile(
-                navigation.getSubproject("library").getBuildFile(),
-                "\nandroid.androidResources.namespaced = true");
-
-        GradleBuildResult result =
-                navigation
-                        .executor()
-                        .expectFailure()
-                        .run("clean", ":library:assembleDebugAndroidTest");
-
-        ScannerSubject.assertThat(result.getStderr())
-                .contains(
-                        "Namespaced Android resources cannot be enabled when specifying navigation"
-                                + " files in the manifest.");
-    }
-
-    @Test
     public void checkManifestFile_doesNotRebuildWhenNonNavigationResourceAreChanged()
             throws Exception {
         navigation.executor().run("clean", ":app:assembleDebug");

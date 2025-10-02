@@ -13,7 +13,7 @@
             - compileTaskName               = "compileProPlayDebugSources"
             - assembleTaskName              = "assembleProPlayDebug"
             - classesFolders:
-               * {PROJECT}/app/build/intermediates/compile_and_runtime_not_namespaced_r_class_jar/proPlayDebug/processProPlayDebugResources/R.jar{!}
+               * {PROJECT}/app/build/intermediates/compile_and_runtime_r_class_jar/proPlayDebug/processProPlayDebugResources/R.jar{!}
                * {PROJECT}/app/build/intermediates/javac/proPlayDebug/compileProPlayDebugJavaWithJavac/classes{!}
             - ideSetupTaskNames             = ["generateProPlayDebugSources"]
             - generatedSourceFolders:
@@ -45,7 +45,7 @@
             - compileTaskName               = "compileProPlayDebugAndroidTestSources"
             - assembleTaskName              = "assembleProPlayDebugAndroidTest"
             - classesFolders:
-               * {PROJECT}/app/build/intermediates/compile_and_runtime_not_namespaced_r_class_jar/proPlayDebugAndroidTest/processProPlayDebugAndroidTestResources/R.jar{!}
+               * {PROJECT}/app/build/intermediates/compile_and_runtime_r_class_jar/proPlayDebugAndroidTest/processProPlayDebugAndroidTestResources/R.jar{!}
                * {PROJECT}/app/build/intermediates/javac/proPlayDebugAndroidTest/compileProPlayDebugAndroidTestJavaWithJavac/classes{!}
             - ideSetupTaskNames             = ["generateProPlayDebugAndroidTestSources"]
             - generatedSourceFolders:
@@ -77,7 +77,7 @@
             - compileTaskName       = "compileProPlayDebugUnitTestSources"
             - assembleTaskName      = "assembleProPlayDebugUnitTest"
             - classesFolders:
-               * {PROJECT}/app/build/intermediates/compile_and_runtime_not_namespaced_r_class_jar/proPlayDebug/processProPlayDebugResources/R.jar{!}
+               * {PROJECT}/app/build/intermediates/compile_and_runtime_r_class_jar/proPlayDebug/processProPlayDebugResources/R.jar{!}
                * {PROJECT}/app/build/intermediates/javac/proPlayDebugUnitTest/compileProPlayDebugUnitTestJavaWithJavac/classes{!}
             - ideSetupTaskNames     = ["createMockableJar"]
             - generatedSourceFolders:

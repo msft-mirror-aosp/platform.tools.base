@@ -88,11 +88,8 @@ internal class KmpGlobalTaskCreationConfigImpl(
 
     override val globalArtifacts: ArtifactsImpl = ArtifactsImpl(project, "global")
 
-    override val namespacedAndroidResources: Boolean
-        get() = false
-
     override val aarOrJarTypeToConsume: AarOrJarTypeToConsume
-        get() = getAarOrJarTypeToConsume(services.projectOptions, namespacedAndroidResources)
+        get() = getAarOrJarTypeToConsume(services.projectOptions)
 
     override val platformAttrs: FileCollection by lazy {
         val attributes =

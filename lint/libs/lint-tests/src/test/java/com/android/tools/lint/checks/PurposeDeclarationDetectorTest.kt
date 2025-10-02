@@ -49,9 +49,9 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
       """
             <?xml version="1.0" encoding="utf-8"?>
             <permissions>
-                <permission name="USE_FOO" requiresPurposeMin="37">
-                    <valid-purpose name="validPurposeForSdk37+" min="37" />
-                    <valid-purpose name="validPurposeForSdk38+" min="38" />
+                <permission name="USE_FOO" requiresSpecificPurposeMinTargetSdkVersion="37">
+                    <valid-specific-purpose name="specificPurposeForSdk37+" minSdkVersion="37" />
+                    <valid-specific-purpose name="specificPurposeForSdk38+" minSdkVersion="38" />
                 </permission>
             </permissions>
         """
@@ -68,15 +68,17 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
 
     @Language("XML")
     private val MALFORMED_MOCK_XML =
-      // USE_FOO is missing requiresPurposeMin and USE_BAR is missing min for purpose.
+      // USE_FOO missing requiresSpecificPurposeMinTargetSdkVersion and USE_BAR missing
+      // minSdkVersion
+      // for purpose.
       """
             <?xml version="1.0" encoding="utf-8"?>
             <permissions>
                 <permission name="USE_FOO">
-                    <valid-purpose name="validPurposeForSdk37+" min="37" />
+                    <valid-specific-purpose name="specificPurposeForSdk37+" minSdkVersion="37" />
                 </permission>
-                <permission name="USE_BAR" requiresPurposeMin="37">
-                    <valid-purpose name="validPurposeForSdk37+" />
+                <permission name="USE_BAR" requiresSpecificPurposeMinTargetSdkVersion="37">
+                    <valid-specific-purpose name="specificPurposeForSdk37+" />
                 </permission>
             </permissions>
         """
@@ -87,12 +89,12 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
       """
             <?xml version="1.0" encoding="utf-8"?>
             <permissions>
-                <permission name="USE_FOO" requiresPurposeMin="37" requiresPurposeMax="38">
-                    <valid-purpose name="fooValidPurpose1" min="37" max="37"/>
-                    <valid-purpose name="fooValidPurpose2" min="38" />
+                <permission name="USE_FOO" requiresSpecificPurposeMinTargetSdkVersion="37" requiresSpecificPurposeMaxSdkVersion="38">
+                    <valid-specific-purpose name="fooSpecificPurpose1" minSdkVersion="37" maxSdkVersion="37"/>
+                    <valid-specific-purpose name="fooSpecificPurpose2" minSdkVersion="38" />
                 </permission>
-                <permission name="USE_BAR" requiresPurposeMin="38">
-                    <valid-purpose name="barValidPurpose1" min="38" />
+                <permission name="USE_BAR" requiresSpecificPurposeMinTargetSdkVersion="38">
+                    <valid-specific-purpose name="barSpecificPurpose1" minSdkVersion="38" />
                 </permission>
             </permissions>
         """
@@ -132,7 +134,7 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
       .run()
       .expect(
         """
-        src/main/AndroidManifest.xml:4: Error: USE_FOO will not be granted due to missing <purpose>. Possible valid purposes: validPurposeForSdk37+, validPurposeForSdk38+ [MissingPurpose]
+        src/main/AndroidManifest.xml:4: Error: USE_FOO on API level(s) 37 requires one or more <specific-purpose> child tag declaration(s). Ensure declared purpose(s) cover all targeted API level(s). Possible purposes: specificPurposeForSdk37+, specificPurposeForSdk38+ [MissingPurpose]
           <uses-permission android:name="USE_FOO" />
           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         1 errors, 0 warnings
@@ -163,7 +165,7 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
                 xmlns:tools="http://schemas.android.com/tools"
                 package="com.example.helloworld">
                 <uses-permission android:name="USE_FOO">
-                  <purpose android:name="validPurposeForSdk38+" />
+                  <specific-purpose android:name="specificPurposeForSdk38+" />
                 </uses-permission>
               </manifest>
               """
@@ -175,7 +177,7 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
       .run()
       .expect(
         """
-        src/main/AndroidManifest.xml:4: Error: USE_FOO will not be granted on API level(s) 37 due to no valid <purpose>. Ensure valid purpose(s) cover all API level(s). Possible valid purposes: validPurposeForSdk37+, validPurposeForSdk38+ [MissingPurpose]
+        src/main/AndroidManifest.xml:4: Error: USE_FOO on API level(s) 37 requires one or more <specific-purpose> child tag declaration(s). Ensure declared purpose(s) cover all targeted API level(s). Possible purposes: specificPurposeForSdk37+, specificPurposeForSdk38+ [MissingPurpose]
           <uses-permission android:name="USE_FOO">
            ~~~~~~~~~~~~~~~
         1 errors, 0 warnings
@@ -216,7 +218,7 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
       .run()
       .expect(
         """
-        src/main/AndroidManifest.xml:4: Error: USE_FOO will not be granted due to missing <purpose>. Possible valid purposes: validPurposeForSdk37+, validPurposeForSdk38+ [MissingPurpose]
+        src/main/AndroidManifest.xml:4: Error: USE_FOO on API level(s) 37 requires one or more <specific-purpose> child tag declaration(s). Ensure declared purpose(s) cover all targeted API level(s). Possible purposes: specificPurposeForSdk37+, specificPurposeForSdk38+ [MissingPurpose]
           <uses-permission-sdk-23 android:name="USE_FOO" />
           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         1 errors, 0 warnings
@@ -225,7 +227,7 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
   }
 
   @Test
-  fun testRequestingPermissionWithValidPurposePass() {
+  fun testRequestingPermissionWithSpecificPurposePass() {
     lint()
       .files(
         gradle(
@@ -247,7 +249,7 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
                 xmlns:tools="http://schemas.android.com/tools"
                 package="com.example.helloworld">
                 <uses-permission android:name="USE_FOO">
-                  <purpose android:name="validPurposeForSdk37+" />
+                  <specific-purpose android:name="specificPurposeForSdk37+" />
                 </uses-permission>
               </manifest>
               """
@@ -283,8 +285,8 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
                 xmlns:tools="http://schemas.android.com/tools"
                 package="com.example.helloworld">
                 <uses-permission android:name="USE_FOO">
-                  <purpose android:name="invalidPurpose" />
-                  <purpose android:name="validPurposeForSdk37+" />
+                  <specific-purpose android:name="invalidPurpose" />
+                  <specific-purpose android:name="specificPurposeForSdk37+" />
                 </uses-permission>
               </manifest>
               """
@@ -389,7 +391,7 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
                 xmlns:tools="http://schemas.android.com/tools"
                 package="com.example.helloworld">
                 <uses-permission android:name="USE_FOO" android:minSdkVersion="38">
-                  <purpose android:name="validPurposeForSdk38+" />
+                  <specific-purpose android:name="specificPurposeForSdk38+" />
                 </uses-permission>
               </manifest>
               """
@@ -426,7 +428,7 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
                 xmlns:tools="http://schemas.android.com/tools"
                 package="com.example.helloworld">
                 <uses-permission android:name="USE_FOO">
-                  <purpose android:name="validPurposeForSdk38+" />
+                  <specific-purpose android:name="specificPurposeForSdk38+" />
                 </uses-permission>
               </manifest>
               """
@@ -532,7 +534,7 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
                 xmlns:tools="http://schemas.android.com/tools"
                 package="com.example.helloworld">
                 <uses-permission android:name="USE_FOO">
-                  <purpose android:name="validPurposeForSdk37+" android:maxSdkVersion="37"  />
+                  <specific-purpose android:name="specificPurposeForSdk37+" android:maxSdkVersion="37"  />
                 </uses-permission>
               </manifest>
               """
@@ -544,7 +546,7 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
       .run()
       .expect(
         """
-        src/main/AndroidManifest.xml:4: Error: USE_FOO will not be granted on API level(s) 38-39 due to no valid <purpose>. Ensure valid purpose(s) cover all API level(s). Possible valid purposes: validPurposeForSdk37+, validPurposeForSdk38+ [MissingPurpose]
+        src/main/AndroidManifest.xml:4: Error: USE_FOO on API level(s) 38-39 requires one or more <specific-purpose> child tag declaration(s). Ensure declared purpose(s) cover all targeted API level(s). Possible purposes: specificPurposeForSdk37+, specificPurposeForSdk38+ [MissingPurpose]
           <uses-permission android:name="USE_FOO">
            ~~~~~~~~~~~~~~~
         1 errors, 0 warnings
@@ -575,10 +577,10 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
                 xmlns:tools="http://schemas.android.com/tools"
                 package="com.example.helloworld">
                 <uses-permission android:name="USE_FOO">
-                  <purpose android:name="fooValidPurpose1" />
+                  <specific-purpose android:name="fooSpecificPurpose1" />
                 </uses-permission>
                 <uses-permission android:name="USE_BAR">
-                  <purpose android:name="barValidPurpose1" android:minSdkVersion="39"  />
+                  <specific-purpose android:name="barSpecificPurpose1" android:minSdkVersion="39"  />
                 </uses-permission>
               </manifest>
               """
@@ -590,10 +592,10 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
       .run()
       .expect(
         """
-        src/main/AndroidManifest.xml:4: Error: USE_FOO will not be granted on API level(s) 38 due to no valid <purpose>. Ensure valid purpose(s) cover all API level(s). Possible valid purposes: fooValidPurpose1, fooValidPurpose2 [MissingPurpose]
+        src/main/AndroidManifest.xml:4: Error: USE_FOO on API level(s) 38 requires one or more <specific-purpose> child tag declaration(s). Ensure declared purpose(s) cover all targeted API level(s). Possible purposes: fooSpecificPurpose1, fooSpecificPurpose2 [MissingPurpose]
           <uses-permission android:name="USE_FOO">
            ~~~~~~~~~~~~~~~
-        src/main/AndroidManifest.xml:7: Error: USE_BAR will not be granted on API level(s) 38 due to no valid <purpose>. Ensure valid purpose(s) cover all API level(s). Possible valid purposes: barValidPurpose1 [MissingPurpose]
+        src/main/AndroidManifest.xml:7: Error: USE_BAR on API level(s) 38 requires one or more <specific-purpose> child tag declaration(s). Ensure declared purpose(s) cover all targeted API level(s). Possible purposes: barSpecificPurpose1 [MissingPurpose]
           <uses-permission android:name="USE_BAR">
            ~~~~~~~~~~~~~~~
         2 errors, 0 warnings
@@ -612,7 +614,7 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
                   compileSdk 38
                   defaultConfig {
                       minSdkVersion 30
-                      targetSdkVersion 38
+                      targetSdkVersion 39
                   }
               }
               """,
@@ -624,11 +626,11 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
                 xmlns:tools="http://schemas.android.com/tools"
                 package="com.example.helloworld">
                 <uses-permission android:name="USE_FOO">
-                  <purpose android:name="fooValidPurpose1" android:maxSdkVersion="37" />
-                  <purpose android:name="fooValidPurpose2" android:minSdkVersion="38" />
+                  <specific-purpose android:name="fooSpecificPurpose1" android:maxSdkVersion="37" />
+                  <specific-purpose android:name="fooSpecificPurpose2" android:maxSdkVersion="38" />
                 </uses-permission>
                 <uses-permission android:name="USE_BAR">
-                  <purpose android:name="barValidPurpose1" />
+                  <specific-purpose android:name="barSpecificPurpose1" />
                 </uses-permission>
               </manifest>
               """
@@ -642,7 +644,7 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
   }
 
   @Test
-  fun testRequestingPermissionWithMultipleValidPurposeIntervalsPass() {
+  fun testRequestingPermissionWithMultipleSpecificPurposeIntervalsPass() {
     lint()
       .files(
         gradle(
@@ -664,9 +666,9 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
                 xmlns:tools="http://schemas.android.com/tools"
                 package="com.example.helloworld">
                 <uses-permission android:name="USE_FOO">
-                  <purpose android:name="validPurposeForSdk37+" android:minSdkVersion="37" android:maxSdkVersion="37" />
-                  <purpose android:name="validPurposeForSdk37+" android:minSdkVersion="38" android:maxSdkVersion="41" />
-                  <purpose android:name="validPurposeForSdk37+" android:minSdkVersion="42" android:maxSdkVersion="42" />
+                  <specific-purpose android:name="specificPurposeForSdk37+" android:minSdkVersion="37" android:maxSdkVersion="37" />
+                  <specific-purpose android:name="specificPurposeForSdk37+" android:minSdkVersion="38" android:maxSdkVersion="41" />
+                  <specific-purpose android:name="specificPurposeForSdk37+" android:minSdkVersion="42" android:maxSdkVersion="42" />
                 </uses-permission>
               </manifest>
               """
@@ -680,7 +682,7 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
   }
 
   @Test
-  fun testRequestingPermissionWithMultipleOverlappedValidPurposeIntervalsPass() {
+  fun testRequestingPermissionWithMultipleOverlappedSpecificPurposeIntervalsPass() {
     lint()
       .files(
         gradle(
@@ -702,10 +704,10 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
                 xmlns:tools="http://schemas.android.com/tools"
                 package="com.example.helloworld">
                 <uses-permission android:name="USE_FOO">
-                  <purpose android:name="validPurposeForSdk37+" android:maxSdkVersion="34" />
-                  <purpose android:name="validPurposeForSdk37+" android:minSdkVersion="32" android:maxSdkVersion="36" />
-                  <purpose android:name="validPurposeForSdk37+" android:minSdkVersion="35" android:maxSdkVersion="41" />
-                  <purpose android:name="validPurposeForSdk37+" android:minSdkVersion="40" />
+                  <specific-purpose android:name="specificPurposeForSdk37+" android:maxSdkVersion="34" />
+                  <specific-purpose android:name="specificPurposeForSdk37+" android:minSdkVersion="32" android:maxSdkVersion="36" />
+                  <specific-purpose android:name="specificPurposeForSdk37+" android:minSdkVersion="35" android:maxSdkVersion="41" />
+                  <specific-purpose android:name="specificPurposeForSdk37+" android:minSdkVersion="40" />
                 </uses-permission>
               </manifest>
               """
@@ -741,10 +743,10 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
                 xmlns:tools="http://schemas.android.com/tools"
                 package="com.example.helloworld">
                 <uses-permission android:name="USE_FOO">
-                  <purpose android:name="validPurposeForSdk37+" android:minSdkVersion="34" android:maxSdkVersion="36" />
-                  <purpose android:name="validPurposeForSdk37+" android:minSdkVersion="39" android:maxSdkVersion="39" />
-                  <purpose android:name="validPurposeForSdk37+" android:minSdkVersion="41" android:maxSdkVersion="42" />
-                  <purpose android:name="invalidPurpose" android:minSdkVersion="43" />
+                  <specific-purpose android:name="specificPurposeForSdk37+" android:minSdkVersion="34" android:maxSdkVersion="36" />
+                  <specific-purpose android:name="specificPurposeForSdk37+" android:minSdkVersion="39" android:maxSdkVersion="39" />
+                  <specific-purpose android:name="specificPurposeForSdk37+" android:minSdkVersion="41" android:maxSdkVersion="42" />
+                  <specific-purpose android:name="invalidPurpose" android:minSdkVersion="43" />
                 </uses-permission>
               </manifest>
               """
@@ -756,7 +758,7 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
       .run()
       .expect(
         """
-        src/main/AndroidManifest.xml:4: Error: USE_FOO will not be granted on API level(s) 37-38, 40, 43-45 due to no valid <purpose>. Ensure valid purpose(s) cover all API level(s). Possible valid purposes: validPurposeForSdk37+, validPurposeForSdk38+ [MissingPurpose]
+        src/main/AndroidManifest.xml:4: Error: USE_FOO on API level(s) 37-38, 40, 43-45 requires one or more <specific-purpose> child tag declaration(s). Ensure declared purpose(s) cover all targeted API level(s). Possible purposes: specificPurposeForSdk37+, specificPurposeForSdk38+ [MissingPurpose]
           <uses-permission android:name="USE_FOO">
            ~~~~~~~~~~~~~~~
         1 errors, 0 warnings

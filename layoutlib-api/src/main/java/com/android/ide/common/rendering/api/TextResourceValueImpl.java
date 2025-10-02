@@ -23,6 +23,7 @@ import java.util.Objects;
 /** A {@link ResourceValue} intended for text nodes where we need access to the raw XML text. */
 public class TextResourceValueImpl extends ResourceValueImpl implements TextResourceValue {
     @Nullable private String rawXmlValue;
+    @Nullable private String renderingValue;
 
     public TextResourceValueImpl(
             @NonNull ResourceNamespace namespace,
@@ -65,8 +66,21 @@ public class TextResourceValueImpl extends ResourceValueImpl implements TextReso
     }
 
     @Override
+    @Nullable
+    public String getRenderingValue() {
+        if (renderingValue != null) {
+            return renderingValue;
+        }
+        return super.getValue();
+    }
+
+    public void setRenderingValue(@Nullable String value) {
+        renderingValue = value;
+    }
+
+    @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), rawXmlValue);
+        return Objects.hash(super.hashCode(), rawXmlValue, renderingValue);
     }
 
     @Override
@@ -74,6 +88,6 @@ public class TextResourceValueImpl extends ResourceValueImpl implements TextReso
         if (this == obj) return true;
         if (!super.equals(obj)) return false;
         TextResourceValueImpl other = (TextResourceValueImpl) obj;
-        return Objects.equals(rawXmlValue, other.rawXmlValue);
+        return Objects.equals(rawXmlValue, other.rawXmlValue) && Objects.equals(renderingValue, other.renderingValue);
     }
 }

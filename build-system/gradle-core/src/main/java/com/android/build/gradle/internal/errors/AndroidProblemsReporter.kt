@@ -24,19 +24,19 @@ import com.android.builder.errors.IssueReporter.Severity
 import com.android.builder.errors.IssueReporter.Type
 import org.gradle.api.Action
 import org.gradle.api.Project
+import org.gradle.api.problems.AdditionalData
 import org.gradle.api.problems.ProblemGroup
 import org.gradle.api.problems.ProblemId
-import org.gradle.api.problems.internal.GeneralDataSpec
-import org.gradle.api.problems.internal.InternalProblemReporter
-import org.gradle.api.problems.internal.InternalProblemSpec
-import org.gradle.api.problems.internal.InternalProblems
+import org.gradle.api.problems.ProblemReporter
+import org.gradle.api.problems.ProblemSpec
+import org.gradle.api.problems.Problems
 import org.gradle.api.provider.Property
 import org.gradle.api.services.BuildService
 import org.gradle.api.services.BuildServiceParameters
 import javax.inject.Inject
 
 abstract class AndroidProblemReporterProvider @Inject constructor(
-    private val problemsService: InternalProblems
+    private val problemsService: Problems
 ) : BuildService<AndroidProblemReporterProvider.Parameters> {
 
     interface Parameters : BuildServiceParameters {
@@ -47,7 +47,7 @@ abstract class AndroidProblemReporterProvider @Inject constructor(
     fun reporter(): AndroidProblemsReporter {
         return when {
             parameters.enableProblemsApi.get() ->
-                AndroidProblemsReporterImpl(problemsService.internalReporter)
+                AndroidProblemsReporterImpl(problemsService.reporter)
 
             else -> object : AndroidProblemsReporter {
                 override fun reportSyncIssue(
@@ -83,31 +83,40 @@ interface AndroidProblemsReporter {
     fun reportSyncIssue(type: Type, severity: Severity, exception: EvalIssueException)
 }
 
+/**
+ * This class defines data provided with the problem. On IDE side it is being read using
+ * [com.android.builder.model.v2.ide.SyncIssueDataView]. In case we evolve it in the future we need
+ * ensure sure backwards compatibility.
+ */
+interface SyncIssueData : AdditionalData {
+    var data: String?
+}
+
 class AndroidProblemsReporterImpl(
-    val problemReporter: InternalProblemReporter
+    val problemReporter: ProblemReporter
 ) : AndroidProblemsReporter {
 
+    private val syncIssueProblemGroup = ProblemGroup.create("agp-sync-issues", "Sync Issues")
     override fun reportSyncIssue(type: Type, severity: Severity, exception: EvalIssueException) {
-        val problem = problemReporter.internalCreate(AndroidSyncIssueProblemBuilder(type, severity, exception))
+        val id = ProblemId.create(type.type.toString(), type.name, syncIssueProblemGroup)
+        val problem = problemReporter.create(id, AndroidSyncIssueProblemBuilder(type, severity, exception))
         problemReporter.report(problem)
     }
 
-    class AndroidSyncIssueProblemBuilder(val type: Type, val severity: Severity, val exception: EvalIssueException) :  Action<InternalProblemSpec> {
-        private val syncIssueProblemGroup = ProblemGroup.create("agp-sync-issues", "Sync Issues")
+    class AndroidSyncIssueProblemBuilder(val type: Type, val severity: Severity, val exception: EvalIssueException) :  Action<ProblemSpec> {
 
-        override fun execute(problem: InternalProblemSpec) {
+        override fun execute(problem: ProblemSpec) {
             val problemSeverity = when (severity) {
                 Severity.WARNING -> org.gradle.api.problems.Severity.WARNING
                 Severity.ERROR -> org.gradle.api.problems.Severity.ERROR
             }
-            problem.id(ProblemId.create(type.type.toString(), type.name, syncIssueProblemGroup))
             problem.severity(problemSeverity)
             problem.contextualLabel(exception.message)
             exception.multilineMessage?.let { problem.details(it.joinToString(separator = "\n")) }
             exception.data?.let {
-                problem.additionalDataInternal(GeneralDataSpec::class.java, { data ->
-                    data.put("EvalIssueException.data", it)
-                })
+                problem.additionalData(SyncIssueData::class.java) { data ->
+                    data.data = it
+                }
             }
             problem.withException(exception)
         }

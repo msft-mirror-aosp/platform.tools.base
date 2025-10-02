@@ -836,11 +836,12 @@ public abstract class RepositoryLoader<T extends LoadableResourceRepository> imp
     ResourceNamespace.Resolver namespaceResolver = myParser.getNamespaceResolver();
     String text = type == ResourceType.ID ? null : myTextExtractor.extractText(myParser, withRowXml);
     String rawXml = type == ResourceType.ID ? null : myTextExtractor.getRawXml();
+    String renderingValue = type == ResourceType.ID ? null : myTextExtractor.getRenderingValue();
     assert withRowXml || rawXml == null; // Text extractor doesn't extract raw XML unless asked to do it.
     ResourceVisibility visibility = getVisibility(type, name);
     BasicValueResourceItem item = rawXml == null ?
                                   new BasicValueResourceItem(type, name, sourceFile, visibility, text) :
-                                  new BasicTextValueResourceItem(type, name, sourceFile, visibility, text, rawXml);
+                                  new BasicTextValueResourceItem(type, name, sourceFile, visibility, text, rawXml, renderingValue);
     item.setNamespaceResolver(namespaceResolver);
     return item;
   }
@@ -1270,6 +1271,7 @@ public abstract class RepositoryLoader<T extends LoadableResourceRepository> imp
   private static class XmlTextExtractor {
     @NonNull private final StringBuilder text = new StringBuilder();
     @NonNull private final StringBuilder rawXml = new StringBuilder();
+    @NonNull private final StringBuilder renderingValue = new StringBuilder();
     @NonNull private final Deque<Boolean> textInclusionState = new ArrayDeque<>();
     private boolean nontrivialRawXml;
 
@@ -1277,6 +1279,7 @@ public abstract class RepositoryLoader<T extends LoadableResourceRepository> imp
     String extractText(@NonNull XmlPullParser parser, boolean withRawXml) throws IOException, XmlPullParserException {
       text.setLength(0);
       rawXml.setLength(0);
+      renderingValue.setLength(0);
       textInclusionState.clear();
       nontrivialRawXml = false;
 
@@ -1350,6 +1353,7 @@ public abstract class RepositoryLoader<T extends LoadableResourceRepository> imp
           case XmlPullParser.ENTITY_REF:
           case XmlPullParser.TEXT: {
             String textPiece = parser.getText();
+            renderingValue.append(textPiece);
             if (getTextInclusionState()) {
               text.append(textPiece);
             }
@@ -1361,6 +1365,7 @@ public abstract class RepositoryLoader<T extends LoadableResourceRepository> imp
 
           case XmlPullParser.CDSECT: {
             String textPiece = parser.getText();
+            renderingValue.append(textPiece);
             if (getTextInclusionState()) {
               text.append(textPiece);
             }
@@ -1383,6 +1388,11 @@ public abstract class RepositoryLoader<T extends LoadableResourceRepository> imp
     @Nullable
     String getRawXml() {
       return nontrivialRawXml ? rawXml.toString() : null;
+    }
+
+    @Nullable
+    String getRenderingValue() {
+      return ValueXmlHelper.unescapeResourceString(renderingValue.toString(), false, true);
     }
 
     private static boolean isXliffNamespace(@Nullable String namespaceUri) {

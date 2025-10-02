@@ -26,7 +26,6 @@ import com.android.build.api.dsl.TestTaskContext
 import com.android.build.gradle.internal.testsuites.TestSuiteSourceCreationConfig
 import org.gradle.api.Action
 import org.gradle.api.NamedDomainObjectContainer
-import org.gradle.api.NamedDomainObjectFactory
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.tasks.testing.Test
 import java.util.concurrent.atomic.AtomicBoolean
@@ -64,6 +63,18 @@ abstract class AgpTestSuiteImpl(
     override fun getName(): String = name
 
     override val targetVariants = mutableListOf<String>()
+
+    /**
+     * Adds one or more target variants to the [targetVariants] list.
+     *
+     * This method is provided for Groovy DSL support, allowing a more idiomatic syntax.
+     * For example:
+     * ```groovy
+     * targetVariants 'debug', 'release'
+     * ```
+     * @param targetVariants The names of the variants to target.
+     */
+    fun targetVariants(vararg targetVariants: String) = this.targetVariants.addAll(targetVariants)
 
     private val targets = objects.domainObjectContainer(
         AgpTestSuiteTarget::class.java

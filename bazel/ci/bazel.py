@@ -4,6 +4,7 @@ import dataclasses
 import getpass
 import logging
 import os
+import re
 import subprocess
 import tempfile
 from typing import List
@@ -27,6 +28,7 @@ class BuildEnv:
   bazel_version: str
   user: str
   branch: str
+  is_studio_only_release: bool
 
   # Startup options for Bazel commands.
   startup_options: List[str]
@@ -105,6 +107,7 @@ def make_build_env(
     bazel_path: str,
     user: str = getpass.getuser(),
     bazel_version: str = "",
+    is_studio_only_release: bool = None,
 ):
   build_number = os.environ.get("BUILD_NUMBER", "SNAPSHOT")
   build_target_name = os.environ.get("BUILD_TARGET_NAME", "")
@@ -121,6 +124,14 @@ def make_build_env(
   # Assuming the workspace root is the name of the branch.
   # Ideally, buildbot provides a concerete environment variable.
   branch = workspace_dir.split("/")[-1]
+  if is_studio_only_release is None:
+    match = None
+    with open(os.path.join(workspace_dir, "tools/base/common/release_version.bzl")) as f:
+        for line in f:
+            match = re.match("IS_AGP_RELEASE_BRANCH *= *\"(true|false)\"", line)
+    if not match:
+        raise Exception("Unable to determine if is_studio_only_release. Expected IS_AGP_RELEASE_BRANCH = \"true\" (or \"false\") in tools/base/common/release_version.bzl")
+    is_studio_only_release = match[1] == "false"
 
   startup_options = ["--max_idle_secs=60"]
   if build_target_name and user == "android-build":  # AB environment
@@ -140,5 +151,6 @@ def make_build_env(
       bazel_version=bazel_version,
       user=user,
       branch=branch,
+      is_studio_only_release=is_studio_only_release,
       startup_options=startup_options,
   )

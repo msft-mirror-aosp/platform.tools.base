@@ -26,8 +26,5 @@
          - sourceProvider:
             - mlModelsDirectories:
                * {PROJECT}/app/src/release/ml{!}{ADDED}
-         - unitTestSourceProvider:
-            - mlModelsDirectories:
-               * {PROJECT}/app/src/testRelease/ml{!}{ADDED}
    < buildTypes
 < BasicAndroidProject

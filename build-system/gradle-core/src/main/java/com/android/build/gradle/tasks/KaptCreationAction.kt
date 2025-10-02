@@ -96,19 +96,7 @@ class KaptCreationAction(
                 null
             ),
         )
-        val externalKaptDeps = creationConfig.variantDependencies.getArtifactFileCollection(
-            AndroidArtifacts.ConsumedConfigType.ANNOTATION_PROCESSOR,
-            AndroidArtifacts.ArtifactScope.EXTERNAL,
-            AndroidArtifacts.ArtifactType.PROCESSED_JAR
-        )
-        task.kaptClasspath.from(
-            creationConfig.variantDependencies.getArtifactFileCollection(
-                AndroidArtifacts.ConsumedConfigType.ANNOTATION_PROCESSOR,
-                AndroidArtifacts.ArtifactScope.PROJECT,
-                AndroidArtifacts.ArtifactType.JAR
-            ),
-            externalKaptDeps
-        )
+        task.kaptClasspath.from(creationConfig.getAnnotationProcessorJars())
         // This does not create a circular dependency as this input is @Internal. These classes are
         // needed in order to support incremental annotation processing with KAPT.
         task.compiledSources.from(task.project.provider {

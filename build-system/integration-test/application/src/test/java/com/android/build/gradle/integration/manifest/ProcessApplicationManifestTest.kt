@@ -138,11 +138,11 @@ class ProcessApplicationManifestTest {
         assertThat(manifestFile2).contains("android:targetSdkVersion=\"Baklava\"")
     }
 
-
     @Test
     fun testLibraryManifestContainsTargetSdkVersionFromOptions() {
         project.getSubproject(":lib").buildFile.appendText("""
             android {
+                testBuildType = "release"
                 testOptions {
                     targetSdk = 22
                     unitTests {
@@ -152,8 +152,8 @@ class ProcessApplicationManifestTest {
             }
         """.trimIndent())
         val result = project.executor().run(":lib:processReleaseUnitTestManifest")
-        assertTrue { result.failedTasks.isEmpty()}
-        val manifestFile =  project.getSubproject(":lib").file("build/intermediates/packaged_manifests/releaseUnitTest/processReleaseUnitTestManifest/AndroidManifest.xml")
+        assertTrue { result.failedTasks.isEmpty() }
+        val manifestFile = project.getSubproject(":lib").file("build/intermediates/packaged_manifests/releaseUnitTest/processReleaseUnitTestManifest/AndroidManifest.xml")
         assertThat(manifestFile).contains("android:targetSdkVersion=\"22\"")
     }
 

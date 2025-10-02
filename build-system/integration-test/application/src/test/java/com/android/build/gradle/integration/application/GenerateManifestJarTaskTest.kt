@@ -117,7 +117,6 @@ class GenerateManifestJarTaskTest(private val enableManifestClass : Boolean) {
                     "assembleDebug",
                     "assembleRelease",
                     "testDebugUnitTest",
-                    "testReleaseUnitTest"
             )
         } else {
             project.executeExpectingFailure("assembleDebug", "assembleRelease")

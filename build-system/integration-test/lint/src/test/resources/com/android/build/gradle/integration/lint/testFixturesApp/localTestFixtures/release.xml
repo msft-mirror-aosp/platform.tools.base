@@ -7,8 +7,7 @@
     manifestMergeReport="build/outputs/logs/manifest-merger-release-report.txt"
     proguardFiles="build/intermediates/default_proguard_files/global/proguard-android-optimize.txt-$androidGradlePluginVersion"
     partialResultsDir="build/intermediates/lint_partial_results/release/lintAnalyzeRelease/out">
-  <buildFeatures
-      namespacing="REQUIRED"/>
+  <buildFeatures/>
   <sourceProviders>
     <sourceProvider
         manifests="src/main/AndroidManifest.xml"
@@ -37,7 +36,7 @@
         testFixture="true"/>
   </testFixturesSourceProviders>
   <artifact
-      classOutputs="build/intermediates/javac/release/compileReleaseJavaWithJavac/classes:build/intermediates/compile_and_runtime_not_namespaced_r_class_jar/release/processReleaseResources/R.jar"
+      classOutputs="build/intermediates/javac/release/compileReleaseJavaWithJavac/classes:build/intermediates/compile_and_runtime_r_class_jar/release/processReleaseResources/R.jar"
       type="MAIN"
       applicationId="com.example.app"
       generatedSourceFolders="build/generated/ap_generated_sources/release/out"

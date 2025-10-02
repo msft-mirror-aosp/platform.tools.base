@@ -73,19 +73,6 @@ public class JacocoConnectedTest {
     }
 
     @Test
-    public void connectedCheckNamespacedRClasses() throws Exception {
-        TestFileUtils.appendToFile(
-                project.getBuildFile(), "android.aaptOptions.namespaced = true\n");
-
-        project.executor().run("connectedCheck");
-
-        assertThat(
-                        project.file(
-                                "build/reports/coverage/androidTest/debug/connected/com.example.helloworld/HelloWorld.html"))
-                .exists();
-    }
-
-    @Test
     public void connectedCheckWithOrchestrator() throws Exception {
         runConnectedCheckAndAssertCoverageReportExists(/*enableClearPackageDataOption=*/ false);
     }

@@ -4,24 +4,21 @@
          - mainArtifact:
             - classesFolders:
                * {PROJECT}/app/build/intermediates/compile_r_class_jar/debug/generateDebugRFile/R.jar{!}{ADDED}
-               * {PROJECT}/app/build/intermediates/compile_and_runtime_not_namespaced_r_class_jar/debug/processDebugResources/R.jar{!}{REMOVED}
+               * {PROJECT}/app/build/intermediates/compile_and_runtime_r_class_jar/debug/processDebugResources/R.jar{!}{REMOVED}
             - bundleInfo{REMOVED} = (null)
          - androidTestArtifact:
             - classesFolders:
                * {PROJECT}/app/build/intermediates/compile_r_class_jar/debugAndroidTest/generateDebugAndroidTestRFile/R.jar{!}{ADDED}
-               * {PROJECT}/app/build/intermediates/compile_and_runtime_not_namespaced_r_class_jar/debugAndroidTest/processDebugAndroidTestResources/R.jar{!}{REMOVED}
+               * {PROJECT}/app/build/intermediates/compile_and_runtime_r_class_jar/debugAndroidTest/processDebugAndroidTestResources/R.jar{!}{REMOVED}
          - unitTestArtifact:
             - classesFolders:
-               * {PROJECT}/app/build/intermediates/compile_and_runtime_not_namespaced_r_class_jar/debug/processDebugResources/R.jar{!}{REMOVED}
+               * {PROJECT}/app/build/intermediates/compile_and_runtime_r_class_jar/debug/processDebugResources/R.jar{!}{REMOVED}
       < debug
       - release:
          - mainArtifact:
             - classesFolders:
                * {PROJECT}/app/build/intermediates/compile_r_class_jar/release/generateReleaseRFile/R.jar{!}{ADDED}
-               * {PROJECT}/app/build/intermediates/compile_and_runtime_not_namespaced_r_class_jar/release/processReleaseResources/R.jar{!}{REMOVED}
+               * {PROJECT}/app/build/intermediates/compile_and_runtime_r_class_jar/release/processReleaseResources/R.jar{!}{REMOVED}
             - bundleInfo{REMOVED} = (null)
-         - unitTestArtifact:
-            - classesFolders:
-               * {PROJECT}/app/build/intermediates/compile_and_runtime_not_namespaced_r_class_jar/release/processReleaseResources/R.jar{!}{REMOVED}
    < variants
 < AndroidProject

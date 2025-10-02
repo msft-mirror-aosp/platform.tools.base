@@ -265,11 +265,9 @@ fun runR8(
         .apply { toolConfig.isolatedSplits?.let { setEnableIsolatedSplits(it) } }
 
     // Use this to control all resources provided to R8
-    val r8ProgramResourceProvider = R8ProgramResourceProvider()
-
     for (path in inputClasses) {
         when {
-            Files.isRegularFile(path) -> r8ProgramResourceProvider.addProgramResourceProvider(
+            Files.isRegularFile(path) -> r8CommandBuilder.addProgramResourceProvider(
                 ArchiveProgramResourceProvider.fromArchive(path)
             )
 
@@ -285,13 +283,9 @@ fun runR8(
         }
     }
 
-    r8ProgramResourceProvider.dataResourceProviders.add(
-        ResourceOnlyProvider(
-            ArchiveResourceProvider.fromArchive(inputJavaResJar, true)
-        ).dataResourceProvider
+    r8CommandBuilder.addProgramResourceProvider(
+        ResourceOnlyProvider(ArchiveResourceProvider.fromArchive(inputJavaResJar, true))
     )
-
-    r8CommandBuilder.addProgramResourceProvider(r8ProgramResourceProvider)
 
     // handle art-profile rewriting if enabled
     inputArtProfile?.let {input ->
@@ -618,73 +612,17 @@ private class ProGuardRulesFilteringVisitor(
     }
 }
 
-private class R8ProgramResourceProvider : ProgramResourceProvider {
-
-    private val programResourcesList: MutableList<ProgramResource> = ArrayList()
-
-    val dataResourceProviders: MutableList<DataResourceProvider> = ArrayList()
-
-    fun addProgramResourceProvider(provider: ProgramResourceProvider) {
-        programResourcesList.addAll(provider.programResources)
-        provider.dataResourceProvider?.let {
-            dataResourceProviders.add(it)
-        }
-    }
-
-    override fun getProgramResources() = programResourcesList
-
-    override fun getDataResourceProvider() = object : DataResourceProvider {
-        override fun accept(visitor: DataResourceProvider.Visitor?) {
-            val visitorWrapper = ProGuardRulesFilteringVisitor(visitor)
-            for (provider in dataResourceProviders) {
-                provider.accept(visitorWrapper)
-            }
-        }
-    }
-}
-
-/** Provider that loads all resources from the specified directories.  */
-private class R8DataResourceProvider(val dirResources: Collection<Path>) : DataResourceProvider {
-
-    override fun accept(visitor: DataResourceProvider.Visitor?) {
-        val seen = mutableSetOf<Path>()
-        val logger: Logger = Logger.getLogger("R8")
-        for (resourceBase in dirResources) {
-            Files.walk(resourceBase).use {
-                it.forEach {
-                    val relative = resourceBase.relativize(it)
-                    if (it != resourceBase
-                        && !it.toString().endsWith(DOT_CLASS)
-                        && seen.add(relative)
-                    ) {
-                        when {
-                            Files.isDirectory(it) -> visitor!!.visit(
-                                DataDirectoryResource.fromFile(
-                                    resourceBase, resourceBase.relativize(it)
-                                )
-                            )
-
-                            else -> visitor!!.visit(
-                                DataEntryResource.fromFile(
-                                    resourceBase, resourceBase.relativize(it)
-                                )
-                            )
-                        }
-                    } else {
-                        logger.fine { "Ignoring entry $relative from $resourceBase" }
-                    }
-                }
-            }
-        }
-    }
-}
-
-private class ResourceOnlyProvider(val originalProvider: ProgramResourceProvider) :
+private class ResourceOnlyProvider(val originalProvider: ArchiveResourceProvider) :
     ProgramResourceProvider {
 
     override fun getProgramResources() = listOf<ProgramResource>()
 
-    override fun getDataResourceProvider() = originalProvider.getDataResourceProvider()
+    override fun getDataResourceProvider() = object : DataResourceProvider {
+        override fun accept(visitor: DataResourceProvider.Visitor?) {
+            val visitorWrapper = ProGuardRulesFilteringVisitor(visitor)
+            originalProvider.accept(visitorWrapper);
+        }
+    }
 }
 
 /** Custom Java resources consumer to make sure we compress Java resources in the jar. */

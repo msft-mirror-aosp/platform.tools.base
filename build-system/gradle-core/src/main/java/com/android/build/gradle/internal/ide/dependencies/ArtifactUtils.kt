@@ -191,7 +191,7 @@ class Level1RuntimeArtifactCollections(variantDependencies: VariantDependencies)
     @get:Internal
     val runtimeExternalJars = variantDependencies.getArtifactCollectionForToolingModel(
         AndroidArtifacts.ConsumedConfigType.RUNTIME_CLASSPATH,
-        AndroidArtifacts.ArtifactScope.EXTERNAL, AndroidArtifacts.ArtifactType.PROCESSED_JAR
+        AndroidArtifacts.ArtifactScope.EXTERNAL, AndroidArtifacts.ArtifactType.JAR
     )
 
     @get:Classpath

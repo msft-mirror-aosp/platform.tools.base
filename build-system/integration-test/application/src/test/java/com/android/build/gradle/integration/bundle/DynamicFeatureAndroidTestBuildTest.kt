@@ -144,7 +144,7 @@ class DynamicFeatureAndroidTestBuildTest {
         // not contain any libs that the app or feature depend on.
         val androidTestFeatureRJar = project.getSubproject("feature")
             .getIntermediateFile(
-                "compile_and_runtime_not_namespaced_r_class_jar",
+                "compile_and_runtime_r_class_jar",
                 "debugAndroidTest",
                 "processDebugAndroidTestResources",
                 "R.jar"

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018 The Android Open Source Project
+ * Copyright (C) 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,15 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.android.tools.journeys.testengine.selector
 
-@file:JvmName("AutoNamespaceLocation")
-package com.android.build.gradle.internal.res.namespaced
+import org.junit.platform.engine.DiscoverySelector
+import java.io.File
 
-import com.android.utils.FileUtils
-import org.gradle.api.artifacts.component.ComponentIdentifier
-
-
-fun getAutoNamespacedLibraryFileName(artifactId: ComponentIdentifier): String {
-    // TODO: handle collisions!
-    return "${FileUtils.sanitizeFileName(artifactId.displayName)}.apk"
-}
+data class DeviceSpecificDirectorySelector(
+  val deviceSerialId: String,
+  val directory: File
+) : DiscoverySelector

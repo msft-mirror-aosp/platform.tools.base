@@ -73,6 +73,11 @@ data class CheckBoxWidget(val p: BooleanParameter): ParameterWidget<Boolean>(p)
 data class UrlLinkWidget(val urlName:String, val urlAddress: String): Widget<String>
 
 /**
+ * A text field that is initialised with a suggested test suite name.
+ */
+data class TestSuiteWidget(val p: StringParameter) : ParameterWidget<String>(p)
+
+/**
  * Horizontal separator. Has no functionality.
  */
 object Separator : Widget<Nothing>

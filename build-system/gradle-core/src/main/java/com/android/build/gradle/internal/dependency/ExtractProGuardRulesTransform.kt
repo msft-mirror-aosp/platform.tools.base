@@ -25,20 +25,32 @@ import org.gradle.api.artifacts.transform.InputArtifact
 import org.gradle.api.artifacts.transform.TransformAction
 import org.gradle.api.artifacts.transform.TransformOutputs
 import org.gradle.api.file.FileSystemLocation
+import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.Classpath
+import org.gradle.api.tasks.Input
 import javax.inject.Inject
 
 @CacheableTransform
 abstract class ExtractProGuardRulesTransform @Inject constructor() :
-    TransformAction<GenericTransformParameters> {
+    TransformAction<ExtractProGuardRulesTransform.Parameters> {
+
+    interface Parameters : GenericTransformParameters{
+        @get:Input
+        val filterOutGlobalRules: Property<Boolean>
+    }
 
     @get:Classpath
     @get:InputArtifact
     abstract val inputArtifact: Provider<FileSystemLocation>
 
     override fun transform(transformOutputs: TransformOutputs) {
-        val targetedR8Rules = TargetedR8RulesReadWriter.readFromJar(inputArtifact.get().asFile)
+        val targetedR8Rules =
+            TargetedR8RulesReadWriter.readFromJar(
+                inputArtifact.get().asFile,
+                isClassesJarInAar = false,
+                shouldRemoveBannedGlobals = parameters.filterOutGlobalRules.get()
+            )
         writeTargetedR8Rules(targetedR8Rules, transformOutputs)
     }
 

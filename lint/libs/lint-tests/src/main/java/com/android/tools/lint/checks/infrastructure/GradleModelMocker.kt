@@ -53,7 +53,6 @@ import com.android.tools.lint.model.LintModelModule
 import com.android.tools.lint.model.LintModelModuleLibrary
 import com.android.tools.lint.model.LintModelModuleLoader
 import com.android.tools.lint.model.LintModelModuleType
-import com.android.tools.lint.model.LintModelNamespacingMode
 import com.android.tools.lint.model.LintModelResourceField
 import com.android.tools.lint.model.LintModelSeverity
 import com.android.tools.lint.model.LintModelSourceProvider
@@ -1291,12 +1290,6 @@ constructor(
           warn("Warning: Split exclude not supported for mocked builder model yet")
         }
       }
-      key.startsWith("android.aaptOptions.namespaced ") -> {
-        val value = getUnquotedValue(key)
-        if (SdkConstants.VALUE_TRUE == value) {
-          updateNamespacing(LintModelNamespacingMode.REQUIRED)
-        }
-      }
       key.startsWith("groupId ") -> {
         updateModuleMavenName { it.copy(groupId = getUnquotedValue(key)) }
       }
@@ -1633,10 +1626,6 @@ constructor(
 
   private fun updateSourceCompatibility(level: String) {
     updateModule { it.copy(javaSourceLevel = level) }
-  }
-
-  private fun updateNamespacing(namespacingMode: LintModelNamespacingMode) {
-    updateBuildFeatures { it.copy(namespacingMode = namespacingMode) }
   }
 
   private fun updateModelVersion(modelVersion: String) {
@@ -2510,7 +2499,6 @@ private data class TestLintModelMavenName(
 private data class TestLintModelBuildFeatures(
   override val viewBinding: Boolean = false,
   override val coreLibraryDesugaringEnabled: Boolean = false,
-  override val namespacingMode: LintModelNamespacingMode = LintModelNamespacingMode.DISABLED,
 ) : LintModelBuildFeatures
 
 private data class TestProductFlavor(

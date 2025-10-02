@@ -18,60 +18,59 @@ package com.android.tools.journeys.testengine.resolver
 
 import com.android.tools.journeys.testengine.JourneysTestEngineInput
 import com.android.tools.journeys.testengine.descriptor.JourneyFileDescriptor
-import com.android.tools.journeys.testengine.selector.DeviceSelector
-import org.junit.platform.engine.discovery.DirectorySelector
-import org.junit.platform.engine.discovery.DiscoverySelectors.selectFile
-import org.junit.platform.engine.discovery.FileSelector
+import com.android.tools.journeys.testengine.selector.DeviceSpecificDirectorySelector
+import org.junit.platform.engine.DiscoverySelector
 import org.junit.platform.engine.support.discovery.SelectorResolver
 import org.junit.platform.engine.support.discovery.SelectorResolver.Match
 import org.junit.platform.engine.support.discovery.SelectorResolver.Resolution
-import org.junit.platform.engine.support.discovery.SelectorResolver.Resolution.selectors
 import java.util.Optional
-import javax.xml.parsers.DocumentBuilderFactory
 
 class JourneysFileSelectorResolver : SelectorResolver {
 
     override fun resolve(
-        selector: DirectorySelector,
+        selector: DiscoverySelector,
         context: SelectorResolver.Context
     ): Resolution {
-        val files = selector.directory.listFiles()
-        return if (!files.isNullOrEmpty()) {
-            selectors(files.mapTo(mutableSetOf()) { selectFile(it) })
+        return if (selector is DeviceSpecificDirectorySelector) {
+            resolve(selector, context)
         } else {
-            Resolution.unresolved()
+            super.resolve(selector, context)
         }
     }
 
-    override fun resolve(
-        selector: FileSelector,
+    private fun resolve(
+        selector: DeviceSpecificDirectorySelector,
         context: SelectorResolver.Context
     ): Resolution {
-        val file = selector.file
-
-        if (file.extension.lowercase() != "xml") {
-            return Resolution.unresolved()
-        }
-
+        val files = selector.directory.listFiles() ?: emptyArray()
         val filter = JourneysTestEngineInput.journeysFilter
-        if (filter.isNotEmpty() && file.name !in filter) {
-            return Resolution.unresolved()
-        }
 
-        val match: Match? =
-            context.addToParent({
-                DeviceSelector(
-                    JourneysTestEngineInput.testDeviceId,
-                    JourneysTestEngineInput.testDeviceDisplayName
-                )
-            }) { parent ->
-                Optional.of(JourneyFileDescriptor(parent.uniqueId, selector.file))
+        val matches = files.mapNotNull { file ->
+            if (file.extension.lowercase() != "xml") {
+                return@mapNotNull null
+            }
+
+            if (filter.isNotEmpty() && file.name !in filter) {
+                return@mapNotNull null
+            }
+
+            // We resolve files directly using `context.addToParent` to ensure they are
+            // correctly nested under their device-specific parent descriptor.
+            // Creating and resolving a new `FileSelector` here would cause the parent
+            // to revert to the root test descriptor. This is explained by
+            // JUnit 5's `context.addToParent` documentation, the parent is reset to the
+            // engine descriptor unless the selector being resolved is the result of
+            // expanding a `SelectorResolver.Match`. A new `FileSelector` would not
+            // satisfy this condition.
+            context.addToParent { parent ->
+                Optional.of(JourneyFileDescriptor(parent.uniqueId, file))
             }.map {
                 Match.exact(it)
             }.orElse(null)
+        }
 
-        return if (match != null) {
-            Resolution.matches(setOf(match))
+        return if (matches.isNotEmpty()) {
+            Resolution.matches(matches.toSet())
         } else {
             Resolution.unresolved()
         }

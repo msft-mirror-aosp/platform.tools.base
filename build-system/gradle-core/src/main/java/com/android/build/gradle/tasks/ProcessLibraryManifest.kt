@@ -93,14 +93,11 @@ abstract class ProcessLibraryManifest : ManifestProcessorTask() {
             SdkConstants.ANDROID_MANIFEST_XML
         ) else null
 
-    private var isNamespaced = false
-
     override fun doTaskAction() {
         workerExecutor.noIsolation().submit(ProcessLibWorkAction::class.java) {
             it.initializeFromBaseTask(this)
             it.variantName.set(variantName)
             it.aaptFriendlyManifestOutputFile.set(aaptFriendlyManifestOutputFile)
-            it.namespaced.set(isNamespaced)
             it.mainManifest.set(
                     if (mainManifest.get().asFile.isFile) {
                         mainManifest.get().asFile
@@ -126,7 +123,6 @@ abstract class ProcessLibraryManifest : ManifestProcessorTask() {
     abstract class ProcessLibParams: ProfileAwareWorkAction.Parameters() {
         abstract val variantName: Property<String>
         abstract val aaptFriendlyManifestOutputFile: RegularFileProperty
-        abstract val namespaced: Property<Boolean>
         abstract val mainManifest: RegularFileProperty
         abstract val manifestOverlays: ListProperty<File>
         abstract val namespace: Property<String>
@@ -144,10 +140,7 @@ abstract class ProcessLibraryManifest : ManifestProcessorTask() {
 
     abstract class ProcessLibWorkAction : ProfileAwareWorkAction<ProcessLibParams>() {
         override fun run() {
-            val optionalFeatures: Collection<ManifestMerger2.Invoker.Feature> =
-                if (parameters.namespaced.get()) listOf(
-                    ManifestMerger2.Invoker.Feature.FULLY_NAMESPACE_LOCAL_RESOURCES
-                ) else emptyList()
+            val optionalFeatures: Collection<ManifestMerger2.Invoker.Feature> = emptyList()
             if (parameters.disableMinSdkVersionCheck.get()) {
                 optionalFeatures.plus(ManifestMerger2.Invoker.Feature.DISABLE_MINSDKLIBRARY_CHECK)
             }
@@ -289,7 +282,6 @@ abstract class ProcessLibraryManifest : ManifestProcessorTask() {
                     else targetSdkVersion.getApiString()
                 )
             task.maxSdkVersion.setDisallowChanges(maxSdkVersion)
-            task.isNamespaced = creationConfig.global.namespacedAndroidResources
             creationConfig.manifestPlaceholdersCreationConfig?.placeholders?.let {
                 task.manifestPlaceholders.setDisallowChanges(it)
             }

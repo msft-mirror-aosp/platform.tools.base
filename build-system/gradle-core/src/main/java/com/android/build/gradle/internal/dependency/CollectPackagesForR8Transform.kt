@@ -107,7 +107,7 @@ abstract class CollectPackagesForR8Transform : TransformAction<GenericTransformP
     }
 
     private fun containsConsumerProguardRules(jarFile: File, isClassesJarInAar: Boolean = false): Boolean {
-        val targetedR8Rules = TargetedR8RulesReadWriter.readFromJar(jarFile, isClassesJarInAar)
+        val targetedR8Rules = TargetedR8RulesReadWriter.readFromJar(jarFile, isClassesJarInAar, shouldRemoveBannedGlobals = false)
         return targetedR8Rules.r8Rules.isNotEmpty() || targetedR8Rules.legacyProguardRules.isNotEmpty()
     }
 

@@ -44,7 +44,7 @@ class LibUnitTestClasses {
      */
     @Test
     fun checkClassesDir() {
-        val buildResult = library.build.executor.run("testReleaseUnitTest")
-        Truth.assertThat(buildResult.skippedTasks).contains(":lib:testReleaseUnitTest")
+        val buildResult = library.build.executor.run("testDebugUnitTest")
+        Truth.assertThat(buildResult.skippedTasks).contains(":lib:testDebugUnitTest")
     }
 }

@@ -92,7 +92,6 @@ interface GlobalTaskCreationConfig: BootClasspathConfig {
 
     // processed access to some DSL values
 
-    val namespacedAndroidResources: Boolean
     val testOptionExecutionEnum: com.android.builder.model.TestOptions.Execution?
 
     /** the same as [prefab] but returns an empty set on unsupported variants */

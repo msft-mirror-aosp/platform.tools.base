@@ -18,7 +18,6 @@ package com.android.build.gradle.integration.resources
 
 import com.android.build.gradle.integration.common.fixture.ANDROIDX_APPCOMPAT_APPCOMPAT_VERSION
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.fixture.SUPPORT_LIB_VERSION
 import com.android.build.gradle.integration.common.fixture.TEST_SUPPORT_LIB_VERSION
 import com.android.build.gradle.integration.common.fixture.app.MinimalSubProject
 import com.android.build.gradle.integration.common.fixture.app.MultiModuleTestProject
@@ -27,7 +26,7 @@ import com.android.testutils.truth.PathSubject.assertThat
 import org.junit.Rule
 import org.junit.Test
 
-class NonNamespacedApplicationLightRClassesTest {
+class ApplicationLightRClassesTest {
 
     private val lib = MinimalSubProject.lib("com.example.lib")
         .appendToBuild(
@@ -189,7 +188,7 @@ class NonNamespacedApplicationLightRClassesTest {
                     "R.txt")).containsAllOf("lib_string", "app_string")
 
         val rJarFile = appFiles.getIntermediateFile(
-            "compile_and_runtime_not_namespaced_r_class_jar",
+            "compile_and_runtime_r_class_jar",
             "debug",
             "processDebugResources",
             "R.jar"
@@ -208,7 +207,7 @@ class NonNamespacedApplicationLightRClassesTest {
 
         // app androidTest resources java
         val rJarFile = appFiles.getIntermediateFile(
-            "compile_and_runtime_not_namespaced_r_class_jar",
+            "compile_and_runtime_r_class_jar",
             "debugAndroidTest",
             "processDebugAndroidTestResources",
             "R.jar"

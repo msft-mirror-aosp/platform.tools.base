@@ -128,6 +128,8 @@ abstract class ProcessApplicationManifest : ManifestProcessorTask() {
     @get:Input
     abstract val addLocaleConfigAttribute: Property<Boolean>
 
+    // Ignore flag
+    @get:Optional
     @get:Input
     abstract val namespacedAndroidResources: Property<Boolean>
 
@@ -155,14 +157,6 @@ abstract class ProcessApplicationManifest : ManifestProcessorTask() {
             }
         }
         val navJsons = navigationJsons?.files?.filter { it.exists() } ?: setOf()
-
-        // TODO (b/141948909): add support for namespaced navigation files
-        if (namespacedAndroidResources.get() && navJsons.any { it.readText() != "[]" }) {
-            throw RuntimeException(
-                "Namespaced Android resources cannot be enabled when specifying navigation files " +
-                "in the manifest."
-            )
-        }
 
         val mergingReport = mergeManifests(
             mainManifest.get(),
@@ -433,9 +427,6 @@ abstract class ProcessApplicationManifest : ManifestProcessorTask() {
                         ArtifactScope.ALL,
                         AndroidArtifacts.ArtifactType.NAVIGATION_JSON
                     )
-            )
-            task.namespacedAndroidResources.setDisallowChanges(
-                creationConfig.global.namespacedAndroidResources
             )
             task.packageOverride.setDisallowChanges(creationConfig.applicationId)
             task.namespace.setDisallowChanges(creationConfig.namespace)

@@ -20,15 +20,19 @@ import static com.google.common.truth.Truth.assertThat;
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.utils.TestFileUtils;
-import com.google.common.collect.ImmutableList;
+
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
-import java.util.Set;
+
 import org.junit.Rule;
 import org.junit.Test;
 
+import java.io.File;
+import java.util.Set;
+
 /** Meta-level tests for the app-level unit testing support. Checks the default values mode. */
 public class UnitTestingSupportTest {
+
     @Rule
     public GradleTestProject project =
             GradleTestProject.builder()
@@ -50,46 +54,51 @@ public class UnitTestingSupportTest {
     private static void doTestProject(GradleTestProject project) throws Exception {
         project.execute("clean", "test");
 
-        for (String variant : ImmutableList.of("Debug", "Release")) {
-            String dirName = "test" + variant + "UnitTest";
-            String unitTestXml =
-                    "build/test-results/" + dirName + "/TEST-com.android.tests.UnitTest.xml";
-            JUnitResults unitTextResults = new JUnitResults(project.file(unitTestXml));
+        String dirName = "testDebugUnitTest";
+        String unitTestXml =
+                "build/test-results/" + dirName + "/TEST-com.android.tests.UnitTest.xml";
+        JUnitResults unitTextResults = new JUnitResults(project.file(unitTestXml));
 
-            assertThat(unitTextResults.getStdErr()).contains("INFO: I can use commons-logging");
+        assertThat(unitTextResults.getStdErr()).contains("INFO: I can use commons-logging");
 
-            checkResults(
-                    unitTestXml,
-                    ImmutableSet.of(
-                            "aarDependencies",
-                            "commonsLogging",
-                            "enums",
-                            "exceptions",
-                            "instanceFields",
-                            "javaResourcesOnClasspath",
-                            "kotlinProductionCode",
-                            "mockFinalClass",
-                            "mockFinalMethod",
-                            "mockInnerClass",
-                            "prodJavaResourcesOnClasspath",
-                            "prodRClass",
-                            "referenceProductionCode",
-                            "taskConfiguration"),
-                    ImmutableSet.of("thisIsIgnored"),
-                    project);
+        // By default, only debug unit tests are run. Verify release unit tests did not run, and
+        // therefore, no test results were generated.
+        File releaseUnitTestResults =
+                project.file(
+                        "build/test-results/testReleaseUnitTest/TEST-com.android.tests.UnitTest.xml");
+        assertThat(releaseUnitTestResults.exists()).isFalse();
 
-            checkResults(
-                    "build/test-results/" + dirName + "/TEST-com.android.tests.NonStandardName.xml",
-                    ImmutableSet.of("passingTest"),
-                    ImmutableSet.of(),
-                    project);
+        checkResults(
+                unitTestXml,
+                ImmutableSet.of(
+                        "aarDependencies",
+                        "commonsLogging",
+                        "enums",
+                        "exceptions",
+                        "instanceFields",
+                        "javaResourcesOnClasspath",
+                        "kotlinProductionCode",
+                        "mockFinalClass",
+                        "mockFinalMethod",
+                        "mockInnerClass",
+                        "prodJavaResourcesOnClasspath",
+                        "prodRClass",
+                        "referenceProductionCode",
+                        "taskConfiguration"),
+                ImmutableSet.of("thisIsIgnored"),
+                project);
 
-            checkResults(
-                    "build/test-results/" + dirName + "/TEST-com.android.tests.TestInKotlin.xml",
-                    ImmutableSet.of("passesInKotlin"),
-                    ImmutableSet.of(),
-                    project);
-        }
+        checkResults(
+                "build/test-results/" + dirName + "/TEST-com.android.tests.NonStandardName.xml",
+                ImmutableSet.of("passingTest"),
+                ImmutableSet.of(),
+                project);
+
+        checkResults(
+                "build/test-results/" + dirName + "/TEST-com.android.tests.TestInKotlin.xml",
+                ImmutableSet.of("passesInKotlin"),
+                ImmutableSet.of(),
+                project);
     }
 
     private static void checkResults(

@@ -171,9 +171,6 @@ private fun getProjectJavaRes(
         })
     }
 
-    if (creationConfig.global.namespacedAndroidResources) {
-        javaRes.from(creationConfig.artifacts.get(InternalArtifactType.RUNTIME_R_CLASS_CLASSES))
-    }
     if ((creationConfig as? ApkCreationConfig)?.packageJacocoRuntime == true) {
         javaRes.from(creationConfig.artifacts.get(InternalArtifactType.JACOCO_CONFIG_RESOURCES))
     }

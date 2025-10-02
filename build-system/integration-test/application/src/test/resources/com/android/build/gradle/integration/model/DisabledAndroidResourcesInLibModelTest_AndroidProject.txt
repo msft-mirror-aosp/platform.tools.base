@@ -9,16 +9,13 @@
             - resGenTaskName = (null)
          - unitTestArtifact:
             - classesFolders:
-               * {PROJECT}/lib/build/intermediates/compile_and_runtime_not_namespaced_r_class_jar/debugUnitTest/generateDebugUnitTestStubRFile/R.jar{!}{REMOVED}
+               * {PROJECT}/lib/build/intermediates/compile_and_runtime_r_class_jar/debugUnitTest/generateDebugUnitTestStubRFile/R.jar{!}{REMOVED}
       < debug
       - release:
          - mainArtifact:
             - classesFolders:
                * {PROJECT}/lib/build/intermediates/compile_r_class_jar/release/generateReleaseRFile/R.jar{!}{REMOVED}
             - resGenTaskName = (null)
-         - unitTestArtifact:
-            - classesFolders:
-               * {PROJECT}/lib/build/intermediates/compile_and_runtime_not_namespaced_r_class_jar/releaseUnitTest/generateReleaseUnitTestStubRFile/R.jar{!}{REMOVED}
    < variants
    - flags:
       * "BUILD_FEATURE_ANDROID_RESOURCES -> false"{ADDED}

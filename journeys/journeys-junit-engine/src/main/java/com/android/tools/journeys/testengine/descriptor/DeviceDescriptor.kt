@@ -39,7 +39,9 @@ class DeviceDescriptor(
         const val SEGMENT_TYPE: String = "deviceId"
     }
 
-    // Disable multi-device execution for now.
+    // Enable multi-device execution sequentially.
+    // Concurrent execution cannot be enabled due to:
+    // https://github.com/gradle/gradle/issues/34274.
     override fun getExecutionMode() = Node.ExecutionMode.SAME_THREAD
 
     override fun getType(): Type = Type.CONTAINER

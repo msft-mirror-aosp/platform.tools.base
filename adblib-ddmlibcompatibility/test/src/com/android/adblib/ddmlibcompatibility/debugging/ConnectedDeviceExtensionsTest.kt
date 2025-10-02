@@ -16,44 +16,38 @@
 package com.android.adblib.ddmlibcompatibility.debugging
 
 import com.android.adblib.ConnectedDevice
-import com.android.adblib.ddmlibcompatibility.AdbLibIDeviceManagerFactory
+import com.android.adblib.ddmlibcompatibility.testutils.InitAndroidDebugBridgeRule
+import com.android.adblib.ddmlibcompatibility.testutils.UseAdbLibAndroidDebugBridgeRule
 import com.android.adblib.testingutils.CoroutineTestUtils.yieldUntil
 import com.android.adblib.testingutils.FakeAdbServerProviderRule
 import com.android.adblib.tools.testutils.waitForOnlineConnectedDevice
-import com.android.ddmlib.AdbInitOptions
 import com.android.ddmlib.AndroidDebugBridge
 import com.android.fakeadbserver.DeviceState
 import com.android.sdklib.AndroidApiLevel
 import kotlinx.coroutines.runBlocking
-import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
-import java.util.concurrent.TimeUnit
+import org.junit.rules.RuleChain
 
 class ConnectedDeviceExtensionsTest {
 
-    @JvmField
-    @Rule
-    val fakeAdbRule = FakeAdbServerProviderRule()
+    private val fakeAdbRule = FakeAdbServerProviderRule()
+    private val useAdbLibAndroidDebugBridgeRule =
+        UseAdbLibAndroidDebugBridgeRule { fakeAdbRule.adbSession }
+    private val initAndroidDebugBridgeRule =
+        InitAndroidDebugBridgeRule { fakeAdbRule.fakeAdb.port }
+    @get:Rule
+    val ruleChain = RuleChain.outerRule(fakeAdbRule)
+        .around(useAdbLibAndroidDebugBridgeRule)
+        .around(initAndroidDebugBridgeRule)!!
 
     private val fakeAdb get() = fakeAdbRule.fakeAdb
 
     @Before
     fun setUp() {
-        AndroidDebugBridge.enableFakeAdbServerMode(fakeAdbRule.fakeAdb.port)
-        val adbInitOptions =
-            AdbInitOptions.builder().setClientSupportEnabled(true)
-                .setIDeviceManagerFactory(AdbLibIDeviceManagerFactory(fakeAdbRule.adbSession))
-        AndroidDebugBridge.init(adbInitOptions.build())
-        AndroidDebugBridge.createBridge(10, TimeUnit.SECONDS) ?: error("Could not create ADB bridge")
-    }
-
-    @After
-    fun tearDown() {
-        AndroidDebugBridge.terminate()
-        AndroidDebugBridge.disableFakeAdbServerMode()
+        AndroidDebugBridge.createBridge() ?: error("Couldn't create a bridge")
     }
 
     @Test

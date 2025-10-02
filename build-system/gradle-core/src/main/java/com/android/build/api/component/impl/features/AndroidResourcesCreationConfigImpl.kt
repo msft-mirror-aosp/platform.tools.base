@@ -18,7 +18,6 @@ package com.android.build.api.component.impl.features
 
 import com.android.build.gradle.internal.component.ComponentCreationConfig
 import com.android.build.gradle.internal.component.ConsumableCreationConfig
-import com.android.build.gradle.internal.component.TestComponentCreationConfig
 import com.android.build.gradle.internal.component.HostTestCreationConfig
 import com.android.build.gradle.internal.component.features.AndroidResourcesCreationConfig
 import com.android.build.gradle.internal.core.dsl.ComponentDslInfo
@@ -26,7 +25,7 @@ import com.android.build.gradle.internal.core.dsl.features.AndroidResourcesDslIn
 import com.android.build.gradle.internal.dsl.AaptOptions
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
 import com.android.build.gradle.internal.scope.InternalArtifactType
-import com.android.build.gradle.internal.scope.InternalArtifactType.COMPILE_AND_RUNTIME_NOT_NAMESPACED_R_CLASS_JAR
+import com.android.build.gradle.internal.scope.InternalArtifactType.COMPILE_AND_RUNTIME_R_CLASS_JAR
 import com.android.build.gradle.internal.services.VariantServices
 import com.android.build.gradle.options.BooleanOption
 import com.android.builder.core.ComponentTypeImpl
@@ -100,51 +99,34 @@ open class AndroidResourcesCreationConfigImpl(
 
     override val compiledRClassArtifact: Provider<RegularFile>
         get() {
-            return if (component.global.namespacedAndroidResources) {
-                component.artifacts.get(InternalArtifactType.COMPILE_R_CLASS_JAR)
-            } else {
-                val useCompileRClassInApp =
-                    internalServices.projectOptions[BooleanOption.ENABLE_APP_COMPILE_TIME_R_CLASS]
-                return when (val componentType = dslInfo.componentType) {
-                    ComponentTypeImpl.ANDROID_TEST, ComponentTypeImpl.TEST_APK -> getRJarForTestApks(useCompileRClassInApp)
-                    ComponentTypeImpl.UNIT_TEST, ComponentTypeImpl.SCREENSHOT_TEST -> getRJarForHostTests()
-                    else -> {
-                        if (componentType.isAar || useCompileRClassInApp) {
-                            component.artifacts.get(InternalArtifactType.COMPILE_R_CLASS_JAR)
-                        } else {
-                            Preconditions.checkState(
-                                componentType.isApk,
-                                "Expected APK type but found: $componentType"
-                            )
-                            component.artifacts.get(COMPILE_AND_RUNTIME_NOT_NAMESPACED_R_CLASS_JAR)
-                        }
+
+            val useCompileRClassInApp =
+                internalServices.projectOptions[BooleanOption.ENABLE_APP_COMPILE_TIME_R_CLASS]
+            return when (val componentType = dslInfo.componentType) {
+                ComponentTypeImpl.ANDROID_TEST, ComponentTypeImpl.TEST_APK -> getRJarForTestApks(
+                    useCompileRClassInApp
+                )
+
+                ComponentTypeImpl.UNIT_TEST, ComponentTypeImpl.SCREENSHOT_TEST -> getRJarForHostTests()
+                else -> {
+                    if (componentType.isAar || useCompileRClassInApp) {
+                        component.artifacts.get(InternalArtifactType.COMPILE_R_CLASS_JAR)
+                    } else {
+                        Preconditions.checkState(
+                            componentType.isApk,
+                            "Expected APK type but found: $componentType"
+                        )
+                        component.artifacts.get(COMPILE_AND_RUNTIME_R_CLASS_JAR)
                     }
                 }
             }
         }
 
+
     override fun getCompiledRClasses(
         configType: AndroidArtifacts.ConsumedConfigType
     ): FileCollection {
-        return if (component.global.namespacedAndroidResources) {
-            internalServices.fileCollection().also { fileCollection ->
-                val namespacedRClassJar = component.artifacts.get(InternalArtifactType.COMPILE_R_CLASS_JAR)
-                val fileTree = internalServices.fileTree(namespacedRClassJar).builtBy(namespacedRClassJar)
-                fileCollection.from(fileTree)
-                fileCollection.from(
-                    component.variantDependencies.getArtifactFileCollection(
-                        configType,
-                        AndroidArtifacts.ArtifactScope.ALL,
-                        AndroidArtifacts.ArtifactType.SHARED_CLASSES
-                    )
-                )
-                (component as? TestComponentCreationConfig)?.mainVariant?.let {
-                    fileCollection.from(it.artifacts.get(InternalArtifactType.COMPILE_R_CLASS_JAR).get())
-                }
-            }
-        } else {
-            internalServices.fileCollection(compiledRClassArtifact)
-        }
+        return internalServices.fileCollection(compiledRClassArtifact)
     }
 
     private fun getRJarForTestApks(useCompileRClassInApp: Boolean): Provider<RegularFile> {
@@ -152,7 +134,7 @@ open class AndroidResourcesCreationConfigImpl(
             component.artifacts.get(InternalArtifactType.COMPILE_R_CLASS_JAR)
         } else {
             component.artifacts.get(
-                COMPILE_AND_RUNTIME_NOT_NAMESPACED_R_CLASS_JAR
+                COMPILE_AND_RUNTIME_R_CLASS_JAR
             )
         }
     }
@@ -166,7 +148,7 @@ open class AndroidResourcesCreationConfigImpl(
         )
         val mainVariant = (component as HostTestCreationConfig).mainVariant
         return if (mainVariant.componentType.isAar) {
-            component.artifacts.get(COMPILE_AND_RUNTIME_NOT_NAMESPACED_R_CLASS_JAR)
+            component.artifacts.get(COMPILE_AND_RUNTIME_R_CLASS_JAR)
         } else {
             Preconditions.checkState(
                 mainVariant.componentType.isApk,
@@ -174,7 +156,7 @@ open class AndroidResourcesCreationConfigImpl(
             )
             mainVariant
                 .artifacts
-                .get(COMPILE_AND_RUNTIME_NOT_NAMESPACED_R_CLASS_JAR)
+                .get(COMPILE_AND_RUNTIME_R_CLASS_JAR)
         }
     }
 }

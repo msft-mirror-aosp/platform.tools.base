@@ -62,16 +62,14 @@ import com.android.build.gradle.internal.res.GenerateLibraryRFileTask
 import com.android.build.gradle.internal.res.LinkAndroidResForBundleTask
 import com.android.build.gradle.internal.res.LinkApplicationAndroidResourcesTask
 import com.android.build.gradle.internal.res.ParseLibraryResourcesTask
-import com.android.build.gradle.internal.res.namespaced.NamespacedResourcesTaskManager
 import com.android.build.gradle.internal.scope.InternalArtifactType
-import com.android.build.gradle.internal.scope.InternalArtifactType.COMPILE_AND_RUNTIME_NOT_NAMESPACED_R_CLASS_JAR
+import com.android.build.gradle.internal.scope.InternalArtifactType.COMPILE_AND_RUNTIME_R_CLASS_JAR
 import com.android.build.gradle.internal.scope.InternalArtifactType.FEATURE_DEX
 import com.android.build.gradle.internal.scope.InternalArtifactType.FEATURE_RESOURCE_PKG
 import com.android.build.gradle.internal.scope.InternalArtifactType.JAVAC
 import com.android.build.gradle.internal.scope.InternalArtifactType.LINKED_RESOURCES_BINARY_FORMAT
 import com.android.build.gradle.internal.scope.InternalArtifactType.MERGED_RES
 import com.android.build.gradle.internal.scope.InternalArtifactType.PACKAGED_RES
-import com.android.build.gradle.internal.scope.InternalArtifactType.RUNTIME_R_CLASS_CLASSES
 import com.android.build.gradle.internal.scope.InternalMultipleArtifactType
 import com.android.build.gradle.internal.scope.Java8LangSupport
 import com.android.build.gradle.internal.scope.publishArtifactToConfiguration
@@ -629,9 +627,6 @@ abstract class TaskManager(
         val projectOptions = creationConfig.services.projectOptions
         val nonTransitiveR = projectOptions[BooleanOption.NON_TRANSITIVE_R_CLASS]
         val enableAppCompileRClass = projectOptions[BooleanOption.ENABLE_APP_COMPILE_TIME_R_CLASS]
-        val namespaced: Boolean = globalConfig.namespacedAndroidResources
-
-        if (namespaced) return
 
         if (creationConfig.componentType.isForTesting
             && !isTestApkCompileRClassEnabled(enableAppCompileRClass, creationConfig.componentType)) {
@@ -678,33 +673,6 @@ abstract class TaskManager(
         val useAaptToGenerateLegacyMultidexMainDexProguardRules =
                 (creationConfig is ApkCreationConfig
                         && creationConfig.dexing.dexingType.isLegacyMultiDex)
-        if (globalConfig.namespacedAndroidResources) {
-            // TODO: make sure we generate the proguard rules in the namespaced case.
-            NamespacedResourcesTaskManager(
-                taskFactory,
-                creationConfig
-            ).createNamespacedResourceTasks(
-                packageOutputType,
-                baseName,
-                useAaptToGenerateLegacyMultidexMainDexProguardRules
-            )
-            val rFiles: FileCollection = project.files(
-                creationConfig.artifacts.get(RUNTIME_R_CLASS_CLASSES))
-            creationConfig.artifacts.forScope(ScopedArtifacts.Scope.PROJECT)
-                .setInitialContent(
-                    ScopedArtifact.CLASSES,
-                    rFiles
-                )
-            creationConfig
-                .artifacts
-                .forScope(ScopedArtifacts.Scope.PROJECT)
-                .setInitialContent(
-                    ScopedArtifact.CLASSES,
-                    creationConfig.artifacts,
-                    RUNTIME_R_CLASS_CLASSES
-                )
-            return
-        }
         createNonNamespacedResourceTasks(
                 creationConfig,
                 packageOutputType,
@@ -794,7 +762,7 @@ abstract class TaskManager(
                     .setInitialContent(
                         ScopedArtifact.CLASSES,
                         artifacts,
-                        COMPILE_AND_RUNTIME_NOT_NAMESPACED_R_CLASS_JAR
+                        COMPILE_AND_RUNTIME_R_CLASS_JAR
                     )
 
                 if (!creationConfig.debuggable &&

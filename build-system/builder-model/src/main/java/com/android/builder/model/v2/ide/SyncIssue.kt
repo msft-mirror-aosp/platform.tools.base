@@ -262,3 +262,12 @@ interface SyncIssue: AndroidModel {
         const val TYPE_MISSING_ANDROID_MANIFEST = 44
     }
 }
+
+/**
+ * View type used to access sync issue data field for sync issues reported as problems
+ * using gradle Problems API.
+ * See [Receiving custom additional data](https://docs.gradle.org/current/samples/sample_problems_api_usage.html#receiving_custom_additional_data).
+ */
+interface SyncIssueDataView {
+    val data: String?
+}

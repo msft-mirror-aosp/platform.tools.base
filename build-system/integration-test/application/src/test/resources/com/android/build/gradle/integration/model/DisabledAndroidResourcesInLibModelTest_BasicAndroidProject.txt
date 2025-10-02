@@ -26,8 +26,5 @@
          - sourceProvider:
             - resDirectories:
                * {PROJECT}/lib/src/release/res{!}{REMOVED}
-         - unitTestSourceProvider:
-            - resDirectories:
-               * {PROJECT}/lib/src/testRelease/res{!}{REMOVED}
    < buildTypes
 < BasicAndroidProject
