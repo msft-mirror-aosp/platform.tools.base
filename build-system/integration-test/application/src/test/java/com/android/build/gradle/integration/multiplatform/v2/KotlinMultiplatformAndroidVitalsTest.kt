@@ -16,8 +16,10 @@
 
 package com.android.build.gradle.integration.multiplatform.v2
 
+import com.android.SdkConstants.MAX_SUPPORTED_ANDROID_PLATFORM_VERSION
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
+import com.android.build.gradle.internal.plugins.KotlinMultiplatformAndroidPlugin.Companion.ANDROID_EXTENSION_ON_KOTLIN_EXTENSION_NAME
 import org.junit.Rule
 import org.junit.Test
 
@@ -26,6 +28,27 @@ class KotlinMultiplatformAndroidVitalsTest {
     @get:Rule
     val rule = GradleRule.from {
         androidKotlinMultiplatformLibrary(":shared") { }
+    }
+
+    @Test
+    fun testMissingCompileSdkException() {
+        val build = rule.build {
+            androidKotlinMultiplatformLibrary(":shared") {
+                android {
+                    compileSdk = null
+                }
+            }
+        }
+        val result = build.executor.expectFailure().run(":shared:assembleAndroidMain")
+        result.assertErrorContains(
+            "compileSdk version is not set.\n" +
+                    "Specify the compileSdk version in the module's build file like so:\n" +
+                    "kotlin {\n" +
+                    "    $ANDROID_EXTENSION_ON_KOTLIN_EXTENSION_NAME {\n" +
+                    "        compileSdk = ${MAX_SUPPORTED_ANDROID_PLATFORM_VERSION.apiLevel}\n" +
+                    "    }\n" +
+                    "}\n"
+        )
     }
 
     /**
