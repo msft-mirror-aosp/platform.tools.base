@@ -149,7 +149,7 @@ class AnalyticsProfileWriter {
             } catch (e: IOException) {
                 StdLogger(StdLogger.Level.WARNING).warning(
                     "Cannot extra Chrome trace directory $extraChromeTracePath. The generated" +
-                            "Chrome trace file may contain stale data.",
+                            " Chrome trace file may contain stale data.",
                     e
                 )
             }

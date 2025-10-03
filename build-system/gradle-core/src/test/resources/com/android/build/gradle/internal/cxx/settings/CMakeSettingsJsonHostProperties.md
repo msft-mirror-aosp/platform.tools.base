@@ -213,7 +213,7 @@ The ABI-level folder where .so files are written.
 - environment: android-gradle
 
 ## ${ndk.soRepublishDir}
-A folder with a predictable name where final build outputs (mainly .so) arehard linked or copied after the build completes. The purpose is so scripts and other external tools have a known path, with no embedded hashcode, to locate these files.
+A folder with a predictable name where final build outputs (mainly .so) are hard linked or copied after the build completes. The purpose is so scripts and other external tools have a known path, with no embedded hashcode, to locate these files.
 - cmake example: ${ndk.moduleDir}/build/intermediates/cmake/debug/obj/x86_64
 - ndk-build example: ${ndk.moduleDir}/build/intermediates/ndkBuild/debug/obj/local/x86_64
 - environment: android-gradle

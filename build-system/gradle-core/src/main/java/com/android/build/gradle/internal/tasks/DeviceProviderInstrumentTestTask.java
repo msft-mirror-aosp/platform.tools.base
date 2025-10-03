@@ -931,7 +931,7 @@ public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTas
                 LoggerWrapper.getLogger(DeviceProviderInstrumentTestTask.class)
                         .warning(
                                 "Implicitly enabling Unified Test Platform because UTP "
-                                        + "is now the only test runner"
+                                        + "is now the only test runner. "
                                         + "Please remove "
                                         + "android.experimental.androidTest."
                                         + "useUnifiedTestPlatform=false "

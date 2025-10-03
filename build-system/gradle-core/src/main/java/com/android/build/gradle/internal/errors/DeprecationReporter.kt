@@ -64,7 +64,7 @@ interface DeprecationReporter {
         VERSION_8_0(Version.VERSION_8_0),
 
         // Obsolete dx Dex Options
-        DEX_OPTIONS(Version.VERSION_8_0, "Using it has no effect, and the Android" +
+        DEX_OPTIONS(Version.VERSION_8_0, "Using it has no effect, and the Android " +
                 "Gradle plugin optimizes dexing automatically."),
 
         // Deprecation of Task Access in the variant API

@@ -485,7 +485,7 @@ class AnalyticsResourceManager constructor(
                 LoggerWrapper.getLogger(this::class.java).info(
                     "Profile outputs directory is set to build/${PROFILE_DIRECTORY} as default " +
                             "because profile json is enabled but no directory is given for the " +
-                            "profile outputs. To configure the profile outputs directory, please"  +
+                            "profile outputs. To configure the profile outputs directory, please "  +
                             "use android.advanced.profileOutputDir gradle property")
                 profileDir
             }
