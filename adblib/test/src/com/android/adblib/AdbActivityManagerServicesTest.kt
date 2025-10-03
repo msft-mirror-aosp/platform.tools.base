@@ -184,6 +184,8 @@ class AdbActivityManagerServicesTest {
         // Assert
         result.onFailure { throwable ->
             Assert.assertTrue(throwable is AdbActivityManagerException)
+            Assert.assertTrue(throwable.message!!.contains(
+                "Error executing 'am capabilities --protobuf' on device serial #1234"))
             Assert.assertTrue((throwable as AdbActivityManagerException).isCommandNotSupported)
             Assert.assertFalse(throwable.isServiceNotRunning)
         }.onSuccess {
@@ -203,6 +205,8 @@ class AdbActivityManagerServicesTest {
         // Assert
         result.onFailure { throwable ->
             Assert.assertTrue(throwable is AdbActivityManagerException)
+            Assert.assertTrue(throwable.message!!.contains(
+                "Error executing 'am capabilities --protobuf' on device serial #1234"))
             Assert.assertTrue((throwable as AdbActivityManagerException).isCommandNotSupported)
             Assert.assertFalse(throwable.isServiceNotRunning)
         }.onSuccess {
