@@ -385,11 +385,7 @@ abstract class JoinEffectDetector<FX : Any>(
       case<_, Type.Sym.This>(classIdEncoder.adapt(Type.Sym.This::site, Type.Sym<Nothing>::This)),
       case<_, Type.Sym.Invoke<FX>>(invokeEncoder),
       case<_, Type.Sym.Fix<FX>>(
-        Encoder.product(
-          Type.Sym<FX>::Fix,
-          Encoder.set(recTypeSymEncoder),
-          Encoder.set(invokeEncoder),
-        )
+        Encoder.product(Type.Sym<FX>::Fix, Encoder.set(typeEncoder), Encoder.set(typeEncoder))
       ),
     )
   }

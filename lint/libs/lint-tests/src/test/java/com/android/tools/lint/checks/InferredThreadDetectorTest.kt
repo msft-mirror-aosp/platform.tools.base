@@ -984,6 +984,75 @@ class InferredThreadDetectorTest : AbstractCheckTest() {
       .expectClean()
   }
 
+  // Reduced test from com.google.intelligence.trieste.query.parser.Parserkt
+  fun testHoRecursion() {
+    lint()
+      .files(
+        kotlin(
+            """
+          sealed class Result<out T> {
+            class Ok<out T>(val value: T) : Result<T>()
+            object Err : Result<Nothing>()
+          }
+
+          fun<S, T> Result<S>.bind(f: (S) -> Result<T>): Result<T> =
+            when (this) {
+              is Result.Ok -> f(value)
+              is Result.Err -> this
+            }
+
+          interface Parser<T> {
+            fun parse(): Result<T>
+          }
+
+          class ManyOf<T>(val base: Parser<T>): Parser<Nothing> {
+            override fun parse(): Result<Nothing> = base.parse().bind { parse() }
+          }
+          """
+              .trimIndent()
+          )
+          .indented()
+      )
+      .run()
+      .expectClean()
+  }
+
+  // Reduced test from com.google.intelligence.trieste.query.parser.Parserkt
+  fun testHoRecursion_localFn() {
+    lint()
+      .files(
+        kotlin(
+            """
+          sealed class Result<out T> {
+            class Ok<out T>(val value: T) : Result<T>()
+            object Err : Result<Nothing>()
+          }
+
+          fun<S, T> Result<S>.bind(f: (S) -> Result<T>): Result<T> =
+            when (this) {
+              is Result.Ok -> f(value)
+              is Result.Err -> this
+            }
+
+          interface Parser<T> {
+            fun parse(): Result<T>
+          }
+
+          class ManyOf<T>(val base: Parser<T>): Parser<Nothing> {
+            override fun parse(): Result<Nothing> {
+              fun loop(): Result<Nothing> = base.parse().bind { loop() }
+              return loop()
+            }
+          }
+          """
+              .trimIndent()
+          )
+          .indented()
+      )
+      .run()
+      .expectClean()
+  }
+
   // Reduced test from com.google.common.reflect.TypeToken.TypeCollector
   fun testRecursiveBranching() {
     lint()
