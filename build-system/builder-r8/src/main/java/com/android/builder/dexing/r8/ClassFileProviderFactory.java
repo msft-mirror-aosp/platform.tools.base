@@ -24,6 +24,7 @@ import com.android.tools.r8.ProgramResource;
 import com.google.common.base.Suppliers;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 
 import java.io.Closeable;
 import java.io.FileNotFoundException;
@@ -35,6 +36,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /**
@@ -48,9 +50,11 @@ public class ClassFileProviderFactory implements Closeable {
      * the last specified provider.
      */
     private static class OrderedClassFileResourceProvider implements ClassFileResourceProvider {
+        private final List<ClassFileResourceProvider> providers;
         private final Supplier<Map<String, ClassFileResourceProvider>> descriptors;
 
         OrderedClassFileResourceProvider(List<ClassFileResourceProvider> providers) {
+            this.providers = providers;
             this.descriptors =
                     Suppliers.memoize(
                             () -> {
@@ -78,6 +82,18 @@ public class ClassFileProviderFactory implements Closeable {
                 return null;
             }
             return provider.getProgramResource(descriptor);
+        }
+
+        @Override
+        public void getProgramResources(Consumer<ProgramResource> consumer) {
+            Set<String> descs = Sets.newHashSet();
+            for (ClassFileResourceProvider provider : providers) {
+                for (String s : provider.getClassDescriptors()) {
+                    if (descs.add(s)) {
+                        consumer.accept(provider.getProgramResource(s));
+                    }
+                }
+            }
         }
     }
 

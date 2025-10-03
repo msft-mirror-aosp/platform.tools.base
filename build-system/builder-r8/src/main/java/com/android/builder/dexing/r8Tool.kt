@@ -70,6 +70,7 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.util.Locale
 import java.util.concurrent.ExecutorService
+import java.util.function.Consumer
 import java.util.logging.Level
 import java.util.logging.Logger
 import java.util.zip.ZipEntry
@@ -616,6 +617,8 @@ private class ResourceOnlyProvider(val originalProvider: ArchiveResourceProvider
     ProgramResourceProvider {
 
     override fun getProgramResources() = listOf<ProgramResource>()
+
+    override fun getProgramResources(consumer: Consumer<ProgramResource>?) {}
 
     override fun getDataResourceProvider() = object : DataResourceProvider {
         override fun accept(visitor: DataResourceProvider.Visitor?) {
