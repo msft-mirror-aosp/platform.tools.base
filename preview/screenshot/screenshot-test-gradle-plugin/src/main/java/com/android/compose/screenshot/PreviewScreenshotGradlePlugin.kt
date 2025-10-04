@@ -92,7 +92,7 @@ class PreviewScreenshotGradlePlugin : Plugin<Project> {
 
         const val MIN_VALIDATION_ENGINE_VERSION = "0.0.1-alpha03"
 
-        private const val LAYOUTLIB_VERSION = "15.1.3"
+        private const val LAYOUTLIB_VERSION = "16.1.0"
 
         val SCREENSHOT_TEST_PLUGIN_VERSION: String by lazy {
             requireNotNull(PreviewScreenshotGradlePlugin::class.java.getResourceAsStream("/version.properties"))
