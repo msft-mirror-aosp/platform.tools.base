@@ -18,7 +18,6 @@
 
 package com.android.builder.dexing
 
-import com.android.SdkConstants.DOT_CLASS
 import com.android.SdkConstants.DOT_JAR
 import com.android.SdkConstants.DOT_XML
 import com.android.SdkConstants.PROGUARD_RULES_FOLDER
@@ -54,6 +53,7 @@ import com.android.tools.r8.origin.PathOrigin
 import com.android.tools.r8.profile.art.ArtProfileBuilder
 import com.android.tools.r8.profile.art.ArtProfileConsumer
 import com.android.tools.r8.profile.art.ArtProfileProvider
+import com.android.tools.r8.references.Reference
 import com.android.tools.r8.startup.StartupProfileBuilder
 import com.android.tools.r8.startup.StartupProfileProvider
 import com.android.tools.r8.utils.ArchiveResourceProvider
@@ -64,6 +64,7 @@ import java.io.File
 import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
+import java.io.Serializable
 import java.nio.charset.Charset
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
@@ -91,15 +92,17 @@ fun isToolsConfigurationFile(name: String): Boolean {
             || lowerCaseName.startsWith("/$TOOLS_CONFIGURATION_FOLDER/")
 }
 
+sealed interface PartialShrinking: Serializable
+data object PartialShrinkingIncludeAll : PartialShrinking {
+    private fun readResolve(): Any = PartialShrinkingIncludeAll
+}
 data class PartialShrinkingConfig(
-    val includedPatterns: String? = null,
-    val excludedPatterns: String? = null
-) : java.io.Serializable { // Serializable so it can be used in Gradle workers
-
+    val includedPatterns: List<String>
+) : PartialShrinking { // Serializable so it can be used in Gradle workers
     companion object {
 
         @Suppress("ConstPropertyName")
-        private const val serialVersionUID = 0L
+        private const val serialVersionUID = 1L
     }
 }
 
@@ -128,7 +131,7 @@ fun runR8(
     outputArtProfile: Path? = null,
     inputProfileForDexStartupOptimization: Path? = null,
     r8Metadata: Path? = null,
-    partialShrinkingConfig: PartialShrinkingConfig? = null,
+    partialShrinking: PartialShrinking? = null,
     r8ExecutorService: ExecutorService? = null // null only if called by tests
 ) {
     val logger: Logger = Logger.getLogger("R8")
@@ -142,6 +145,7 @@ fun runR8(
         logger.fine("Java resources: $inputJavaResJar")
         logger.fine("Library classes: $libraries")
         logger.fine("Classpath classes: $classpath")
+        logger.fine("Partial shrinking includes: $partialShrinking")
     }
     val r8CommandBuilder =
         R8Command.builder(
@@ -153,10 +157,39 @@ fun runR8(
             )
         )
 
-    if (partialShrinkingConfig != null) {
-        r8CommandBuilder.enableExperimentalPartialShrinking(
-            partialShrinkingConfig.includedPatterns,
-            partialShrinkingConfig.excludedPatterns
+    if (partialShrinking != null) {
+        r8CommandBuilder.addPartialOptimizationConfigurationProviders(
+            { builder ->
+                when (partialShrinking) {
+                    is PartialShrinkingIncludeAll -> builder.addPackageAndSubPackages(Reference.packageFromString(""))
+                    is PartialShrinkingConfig -> {
+                        partialShrinking.includedPatterns.forEach { include ->
+                            if (include.isWildcard()) {
+                                builder.addPackageAndSubPackages(
+                                    Reference.packageFromString(
+                                        include.cutWildcardSuffix()
+                                    )
+                                )
+                            } else if (include.isPackage()) {
+                                builder.addPackage(Reference.packageFromString(include.cutPackageSuffix()))
+                            } else if (include.isClassName()) {
+                                builder.addClass(Reference.classFromTypeName(include))
+                            } else {
+                                throw IllegalArgumentException(
+                                    """
+                            Partial shrinking includes can be:
+                             - include packages that ends with '.*' like 'org.example.*'
+                             - include packages and subpackages that ends with '.**' like 'org.example.*'
+                             - include classes that ends with the first capital character of the last component
+                               like 'org.example.MyClass'.
+                             Still, you inclusion rule '${include}' does not belong to any category
+                             """.trimIndent()
+                                )
+                            }
+                        }
+                    }
+                }
+            }
         )
     }
 
@@ -331,6 +364,29 @@ fun runR8(
         }
     }
 }
+
+private fun String.isClassName(): Boolean {
+    if(isEmpty()) return false
+    val lastDotIndex = lastIndexOf('.')
+    if (lastDotIndex == -1) {
+        // maybe class with no package
+        return this[0].isUpperCase()
+    }
+    val charAfterDotIndex = lastDotIndex + 1
+    return if (charAfterDotIndex < length) {
+        this[charAfterDotIndex].isUpperCase()
+    } else {
+        false
+    }
+}
+
+private const val wildcardSuffix = ".**"
+private fun String.isWildcard(): Boolean = this.endsWith(wildcardSuffix)
+private fun String.cutWildcardSuffix(): String = removeSuffix(wildcardSuffix)
+
+private const val packageSuffix = ".*"
+private fun String.isPackage(): Boolean = this.endsWith(packageSuffix)
+private fun String.cutPackageSuffix(): String = removeSuffix(packageSuffix)
 
 private fun setupResourceShrinking(
     r8CommandBuilder: R8Command.Builder,
@@ -573,7 +629,7 @@ data class ToolConfig(
     val isolatedSplits: Boolean?,
     val r8OutputType: R8OutputType,
     val mainDexListDisallowed: Boolean
-) : java.io.Serializable { // Serializable so it can be used in Gradle workers
+) : Serializable { // Serializable so it can be used in Gradle workers
 
     companion object {
         @Suppress("ConstPropertyName")
@@ -590,7 +646,7 @@ data class ResourceShrinkingConfig(
     val logFile: File?,
     val shrunkResourcesOutputFiles: List<File>,
     val featureShrunkResourcesOutputDir: File?
-) : java.io.Serializable { // Serializable so it can be used in Gradle workers
+) : Serializable { // Serializable so it can be used in Gradle workers
 
     companion object {
         @Suppress("ConstPropertyName")

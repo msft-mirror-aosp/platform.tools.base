@@ -53,7 +53,9 @@ import com.android.build.gradle.tasks.PackageAndroidArtifact.Companion.THROW_ON_
 import com.android.buildanalyzer.common.TaskCategory
 import com.android.builder.dexing.DexingType
 import com.android.builder.dexing.MainDexListConfig
+import com.android.builder.dexing.PartialShrinking
 import com.android.builder.dexing.PartialShrinkingConfig
+import com.android.builder.dexing.PartialShrinkingIncludeAll
 import com.android.builder.dexing.ProguardConfig
 import com.android.builder.dexing.ProguardOutputFiles
 import com.android.builder.dexing.R8OutputType
@@ -240,6 +242,10 @@ abstract class R8Task @Inject constructor(
     @get:Input
     @get:Optional
     abstract val partialShrinkingEnabled: Property<Boolean>
+
+    @get:Input
+    @get:Optional
+    abstract val applicationOptimizationEnabled: Property<Boolean>
 
     @get:Input
     @get:Optional
@@ -596,17 +602,27 @@ abstract class R8Task @Inject constructor(
                 task.resourceShrinkingParams.enabled.setDisallowChanges(false)
             }
 
-            task.partialShrinkingEnabled.setDisallowChanges(creationConfig.optimizationCreationConfig.applicationOptimizationEnabled)
+            // for validation purposes
+            task.applicationOptimizationEnabled.setDisallowChanges(
+                creationConfig.optimizationCreationConfig.applicationOptimizationEnabled
+            )
 
-            if (creationConfig.services.projectOptions[BooleanOption.R8_GRADUAL_API]
-                && creationConfig.optimizationCreationConfig.applicationOptimizationEnabled
-            ) {
+            task.partialShrinkingEnabled.setDisallowChanges(
+                creationConfig.optimizationCreationConfig.applicationOptimizationEnabled ||
+                        isGradualShrinkingPackagesEnabled()
+            )
+
+            if (creationConfig.optimizationCreationConfig.applicationOptimizationEnabled) {
                 task.gradualShrinkingPackages.set(creationConfig.optimizationCreationConfig.includePackages)
             }
             task.packageList.setDisallowChanges(
                 creationConfig.artifacts.get(InternalArtifactType.MERGED_PACKAGES_FOR_R8)
             )
         }
+
+        private fun isGradualShrinkingPackagesEnabled(): Boolean =
+            creationConfig.optimizationCreationConfig.minifiedEnabled
+                    && creationConfig.services.projectOptions[BooleanOption.GRADUAL_R8_SHRINKING]
 
         override fun keep(keep: String) {
             proguardConfigurations.add("-keep $keep")
@@ -636,6 +652,13 @@ abstract class R8Task @Inject constructor(
     }
 
     override fun doTaskAction() {
+        //verify r8 gradual settings
+        if(applicationOptimizationEnabled.orNull == true && gradualShrinkingPackages.get().isEmpty()){
+            throw RuntimeException(
+                "Wrong configuration. Gradual R8 is ON with optimization.enable = true "+
+                        "but packageScope has no include rules.")
+        }
+
         val output: Property<out FileSystemLocation> =
             when {
                 componentType.orNull?.isAar == true -> outputClasses
@@ -757,7 +780,7 @@ abstract class R8Task @Inject constructor(
             it.r8Metadata.set(r8Metadata)
             it.toolConfig.set(toolParameters.toToolConfig())
             it.resourceShrinkingConfig.set(resourceShrinkingParams.toConfig())
-            it.partialShrinkingConfig.set(aggregatePartialShrinkingConfig())
+            it.partialShrinkingIncludes.set(aggregatePartialShrinkingConfig())
             // Note: Build service can only be passed in Gradle worker non-isolation mode
             if (executionOptions.get().runInSeparateProcess) {
                 it.r8ThreadPoolSizeIfIsolationMode.set(r8ThreadPoolSize)
@@ -782,32 +805,16 @@ abstract class R8Task @Inject constructor(
     }
 
     // Merge creation config included/excluded patterns with package.txt with merged R8 packages
-    private fun aggregatePartialShrinkingConfig(): PartialShrinkingConfig? {
+    private fun aggregatePartialShrinkingConfig(): PartialShrinking? {
+        if(partialShrinkingEnabled.orNull != true) return null
+
         // load from files and from new gradual r8 dsl
         val fileIncludes = loadR8AllowedPackages()
         val packages = (gradualShrinkingPackages.orNull ?: listOf()).toList()
-        if (hasPartialScope(packages) ||
-            containsPartialRule(fileIncludes)
-        ) {
-            val updatedPackages = packages + fileIncludes
-            return PartialShrinkingConfig(
-                updatedPackages.joinToString(","),
-                null
-            )
-        }
-        return null
+        val updatedPackages = packages + fileIncludes
+        if (updatedPackages.contains("**")) return PartialShrinkingIncludeAll
+        return PartialShrinkingConfig(updatedPackages)
     }
-
-    private fun containsPartialRule(packages: List<String>): Boolean =
-        packages.any { it != "**" }
-
-    // check if user set anything in `packageScope`
-    // having "**" means it's not partial
-    // having empty list means user set it to empty
-    private fun hasPartialScope(packages: List<String>): Boolean =
-        if (packages.isNotEmpty()) {
-            containsPartialRule(packages)
-        } else partialShrinkingEnabled.orNull == true
 
     private fun loadR8AllowedPackages(): List<String> {
         val packageFile = packageList.orNull
@@ -847,7 +854,7 @@ abstract class R8Task @Inject constructor(
             r8Metadata: File?,
             toolConfig: ToolConfig,
             resourceShrinkingConfig: ResourceShrinkingConfig?,
-            partialShrinkingConfig: PartialShrinkingConfig?,
+            partialShrinkingIncludes: PartialShrinking?,
             r8ThreadPool: ExecutorService
         ) {
             val logger = LoggerWrapper.getLogger(R8Task::class.java)
@@ -911,7 +918,7 @@ abstract class R8Task @Inject constructor(
                 outputArtProfile?.toPath(),
                 inputProfileForDexStartupOptimization?.toPath(),
                 r8Metadata?.toPath(),
-                partialShrinkingConfig,
+                partialShrinkingIncludes,
                 r8ThreadPool
             )
         }
@@ -979,7 +986,7 @@ abstract class R8Task @Inject constructor(
             abstract val r8Metadata: RegularFileProperty
             abstract val toolConfig: Property<ToolConfig>
             abstract val resourceShrinkingConfig: Property<ResourceShrinkingConfig>
-            abstract val partialShrinkingConfig: Property<PartialShrinkingConfig>
+            abstract val partialShrinkingIncludes: Property<PartialShrinking>
             abstract val r8ThreadPoolSizeIfIsolationMode: Property<Int> // Set iff in Gradle worker isolation mode
             abstract val r8D8ThreadPoolBuildServiceIfNonIsolationMode: Property<R8D8ThreadPoolBuildService> // Set iff in Gradle worker non-isolation mode
         }
@@ -1026,7 +1033,7 @@ abstract class R8Task @Inject constructor(
                     parameters.r8Metadata.orNull?.asFile,
                     parameters.toolConfig.get(),
                     parameters.resourceShrinkingConfig.orNull,
-                    parameters.partialShrinkingConfig.orNull,
+                    parameters.partialShrinkingIncludes.orNull,
                     r8ThreadPool
                 )
             } finally {

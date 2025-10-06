@@ -82,6 +82,17 @@ class GradualR8ApiTest {
                         }
                     """.trimIndent()
                 )
+                add(
+                    "src/main/java/com/example/androidlib/internal/ClassInAndroidLib2.kt",
+                    //language=kotlin
+                    """
+                        package com.example.androidlib.internal
+                        class ClassInAndroidLib2 {
+                            fun methodToKeep() {}
+                            fun methodToRemove() {}
+                        }
+                    """.trimIndent()
+                )
                 add("consumer-rules.pro", "")
             }
         }
@@ -104,6 +115,17 @@ class GradualR8ApiTest {
                     """
                         package com.example.androidlib2
                         class ClassInAndroidLib2 {
+                            fun methodToKeep() {}
+                            fun methodToRemove() {}
+                        }
+                    """.trimIndent()
+                )
+                add(
+                    "src/main/java/com/example/androidlib2/ClassInAndroidLib4.kt",
+                    //language=kotlin
+                    """
+                        package com.example.androidlib2
+                        class ClassInAndroidLib4 {
                             fun methodToKeep() {}
                             fun methodToRemove() {}
                         }
@@ -149,24 +171,18 @@ class GradualR8ApiTest {
                 }
             }
         }
-        build.executor.run(":app:assembleRelease")
-        build.androidApplication().assertApk(ApkSelector.RELEASE) {
-            classes().containsAtLeast(
-                "com/example/androidlib2/ClassInAndroidLib2",
-                "com/example/androidlib/ClassInAndroidLib",
-                "com/example/javalib/ClassInJavaLib",
-            )
-        }
+        val result = build.executor.expectFailure().run(":app:assembleRelease")
+        result.assertErrorContains("Wrong configuration.")
     }
 
     @Test
-    fun `test gradual r8 partial optimization`() {
+    fun `test gradual r8 partial optimization for package + subpackages`() {
         val build = rule.build {
             androidApplication {
                 android {
                     buildTypes {
                         named("release") {
-                            it.optimization.packageScope.add("com.example.androidlib2.**")
+                            it.optimization.packageScope.add("com.example.androidlib.**")
                         }
                     }
                 }
@@ -174,7 +190,48 @@ class GradualR8ApiTest {
         }
         build.executor.run(":app:assembleRelease")
         build.androidApplication().assertApk(ApkSelector.RELEASE) {
-            classes().subPackage("com/example/androidlib2").containsExactly(listOf())
+            classes().subPackage("com/example/androidlib").isEmpty()
+            classes().subPackage("com/example/androidlib/internal").isEmpty()
+        }
+    }
+
+    @Test
+    fun `test gradual r8 partial optimization for package only`() {
+        val build = rule.build {
+            androidApplication {
+                android {
+                    buildTypes {
+                        named("release") {
+                            it.optimization.packageScope.add("com.example.androidlib.*")
+                        }
+                    }
+                }
+            }
+        }
+        build.executor.run(":app:assembleRelease")
+        build.androidApplication().assertApk(ApkSelector.RELEASE) {
+            classes().subPackage("com/example/androidlib")
+                .containsExactly("internal/ClassInAndroidLib2")
+        }
+    }
+
+    @Test
+    fun `test gradual r8 partial optimization for class`() {
+        val build = rule.build {
+            androidApplication {
+                android {
+                    buildTypes {
+                        named("release") {
+                            it.optimization.packageScope.add("com.example.androidlib2.ClassInAndroidLib2")
+                        }
+                    }
+                }
+            }
+        }
+        build.executor.run(":app:assembleRelease")
+        build.androidApplication().assertApk(ApkSelector.RELEASE) {
+            classes().subPackage("com/example/androidlib2")
+                .containsExactly("ClassInAndroidLib4")
         }
     }
 

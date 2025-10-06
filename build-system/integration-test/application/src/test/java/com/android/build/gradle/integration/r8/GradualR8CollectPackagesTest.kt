@@ -36,7 +36,7 @@ import org.junit.Test
 import kotlin.collections.plus
 
 /** Integration test for gradual R8 feature. */
-class GradualR8Test {
+class GradualR8CollectPackagesTest {
 
     @get:Rule
     val rule = GradleRule.from {
@@ -267,12 +267,4 @@ class GradualR8Test {
 
 private fun addShrinkRulesToJar(jar: ByteArray, shrinkRules: Map<String, ByteArray>): ByteArray {
     return (ZipContents.fromByteArray(jar) + ZipContents(shrinkRules)).toByteArray()
-}
-
-private fun addShrinkRulesToAar(aar: ByteArray, shrinkRules: Map<String, ByteArray>): ByteArray {
-    val aarContents = ZipContents.fromByteArray(aar)
-    val classesJar = aarContents.entries["classes.jar"] ?: ZipContents(emptyMap()).toByteArray()
-    val updatedClassesJar = addShrinkRulesToJar(classesJar, shrinkRules)
-    val updatedAarEntries = aarContents.entries + mapOf("classes.jar" to updatedClassesJar)
-    return ZipContents(updatedAarEntries).toByteArray()
 }

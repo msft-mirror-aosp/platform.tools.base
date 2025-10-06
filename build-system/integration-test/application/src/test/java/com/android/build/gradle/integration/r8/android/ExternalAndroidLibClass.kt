@@ -17,7 +17,7 @@
 package com.android.build.gradle.integration.r8.android
 
 /**
- * This class exists for testing in [com.android.build.gradle.integration.r8.GradualR8Test]
+ * This class exists for testing in [com.android.build.gradle.integration.r8.GradualR8CollectPackagesTest]
  */
 internal class ExternalAndroidLibClass {
     fun methodToKeep() {}

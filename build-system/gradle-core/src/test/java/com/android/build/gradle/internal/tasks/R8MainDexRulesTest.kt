@@ -207,7 +207,7 @@ fun runR8(
             mainDexListDisallowed = BooleanOption.R8_MAIN_DEX_LIST_DISALLOWED.defaultValue
         ),
         resourceShrinkingConfig = null,
-        partialShrinkingConfig = null,
+        partialShrinkingIncludes = null,
         r8ThreadPool = MoreExecutors.newDirectExecutorService()
     )
 }

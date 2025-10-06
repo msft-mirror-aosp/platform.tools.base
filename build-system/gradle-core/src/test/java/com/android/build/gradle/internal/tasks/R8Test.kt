@@ -25,6 +25,7 @@ import com.android.build.gradle.internal.transforms.testdata.Toy
 import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.options.SyncOptions
 import com.android.builder.core.ComponentTypeImpl
+import com.android.builder.dexing.PartialShrinking
 import com.android.builder.dexing.PartialShrinkingConfig
 import com.android.builder.dexing.R8OutputType
 import com.android.builder.dexing.ToolConfig
@@ -281,44 +282,14 @@ class R8Test(private val r8OutputType: R8OutputType) {
             java8Support = Java8LangSupport.R8,
             useFullR8 = true,
             minSdkVersion = 23,
-            partialShrinkingConfig = PartialShrinkingConfig(
-                "${Cat::class.java.name},${Animal::class.java.name}",
-                null
-            )
+            partialShrinkingIncludes =
+                PartialShrinkingConfig(listOf(Cat::class.java.name,Animal::class.java.name))
         )
 
         assertClassDoesNotExist(Cat::class.java)
         assertClassDoesNotExist(Animal::class.java)
         assertClassExists(CarbonForm::class.java)
         assertClassExists(Toy::class.java)
-    }
-
-    @Test
-    fun testPartialShrinkingExcludeConfiguration() {
-        Assume.assumeTrue(r8OutputType == R8OutputType.DEX)
-        val classes = tmp.root.toPath().resolve("classes.jar")
-
-        TestInputsGenerator.pathWithClasses(
-            classes,
-            listOf(Animal::class.java, CarbonForm::class.java, Cat::class.java, Toy::class.java)
-        )
-
-        runR8(
-            classes = listOf(classes.toFile()),
-            java8Support = Java8LangSupport.R8,
-            useFullR8 = true,
-            minSdkVersion = 23,
-            partialShrinkingConfig = PartialShrinkingConfig(
-                "com.android.build.gradle.internal.transforms.testdata.*",
-                CarbonForm::class.java.name
-            )
-        )
-
-        assertClassExists(CarbonForm::class.java)
-        assertClassDoesNotExist(Animal::class.java)
-        assertClassDoesNotExist(Toy::class.java)
-        assertClassDoesNotExist(Cat::class.java)
-
     }
 
     @Test
@@ -705,7 +676,7 @@ class R8Test(private val r8OutputType: R8OutputType) {
         featureDexDir: File? = null,
         featureJavaResourceOutputDir: File? = null,
         libConfiguration: String? = null,
-        partialShrinkingConfig: PartialShrinkingConfig? = null
+        partialShrinkingIncludes: PartialShrinking? = null
     ) {
         val proguardConfigurations: MutableList<String> = mutableListOf(
             "-ignorewarnings")
@@ -772,7 +743,7 @@ class R8Test(private val r8OutputType: R8OutputType) {
                 mainDexListDisallowed = BooleanOption.R8_MAIN_DEX_LIST_DISALLOWED.defaultValue
             ),
             resourceShrinkingConfig = null,
-            partialShrinkingConfig = partialShrinkingConfig,
+            partialShrinkingIncludes = partialShrinkingIncludes,
             r8ThreadPool = MoreExecutors.newDirectExecutorService()
         )
     }
