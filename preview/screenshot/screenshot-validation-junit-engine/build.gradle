@@ -27,7 +27,6 @@ dependencies {
     implementation libs.junit_platform_reporting
     implementation "com.android.tools.compose:compose-preview-detector:${rootProject.ext.baseVersion}"
     implementation("com.android.tools.compose:compose-preview-renderer:$version")
-    implementation("com.android.tools.compose:compose-preview-renderer-model:$version")
     implementation(project(":base:preview:screenshot:screenshot-validation-api"))
     testImplementation libs.junit
     testImplementation libs.truth

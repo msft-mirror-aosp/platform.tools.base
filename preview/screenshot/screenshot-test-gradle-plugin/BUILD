@@ -46,7 +46,6 @@ maven_repository(
     artifacts = [
         "//tools/base/multipreview-asm:compose-preview-detector",
         "//tools/base/standalone-render/compose-cli:compose-preview-renderer",
-        "//tools/base/standalone-render/compose-cli-serialize:compose-preview-renderer-model",
         "//tools/base/testutils:tools.testutils",
         "@maven//:org.jetbrains.kotlin.kotlin-test-junit_1.7.10",
         "@maven//:org.mockito.kotlin.mockito-kotlin_5.4.0",
@@ -61,7 +60,6 @@ maven_repository(
     # keep sorted
     artifacts = [
         "//tools/base/multipreview-asm:compose-preview-detector",
-        "//tools/base/standalone-render/compose-cli-serialize:compose-preview-renderer-model",
     ],
 )
 

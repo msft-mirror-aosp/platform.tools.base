@@ -19,7 +19,6 @@ kotlin_library(
         "//tools/base/layoutlib-api:tools.layoutlib-api",
         "//tools/base/multipreview-asm:tools.compose-preview-detector",
         "//tools/base/sdklib:tools.sdklib",
-        "//tools/base/standalone-render/compose-cli-serialize:tools.compose-preview-renderer-model",
         "//tools/base/standalone-render/lib:tools.standalone-render.lib",
     ],
 )
@@ -49,7 +48,6 @@ merge_deps(
         "//tools/base/resource-repository:tools.resource-repository",
         "//tools/base/sdk-common:tools.sdk-common",
         "//tools/base/sdklib:tools.sdklib",
-        "//tools/base/standalone-render/compose-cli-serialize:tools.compose-preview-renderer-model",
         "//tools/base/standalone-render/lib:tools.standalone-render.lib",
         "//tools/base/zipflinger",
         "@maven//:com.google.code.gson.gson",
@@ -148,7 +146,7 @@ kotlin_test(
     deps = [
         ":tools.compose-preview-renderer",
         "//tools/base/perf-logger:studio.perf-logger_testlib",
-        "//tools/base/standalone-render/compose-cli-serialize:tools.compose-preview-renderer-model",
+        "//tools/base/standalone-render/lib:tools.standalone-render.lib",
         "//tools/base/testutils:tools.testutils",
         "@maven//:junit.junit",
     ],
@@ -177,7 +175,7 @@ kotlin_test(
     deps = [
         ":tools.compose-preview-renderer",
         "//tools/base/perf-logger:studio.perf-logger_testlib",
-        "//tools/base/standalone-render/compose-cli-serialize:tools.compose-preview-renderer-model",
+        "//tools/base/standalone-render/lib:tools.standalone-render.lib",
         "//tools/base/testutils:tools.testutils",
         "@maven//:junit.junit",
     ],
