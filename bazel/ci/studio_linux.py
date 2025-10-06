@@ -89,11 +89,6 @@ _ARTIFACTS = [
     ('tools/vendor/google/game-tools/packaging/game-tools-linux.tar.gz', 'artifacts'),
     ('tools/vendor/google/game-tools/packaging/game-tools-win.zip', 'artifacts'),
     ('tools/base/deploy/service/deploy.service_deploy.jar', 'artifacts'),
-    ('tools/base/gmaven/gmaven.zip', 'artifacts/gmaven_repo.zip'),
-    ('tools/base/build-system/documentation.zip', 'artifacts/android_gradle_plugin_reference_docs.zip'),
-    ('tools/base/firebase/testlab/testlab-gradle-plugin/testlab-gradle-plugin.zip', 'artifacts'),
-    ('tools/base/journeys/journeys_maven_repo.zip', 'artifacts'),
-    ('tools/base/preview/screenshot/preview_screenshot_maven_repo.zip', 'artifacts'),
     ('tools/adt/idea/aswb/aswb/aswb_bazel.zip', 'artifacts'),
     ('tools/base/sdk-common/tools.sdk-common.jar', 'artifacts'),
     ('tools/base/sdk-common/tools.sdk-common.src.jar', 'artifacts'),
@@ -104,11 +99,18 @@ _ARTIFACTS = [
     ('tools/base/resource-repository/libtools.resource-repository.jar', 'artifacts'),
     ('tools/base/environment-services/libtools.environment-services.jar', 'artifacts'),
     ('prebuilts/studio/layoutlib/layoutlib-repository.zip', 'artifacts'),
-    ('tools/base/build-system/android_gradle_plugin_9.zip', 'artifacts'),
 
     ('tools/base/bazel/owners.zip', 'owners.zip'),
 ]
 
+_AGP_ARTIFACTS = [
+    ('tools/base/gmaven/gmaven.zip', 'artifacts/gmaven_repo.zip'),
+    ('tools/base/build-system/documentation.zip', 'artifacts/android_gradle_plugin_reference_docs.zip'),
+    ('tools/base/firebase/testlab/testlab-gradle-plugin/testlab-gradle-plugin.zip', 'artifacts'),
+    ('tools/base/journeys/journeys_maven_repo.zip', 'artifacts'),
+    ('tools/base/preview/screenshot/preview_screenshot_maven_repo.zip', 'artifacts'),
+    ('tools/base/build-system/android_gradle_plugin_9.zip', 'artifacts'),
+]
 
 def studio_linux(build_env: bazel.BuildEnv) -> None:
   """Runs studio-linux target."""
@@ -249,4 +251,5 @@ def copy_artifacts(
   """Copies artifacts to the dist directory."""
   dist_path = pathlib.Path(build_env.dist_dir)
   (dist_path / 'artifacts').mkdir(parents=True, exist_ok=True)
-  studio.copy_artifacts(build_env, _ARTIFACTS, missing_ok)
+  artifacts = _ARTIFACTS if build_env.is_studio_only_release else _ARTIFACTS + _AGP_ARTIFACTS
+  studio.copy_artifacts(build_env, artifacts, missing_ok)

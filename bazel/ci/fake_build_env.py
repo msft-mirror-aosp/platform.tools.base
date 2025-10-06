@@ -67,5 +67,6 @@ def make_fake_build_env(**kwargs) -> Iterator[bazel.BuildEnv]:
         user='user',
         branch='',
         startup_options=[],
+        is_studio_only_release=False,
         **kwargs,
     )
