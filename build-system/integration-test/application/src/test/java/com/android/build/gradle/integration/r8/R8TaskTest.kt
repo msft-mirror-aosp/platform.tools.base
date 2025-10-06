@@ -19,7 +19,6 @@ package com.android.build.gradle.integration.r8
 import com.android.build.api.dsl.ApplicationExtension
 import com.android.build.gradle.integration.common.fixture.LoggingLevel
 import com.android.build.gradle.integration.common.fixture.project.ApkSelector
-import com.android.build.gradle.integration.common.fixture.project.GradleBuild
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
@@ -247,27 +246,6 @@ class R8TaskTest {
         }
     }
 
-
-    @Test
-    fun testPartialShrinkingDisabled() {
-        val build = createPartialShrinkingTestBuild(partialShrinkingEnabled = false)
-        build.executor.run(":app:assembleRelease")
-        val app = build.androidApplication()
-        app.assertApk(ApkSelector.RELEASE) {
-            classes().containsExactly("pkg/name/app/HelloWorld")
-        }
-    }
-
-    @Test
-    fun testPartialShrinkingEnabled() {
-        val build = createPartialShrinkingTestBuild(partialShrinkingEnabled = true)
-        build.executor.run(":app:assembleRelease")
-        val app = build.androidApplication()
-        app.assertApk(ApkSelector.RELEASE) {
-            classes().containsExactly("pkg/name/app/HelloWorld", "example/MyInterface", "example/MyInterface$-CC")
-        }
-    }
-
     /** Regression test for b/380110863. */
     @Test
     fun `test system properties are passed to forked process`() {
@@ -292,32 +270,6 @@ class R8TaskTest {
         TruthHelper.assertThat(result.failureMessage).contains(
             "Expected value of com.android.tools.r8.experimental.enablewhyareyounotinlining to be a boolean, but was: invalid_value"
         )
-    }
-
-    private fun createPartialShrinkingTestBuild(partialShrinkingEnabled: Boolean): GradleBuild {
-        return rule.build {
-            androidApplication {
-                android {
-                    defaultConfig {
-                        minSdk = 21
-                    }
-                }
-                files.add(
-                    "src/main/java/example/MyInterface.java",
-                    //language=java
-                    """
-                        package example;
-
-                        interface MyInterface {
-                            static void printContent() { System.out.println("hello"); }
-                        }
-                    """.trimIndent()
-                )
-                android.experimentalProperties.put("com.android.tools.r8.experimentalPartialShrinkingEnabled", partialShrinkingEnabled)
-                android.experimentalProperties.put("com.android.tools.r8.experimentalPartialShrinkingIncludePatterns", "pkg.**")
-                android.experimentalProperties.put("com.android.tools.r8.experimentalPartialShrinkingExcludePatterns", "example.*")
-            }
-        }
     }
 }
 

@@ -239,10 +239,6 @@ abstract class R8Task @Inject constructor(
 
     @get:Input
     @get:Optional
-    abstract val partialShrinkingConfig: Property<PartialShrinkingConfig>
-
-    @get:Input
-    @get:Optional
     abstract val partialShrinkingEnabled: Property<Boolean>
 
     @get:Input
@@ -601,7 +597,6 @@ abstract class R8Task @Inject constructor(
             }
 
             task.partialShrinkingEnabled.setDisallowChanges(creationConfig.optimizationCreationConfig.applicationOptimizationEnabled)
-            task.partialShrinkingConfig.setDisallowChanges(creationConfig.getPartialShrinkingConfig())
 
             if (creationConfig.services.projectOptions[BooleanOption.R8_GRADUAL_API]
                 && creationConfig.optimizationCreationConfig.applicationOptimizationEnabled
@@ -788,20 +783,16 @@ abstract class R8Task @Inject constructor(
 
     // Merge creation config included/excluded patterns with package.txt with merged R8 packages
     private fun aggregatePartialShrinkingConfig(): PartialShrinkingConfig? {
-        // loading include/exclude from custom properties
-        val creationConfig = partialShrinkingConfig.orNull
         // load from files and from new gradual r8 dsl
-        val includePatterns = creationConfig?.includedPatterns?.split(",") ?: listOf()
         val fileIncludes = loadR8AllowedPackages()
         val packages = (gradualShrinkingPackages.orNull ?: listOf()).toList()
         if (hasPartialScope(packages) ||
-            containsPartialRule(includePatterns) ||
             containsPartialRule(fileIncludes)
         ) {
-            val updatedPackages = packages + includePatterns + fileIncludes
+            val updatedPackages = packages + fileIncludes
             return PartialShrinkingConfig(
                 updatedPackages.joinToString(","),
-                creationConfig?.excludedPatterns
+                null
             )
         }
         return null
@@ -1048,23 +1039,6 @@ abstract class R8Task @Inject constructor(
             }
         }
     }
-}
-
-fun ConsumableCreationConfig.getPartialShrinkingConfig(): PartialShrinkingConfig? {
-    if (this !is VariantCreationConfig) return null
-    val properties = experimentalProperties.get()
-    if (ModulePropertyKey.OptionalBoolean.R8_EXPERIMENTAL_PARTIAL_SHRINKING_ENABLED.getValue(
-            properties
-        ) != true
-    ) return null
-    return PartialShrinkingConfig(
-        includedPatterns = ModulePropertyKey.OptionalString.R8_EXPERIMENTAL_PARTIAL_SHRINKING_INCLUDE_PATTERNS.getValue(
-            properties
-        ),
-        excludedPatterns = ModulePropertyKey.OptionalString.R8_EXPERIMENTAL_PARTIAL_SHRINKING_EXCLUDE_PATTERNS.getValue(
-            properties
-        )
-    )
 }
 
 /** Similar to [ToolConfig] but containing Gradle types. */

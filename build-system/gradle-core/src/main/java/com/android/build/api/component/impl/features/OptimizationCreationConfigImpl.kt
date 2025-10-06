@@ -30,7 +30,6 @@ import com.android.build.gradle.internal.core.dsl.features.OptimizationDslInfo
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.services.VariantServices
 import com.android.build.gradle.internal.tasks.ModuleMetadata
-import com.android.build.gradle.internal.tasks.getPartialShrinkingConfig
 import com.android.builder.errors.IssueReporter
 import org.gradle.api.file.RegularFile
 import org.gradle.api.provider.ListProperty
@@ -143,8 +142,6 @@ class OptimizationCreationConfigImpl(
                                 dslInfo.postProcessingOptions.codeShrinkerEnabled()
                     else -> component.mainVariant.optimizationCreationConfig.minifiedEnabled
                 }
-            } else if (component.getPartialShrinkingConfig() != null) {
-                true
             } else if (component is ApplicationCreationConfig) {
                 minify || dslInfo.applicationOptimizationEnabled
             } else {

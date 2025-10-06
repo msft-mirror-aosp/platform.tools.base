@@ -77,13 +77,7 @@ sealed interface ModulePropertyKey<OutputT> {
         /**
          * Whether to enable various R8 optimization on the code
          */
-        ANDROID_PRIVACY_SANDBOX_R8_OPTIMIZATION("android.experimental.privacysandboxsdk.optimize"),
-
-        /**
-         * Whether to use R8 Partial Shrinking.
-         */
-        R8_EXPERIMENTAL_PARTIAL_SHRINKING_ENABLED("com.android.tools.r8.experimentalPartialShrinkingEnabled")
-        ;
+        ANDROID_PRIVACY_SANDBOX_R8_OPTIMIZATION("android.experimental.privacysandboxsdk.optimize");
 
         override fun getValue(properties: Map<String, Any>): Boolean? {
             return properties[key]?.let { parseBoolean(key, it) }
