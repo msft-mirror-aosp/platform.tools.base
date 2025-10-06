@@ -22,6 +22,7 @@ import com.android.build.api.artifact.Artifact
 import com.android.build.api.artifact.Artifacts
 import com.android.build.api.artifact.ScopedArtifact
 import com.android.build.api.dsl.CommonExtension
+import com.android.build.api.dsl.SdkComponents
 import com.android.build.api.variant.AndroidComponentsExtension
 import com.android.build.api.variant.HasHostTests
 import com.android.build.api.variant.HostTest
@@ -35,8 +36,6 @@ import com.android.compose.screenshot.services.AnalyticsService
 import com.android.compose.screenshot.tasks.PreviewScreenshotTestEngineInput
 import com.android.compose.screenshot.tasks.PreviewScreenshotUpdateTask
 import com.android.compose.screenshot.tasks.PreviewScreenshotValidationTask
-import java.io.File
-import java.util.Locale
 import java.util.Properties
 import java.util.UUID
 import org.gradle.api.Plugin
@@ -50,7 +49,6 @@ import org.gradle.api.file.RegularFile
 import org.gradle.api.plugins.JavaBasePlugin
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.TaskProvider
-import org.gradle.api.tasks.testing.Test
 import org.gradle.api.JavaVersion
 import org.gradle.util.GradleVersion
 
@@ -242,8 +240,7 @@ class PreviewScreenshotGradlePlugin : Plugin<Project> {
 
                         task.classpath.from(
                             task.project.configurations.getByName(previewScreenshotTestEngineConfigurationName),
-                            task.project.configurations.getByName(layoutlibJarConfigurationName),
-                            componentsExtension.sdkComponents.bootClasspath,
+                            componentsExtension.sdkComponents.bootClasspath,  // Needed for test discovery
                         )
                         maxHeapSize?.let {
                             task.maxHeapSize = it
@@ -251,7 +248,7 @@ class PreviewScreenshotGradlePlugin : Plugin<Project> {
                     }
 
                     updateTask.configureTestEngineInput(
-                        project, variant, screenshotTestComponent, layoutlibDataFromMaven,
+                        project, variant, screenshotTestComponent, componentsExtension.sdkComponents, layoutlibDataFromMaven,
                         sdkDirectory, screenshotExtension, null, { testEngineInput }
                     )
 
@@ -288,8 +285,7 @@ class PreviewScreenshotGradlePlugin : Plugin<Project> {
 
                         task.classpath.from(
                             task.project.configurations.getByName(previewScreenshotTestEngineConfigurationName),
-                            task.project.configurations.getByName(layoutlibJarConfigurationName),
-                            componentsExtension.sdkComponents.bootClasspath,
+                            componentsExtension.sdkComponents.bootClasspath,  // Needed for test discovery
                         )
 
                         maxHeapSize?.let {
@@ -298,7 +294,8 @@ class PreviewScreenshotGradlePlugin : Plugin<Project> {
                     }
 
                     previewScreenshotTestTask.configureTestEngineInput(
-                        project, variant, screenshotTestComponent, layoutlibDataFromMaven,
+                        project, variant, screenshotTestComponent,
+                        componentsExtension.sdkComponents, layoutlibDataFromMaven,
                         sdkDirectory, screenshotExtension,
                         { reports.junitXml.outputLocation.get() },
                         { testEngineInput }
@@ -322,6 +319,7 @@ class PreviewScreenshotGradlePlugin : Plugin<Project> {
     private fun <T: Task> TaskProvider<T>.configureTestEngineInput(
         project: Project,
         variant: Variant, screenshotTestComponent: HostTest,
+        sdkComponents: SdkComponents,
         layoutlibDataFromMaven: LayoutlibDataFromMaven,
         sdkDirectory: Provider<Directory>,
         screenshotExtension: ScreenshotTestOptionsImpl,
@@ -334,6 +332,7 @@ class PreviewScreenshotGradlePlugin : Plugin<Project> {
                 threshold.set(screenshotExtension.imageDifferenceThreshold)
                 namespace.set(variant.namespace)
                 layoutlibDataDir.setFrom(layoutlibDataFromMaven.layoutlibDataDirectory)
+                layoutlibClassPath.setFrom(project.configurations.getByName(layoutlibJarConfigurationName), sdkComponents.bootClasspath)
                 referenceImageDir.set(project.layout.projectDirectory.dir("src/screenshotTest${variantName.capitalized()}/reference"))
                 previewImageOutputDir.set(buildDir.dir("$PREVIEW_OUTPUT/${variant.computePathSegments()}/rendered"))
                 diffImageOutputDir.set(buildDir.dir("$PREVIEW_OUTPUT/${variant.computePathSegments()}/diffs"))
@@ -445,10 +444,15 @@ class PreviewScreenshotGradlePlugin : Plugin<Project> {
                 isCanBeConsumed = false
                 description = "A configuration to resolve layoutlib jar dependencies."
             }
-            val version = LAYOUTLIB_VERSION
             dependencies.add(
                 layoutlibJarConfigurationName,
-                "com.android.tools.layoutlib:layoutlib:$version")
+                "com.android.tools.layoutlib:layoutlib:$LAYOUTLIB_VERSION")
+
+            // Standalone renderer version is the same as plugin version.
+            val standaloneRendererVersion = SCREENSHOT_TEST_PLUGIN_VERSION
+            dependencies.add(
+                layoutlibJarConfigurationName,
+                "com.android.tools.compose:compose-preview-renderer:$standaloneRendererVersion")
         }
     }
 

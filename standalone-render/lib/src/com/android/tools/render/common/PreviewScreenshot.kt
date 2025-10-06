@@ -17,9 +17,10 @@
 package com.android.tools.render.common
 
 import com.android.tools.render.StandaloneRenderModelModule
+import java.io.Serializable
 
 /** Information required to render a screenshot of a preview. */
-interface PreviewScreenshot {
+interface PreviewScreenshot : Serializable {
     val methodFQN: String
     val previewParams: Map<String, String>
     val previewId: String

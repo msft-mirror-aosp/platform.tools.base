@@ -31,6 +31,7 @@ import org.junit.Test
 import kotlin.io.path.listDirectoryEntries
 import kotlin.io.path.name
 import kotlin.io.path.readText
+import org.junit.Ignore
 
 private const val TILES_VERSION = "1.4.0"
 private const val PROTOLAYOUT_VERSION = "1.2.0"
@@ -66,10 +67,12 @@ class WearTileScreenshotTest {
                     implementation("androidx.wear.tiles:tiles-material:$TILES_VERSION")
                     implementation("androidx.wear.tiles:tiles-tooling:$TILES_VERSION")
                     implementation("androidx.wear.tiles:tiles-tooling-preview:$TILES_VERSION")
+                    implementation("androidx.wear.protolayout:protolayout:$PROTOLAYOUT_VERSION")
                     implementation("androidx.wear.protolayout:protolayout-material:$PROTOLAYOUT_VERSION")
                 }
                 kotlin {
-                    jvmToolchain(17)
+                    // Required by LayoutLib (com/android/layoutlib/bridge/Bridge).
+                    jvmToolchain(21)
                 }
 
                 files {
@@ -299,24 +302,23 @@ class WearTileScreenshotTest {
         )
     }
 
+    @Ignore("b/388773416")
     @Test
     fun runPreviewScreenshotTestsWithTilesToolingAsTestDep() {
         val tilesToolingDep = "androidx.wear.tiles:tiles-tooling:$TILES_VERSION"
-        val build = rule.build {
-            androidApplication {
-                dependencies {
-                    remove("implementation", tilesToolingDep)
-                    screenshotTestImplementation(tilesToolingDep)
-                }
+        rule.build.androidApplication().reconfigure {
+            dependencies {
+                remove("implementation", tilesToolingDep)
+                screenshotTestImplementation(tilesToolingDep)
             }
         }
-        val appProject = build.androidApplication()
+        val appProject = rule.build.androidApplication()
 
         // Generate screenshots to be tested against
         updateReferenceImage()
 
         // Validate previews matches screenshots
-        build.sstExecutor().run(":app:validateDebugScreenshotTest")
+        rule.build.sstExecutor().run(":app:validateDebugScreenshotTest")
 
         // Verify that HTML reports are generated and all tests pass
         val indexHtmlReport = appProject.buildDir.resolve("reports/screenshotTest/preview/debug/index.html")

@@ -100,6 +100,10 @@ interface PreviewScreenshotTestEngineInput {
     @get:Classpath
     val layoutlibDataDir: ConfigurableFileCollection
 
+    @get:InputFiles
+    @get:Classpath
+    val layoutlibClassPath: ConfigurableFileCollection
+
     @get:Input
     val threshold: Property<Float>
 
@@ -185,6 +189,9 @@ fun PreviewScreenshotTestEngineInput.copyJvmArgsTo(addJvmArgFunc: (String) -> Un
     addJvmArgFunc(toJvmTestEngineParam(
         "Renderer.layoutlibDataDir",
         layoutlibDataDir.singleFile.absolutePath))
+    addJvmArgFunc(toJvmTestEngineParam(
+        "Renderer.layoutlibClassPath",
+        layoutlibClassPath.files.joinToString(File.pathSeparator) { it.absolutePath }))
     addJvmArgFunc(toJvmTestEngineParam(
         "TestOption.recordingModeEnabled",
         recordingModeEnabled.get().toString()))

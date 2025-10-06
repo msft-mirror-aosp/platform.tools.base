@@ -866,9 +866,9 @@ gradle_integration_test(
         "//tools/base/build-system/integration-test/application:layoutlib_prebuilts",
         "//tools/base/build-system/integration-test:kotlin_gradle_plugin_prebuilts",
     ],
+    resources = glob(["src/test/resources/fonts/**"]),
     shard_count = 2,
     tags = [
-        "manual",  # b/447352360
         "noci:studio-win",  # b/374358308
     ],
     deps = TEST_DEPS,

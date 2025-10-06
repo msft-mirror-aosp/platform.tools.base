@@ -16,6 +16,8 @@
 
 package com.android.tools.render.common
 
+import java.io.Serializable
+
 /**
  * Result of a screenshot creation. It will contain
  * [previewId] is a string that is designed to uniquely identify the preview, currently an image
@@ -32,4 +34,4 @@ data class PreviewScreenshotResult(
     val methodFQN: String,
     val imagePath: String,
     val error: ScreenshotError?,
-)
+) : Serializable

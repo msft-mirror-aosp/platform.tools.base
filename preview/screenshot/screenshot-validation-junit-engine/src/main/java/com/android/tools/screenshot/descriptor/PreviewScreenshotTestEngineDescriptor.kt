@@ -16,9 +16,8 @@
 
 package com.android.tools.screenshot.descriptor
 
-import com.android.tools.render.Renderer
+import com.android.tools.screenshot.renderer.Renderer
 import com.android.tools.screenshot.PreviewScreenshotExecutionContext
-import com.android.tools.screenshot.PreviewScreenshotTestEngineInput.RendererInput
 import org.junit.platform.engine.UniqueId
 import org.junit.platform.engine.reporting.ReportEntry
 import org.junit.platform.engine.support.descriptor.EngineDescriptor
@@ -35,16 +34,7 @@ class PreviewScreenshotTestEngineDescriptor(uniqueId: UniqueId, displayName: Str
         context.executionListener.reportingEntryPublished(
             this, ReportEntry.from("deviceDisplayName", "Preview"))
 
-        Renderer(
-            fontsPath = RendererInput.fontsPath.absolutePath.ifBlank { null },
-            resourceApkPath = RendererInput.resourceApkPath.absolutePath.ifBlank { null },
-            namespace = RendererInput.namespace,
-            classPath = (RendererInput.mainAllClassPath + RendererInput.screenshotAllClassPath)
-                .map { it.absolutePath },
-            projectClassPath = (RendererInput.mainProjectClassPath + RendererInput.screenshotProjectClassPath)
-                .map { it.absolutePath },
-            layoutlibPath = RendererInput.layoutlibDataDir.absolutePath,
-        ).use { renderer ->
+        Renderer().use { renderer ->
             invocation(context.copy(renderer = renderer))
         }
     }
