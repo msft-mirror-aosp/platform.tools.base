@@ -140,7 +140,7 @@ class JourneysConnectedTest {
         }
         val appProject = build.androidApplication()
         appProject.files.add(
-            "src/journeysTest/simpleJourney.xml",
+            "src/journeysTest/simple.journey.xml",
             """
                 <?xml version="1.0" encoding="utf-8"?>
                 <journey name="My Journeys Test 1">
@@ -156,11 +156,11 @@ class JourneysConnectedTest {
                 .run(":app:validateDebugJourneysTest")
 
         val outputDir =
-            appProject.buildDir.resolve("outputs/journeysTest/debug/results/$DEVICE_SERIAL/simpleJourney")
+            appProject.buildDir.resolve("outputs/journeysTest/debug/results/$DEVICE_SERIAL/simple")
         assertThat(outputDir.resolve("journey_results.pb")).exists()
 
         assertJourneyEvents(
-            result, "$DEVICE_SERIAL > simpleJourney.xml", "", listOf(
+            result, "$DEVICE_SERIAL > simple.journey.xml", "", listOf(
                 buildRunStartedEvent(
                     prompts = listOf("Action 1"),
                     metadata = mapOf("deviceId" to DEVICE_SERIAL, "deviceName" to DEVICE_NAME)
@@ -178,7 +178,7 @@ class JourneysConnectedTest {
         val build = rule.build
         val appProject = build.androidApplication()
         appProject.files.add(
-            "src/journeysTest/journey1.xml",
+            "src/journeysTest/journey1.journey.xml",
             """
                 <?xml version="1.0" encoding="utf-8"?>
                 <journey name="Journey 1">
@@ -190,7 +190,7 @@ class JourneysConnectedTest {
             """.trimIndent()
         )
         appProject.files.add(
-            "src/journeysTest/journey2.xml",
+            "src/journeysTest/journey2.journey.xml",
             """
                 <?xml version="1.0" encoding="utf-8"?>
                 <journey name="Journey 2">
@@ -202,7 +202,7 @@ class JourneysConnectedTest {
             """.trimIndent()
         )
         appProject.files.add(
-            "src/journeysTest/journey3.xml",
+            "src/journeysTest/journey3.journey.xml",
             """
                 <?xml version="1.0" encoding="utf-8"?>
                 <journey name="Journey 3">
@@ -217,7 +217,7 @@ class JourneysConnectedTest {
         createRoboResults("journeys/robo_results_default.textproto", roboResultsPath)
         val result =
             executor.withArgument("-DroboResultsPath=$roboResultsPath")
-                .withArgument("-PjourneysFilter=journey1.xml, journey2.xml")
+                .withArgument("-PjourneysFilter=journey1.journey.xml, journey2.journey.xml")
                 .withEnvironmentVariables(mapOf("JOURNEYS_ENABLE_STDOUT_REPORT" to "true"))
                 .run(":app:validateDebugJourneysTest")
 
@@ -310,14 +310,14 @@ class JourneysConnectedTest {
         }
         assertJourneyEvents(
             result,
-            "$DEVICE_SERIAL > journey1.xml",
-            "$DEVICE_SERIAL > journey2.xml",
+            "$DEVICE_SERIAL > journey1.journey.xml",
+            "$DEVICE_SERIAL > journey2.journey.xml",
             getExpectedEventsForJourney(journey1OutputDir)
         )
         assertJourneyEvents(
             result,
-            "$DEVICE_SERIAL > journey2.xml",
-            "$DEVICE_SERIAL > journey1.xml",
+            "$DEVICE_SERIAL > journey2.journey.xml",
+            "$DEVICE_SERIAL > journey1.journey.xml",
             getExpectedEventsForJourney(journey2OutputDir)
         )
     }
@@ -327,7 +327,7 @@ class JourneysConnectedTest {
         val build = rule.build
         val appProject = build.androidApplication()
         appProject.files.add(
-            "src/journeysTest/journey1.xml",
+            "src/journeysTest/journey1.journey.xml",
             """
                 <?xml version="1.0" encoding="utf-8"?>
                 <journey name="Journey 1">
@@ -360,7 +360,7 @@ class JourneysConnectedTest {
         val build = rule.build
         val appProject = build.androidApplication()
         appProject.files.add(
-            "src/journeysTest/journey1.xml",
+            "src/journeysTest/journey1.journey.xml",
             """
                 <?xml version="1.0" encoding="utf-8"?>
                 <journey name="Journey 1">
@@ -371,14 +371,28 @@ class JourneysConnectedTest {
                 </journey>
             """.trimIndent()
         )
+        // This is to check that missing .journey suffix also results in skipping of the file.
+        appProject.files.add(
+            "src/journeysTest/journey2.xml",
+            """
+                <?xml version="1.0" encoding="utf-8"?>
+                <journey name="Journey 2">
+                    <actions>
+                        <action>Action 1</action>
+                        <action>Action 2</action>
+                    </actions>
+                </journey>
+            """.trimIndent()
+        )
         val result =
             executor
                 .expectFailure()
-                .withArgument("-PjourneysFilter=journey3.xml, journey4.xml")
+                .withArgument("-PjourneysFilter=journey2.xml, journey3.journey.xml")
                 .withEnvironmentVariables(mapOf("JOURNEYS_ENABLE_STDOUT_REPORT" to "true"))
                 .run(":app:validateDebugJourneysTest")
 
-        result.assertOutputDoesNotContain("journey1")
+        result.assertOutputDoesNotContain("$DEVICE_SERIAL > journey1.journey.xml")
+        result.assertOutputDoesNotContain("$DEVICE_SERIAL > journey2.xml")
     }
 
     @Test
@@ -386,7 +400,7 @@ class JourneysConnectedTest {
         val build = rule.build
         val appProject = build.androidApplication()
         appProject.files.add(
-            "src/journeysTest/malformedJourney.xml",
+            "src/journeysTest/malformed.journey.xml",
             """
                 <?xml version="1.0" encoding="utf-8"?>
                 <journey name="Journey 1"></journey>
@@ -399,7 +413,7 @@ class JourneysConnectedTest {
                 .run(":app:validateDebugJourneysTest")
 
         assertJourneyEvents(
-            result, "$DEVICE_SERIAL > malformedJourney.xml", "", listOf(
+            result, "$DEVICE_SERIAL > malformed.journey.xml", "", listOf(
                 buildRunStartedEvent(
                     prompts = listOf(),
                     metadata = mapOf("deviceId" to DEVICE_SERIAL, "deviceName" to DEVICE_NAME)
@@ -417,7 +431,7 @@ class JourneysConnectedTest {
         val build = rule.build
         val appProject = build.androidApplication()
         appProject.files.add(
-            "src/journeysTest/simpleJourney.xml",
+            "src/journeysTest/simple.journey.xml",
             """
                 <?xml version="1.0" encoding="utf-8"?>
                 <journey name="Journey 1">
@@ -435,12 +449,12 @@ class JourneysConnectedTest {
                 .run(":app:validateDebugJourneysTest")
 
         val outputDir =
-            appProject.buildDir.resolve("outputs/journeysTest/debug/results/$DEVICE_SERIAL/simpleJourney")
+            appProject.buildDir.resolve("outputs/journeysTest/debug/results/$DEVICE_SERIAL/simple")
         assertThat(outputDir.resolve("journey_results.pb")).exists()
 
         result.assertOutputContains("Intentionally throwing an error.")
         assertJourneyEvents(
-            result, "$DEVICE_SERIAL > simpleJourney.xml", "", listOf(
+            result, "$DEVICE_SERIAL > simple.journey.xml", "", listOf(
                 buildRunStartedEvent(
                     prompts = listOf("Action 1"),
                     metadata = mapOf("deviceId" to DEVICE_SERIAL, "deviceName" to DEVICE_NAME)
@@ -458,7 +472,7 @@ class JourneysConnectedTest {
         val build = rule.build
         val appProject = build.androidApplication()
         appProject.files.add(
-            "src/journeysTest/simpleJourney.xml",
+            "src/journeysTest/simple.journey.xml",
             """
                 <?xml version="1.0" encoding="utf-8"?>
                 <journey name="A simple journey">
@@ -479,7 +493,7 @@ class JourneysConnectedTest {
             .run(":app:validateDebugJourneysTest")
 
         val outputDir =
-            appProject.buildDir.resolve("outputs/journeysTest/debug/results/$DEVICE_SERIAL/simpleJourney")
+            appProject.buildDir.resolve("outputs/journeysTest/debug/results/$DEVICE_SERIAL/simple")
         assertThat(outputDir.resolve("robo_results.pb")).exists()
         assertThat(outputDir.resolve("journey_results.pb")).exists()
         for (i in 0 until 9) {
@@ -648,7 +662,7 @@ class JourneysConnectedTest {
                 Status.SUCCEEDED
             )
         )
-        assertJourneyEvents(result, "$DEVICE_SERIAL > simpleJourney.xml", "", expectedEvents)
+        assertJourneyEvents(result, "$DEVICE_SERIAL > simple.journey.xml", "", expectedEvents)
     }
 
     @Test
@@ -656,7 +670,7 @@ class JourneysConnectedTest {
         val build = rule.build
         val appProject = build.androidApplication()
         appProject.files.add(
-            "src/journeysTest/simpleJourney.xml",
+            "src/journeysTest/simple.journey.xml",
             """
                 <?xml version="1.0" encoding="utf-8"?>
                 <journey name="A simple journey">
@@ -677,7 +691,7 @@ class JourneysConnectedTest {
             .run(":app:validateDebugJourneysTest")
 
         val outputDir =
-            appProject.buildDir.resolve("outputs/journeysTest/debug/results/$DEVICE_SERIAL/simpleJourney")
+            appProject.buildDir.resolve("outputs/journeysTest/debug/results/$DEVICE_SERIAL/simple")
         assertThat(outputDir.resolve("robo_results.pb")).exists()
         assertThat(outputDir.resolve("journey_results.pb")).exists()
         for (i in 0 until 8) {
@@ -800,7 +814,7 @@ class JourneysConnectedTest {
                 "Journey terminated unexpectedly with model response: The goal was to save the first post. Tapping on the bookmark icon should have saved the post, but it led to a Chrome welcome screen instead. This is unexpected and indicates a problem."
             )
         )
-        assertJourneyEvents(result, "$DEVICE_SERIAL > simpleJourney.xml", "", expectedEvents)
+        assertJourneyEvents(result, "$DEVICE_SERIAL > simple.journey.xml", "", expectedEvents)
     }
 
     private fun createRoboResults(roboResultsResourceName: String, roboResultsPath: Path) {

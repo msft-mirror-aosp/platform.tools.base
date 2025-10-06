@@ -92,7 +92,7 @@ class JourneyFileDescriptor(
         val outputPath = Path(
             JourneysTestEngineInput.resultsDir.absolutePath,
             context.targetDeviceId,
-            journeyFile.nameWithoutExtension
+            journeyFile.nameWithoutExtension.removeSuffix(".journey")
         ).also { it.toFile().mkdirs() }
         val fileConsumer = JourneyRunAggregatorConsumer(outputPath.toFile())
 
