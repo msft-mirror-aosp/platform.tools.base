@@ -16,13 +16,13 @@
 
 package com.android.build.api.component.analytics
 
-import com.android.build.api.variant.AndroidTest
 import com.android.build.api.variant.AndroidResources
+import com.android.build.api.variant.AndroidTest
 import com.android.build.api.variant.AndroidVersion
-import com.android.build.api.variant.GeneratesApk
-import com.android.build.api.variant.BuildConfigField
 import com.android.build.api.variant.ApkPackaging
+import com.android.build.api.variant.BuildConfigField
 import com.android.build.api.variant.Dexing
+import com.android.build.api.variant.GeneratesApk
 import com.android.build.api.variant.Renderscript
 import com.android.build.api.variant.ResValue
 import com.android.tools.build.gradle.internal.profile.VariantPropertiesMethodType

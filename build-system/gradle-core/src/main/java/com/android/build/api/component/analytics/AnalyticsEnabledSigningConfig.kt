@@ -20,8 +20,6 @@ import com.android.build.api.variant.SigningConfig
 import com.android.tools.build.gradle.internal.profile.VariantPropertiesMethodType
 import com.google.wireless.android.sdk.stats.GradleBuildVariant
 import org.gradle.api.provider.Property
-import org.gradle.api.provider.Provider
-import java.io.File
 import javax.inject.Inject
 
 open class AnalyticsEnabledSigningConfig@Inject constructor(

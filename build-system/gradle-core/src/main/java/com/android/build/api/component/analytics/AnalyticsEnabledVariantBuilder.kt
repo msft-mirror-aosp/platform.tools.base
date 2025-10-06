@@ -16,9 +16,9 @@
 
 package com.android.build.api.component.analytics
 
+import com.android.build.api.variant.GeneratesApkBuilder
 import com.android.build.api.variant.HasHostTestsBuilder
 import com.android.build.api.variant.HostTestBuilder
-import com.android.build.api.variant.GeneratesApkBuilder
 import com.android.build.api.variant.VariantBuilder
 import com.android.tools.build.gradle.internal.profile.VariantMethodType
 import com.google.wireless.android.sdk.stats.GradleBuildVariant

@@ -17,14 +17,14 @@
 package com.android.build.api.component.analytics
 
 import com.android.build.api.artifact.Artifacts
-import com.android.build.api.variant.Component
 import com.android.build.api.instrumentation.AsmClassVisitorFactory
 import com.android.build.api.instrumentation.FramesComputationMode
 import com.android.build.api.instrumentation.InstrumentationParameters
 import com.android.build.api.instrumentation.InstrumentationScope
-import com.android.build.api.variant.LifecycleTasks
+import com.android.build.api.variant.Component
 import com.android.build.api.variant.Instrumentation
 import com.android.build.api.variant.JavaCompilation
+import com.android.build.api.variant.LifecycleTasks
 import com.android.build.api.variant.Sources
 import com.android.tools.build.gradle.internal.profile.VariantPropertiesMethodType
 import com.google.wireless.android.sdk.stats.AsmClassesTransformRegistration

@@ -16,15 +16,11 @@
 
 package com.android.build.api.component.analytics
 
-import com.android.build.api.artifact.ScopedArtifact
 import com.android.build.api.variant.ScopedArtifacts
 import com.android.build.api.variant.ScopedArtifactsOperation
-import com.android.tools.build.gradle.internal.profile.VariantPropertiesMethodType
 import com.google.wireless.android.sdk.stats.GradleBuildVariant
 import org.gradle.api.Task
-import org.gradle.api.file.FileSystemLocation
 import org.gradle.api.model.ObjectFactory
-import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.TaskProvider
 import javax.inject.Inject
 

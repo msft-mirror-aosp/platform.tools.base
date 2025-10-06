@@ -21,8 +21,8 @@ import com.android.build.api.variant.ApplicationAndroidResourcesBuilder
 import com.android.build.api.variant.ApplicationVariantBuilder
 import com.android.build.api.variant.DependenciesInfoBuilder
 import com.android.build.api.variant.DeviceTestBuilder
-import com.android.build.api.variant.PropertyAccessNotAllowedException
 import com.android.build.api.variant.HostTestBuilder
+import com.android.build.api.variant.PropertyAccessNotAllowedException
 import com.android.build.api.variant.TestSuiteBuilder
 import com.android.tools.build.gradle.internal.profile.VariantMethodType
 import com.google.wireless.android.sdk.stats.GradleBuildVariant

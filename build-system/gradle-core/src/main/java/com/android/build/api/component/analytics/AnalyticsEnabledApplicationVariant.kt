@@ -18,21 +18,21 @@ package com.android.build.api.component.analytics
 
 import com.android.build.api.variant.AndroidTest
 import com.android.build.api.variant.AndroidVersion
-import com.android.build.api.variant.GeneratesApk
+import com.android.build.api.variant.ApkOutputProviders
 import com.android.build.api.variant.ApplicationAndroidResources
 import com.android.build.api.variant.ApplicationVariant
 import com.android.build.api.variant.BundleConfig
 import com.android.build.api.variant.DependenciesInfo
 import com.android.build.api.variant.DeviceTest
 import com.android.build.api.variant.Dexing
+import com.android.build.api.variant.GeneratesApk
 import com.android.build.api.variant.HostTest
 import com.android.build.api.variant.Renderscript
 import com.android.build.api.variant.SigningConfig
 import com.android.build.api.variant.TestFixtures
+import com.android.build.api.variant.TestSuite
 import com.android.build.api.variant.TestedApkPackaging
 import com.android.build.api.variant.VariantOutput
-import com.android.build.api.variant.ApkOutputProviders
-import com.android.build.api.variant.TestSuite
 import com.android.tools.build.gradle.internal.profile.VariantPropertiesMethodType
 import com.google.wireless.android.sdk.stats.GradleBuildVariant
 import org.gradle.api.model.ObjectFactory
