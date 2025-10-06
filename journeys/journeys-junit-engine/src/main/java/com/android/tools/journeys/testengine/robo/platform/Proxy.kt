@@ -424,7 +424,12 @@ class Proxy(
                         .setSeconds(RoboConfigConstants.TEST_TIMEOUT_SECONDS)
                         .build()
                 )
-                .setRoboConfig(RoboConfig.newBuilder().setUseNewExtensionHarness(true).build())
+                .setRoboConfig(
+                    RoboConfig.newBuilder()
+                        .setUseNewExtensionHarness(true)
+                        .setEnablePreActionOutput(true)
+                        .build()
+                )
                 .addCrawlParameters(
                     CrawlParameter.newBuilder()
                         .setName(RoboConfigConstants.ROBO_ADB_FORWARD)

@@ -16,6 +16,7 @@
 
 package com.android.tools.journeys.testengine.robo.adapter
 
+import androidx.test.tools.crawler.output.ActionDetails
 import androidx.test.tools.crawler.output.Crawl
 import com.android.tools.journeys.proto.Artifact
 import com.android.tools.journeys.proto.ArtifactType
@@ -84,7 +85,7 @@ class RoboResultAdapterTest {
             )
         )
 
-        adapter.onCrawlReceived(crawl)
+        sendCrawlEvents(adapter, crawl)
 
         val expectedEvents =
             listOf(
@@ -259,7 +260,7 @@ class RoboResultAdapterTest {
             )
         )
 
-        adapter.onCrawlReceived(crawl)
+        sendCrawlEvents(adapter, crawl)
 
         val expectedEvents =
             listOf(
@@ -393,6 +394,39 @@ class RoboResultAdapterTest {
                 capturedEvents[i],
                 "Event mismatch at index $i"
             )
+        }
+    }
+
+    private fun sendCrawlEvents(adapter: RoboResultAdapter, crawl: Crawl) {
+        // The order of receiving events for a real run is simulated here.
+        // Real events are received as:
+        // 1) Display state for index i from robo_results
+        // 2) Action at index i before it starts from pre_actions
+        // 3) Action at index i after it ends from robo_results
+        crawl.actionsList.forEachIndexed { index, action ->
+            // Send display state.
+            adapter.onCrawlReceived(
+                Crawl.newBuilder()
+                    .addDisplayStates(crawl.displayStatesList[index])
+                    .build()
+            )
+            // Send action before it starts without end time.
+            // Note that, terminate crawl action is not sent as a pre action.
+            if (action.details?.detailsCase != ActionDetails.DetailsCase.TERMINATE_CRAWL_ACTION) {
+                adapter.onCrawlReceived(
+                    Crawl.newBuilder()
+                        .addActions(
+                            action.toBuilder()
+                                .clearEndTime()
+                                .clearResultDetails()
+                                .clearExecutionResult()
+                        )
+                        .build()
+                )
+            }
+
+            // Send action after it completes with end time.
+            adapter.onCrawlReceived(Crawl.newBuilder().addActions(action).build())
         }
     }
 

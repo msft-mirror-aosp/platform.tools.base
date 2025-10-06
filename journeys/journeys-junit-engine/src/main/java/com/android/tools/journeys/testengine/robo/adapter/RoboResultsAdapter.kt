@@ -107,7 +107,7 @@ class RoboResultAdapter(
             // If an action has no RoboScriptDetails, we skip showing such actions.
             // This typically happens for setup actions like LAUNCH_ACTION before the first prompt.
             if (action.roboScriptDetailsList.isEmpty()) {
-                if (action.actionSeq == 0) {
+                if (action.actionSeq == 0 && !action.hasEndTime()) {
                     onStepStarted(0, action.startTime)
                 }
                 continue
@@ -170,11 +170,18 @@ class RoboResultAdapter(
         val currentRoboScriptIndex = config.crawlProcessingState.currentRoboScriptIndex
         var lastCompletedIndex =
             config.crawlProcessingState.lastCompletedRoboScriptIndex
+        // All events except addition of an interaction should be processed as soon as we receive
+        // an action via pre action i.e. before it started. The pre action won't have the
+        // end time and result. Addition of interaction will need the result of action which is
+        // received only when the action completes and hence it is processed differently.
+        // Further, terminate crawl action should always be used to process events as it is not
+        // received via pre actions.
+        val processEvent = !action.hasEndTime() || isTerminateCrawlAction(action)
 
         // If the currentRoboScript was a singleton in roboScript details, the finish would
         // not be triggered until next action is received. This check makes sure we invoke
         // finish for such cases.
-        if (roboIndex == currentRoboScriptIndex + 1 && lastCompletedIndex == currentRoboScriptIndex - 1) {
+        if (processEvent && roboIndex == currentRoboScriptIndex + 1 && lastCompletedIndex == currentRoboScriptIndex - 1) {
             val currentRoboScript = config.crawlProcessingState.currentRoboScript
             currentRoboScript?.let {
                 onRoboScriptFinished(
@@ -188,7 +195,7 @@ class RoboResultAdapter(
                 lastCompletedIndex = currentRoboScriptIndex
             }
         }
-        if (roboIndex == lastCompletedIndex + 1 && roboIndex != currentRoboScriptIndex) {
+        if (processEvent && roboIndex == lastCompletedIndex + 1 && roboIndex != currentRoboScriptIndex) {
             onRoboScriptStarted(
                 action.startTime,
                 action.displayStateId,
@@ -201,7 +208,7 @@ class RoboResultAdapter(
         }
 
         val isComplete = roboIndex < lastInActionListRoboScriptIndex
-        if (isComplete || isTerminateCrawlAction(action)) {
+        if ((processEvent && isComplete) || isTerminateCrawlAction(action)) {
             onRoboScriptFinished(
                 action.startTime,
                 action.displayStateId,
@@ -323,11 +330,19 @@ class RoboResultAdapter(
      * @param roboScript The details of the prompt corresponding to the action.
      */
     private fun onActionPerformed(action: Action, roboScript: RoboScriptDetails) {
-        handleModelDetails(roboScript.modelDetails, action.displayStateId)
+        val isPreAction = !action.hasEndTime()
+        // Turn can be initialized with pre action as we do not need any result.
+        // Always process terminate crawl action as it is not received in pre actions.
+        if (isPreAction || isTerminateCrawlAction(action)) {
+            handleModelDetails(roboScript.modelDetails, action.displayStateId)
+        }
         if (isTerminateCrawlAction(action)) {
             return
         }
-        config.crawlProcessingState.addInteractionToCurrentTurn(action)
+        // Interaction cannot be added with pre action as a result is required.
+        if (!isPreAction) {
+            config.crawlProcessingState.addInteractionToCurrentTurn(action)
+        }
     }
 
     /**

@@ -127,7 +127,11 @@ class JourneyFileDescriptor(
                 val hostPath = outputPath.resolve(artifact.name)
                 hostPath.outputStream(StandardOpenOption.CREATE, StandardOpenOption.APPEND)
                     .use(artifact.data::writeTo)
-                if (artifact.name == RoboConfigConstants.ROBO_RESULTS_FILE_NAME) {
+                if (artifact.name in setOf(
+                        RoboConfigConstants.ROBO_RESULTS_FILE_NAME,
+                        RoboConfigConstants.ROBO_PRE_ACTIONS_FILE_NAME
+                    )
+                ) {
                     resultAdapter.process(artifact.data.toByteArray())
                 }
             }

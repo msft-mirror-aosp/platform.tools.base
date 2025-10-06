@@ -41,6 +41,9 @@ object RoboConfigConstants {
     /** The filename for the Robo test results protobuf file. */
     const val ROBO_RESULTS_FILE_NAME = "robo_results.pb"
 
+    /** The filename for the action received from robo backend prior to being performed. */
+    const val ROBO_PRE_ACTIONS_FILE_NAME = "pre_actions.pb"
+
     /** Argument key for specifying robo script config. */
     const val ROBO_SCRIPT_CONFIG_NAME = "robo.script"
 

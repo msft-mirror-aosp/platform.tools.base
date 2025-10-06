@@ -16,6 +16,7 @@
 
 package com.android.tools.journeys.testengine.robo.platform
 
+import androidx.test.tools.crawler.output.ActionDetails
 import androidx.test.tools.crawler.output.Crawl
 import androidx.test.tools.crawler.proto.RemotePlatformRequest
 import androidx.test.tools.crawler.proto.RemotePlatformResponse
@@ -29,7 +30,6 @@ import com.google.cloud.test.appcrawler.proto.EchoRequest
 import com.google.cloud.test.appcrawler.proto.EchoResponse
 import com.google.common.base.VerifyException
 import com.google.protobuf.Empty
-import io.grpc.Status
 import io.grpc.stub.StreamObserver
 import java.io.IOException
 
@@ -120,12 +120,18 @@ class FakeCrawlerService(
             }
 
             private fun streamCrawlUpdates(responseObserver: StreamObserver<CrawlerResponse>) {
+                // The order of receiving events for a real run is simulated here.
+                // Real events are received as:
+                // 1) Display state for index i from robo_results
+                // 2) Action at index i before it starts from pre_actions
+                // 3) Action at index i after it ends from robo_results
                 for (actionIndex in masterCrawl.actionsList.indices) {
                     val currentAction = masterCrawl.getActions(actionIndex)
                     val currentDisplayState = masterCrawl.displayStatesList.find {
                         it.displayStateId == currentAction.displayStateId
                     }
 
+                    // Send display state.
                     currentDisplayState?.let {
                         val displayStatePartialCrawl = Crawl.newBuilder()
                             .setCrawlIdentifier(masterCrawl.crawlIdentifier)
@@ -140,8 +146,35 @@ class FakeCrawlerService(
                                     Artifact.newBuilder()
                                         .setName(RoboConfigConstants.ROBO_RESULTS_FILE_NAME)
                                         .setAppend(true)
-
                                         .setData(displayStatePartialCrawl)
+                                )
+                                .build()
+                        )
+                    }
+
+                    // Note that, terminate crawl action is not sent as a pre action.
+                    if (currentAction.details?.detailsCase != ActionDetails.DetailsCase.TERMINATE_CRAWL_ACTION) {
+                        val preActionPartialCrawl = Crawl.newBuilder()
+                            .setCrawlIdentifier(masterCrawl.crawlIdentifier)
+                            .setAppPackageId(masterCrawl.appPackageId)
+                            .addActions(
+                                currentAction.toBuilder()
+                                    .clearEndTime()
+                                    .clearResultDetails()
+                                    .clearExecutionResult()
+                            )
+                            .setCrawlResult(Crawl.CrawlResult.UNDEFINED_CRAWL_RESULT)
+                            .build()
+                            .toByteString()
+
+                        // Send pre action.
+                        responseObserver.onNext(
+                            CrawlerResponse.newBuilder()
+                                .setArtifact(
+                                    Artifact.newBuilder()
+                                        .setName(RoboConfigConstants.ROBO_PRE_ACTIONS_FILE_NAME)
+                                        .setAppend(true)
+                                        .setData(preActionPartialCrawl)
                                 )
                                 .build()
                         )
@@ -155,6 +188,7 @@ class FakeCrawlerService(
                         .build()
                         .toByteString()
 
+                    // Send action post completion.
                     responseObserver.onNext(
                         CrawlerResponse.newBuilder()
                             .setArtifact(
