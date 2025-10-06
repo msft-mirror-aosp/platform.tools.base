@@ -21,7 +21,6 @@ import com.android.tools.preview.multipreview.ComposePreviewMethod
 import com.android.tools.preview.multipreview.ParameterRepresentation
 import com.android.tools.preview.multipreview.PreviewMethod
 import com.android.tools.preview.multipreview.WearTilePreviewMethod
-import com.android.tools.render.common.render
 import com.android.tools.render.compose.ComposeScreenshot
 import com.android.tools.render.wear.WearTileScreenshot
 import com.android.tools.screenshot.PreviewScreenshotExecutionContext
@@ -131,7 +130,7 @@ class PreviewAnnotationDescriptor(
             }
         }
 
-        render(previewScreenshot, context.previewImageOutputDir.absolutePath, context.renderer).forEachIndexed { idx, result ->
+        context.renderer.render(previewScreenshot, context.previewImageOutputDir.absolutePath).forEachIndexed { idx, result ->
             val previewName = StringBuilder()
             previewScreenshot.previewParams["name"]?.let { previewName.append("_$it") }
             if (displayNameIncludesParams) {

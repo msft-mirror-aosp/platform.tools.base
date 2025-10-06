@@ -44,11 +44,7 @@ class PreviewScreenshotTestEngineDescriptor(uniqueId: UniqueId, displayName: Str
             projectClassPath = (RendererInput.mainProjectClassPath + RendererInput.screenshotProjectClassPath)
                 .map { it.absolutePath },
             layoutlibPath = RendererInput.layoutlibDataDir.absolutePath,
-        ) {
-            // The security manager was removed in JDK 24. We disable it unconditionally to support
-            // running on newer JDKs.
-            disableSecurityManager()
-        }.use { renderer ->
+        ).use { renderer ->
             invocation(context.copy(renderer = renderer))
         }
     }

@@ -89,7 +89,7 @@ class RendererTest {
             emptyList(),
             emptyList(),
             layoutlibPath.absolutePathString(),
-        ) { disableSecurityManager() }.use {
+        ).use {
             val (_, result) = it.render(request).single()
             assertNull("A single RenderResult is expected", outputImage)
             outputImage = result.renderedImage.copy
@@ -124,7 +124,7 @@ class RendererTest {
             emptyList(),
             emptyList(),
             "",
-        ) { disableSecurityManager() }.use {
+        ).use {
             val invalidRequest = RenderRequest({}) { sequenceOf("") }
             it.render(invalidRequest).map { it.second }.toList()
         }
@@ -161,7 +161,7 @@ class RendererTest {
             emptyList(),
             emptyList(),
             layoutlibPath.absolutePathString(),
-        ) { disableSecurityManager() }.use {
+        ).use {
             it.render(RenderRequest({}) { sequenceOf(layout) }).map { it.second }.toList()
         }
 
