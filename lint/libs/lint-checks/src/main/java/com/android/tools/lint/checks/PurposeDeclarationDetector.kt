@@ -25,10 +25,12 @@ import com.android.SdkConstants.TAG_SPECIFIC_PURPOSE
 import com.android.SdkConstants.TAG_USES_PERMISSION
 import com.android.SdkConstants.TAG_USES_PERMISSION_SDK_23
 import com.android.SdkConstants.TAG_VALID_SPECIFIC_PURPOSE
+import com.android.ide.common.rendering.api.ResourceNamespace
 import com.android.ide.common.util.toPathString
 import com.android.resources.ResourceType
 import com.android.resources.ResourceUrl
 import com.android.sdklib.IAndroidTarget.PERMISSION_VERSIONS
+import com.android.tools.lint.client.api.ResourceRepositoryScope
 import com.android.tools.lint.detector.api.Category
 import com.android.tools.lint.detector.api.Context
 import com.android.tools.lint.detector.api.Detector
@@ -188,21 +190,55 @@ class PurposeDeclarationDetector : Detector(), XmlScanner {
       return null
     }
 
-    val purposeStringRef = permissionElement.getAttributeNS(ANDROID_URI, ATTR_PURPOSE_STRING)
-    if (purposeStringRef.isEmpty()) {
+    val purposeStringAttr = permissionElement.getAttributeNodeNS(ANDROID_URI, ATTR_PURPOSE_STRING)
+    if (purposeStringAttr?.value.isNullOrEmpty()) {
       return "missing `purposeString` attribute"
     }
 
-    val resourceUrl = ResourceUrl.parse(purposeStringRef)
+    val resourceUrl = ResourceUrl.parse(purposeStringAttr.value)
     if (resourceUrl == null || resourceUrl.type != ResourceType.STRING) {
-      val attrNode = permissionElement.getAttributeNodeNS(ANDROID_URI, ATTR_PURPOSE_STRING)
+
       // More user-friendly to highlight the incorrectly defined attribute rather than report it as
       // part of the generic error message referencing <uses-permission>. So, we report instead of
       // returning the error message.
       context.report(
         MISSING_PURPOSE,
-        context.getLocation(attrNode, LocationType.VALUE),
+        context.getLocation(purposeStringAttr, LocationType.VALUE),
         "`purposeString` must reference a string resource (e.g. `@string/my_purpose_resource`)",
+      )
+      return null
+    }
+
+    // If a string resource is defined, the content can be validated.
+    val resources =
+      context.client.getResources(context.mainProject, ResourceRepositoryScope.ALL_DEPENDENCIES)
+    val purposeResources =
+      resources
+        .getResources(ResourceNamespace.TODO(), resourceUrl.type, resourceUrl.name)
+        // Set a cap on number of resources that are analyzed to avoid potential perf issues.
+        .take(MAX_PURPOSE_STRING_RESOURCES_TO_CHECK)
+
+    val failingResourceNames = mutableListOf<String>()
+    for (resource in purposeResources) {
+      val purposeString = resource.resourceValue?.value ?: continue
+
+      if (purposeString.isBlank() || purposeString.length > MAX_PURPOSE_STRING_LENGTH) {
+        val qualifierString = resource.configuration.getQualifierString()
+        failingResourceNames.add("${resourceUrl.name} (${qualifierString.ifEmpty { "Default" }})")
+      }
+
+      if (failingResourceNames.size == MAX_PURPOSE_STRING_TO_REPORT) {
+        break
+      }
+    }
+
+    if (failingResourceNames.isNotEmpty()) {
+      context.report(
+        INVALID_PURPOSE_STRING,
+        context.getLocation(purposeStringAttr, LocationType.VALUE),
+        "The referenced `purposeString` must be non-blank and have no more than " +
+          "$MAX_PURPOSE_STRING_LENGTH characters. Invalid example(s) include: " +
+          failingResourceNames.joinToString(", "),
       )
     }
 
@@ -321,6 +357,10 @@ class PurposeDeclarationDetector : Detector(), XmlScanner {
     private const val ATTR_REQUIRES_PURPOSE_STRING_MAX = "requiresPurposeStringMaxSdkVersion"
     private const val MIN_SDK_VERSION_DEFAULT = 1
     private const val ANDROID_C_SDK_VERSION = 37
+    private const val MAX_PURPOSE_STRING_RESOURCES_TO_CHECK = 100
+    private const val MAX_PURPOSE_STRING_TO_REPORT = 2
+    private const val MAX_PURPOSE_STRING_LENGTH = 300
+    private const val RECOMMENDED_PURPOSE_STRING_LENGTH = 150
 
     // For convenience to avoid overflow errors with interval math when adding 1
     private const val MAX_SDK_VERSION_DEFAULT = 999999
@@ -344,13 +384,34 @@ class PurposeDeclarationDetector : Detector(), XmlScanner {
               preset valid purpose string found in the permission's documentation. The declared \
               purpose(s) must cover all API levels for which the permission requires purpose.
 
-              Purpose String: If a permission requires a purpose string, a valid \
-              `android:purposeString` attribute should be declared. This attribute must reference a \
-              localized string resource that is under 300 characters (150 recommended) for all \
-              locales the app supports as the text is displayed on user-facing surfaces.
+              Purpose String: If a permission requires a purpose string, `android:purposeString` \
+              attribute must be declared with a string resource referencing appropriate localized \
+              string(s) including the reason for why the permission is required by the app.
               """,
         category = Category.CORRECTNESS,
         priority = 10,
+        severity = Severity.FATAL,
+        androidSpecific = true,
+        implementation = IMPLEMENTATION,
+      )
+
+    // This is only used to validate the content of the purpose string. A separate issue has been
+    // created in case this check leads to performance issues and may need to be suppressed without
+    // impacting other missing purpose checks.
+    @JvmField
+    val INVALID_PURPOSE_STRING: Issue =
+      Issue.create(
+        id = "InvalidPurposeString",
+        briefDescription = "Invalid purpose string for permission",
+        explanation =
+          """
+              If a permission requires a purpose string, a valid `android:purposeString` attribute \
+              should be declared. This attribute must reference a localized string resource that's \
+              no more than $MAX_PURPOSE_STRING_LENGTH characters ($RECOMMENDED_PURPOSE_STRING_LENGTH recommended) \
+              for all locales the app supports as the text is displayed on user-facing surfaces.
+              """,
+        category = Category.CORRECTNESS,
+        priority = 9,
         severity = Severity.FATAL,
         androidSpecific = true,
         implementation = IMPLEMENTATION,

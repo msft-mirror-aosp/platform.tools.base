@@ -19,7 +19,9 @@ import com.android.SdkConstants.FD_DATA
 import com.android.SdkConstants.FD_PLATFORMS
 import com.android.SdkConstants.FN_PERMISSION_VERSIONS
 import com.android.testutils.TestUtils
+import com.android.tools.lint.checks.PurposeDeclarationDetector.Companion.INVALID_PURPOSE_STRING
 import com.android.tools.lint.checks.PurposeDeclarationDetector.Companion.MISSING_PURPOSE
+import com.android.tools.lint.checks.infrastructure.TestMode
 import com.android.tools.lint.detector.api.Detector
 import java.io.File
 import org.intellij.lang.annotations.Language
@@ -40,6 +42,8 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
   }
 
   override fun getDetector(): Detector = PurposeDeclarationDetector()
+
+  override fun getIssues() = listOf(MISSING_PURPOSE, INVALID_PURPOSE_STRING)
 
   companion object {
     private const val MOCK_SDK_DIR = "mock-sdk"
@@ -120,6 +124,33 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
             </permissions>
         """
         .trimIndent()
+
+    private const val MAX_PURPOSE_STRING_LENGTH = 300
+
+    private val LONG_PURPOSE_STRING = "L".repeat(MAX_PURPOSE_STRING_LENGTH + 1)
+    private const val VALID_PURPOSE_STRING = "My valid purpose String"
+    private const val BLANK_PURPOSE_STRING = "     "
+
+    @Language("XML")
+    private val validPurposeString =
+      xml(
+        "res/values-en-rUS/strings.xml",
+        """<resources><string name="myPurposeString">$VALID_PURPOSE_STRING</string></resources>""",
+      )
+
+    @Language("XML")
+    private val invalidLongPurposeString =
+      xml(
+        "res/values/strings.xml",
+        """<resources><string name="myPurposeString">$LONG_PURPOSE_STRING</string></resources>""",
+      )
+
+    @Language("XML")
+    private val invalidBlankPurposeString =
+      xml(
+        "res/values-en-rNZ/strings.xml",
+        """<resources><string name="myPurposeString">$BLANK_PURPOSE_STRING</string></resources>""",
+      )
   }
 
   @Test
@@ -139,7 +170,6 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
           .indented()
       )
       .sdkHome(setupMockSdk(DEFAULT_MOCK_XML))
-      .issues(MISSING_PURPOSE)
       .run()
       .expect(
         """
@@ -170,7 +200,6 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
           .indented()
       )
       .sdkHome(setupMockSdk(DEFAULT_MOCK_XML))
-      .issues(MISSING_PURPOSE)
       .run()
       .expect(
         """
@@ -199,7 +228,6 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
           .indented()
       )
       .sdkHome(setupMockSdk(PERMISSION_REQUIRING_PURPOSE_STRING))
-      .issues(MISSING_PURPOSE)
       .run()
       .expect(
         """
@@ -228,7 +256,6 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
           .indented()
       )
       .sdkHome(setupMockSdk(PERMISSION_REQUIRING_PURPOSE_STRING))
-      .issues(MISSING_PURPOSE)
       .run()
       .expect(
         """
@@ -241,7 +268,7 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
   }
 
   @Test
-  fun testRequestingPermissionWithPurposeStringAttributeDefinedPass() {
+  fun testRequestingPermissionWithLongPurposeStringFail() {
     lint()
       .files(
         manifest(
@@ -250,14 +277,72 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
                 xmlns:tools="http://schemas.android.com/tools"
                 package="com.example.helloworld">
                 <uses-sdk android:minSdkVersion="30" android:targetSdkVersion="37" />
-                <uses-permission android:name="USE_FOO" android:purposeString="@string/foo_string_resource" />
+                <uses-permission android:name="USE_FOO" android:purposeString="@string/myPurposeString" />
               </manifest>
               """
           )
-          .indented()
+          .indented(),
+        invalidLongPurposeString,
       )
       .sdkHome(setupMockSdk(PERMISSION_REQUIRING_PURPOSE_STRING))
-      .issues(MISSING_PURPOSE)
+      .run()
+      .expect(
+        """
+        AndroidManifest.xml:5: Error: The referenced purposeString must be non-blank and have no more than 300 characters. Invalid example(s) include: myPurposeString (Default) [InvalidPurposeString]
+          <uses-permission android:name="USE_FOO" android:purposeString="@string/myPurposeString" />
+                                                                         ~~~~~~~~~~~~~~~~~~~~~~~
+        1 errors, 0 warnings
+        """
+      )
+  }
+
+  @Test
+  fun testRequestingPermissionWithBlankPurposeStringFail() {
+    lint()
+      .files(
+        manifest(
+            """
+              <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+                xmlns:tools="http://schemas.android.com/tools"
+                package="com.example.helloworld">
+                <uses-sdk android:minSdkVersion="30" android:targetSdkVersion="37" />
+                <uses-permission android:name="USE_FOO" android:purposeString="@string/myPurposeString" />
+              </manifest>
+              """
+          )
+          .indented(),
+        invalidBlankPurposeString,
+      )
+      .sdkHome(setupMockSdk(PERMISSION_REQUIRING_PURPOSE_STRING))
+      .run()
+      .expect(
+        """
+        AndroidManifest.xml:5: Error: The referenced purposeString must be non-blank and have no more than 300 characters. Invalid example(s) include: myPurposeString (en-rNZ) [InvalidPurposeString]
+          <uses-permission android:name="USE_FOO" android:purposeString="@string/myPurposeString" />
+                                                                         ~~~~~~~~~~~~~~~~~~~~~~~
+        1 errors, 0 warnings
+        """
+      )
+  }
+
+  @Test
+  fun testRequestingPermissionWithValidPurposeStringPass() {
+    lint()
+      .files(
+        manifest(
+            """
+              <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+                xmlns:tools="http://schemas.android.com/tools"
+                package="com.example.helloworld">
+                <uses-sdk android:minSdkVersion="30" android:targetSdkVersion="37" />
+                <uses-permission android:name="USE_FOO" android:purposeString="@string/myPurposeString" />
+              </manifest>
+              """
+          )
+          .indented(),
+        validPurposeString,
+      )
+      .sdkHome(setupMockSdk(PERMISSION_REQUIRING_PURPOSE_STRING))
       .run()
       .expectClean()
   }
@@ -279,7 +364,6 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
           .indented()
       )
       .sdkHome(setupMockSdk(PERMISSION_REQUIRING_ALL_PURPOSES))
-      .issues(MISSING_PURPOSE)
       .run()
       .expect(
         """
@@ -308,7 +392,6 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
           .indented()
       )
       .sdkHome(setupMockSdk(PERMISSION_REQUIRING_ALL_PURPOSES))
-      .issues(MISSING_PURPOSE)
       .run()
       .expect(
         """
@@ -318,6 +401,41 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
         AndroidManifest.xml:5: Error: purposeString must reference a string resource (e.g. @string/my_purpose_resource) [MissingPurpose]
           <uses-permission android:name="USE_FOO" android:purposeString="@array/my_array_resource" />
                                                                          ~~~~~~~~~~~~~~~~~~~~~~~~
+        2 errors, 0 warnings
+        """
+      )
+  }
+
+  @Test
+  fun testRequestingPermissionWithNoSpecificAndMultipleInvalidPurposeStringsFail() {
+    lint()
+      .files(
+        manifest(
+            """
+              <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+                xmlns:tools="http://schemas.android.com/tools"
+                package="com.example.helloworld">
+                <uses-sdk android:minSdkVersion="30" android:targetSdkVersion="37" />
+                <uses-permission android:name="USE_FOO" android:purposeString="@string/myPurposeString" />
+              </manifest>
+              """
+          )
+          .indented(),
+        invalidLongPurposeString,
+        invalidBlankPurposeString,
+        validPurposeString,
+      )
+      .sdkHome(setupMockSdk(PERMISSION_REQUIRING_ALL_PURPOSES))
+      .skipTestModes(TestMode.RESOURCE_REPOSITORIES)
+      .run()
+      .expect(
+        """
+        AndroidManifest.xml:5: Error: USE_FOO permission is missing required purpose attributes/elements: missing one or more <specific-purpose> tags required for API level(s) 37 [MissingPurpose]
+          <uses-permission android:name="USE_FOO" android:purposeString="@string/myPurposeString" />
+          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        AndroidManifest.xml:5: Error: The referenced purposeString must be non-blank and have no more than 300 characters. Invalid example(s) include: myPurposeString (Default), myPurposeString (en-rNZ) [InvalidPurposeString]
+          <uses-permission android:name="USE_FOO" android:purposeString="@string/myPurposeString" />
+                                                                         ~~~~~~~~~~~~~~~~~~~~~~~
         2 errors, 0 warnings
         """
       )
@@ -340,7 +458,6 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
           .indented()
       )
       .sdkHome(setupMockSdk(PERMISSION_REQUIRING_ALL_PURPOSES))
-      .issues(MISSING_PURPOSE)
       .run()
       .expectClean()
   }
@@ -364,7 +481,6 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
           .indented()
       )
       .sdkHome(setupMockSdk(PERMISSION_REQUIRING_ALL_PURPOSES))
-      .issues(MISSING_PURPOSE)
       .run()
       .expectClean()
   }
@@ -386,7 +502,6 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
           .indented()
       )
       .sdkHome(setupMockSdk(DEFAULT_MOCK_XML))
-      .issues(MISSING_PURPOSE)
       .run()
       .expect(
         """
@@ -417,7 +532,6 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
           .indented()
       )
       .sdkHome(setupMockSdk(DEFAULT_MOCK_XML))
-      .issues(MISSING_PURPOSE)
       .run()
       .expectClean()
   }
@@ -442,7 +556,6 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
           .indented()
       )
       .sdkHome(setupMockSdk(DEFAULT_MOCK_XML))
-      .issues(MISSING_PURPOSE)
       .run()
       .expectClean()
   }
@@ -464,7 +577,6 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
           .indented()
       )
       .sdkHome(setupMockSdk(DEFAULT_MOCK_XML))
-      .issues(MISSING_PURPOSE)
       .run()
       .expectClean()
   }
@@ -486,7 +598,6 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
           .indented()
       )
       .sdkHome(setupMockSdk(DEFAULT_MOCK_XML))
-      .issues(MISSING_PURPOSE)
       .run()
       .expectClean()
   }
@@ -511,7 +622,6 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
           .indented()
       )
       .sdkHome(setupMockSdk(DEFAULT_MOCK_XML))
-      .issues(MISSING_PURPOSE)
       .run()
       .expectClean()
   }
@@ -536,7 +646,6 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
           .indented()
       )
       .sdkHome(setupMockSdk(DEFAULT_MOCK_XML))
-      .issues(MISSING_PURPOSE)
       .run()
       .expectClean()
   }
@@ -560,7 +669,6 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
           .indented()
       )
       .sdkHome(setupMockSdk(MALFORMED_MOCK_XML))
-      .issues(MISSING_PURPOSE)
       .run()
       .expectClean()
   }
@@ -582,7 +690,6 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
           .indented()
       )
       .sdkHome(setupMockSdk(DEFAULT_MOCK_XML))
-      .issues(MISSING_PURPOSE)
       .run()
       .expectClean()
   }
@@ -606,7 +713,6 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
           .indented()
       )
       .sdkHome(setupMockSdk(DEFAULT_MOCK_XML))
-      .issues(MISSING_PURPOSE)
       .run()
       .expect(
         """
@@ -640,7 +746,6 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
           .indented()
       )
       .sdkHome(setupMockSdk(MULTI_PERMISSIONS_MOCK_XML))
-      .issues(MISSING_PURPOSE)
       .run()
       .expect(
         """
@@ -678,7 +783,6 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
           .indented()
       )
       .sdkHome(setupMockSdk(MULTI_PERMISSIONS_MOCK_XML))
-      .issues(MISSING_PURPOSE)
       .run()
       .expectClean()
   }
@@ -704,7 +808,6 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
           .indented()
       )
       .sdkHome(setupMockSdk(DEFAULT_MOCK_XML))
-      .issues(MISSING_PURPOSE)
       .run()
       .expectClean()
   }
@@ -731,7 +834,6 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
           .indented()
       )
       .sdkHome(setupMockSdk(DEFAULT_MOCK_XML))
-      .issues(MISSING_PURPOSE)
       .run()
       .expectClean()
   }
@@ -758,7 +860,6 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
           .indented()
       )
       .sdkHome(setupMockSdk(DEFAULT_MOCK_XML))
-      .issues(MISSING_PURPOSE)
       .run()
       .expect(
         """
@@ -787,7 +888,6 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
           .indented()
       )
       .sdkHome(setupMockSdk(EMPTY_MOCK_XML))
-      .issues(MISSING_PURPOSE)
       .run()
       .expectClean()
   }
@@ -809,7 +909,6 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
           .indented()
       )
       .sdkHome(TestUtils.getSdk().toFile())
-      .issues(MISSING_PURPOSE)
       .run()
       .expectClean()
   }
