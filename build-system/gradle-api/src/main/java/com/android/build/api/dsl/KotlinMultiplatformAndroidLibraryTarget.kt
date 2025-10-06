@@ -17,12 +17,9 @@
 package com.android.build.api.dsl
 
 import org.jetbrains.kotlin.gradle.plugin.KotlinTarget
-import org.gradle.api.Incubating
 import org.gradle.api.NamedDomainObjectContainer
-import org.gradle.api.plugins.ExtensionAware
 import org.jetbrains.kotlin.gradle.dsl.HasConfigurableKotlinCompilerOptions
 import org.jetbrains.kotlin.gradle.dsl.KotlinJvmCompilerOptions
-import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 
 interface KotlinMultiplatformAndroidLibraryTarget:
     KotlinTarget,
@@ -35,16 +32,4 @@ interface KotlinMultiplatformAndroidLibraryTarget:
      * Enables compilation of java sources.
      */
     fun withJava()
-}
-
-@Incubating
-fun KotlinMultiplatformExtension.androidLibrary(
-    action: KotlinMultiplatformAndroidLibraryTarget.() -> Unit
-) {
-    (this as ExtensionAware).extensions.findByType(
-        KotlinMultiplatformAndroidLibraryTarget::class.java
-    )?.action() ?: throw IllegalStateException(
-        "You need to apply the " +
-            "`com.android.kotlin.multiplatform.library` plugin before accessing the android target."
-    )
 }

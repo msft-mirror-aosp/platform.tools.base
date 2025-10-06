@@ -1481,10 +1481,6 @@ package com.android.build.api.dsl {
     property public abstract org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.KotlinMultiplatformAndroidCompilation> compilations;
   }
 
-  public final class KotlinMultiplatformAndroidLibraryTargetKt {
-    method @org.gradle.api.Incubating public static void androidLibrary(org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension, kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryTarget,kotlin.Unit> action);
-  }
-
   public interface LibraryAndroidResources extends com.android.build.api.dsl.AndroidResources {
     method public boolean getEnable();
     method public void setEnable(boolean);

@@ -420,7 +420,6 @@ https://issuetracker.google.com/328749317
   * com.android.build.api.dsl.KotlinMultiplatformAndroidDeviceTest.multidex: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.MultiDexConfig, kotlin.Unit>)
   * com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryExtension.getOptimization: com.android.build.api.dsl.KmpOptimization ()
   * com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryExtension.optimization: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.KmpOptimization, kotlin.Unit>)
-  * com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryTargetKt.androidLibrary: void (org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension, kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryTarget, kotlin.Unit>)
 https://issuetracker.google.com/328749318
   * com.android.build.api.variant.DeviceTestBuilder.getEnable: boolean ()
   * com.android.build.api.variant.DeviceTestBuilder.setEnable: void (boolean)
