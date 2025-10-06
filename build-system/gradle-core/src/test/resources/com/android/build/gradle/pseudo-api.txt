@@ -1654,8 +1654,10 @@ com.android.build.gradle.internal.dsl.InternalDynamicFeatureExtension.testCovera
 com.android.build.gradle.internal.dsl.InternalDynamicFeatureExtension.testOptions: void (org.gradle.api.Action<com.android.build.gradle.internal.dsl.TestOptions>)
 com.android.build.gradle.internal.dsl.InternalDynamicFeatureExtension.viewBinding: void (org.gradle.api.Action<com.android.build.gradle.internal.dsl.ViewBindingOptionsImpl>)
 com.android.build.gradle.internal.dsl.InternalFusedLibraryExtension implements com.android.build.api.dsl.FusedLibraryExtension
+com.android.build.gradle.internal.dsl.InternalFusedLibraryExtension.aarMetadata: void (org.gradle.api.Action<com.android.build.api.dsl.AarMetadata>)
 com.android.build.gradle.internal.dsl.InternalFusedLibraryExtension.getMinSdkApiLevel: java.lang.Integer ()
 com.android.build.gradle.internal.dsl.InternalFusedLibraryExtension.minSdk: void (org.gradle.api.Action<com.android.build.api.dsl.MinSdkSpec>)
+com.android.build.gradle.internal.dsl.InternalFusedLibraryExtension.packaging: void (org.gradle.api.Action<com.android.build.api.dsl.Packaging>)
 com.android.build.gradle.internal.dsl.InternalLibraryExtension implements com.android.build.api.dsl.LibraryExtension, com.android.build.gradle.internal.dsl.InternalTestedExtension
 com.android.build.gradle.internal.dsl.InternalLibraryExtension.aaptOptions: void (org.gradle.api.Action<com.android.build.gradle.internal.dsl.AaptOptions>)
 com.android.build.gradle.internal.dsl.InternalLibraryExtension.adbOptions: void (org.gradle.api.Action<com.android.build.gradle.internal.dsl.AdbOptions>)

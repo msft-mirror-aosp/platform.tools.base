@@ -47,6 +47,7 @@ import org.gradle.api.file.FileSystemLocation
 import org.gradle.api.file.RegularFile
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.Property
+import org.gradle.api.provider.SetProperty
 import org.gradle.api.tasks.CacheableTask
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFiles
@@ -77,6 +78,21 @@ abstract class FusedLibraryMergeArtifactTask : NonIncrementalGlobalTask() {
     @get:PathSensitive(PathSensitivity.RELATIVE)
     abstract val artifactFiles: ConfigurableFileCollection
 
+    @get:Nested
+    abstract val aarMetadataInputs: AarMetadataInputs
+
+    @get:Optional
+    @get:Input
+    abstract val jniExcludes: SetProperty<String>
+
+    @get:Optional
+    @get:Input
+    abstract val jniKeepDebugSymbols: SetProperty<String>
+
+    @get:Optional
+    @get:Input
+    abstract val jniPickFirst: SetProperty<String>
+
     @get:OutputDirectory
     @get:Optional
     abstract val outputDir: DirectoryProperty
@@ -84,9 +100,6 @@ abstract class FusedLibraryMergeArtifactTask : NonIncrementalGlobalTask() {
     @get:OutputFile
     @get:Optional
     abstract val outputFile: RegularFileProperty
-
-    @get:Nested
-    abstract val aarMetadataInputs: AarMetadataInputs
 
     override fun doTaskAction() {
         workerExecutor.noIsolation().submit(FusedLibraryMergeArtifactWorkAction::class.java) {
@@ -101,10 +114,14 @@ abstract class FusedLibraryMergeArtifactTask : NonIncrementalGlobalTask() {
     }
 
     abstract class FusedLibraryMergeArtifactParams : ProfileAwareWorkAction.Parameters() {
-        abstract var aarMetadataInputs: AarMetadataInputs
         abstract val artifactType: Property<ArtifactType>
         abstract val input: ConfigurableFileCollection
         abstract val output: Property<FileSystemLocation>
+
+        abstract var aarMetadataInputs: AarMetadataInputs
+        abstract val jniExcludes: SetProperty<String>
+        abstract val jniKeepDebugSymbols: SetProperty<String>
+        abstract val jniPickFirst: SetProperty<String>
     }
 
     abstract class FusedLibraryMergeArtifactWorkAction
@@ -127,21 +144,25 @@ abstract class FusedLibraryMergeArtifactTask : NonIncrementalGlobalTask() {
                         }
                     }
                     ArtifactType.JNI -> {
+                        if (jniKeepDebugSymbols.get().any()) {
+                            error("keepDebugSymbols is not supported by Fused Library.")
+                        }
                         val aarOutputJniOutputDir = output.get().asFile.resolve(FD_JNI)
                         val relativeInputFiles = inputFiles
                             .flatMap { it.walkBottomUp() }
                             .filter { it.isFile }
                             .map {
-                                MergeNativeLibsTask.InputFile(it,
+                                MergeNativeLibsTask.InputFile(
+                                    it,
                                     it.toString()
                                         .substringAfter("$separator$FD_JNI$separator")
                                 )
                             }
                         mergeJavaNativeLibs(
                             inputFiles = relativeInputFiles,
-                            emptySet(),
-                            emptySet(),
-                            emptySet(),
+                            jniPickFirst.get(),
+                            exclude = jniExcludes.get(),
+                            testOnly = emptySet(),
                             testOnlyDir = null,
                             projectNativeLibs = emptySet(),
                             outputDir = aarOutputJniOutputDir
@@ -264,14 +285,33 @@ abstract class FusedLibraryMergeArtifactTask : NonIncrementalGlobalTask() {
 
             task.artifactType.setDisallowChanges(androidArtifactType)
 
-            creationConfig.aarMetadata.minAgpVersion?.let {
-                task.aarMetadataInputs.minAgpVersion.setDisallowChanges(it)
-            }
-            creationConfig.aarMetadata.minCompileSdk?.let {
-                task.aarMetadataInputs.minCompileSdk.setDisallowChanges(it)
-            }
-            creationConfig.aarMetadata.minCompileSdkExtension?.let {
-                task.aarMetadataInputs.minCompileSdkExtension.setDisallowChanges(it)
+            when (androidArtifactType) {
+                ArtifactType.AAR_METADATA -> {
+                    creationConfig.aarMetadata.minAgpVersion?.let {
+                        task.aarMetadataInputs.minAgpVersion.setDisallowChanges(it)
+                    }
+                    creationConfig.aarMetadata.minCompileSdk?.let {
+                        task.aarMetadataInputs.minCompileSdk.setDisallowChanges(it)
+                    }
+                    creationConfig.aarMetadata.minCompileSdkExtension?.let {
+                        task.aarMetadataInputs.minCompileSdkExtension.setDisallowChanges(it)
+                    }
+                }
+                ArtifactType.JNI -> {
+                    task.jniExcludes.setDisallowChanges(
+                        creationConfig.packaging.jniLibs.excludes
+                    )
+                    task.jniPickFirst.setDisallowChanges(
+                        creationConfig.packaging.jniLibs.pickFirsts
+                    )
+
+                    // Only added to the task for error messaging, as debug stripping
+                    // should be configured in the dependencies.
+                    task.jniKeepDebugSymbols.setDisallowChanges(
+                        creationConfig.packaging.jniLibs.keepDebugSymbols
+                    )
+                }
+                else -> {}
             }
         }
 

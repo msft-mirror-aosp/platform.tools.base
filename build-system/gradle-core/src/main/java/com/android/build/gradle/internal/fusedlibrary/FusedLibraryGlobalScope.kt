@@ -18,6 +18,7 @@ package com.android.build.gradle.internal.fusedlibrary
 
 import com.android.build.api.artifact.impl.ArtifactsImpl
 import com.android.build.api.dsl.FusedLibraryExtension
+import com.android.build.api.variant.Packaging
 import com.android.build.gradle.internal.dependency.PluginConfigurations
 import com.android.build.gradle.internal.dsl.AarMetadataImpl
 import com.android.build.gradle.internal.services.TaskCreationServices
@@ -33,6 +34,7 @@ interface FusedLibraryGlobalScope {
     val manifestPlaceholders: MutableMap<String, String>
     val minSdkApiLevel: Int
     val namespace: String
+    val packaging: Packaging
     val projectLayout: ProjectLayout
     val services: TaskCreationServices
     val dependencies: FusedLibraryDependencies

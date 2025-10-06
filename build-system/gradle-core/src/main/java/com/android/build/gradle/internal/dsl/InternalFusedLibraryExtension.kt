@@ -16,8 +16,10 @@
 
 package com.android.build.gradle.internal.dsl
 
+import com.android.build.api.dsl.AarMetadata
 import com.android.build.api.dsl.FusedLibraryExtension
 import com.android.build.api.dsl.MinSdkSpec
+import com.android.build.api.dsl.Packaging
 import org.gradle.api.Action
 
 /*
@@ -26,4 +28,6 @@ import org.gradle.api.Action
 interface InternalFusedLibraryExtension : FusedLibraryExtension {
     val minSdkApiLevel: Int?
     fun minSdk(action: Action<MinSdkSpec>)
+    fun aarMetadata(action: Action<AarMetadata>)
+    fun packaging(action: Action<Packaging>)
 }
