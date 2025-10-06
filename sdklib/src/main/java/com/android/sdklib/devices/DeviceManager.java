@@ -386,7 +386,7 @@ public class DeviceManager {
                                 if (CancellableFileIo.isRegularFile(deviceXml)) {
                                     for (Device device : loadDevices(deviceXml).values()) {
                                         if (!mIsSupportedDevice.test(device)) continue;
-                                        if (isDeprecatedWearSkin(device)) {
+                                        if (isDeprecatedWearDevice(device)) {
                                             Device.Builder builder = new Device.Builder(device);
                                             builder.setDeprecated(true);
                                             device = builder.build();
@@ -400,8 +400,20 @@ public class DeviceManager {
         }
     }
 
-    private static boolean isDeprecatedWearSkin(Device device) {
-        return "android-wear".equals(device.getTagId()) && !device.getId().startsWith("wearos");
+    /**
+     * Some device definitions are present in old system images which can override some vendor
+     * device definitions. This method ensures these devices are considered as deprecated. For
+     * example, `wearos_rect` is deprecated in the vendor definition, however APIs 30 and 33 also
+     * provide a `wearos_rect` which is not deprecated. This function checks whether the device is a
+     * deprecated wear device based on its id. If the device's id does not start with `wearos` or
+     * the id is either `wearos_square` or `wearos_rect` then it is considered as deprecated.
+     */
+    private static boolean isDeprecatedWearDevice(Device device) {
+        boolean isWearDevice = "android-wear".equals(device.getTagId());
+        if (!isWearDevice) return false;
+        return !device.getId().startsWith("wearos")
+                || "wearos_square".equals(device.getId())
+                || "wearos_rect".equals(device.getId());
     }
 
     /**
