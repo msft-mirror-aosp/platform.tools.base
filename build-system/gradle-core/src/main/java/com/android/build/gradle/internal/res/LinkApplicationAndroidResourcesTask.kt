@@ -824,65 +824,6 @@ abstract class LinkApplicationAndroidResourcesTask: ProcessAndroidResources() {
         }
     }
 
-    /**
-     * TODO: extract in to a separate task implementation once splits are calculated in the split
-     * discovery task.
-     */
-    class NamespacedCreationAction(
-        creationConfig: ApkCreationConfig,
-        generateLegacyMultidexMainDexProguardRules: Boolean,
-        baseName: Provider<String>
-    ) : BaseCreationAction(
-        creationConfig,
-        generateLegacyMultidexMainDexProguardRules,
-        baseName,
-        false
-    ) {
-
-        override fun handleProvider(
-            taskProvider: TaskProvider<LinkApplicationAndroidResourcesTask>
-        ) {
-            super.handleProvider(taskProvider)
-
-            creationConfig.artifacts.setInitialProvider(
-                taskProvider,
-                LinkApplicationAndroidResourcesTask::sourceOutputDirProperty
-            ).withName("out").on(InternalArtifactType.RUNTIME_R_CLASS_SOURCES)
-        }
-
-        override fun configure(
-            task: LinkApplicationAndroidResourcesTask
-        ) {
-            super.configure(task)
-
-            val dependencies = ArrayList<FileCollection>(2)
-            dependencies.add(
-                creationConfig.services.fileCollection(
-                    creationConfig.artifacts.get(InternalArtifactType.RES_STATIC_LIBRARY)
-                )
-            )
-            dependencies.add(
-                creationConfig.variantDependencies.getArtifactFileCollection(
-                    RUNTIME_CLASSPATH, ALL, AndroidArtifacts.ArtifactType.RES_STATIC_LIBRARY
-                )
-            )
-
-            task.dependenciesFileCollection.fromDisallowChanges(
-                creationConfig.services.fileCollection(
-                    dependencies
-                )
-            )
-
-            task.sharedLibraryDependencies.fromDisallowChanges(
-                creationConfig.variantDependencies.getArtifactFileCollection(
-                    COMPILE_CLASSPATH, ALL, AndroidArtifacts.ArtifactType.RES_SHARED_STATIC_LIBRARY
-                )
-            )
-
-            task.namespaced.setDisallowChanges(true)
-        }
-    }
-
     companion object {
         private val LOG = Logging.getLogger(LinkApplicationAndroidResourcesTask::class.java)
 
