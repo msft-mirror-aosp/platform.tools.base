@@ -1,6 +1,6 @@
 load("//tools/base/bazel:kotlin.bzl", "kotlin_test")
 load("//tools/base/bazel:maven.bzl", "maven_library")
-load("//tools/base/journeys:version.bzl", "JOURNEYS_TEST_PLUGIN_VERSION")
+load("//tools/base/journeys:version.bzl", "JOURNEYS_TEST_ENGINE_VERSION")
 
 maven_library(
     name = "journeys-junit-engine",
@@ -25,7 +25,7 @@ maven_library(
     coordinates = "com.android.tools.journeys:journeys-junit-engine",
     resource_strip_prefix = "tools/base/journeys/journeys-junit-engine/src/main/resources/",
     resources = glob(["src/main/resources/**"]),
-    version = JOURNEYS_TEST_PLUGIN_VERSION,
+    version = JOURNEYS_TEST_ENGINE_VERSION,
     visibility = ["//visibility:public"],
     # keep sorted
     deps = [

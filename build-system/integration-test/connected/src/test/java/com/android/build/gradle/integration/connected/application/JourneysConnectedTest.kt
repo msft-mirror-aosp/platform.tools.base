@@ -16,14 +16,17 @@
 
 package com.android.build.gradle.integration.connected.application
 
+import com.android.build.api.dsl.AgpTestSuite
+import com.android.build.api.dsl.AgpTestSuiteInputParameters
 import com.android.build.api.dsl.ApplicationExtension
+import com.android.build.api.variant.ApplicationAndroidComponentsExtension
 import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
 import com.android.build.gradle.integration.common.fixture.GradleBuildResult
 import com.android.build.gradle.integration.common.fixture.GradleTaskExecutor
 import com.android.build.gradle.integration.common.fixture.LoggingLevel
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition
-import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
+import com.android.build.gradle.integration.common.fixture.project.plugins.ApplicationComponentCallback
 import com.android.build.gradle.integration.common.fixture.project.plugins.GenericCallback
 import com.android.build.gradle.integration.connected.utils.getEmulator
 import com.android.build.gradle.options.BooleanOption
@@ -46,6 +49,7 @@ import com.android.tools.journeys.proto.TurnAdded
 import com.google.common.io.Resources
 import com.google.protobuf.Timestamp
 import org.gradle.api.Project
+import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.junit.ClassRule
 import org.junit.Rule
 import org.junit.Test
@@ -62,7 +66,7 @@ class JourneysConnectedTest {
         @JvmField
         val EMULATOR = getEmulator()
 
-        const val DEVICE_NAME = "emulator-5554 - 13"
+        const val DEVICE_NAME = "emulator-5554"
         const val DEVICE_SERIAL = "emulator-5554"
     }
 
@@ -70,6 +74,9 @@ class JourneysConnectedTest {
     val rule = GradleRule.configure()
         .withProfileOutput()
         .from {
+            gradleProperties {
+                add(BooleanOption.TEST_SUITE_SUPPORT, true)
+            }
             androidApplication {
                 setupProject()
             }
@@ -79,47 +86,46 @@ class JourneysConnectedTest {
         get() = rule.build.executor
             .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
             .with(BooleanOption.USE_ANDROID_X, true)
-            .withLoggingLevel(LoggingLevel.LIFECYCLE)
+            .withLoggingLevel(LoggingLevel.INFO)
 
     private fun AndroidProjectDefinition<ApplicationExtension>.setupProject() {
-        applyPlugin(
-            PluginType.Custom(
-                id = "com.android.tools.journeys",
-                version = "+",
-                artifact = "com.android.tools.journeys:journeys-gradle-plugin",
-                hasMarker = false,
-            )
-        )
         android {
             defaultConfig {
                 minSdk = 24
             }
+            testOptions.suites.create("journeysTest", AgpTestSuite::class.java) {
+                it.useJunitEngine.apply {
+                    inputs.add(AgpTestSuiteInputParameters.TESTED_APKS)
+                    includeEngines.add("journeys-test-engine")
+                    enginesDependencies.add("org.junit.platform:junit-platform-engine:+")
+                    enginesDependencies.add("org.junit.platform:junit-platform-launcher:+")
+                }
+                it.targetVariants.add("debug")
+                it.targets.create("t1") {}
+            }
         }
-        pluginCallbacks += MockChannelProviderCallback::class.java
+        // Add callback to add test support dependency first to ensure that the mock channel
+        // provider takes precedence in the classpath.
+        pluginCallbacks += FakeCrawlerServiceSetupCallback::class.java
+        pluginCallbacks += JourneysEngineDepSetupCallback::class.java
+        pluginCallbacks += PrintTestLogsCallback::class.java
     }
 
-    class MockChannelProviderCallback : GenericCallback {
+    class FakeCrawlerServiceSetupCallback : ApplicationComponentCallback {
 
-        override fun handleProject(project: Project) {
-            val container = project.configurations
-            val dependencies = project.dependencies
-            if (container.findByName("_test-journeys-config") == null) {
-                container.create("_test-journeys-config").apply {
-                    isVisible = false
-                    isTransitive = true
-                    isCanBeConsumed = false
-                    description = "A configuration to resolve mock channel provider dependencies."
+        override fun handleExtension(
+            project: Project,
+            androidComponents: ApplicationAndroidComponentsExtension
+        ) {
+            androidComponents.finalizeDsl { android ->
+                android.testOptions.suites.getByName("journeysTest") {
+                    it.useJunitEngine.apply {
+                        enginesDependencies.add("com.android.tools.journeys:journeys-junit-engine-test-support:+")
+                    }
                 }
-
-                dependencies.add(
-                    "_test-journeys-config",
-                    "com.android.tools.journeys:journeys-junit-engine-test-support:+"
-                )
             }
             project.tasks.withType(org.gradle.api.tasks.testing.Test::class.java)
                 .configureEach { testTask ->
-                    testTask.classpath =
-                        project.configurations.getByName("_test-journeys-config") + testTask.classpath
                     val path =
                         project.providers.systemProperty("roboResultsPath").orNull ?: ""
                     val shouldInduceServerError =
@@ -131,11 +137,42 @@ class JourneysConnectedTest {
         }
     }
 
+    class JourneysEngineDepSetupCallback : ApplicationComponentCallback {
+
+        override fun handleExtension(
+            project: Project,
+            androidComponents: ApplicationAndroidComponentsExtension
+        ) {
+            androidComponents.finalizeDsl { android ->
+                android.testOptions.suites.getByName("journeysTest") {
+                    it.useJunitEngine.apply {
+                        enginesDependencies.add("com.android.tools.journeys:journeys-junit-engine:+")
+                    }
+                }
+            }
+        }
+    }
+
+    class PrintTestLogsCallback : GenericCallback {
+
+        override fun handleProject(project: Project) {
+            project.tasks.withType(org.gradle.api.tasks.testing.Test::class.java) {
+                it.testLogging {
+                    it.events("passed", "skipped", "failed")
+                    it.showExceptions = true
+                    it.exceptionFormat = TestExceptionFormat.FULL
+                    it.showCauses = true
+                    it.showStackTraces = true
+                }
+            }
+        }
+    }
+
     @Test
     fun `expect auth failure when using prod backend`() {
         val build = rule.build {
             androidApplication {
-                pluginCallbacks -= MockChannelProviderCallback::class.java
+                pluginCallbacks -= FakeCrawlerServiceSetupCallback::class.java
             }
         }
         val appProject = build.androidApplication()
@@ -153,10 +190,10 @@ class JourneysConnectedTest {
         val result =
             executor.expectFailure()
                 .withEnvironmentVariables(mapOf("JOURNEYS_ENABLE_STDOUT_REPORT" to "true"))
-                .run(":app:validateDebugJourneysTest")
+                .run(":app:testJourneysTestT1DebugTestSuite")
 
         val outputDir =
-            appProject.buildDir.resolve("outputs/journeysTest/debug/results/$DEVICE_SERIAL/simple")
+            appProject.buildDir.resolve("intermediates/debug/testJourneysTestT1DebugTestSuite/results/$DEVICE_SERIAL/simple")
         assertThat(outputDir.resolve("journey_results.pb")).exists()
 
         assertJourneyEvents(
@@ -217,12 +254,12 @@ class JourneysConnectedTest {
         createRoboResults("journeys/robo_results_default.textproto", roboResultsPath)
         val result =
             executor.withArgument("-DroboResultsPath=$roboResultsPath")
-                .withArgument("-PjourneysFilter=journey1.journey.xml, journey2.journey.xml")
+                .withEnvironmentVariables(mapOf("JOURNEYS_FILTER" to "journey1.journey.xml, journey2.journey.xml"))
                 .withEnvironmentVariables(mapOf("JOURNEYS_ENABLE_STDOUT_REPORT" to "true"))
-                .run(":app:validateDebugJourneysTest")
+                .run(":app:testJourneysTestT1DebugTestSuite")
 
         val journey1OutputDir =
-            appProject.buildDir.resolve("outputs/journeysTest/debug/results/$DEVICE_SERIAL/journey1")
+            appProject.buildDir.resolve("intermediates/debug/testJourneysTestT1DebugTestSuite/results/$DEVICE_SERIAL/journey1")
         assertThat(journey1OutputDir.resolve("robo_results.pb")).exists()
         assertThat(journey1OutputDir.resolve("journey_results.pb")).exists()
         for (i in 0 until 4) {
@@ -230,7 +267,7 @@ class JourneysConnectedTest {
         }
 
         val journey2OutputDir =
-            appProject.buildDir.resolve("outputs/journeysTest/debug/results/$DEVICE_SERIAL/journey2")
+            appProject.buildDir.resolve("intermediates/debug/testJourneysTestT1DebugTestSuite/results/$DEVICE_SERIAL/journey2")
         assertThat(journey2OutputDir.resolve("robo_results.pb")).exists()
         assertThat(journey2OutputDir.resolve("journey_results.pb")).exists()
         for (i in 0 until 4) {
@@ -238,7 +275,7 @@ class JourneysConnectedTest {
         }
 
         val journey3OutputDir =
-            appProject.buildDir.resolve("outputs/journeysTest/debug/results/$DEVICE_SERIAL/journey3")
+            appProject.buildDir.resolve("intermediates/debug/testJourneysTestT1DebugTestSuite/results/$DEVICE_SERIAL/journey3")
         assertThat(journey3OutputDir).doesNotExist()
 
         result.assertOutputDoesNotContain("journey3")
@@ -342,10 +379,10 @@ class JourneysConnectedTest {
         createRoboResults("journeys/robo_results_default.textproto", roboResultsPath)
         val result =
             executor.withArgument("-DroboResultsPath=$roboResultsPath")
-                .run(":app:validateDebugJourneysTest")
+                .run(":app:testJourneysTestT1DebugTestSuite")
 
         val journey1OutputDir =
-            appProject.buildDir.resolve("outputs/journeysTest/debug/results/$DEVICE_SERIAL/journey1")
+            appProject.buildDir.resolve("intermediates/debug/testJourneysTestT1DebugTestSuite/results/$DEVICE_SERIAL/journey1")
         assertThat(journey1OutputDir.resolve("robo_results.pb")).exists()
         assertThat(journey1OutputDir.resolve("journey_results.pb")).exists()
         for (i in 0 until 4) {
@@ -386,10 +423,9 @@ class JourneysConnectedTest {
         )
         val result =
             executor
-                .expectFailure()
-                .withArgument("-PjourneysFilter=journey2.xml, journey3.journey.xml")
+                .withEnvironmentVariables(mapOf("JOURNEYS_FILTER" to "journey2.xml, journey3.journey.xml"))
                 .withEnvironmentVariables(mapOf("JOURNEYS_ENABLE_STDOUT_REPORT" to "true"))
-                .run(":app:validateDebugJourneysTest")
+                .run(":app:testJourneysTestT1DebugTestSuite")
 
         result.assertOutputDoesNotContain("$DEVICE_SERIAL > journey1.journey.xml")
         result.assertOutputDoesNotContain("$DEVICE_SERIAL > journey2.xml")
@@ -410,7 +446,11 @@ class JourneysConnectedTest {
             executor
                 .expectFailure()
                 .withEnvironmentVariables(mapOf("JOURNEYS_ENABLE_STDOUT_REPORT" to "true"))
-                .run(":app:validateDebugJourneysTest")
+                .run(":app:testJourneysTestT1DebugTestSuite")
+
+        val outputDir =
+            appProject.buildDir.resolve("intermediates/debug/testJourneysTestT1DebugTestSuite/results/$DEVICE_SERIAL/malformed")
+        assertThat(outputDir.resolve("journey_results.pb")).exists()
 
         assertJourneyEvents(
             result, "$DEVICE_SERIAL > malformed.journey.xml", "", listOf(
@@ -446,10 +486,10 @@ class JourneysConnectedTest {
                 .expectFailure()
                 .withArgument("-DshouldInduceServerError=true")
                 .withEnvironmentVariables(mapOf("JOURNEYS_ENABLE_STDOUT_REPORT" to "true"))
-                .run(":app:validateDebugJourneysTest")
+                .run(":app:testJourneysTestT1DebugTestSuite")
 
         val outputDir =
-            appProject.buildDir.resolve("outputs/journeysTest/debug/results/$DEVICE_SERIAL/simple")
+            appProject.buildDir.resolve("intermediates/debug/testJourneysTestT1DebugTestSuite/results/$DEVICE_SERIAL/simple")
         assertThat(outputDir.resolve("journey_results.pb")).exists()
 
         result.assertOutputContains("Intentionally throwing an error.")
@@ -490,10 +530,10 @@ class JourneysConnectedTest {
         createRoboResults("journeys/robo_results_successful.textproto", roboResultsPath)
         val result = executor.withArgument("-DroboResultsPath=$roboResultsPath")
             .withEnvironmentVariables(mapOf("JOURNEYS_ENABLE_STDOUT_REPORT" to "true"))
-            .run(":app:validateDebugJourneysTest")
+            .run(":app:testJourneysTestT1DebugTestSuite")
 
         val outputDir =
-            appProject.buildDir.resolve("outputs/journeysTest/debug/results/$DEVICE_SERIAL/simple")
+            appProject.buildDir.resolve("intermediates/debug/testJourneysTestT1DebugTestSuite/results/$DEVICE_SERIAL/simple")
         assertThat(outputDir.resolve("robo_results.pb")).exists()
         assertThat(outputDir.resolve("journey_results.pb")).exists()
         for (i in 0 until 9) {
@@ -688,10 +728,10 @@ class JourneysConnectedTest {
         createRoboResults("journeys/robo_results_failed.textproto", roboResultsPath)
         val result = executor.expectFailure().withArgument("-DroboResultsPath=$roboResultsPath")
             .withEnvironmentVariables(mapOf("JOURNEYS_ENABLE_STDOUT_REPORT" to "true"))
-            .run(":app:validateDebugJourneysTest")
+            .run(":app:testJourneysTestT1DebugTestSuite")
 
         val outputDir =
-            appProject.buildDir.resolve("outputs/journeysTest/debug/results/$DEVICE_SERIAL/simple")
+            appProject.buildDir.resolve("intermediates/debug/testJourneysTestT1DebugTestSuite/results/$DEVICE_SERIAL/simple")
         assertThat(outputDir.resolve("robo_results.pb")).exists()
         assertThat(outputDir.resolve("journey_results.pb")).exists()
         for (i in 0 until 8) {
@@ -977,7 +1017,10 @@ class JourneysConnectedTest {
             // Capture and check the runtime journey_run_id for consistency.
             if (actualEvent.eventPayloadCase == JourneyRunEvent.EventPayloadCase.RUN_STARTED) {
                 journeyRunStartId = actualEvent.journeyRunId
-                assertTrue(journeyRunStartId.isNotEmpty(), "journeyRunStartId should not be empty")
+                assertTrue(
+                    journeyRunStartId.isNotEmpty(),
+                    "journeyRunStartId should not be empty"
+                )
                 // Check the nested ID in RunStarted.Initialization.
                 assertEquals(
                     journeyRunStartId,
