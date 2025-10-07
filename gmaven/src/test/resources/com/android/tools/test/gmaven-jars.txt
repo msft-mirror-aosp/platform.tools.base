@@ -2432,7 +2432,6 @@ com/android/tools/external/com-intellij/kotlin-compiler
   com/intellij/openapi/vfs/
   com/intellij/util/
   com/intellij/util/io/
-  com/intellij/util/lang/
   custom-formatters.js
   io/
   io/vavr/
