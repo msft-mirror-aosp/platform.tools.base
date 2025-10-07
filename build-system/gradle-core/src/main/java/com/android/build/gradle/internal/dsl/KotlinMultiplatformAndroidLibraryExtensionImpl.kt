@@ -40,7 +40,7 @@ import javax.inject.Inject
 internal abstract class KotlinMultiplatformAndroidLibraryExtensionImpl @Inject constructor(
     private val dslServices: DslServices,
     objectFactory: ObjectFactory,
-    private val compilationEnabledCallback: (KotlinMultiplatformAndroidCompilationBuilder) -> Unit,
+    private val compilationEnabledCallback: (KotlinMultiplatformAndroidCompilationBuilderImpl) -> Unit,
 ): KotlinMultiplatformAndroidLibraryExtension, Lockable {
 
     @WithLazyInitialization
@@ -155,18 +155,18 @@ internal abstract class KotlinMultiplatformAndroidLibraryExtensionImpl @Inject c
         previousConfiguration: KotlinMultiplatformAndroidCompilationBuilder?,
     ): KotlinMultiplatformAndroidCompilationBuilderImpl {
         previousConfiguration?.let {
-            val type = when (compilationType) {
-                KmpAndroidCompilationType.MAIN -> "main"
-                KmpAndroidCompilationType.HOST_TEST -> "host"
-                KmpAndroidCompilationType.DEVICE_TEST -> "device"
+            val compilationInfo = when (compilationType) {
+                KmpAndroidCompilationType.MAIN -> Pair("main", KmpAndroidCompilationType.MAIN)
+                KmpAndroidCompilationType.HOST_TEST -> Pair("host", KmpAndroidCompilationType.HOST_TEST)
+                KmpAndroidCompilationType.DEVICE_TEST -> Pair("device", KmpAndroidCompilationType.DEVICE_TEST)
             }
 
             throw IllegalStateException(
-                "Android $type tests have already been enabled, and a corresponding compilation " +
-                        "(`${it.compilationName}`) has already been created. You can create only " +
-                        "one component of type android $type tests on. Alternatively, you can " +
+                "Android ${compilationInfo.first} tests have already been enabled, and a corresponding compilation " +
+                        "(`${compilationInfo.second.defaultCompilationName}`) has already been created. You can create only " +
+                        "one component of type android $compilationInfo tests on. Alternatively, you can " +
                         "specify a dependency from the default sourceSet " +
-                        "(`${it.defaultSourceSetName}`) to another sourceSet and it will be " +
+                        "(`${compilationInfo.second.defaultSourceSetName}`) to another sourceSet and it will be " +
                         "included in the compilation."
             )
         }

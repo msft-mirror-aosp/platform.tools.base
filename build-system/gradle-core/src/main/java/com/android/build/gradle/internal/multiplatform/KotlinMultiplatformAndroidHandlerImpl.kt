@@ -25,6 +25,7 @@ import com.android.build.api.variant.impl.KotlinMultiplatformAndroidLibraryTarge
 import com.android.build.gradle.internal.component.KmpComponentCreationConfig
 import com.android.build.gradle.internal.dependency.configureKotlinTestDependencyForInstrumentedTestCompilation
 import com.android.build.gradle.internal.dependency.configureKotlinTestDependencyForUnitTestCompilation
+import com.android.build.gradle.internal.dsl.KotlinMultiplatformAndroidCompilationBuilderImpl
 import com.android.build.gradle.internal.dsl.KotlinMultiplatformAndroidLibraryExtensionImpl
 import com.android.build.gradle.internal.dsl.decorator.androidPluginDslDecorator
 import com.android.build.gradle.internal.ide.kmp.KotlinAndroidSourceSetMarker
@@ -73,7 +74,7 @@ internal class KotlinMultiplatformAndroidHandlerImpl(
             extensionImplClass,
             dslServices,
             objectFactory,
-            { compilationBuilder: KotlinMultiplatformAndroidCompilationBuilder ->
+            { compilationBuilder: KotlinMultiplatformAndroidCompilationBuilderImpl ->
                 if (project.pluginManager.hasPlugin(KOTLIN_MPP_PLUGIN_ID)) {
                     createCompilation(
                         compilationName = compilationBuilder.compilationName,

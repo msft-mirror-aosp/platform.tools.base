@@ -25,8 +25,8 @@ import org.jetbrains.kotlin.gradle.plugin.hierarchy.KotlinSourceSetTreeClassifie
 internal class KotlinMultiplatformAndroidCompilationBuilderImpl(
     private val compilationType: KmpAndroidCompilationType
 ): KotlinMultiplatformAndroidCompilationBuilder {
-    override var compilationName = compilationType.defaultCompilationName
-    override var defaultSourceSetName = compilationType.defaultSourceSetName
+    var compilationName = compilationType.defaultCompilationName
+    var defaultSourceSetName = compilationType.defaultSourceSetName
     override var sourceSetTreeName = compilationType.defaultSourceSetTreeName
 
     @OptIn(ExternalKotlinTargetApi::class)
