@@ -15,6 +15,7 @@
  */
 package com.android.tools.lint.checks
 
+import com.android.tools.lint.checks.ForegroundServiceTypesDetector.Companion.ISSUE_TYPE
 import com.android.tools.lint.checks.infrastructure.TestMode
 import com.android.tools.lint.detector.api.Detector
 
@@ -86,6 +87,24 @@ public class MyClass {
       public void startForeground(int i, Object object) {;}
 }
 """
+    )
+
+  private val serviceCompatStubs =
+    arrayOf(
+      java(
+          """
+                package androidx.core.app;
+                import android.app.Notification;
+                import android.app.Service;
+                import androidx.annotation.NonNull;
+                import androidx.annotation.Nullable;
+                public final class ServiceCompat {
+                  public static void startForeground(@NonNull Service service, int id,
+                          @Nullable Notification notification, int foregroundServiceType) {}
+                }
+                """
+        )
+        .indented()
     )
 
   override fun getDetector(): Detector {
@@ -328,21 +347,60 @@ public class MyClass {
       .expectClean()
   }
 
-  companion object {
-    val serviceCompatStubs =
-      arrayOf(
-        java(
+  fun testMergedManifestHasForegroundServiceType() {
+    lint()
+      .files(
+        manifest(
+            "src/main/AndroidManifest.xml",
+            """<?xml version="1.0" encoding="utf-8"?>
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+              package="test.pkg">
+              <uses-sdk android:targetSdkVersion="34" />
+              <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+              <application>
+                  <service
+                      android:name="test.pkg.MyService"
+                      android:foregroundServiceType="location">
+                  </service>
+              </application>
+          </manifest>
+          """,
+          )
+          .indented(),
+        manifest(
+            "src/debug/AndroidManifest.xml",
+            """<?xml version="1.0" encoding="utf-8"?>
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android" xmlns:tools="http://schemas.android.com/tools" package="test.pkg">
+              <application>
+                  <service
+                      android:name="test.pkg.MyService"
+                      android:permission="MY_PERMISSION"
+                      tools:node="merge"/>
+              </application>
+          </manifest>
+          """,
+          )
+          .indented(),
+        gradle(
             """
-                package androidx.core.app;
-                import android.app.Notification;
-                import android.app.Service;
-                public final class ServiceCompat {
-                  public static void startForeground(@NonNull Service service, int id,
-                          @NonNull Notification notification, int foregroundServiceType) {}
+                android {
+                    compileSdkVersion 25
+                    defaultConfig {
+                        applicationId "test.pkg"
+                        minSdkVersion 34
+                        targetSdkVersion 34
+                        versionCode 2
+                        versionName "MyName"
+                    }
                 }
                 """
           )
-          .indented()
+          .indented(),
+        MY_SERVICE_COMPAT,
+        *serviceCompatStubs,
       )
+      .issues(ISSUE_TYPE)
+      .run()
+      .expectClean()
   }
 }
