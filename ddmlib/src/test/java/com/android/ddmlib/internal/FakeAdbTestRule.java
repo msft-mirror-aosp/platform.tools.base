@@ -28,7 +28,6 @@ import com.android.ddmlib.Client;
 import com.android.ddmlib.DdmPreferences;
 import com.android.ddmlib.IDevice;
 import com.android.ddmlib.JdwpHandshake;
-import com.android.ddmlib.idevicemanager.IDeviceManagerFactory;
 import com.android.fakeadbserver.DeviceState;
 import com.android.fakeadbserver.FakeAdbServer;
 import com.android.sdklib.AndroidApiLevel;
@@ -43,7 +42,6 @@ import java.nio.channels.SocketChannel;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Supplier;
 
 public class FakeAdbTestRule extends ExternalResource {
 
@@ -64,7 +62,6 @@ public class FakeAdbTestRule extends ExternalResource {
     private FakeAdbServer myServer;
 
     private final AndroidApiLevel sdk;
-    private Supplier<IDeviceManagerFactory> iDeviceManagerFactoryFactory;
 
     public FakeAdbTestRule() {
         this(new AndroidApiLevel(26));
@@ -82,12 +79,6 @@ public class FakeAdbTestRule extends ExternalResource {
         this(androidVersion.getAndroidApiLevel());
     }
 
-    public FakeAdbTestRule withIDeviceManagerFactoryFactory(
-            Supplier<IDeviceManagerFactory> iDeviceManagerFactoryFactory) {
-        this.iDeviceManagerFactoryFactory = iDeviceManagerFactoryFactory;
-        return this;
-    }
-
     @Override
     public void before() throws Throwable {
         FakeAdbServer.Builder builder = new FakeAdbServer.Builder();
@@ -103,9 +94,6 @@ public class FakeAdbTestRule extends ExternalResource {
 
         AdbInitOptions.Builder adbInitOptions =
                 AdbInitOptions.builder().setClientSupportEnabled(true);
-        if (iDeviceManagerFactoryFactory != null) {
-            adbInitOptions.setIDeviceManagerFactory(iDeviceManagerFactoryFactory.get());
-        }
         AndroidDebugBridge.init(adbInitOptions.build());
 
         AndroidDebugBridge bridge = AndroidDebugBridge.createBridge(getPathToAdb().toString(),
