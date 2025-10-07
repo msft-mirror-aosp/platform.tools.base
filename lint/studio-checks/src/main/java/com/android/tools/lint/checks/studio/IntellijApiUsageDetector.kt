@@ -29,6 +29,7 @@ import com.android.tools.lint.detector.api.Severity
 import com.android.tools.lint.detector.api.SourceCodeScanner
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiClassOwner
+import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiLiteralValue
 import com.intellij.psi.PsiMethod
 import com.intellij.psi.PsiNamedElement
@@ -73,7 +74,7 @@ class IntellijApiUsageDetector : Detector(), SourceCodeScanner {
     annotationInfo: AnnotationInfo,
     usageInfo: AnnotationUsageInfo,
   ) {
-    if (!isDeprecatedForRemoval(annotationInfo)) {
+    if (!isDeprecatedForRemoval(annotationInfo.annotation)) {
       return
     }
     if (isInIgnoredPackage(annotationInfo.annotation)) {
@@ -83,6 +84,9 @@ class IntellijApiUsageDetector : Detector(), SourceCodeScanner {
       return // TODO: package-level deprecations are currently too noisy due to Kotlin K1 usages.
     }
     val referenced = usageInfo.referenced
+    if (isOverrideOfNonDeprecatedMethod(context, annotationInfo, referenced)) {
+      return
+    }
     val symbolName =
       when {
         element is USimpleNameReferenceExpression -> element.identifier
@@ -142,12 +146,33 @@ class IntellijApiUsageDetector : Detector(), SourceCodeScanner {
         packageName.startsWith("java.")
   }
 
-  private fun isDeprecatedForRemoval(annotationInfo: AnnotationInfo): Boolean {
-    return when (annotationInfo.qualifiedName) {
+  private fun isDeprecatedForRemoval(annotation: UAnnotation): Boolean {
+    return when (annotation.qualifiedName) {
       "org.jetbrains.annotations.ApiStatus.ScheduledForRemoval" -> true
-      "java.lang.Deprecated" -> isTrue(annotationInfo.annotation.findAttributeValue("forRemoval"))
+      "java.lang.Deprecated" -> isTrue(annotation.findAttributeValue("forRemoval"))
       else -> false
     }
+  }
+
+  private fun isOverrideOfNonDeprecatedMethod(
+    context: JavaContext,
+    anno: AnnotationInfo,
+    declaration: PsiElement?,
+  ): Boolean {
+    // If a class is marked for removal, then it'll be deleted soon. However, clients will still
+    // be able to call methods that remain in the supertypes. This scenario comes up sometimes
+    // when JetBrains deprecates a class in the "middle" of a class hierarchy.
+    if (declaration is PsiMethod && anno.origin == AnnotationOrigin.CLASS) {
+      val superMethod = generateSequence(declaration, context.evaluator::getSuperMethod).last()
+      if (superMethod !== declaration) {
+        val superClass = superMethod.containingClass
+        val superAnnotations = context.evaluator.getAnnotations(superClass, inHierarchy = false)
+        if (superAnnotations.none(::isDeprecatedForRemoval)) {
+          return true
+        }
+      }
+    }
+    return false
   }
 
   // Checks whether [expr] evaluates to 'true', handling the corner case where [expr] is a

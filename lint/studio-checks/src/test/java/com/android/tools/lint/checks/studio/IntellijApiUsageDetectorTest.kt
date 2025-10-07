@@ -171,6 +171,80 @@ class IntellijApiUsageDetectorTest {
         """
       )
   }
+
+  @Test
+  fun testOverrideOfNonDeprecatedMethod() {
+    studioLint()
+      .files(
+        API_STATUS_ANNOTATION_STUB,
+        java(
+            """
+          package test.pkg;
+
+          public abstract class LocalFileSystem {
+            public void findFileByPath() {
+              throw new IllegalStateException("stub");
+            }
+          }
+          """
+          )
+          .indented(),
+        java(
+            """
+          package test.pkg;
+
+          @Deprecated(forRemoval = true)
+          public abstract class LocalFileSystemBase extends LocalFileSystem {
+            @Override
+            public void findFileByPath() {
+              throw new IllegalStateException("stub");
+            }
+            public void someDeprecatedMethod() {}
+          }
+          """
+          )
+          .indented(),
+        java(
+            """
+          package test.pkg;
+
+          @SuppressWarnings("ScheduledForRemoval")
+          public class TempFileSystem extends LocalFileSystemBase {
+            public static TempFileSystem getInstance() {
+              throw new IllegalStateException("stub");
+            }
+          }
+          """
+          )
+          .indented(),
+        kotlin(
+            """
+          package test.pkg
+
+          fun test() {
+            var fs = TempFileSystem.getInstance()
+            fs.someDeprecatedMethod() // ERROR.
+            fs.findFileByPath() // OK, because the super method is not deprecated.
+            (fs as LocalFileSystemBase).findFileByPath() // ERROR (for the downcast).
+          }
+          """
+          )
+          .indented(),
+      )
+      .issues(IntellijApiUsageDetector.SCHEDULED_FOR_REMOVAL)
+      .run()
+      .expect(
+        """
+        src/test/pkg/test.kt:5: Warning: Containing class LocalFileSystemBase is @Deprecated(forRemoval=true) [ScheduledForRemoval]
+          fs.someDeprecatedMethod() // ERROR.
+             ~~~~~~~~~~~~~~~~~~~~
+        src/test/pkg/test.kt:7: Warning: LocalFileSystemBase is @Deprecated(forRemoval=true) [ScheduledForRemoval]
+          (fs as LocalFileSystemBase).findFileByPath() // ERROR (for the downcast).
+                 ~~~~~~~~~~~~~~~~~~~
+        0 errors, 2 warnings
+        """
+      )
+  }
 }
 
 private val API_STATUS_ANNOTATION_STUB =
