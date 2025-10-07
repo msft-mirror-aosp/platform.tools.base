@@ -25,6 +25,7 @@ androidx/databinding/databinding-ktx
   classes.jar
   classes.jar:META-INF/
   classes.jar:META-INF/androidx.databinding_databindingKtx.version
+  classes.jar:META-INF/databindingKtx.kotlin_module
   classes.jar:androidx/
   classes.jar:androidx/databinding/
 
