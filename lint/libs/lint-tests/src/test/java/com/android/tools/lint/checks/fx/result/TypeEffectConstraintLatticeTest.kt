@@ -111,6 +111,13 @@ class TypeLatticeTest :
     Truth.assertThat(widen(x join sym, x join sym join sym1))
       .isEqualTo(fix { listOf(x, y["f", it], it["f", it]) })
   }
+
+  @Test
+  fun `repeated sub-symbol summarized`() {
+    val sym1 = fix { listOf(Type.String, y["f", it]) }
+    val sym2 = y["f", Type.String]
+    Truth.assertThat(widen(sym1, sym2)).isEqualTo(sym1)
+  }
 }
 
 class EffectLatticeTest :
@@ -188,7 +195,7 @@ internal val x = Sym.Param("x")
 internal val y = Sym.Param("y")
 internal val z = Sym.Param("z")
 
-internal fun <FX> fix(body: (Sym<FX>) -> Collection<Sym<FX>>) = Sym.Fix(body(Sym.Rec))
+internal fun <FX> fix(body: (Sym<FX>) -> Collection<Type<FX>>) = Sym.Fix(body(Sym.Rec))
 
 internal operator fun <FX> Sym<FX>.get(methodName: String, vararg args: Type<FX>): Invoke<FX> {
   // Method descriptor. Type signature unimportant for this test.

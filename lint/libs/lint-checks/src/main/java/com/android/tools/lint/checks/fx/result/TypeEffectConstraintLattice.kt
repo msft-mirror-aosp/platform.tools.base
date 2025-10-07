@@ -329,13 +329,11 @@ class TypeEffectConstraintLattice<FX>(private val fxLattice: Lattice<FX>) {
     private inline fun <T> PersistentSet<Type<FX>>.substBy(crossinline rec: (T) -> T): (T) -> T =
       { target ->
         when {
-          target is Type.Sym<*> && (target as Type.Sym<FX>) in this -> (Type.Sym.Rec as T)
           target is Type.Union<*> ->
             target.cases.joinedOver {
-              (if (it is Type.Sym<*> && (it as Type.Sym<FX>) in this) (Type.Sym.Rec as T)
-              else rec(it as T))
-                as Type<FX>
+              (if ((it as Type<FX>) in this) (Type.Sym.Rec as T) else rec(it as T)) as Type<FX>
             } as T
+          (target as Type<FX>) in this -> (Type.Sym.Rec as T)
           else -> rec(target)
         }
       }
