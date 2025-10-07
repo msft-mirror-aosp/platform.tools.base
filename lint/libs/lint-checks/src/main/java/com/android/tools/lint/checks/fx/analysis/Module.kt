@@ -155,7 +155,7 @@ internal class Module<FX : Any>(val classes: Map<ClassId, ClassBody<FX>>) {
   }
 
   class Builder<FX : Any>(private val annotationParser: AnnotationParser<FX>) {
-    private val classes = HashMap<ClassId, ClassBody<FX>>()
+    private val classes = LinkedHashMap<ClassId, ClassBody<FX>>()
     private var elapsed: Duration = Duration.Companion.ZERO
     private val overloadingCache = IdentityHashMap<PsiElement, TermEnv<Nothing>>()
 

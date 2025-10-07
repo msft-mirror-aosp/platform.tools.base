@@ -15,6 +15,7 @@
  */
 package com.android.tools.lint.checks.fx.result
 
+import com.android.tools.lint.checks.fx.utils.InterningPool
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiMethod
 import com.intellij.psi.PsiModifier
@@ -24,11 +25,26 @@ import org.jetbrains.uast.UElement
 import org.jetbrains.uast.UExpression
 
 /** An internal representation of a method descriptor, identifying the name and overloading. */
-data class MethodId(val isVirtual: Boolean, val name: String, val paramTags: List<ClassId?>) {
+class MethodId(val isVirtual: Boolean, name: String, paramTags: List<ClassId?>) {
+  val name = namePool.intern(name)
+  val paramTags = paramListPool.intern(paramTags)
+
+  override fun equals(other: Any?) =
+    other is MethodId &&
+      name === other.name &&
+      isVirtual == other.isVirtual &&
+      paramTags === other.paramTags
+
+  override fun hashCode() =
+    31 * (31 * isVirtual.hashCode() + System.identityHashCode(paramTags)) +
+      System.identityHashCode(name)
 
   override fun toString(): String = "$name${(paramTags.hashCode() % 1000).subscript()}"
 
   companion object {
+    private val namePool = InterningPool<String>()
+    private val paramListPool = InterningPool<List<ClassId?>>()
+
     operator fun invoke(method: PsiMethod): MethodId {
       val typeParams = buildSet {
         for (x in method.containingClass?.typeParameters ?: arrayOf()) x.name?.let(::add)
