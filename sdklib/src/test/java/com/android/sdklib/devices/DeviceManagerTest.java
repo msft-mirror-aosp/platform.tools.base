@@ -144,6 +144,7 @@ public class DeviceManagerTest {
                         "Wear OS Small Round",
                         "Wear OS Square",
                         "Wear OS Large Round",
+                        "Wear OS XL Round",
                         "Automotive (1024p landscape)",
                         "Automotive (1080p landscape)",
                         "Automotive (1408p landscape) with Google Play",
@@ -234,6 +235,7 @@ public class DeviceManagerTest {
                         "Wear OS Small Round",
                         "Wear OS Square",
                         "Wear OS Large Round",
+                        "Wear OS XL Round",
                         "Automotive (1024p landscape)",
                         "Automotive (1080p landscape)",
                         "Automotive (1408p landscape) with Google Play",
@@ -372,6 +374,7 @@ public class DeviceManagerTest {
                         "Wear OS Small Round",
                         "Wear OS Square",
                         "Wear OS Large Round",
+                        "Wear OS XL Round",
                         "Automotive (1024p landscape)",
                         "Automotive (1080p landscape)",
                         "Automotive (1408p landscape) with Google Play",
@@ -460,6 +463,7 @@ public class DeviceManagerTest {
                         "Wear OS Small Round",
                         "Wear OS Square",
                         "Wear OS Large Round",
+                        "Wear OS XL Round",
                         "Automotive (1024p landscape)",
                         "Automotive (1080p landscape)",
                         "Automotive (1408p landscape) with Google Play",
@@ -593,6 +597,7 @@ public class DeviceManagerTest {
                         "Wear OS Rectangular",
                         "Wear OS Square",
                         "Wear OS Large Round",
+                        "Wear OS XL Round",
                         "Automotive (1024p landscape)",
                         "Automotive (1080p landscape)",
                         "Automotive (1408p landscape) with Google Play",
@@ -681,6 +686,7 @@ public class DeviceManagerTest {
                         "Wear OS Small Round",
                         "Wear OS Square",
                         "Wear OS Large Round",
+                        "Wear OS XL Round",
                         "Automotive (1024p landscape)",
                         "Automotive (1080p landscape)",
                         "Automotive (1408p landscape) with Google Play",
@@ -1102,6 +1108,7 @@ public class DeviceManagerTest {
                             + "Warning: Unsupported device pixel_8a\n"
                             + "Warning: Unsupported device wearos_large_round\n"
                             + "Warning: Unsupported device wearos_small_round\n"
+                            + "Warning: Unsupported device wearos_xl_round\n"
                             + "Warning: Unsupported device wearos_rect\n"
                             + "Warning: Unsupported device wearos_square\n"
                             + "Warning: Unsupported device tv_4k\n"
