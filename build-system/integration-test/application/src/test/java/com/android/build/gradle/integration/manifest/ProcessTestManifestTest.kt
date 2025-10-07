@@ -507,6 +507,39 @@ class ProcessTestManifestTest {
     }
 
     @Test
+    fun testUnitTestManifestDefaultsTargetSdkToCompileSdkWithMinorRelease() {
+        project.buildFile.appendText("""
+            android {
+                testBuildType = "release"
+                compileSdk {
+                    version = release(36) {
+                        minorApiLevel = 1
+                    }
+                }
+                testOptions {
+                    unitTests {
+                        includeAndroidResources = true
+                    }
+                }
+            }
+        """.trimIndent())
+
+        val result = project.executor().run("processReleaseUnitTestManifest")
+        assertTrue { result.failedTasks.isEmpty()}
+        val manifestFile = project.file("build/intermediates/packaged_manifests/releaseUnitTest/processReleaseUnitTestManifest/AndroidManifest.xml")
+        assertThat(manifestFile).exists()
+        assertThat(manifestFile).contains("android:targetSdkVersion=\"14\"")
+
+        val result2 = project.executor()
+            .with(BooleanOption.DEFAULT_TARGET_SDK_TO_COMPILE_SDK_IF_UNSET, true)
+            .run("processReleaseUnitTestManifest")
+        assertTrue { result2.failedTasks.isEmpty()}
+        val manifestFile2 = project.file("build/intermediates/packaged_manifests/releaseUnitTest/processReleaseUnitTestManifest/AndroidManifest.xml")
+        assertThat(manifestFile2).exists()
+        assertThat(manifestFile2).contains("android:targetSdkVersion=\"36\"")
+    }
+
+    @Test
     fun testLibraryUnitTestManifestDefaultsToCompileSdkPreviewValueIfTargetSdkIsUnset() {
         project.buildFile.appendText("""
             android {
