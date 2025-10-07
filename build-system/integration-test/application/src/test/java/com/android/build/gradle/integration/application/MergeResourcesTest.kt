@@ -322,6 +322,54 @@ class MergeResourcesTest {
         }
     }
 
+
+    // Regression test for b/448768899
+    @Test
+    fun pickupNavigationXmlForIncremental() {
+        val build = project.build
+        val app = build.androidApplication()
+
+        app.files.add(
+            "src/main/res/navigation/nav_graph.xml",
+            //language=xml
+            """
+            <navigation xmlns:android="http://schemas.android.com/apk/res/android">
+            </navigation>
+            """.trimIndent()
+        )
+        build.executor.withArgument("--build-cache").run("clean", ":app:parseDebugLocalResources")
+
+        val rDef = app
+            .resolve(InternalArtifactType.LOCAL_ONLY_SYMBOL_LIST)
+            .resolve("debug/parseDebugLocalResources/R-def.txt")
+
+        assertThat(rDef).exists()
+
+        app.files.update("src/main/res/navigation/nav_graph.xml").transform {
+            """
+            <navigation xmlns:android="http://schemas.android.com/apk/res/android"
+                xmlns:app="http://schemas.android.com/apk/res-auto"
+                android:id="@+id/nav_graph"
+                app:startDestination="@id/firstFragment">
+
+                <fragment
+                    android:id="@+id/firstFragment"
+                    android:name="com.example.navigation.FirstFragment"
+                    android:label="First Fragment">
+                    <action
+                        android:id="@+id/action_firstFragment_self"
+                        app:destination="@id/firstFragment" />
+                </fragment>
+            </navigation>
+            """.trimIndent()
+        }
+
+        build.executor.withArgument("--build-cache").run(":app:parseDebugLocalResources")
+
+        assertThat(rDef).exists()
+        assertThat(rDef).contains("action_firstFragment_self")
+    }
+
     // Regression test for b/209574833
     @Test
     fun addResourceBetweenBuildsWithProductFlavor() {

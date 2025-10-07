@@ -110,7 +110,8 @@ abstract class ParseLibraryResourcesTask : NewIncrementalTask() {
         val incremental = inputChanges.isIncremental
         val changedResources = if (incremental) {
             // This method already ignores directories, only actual file changes will be reported.
-            inputChanges.getChangesInSerializableForm(inputResourcesDir).changes
+            inputChanges.getChangesInSerializableForm(inputResourcesDir).changes +
+            inputChanges.getChangesInSerializableForm(inputNavigationResourcesDir).changes
         } else {
             listOf()
         }
