@@ -1509,7 +1509,11 @@ public class ManifestMerger2SmallTest {
 
     @Test
     public void testFeatureSplitValidation() throws Exception {
-        File inputFile = TestUtils.inputAsFile("testFeatureSplitOption", "</manifest>\n");
+        File inputFile =
+                TestUtils.inputAsFile(
+                        "testFeatureSplitOption",
+                        "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                                + "<manifest package=\"com.example.test\"></manifest>\n");
         MockLog mockLog = new MockLog();
         ManifestMerger2.Invoker invoker =
                 ManifestMerger2.newMerger(
@@ -3791,17 +3795,19 @@ public class ManifestMerger2SmallTest {
 
     public static void validateFeatureName(
             ManifestMerger2.Invoker invoker, String featureName, boolean isValid) throws Exception {
-        try {
-            invoker.setFeatureName(featureName);
-        } catch (IllegalArgumentException e) {
-            if (isValid) {
-                fail("Unexpected exception throw " + e.getMessage());
-            }
-            assertTrue(e.getMessage().contains("FeatureName"));
-            return;
-        }
-        if (!isValid) {
-            fail("Expected Exception not thrown");
+        invoker.setFeatureName(featureName);
+        MergingReport report = invoker.merge();
+        if (isValid) {
+            assertThat(report.getResult()).isEqualTo(MergingReport.Result.SUCCESS);
+        } else {
+            assertThat(report.getResult()).isEqualTo(MergingReport.Result.ERROR);
+            assertThat(
+                            report.getLoggingRecords().stream()
+                                    .anyMatch(
+                                            record ->
+                                                    record.toString()
+                                                            .contains("FeatureName must follow ")))
+                    .isTrue();
         }
     }
 

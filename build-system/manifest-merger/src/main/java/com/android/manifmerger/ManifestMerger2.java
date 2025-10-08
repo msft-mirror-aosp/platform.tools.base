@@ -28,6 +28,7 @@ import static com.android.manifmerger.PlaceholderHandler.PACKAGE_NAME;
 import com.android.AndroidXConstants;
 import com.android.SdkConstants;
 import com.android.annotations.concurrency.Immutable;
+import com.android.ide.common.blame.SourceFile;
 import com.android.ide.common.xml.XmlFormatPreferences;
 import com.android.ide.common.xml.XmlFormatStyle;
 import com.android.ide.common.xml.XmlPrettyPrinter;
@@ -206,6 +207,15 @@ public class ManifestMerger2 {
         }
 
         if (!mFeatureName.isEmpty()) {
+            if (!Invoker.FEATURE_NAME_PATTERN.matcher(mFeatureName).matches()) {
+                mergingReportBuilder.addMessage(
+                        new SourceFile(mManifestFile),
+                        MergingReport.Record.Severity.ERROR,
+                        "FeatureName must follow "
+                                + Invoker.FEATURE_NAME_PATTERN.pattern()
+                                + " regex, found "
+                                + mFeatureName);
+            }
             loadedMainManifestInfo =
                     removeDynamicFeatureManifestSplitAttributeIfSpecified(
                             loadedMainManifestInfo, mergingReportBuilder);
@@ -2052,14 +2062,6 @@ public class ManifestMerger2 {
         public Invoker setFeatureName(@Nullable String featureName) {
             if (featureName != null) {
                 mFeatureName = featureName;
-                if (!FEATURE_NAME_PATTERN.matcher(mFeatureName).matches()) {
-
-                    throw new IllegalArgumentException(
-                            "FeatureName must follow "
-                                    + FEATURE_NAME_PATTERN.pattern()
-                                    + " regex, found "
-                                    + featureName);
-                }
             }
             return this;
         }
