@@ -19,6 +19,8 @@ import com.android.build.api.variant.ApplicationAndroidComponentsExtension
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
 import com.android.build.gradle.integration.common.fixture.project.plugins.ApplicationComponentCallback
+import com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
+import com.android.build.gradle.integration.common.utils.getVariantByName
 import com.google.common.truth.Truth
 import org.gradle.api.DefaultTask
 import org.gradle.api.Project
@@ -74,6 +76,20 @@ class SourceGeneratingTaskTest {
                 )
             }
         }
+    }
+
+    /** Regression test for b/446220448. */
+    @Test
+    fun `test generated Kotlin sources are included in the model`() {
+        val gradleBuild = project.build
+        val androidProject = gradleBuild.modelBuilder.fetchModels().container.getProject().androidProject!!
+        val debugArtifact = androidProject.getVariantByName("debug").mainArtifact
+        val generatedDir = gradleBuild.androidApplication().generatedDir.toFile()
+        assertThat(debugArtifact.generatedSourceFolders)
+            .containsExactly(
+                generatedDir.resolve("kotlin/generatedebugSources"),
+                generatedDir.resolve("ap_generated_sources/debug/out")
+            )
     }
 
     /** Regression test for b/446189433. */
