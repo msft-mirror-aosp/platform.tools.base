@@ -701,17 +701,25 @@ public final class Device {
 
     /** Whether the given device is an XR device */
     public static boolean isXr(@Nullable Device device) {
-        return isXrHeadset(device) || isAiGlasses(device);
+        return XR_HEADSET_TAG.getId().equals(device != null ? device.getTagId() : null)
+                || isXrHeadset(device)
+                || isAiGlasses(device)
+                || isXrGlasses(device);
     }
 
     /** Whether the given device is an XR Headset device */
     public static boolean isXrHeadset(@Nullable Device device) {
-        return XR_HEADSET_TAG.getId().equals(device != null ? device.getTagId() : null);
+        return "xr_headset_device".equals(device != null ? device.getId() : null);
     }
 
     /** Whether the given device is an AI Glasses device */
     public static boolean isAiGlasses(@Nullable Device device) {
         return AI_GLASSES_TAG.getId().equals(device != null ? device.getTagId() : null);
+    }
+
+    /** Whether the given device is an XR Glasses device */
+    public static boolean isXrGlasses(@Nullable Device device) {
+        return "xr_glasses_device".equals(device != null ? device.getId() : null);
     }
 
     /** Whether the given device appears to be a mobile device (e.g. not wear, tv, auto, etc) */

@@ -482,6 +482,7 @@ public class AvdManagerCliTest {
                         "P wearos_small_round\n",
                         "P wearos_square\n",
                         "P wearos_xl_round\n",
+                        "P xr_glasses_device\n",
                         "P xr_headset_device\n",
                         "P 2.7in QVGA\n",
                         "P 2.7in QVGA slider\n",
@@ -524,11 +525,11 @@ public class AvdManagerCliTest {
                         .join(mLogger.getMessages())
                         .contains(
                                 "P ---------\n"
-                                        + "P id: 75 or \"4in WVGA (Nexus S)\"\n"
+                                        + "P id: 76 or \"4in WVGA (Nexus S)\"\n"
                                         + "P     Name: 4\" WVGA (Nexus S)\n"
                                         + "P     OEM : Generic\n"
                                         + "P ---------\n"
-                                        + "P id: 76 or \"4.65in 720p (Galaxy Nexus)\"\n"
+                                        + "P id: 77 or \"4.65in 720p (Galaxy Nexus)\"\n"
                                         + "P     Name: 4.65\" 720p (Galaxy Nexus)\n"
                                         + "P     OEM : Generic\n"
                                         + "P ---------"));
