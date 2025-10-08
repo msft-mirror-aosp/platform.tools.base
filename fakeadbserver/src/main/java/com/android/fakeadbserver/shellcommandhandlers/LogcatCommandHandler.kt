@@ -49,6 +49,7 @@ open class LogcatCommandHandler(shellProtocolType: ShellProtocolType?) : SimpleS
             return
         }
         val format = parsedArgs[formatIndex + 1]
+        val shouldWait = !parsedArgs.contains("-d") && !parsedArgs.contains("-t")
         // TODO format the output according {@code format} argument.
         statusWriter.writeOk()
         val subscriptionResult = device.subscribeLogcatChangeHandler(
@@ -76,7 +77,7 @@ open class LogcatCommandHandler(shellProtocolType: ShellProtocolType?) : SimpleS
             for (message in subscriptionResult.mLogcatContents) {
                 shellCommandOutput.writeStdout(message)
             }
-            while (true) {
+            while (shouldWait) {
                 try {
                     if (!subscriptionResult.mQueue.take().call().mShouldContinue) {
                         break
