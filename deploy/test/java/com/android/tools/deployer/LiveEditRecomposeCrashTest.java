@@ -47,8 +47,8 @@ public class LiveEditRecomposeCrashTest extends LiveEditTestBase {
         Deploy.AgentLiveEditResponse response = sendUpdateRequest(request);
         Assert.assertEquals(Deploy.AgentLiveEditResponse.Status.OK, response.getStatus());
         // First time we Live Edit LiveEditRecomposeKt. The class get primed and we trigger
-        // a full loadStateAndCompose.
-        Assert.assertTrue(android.waitForInput("loadStateAndCompose", RETURN_VALUE_TIMEOUT));
+        // an activity restart.
+        Assert.assertTrue(android.waitForInput("Activity recreated", RETURN_VALUE_TIMEOUT));
         Deploy.AgentComposeStatusResponse composeStatusRes = sendPollRequest();
         Assert.assertEquals(
                 Deploy.AgentComposeStatusResponse.Status.OK, composeStatusRes.getStatus());
