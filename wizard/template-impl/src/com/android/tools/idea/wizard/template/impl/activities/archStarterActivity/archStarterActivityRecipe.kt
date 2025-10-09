@@ -35,6 +35,7 @@ import com.android.tools.idea.wizard.template.impl.activities.common.addAllKotli
 import com.android.tools.idea.wizard.template.impl.activities.common.addComposeDependencies
 import com.android.tools.idea.wizard.template.impl.activities.common.generateManifest
 import com.android.tools.idea.wizard.template.impl.activities.common.generateThemeStyles
+import java.io.File
 
 fun RecipeExecutor.archStarterActivityRecipe(
   moduleData: ModuleTemplateData,
@@ -101,6 +102,8 @@ fun RecipeExecutor.archStarterActivityRecipe(
   addPlatformDependency("io.coil-kt.coil3:coil-bom:3.3.0")
   addDependency("io.coil-kt.coil3:coil-compose")
   addDependency("io.coil-kt.coil3:coil-network-okhttp")
+
+  copy(File("arch-sample-activity").resolve("drawable"), resOut.resolve("drawable"))
 
   val themeName = "${moduleData.themesData.appName}Theme"
   val modelName = "${moduleData.themesData.appName}Model"
