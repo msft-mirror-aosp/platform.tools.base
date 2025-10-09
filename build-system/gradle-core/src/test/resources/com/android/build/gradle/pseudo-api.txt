@@ -1644,6 +1644,9 @@ com.android.build.gradle.internal.dsl.InternalDynamicFeatureExtension.defaultCon
 com.android.build.gradle.internal.dsl.InternalDynamicFeatureExtension.installation: void (org.gradle.api.Action<com.android.build.api.dsl.DynamicFeatureInstallation>)
 com.android.build.gradle.internal.dsl.InternalDynamicFeatureExtension.privacySandbox: void (org.gradle.api.Action<com.android.build.api.dsl.PrivacySandbox>)
 com.android.build.gradle.internal.dsl.InternalDynamicFeatureExtension.productFlavors: void (org.gradle.api.Action<org.gradle.api.NamedDomainObjectContainer<com.android.build.gradle.internal.dsl.ProductFlavor>>)
+com.android.build.gradle.internal.dsl.InternalFusedLibraryExtension implements com.android.build.api.dsl.FusedLibraryExtension
+com.android.build.gradle.internal.dsl.InternalFusedLibraryExtension.getMinSdkApiLevel: java.lang.Integer ()
+com.android.build.gradle.internal.dsl.InternalFusedLibraryExtension.minSdk: void (org.gradle.api.Action<com.android.build.api.dsl.MinSdkSpec>)
 com.android.build.gradle.internal.dsl.InternalLibraryExtension implements com.android.build.api.dsl.LibraryExtension, com.android.build.gradle.internal.dsl.InternalTestedExtension
 com.android.build.gradle.internal.dsl.InternalLibraryExtension.androidResources: void (org.gradle.api.Action<com.android.build.api.dsl.LibraryAndroidResources>)
 com.android.build.gradle.internal.dsl.InternalLibraryExtension.buildFeatures: void (org.gradle.api.Action<com.android.build.api.dsl.LibraryBuildFeatures>)

@@ -15,14 +15,24 @@
  */
 package com.android.tools.journeys.testengine.descriptor
 
-import androidx.test.tools.crawler.output.Crawl
+import com.android.tools.journeys.proto.JourneyRunEvent
+import com.android.tools.journeys.proto.JourneyRunResult
+import com.android.tools.journeys.proto.Result
+import com.android.tools.journeys.proto.RunFinished
+import com.android.tools.journeys.proto.RunStarted
+import com.android.tools.journeys.proto.Status
 import com.android.tools.journeys.testengine.JourneysExecutionContext
 import com.android.tools.journeys.testengine.JourneysTestEngineInput
-import com.android.tools.journeys.testengine.output.CrawlProcessingState
-import com.android.tools.journeys.testengine.output.ProgressReporter
-import com.android.tools.journeys.testengine.robo.RoboConfigConstants
-import com.android.tools.journeys.testengine.robo.RoboConverter
+import com.android.tools.journeys.testengine.adapter.consumer.CompositeJourneyRunEventConsumer
+import com.android.tools.journeys.testengine.adapter.consumer.JourneyRunAggregatorConsumer
+import com.android.tools.journeys.testengine.adapter.consumer.StreamingEventConsumer
+import com.android.tools.journeys.testengine.adapter.createAdapter
+import com.android.tools.journeys.testengine.robo.adapter.CrawlProcessingState
+import com.android.tools.journeys.testengine.robo.adapter.RoboResultAdapter.RoboResultAdapterConfig
+import com.android.tools.journeys.testengine.robo.platform.RoboConfigConstants
+import com.android.tools.journeys.testengine.robo.platform.RoboConverter
 import com.google.cloud.test.appcrawler.proto.Artifact
+import com.google.protobuf.util.Timestamps
 import org.junit.platform.engine.TestDescriptor
 import org.junit.platform.engine.UniqueId
 import org.junit.platform.engine.reporting.ReportEntry
@@ -44,6 +54,7 @@ class JourneyFileDescriptor(
     Node<JourneysExecutionContext> {
 
     companion object {
+
         const val SEGMENT_TYPE: String = "journeyFile"
     }
 
@@ -57,47 +68,140 @@ class JourneyFileDescriptor(
         context: JourneysExecutionContext,
         dynamicTestExecutor: Node.DynamicTestExecutor
     ): JourneysExecutionContext {
+        when (context.backendId) {
+            "ROBO" -> executeForRoboBackend(context)
+            else -> throw IllegalArgumentException("Unknown backend: ${context.backendId}")
+        }
+
+        return context
+    }
+
+    private fun executeForRoboBackend(context: JourneysExecutionContext) {
         requireNotNull(context.targetDeviceId) { "Target Device ID should not be null." }
-        val outputPath =
-            Path(
-                JourneysTestEngineInput.resultsDir.absolutePath,
-                context.targetDeviceId, journeyFile.nameWithoutExtension
-            )
-        outputPath.toFile().mkdirs()
-        val prompts = journeyFile.toPath().inputStream().use { RoboConverter.getPrompts(it) }
-        val crawlProcessingState = CrawlProcessingState(prompts)
+
         val reportEntryPublisher = { key: String, value: String ->
             if (value.isNotBlank()) {
                 context.executionListener.reportingEntryPublished(
                     this,
-                    ReportEntry.from("Journeys.$key", value)
+                    ReportEntry.from(key, value)
                 )
             }
         }
-        val reporter = ProgressReporter(crawlProcessingState, outputPath, reportEntryPublisher)
-        val artifactProcessor = { artifact: Artifact ->
-            val hostPath = outputPath.resolve(artifact.name)
-            hostPath.outputStream(StandardOpenOption.CREATE, StandardOpenOption.APPEND)
-                .use(artifact.data::writeTo)
-            if (artifact.name == RoboConfigConstants.ROBO_RESULTS_FILE_NAME) {
-                reporter.onCrawlReceived(Crawl.parseFrom(artifact.data))
-            }
-        }
-        prompts.forEachIndexed { index, prompt ->
-            reportEntryPublisher(
-                "PromptScheduled.prompt$index",
-                prompt
-            )
-        }
-        context.proxy.executeJourney(
+        val streamingConsumer = StreamingEventConsumer(reportEntryPublisher)
+
+        val outputPath = Path(
+            JourneysTestEngineInput.resultsDir.absolutePath,
             context.targetDeviceId,
-            journeyFile.toPath(),
-            artifactProcessor
-        )
-        reporter.reportSkippedPrompts()
-        crawlProcessingState.getJourneyError()?.let {
-            throw AssertionError("Journey failed: ${it.message}")
+            journeyFile.nameWithoutExtension.removeSuffix(".journey")
+        ).also { it.toFile().mkdirs() }
+        val fileConsumer = JourneyRunAggregatorConsumer(outputPath.toFile())
+
+        val compositeConsumer =
+            CompositeJourneyRunEventConsumer(listOf(streamingConsumer, fileConsumer))
+        val prompts = mutableListOf<String>()
+
+        try {
+            prompts.addAll(journeyFile.toPath().inputStream().use { RoboConverter.getPrompts(it) })
+        } catch (e: Exception) {
+            compositeConsumer.onEvent(createRunStartedEvent(context, prompts))
+            val errorResult = Result.newBuilder()
+                .setStatus(Status.ERROR)
+                .setErrorMessage(e.message)
+                .build()
+            compositeConsumer.onEvent(createRunFinishedEvent(context, errorResult))
+            throw e
         }
-        return context
+
+        compositeConsumer.onEvent(createRunStartedEvent(context, prompts))
+
+        val crawlProcessingState = CrawlProcessingState(context.journeyRunId, prompts)
+        try {
+            val adapterConfig = RoboResultAdapterConfig(
+                compositeConsumer,
+                crawlProcessingState,
+                outputPath
+            )
+            val resultAdapter = createAdapter(context.backendId, adapterConfig)
+
+            val artifactProcessor = { artifact: Artifact ->
+                val hostPath = outputPath.resolve(artifact.name)
+                hostPath.outputStream(StandardOpenOption.CREATE, StandardOpenOption.APPEND)
+                    .use(artifact.data::writeTo)
+                if (artifact.name in setOf(
+                        RoboConfigConstants.ROBO_RESULTS_FILE_NAME,
+                        RoboConfigConstants.ROBO_PRE_ACTIONS_FILE_NAME
+                    )
+                ) {
+                    resultAdapter.process(artifact.data.toByteArray())
+                }
+            }
+
+            context.proxy.executeJourney(
+                context.journeyRunId,
+                context.targetDeviceId,
+                journeyFile.toPath(),
+                artifactProcessor
+            )
+        } catch (e: Exception) {
+            val errorResult = Result.newBuilder()
+                .setStatus(Status.ERROR)
+                .setErrorMessage(e.message)
+                .build()
+            compositeConsumer.onEvent(createRunFinishedEvent(context, errorResult))
+            throw e
+        }
+
+        compositeConsumer.onEvent(
+            createRunFinishedEvent(
+                context,
+                crawlProcessingState.journeyResult
+            )
+        )
+
+        if (!crawlProcessingState.journeyResult.errorMessage.isNullOrBlank()) {
+            throw AssertionError("Journey failed: ${crawlProcessingState.journeyResult.errorMessage}")
+        }
+    }
+
+    private fun createRunStartedEvent(
+        context: JourneysExecutionContext,
+        prompts: List<String>
+    ): JourneyRunEvent {
+        val initialization =
+            JourneyRunResult.Initialization.newBuilder()
+                .setId(context.journeyRunId)
+                .addAllPrompts(prompts)
+                .setStartTimestamp(Timestamps.fromMillis(System.currentTimeMillis()))
+                .putMetadata("deviceId", context.targetDeviceId)
+
+        context.targetDeviceName?.let {
+            initialization.putMetadata("deviceName", it)
+        }
+
+        return JourneyRunEvent.newBuilder()
+            .setJourneyRunId(context.journeyRunId)
+            .setRunStarted(
+                RunStarted.newBuilder()
+                    .setInitialization(initialization.build())
+                    .build()
+            )
+            .build()
+    }
+
+    private fun createRunFinishedEvent(
+        context: JourneysExecutionContext,
+        result: Result
+    ): JourneyRunEvent {
+        return JourneyRunEvent.newBuilder()
+            .setJourneyRunId(context.journeyRunId)
+            .setRunFinished(
+                RunFinished.newBuilder()
+                    .setCompletion(
+                        JourneyRunResult.Completion.newBuilder()
+                            .setEndTimestamp(Timestamps.fromMillis(System.currentTimeMillis()))
+                            .setResult(result)
+                            .build()
+                    ).build()
+            ).build()
     }
 }

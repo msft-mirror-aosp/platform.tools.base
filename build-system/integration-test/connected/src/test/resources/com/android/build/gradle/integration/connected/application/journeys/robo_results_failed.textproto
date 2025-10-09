@@ -303,7 +303,7 @@
       }
     }
     robo_script_details: {
-      action_index : 3
+      action_index : 2
       robo_script_action_json: "{\"eventType\":\"AI_AGENT\",\"aiAgentInstructions\":{\"goal\":\"Save the first post\",\"hint\":\"If the goal describes a single action (like 'click the submit button') then the goal is complete after that single action has been taken once, as described in the list of previous actions.\",\"isFirstEvaluation\":\"false\",\"nextGoal\":\"Go to saved posts\"},\"maxNumberOfRuns\":10}"
       termination_cause: PROMPT_EVALUATION_FAILED
       model_details: {

@@ -1338,6 +1338,7 @@ public final class SdkConstants {
     public static final String ATTR_PATH_PATTERN = "pathPattern";
     public static final String ATTR_PATH_SUFFIX = "pathSuffix";
     public static final String ATTR_PATH_ADVANCED_PATTERN = "pathAdvancedPattern";
+    public static final String ATTR_PURPOSE_STRING = "purposeString";
     public static final String ATTR_FRAGMENT_ADVANCED_PATTERN = "fragmentAdvancedPattern";
     public static final String ATTR_FRAGMENT_PATTERN = "fragmentPattern";
     public static final String ATTR_FRAGMENT_PREFIX = "fragmentPrefix";
@@ -2920,6 +2921,14 @@ public final class SdkConstants {
      * be fairly recent.
      */
     public static final String GRADLE_LATEST_VERSION = "9.0.0";
+
+    /**
+     * The minimum released version of the Android Gradle Plugin for which Studio will attempt a
+     * "forced upgrade" using the AGP Upgrade Assistant. Below this version, Studio will attempt to
+     * display a diagnostic informing the user that this project's version AGP is unsupported, but
+     * at some point that might fail.
+     */
+    public static final String GRADLE_PLUGIN_MINIMUM_FORCED_UPGRADE_VERSION = "3.2.0";
 
     /**
      * The minimum released version of the Android Gradle Plugin that this version of Studio will

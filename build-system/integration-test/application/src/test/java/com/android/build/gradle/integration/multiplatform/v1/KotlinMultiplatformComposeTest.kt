@@ -56,9 +56,6 @@ class KotlinMultiplatformComposeTest {
                         sourceCompatibility = JavaVersion.VERSION_1_8
                         targetCompatibility = JavaVersion.VERSION_1_8
                     }
-                    composeOptions {
-                        useLiveLiterals = false
-                    }
                 }
                 dependencies {
                     implementation("androidx.compose.ui:ui-tooling:$COMPOSE_UI_VERSION")

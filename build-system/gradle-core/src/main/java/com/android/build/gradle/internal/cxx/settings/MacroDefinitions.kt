@@ -363,7 +363,7 @@ enum class Macro(
         cmakeProperties = listOf(CMAKE_LIBRARY_OUTPUT_DIRECTORY, CMAKE_RUNTIME_OUTPUT_DIRECTORY),
         bind = CXX_ABI_MODEL_SO_FOLDER),
     NDK_SO_REPUBLISH_DIR(
-        description = "A folder with a predictable name where final build outputs (mainly .so) are" +
+        description = "A folder with a predictable name where final build outputs (mainly .so) are " +
                 "hard linked or copied after the build completes. The purpose is so scripts " +
                 "and other external tools have a known path, with no embedded hashcode, to locate " +
                 "these files.",

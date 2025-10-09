@@ -15,12 +15,15 @@
  */
 package com.android.tools.journeys.testengine
 
-import com.android.tools.journeys.testengine.robo.Proxy
+import com.android.tools.journeys.testengine.robo.platform.Proxy
 import org.junit.platform.engine.EngineExecutionListener
 import org.junit.platform.engine.support.hierarchical.EngineExecutionContext
 
 data class JourneysExecutionContext(
+    val journeyRunId: String,
     val executionListener: EngineExecutionListener,
     val proxy: Proxy,
-    val targetDeviceId: String? = null
+    val targetDeviceId: String? = null,
+    val targetDeviceName: String? = null,
+    val backendId: String = "ROBO"
 ) : EngineExecutionContext

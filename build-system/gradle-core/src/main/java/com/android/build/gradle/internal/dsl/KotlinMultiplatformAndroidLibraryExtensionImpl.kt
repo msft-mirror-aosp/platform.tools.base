@@ -31,14 +31,9 @@ import com.android.build.api.variant.impl.KmpAndroidCompilationType
 import com.android.build.api.variant.impl.MutableAndroidVersion
 import com.android.build.gradle.internal.coverage.JacocoOptions
 import com.android.build.gradle.internal.dsl.decorator.annotation.WithLazyInitialization
-import com.android.build.gradle.internal.packaging.getDefaultDebugKeystoreLocation
-import com.android.build.gradle.internal.services.AndroidLocationsBuildService
 import com.android.build.gradle.internal.services.DslServices
-import com.android.build.gradle.internal.services.getBuildService
-import com.android.builder.core.BuilderConstants
 import com.android.builder.core.LibraryRequest
 import com.android.builder.core.ToolsRevisionUtils
-import com.android.builder.signing.DefaultSigningConfig
 import org.gradle.api.model.ObjectFactory
 import javax.inject.Inject
 
@@ -52,12 +47,6 @@ internal abstract class KotlinMultiplatformAndroidLibraryExtensionImpl @Inject c
     @Suppress("unused") // the call is injected by DslDecorator
     fun lazyInit() {
         buildToolsVersion = ToolsRevisionUtils.DEFAULT_BUILD_TOOLS_REVISION.toString()
-        DefaultSigningConfig.DebugSigningConfig(
-            getBuildService(
-                dslServices.buildServiceRegistry,
-                AndroidLocationsBuildService::class.java
-            ).get().getDefaultDebugKeystoreLocation()
-        ).copyToSigningConfig(signingConfig)
     }
 
     final override val localDependencySelection: DependencySelection = dslServices.newDecoratedInstance(
@@ -88,10 +77,6 @@ internal abstract class KotlinMultiplatformAndroidLibraryExtensionImpl @Inject c
         libraryRequests.add(LibraryRequest(name, required))
     }
 
-    var signingConfig = dslServices.newDecoratedInstance(
-        SigningConfig::class.java, BuilderConstants.DEBUG, dslServices
-    )
-
     internal abstract var _compileSdk: CompileSdkVersion?
 
     private val compileSdkDelegate = CompileSdkDelegate(
@@ -100,6 +85,10 @@ internal abstract class KotlinMultiplatformAndroidLibraryExtensionImpl @Inject c
         issueReporter = dslServices.issueReporter,
         dslServices = dslServices
     )
+
+    val compileSdkVersion: String? by lazy {
+        compileSdkDelegate.compileSdkVersion
+    }
 
     override var compileSdk: Int?
         get() = compileSdkDelegate.compileSdk

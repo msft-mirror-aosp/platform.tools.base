@@ -20,6 +20,7 @@ import org.gradle.api.Task
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.ConfigurableFileTree
 import org.gradle.api.file.Directory
+import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.api.tasks.util.PatternFilterable
@@ -43,10 +44,6 @@ class TaskProviderBasedDirectoryEntryImpl(
      * sources that would require filtering.
      */
     override val filter: PatternFilterable? = null
-    override fun asFiles(
-      projectDir: Provider<Directory>
-    ): Provider<out Collection<Directory>> =
-        directoryProvider.map { listOf(it) }
 
     override fun asFileTree(
             fileTreeCreator: () -> ConfigurableFileTree,
@@ -60,7 +57,18 @@ class TaskProviderBasedDirectoryEntryImpl(
     ): List<ConfigurableFileTree> =
         listOf(fileTreeCreator().setDir(directoryProvider).builtBy(directoryProvider))
 
-    override fun makeDependentOf(task: Task, projectDir: Provider<Directory>): Unit {
+    override fun makeDependentOf(task: Task): Unit {
         task.dependsOn(directoryProvider)
+    }
+
+    override fun addTo(projectDir: Directory, listProperty: ListProperty<Directory>) {
+        listProperty.add(directoryProvider)
+    }
+
+    override fun addTo(
+        projectDir: Directory,
+        into: ConfigurableFileCollection,
+    ) {
+        into.from(directoryProvider)
     }
 }

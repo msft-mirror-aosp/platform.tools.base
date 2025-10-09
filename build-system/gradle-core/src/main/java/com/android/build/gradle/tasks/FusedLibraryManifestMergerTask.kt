@@ -24,7 +24,7 @@ import com.android.build.gradle.internal.fusedlibrary.FusedLibraryInternalArtifa
 import com.android.build.gradle.internal.profile.ProfileAwareWorkAction
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
 import com.android.build.gradle.internal.tasks.BuildAnalyzer
-import com.android.build.gradle.internal.tasks.factory.PrivacySandboxSdkVariantTaskCreationAction
+import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationAction
 import com.android.build.gradle.internal.tasks.manifest.ManifestProviderImpl
 import com.android.build.gradle.internal.tasks.manifest.mergeManifests
 import com.android.build.gradle.internal.utils.setDisallowChanges
@@ -42,7 +42,6 @@ import org.gradle.api.tasks.CacheableTask
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.Internal
-import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
@@ -54,7 +53,7 @@ import java.io.File
  */
 @CacheableTask
 @BuildAnalyzer(primaryTaskCategory = TaskCategory.MANIFEST, secondaryTaskCategories = [TaskCategory.MERGING, TaskCategory.FUSING])
-abstract class FusedLibraryManifestMergerTask : ManifestProcessorTask() {
+abstract class FusedLibraryManifestMergerTask : ManifestProcessorGlobalTask() {
 
     @get:Internal
     abstract val libraryManifests: Property<ArtifactCollection>
@@ -152,7 +151,7 @@ abstract class FusedLibraryManifestMergerTask : ManifestProcessorTask() {
     }
 
     class CreationAction(private val creationConfig: FusedLibraryGlobalScope) :
-        PrivacySandboxSdkVariantTaskCreationAction<FusedLibraryManifestMergerTask>() {
+        GlobalTaskCreationAction<FusedLibraryManifestMergerTask>() {
 
         override val name: String
             get() = "mergeManifest"
@@ -187,7 +186,7 @@ abstract class FusedLibraryManifestMergerTask : ManifestProcessorTask() {
             )
             task.libraryManifests.set(libraryManifests)
             task.manifestPlaceholders.set(creationConfig.manifestPlaceholders)
-            task.minSdkVersion.setDisallowChanges(creationConfig.minSdk.toString())
+            task.minSdkVersion.setDisallowChanges(creationConfig.minSdkApiLevel.toString())
             task.namespace.set(creationConfig.namespace)
             task.tmpDir.setDisallowChanges(
                     creationConfig.projectLayout.buildDirectory.dir("tmp/FusedLibraryManifestMerger")

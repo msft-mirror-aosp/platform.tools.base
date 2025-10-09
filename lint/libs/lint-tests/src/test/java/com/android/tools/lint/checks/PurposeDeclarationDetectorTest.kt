@@ -19,7 +19,9 @@ import com.android.SdkConstants.FD_DATA
 import com.android.SdkConstants.FD_PLATFORMS
 import com.android.SdkConstants.FN_PERMISSION_VERSIONS
 import com.android.testutils.TestUtils
+import com.android.tools.lint.checks.PurposeDeclarationDetector.Companion.INVALID_PURPOSE_STRING
 import com.android.tools.lint.checks.PurposeDeclarationDetector.Companion.MISSING_PURPOSE
+import com.android.tools.lint.checks.infrastructure.TestMode
 import com.android.tools.lint.detector.api.Detector
 import java.io.File
 import org.intellij.lang.annotations.Language
@@ -40,6 +42,8 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
   }
 
   override fun getDetector(): Detector = PurposeDeclarationDetector()
+
+  override fun getIssues() = listOf(MISSING_PURPOSE, INVALID_PURPOSE_STRING)
 
   companion object {
     private const val MOCK_SDK_DIR = "mock-sdk"
@@ -69,8 +73,7 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
     @Language("XML")
     private val MALFORMED_MOCK_XML =
       // USE_FOO missing requiresSpecificPurposeMinTargetSdkVersion and USE_BAR missing
-      // minSdkVersion
-      // for purpose.
+      // minSdkVersion for purpose.
       """
             <?xml version="1.0" encoding="utf-8"?>
             <permissions>
@@ -99,42 +102,78 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
             </permissions>
         """
         .trimIndent()
+
+    @Language("XML")
+    private val PERMISSION_REQUIRING_PURPOSE_STRING =
+      """
+            <?xml version="1.0" encoding="utf-8"?>
+            <permissions>
+                <permission name="USE_FOO" requiresPurposeStringMinTargetSdkVersion="37" />
+            </permissions>
+        """
+        .trimIndent()
+
+    @Language("XML")
+    private val PERMISSION_REQUIRING_ALL_PURPOSES =
+      """
+            <?xml version="1.0" encoding="utf-8"?>
+            <permissions>
+                <permission name="USE_FOO" requiresSpecificPurposeMinTargetSdkVersion="37" requiresPurposeStringMinTargetSdkVersion="37">
+                    <valid-specific-purpose name="specificPurposeForSdk37+" minSdkVersion="37" />
+                </permission>
+            </permissions>
+        """
+        .trimIndent()
+
+    private const val MAX_PURPOSE_STRING_LENGTH = 300
+
+    private val LONG_PURPOSE_STRING = "L".repeat(MAX_PURPOSE_STRING_LENGTH + 1)
+    private const val VALID_PURPOSE_STRING = "My valid purpose String"
+    private const val BLANK_PURPOSE_STRING = "     "
+
+    @Language("XML")
+    private val validPurposeString =
+      xml(
+        "res/values-en-rUS/strings.xml",
+        """<resources><string name="myPurposeString">$VALID_PURPOSE_STRING</string></resources>""",
+      )
+
+    @Language("XML")
+    private val invalidLongPurposeString =
+      xml(
+        "res/values/strings.xml",
+        """<resources><string name="myPurposeString">$LONG_PURPOSE_STRING</string></resources>""",
+      )
+
+    @Language("XML")
+    private val invalidBlankPurposeString =
+      xml(
+        "res/values-en-rNZ/strings.xml",
+        """<resources><string name="myPurposeString">$BLANK_PURPOSE_STRING</string></resources>""",
+      )
   }
 
   @Test
   fun testDocumentationExampleRequestingPermissionWithNoPurposeFail() {
     lint()
       .files(
-        gradle(
-            "build.gradle",
-            """
-              android {
-                  compileSdk 37
-                  defaultConfig {
-                      minSdkVersion 30
-                      targetSdkVersion 37
-                  }
-              }
-              """,
-          )
-          .indented(),
         manifest(
             """
               <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                 xmlns:tools="http://schemas.android.com/tools"
                 package="com.example.helloworld">
+                <uses-sdk android:minSdkVersion="30" android:targetSdkVersion="37" />
                 <uses-permission android:name="USE_FOO" />
               </manifest>
               """
           )
-          .indented(),
+          .indented()
       )
       .sdkHome(setupMockSdk(DEFAULT_MOCK_XML))
-      .issues(MISSING_PURPOSE)
       .run()
       .expect(
         """
-        src/main/AndroidManifest.xml:4: Error: USE_FOO on API level(s) 37 requires one or more <specific-purpose> child tag declaration(s). Ensure declared purpose(s) cover all targeted API level(s). Possible purposes: specificPurposeForSdk37+, specificPurposeForSdk38+ [MissingPurpose]
+        AndroidManifest.xml:5: Error: USE_FOO permission is missing required purpose attributes/elements: missing one or more <specific-purpose> tags required for API level(s) 37 [MissingPurpose]
           <uses-permission android:name="USE_FOO" />
           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         1 errors, 0 warnings
@@ -146,38 +185,25 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
   fun testDocumentationExampleRequestingPermissionWithNoPurposeOnOldSdkFail() {
     lint()
       .files(
-        gradle(
-            "build.gradle",
-            """
-              android {
-                  compileSdk 38
-                  defaultConfig {
-                      minSdkVersion 30
-                      targetSdkVersion 38
-                  }
-              }
-              """,
-          )
-          .indented(),
         manifest(
             """
               <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                 xmlns:tools="http://schemas.android.com/tools"
                 package="com.example.helloworld">
+                <uses-sdk android:minSdkVersion="30" android:targetSdkVersion="38" />
                 <uses-permission android:name="USE_FOO">
                   <specific-purpose android:name="specificPurposeForSdk38+" />
                 </uses-permission>
               </manifest>
               """
           )
-          .indented(),
+          .indented()
       )
       .sdkHome(setupMockSdk(DEFAULT_MOCK_XML))
-      .issues(MISSING_PURPOSE)
       .run()
       .expect(
         """
-        src/main/AndroidManifest.xml:4: Error: USE_FOO on API level(s) 37 requires one or more <specific-purpose> child tag declaration(s). Ensure declared purpose(s) cover all targeted API level(s). Possible purposes: specificPurposeForSdk37+, specificPurposeForSdk38+ [MissingPurpose]
+        AndroidManifest.xml:5: Error: USE_FOO permission is missing required purpose attributes/elements: missing one or more <specific-purpose> tags required for API level(s) 37 [MissingPurpose]
           <uses-permission android:name="USE_FOO">
            ~~~~~~~~~~~~~~~
         1 errors, 0 warnings
@@ -186,39 +212,300 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
   }
 
   @Test
-  fun testRequestingUsesPermission23WithNoPurposeFail() {
+  fun testDocumentationExampleRequestingPermissionWithNoPurposeStringFail() {
     lint()
       .files(
-        gradle(
-            "build.gradle",
-            """
-              android {
-                  compileSdk 37
-                  defaultConfig {
-                      minSdkVersion 30
-                      targetSdkVersion 37
-                  }
-              }
-              """,
-          )
-          .indented(),
         manifest(
             """
               <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                 xmlns:tools="http://schemas.android.com/tools"
                 package="com.example.helloworld">
-                <uses-permission-sdk-23 android:name="USE_FOO" />
+                <uses-sdk android:minSdkVersion="30" android:targetSdkVersion="37" />
+                <uses-permission android:name="USE_FOO" />
+              </manifest>
+              """
+          )
+          .indented()
+      )
+      .sdkHome(setupMockSdk(PERMISSION_REQUIRING_PURPOSE_STRING))
+      .run()
+      .expect(
+        """
+        AndroidManifest.xml:5: Error: USE_FOO permission is missing required purpose attributes/elements: missing purposeString attribute [MissingPurpose]
+          <uses-permission android:name="USE_FOO" />
+          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        1 errors, 0 warnings
+        """
+      )
+  }
+
+  @Test
+  fun testRequestingPermissionWithInvalidPurposeStringAttributeTypeFail() {
+    lint()
+      .files(
+        manifest(
+            """
+              <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+                xmlns:tools="http://schemas.android.com/tools"
+                package="com.example.helloworld">
+                <uses-sdk android:minSdkVersion="30" android:targetSdkVersion="37" />
+                <uses-permission android:name="USE_FOO" android:purposeString="@array/foo_array_resource" />
+              </manifest>
+              """
+          )
+          .indented()
+      )
+      .sdkHome(setupMockSdk(PERMISSION_REQUIRING_PURPOSE_STRING))
+      .run()
+      .expect(
+        """
+        AndroidManifest.xml:5: Error: purposeString must reference a string resource (e.g. @string/my_purpose_resource) [MissingPurpose]
+          <uses-permission android:name="USE_FOO" android:purposeString="@array/foo_array_resource" />
+                                                                         ~~~~~~~~~~~~~~~~~~~~~~~~~
+        1 errors, 0 warnings
+        """
+      )
+  }
+
+  @Test
+  fun testRequestingPermissionWithLongPurposeStringFail() {
+    lint()
+      .files(
+        manifest(
+            """
+              <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+                xmlns:tools="http://schemas.android.com/tools"
+                package="com.example.helloworld">
+                <uses-sdk android:minSdkVersion="30" android:targetSdkVersion="37" />
+                <uses-permission android:name="USE_FOO" android:purposeString="@string/myPurposeString" />
               </manifest>
               """
           )
           .indented(),
+        invalidLongPurposeString,
       )
-      .sdkHome(setupMockSdk(DEFAULT_MOCK_XML))
-      .issues(MISSING_PURPOSE)
+      .sdkHome(setupMockSdk(PERMISSION_REQUIRING_PURPOSE_STRING))
       .run()
       .expect(
         """
-        src/main/AndroidManifest.xml:4: Error: USE_FOO on API level(s) 37 requires one or more <specific-purpose> child tag declaration(s). Ensure declared purpose(s) cover all targeted API level(s). Possible purposes: specificPurposeForSdk37+, specificPurposeForSdk38+ [MissingPurpose]
+        AndroidManifest.xml:5: Error: The referenced purposeString must be non-blank and have no more than 300 characters. Invalid example(s) include: myPurposeString (Default) [InvalidPurposeString]
+          <uses-permission android:name="USE_FOO" android:purposeString="@string/myPurposeString" />
+                                                                         ~~~~~~~~~~~~~~~~~~~~~~~
+        1 errors, 0 warnings
+        """
+      )
+  }
+
+  @Test
+  fun testRequestingPermissionWithBlankPurposeStringFail() {
+    lint()
+      .files(
+        manifest(
+            """
+              <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+                xmlns:tools="http://schemas.android.com/tools"
+                package="com.example.helloworld">
+                <uses-sdk android:minSdkVersion="30" android:targetSdkVersion="37" />
+                <uses-permission android:name="USE_FOO" android:purposeString="@string/myPurposeString" />
+              </manifest>
+              """
+          )
+          .indented(),
+        invalidBlankPurposeString,
+      )
+      .sdkHome(setupMockSdk(PERMISSION_REQUIRING_PURPOSE_STRING))
+      .run()
+      .expect(
+        """
+        AndroidManifest.xml:5: Error: The referenced purposeString must be non-blank and have no more than 300 characters. Invalid example(s) include: myPurposeString (en-rNZ) [InvalidPurposeString]
+          <uses-permission android:name="USE_FOO" android:purposeString="@string/myPurposeString" />
+                                                                         ~~~~~~~~~~~~~~~~~~~~~~~
+        1 errors, 0 warnings
+        """
+      )
+  }
+
+  @Test
+  fun testRequestingPermissionWithValidPurposeStringPass() {
+    lint()
+      .files(
+        manifest(
+            """
+              <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+                xmlns:tools="http://schemas.android.com/tools"
+                package="com.example.helloworld">
+                <uses-sdk android:minSdkVersion="30" android:targetSdkVersion="37" />
+                <uses-permission android:name="USE_FOO" android:purposeString="@string/myPurposeString" />
+              </manifest>
+              """
+          )
+          .indented(),
+        validPurposeString,
+      )
+      .sdkHome(setupMockSdk(PERMISSION_REQUIRING_PURPOSE_STRING))
+      .run()
+      .expectClean()
+  }
+
+  @Test
+  fun testRequestingPermissionWithNoSpecificAndPurposeStringFail() {
+    lint()
+      .files(
+        manifest(
+            """
+              <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+                xmlns:tools="http://schemas.android.com/tools"
+                package="com.example.helloworld">
+                <uses-sdk android:minSdkVersion="30" android:targetSdkVersion="37" />
+                <uses-permission android:name="USE_FOO" />
+              </manifest>
+              """
+          )
+          .indented()
+      )
+      .sdkHome(setupMockSdk(PERMISSION_REQUIRING_ALL_PURPOSES))
+      .run()
+      .expect(
+        """
+        AndroidManifest.xml:5: Error: USE_FOO permission is missing required purpose attributes/elements: missing one or more <specific-purpose> tags required for API level(s) 37; missing purposeString attribute [MissingPurpose]
+          <uses-permission android:name="USE_FOO" />
+          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        1 errors, 0 warnings
+        """
+      )
+  }
+
+  @Test
+  fun testRequestingPermissionWithNoSpecificAndInvalidPurposeStringTypeFail() {
+    lint()
+      .files(
+        manifest(
+            """
+              <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+                xmlns:tools="http://schemas.android.com/tools"
+                package="com.example.helloworld">
+                <uses-sdk android:minSdkVersion="30" android:targetSdkVersion="37" />
+                <uses-permission android:name="USE_FOO" android:purposeString="@array/my_array_resource" />
+              </manifest>
+              """
+          )
+          .indented()
+      )
+      .sdkHome(setupMockSdk(PERMISSION_REQUIRING_ALL_PURPOSES))
+      .run()
+      .expect(
+        """
+        AndroidManifest.xml:5: Error: USE_FOO permission is missing required purpose attributes/elements: missing one or more <specific-purpose> tags required for API level(s) 37 [MissingPurpose]
+          <uses-permission android:name="USE_FOO" android:purposeString="@array/my_array_resource" />
+          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        AndroidManifest.xml:5: Error: purposeString must reference a string resource (e.g. @string/my_purpose_resource) [MissingPurpose]
+          <uses-permission android:name="USE_FOO" android:purposeString="@array/my_array_resource" />
+                                                                         ~~~~~~~~~~~~~~~~~~~~~~~~
+        2 errors, 0 warnings
+        """
+      )
+  }
+
+  @Test
+  fun testRequestingPermissionWithNoSpecificAndMultipleInvalidPurposeStringsFail() {
+    lint()
+      .files(
+        manifest(
+            """
+              <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+                xmlns:tools="http://schemas.android.com/tools"
+                package="com.example.helloworld">
+                <uses-sdk android:minSdkVersion="30" android:targetSdkVersion="37" />
+                <uses-permission android:name="USE_FOO" android:purposeString="@string/myPurposeString" />
+              </manifest>
+              """
+          )
+          .indented(),
+        invalidLongPurposeString,
+        invalidBlankPurposeString,
+        validPurposeString,
+      )
+      .sdkHome(setupMockSdk(PERMISSION_REQUIRING_ALL_PURPOSES))
+      .skipTestModes(TestMode.RESOURCE_REPOSITORIES)
+      .run()
+      .expect(
+        """
+        AndroidManifest.xml:5: Error: USE_FOO permission is missing required purpose attributes/elements: missing one or more <specific-purpose> tags required for API level(s) 37 [MissingPurpose]
+          <uses-permission android:name="USE_FOO" android:purposeString="@string/myPurposeString" />
+          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        AndroidManifest.xml:5: Error: The referenced purposeString must be non-blank and have no more than 300 characters. Invalid example(s) include: myPurposeString (Default), myPurposeString (en-rNZ) [InvalidPurposeString]
+          <uses-permission android:name="USE_FOO" android:purposeString="@string/myPurposeString" />
+                                                                         ~~~~~~~~~~~~~~~~~~~~~~~
+        2 errors, 0 warnings
+        """
+      )
+  }
+
+  @Test
+  fun testRequestingPermissionWithNoSpecificAndInvalidPurposeStringOnOldSdkPass() {
+    lint()
+      .files(
+        manifest(
+            """
+              <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+                xmlns:tools="http://schemas.android.com/tools"
+                package="com.example.helloworld">
+                <uses-sdk android:minSdkVersion="30" android:targetSdkVersion="36" />
+                <uses-permission android:name="USE_FOO" />
+              </manifest>
+              """
+          )
+          .indented()
+      )
+      .sdkHome(setupMockSdk(PERMISSION_REQUIRING_ALL_PURPOSES))
+      .run()
+      .expectClean()
+  }
+
+  @Test
+  fun testRequestingPermissionWithAllPurposesPass() {
+    lint()
+      .files(
+        manifest(
+            """
+              <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+                xmlns:tools="http://schemas.android.com/tools"
+                package="com.example.helloworld">
+                <uses-sdk android:minSdkVersion="30" android:targetSdkVersion="37" />
+                <uses-permission android:name="USE_FOO" android:purposeString="@string/my_string_resource">
+                  <specific-purpose android:name="specificPurposeForSdk37+" />
+                </uses-permission>
+              </manifest>
+              """
+          )
+          .indented()
+      )
+      .sdkHome(setupMockSdk(PERMISSION_REQUIRING_ALL_PURPOSES))
+      .run()
+      .expectClean()
+  }
+
+  @Test
+  fun testRequestingUsesPermission23WithNoPurposeFail() {
+    lint()
+      .files(
+        manifest(
+            """
+              <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+                xmlns:tools="http://schemas.android.com/tools"
+                package="com.example.helloworld">
+                <uses-sdk android:minSdkVersion="30" android:targetSdkVersion="37" />
+                <uses-permission-sdk-23 android:name="USE_FOO" />
+              </manifest>
+              """
+          )
+          .indented()
+      )
+      .sdkHome(setupMockSdk(DEFAULT_MOCK_XML))
+      .run()
+      .expect(
+        """
+        AndroidManifest.xml:5: Error: USE_FOO permission is missing required purpose attributes/elements: missing one or more <specific-purpose> tags required for API level(s) 37 [MissingPurpose]
           <uses-permission-sdk-23 android:name="USE_FOO" />
           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         1 errors, 0 warnings
@@ -230,34 +517,21 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
   fun testRequestingPermissionWithSpecificPurposePass() {
     lint()
       .files(
-        gradle(
-            "build.gradle",
-            """
-              android {
-                  compileSdk 37
-                  defaultConfig {
-                      minSdkVersion 30
-                      targetSdkVersion 37
-                  }
-              }
-              """,
-          )
-          .indented(),
         manifest(
             """
               <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                 xmlns:tools="http://schemas.android.com/tools"
                 package="com.example.helloworld">
+                <uses-sdk android:minSdkVersion="30" android:targetSdkVersion="37" />
                 <uses-permission android:name="USE_FOO">
                   <specific-purpose android:name="specificPurposeForSdk37+" />
                 </uses-permission>
               </manifest>
               """
           )
-          .indented(),
+          .indented()
       )
       .sdkHome(setupMockSdk(DEFAULT_MOCK_XML))
-      .issues(MISSING_PURPOSE)
       .run()
       .expectClean()
   }
@@ -266,24 +540,12 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
   fun testRequestingPermissionWithValidAndInvalidPurposePass() {
     lint()
       .files(
-        gradle(
-            "build.gradle",
-            """
-              android {
-                  compileSdk 37
-                  defaultConfig {
-                      minSdkVersion 30
-                      targetSdkVersion 37
-                  }
-              }
-              """,
-          )
-          .indented(),
         manifest(
             """
               <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                 xmlns:tools="http://schemas.android.com/tools"
                 package="com.example.helloworld">
+                <uses-sdk android:minSdkVersion="30" android:targetSdkVersion="37" />
                 <uses-permission android:name="USE_FOO">
                   <specific-purpose android:name="invalidPurpose" />
                   <specific-purpose android:name="specificPurposeForSdk37+" />
@@ -291,10 +553,9 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
               </manifest>
               """
           )
-          .indented(),
+          .indented()
       )
       .sdkHome(setupMockSdk(DEFAULT_MOCK_XML))
-      .issues(MISSING_PURPOSE)
       .run()
       .expectClean()
   }
@@ -303,32 +564,19 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
   fun testRequestingPermissionsWithNoPurposeUsingOldTargetSdkPass() {
     lint()
       .files(
-        gradle(
-            "build.gradle",
-            """
-              android {
-                  compileSdk 37
-                  defaultConfig {
-                      minSdkVersion 30
-                      targetSdkVersion 36
-                  }
-              }
-              """,
-          )
-          .indented(),
         manifest(
             """
               <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                 xmlns:tools="http://schemas.android.com/tools"
                 package="com.example.helloworld">
+                <uses-sdk android:minSdkVersion="30" android:targetSdkVersion="36" />
                 <uses-permission android:name="USE_FOO" />
               </manifest>
               """
           )
-          .indented(),
+          .indented()
       )
       .sdkHome(setupMockSdk(DEFAULT_MOCK_XML))
-      .issues(MISSING_PURPOSE)
       .run()
       .expectClean()
   }
@@ -337,32 +585,19 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
   fun testRequestingPermissionsOnOldSdkWithNoPurposePass() {
     lint()
       .files(
-        gradle(
-            "build.gradle",
-            """
-              android {
-                  compileSdk 37
-                  defaultConfig {
-                      minSdkVersion 30
-                      targetSdkVersion 37
-                  }
-              }
-              """,
-          )
-          .indented(),
         manifest(
             """
               <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                 xmlns:tools="http://schemas.android.com/tools"
                 package="com.example.helloworld">
+                <uses-sdk android:minSdkVersion="30" android:targetSdkVersion="37" />
                 <uses-permission android:name="USE_FOO" android:maxSdkVersion="36" />
               </manifest>
               """
           )
-          .indented(),
+          .indented()
       )
       .sdkHome(setupMockSdk(DEFAULT_MOCK_XML))
-      .issues(MISSING_PURPOSE)
       .run()
       .expectClean()
   }
@@ -371,35 +606,22 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
   fun testRequestingPermissionsOnFewSdksUsingMinSdkVersionAttrWithNoPurposePass() {
     lint()
       .files(
-        gradle(
-            "build.gradle",
-            """
-              android {
-                  compileSdk 38
-                  defaultConfig {
-                      minSdkVersion 30
-                      targetSdkVersion 38
-                  }
-              }
-              """,
-          )
-          .indented(),
         // SDK 37 does not need purpose due to android:minSdkVersion="38"
         manifest(
             """
               <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                 xmlns:tools="http://schemas.android.com/tools"
                 package="com.example.helloworld">
+                <uses-sdk android:minSdkVersion="30" android:targetSdkVersion="38" />
                 <uses-permission android:name="USE_FOO" android:minSdkVersion="38">
                   <specific-purpose android:name="specificPurposeForSdk38+" />
                 </uses-permission>
               </manifest>
               """
           )
-          .indented(),
+          .indented()
       )
       .sdkHome(setupMockSdk(DEFAULT_MOCK_XML))
-      .issues(MISSING_PURPOSE)
       .run()
       .expectClean()
   }
@@ -408,35 +630,22 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
   fun testRequestingPermissionsOnFewSdksUsingMinSdkVersionWithNoPurposePass() {
     lint()
       .files(
-        gradle(
-            "build.gradle",
-            """
-              android {
-                  compileSdk 38
-                  defaultConfig {
-                      minSdkVersion 38
-                      targetSdkVersion 38
-                  }
-              }
-              """,
-          )
-          .indented(),
         // SDK 37 does not need purpose due to the app's minSdkVersion set to 38
         manifest(
             """
               <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                 xmlns:tools="http://schemas.android.com/tools"
                 package="com.example.helloworld">
+                <uses-sdk android:minSdkVersion="38" android:targetSdkVersion="38" />
                 <uses-permission android:name="USE_FOO">
                   <specific-purpose android:name="specificPurposeForSdk38+" />
                 </uses-permission>
               </manifest>
               """
           )
-          .indented(),
+          .indented()
       )
       .sdkHome(setupMockSdk(DEFAULT_MOCK_XML))
-      .issues(MISSING_PURPOSE)
       .run()
       .expectClean()
   }
@@ -445,34 +654,21 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
   fun testRequestingPermissionsWithNoPurposeUsingMalformedXmlPass() {
     lint()
       .files(
-        gradle(
-            "build.gradle",
-            """
-              android {
-                  compileSdk 37
-                  defaultConfig {
-                      minSdkVersion 30
-                      targetSdkVersion 37
-                  }
-              }
-              """,
-          )
-          .indented(),
         // SDK 37 does not need purpose due to the app's minSdkVersion set to 38
         manifest(
             """
               <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                 xmlns:tools="http://schemas.android.com/tools"
                 package="com.example.helloworld">
+                <uses-sdk android:minSdkVersion="30" android:targetSdkVersion="37" />
                 <uses-permission android:name="USE_FOO" />
                 <uses-permission android:name="USE_BAR" />
               </manifest>
               """
           )
-          .indented(),
+          .indented()
       )
       .sdkHome(setupMockSdk(MALFORMED_MOCK_XML))
-      .issues(MISSING_PURPOSE)
       .run()
       .expectClean()
   }
@@ -481,32 +677,19 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
   fun testRequestingPermissionRequiringNoPurposePass() {
     lint()
       .files(
-        gradle(
-            "build.gradle",
-            """
-              android {
-                  compileSdk 37
-                  defaultConfig {
-                      minSdkVersion 30
-                      targetSdkVersion 37
-                  }
-              }
-              """,
-          )
-          .indented(),
         manifest(
             """
               <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                 xmlns:tools="http://schemas.android.com/tools"
                 package="com.example.helloworld">
+                <uses-sdk android:minSdkVersion="30" android:targetSdkVersion="37" />
                 <uses-permission android:name="USE_BAR" />
               </manifest>
               """
           )
-          .indented(),
+          .indented()
       )
       .sdkHome(setupMockSdk(DEFAULT_MOCK_XML))
-      .issues(MISSING_PURPOSE)
       .run()
       .expectClean()
   }
@@ -515,38 +698,25 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
   fun testRequestingPermissionWithNoPurposeOn38PlusFail() {
     lint()
       .files(
-        gradle(
-            "build.gradle",
-            """
-              android {
-                  compileSdk 39
-                  defaultConfig {
-                      minSdkVersion 30
-                      targetSdkVersion 39
-                  }
-              }
-              """,
-          )
-          .indented(),
         manifest(
             """
               <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                 xmlns:tools="http://schemas.android.com/tools"
                 package="com.example.helloworld">
+                <uses-sdk android:minSdkVersion="30" android:targetSdkVersion="39" />
                 <uses-permission android:name="USE_FOO">
                   <specific-purpose android:name="specificPurposeForSdk37+" android:maxSdkVersion="37"  />
                 </uses-permission>
               </manifest>
               """
           )
-          .indented(),
+          .indented()
       )
       .sdkHome(setupMockSdk(DEFAULT_MOCK_XML))
-      .issues(MISSING_PURPOSE)
       .run()
       .expect(
         """
-        src/main/AndroidManifest.xml:4: Error: USE_FOO on API level(s) 38-39 requires one or more <specific-purpose> child tag declaration(s). Ensure declared purpose(s) cover all targeted API level(s). Possible purposes: specificPurposeForSdk37+, specificPurposeForSdk38+ [MissingPurpose]
+        AndroidManifest.xml:5: Error: USE_FOO permission is missing required purpose attributes/elements: missing one or more <specific-purpose> tags required for API level(s) 38-39 [MissingPurpose]
           <uses-permission android:name="USE_FOO">
            ~~~~~~~~~~~~~~~
         1 errors, 0 warnings
@@ -558,24 +728,12 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
   fun testRequestingPermissionWithComplexXmlFail() {
     lint()
       .files(
-        gradle(
-            "build.gradle",
-            """
-              android {
-                  compileSdk 38
-                  defaultConfig {
-                      minSdkVersion 30
-                      targetSdkVersion 38
-                  }
-              }
-              """,
-          )
-          .indented(),
         manifest(
             """
               <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                 xmlns:tools="http://schemas.android.com/tools"
                 package="com.example.helloworld">
+                <uses-sdk android:minSdkVersion="30" android:targetSdkVersion="38" />
                 <uses-permission android:name="USE_FOO">
                   <specific-purpose android:name="fooSpecificPurpose1" />
                 </uses-permission>
@@ -585,17 +743,16 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
               </manifest>
               """
           )
-          .indented(),
+          .indented()
       )
       .sdkHome(setupMockSdk(MULTI_PERMISSIONS_MOCK_XML))
-      .issues(MISSING_PURPOSE)
       .run()
       .expect(
         """
-        src/main/AndroidManifest.xml:4: Error: USE_FOO on API level(s) 38 requires one or more <specific-purpose> child tag declaration(s). Ensure declared purpose(s) cover all targeted API level(s). Possible purposes: fooSpecificPurpose1, fooSpecificPurpose2 [MissingPurpose]
+        AndroidManifest.xml:5: Error: USE_FOO permission is missing required purpose attributes/elements: missing one or more <specific-purpose> tags required for API level(s) 38 [MissingPurpose]
           <uses-permission android:name="USE_FOO">
            ~~~~~~~~~~~~~~~
-        src/main/AndroidManifest.xml:7: Error: USE_BAR on API level(s) 38 requires one or more <specific-purpose> child tag declaration(s). Ensure declared purpose(s) cover all targeted API level(s). Possible purposes: barSpecificPurpose1 [MissingPurpose]
+        AndroidManifest.xml:8: Error: USE_BAR permission is missing required purpose attributes/elements: missing one or more <specific-purpose> tags required for API level(s) 38 [MissingPurpose]
           <uses-permission android:name="USE_BAR">
            ~~~~~~~~~~~~~~~
         2 errors, 0 warnings
@@ -607,24 +764,12 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
   fun testRequestingPermissionWithComplexXmlPass() {
     lint()
       .files(
-        gradle(
-            "build.gradle",
-            """
-              android {
-                  compileSdk 38
-                  defaultConfig {
-                      minSdkVersion 30
-                      targetSdkVersion 39
-                  }
-              }
-              """,
-          )
-          .indented(),
         manifest(
             """
               <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                 xmlns:tools="http://schemas.android.com/tools"
                 package="com.example.helloworld">
+                <uses-sdk android:minSdkVersion="30" android:targetSdkVersion="39" />
                 <uses-permission android:name="USE_FOO">
                   <specific-purpose android:name="fooSpecificPurpose1" android:maxSdkVersion="37" />
                   <specific-purpose android:name="fooSpecificPurpose2" android:maxSdkVersion="38" />
@@ -635,10 +780,9 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
               </manifest>
               """
           )
-          .indented(),
+          .indented()
       )
       .sdkHome(setupMockSdk(MULTI_PERMISSIONS_MOCK_XML))
-      .issues(MISSING_PURPOSE)
       .run()
       .expectClean()
   }
@@ -647,24 +791,12 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
   fun testRequestingPermissionWithMultipleSpecificPurposeIntervalsPass() {
     lint()
       .files(
-        gradle(
-            "build.gradle",
-            """
-              android {
-                  compileSdk 37
-                  defaultConfig {
-                      minSdkVersion 30
-                      targetSdkVersion 42
-                  }
-              }
-              """,
-          )
-          .indented(),
         manifest(
             """
               <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                 xmlns:tools="http://schemas.android.com/tools"
                 package="com.example.helloworld">
+                <uses-sdk android:minSdkVersion="30" android:targetSdkVersion="42" />
                 <uses-permission android:name="USE_FOO">
                   <specific-purpose android:name="specificPurposeForSdk37+" android:minSdkVersion="37" android:maxSdkVersion="37" />
                   <specific-purpose android:name="specificPurposeForSdk37+" android:minSdkVersion="38" android:maxSdkVersion="41" />
@@ -673,10 +805,9 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
               </manifest>
               """
           )
-          .indented(),
+          .indented()
       )
       .sdkHome(setupMockSdk(DEFAULT_MOCK_XML))
-      .issues(MISSING_PURPOSE)
       .run()
       .expectClean()
   }
@@ -685,24 +816,12 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
   fun testRequestingPermissionWithMultipleOverlappedSpecificPurposeIntervalsPass() {
     lint()
       .files(
-        gradle(
-            "build.gradle",
-            """
-              android {
-                  compileSdk 37
-                  defaultConfig {
-                      minSdkVersion 30
-                      targetSdkVersion 42
-                  }
-              }
-              """,
-          )
-          .indented(),
         manifest(
             """
               <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                 xmlns:tools="http://schemas.android.com/tools"
                 package="com.example.helloworld">
+                <uses-sdk android:minSdkVersion="30" android:targetSdkVersion="42" />
                 <uses-permission android:name="USE_FOO">
                   <specific-purpose android:name="specificPurposeForSdk37+" android:maxSdkVersion="34" />
                   <specific-purpose android:name="specificPurposeForSdk37+" android:minSdkVersion="32" android:maxSdkVersion="36" />
@@ -712,10 +831,9 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
               </manifest>
               """
           )
-          .indented(),
+          .indented()
       )
       .sdkHome(setupMockSdk(DEFAULT_MOCK_XML))
-      .issues(MISSING_PURPOSE)
       .run()
       .expectClean()
   }
@@ -724,24 +842,12 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
   fun testRequestingPermissionWithMultipleSdkRangesMissingPurposeFail() {
     lint()
       .files(
-        gradle(
-            "build.gradle",
-            """
-              android {
-                  compileSdk 37
-                  defaultConfig {
-                      minSdkVersion 30
-                      targetSdkVersion 45
-                  }
-              }
-              """,
-          )
-          .indented(),
         manifest(
             """
               <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                 xmlns:tools="http://schemas.android.com/tools"
                 package="com.example.helloworld">
+                <uses-sdk android:minSdkVersion="30" android:targetSdkVersion="45" />
                 <uses-permission android:name="USE_FOO">
                   <specific-purpose android:name="specificPurposeForSdk37+" android:minSdkVersion="34" android:maxSdkVersion="36" />
                   <specific-purpose android:name="specificPurposeForSdk37+" android:minSdkVersion="39" android:maxSdkVersion="39" />
@@ -751,14 +857,13 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
               </manifest>
               """
           )
-          .indented(),
+          .indented()
       )
       .sdkHome(setupMockSdk(DEFAULT_MOCK_XML))
-      .issues(MISSING_PURPOSE)
       .run()
       .expect(
         """
-        src/main/AndroidManifest.xml:4: Error: USE_FOO on API level(s) 37-38, 40, 43-45 requires one or more <specific-purpose> child tag declaration(s). Ensure declared purpose(s) cover all targeted API level(s). Possible purposes: specificPurposeForSdk37+, specificPurposeForSdk38+ [MissingPurpose]
+        AndroidManifest.xml:5: Error: USE_FOO permission is missing required purpose attributes/elements: missing one or more <specific-purpose> tags required for API level(s) 37-38, 40, 43-45 [MissingPurpose]
           <uses-permission android:name="USE_FOO">
            ~~~~~~~~~~~~~~~
         1 errors, 0 warnings
@@ -770,32 +875,19 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
   fun testRequestingPermissionsWithEmptyXmlPermissionFile() {
     lint()
       .files(
-        gradle(
-            "build.gradle",
-            """
-              android {
-                  compileSdk 37
-                  defaultConfig {
-                      minSdkVersion 30
-                      targetSdkVersion 37
-                  }
-              }
-              """,
-          )
-          .indented(),
         manifest(
             """
               <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                 xmlns:tools="http://schemas.android.com/tools"
                 package="com.example.helloworld">
+                <uses-sdk android:minSdkVersion="30" android:targetSdkVersion="37" />
                 <uses-permission android:name="USE_FOO" />
               </manifest>
               """
           )
-          .indented(),
+          .indented()
       )
       .sdkHome(setupMockSdk(EMPTY_MOCK_XML))
-      .issues(MISSING_PURPOSE)
       .run()
       .expectClean()
   }
@@ -804,32 +896,19 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
   fun testRequestingPermissionsWithMissingXmlPermissionFile() {
     lint()
       .files(
-        gradle(
-            "build.gradle",
-            """
-              android {
-                  compileSdk 37
-                  defaultConfig {
-                      minSdkVersion 30
-                      targetSdkVersion 37
-                  }
-              }
-              """,
-          )
-          .indented(),
         manifest(
             """
               <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                 xmlns:tools="http://schemas.android.com/tools"
                 package="com.example.helloworld">
+                <uses-sdk android:minSdkVersion="30" android:targetSdkVersion="37" />
                 <uses-permission android:name="USE_FOO" />
               </manifest>
               """
           )
-          .indented(),
+          .indented()
       )
       .sdkHome(TestUtils.getSdk().toFile())
-      .issues(MISSING_PURPOSE)
       .run()
       .expectClean()
   }

@@ -51969,26 +51969,26 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "com.android.tools.layoutlib.layoutlib-resources_15.1.3",
-    pom = "repository/com/android/tools/layoutlib/layoutlib-resources/15.1.3/layoutlib-resources-15.1.3.pom",
+    name = "com.android.tools.layoutlib.layoutlib-resources_16.1.0",
+    pom = "repository/com/android/tools/layoutlib/layoutlib-resources/16.1.0/layoutlib-resources-16.1.0.pom",
     repo_root_path = "repository",
-    repo_path = "com/android/tools/layoutlib/layoutlib-resources/15.1.3",
+    repo_path = "com/android/tools/layoutlib/layoutlib-resources/16.1.0",
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
-    name = "com.android.tools.layoutlib.layoutlib-runtime_15.1.3",
-    pom = "repository/com/android/tools/layoutlib/layoutlib-runtime/15.1.3/layoutlib-runtime-15.1.3.pom",
+    name = "com.android.tools.layoutlib.layoutlib-runtime_16.1.0",
+    pom = "repository/com/android/tools/layoutlib/layoutlib-runtime/16.1.0/layoutlib-runtime-16.1.0.pom",
     repo_root_path = "repository",
-    repo_path = "com/android/tools/layoutlib/layoutlib-runtime/15.1.3",
+    repo_path = "com/android/tools/layoutlib/layoutlib-runtime/16.1.0",
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
-    name = "com.android.tools.layoutlib.layoutlib_15.1.3",
-    pom = "repository/com/android/tools/layoutlib/layoutlib/15.1.3/layoutlib-15.1.3.pom",
+    name = "com.android.tools.layoutlib.layoutlib_16.1.0",
+    pom = "repository/com/android/tools/layoutlib/layoutlib/16.1.0/layoutlib-16.1.0.pom",
     repo_root_path = "repository",
-    repo_path = "com/android/tools/layoutlib/layoutlib/15.1.3",
+    repo_path = "com/android/tools/layoutlib/layoutlib/16.1.0",
     visibility = ["//visibility:public"],
 )
 
@@ -65500,6 +65500,29 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "com.google.dagger.hilt-android-compiler_2.40.1",
+    pom = "repository/com/google/dagger/hilt-android-compiler/2.40.1/hilt-android-compiler-2.40.1.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/dagger/hilt-android-compiler/2.40.1",
+    parent = "org.sonatype.oss.oss-parent_7",
+    deps = [
+        "com.google.dagger.dagger_2.40.1",
+        "com.google.dagger.dagger-compiler_2.40.1",
+        "com.google.dagger.dagger-spi_2.40.1",
+        "com.google.code.findbugs.jsr305_3.0.1",
+        "com.google.guava.failureaccess_1.0.1",
+        "com.google.guava.guava_27.1-jre",
+        "com.squareup.javapoet_1.13.0",
+        "javax.annotation.jsr250-api_1.0",
+        "javax.inject.javax.inject_1",
+        "net.ltgt.gradle.incap.incap_0.2",
+        "org.jetbrains.kotlin.kotlin-stdlib_1.5.30",
+        "org.jetbrains.kotlinx.kotlinx-metadata-jvm_0.3.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "com.google.dagger.hilt-android-gradle-plugin_2.40.1",
     pom = "repository/com/google/dagger/hilt-android-gradle-plugin/2.40.1/hilt-android-gradle-plugin-2.40.1.pom",
     repo_root_path = "repository",
@@ -68434,12 +68457,12 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "com.openai.openai-java-client-okhttp_2.19.1",
-    pom = "repository/com/openai/openai-java-client-okhttp/2.19.1/openai-java-client-okhttp-2.19.1.pom",
+    name = "com.openai.openai-java-client-okhttp_4.0.0",
+    pom = "repository/com/openai/openai-java-client-okhttp/4.0.0/openai-java-client-okhttp-4.0.0.pom",
     repo_root_path = "repository",
-    repo_path = "com/openai/openai-java-client-okhttp/2.19.1",
+    repo_path = "com/openai/openai-java-client-okhttp/4.0.0",
     deps = [
-        "com.openai.openai-java-core_2.19.1",
+        "com.openai.openai-java-core_4.0.0",
         "org.jetbrains.kotlin.kotlin-stdlib-jdk8_1.8.0",
         "com.squareup.okhttp3.okhttp_4.12.0",
         "com.squareup.okhttp3.logging-interceptor_4.12.0",
@@ -68448,10 +68471,10 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "com.openai.openai-java-core_2.19.1",
-    pom = "repository/com/openai/openai-java-core/2.19.1/openai-java-core-2.19.1.pom",
+    name = "com.openai.openai-java-core_4.0.0",
+    pom = "repository/com/openai/openai-java-core/4.0.0/openai-java-core-4.0.0.pom",
     repo_root_path = "repository",
-    repo_path = "com/openai/openai-java-core/2.19.1",
+    repo_path = "com/openai/openai-java-core/4.0.0",
     deps = [
         "com.fasterxml.jackson.core.jackson-core_2.18.2",
         "com.fasterxml.jackson.core.jackson-databind_2.18.2",
@@ -68472,12 +68495,12 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "com.openai.openai-java_2.19.1",
-    pom = "repository/com/openai/openai-java/2.19.1/openai-java-2.19.1.pom",
+    name = "com.openai.openai-java_4.0.0",
+    pom = "repository/com/openai/openai-java/4.0.0/openai-java-4.0.0.pom",
     repo_root_path = "repository",
-    repo_path = "com/openai/openai-java/2.19.1",
+    repo_path = "com/openai/openai-java/4.0.0",
     deps = [
-        "com.openai.openai-java-client-okhttp_2.19.1",
+        "com.openai.openai-java-client-okhttp_4.0.0",
         "org.jetbrains.kotlin.kotlin-stdlib-jdk8_1.8.0",
     ],
     visibility = ["//visibility:public"],

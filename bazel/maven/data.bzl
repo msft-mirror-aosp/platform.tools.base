@@ -616,10 +616,10 @@ DATA = [
     "com.android.tools:desugar_jdk_libs_configuration_nio:2.0.4",
     "com.android.tools:desugar_jdk_libs_minimal:2.0.4",
     "com.android.tools:desugar_jdk_libs_nio:2.0.4",
-    "com.android.tools.layoutlib:layoutlib:15.1.3",
+    "com.android.tools.layoutlib:layoutlib:16.1.0",
     "com.android.tools.layoutlib:layoutlib-api:30.1.3",
-    "com.android.tools.layoutlib:layoutlib-resources:15.1.3",
-    "com.android.tools.layoutlib:layoutlib-runtime:15.1.3",
+    "com.android.tools.layoutlib:layoutlib-resources:16.1.0",
+    "com.android.tools.layoutlib:layoutlib-runtime:16.1.0",
     "com.android.tools.lint:lint-checks:26.5.0",
     "com.android.tools.lint:lint-gradle:26.3.2",
     "com.android.tools.lint:lint-gradle:26.5.0",
@@ -762,6 +762,7 @@ DATA = [
     "com.google.dagger:dagger-compiler:2.6",
     "com.google.dagger.hilt.android:com.google.dagger.hilt.android.gradle.plugin:pom:2.44.2",  # Dependency of architecture-samples
     "com.google.dagger:hilt-android:2.40.1",
+    "com.google.dagger:hilt-android-compiler:2.40.1",
     "com.google.dagger:hilt-android-gradle-plugin:2.40.1",
     "com.google.dagger:hilt-android-testing:2.44.2",  # Dependency of architecture-samples
     "com.google.dagger:hilt-compiler:2.40.1",
@@ -863,7 +864,7 @@ DATA = [
     "com.jakewharton.timber:timber:5.0.1",  # Dependency of architecture-samples
     "com.jetbrains.intellij.java:java-compiler-ant-tasks:243.22562.145",
     "com.linkedin.testbutler:test-butler-app:1.3.1",
-    "com.openai:openai-java:2.19.1",
+    "com.openai:openai-java:4.0.0",
     "com.squareup.dagger:dagger-compiler:1.2.2",
     "com.squareup:kotlinpoet:1.12.0",
     "com.squareup:kotlinpoet:2.0.0",
@@ -1268,6 +1269,7 @@ DATA = [
     "androidx.sqlite:sqlite-bundled-jvm:jar:sources:2.5.0-beta01",  # Database Inspector
     "androidx.sqlite:sqlite-jvm:jar:sources:2.5.0-beta01",  # Database Inspector
     "com.anthropic:anthropic-java-core:jar:sources:2.8.1",
+    "com.openai:openai-java-core:jar:sources:4.0.0",
     "com.squareup.okhttp3:okhttp:jar:sources:4.12.0",
     "com.squareup.okio:okio-jvm:jar:sources:3.6.0",
     "io.grpc:grpc-all:jar:sources:1.69.1",

@@ -131,24 +131,24 @@ sealed interface Type<out FX> {
 
     data class Fix<out FX>
     internal constructor(
-      val baseCases: PersistentSet<Sym<FX>>,
-      val inductiveCases: PersistentSet<Invoke<FX>>, // that refer to 1+ `Rec`
+      val baseCases: PersistentSet<Type<FX>>,
+      val inductiveCases: PersistentSet<Type<FX>>, // that refer to 1+ `Rec`
     ) : Sym<FX> {
       init {
         if (inductiveCases.isEmpty()) throw TrivialInduction(baseCases)
       }
 
-      class TrivialInduction(val cases: PersistentSet<Sym<*>>) : Exception()
+      class TrivialInduction(val cases: PersistentSet<Type<*>>) : Exception()
 
-      val cases: Sequence<Sym<FX>>
+      val cases: Sequence<Type<FX>>
         get() = baseCases.asSequence() + inductiveCases.asSequence()
 
       override fun toString() = "(μ\uD835\uDEC2. ${cases.joinToString(" ∪ ")})"
 
       companion object {
-        operator fun <FX> invoke(cases: Collection<Sym<FX>>): Fix<FX> {
+        operator fun <FX> invoke(cases: Collection<Type<FX>>): Fix<FX> {
           val (indCases, baseCases) = cases.partitionToPersistentSets { it.hasFreeRec() }
-          return Fix(baseCases, indCases.remove(Rec) as PersistentSet<Invoke<FX>>)
+          return Fix(baseCases, indCases.remove(Rec))
         }
 
         internal fun <FX> Type<FX>.hasFreeRec(): Boolean =

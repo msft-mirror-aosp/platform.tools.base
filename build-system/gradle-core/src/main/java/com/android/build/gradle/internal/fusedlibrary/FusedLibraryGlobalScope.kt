@@ -31,7 +31,7 @@ interface FusedLibraryGlobalScope {
     val experimentalProperties: MapProperty<String, Any>
     val extension: FusedLibraryExtension
     val manifestPlaceholders: MutableMap<String, String>
-    val minSdk: Int
+    val minSdkApiLevel: Int
     val namespace: String
     val projectLayout: ProjectLayout
     val services: TaskCreationServices

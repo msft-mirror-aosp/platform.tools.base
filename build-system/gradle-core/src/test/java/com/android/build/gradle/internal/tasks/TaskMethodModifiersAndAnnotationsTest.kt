@@ -127,9 +127,10 @@ class TaskMethodModifiersAndAnnotationsTest {
             BaseTask::class.java.isAssignableFrom(it)
         }
 
-        // For type 1, they need to extend one of the 3 following subtypes
+        // For type 1, they need to extend one of the following subtypes
         val type1Violations = tasksExtendingBaseTask.filter {
             !NewIncrementalTask::class.java.isAssignableFrom(it)
+                    && !NewIncrementalGlobalTask::class.java.isAssignableFrom(it)
                     && !NonIncrementalTask::class.java.isAssignableFrom(it)
                     && !NonIncrementalGlobalTask::class.java.isAssignableFrom(it)
         }.minus(
@@ -150,6 +151,7 @@ class TaskMethodModifiersAndAnnotationsTest {
 
         assertWithMessage(
             "All AGP tasks should extend ${NewIncrementalTask::class.java.simpleName}, " +
+                    "${NewIncrementalGlobalTask::class.java.simpleName}, " +
                     "${NonIncrementalTask::class.java.simpleName}, or " +
                     "${NonIncrementalGlobalTask::class.java.simpleName}. " +
                     "For AGP tasks that extend a Gradle task (e.g., Zip, Test) directly, " +
@@ -166,8 +168,6 @@ class TaskMethodModifiersAndAnnotationsTest {
                 "com.android.build.gradle.internal.tasks.SigningReportTask",
                 "com.android.build.gradle.tasks.ExternalNativeBuildJsonTask",
                 "com.android.build.gradle.tasks.ExternalNativeBuildTask",
-                "com.android.build.gradle.tasks.FusedLibraryBundle",
-                "com.android.build.gradle.tasks.FusedLibraryBundleAar",
             )
     }
 
@@ -200,8 +200,6 @@ class TaskMethodModifiersAndAnnotationsTest {
                 "com.android.build.gradle.internal.tasks.FinalizeBundleTask\$CreationForAssetPackBundleAction",
                 "com.android.build.gradle.internal.tasks.LinkManifestForAssetPackTask\$CreationForAssetPackBundleAction",
                 "com.android.build.gradle.internal.tasks.ListingFileRedirectTask\$CreationAction",
-                "com.android.build.gradle.internal.tasks.MergeJavaResourceTask\$FusedLibraryCreationAction",
-                "com.android.build.gradle.internal.tasks.MergeJavaResourceTask\$PrivacySandboxSdkCreationAction",
                 "com.android.build.gradle.internal.tasks.PackageBundleTask\$CreationForAssetPackBundleAction",
                 "com.android.build.gradle.internal.tasks.PerModuleBundleTask\$PrivacySandboxSdkCreationAction",
                 "com.android.build.gradle.internal.tasks.ProcessAssetPackManifestTask\$CreationForAssetPackBundleAction",
@@ -212,10 +210,7 @@ class TaskMethodModifiersAndAnnotationsTest {
                 "com.android.build.gradle.internal.tasks.factory.AndroidVariantTaskCreationAction",
                 "com.android.build.gradle.internal.tasks.factory.TaskConfigurationActionsTest\$createTaskAction\$creationAction$1",
                 "com.android.build.gradle.tasks.ExternalNativeBuildTaskKt\$createWorkingCxxBuildTask$1",
-                "com.android.build.gradle.tasks.FusedLibraryBundle\$CreationAction",
-                "com.android.build.gradle.tasks.FusedLibraryBundleAar\$CreationAction",
                 "com.android.build.gradle.tasks.JavaCompileCreationAction",
-                "com.android.build.gradle.tasks.PrivacySandboxSdkManifestMergerTask\$CreationAction",
                 "com.android.build.gradle.tasks.PrivacySandboxSdkMergeDexTask\$CreationAction",
             )
     }
@@ -431,9 +426,6 @@ class TaskMethodModifiersAndAnnotationsTest {
             "com.android.build.gradle.tasks.ExternalNativeBuildJsonTask.getNativeLocationsBuildService",
             "com.android.build.gradle.tasks.ExternalNativeBuildJsonTask.getSdkComponents",
             "com.android.build.gradle.tasks.ExternalNativeCleanTask.getSdkComponents",
-            "com.android.build.gradle.tasks.FusedLibraryClassesRewriteTask.getSymbolTableBuildService",
-            "com.android.build.gradle.tasks.FusedLibraryMergeResourceCompileSymbolsTask.getSymbolTableBuildService",
-            "com.android.build.gradle.tasks.FusedLibraryMergeResourcesTask.getAnalytics",
             "com.android.build.gradle.tasks.MergeResources.getAapt2ThreadPoolBuildService",
             "com.android.build.gradle.tasks.PrefabPackageTask.getSdkComponents",
             "com.android.build.gradle.tasks.PrivacySandboxSdkMergeResourcesTask.getAnalytics",

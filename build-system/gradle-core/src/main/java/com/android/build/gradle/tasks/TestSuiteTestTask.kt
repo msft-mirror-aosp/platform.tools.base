@@ -61,9 +61,11 @@ import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.testing.Test
 import org.gradle.api.tasks.testing.junitplatform.JUnitPlatformOptions
+import shadow.bundletool.com.android.utils.PathUtils
 import java.io.File
 import java.io.FileWriter
 import java.util.Properties
+import kotlin.io.path.Path
 
 @CacheableTask
 @BuildAnalyzer(primaryTaskCategory = TaskCategory.TEST)
@@ -119,6 +121,17 @@ abstract class TestSuiteTestTask: Test(), GlobalTask {
 
     @TaskAction
     override fun executeTests() {
+
+        // I suspect Gradle considers that it is the responsibility of the test engine to clean
+        // up the output folders but the fact is that we never run in incremental mode so keeping
+        // the previous runs output folders is of little to no interest, I will therefore clean
+        // up those folders, although we should check with Gradle what is their official policy.
+        // In fact, I am suspecting that since the test engine is running in a separate process,
+        // Gradle has no way to monitor what is written to these directories so it leaves it
+        // untouched at the next execution.
+        PathUtils.deleteRecursivelyIfExists(resultsDir.get().asFile.toPath())
+        PathUtils.deleteRecursivelyIfExists(coverageDir.get().asFile.toPath())
+
         val engineInputParameters: List<TestEngineInputProperty> = engineInputParameters.get(). map { inputProperty ->
             TestEngineInputProperty(
                 inputProperty.type.propertyName,

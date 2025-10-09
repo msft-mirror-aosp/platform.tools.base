@@ -22,6 +22,7 @@ import com.android.build.api.attributes.BuildTypeAttr
 import com.android.build.api.dsl.FusedLibraryExtension
 import com.android.build.gradle.internal.dependency.configureKotlinPlatformAttribute
 import com.android.build.gradle.internal.dsl.FusedLibraryExtensionImpl
+import com.android.build.gradle.internal.dsl.InternalFusedLibraryExtension
 import com.android.build.gradle.internal.fusedlibrary.FusedLibraryConstants
 import com.android.build.gradle.internal.fusedlibrary.FusedLibraryGlobalScope
 import com.android.build.gradle.internal.fusedlibrary.FusedLibraryGlobalScopeImpl
@@ -39,6 +40,7 @@ import com.android.build.gradle.internal.services.Aapt2ThreadPoolBuildService
 import com.android.build.gradle.internal.services.DslServices
 import com.android.build.gradle.internal.services.SymbolTableBuildService
 import com.android.build.gradle.internal.tasks.MergeJavaResourceTask
+import com.android.build.gradle.internal.tasks.MergeJavaResourcesGlobalTask
 import com.android.build.gradle.internal.tasks.factory.TaskCreationAction
 import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.tasks.FusedLibraryBundleAar
@@ -62,7 +64,6 @@ import org.gradle.api.artifacts.Configuration
 import org.gradle.api.artifacts.Dependency
 import org.gradle.api.artifacts.ModuleVersionIdentifier
 import org.gradle.api.attributes.Bundling
-import org.gradle.api.attributes.Bundling.BUNDLING_ATTRIBUTE
 import org.gradle.api.attributes.Category
 import org.gradle.api.attributes.Category.CATEGORY_ATTRIBUTE
 import org.gradle.api.attributes.DocsType
@@ -76,9 +77,7 @@ import org.gradle.api.publish.PublishingExtension
 import org.gradle.api.publish.maven.MavenPom
 import org.gradle.api.publish.maven.MavenPublication
 import org.gradle.build.event.BuildEventsListenerRegistry
-import org.jdom2.DocType
 import shadow.bundletool.com.android.SdkConstants
-import shadow.bundletool.com.android.tools.r8.internal.tR
 import javax.inject.Inject
 
 @Suppress("UnstableApiUsage")
@@ -97,14 +96,14 @@ class FusedLibraryPlugin @Inject constructor(
     private val variantScope: FusedLibraryGlobalScope by lazy(LazyThreadSafetyMode.NONE) {
         withProject("variantScope") { project ->
             FusedLibraryGlobalScopeImpl(
-                    project,
-                    projectServices,
-                    { extension }
+                project,
+                projectServices,
+                { extension }
             )
         }
     }
 
-    private val extension: FusedLibraryExtension by lazy(LazyThreadSafetyMode.NONE) {
+    private val extension: InternalFusedLibraryExtension by lazy(LazyThreadSafetyMode.NONE) {
         withProject("extension") { project ->
             instantiateExtension(project)
         }
@@ -122,24 +121,22 @@ class FusedLibraryPlugin @Inject constructor(
         extension
     }
 
-    private fun instantiateExtension(project: Project): FusedLibraryExtension {
+    private fun instantiateExtension(project: Project): InternalFusedLibraryExtension {
 
-        val fusedLibraryExtensionImpl = dslServices.newDecoratedInstance(
-                FusedLibraryExtensionImpl::class.java,
-                dslServices,
-        )
+        val fusedLibraryExtensionImpl =
+            FusedLibraryExtensionImpl.getDecoratedInstance(dslServices, settingsExtension)
 
         abstract class Extension(
                 val publicExtensionImpl: FusedLibraryExtensionImpl,
-        ): FusedLibraryExtension by publicExtensionImpl
+        ): InternalFusedLibraryExtension by publicExtensionImpl
 
-        return project.extensions.create(
+        project.extensions.create(
                 FusedLibraryExtension::class.java,
                 FusedLibraryConstants.EXTENSION_NAME,
-                Extension::class.java,
+            Extension::class.java,
                 fusedLibraryExtensionImpl
         )
-
+        return fusedLibraryExtensionImpl
     }
 
     private fun maybePublishToMaven(
@@ -314,7 +311,7 @@ class FusedLibraryPlugin @Inject constructor(
                         FusedLibraryBundleClasses.CreationActionClassesJar(variantScope),
                         FusedLibraryBundleClasses.CreationActionLintJar(variantScope),
                         FusedLibraryBundleAar.CreationAction(variantScope),
-                        MergeJavaResourceTask.FusedLibraryCreationAction(variantScope),
+                        MergeJavaResourcesGlobalTask.FusedLibraryCreationAction(variantScope),
                         FusedLibraryMergeResourceCompileSymbolsTask.CreationAction(variantScope),
                         FusedLibraryReportTask.CreationAction(variantScope),
                         FusedLibraryDependencyValidationTask.CreationAction(variantScope)

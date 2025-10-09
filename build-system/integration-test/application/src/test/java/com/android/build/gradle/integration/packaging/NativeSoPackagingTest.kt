@@ -647,11 +647,17 @@ class NativeSoPackagingTest {
 
     @Test
     fun testSharedObjectFilesAlignment4k() {
-        TestFileUtils.searchAndReplace(
-            appProject.file("src/main/AndroidManifest.xml"),
-            "<application ",
-            "<application android:extractNativeLibs=\"false\" "
-        )
+        TestFileUtils.appendToFile(
+            appProject.buildFile,
+            """
+                android {
+                    packaging {
+                        jniLibs {
+                            useLegacyPackaging = false
+                        }
+                    }
+                }
+            """.trimIndent())
         val flag =
             ModulePropertyKey.OptionalString.NATIVE_LIBRARY_PAGE_SIZE
         TestFileUtils.appendToFile(
@@ -673,11 +679,17 @@ class NativeSoPackagingTest {
 
     @Test
     fun testSharedObjectFilesAlignment16k() {
-        TestFileUtils.searchAndReplace(
-            appProject.file("src/main/AndroidManifest.xml"),
-            "<application ",
-            "<application android:extractNativeLibs=\"false\" "
-        )
+        TestFileUtils.appendToFile(
+            appProject.buildFile,
+            """
+                android {
+                    packaging {
+                        jniLibs {
+                            useLegacyPackaging = false
+                        }
+                    }
+                }
+            """.trimIndent())
         // The default page size is 16k
         execute("app:assembleDebug")
 
@@ -693,11 +705,6 @@ class NativeSoPackagingTest {
 
     @Test
     fun testSharedObjectFilesAlignment64k() {
-        TestFileUtils.searchAndReplace(
-            appProject.file("src/main/AndroidManifest.xml"),
-            "<application ",
-            "<application android:extractNativeLibs=\"false\" "
-        )
         val flag =
             ModulePropertyKey.OptionalString.NATIVE_LIBRARY_PAGE_SIZE
         TestFileUtils.appendToFile(
@@ -705,6 +712,11 @@ class NativeSoPackagingTest {
             """
                 android {
                     experimentalProperties["${flag.key}"]="64k"
+                    packaging {
+                        jniLibs {
+                            useLegacyPackaging = false
+                        }
+                    }
                 }
             """.trimIndent()
         )
@@ -722,11 +734,6 @@ class NativeSoPackagingTest {
 
     @Test
     fun testSharedObjectFilesInvalidAlignment() {
-        TestFileUtils.searchAndReplace(
-            appProject.file("src/main/AndroidManifest.xml"),
-            "<application ",
-            "<application android:extractNativeLibs=\"false\" "
-        )
         val flag =
             ModulePropertyKey.OptionalString.NATIVE_LIBRARY_PAGE_SIZE
         TestFileUtils.appendToFile(
@@ -734,6 +741,11 @@ class NativeSoPackagingTest {
             """
                 android {
                     experimentalProperties["${flag.key}"]="0k"
+                    packaging {
+                        jniLibs {
+                            useLegacyPackaging = false
+                        }
+                    }
                 }
             """.trimIndent()
         )

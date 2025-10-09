@@ -2012,10 +2012,7 @@ abstract class TaskManager(
                     code.forAllSources { directoryEntry ->
                         if (directoryEntry.isUserAdded && directoryEntry.isGenerated) {
                             directoryEntry.makeDependentOf(
-                                task,
-                                creationConfig.services.provider {
-                                    creationConfig.services.projectInfo.projectDirectory
-                                }
+                                task
                             )
                         }
                     }

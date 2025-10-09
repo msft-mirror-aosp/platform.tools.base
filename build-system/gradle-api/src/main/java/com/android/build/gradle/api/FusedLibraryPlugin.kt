@@ -16,7 +16,6 @@
 
 package com.android.build.gradle.api
 
-import org.gradle.api.Incubating
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 
@@ -25,7 +24,6 @@ import org.gradle.api.Project
  *
  * @suppress Do not use from production code. Only exposed for prototype.
  */
-@Incubating
 class FusedLibraryPlugin: Plugin<Project> {
     override fun apply(project: Project) {
         project.apply(mapOf("plugin" to "com.android.internal.fused-library"))

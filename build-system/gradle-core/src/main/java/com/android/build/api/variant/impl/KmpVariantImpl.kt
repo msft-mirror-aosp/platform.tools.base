@@ -56,8 +56,11 @@ import com.android.build.gradle.internal.scope.BuildFeatureValues
 import com.android.build.gradle.internal.scope.MutableTaskContainer
 import com.android.build.gradle.internal.services.TaskCreationServices
 import com.android.build.gradle.internal.services.VariantServices
-import com.android.build.gradle.internal.tasks.AarMetadataTask
+import com.android.build.gradle.internal.tasks.AarMetadataTask.Companion.DEFAULT_MIN_AGP_VERSION
+import com.android.build.gradle.internal.tasks.AarMetadataTask.Companion.DEFAULT_MIN_COMPILE_SDK_EXTENSION
+import com.android.build.gradle.internal.tasks.AarMetadataTask.Companion.DEFAULT_MIN_COMPILE_SDK_VERSION
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfig
+import com.android.build.gradle.internal.utils.parseTargetHash
 import com.android.build.gradle.internal.variant.VariantPathHelper
 import com.google.common.collect.ImmutableMap
 import com.google.wireless.android.sdk.stats.GradleBuildVariant
@@ -109,12 +112,16 @@ open class KmpVariantImpl @Inject constructor(
 
     override val aarMetadata: AarMetadata =
         internalServices.newInstance(AarMetadata::class.java).also {
-            it.minCompileSdk.set(dslInfo.aarMetadata.minCompileSdk ?: 1)
+            it.minCompileSdk.set(
+                dslInfo.aarMetadata.minCompileSdk
+                    ?: parseTargetHash(global.compileSdkHashString).apiLevel
+                    ?: DEFAULT_MIN_COMPILE_SDK_VERSION)
             it.minCompileSdkExtension.set(
-                dslInfo.aarMetadata.minCompileSdkExtension ?: AarMetadataTask.DEFAULT_MIN_COMPILE_SDK_EXTENSION
+                dslInfo.aarMetadata.minCompileSdkExtension
+                    ?: DEFAULT_MIN_COMPILE_SDK_EXTENSION
             )
             it.minAgpVersion.set(
-                dslInfo.aarMetadata.minAgpVersion ?: AarMetadataTask.DEFAULT_MIN_AGP_VERSION
+                dslInfo.aarMetadata.minAgpVersion ?: DEFAULT_MIN_AGP_VERSION
             )
         }
 

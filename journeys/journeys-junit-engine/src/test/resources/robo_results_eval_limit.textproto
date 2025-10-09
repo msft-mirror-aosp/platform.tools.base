@@ -166,6 +166,7 @@ actions: {
       id: 3
     }
   }
+  display_state_id   : 4
 }
 actions: {
   action_seq: 5

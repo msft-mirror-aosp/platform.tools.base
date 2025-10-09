@@ -22,10 +22,15 @@ import com.android.build.api.dsl.KotlinMultiplatformAndroidDeviceTest
 import com.android.build.api.dsl.MultiDexConfig
 import com.android.build.api.dsl.TargetSdkSpec
 import com.android.build.api.dsl.TargetSdkVersion
+import com.android.build.gradle.internal.dsl.decorator.annotation.WithLazyInitialization
+import com.android.build.gradle.internal.packaging.getDefaultDebugKeystoreLocation
+import com.android.build.gradle.internal.services.AndroidLocationsBuildService
 import com.android.build.gradle.internal.services.DslServices
+import com.android.build.gradle.internal.services.getBuildService
 import com.android.build.gradle.internal.utils.updateIfChanged
 import com.android.builder.core.BuilderConstants
 import com.android.builder.model.TestOptions
+import com.android.builder.signing.DefaultSigningConfig
 import com.android.utils.HelpfulEnumConverter
 import com.google.common.base.Preconditions
 import com.google.common.base.Verify
@@ -35,6 +40,17 @@ import javax.inject.Inject
 abstract class KotlinMultiplatformAndroidDeviceTestImpl @Inject constructor(
     val dslServices: DslServices,
 ): KotlinMultiplatformAndroidDeviceTest {
+
+    @WithLazyInitialization
+    @Suppress("unused") // the call is injected by DslDecorator
+    fun lazyInit() {
+        DefaultSigningConfig.DebugSigningConfig(
+            getBuildService(
+                dslServices.buildServiceRegistry,
+                AndroidLocationsBuildService::class.java
+            ).get().getDefaultDebugKeystoreLocation()
+        ).copyToSigningConfig(signing)
+    }
 
     private val executionConverter = HelpfulEnumConverter(TestOptions.Execution::class.java)
     private var _execution = TestOptions.Execution.HOST

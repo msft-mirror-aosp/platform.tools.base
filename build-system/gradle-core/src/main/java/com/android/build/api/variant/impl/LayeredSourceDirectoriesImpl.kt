@@ -26,6 +26,7 @@ import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.util.PatternFilterable
 import java.io.File
+import org.gradle.api.file.FileCollection
 
 open class LayeredSourceDirectoriesImpl(
     _name: String,
@@ -95,7 +96,7 @@ open class LayeredSourceDirectoriesImpl(
                 )
             )
             variantServices.newListPropertyForInternalUse(Directory::class.java).also {
-                it.addAll(directoryEntry)
+                directoryEntry.addTo(variantServices.projectInfo.projectDirectory, it)
                 directories.add(it)
                 if (isStatic) {
                     staticDirectories.add(it)
@@ -104,22 +105,12 @@ open class LayeredSourceDirectoriesImpl(
         }
     }
 
-    internal fun ListProperty<Directory>.addAll(directoryEntry: DirectoryEntry) {
-        addAll(
-            directoryEntry.asFiles(
-                variantServices.provider {
-                    variantServices.projectInfo.projectDirectory
-                }
-            )
-        )
-    }
-
     internal fun addStaticSources(sources: DirectoryEntries) {
         variantSources.add(sources)
 
         variantServices.newListPropertyForInternalUse(Directory::class.java).also {
             sources.directoryEntries.forEach { directoryEntry ->
-                it.addAll(directoryEntry)
+                directoryEntry.addTo(variantServices.projectInfo.projectDirectory, it)
             }
             directories.add(it)
             staticDirectories.add(it)
@@ -146,63 +137,34 @@ open class LayeredSourceDirectoriesImpl(
     /**
      * Returns the list of local source directories matching the given [filter]
      */
-    fun getVariantSourcesWithFilter(filter: (DirectoryEntry) -> Boolean = { _ -> true } ): Map<String, Provider<out Collection<Directory>>> =
-        getVariantSources().associate { directoryEntries ->
-            val projectDir = variantServices.provider {
-                variantServices.projectInfo.projectDirectory
-            }
+    fun getVariantSourcesWithFilter(filter: (DirectoryEntry) -> Boolean = { _ -> true }): Map<String, FileCollection> {
+        val projectDir = variantServices.projectInfo.projectDirectory
+        return getVariantSources().associate { directoryEntries ->
+            val fileCollection = variantServices.fileCollection()
 
-            // each [DirectoryEntries] contains a list of [DirectoryEntry] but we need
-            // to return a [Provider] on a single collection of [Directory].
-            //
-            // In order to achieve that, basically, use [Provider]'s zip method to zip
-            // up providers together and flatten the list of list into just one list.
-            var currentZippedValue: Provider<out Collection<Directory>>? = null
             directoryEntries.directoryEntries
                 .filter(filter)
-                .forEach {
-                    currentZippedValue = if (currentZippedValue == null) {
-                        it.asFiles(projectDir)
-                    } else {
-                        currentZippedValue.zip(it.asFiles(projectDir)) {
-                                d1: Collection<Directory>, d2: Collection<Directory> ->
-                            mutableListOf<Directory>().also { result ->
-                                result.addAll(d1)
-                                result.addAll(d2)
-                            }
-                        }
-                    }
+                .forEach { directoryEntry ->
+                    directoryEntry.addTo(projectDir, fileCollection)
                 }
-            directoryEntries.name to (currentZippedValue ?:
-                variantServices.provider { listOf() })
+
+            directoryEntries.name to fileCollection
         }
+    }
 
     /*
      * Internal API that can only be used by the model.
      */
-    override fun variantSourcesForModel(filter: (DirectoryEntry) -> Boolean ): List<File> {
-        val files = mutableListOf<File>()
+    override fun variantSourcesForModel(filter: (DirectoryEntry) -> Boolean ): Collection<File> {
+        val fileCollection = variantServices.fileCollection()
         variantSources.get()
             .map { it.directoryEntries}
             .flatten()
             .filter { filter.invoke(it) }
             .forEach {
-                if (it is TaskProviderBasedDirectoryEntryImpl) {
-                    files.add(it.directoryProvider.get().asFile)
-                } else {
-                    val asDirectoriesProperty = it.asFiles(
-                        variantServices.provider {
-                            variantServices.projectInfo.projectDirectory
-                        }
-                    )
-                    if (asDirectoriesProperty.isPresent) {
-                        files.addAll(asDirectoriesProperty.get().map { directory ->
-                            directory.asFile
-                        })
-                    }
-                }
+                it.addTo(variantServices.projectInfo.projectDirectory, fileCollection)
             }
-        return files
+        return fileCollection.files
     }
 
     /**
@@ -217,7 +179,7 @@ open class LayeredSourceDirectoriesImpl(
      */
     fun getAscendingOrderAssetSets(
         aaptEnv: Provider<String>
-    ): Provider<List<Provider<AssetSet>>> {
+    ): Provider<List<AssetSet>> {
 
         return variantSources.map { allDirectories ->
             allDirectories.map { directoryEntries ->
@@ -225,14 +187,10 @@ open class LayeredSourceDirectoriesImpl(
                     BuilderConstants.MAIN else directoryEntries.name
 
                 directoryEntries.directoryEntries.map { directoryEntry ->
-                    directoryEntry.asFiles(
-                        variantServices.provider {
-                            variantServices.projectInfo.projectDirectory
-                        }
-                    ).map {
-                        AssetSet(assetName, aaptEnv.orNull).also { assetSet ->
-                            assetSet.addSources(it.map { it.asFile })
-                        }
+                    val fileCollection = variantServices.fileCollection()
+                    directoryEntry.addTo(variantServices.projectInfo.projectDirectory, fileCollection)
+                    AssetSet(assetName, aaptEnv.orNull).also { assetSet ->
+                        assetSet.addSources(fileCollection.files)
                     }
                 }
             }.flatten()

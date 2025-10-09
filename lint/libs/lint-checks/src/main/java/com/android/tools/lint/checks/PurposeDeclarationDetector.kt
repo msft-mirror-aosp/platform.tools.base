@@ -19,18 +19,24 @@ import com.android.SdkConstants.ANDROID_URI
 import com.android.SdkConstants.ATTR_MAX_SDK_VERSION
 import com.android.SdkConstants.ATTR_MIN_SDK_VERSION
 import com.android.SdkConstants.ATTR_NAME
+import com.android.SdkConstants.ATTR_PURPOSE_STRING
 import com.android.SdkConstants.TAG_PERMISSION
 import com.android.SdkConstants.TAG_SPECIFIC_PURPOSE
 import com.android.SdkConstants.TAG_USES_PERMISSION
 import com.android.SdkConstants.TAG_USES_PERMISSION_SDK_23
 import com.android.SdkConstants.TAG_VALID_SPECIFIC_PURPOSE
+import com.android.ide.common.rendering.api.ResourceNamespace
 import com.android.ide.common.util.toPathString
+import com.android.resources.ResourceType
+import com.android.resources.ResourceUrl
 import com.android.sdklib.IAndroidTarget.PERMISSION_VERSIONS
+import com.android.tools.lint.client.api.ResourceRepositoryScope
 import com.android.tools.lint.detector.api.Category
 import com.android.tools.lint.detector.api.Context
 import com.android.tools.lint.detector.api.Detector
 import com.android.tools.lint.detector.api.Implementation
 import com.android.tools.lint.detector.api.Issue
+import com.android.tools.lint.detector.api.LocationType
 import com.android.tools.lint.detector.api.Project
 import com.android.tools.lint.detector.api.Scope
 import com.android.tools.lint.detector.api.Severity
@@ -48,8 +54,8 @@ import org.xmlpull.v1.XmlPullParser.START_TAG
 
 /**
  * The detector flags cases where an app requests a permission that requires purpose but fails to
- * provide one in the manifest. The check applies this rule across all appropriate SDK versions by
- * taking into account the app's targetSdkVersion and various other parameters.
+ * provide appropriate purpose elements. The check applies this rule across all appropriate SDK
+ * versions by taking into account the app's targetSdkVersion and various other parameters.
  */
 class PurposeDeclarationDetector : Detector(), XmlScanner {
   override fun checkMergedProject(context: Context) {
@@ -67,8 +73,8 @@ class PurposeDeclarationDetector : Detector(), XmlScanner {
   }
 
   /**
-   * Evaluate whether the permission requires purposes. If yes, ensure valid purpose(s) are declared
-   * for all applicable SDKs.
+   * Evaluate whether the permission requires purposes. If yes, ensure appropriate purpose elements
+   * are declared for all applicable SDKs.
    */
   private fun evaluatePermissionRequest(context: Context, element: Element) {
     // Check if permission requires purpose.
@@ -85,54 +91,74 @@ class PurposeDeclarationDetector : Detector(), XmlScanner {
     val usesPermissionMaxSdkVersion =
       element.getAttributeNS(ANDROID_URI, ATTR_MAX_SDK_VERSION).toIntOrNull()
         ?: MAX_SDK_VERSION_DEFAULT
+    val usesPermissionSdkRange = SdkRange(usesPermissionMinSdkVersion, usesPermissionMaxSdkVersion)
 
-    // Identify target SDK range for which <specific-purpose> validation is required and evaluate.
-    val minSpecificPurposeSdk =
-      maxOf(
-        permissionInfo.requiresSpecificPurposeSdkRange.min,
-        projectMinSdk,
-        usesPermissionMinSdkVersion,
+    val missingPurposeErrorMessages = mutableListOf<String>()
+
+    // Validate specific purpose declarations.
+    val specificPurposeError =
+      validateDeclaredPurposes(
+        element,
+        permissionInfo.validSpecificPurposes,
+        TAG_SPECIFIC_PURPOSE,
+        computeRequiresPurposeSdkRange(
+          permissionInfo.requiresSpecificPurposeSdkRange,
+          projectMinSdk,
+          projectTargetSdk,
+          usesPermissionSdkRange,
+        ),
       )
-    val maxSpecificPurposeSdk =
-      minOf(
-        permissionInfo.requiresSpecificPurposeSdkRange.max,
-        projectTargetSdk,
-        usesPermissionMaxSdkVersion,
-      )
-    val requiredRange = SdkRange(minSpecificPurposeSdk, maxSpecificPurposeSdk)
-    validateDeclaredPurposes(
-      context,
-      permissionName,
-      element,
-      permissionInfo.validSpecificPurposes,
-      TAG_SPECIFIC_PURPOSE,
-      requiredRange,
-    )
+    specificPurposeError?.let { missingPurposeErrorMessages.add(it) }
+
+    // Validate purpose string declaration (only required for apps)
+    if (!context.mainProject.isLibrary) {
+      val purposeStringError =
+        validatePurposeResourceString(
+          context,
+          element,
+          computeRequiresPurposeSdkRange(
+            permissionInfo.requiresPurposeStringSdkRange,
+            projectMinSdk,
+            projectTargetSdk,
+            usesPermissionSdkRange,
+          ),
+        )
+      purposeStringError?.let { missingPurposeErrorMessages.add(it) }
+    }
+
+    // Combine all error messages for MISSING_PURPOSE issue and report as one.
+    reportMissingPurposeErrors(context, permissionName, element, missingPurposeErrorMessages)
+  }
+
+  private fun computeRequiresPurposeSdkRange(
+    purposeTypeSdkRange: SdkRange,
+    projectMinSdk: Int,
+    projectTargetSdk: Int,
+    usesPermissionSdkRange: SdkRange,
+  ): SdkRange {
+    val minPurposeStringSdk =
+      maxOf(purposeTypeSdkRange.min, projectMinSdk, usesPermissionSdkRange.min)
+    val maxPurposeStringSdk =
+      minOf(purposeTypeSdkRange.max, projectTargetSdk, usesPermissionSdkRange.max)
+    return SdkRange(minPurposeStringSdk, maxPurposeStringSdk)
   }
 
   private fun validateDeclaredPurposes(
-    context: Context,
-    permissionName: String,
     permissionElement: Element,
     possiblePurposes: Map<String, SdkRange>,
     purposeTag: String,
     requiredRange: SdkRange,
-  ) {
+  ): String? {
     // No SDK range targeted by this app requires a purpose to be declared for the permission.
     if (requiredRange.min > requiredRange.max) {
-      return
+      return null
     }
 
     val purposeElements = getSubTagsByName(permissionElement, purposeTag).toList()
 
     // Handle the most common case: no purposes are declared at all.
     if (purposeElements.isEmpty()) {
-      val message =
-        "`$permissionName` on API level(s) ${formatRange(requiredRange)} requires one or more <$purposeTag> child tag declaration(s). " +
-          "Ensure declared purpose(s) cover all targeted API level(s). " +
-          "Possible purposes: ${possiblePurposes.keys.joinToString()}"
-      context.report(MISSING_PURPOSE, context.getLocation(permissionElement), message)
-      return
+      return "missing one or more `<$purposeTag>` tags required for API level(s) ${formatRange(requiredRange)}"
     }
 
     // Calculate the effective SDK range for each declared purpose and merge them into a set of
@@ -148,12 +174,75 @@ class PurposeDeclarationDetector : Detector(), XmlScanner {
     // it.
     if (uncoveredRanges.isNotEmpty()) {
       val formattedUncoveredRanges = uncoveredRanges.joinToString { formatRange(it) }
-      val message =
-        "`$permissionName` on API level(s) $formattedUncoveredRanges requires one or more <$purposeTag> child tag declaration(s). " +
-          "Ensure declared purpose(s) cover all targeted API level(s). " +
-          "Possible purposes: ${possiblePurposes.keys.joinToString()}"
-      context.report(MISSING_PURPOSE, context.getLocation(permissionElement), message)
+      return "missing one or more `<$purposeTag>` tags required for API level(s) $formattedUncoveredRanges"
     }
+
+    return null
+  }
+
+  private fun validatePurposeResourceString(
+    context: Context,
+    permissionElement: Element,
+    requiredRange: SdkRange,
+  ): String? {
+    // No SDK range targeted by this app requires a purpose string resource to be declared.
+    if (requiredRange.min > requiredRange.max) {
+      return null
+    }
+
+    val purposeStringAttr = permissionElement.getAttributeNodeNS(ANDROID_URI, ATTR_PURPOSE_STRING)
+    if (purposeStringAttr?.value.isNullOrEmpty()) {
+      return "missing `purposeString` attribute"
+    }
+
+    val resourceUrl = ResourceUrl.parse(purposeStringAttr.value)
+    if (resourceUrl == null || resourceUrl.type != ResourceType.STRING) {
+
+      // More user-friendly to highlight the incorrectly defined attribute rather than report it as
+      // part of the generic error message referencing <uses-permission>. So, we report instead of
+      // returning the error message.
+      context.report(
+        MISSING_PURPOSE,
+        context.getLocation(purposeStringAttr, LocationType.VALUE),
+        "`purposeString` must reference a string resource (e.g. `@string/my_purpose_resource`)",
+      )
+      return null
+    }
+
+    // If a string resource is defined, the content can be validated.
+    val resources =
+      context.client.getResources(context.mainProject, ResourceRepositoryScope.ALL_DEPENDENCIES)
+    val purposeResources =
+      resources
+        .getResources(ResourceNamespace.TODO(), resourceUrl.type, resourceUrl.name)
+        // Set a cap on number of resources that are analyzed to avoid potential perf issues.
+        .take(MAX_PURPOSE_STRING_RESOURCES_TO_CHECK)
+
+    val failingResourceNames = mutableListOf<String>()
+    for (resource in purposeResources) {
+      val purposeString = resource.resourceValue?.value ?: continue
+
+      if (purposeString.isBlank() || purposeString.length > MAX_PURPOSE_STRING_LENGTH) {
+        val qualifierString = resource.configuration.getQualifierString()
+        failingResourceNames.add("${resourceUrl.name} (${qualifierString.ifEmpty { "Default" }})")
+      }
+
+      if (failingResourceNames.size == MAX_PURPOSE_STRING_TO_REPORT) {
+        break
+      }
+    }
+
+    if (failingResourceNames.isNotEmpty()) {
+      context.report(
+        INVALID_PURPOSE_STRING,
+        context.getLocation(purposeStringAttr, LocationType.VALUE),
+        "The referenced `purposeString` must be non-blank and have no more than " +
+          "$MAX_PURPOSE_STRING_LENGTH characters. Invalid example(s) include: " +
+          failingResourceNames.joinToString(", "),
+      )
+    }
+
+    return null
   }
 
   /** Calculates the union of all valid SDK ranges from the declared purpose elements. */
@@ -241,14 +330,37 @@ class PurposeDeclarationDetector : Detector(), XmlScanner {
     return if (range.min == range.max) "${range.min}" else "${range.min}-${range.max}"
   }
 
+  private fun reportMissingPurposeErrors(
+    context: Context,
+    permissionName: String,
+    permissionElement: Element,
+    missingPurposeErrorMessages: List<String>,
+  ) {
+    if (missingPurposeErrorMessages.isEmpty()) {
+      return
+    }
+
+    val detailsString = missingPurposeErrorMessages.joinToString(separator = "; ")
+    val finalMessage =
+      "$permissionName permission is missing required purpose attributes/elements: $detailsString"
+
+    context.report(MISSING_PURPOSE, context.getLocation(permissionElement), finalMessage)
+  }
+
   companion object {
     private const val ATTR_MIN_SDK = "minSdkVersion"
     private const val ATTR_MAX_SDK = "maxSdkVersion"
     private const val ATTR_REQUIRES_SPECIFIC_PURPOSE_MIN =
       "requiresSpecificPurposeMinTargetSdkVersion"
     private const val ATTR_REQUIRES_SPECIFIC_PURPOSE_MAX = "requiresSpecificPurposeMaxSdkVersion"
+    private const val ATTR_REQUIRES_PURPOSE_STRING_MIN = "requiresPurposeStringMinTargetSdkVersion"
+    private const val ATTR_REQUIRES_PURPOSE_STRING_MAX = "requiresPurposeStringMaxSdkVersion"
     private const val MIN_SDK_VERSION_DEFAULT = 1
     private const val ANDROID_C_SDK_VERSION = 37
+    private const val MAX_PURPOSE_STRING_RESOURCES_TO_CHECK = 100
+    private const val MAX_PURPOSE_STRING_TO_REPORT = 2
+    private const val MAX_PURPOSE_STRING_LENGTH = 300
+    private const val RECOMMENDED_PURPOSE_STRING_LENGTH = 150
 
     // For convenience to avoid overflow errors with interval math when adding 1
     private const val MAX_SDK_VERSION_DEFAULT = 999999
@@ -263,11 +375,43 @@ class PurposeDeclarationDetector : Detector(), XmlScanner {
         briefDescription = "Missing purpose for permission",
         explanation =
           """
-              Some permissions require a valid `<purpose>` child element(s) to be included under \
-              the `<uses-permission>` declaration.
+              When requesting a permission that requires purpose declaration, appropriate tags \
+              and/or attributes must be defined based on the required purpose types. Failure to do \
+              so will lead to unexpected runtime issues.
+
+              Specific Purpose: If a permission requires a specific purpose, at least one \
+              `<specific-purpose>` child tag must be declared. This tag must use appropriate \
+              preset valid purpose string found in the permission's documentation. The declared \
+              purpose(s) must cover all API levels for which the permission requires purpose.
+
+              Purpose String: If a permission requires a purpose string, `android:purposeString` \
+              attribute must be declared with a string resource referencing appropriate localized \
+              string(s) including the reason for why the permission is required by the app.
               """,
         category = Category.CORRECTNESS,
         priority = 10,
+        severity = Severity.FATAL,
+        androidSpecific = true,
+        implementation = IMPLEMENTATION,
+      )
+
+    // This is only used to validate the content of the purpose string. A separate issue has been
+    // created in case this check leads to performance issues and may need to be suppressed without
+    // impacting other missing purpose checks.
+    @JvmField
+    val INVALID_PURPOSE_STRING: Issue =
+      Issue.create(
+        id = "InvalidPurposeString",
+        briefDescription = "Invalid purpose string for permission",
+        explanation =
+          """
+              If a permission requires a purpose string, a valid `android:purposeString` attribute \
+              should be declared. This attribute must reference a localized string resource that's \
+              no more than $MAX_PURPOSE_STRING_LENGTH characters ($RECOMMENDED_PURPOSE_STRING_LENGTH recommended) \
+              for all locales the app supports as the text is displayed on user-facing surfaces.
+              """,
+        category = Category.CORRECTNESS,
+        priority = 9,
         severity = Severity.FATAL,
         androidSpecific = true,
         implementation = IMPLEMENTATION,
@@ -278,6 +422,7 @@ class PurposeDeclarationDetector : Detector(), XmlScanner {
     /** Captures the SDKs that require purpose as well valid purposes and their SDK validity. */
     private data class PermissionInfo(
       val requiresSpecificPurposeSdkRange: SdkRange,
+      val requiresPurposeStringSdkRange: SdkRange,
       val validSpecificPurposes: Map<String, SdkRange>,
     )
 
@@ -328,10 +473,23 @@ class PurposeDeclarationDetector : Detector(), XmlScanner {
               parser.getAttributeValue(null, ATTR_NAME).takeIf { !it.isNullOrEmpty() } ?: continue
             val requiresSpecificPurposeMinSdk =
               parser.getAttributeValue(null, ATTR_REQUIRES_SPECIFIC_PURPOSE_MIN)?.toIntOrNull()
-                ?: continue
+                ?: MAX_SDK_VERSION_DEFAULT
             val requiresSpecificPurposeMaxSdk =
               parser.getAttributeValue(null, ATTR_REQUIRES_SPECIFIC_PURPOSE_MAX)?.toIntOrNull()
                 ?: MAX_SDK_VERSION_DEFAULT
+            val requiresPurposeStringMinSdk =
+              parser.getAttributeValue(null, ATTR_REQUIRES_PURPOSE_STRING_MIN)?.toIntOrNull()
+                ?: MAX_SDK_VERSION_DEFAULT
+            val requiresPurposeStringMaxSdk =
+              parser.getAttributeValue(null, ATTR_REQUIRES_PURPOSE_STRING_MAX)?.toIntOrNull()
+                ?: MAX_SDK_VERSION_DEFAULT
+
+            if (
+              requiresSpecificPurposeMinSdk == MAX_SDK_VERSION_DEFAULT &&
+                requiresPurposeStringMinSdk == MAX_SDK_VERSION_DEFAULT
+            ) {
+              continue
+            }
 
             val specificPurposesMap = mutableMapOf<String, SdkRange>()
             val depth = parser.depth
@@ -358,8 +516,11 @@ class PurposeDeclarationDetector : Detector(), XmlScanner {
             }
 
             // Add permission to map only if the element's metadata is not malformed, and it
-            // contains at least one valid purpose.
-            if (specificPurposesMap.isNotEmpty()) {
+            // contains at least one valid purpose and/or requires purpose string.
+            if (
+              specificPurposesMap.isNotEmpty() ||
+                requiresPurposeStringMinSdk != MAX_SDK_VERSION_DEFAULT
+            ) {
               mapBuilder[permissionName] =
                 PermissionInfo(
                   requiresSpecificPurposeSdkRange =
@@ -367,6 +528,8 @@ class PurposeDeclarationDetector : Detector(), XmlScanner {
                       min = requiresSpecificPurposeMinSdk,
                       max = requiresSpecificPurposeMaxSdk,
                     ),
+                  requiresPurposeStringSdkRange =
+                    SdkRange(min = requiresPurposeStringMinSdk, max = requiresPurposeStringMaxSdk),
                   validSpecificPurposes = specificPurposesMap.toMap(),
                 )
             }

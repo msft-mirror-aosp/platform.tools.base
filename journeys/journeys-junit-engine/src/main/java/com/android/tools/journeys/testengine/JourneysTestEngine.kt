@@ -18,9 +18,9 @@ package com.android.tools.journeys.testengine
 
 import com.android.tools.journeys.testengine.resolver.DeviceSelectorResolver
 import com.android.tools.journeys.testengine.resolver.JourneysFileSelectorResolver
-import com.android.tools.journeys.testengine.robo.Adb
-import com.android.tools.journeys.testengine.robo.ChannelProviderFactory
-import com.android.tools.journeys.testengine.robo.Proxy
+import com.android.tools.journeys.testengine.robo.platform.Adb
+import com.android.tools.journeys.testengine.robo.platform.ChannelProviderFactory
+import com.android.tools.journeys.testengine.robo.platform.Proxy
 import org.junit.platform.engine.EngineDiscoveryRequest
 import org.junit.platform.engine.EngineExecutionListener
 import org.junit.platform.engine.ExecutionRequest
@@ -34,6 +34,7 @@ import org.junit.platform.engine.support.hierarchical.ForkJoinPoolHierarchicalTe
 import org.junit.platform.engine.support.hierarchical.HierarchicalTestEngine
 import org.junit.platform.engine.support.hierarchical.HierarchicalTestExecutorService
 import java.util.ServiceLoader
+import java.util.UUID
 
 /**
  * Journeys Test Engine for JUnit Platform.
@@ -77,18 +78,20 @@ class JourneysTestEngine : HierarchicalTestEngine<JourneysExecutionContext>() {
                     testDescriptor: TestDescriptor,
                     entry: ReportEntry
                 ) {
-                    entry.keyValuePairs.forEach { key, value ->
+                    entry.keyValuePairs.forEach { (key, value) ->
                         executionRequest.engineExecutionListener.reportingEntryPublished(
                             testDescriptor, entry
                         )
-                        println("[additionalTestArtifacts]$key=$value")
+                        if (JourneysTestEngineInput.enableStdoutReport) {
+                            println("<JOURNEYS_TEST_ARTIFACT><DESCRIPTION>$key</DESCRIPTION><ENCODED_PROTO>$value</ENCODED_PROTO></JOURNEYS_TEST_ARTIFACT>")
+                        }
                     }
                 }
             }
-        return JourneysExecutionContext(listener, proxy)
+        return JourneysExecutionContext(UUID.randomUUID().toString(), listener, proxy)
     }
 
-    override fun createExecutorService(request: ExecutionRequest): HierarchicalTestExecutorService? {
+    override fun createExecutorService(request: ExecutionRequest): HierarchicalTestExecutorService {
         return ForkJoinPoolHierarchicalTestExecutorService(
             PrefixedConfigurationParameters(
                 request.configurationParameters, "journeys.execution.parallel.config."

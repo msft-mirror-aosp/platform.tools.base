@@ -82,7 +82,7 @@ class ForegroundServiceTypesDetector : Detector(), XmlScanner, SourceCodeScanner
     // called from, so we don't know which
     // <service> element is missing attribute foregroundServiceType. We just iterate through all
     // <service> elements, if none of them has attribute foregroundServiceType, report error.
-    val manifest = context.project.manifestDom?.documentElement ?: return
+    val manifest = context.project.mergedManifest?.documentElement ?: return
 
     if (manifestHasServiceTag(manifest) && !manifestHasForegroundServiceType(manifest)) {
       val incident =

@@ -21,6 +21,7 @@ import static com.android.build.gradle.internal.scope.InternalArtifactType.BUILT
 
 import com.android.annotations.NonNull;
 import com.android.build.api.artifact.impl.ArtifactsImpl;
+import com.android.build.api.variant.impl.FlatSourceDirectoriesImpl;
 import com.android.build.gradle.internal.component.ComponentCreationConfig;
 import com.android.build.gradle.internal.component.KmpComponentCreationConfig;
 import com.android.build.gradle.internal.component.NestedComponentCreationConfig;
@@ -36,6 +37,7 @@ import org.gradle.api.file.ConfigurableFileCollection;
 import org.gradle.api.file.Directory;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.provider.Provider;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
 import java.util.List;
@@ -64,16 +66,12 @@ public class Utils {
 
         component
                 .getSources()
-                .java(
-                        javaSources -> {
-                            fileCollection.from(
-                                    javaSources.variantSourcesFileCollectionForModel$gradle_core(
-                                            directoryEntry ->
-                                                    directoryEntry.isGenerated()
-                                                            && directoryEntry
-                                                                    .getShouldBeAddedToIdeModel()));
-                            return Unit.INSTANCE;
-                        });
+                .java(javaSources -> addSourcesToFileCollection(javaSources, fileCollection));
+
+        component
+                .getSources()
+                .kotlin(kotlinSources -> addSourcesToFileCollection(kotlinSources, fileCollection));
+
         Provider<Directory> kaptGeneratedJavaSources =
                 component.getBuiltInKaptArtifact(BUILT_IN_KAPT_GENERATED_JAVA_SOURCES.INSTANCE);
         if (kaptGeneratedJavaSources != null) {
@@ -99,6 +97,16 @@ public class Utils {
         }
         fileCollection.disallowChanges();
         return fileCollection;
+    }
+
+    private static @NotNull Unit addSourcesToFileCollection(
+            FlatSourceDirectoriesImpl sources, ConfigurableFileCollection fileCollection) {
+        fileCollection.from(
+                sources.variantSourcesFileCollectionForModel$gradle_core(
+                        directoryEntry ->
+                                directoryEntry.isGenerated()
+                                        && directoryEntry.getShouldBeAddedToIdeModel()));
+        return Unit.INSTANCE;
     }
 
     @NonNull

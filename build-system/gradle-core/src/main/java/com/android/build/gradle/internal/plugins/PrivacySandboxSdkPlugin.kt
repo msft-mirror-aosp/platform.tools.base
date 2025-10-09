@@ -49,6 +49,7 @@ import com.android.build.gradle.internal.tasks.AppMetadataTask
 import com.android.build.gradle.internal.tasks.BaseTask
 import com.android.build.gradle.internal.tasks.GeneratePrivacySandboxProguardRulesTask
 import com.android.build.gradle.internal.tasks.MergeJavaResourceTask
+import com.android.build.gradle.internal.tasks.MergeJavaResourcesGlobalTask
 import com.android.build.gradle.internal.tasks.PerModuleBundleTask
 import com.android.build.gradle.internal.tasks.R8Task
 import com.android.build.gradle.internal.tasks.SignAsbTask
@@ -324,7 +325,7 @@ class PrivacySandboxSdkPlugin @Inject constructor(
                         SignAsbTask.CreationActionPrivacySandboxSdk(variantScope),
                         FusedLibraryMergeClasses.PrivacySandboxSdkCreationAction(variantScope),
                         GeneratePrivacySandboxAsar.CreationAction(variantScope),
-                        MergeJavaResourceTask.PrivacySandboxSdkCreationAction(variantScope),
+                        MergeJavaResourcesGlobalTask.PrivacySandboxSdkCreationAction(variantScope),
                         PrivacySandboxValidateConfigurationTask.CreationAction(variantScope),
                         PrivacySandboxSdkGenerateJarStubsTask.CreationAction(variantScope),
                         PrivacySandboxSdkMergeResourcesTask.CreationAction(variantScope),

@@ -74,6 +74,7 @@ import com.google.common.base.Joiner
 import com.google.common.collect.Sets
 import com.google.common.io.ByteStreams
 import org.gradle.api.file.*
+import org.gradle.api.GradleException
 import org.gradle.api.logging.Logging
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.MapProperty
@@ -1050,38 +1051,46 @@ abstract class PackageAndroidArtifact : NewIncrementalTask() {
                     THROW_ON_ERROR_ISSUE_REPORTER)
             val nativeLibsPackagingMode = PackagingUtils.getNativeLibrariesLibrariesPackagingMode(
                     manifestData.extractNativeLibs)
-            // Warn if params.getJniLibsUseLegacyPackaging() is not compatible with
+            // Error if params.getJniLibsUseLegacyPackaging() is not compatible with
             // nativeLibsPackagingMode. We currently fall back to what's specified in the manifest, but
             // in future versions of AGP, we should use what's specified via
             // params.getJniLibsUseLegacyPackaging().
             val logger = LoggerWrapper(Logging.getLogger(PackageAndroidArtifact::class.java))
             if (params.jniLibsUseLegacyPackaging.get()) {
-                // TODO (b/149770867) make this an error in future AGP versions.
                 if (nativeLibsPackagingMode == NativeLibrariesPackagingMode.UNCOMPRESSED_AND_ALIGNED) {
-                    logger.warning(
-                            "PackagingOptions.jniLibs.useLegacyPackaging should be set to false "
-                                    + "because android:extractNativeLibs is set to \"false\" in "
+                    throw GradleException(
+                        "android:extractNativeLibs is set to \"false\" in "
                                     + "AndroidManifest.xml. Avoid setting "
                                     + "android:extractNativeLibs=\"false\" explicitly in "
                                     + "AndroidManifest.xml, and instead set "
-                                    + "android.packagingOptions.jniLibs.useLegacyPackaging to false in "
-                                    + "the build.gradle file.")
+                                    + "android.packagingOptions.jniLibs.useLegacyPackaging to "
+                                    + "false in the build script.")
                 }
             } else {
                 if (nativeLibsPackagingMode == NativeLibrariesPackagingMode.COMPRESSED) {
-                    logger.warning(
-                            "PackagingOptions.jniLibs.useLegacyPackaging should be set to true "
-                                    + "because android:extractNativeLibs is set to \"true\" in "
-                                    + "AndroidManifest.xml.")
+                    throw GradleException(
+                        "android:extractNativeLibs is set to \"true\" in "
+                                + "AndroidManifest.xml.Avoid setting "
+                                + "android:extractNativeLibs=\"true\" explicitly in "
+                                + "AndroidManifest.xml, and instead set "
+                                + "android.packagingOptions.jniLibs.useLegacyPackaging to true in "
+                                + "the build script.")
                 }
             }
             val useEmbeddedDex = manifestData.useEmbeddedDex
             val dexPackagingMode = PackagingUtils.getDexPackagingMode(
                     useEmbeddedDex, params.dexUseLegacyPackaging.get())
-            if (params.dexUseLegacyPackaging.get() && java.lang.Boolean.TRUE == useEmbeddedDex) {
-                // TODO (b/149770867) make this an error in future AGP versions.
-                logger.warning("PackagingOptions.dex.useLegacyPackaging should be set to false because "
-                        + "android:useEmbeddedDex is set to \"true\" in AndroidManifest.xml.")
+            if (useEmbeddedDex != null) {
+                // Error if useEmbeddedDex value conflicts with useLegacyPackaging, warn otherwise
+                val removalSuggestion = "Please remove android:useEmbeddedDex from your AndroidManifest.xml"
+                if (params.dexUseLegacyPackaging.isPresent && params.dexUseLegacyPackaging.get() == useEmbeddedDex) {
+                    throw GradleException("PackagingOptions.dex.useLegacyPackaging is set " +
+                            "to ${params.dexUseLegacyPackaging.get()}, which conflicts with android:useEmbeddedDex=\"${useEmbeddedDex}\" in " +
+                            "AndroidManifest.xml. $removalSuggestion.")
+                } else {
+                    logger.warning("$removalSuggestion. This should be replaced with " +
+                            "PackagingOptions.dex.useLegacyPackaging in the build script.")
+                }
             }
             val dependencyData = if (params.dependencyDataFile.isPresent) Files.readAllBytes(
                     params.dependencyDataFile.get().asFile.toPath()) else null

@@ -41,7 +41,6 @@ import org.gradle.api.Project
 import org.gradle.api.tasks.testing.TestDescriptor
 import org.gradle.api.tasks.testing.TestListener
 import org.gradle.api.tasks.testing.TestResult
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
@@ -89,6 +88,11 @@ class ScreenshotTest {
                     addEmptyClasses("RandomClass_${UUID.randomUUID()}")
                 })
             }
+        }
+
+        kotlin {
+            // Required by LayoutLib (com/android/layoutlib/bridge/Bridge).
+            jvmToolchain(21)
         }
 
         dependencies {
@@ -214,7 +218,6 @@ class ScreenshotTest {
                 compose = true
             }
             composeOptions {
-                useLiveLiterals = false
                 kotlinCompilerExtensionVersion = TestUtils.COMPOSE_COMPILER_FOR_TESTS
             }
             experimentalProperties["android.experimental.enableScreenshotTest"] = true
@@ -851,7 +854,6 @@ class ScreenshotTest {
         assertThat(result.stdout).contains("[additionalTestArtifacts]PreviewScreenshot.newImagePath=")
     }
 
-    @Ignore("b/360220857: R class files are not loaded for non-main source set for rendering")
     @Test
     fun runPreviewScreenshotTestWithCustomFontShouldLoadCustomFonts() {
         val build = rule.build {
@@ -907,7 +909,7 @@ class ScreenshotTest {
                 }
             }
         }
-        val appProject = build.androidApplication()
+
         updateReferenceImage()
 
         val result = build.sstExecutor().run(":app:validateDebugScreenshotTest")

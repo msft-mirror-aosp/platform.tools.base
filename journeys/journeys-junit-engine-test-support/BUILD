@@ -1,5 +1,5 @@
 load("//tools/base/bazel:maven.bzl", "maven_library")
-load("//tools/base/journeys:version.bzl", "JOURNEYS_TEST_PLUGIN_VERSION")
+load("//tools/base/journeys:version.bzl", "JOURNEYS_TEST_ENGINE_VERSION")
 
 maven_library(
     name = "journeys-junit-engine-test-support",
@@ -15,7 +15,7 @@ maven_library(
     module_name = "com.android.tools.journeys.testsupport",
     resource_strip_prefix = "tools/base/journeys/journeys-junit-engine-test-support/src/main/resources/",
     resources = glob(["src/main/resources/**"]),
-    version = JOURNEYS_TEST_PLUGIN_VERSION,
+    version = JOURNEYS_TEST_ENGINE_VERSION,
     visibility = ["//visibility:public"],
     deps = [
         "//tools/base/journeys/journeys-junit-engine",

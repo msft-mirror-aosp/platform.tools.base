@@ -24,6 +24,7 @@ import org.gradle.api.file.FileCollection
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.util.PatternFilterable
 import java.io.File
+import org.gradle.api.file.FileTree
 
 /**
  * A set of source directories for a specific [SourceType]
@@ -65,13 +66,7 @@ open class FlatSourceDirectoriesImpl(
     //
     override fun addSource(directoryEntry: DirectoryEntry){
         variantSources.add(directoryEntry)
-        directories.addAll(
-            directoryEntry.asFiles(
-                variantServices.provider {
-                    variantServices.projectInfo.projectDirectory
-                }
-            )
-        )
+        directoryEntry.addTo(variantServices.projectInfo.projectDirectory, directories)
     }
 
     override fun addStaticSource(directoryEntry: DirectoryEntry){
@@ -79,13 +74,7 @@ open class FlatSourceDirectoriesImpl(
             "The task ${directoryEntry.name} is generating code and should not be added as a Static source")
 
         addSource(directoryEntry)
-        staticDirectories.addAll(
-            directoryEntry.asFiles(
-                variantServices.provider {
-                    variantServices.projectInfo.projectDirectory
-                }
-            )
-        )
+        directoryEntry.addTo(variantServices.projectInfo.projectDirectory,staticDirectories)
     }
 
     internal fun getAsFileTrees(): Provider<List<Provider<List<ConfigurableFileTree>>>> {
@@ -137,17 +126,7 @@ open class FlatSourceDirectoriesImpl(
         variantSources.get()
             .filter { filter.invoke(it) }
             .forEach {
-                if (it is TaskProviderBasedDirectoryEntryImpl) {
-                    fileCollection.from(it.directoryProvider)
-                } else {
-                    fileCollection.from(
-                        it.asFiles(
-                            variantServices.provider {
-                                variantServices.projectInfo.projectDirectory
-                            }
-                        )
-                    )
-                }
+                it.addTo(variantServices.projectInfo.projectDirectory, fileCollection)
             }
         fileCollection.disallowChanges()
         return fileCollection

@@ -113,6 +113,7 @@ message Event {
     // LeakCanary Prefix = 800
     LEAKCANARY_LOGCAT = 801;
     LEAKCANARY_LOGCAT_STATUS = 802;
+    LEAKCANARY_HOST_ANALYSIS_TRIGGER = 803;
 
     // Demo echo event = 1000
     ECHO = 1000;

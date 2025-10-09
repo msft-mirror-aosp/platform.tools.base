@@ -420,16 +420,9 @@ https://issuetracker.google.com/328749317
   * com.android.build.api.dsl.KotlinMultiplatformAndroidDeviceTest.multidex: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.MultiDexConfig, kotlin.Unit>)
   * com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryExtension.getOptimization: com.android.build.api.dsl.KmpOptimization ()
   * com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryExtension.optimization: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.KmpOptimization, kotlin.Unit>)
-  * com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryTargetKt.androidLibrary: void (org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension, kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryTarget, kotlin.Unit>)
 https://issuetracker.google.com/328749318
   * com.android.build.api.variant.DeviceTestBuilder.getEnable: boolean ()
   * com.android.build.api.variant.DeviceTestBuilder.setEnable: void (boolean)
-https://issuetracker.google.com/330685970
-  * com.android.build.api.dsl.FusedLibraryExtension
-  * com.android.build.api.dsl.FusedLibraryExtension.getMinSdk: java.lang.Integer ()
-  * com.android.build.api.dsl.FusedLibraryExtension.getNamespace: java.lang.String ()
-  * com.android.build.api.dsl.FusedLibraryExtension.setMinSdk: void (java.lang.Integer)
-  * com.android.build.api.dsl.FusedLibraryExtension.setNamespace: void (java.lang.String)
 https://issuetracker.google.com/330686862
   * com.android.build.api.dsl.TestFixtures
   * com.android.build.api.dsl.TestFixtures.getAndroidResources: boolean ()
@@ -507,9 +500,6 @@ https://issuetracker.google.com/336296433
   * com.android.build.api.variant.DeviceTestBuilder.setEnableCodeCoverage: void (boolean)
 https://issuetracker.google.com/336985668
   * com.android.build.api.variant.UnitTest.configureTestTask: void (kotlin.jvm.functions.Function1<? super org.gradle.api.tasks.testing.Test, kotlin.Unit>)
-https://issuetracker.google.com/341235113
-  * com.android.build.api.dsl.FusedLibraryExtension.aarMetadata: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.AarMetadata, kotlin.Unit>)
-  * com.android.build.api.dsl.FusedLibraryExtension.getAarMetadata: com.android.build.api.dsl.AarMetadata ()
 https://issuetracker.google.com/349614565
   * com.android.build.api.dsl.ApplicationAndroidResources.getLocaleFilters: java.util.Set<java.lang.String> ()
   * com.android.build.api.variant.ApplicationAndroidResources.getLocaleFilters: org.gradle.api.provider.SetProperty<java.lang.String> ()
@@ -585,8 +575,6 @@ https://issuetracker.google.com/373816438
   * com.android.build.api.dsl.BundleDeviceGroup.getEnableSplit: java.lang.Boolean ()
   * com.android.build.api.dsl.BundleDeviceGroup.setDefaultGroup: void (java.lang.String)
   * com.android.build.api.dsl.BundleDeviceGroup.setEnableSplit: void (java.lang.Boolean)
-https://issuetracker.google.com/379870599
-  * com.android.build.api.dsl.FusedLibraryExtension.getManifestPlaceholders: java.util.Map<java.lang.String, java.lang.String> ()
 https://issuetracker.google.com/380074867
   * com.android.build.api.dsl.FusedLibraryExtension.getExperimentalProperties: java.util.Map<java.lang.String, java.lang.Object> ()
 https://issuetracker.google.com/382716517

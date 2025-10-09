@@ -171,6 +171,11 @@ private fun getProjectJavaRes(
         })
     }
 
+    if (creationConfig.useBuiltInKotlinSupport) {
+        // Also collect `.kotlin_module` files (see b/446696613)
+        javaRes.from(creationConfig.artifacts.get(InternalArtifactType.BUILT_IN_KOTLINC))
+    }
+
     if ((creationConfig as? ApkCreationConfig)?.packageJacocoRuntime == true) {
         javaRes.from(creationConfig.artifacts.get(InternalArtifactType.JACOCO_CONFIG_RESOURCES))
     }

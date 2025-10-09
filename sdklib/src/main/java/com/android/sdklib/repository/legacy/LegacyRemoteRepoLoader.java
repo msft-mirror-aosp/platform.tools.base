@@ -15,8 +15,6 @@
  */
 package com.android.sdklib.repository.legacy;
 
-import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
 import com.android.repository.Revision;
 import com.android.repository.api.Channel;
 import com.android.repository.api.Checksum;
@@ -49,9 +47,14 @@ import com.android.sdklib.repository.legacy.remote.internal.sources.SdkRepoSourc
 import com.android.sdklib.repository.legacy.remote.internal.sources.SdkSource;
 import com.android.sdklib.repository.legacy.remote.internal.sources.SdkSysImgSource;
 import com.android.sdklib.repository.targets.OptionalLibraryImpl;
+
 import com.google.common.collect.ComparisonChain;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
+
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collection;
@@ -64,13 +67,13 @@ import java.util.List;
 public class LegacyRemoteRepoLoader implements FallbackRemoteRepoLoader {
 
     /** Parses xml files using the {@link SdkSource} mechanism into {@link LegacyRemotePackage}s. */
-    @NonNull
+    @Nullable
     @Override
     public Collection<RemotePackage> parseLegacyXml(
-            @NonNull RepositorySource source,
-            @NonNull Downloader downloader,
+            @NotNull RepositorySource source,
+            @NotNull Downloader downloader,
             @Nullable SettingsController settings,
-            @NonNull ProgressIndicator progress) {
+            @NotNull ProgressIndicator progress) {
         SdkSource legacySource;
         RemotePkgInfo[] packages = null;
         Collection<SchemaModule<?>> modules = source.getPermittedModules();
@@ -92,6 +95,7 @@ public class LegacyRemoteRepoLoader implements FallbackRemoteRepoLoader {
                         progress.createSubProgress(progressMax + progressIncrement));
                 if (legacySource.getFetchError() != null) {
                     progress.logInfo(legacySource.getFetchError());
+                    return null;
                 }
                 packages = legacySource.getPackages();
                 if (packages != null) {
@@ -131,7 +135,7 @@ public class LegacyRemoteRepoLoader implements FallbackRemoteRepoLoader {
         }
 
         @Override
-        @NonNull
+        @NotNull
         public TypeDetails getTypeDetails() {
             if (mDetails == null) {
                 int layoutlibApi = 0;
@@ -161,13 +165,13 @@ public class LegacyRemoteRepoLoader implements FallbackRemoteRepoLoader {
             return mDetails;
         }
 
-        @NonNull
+        @NotNull
         @Override
         public Revision getVersion() {
             return mWrapped.getRevision();
         }
 
-        @NonNull
+        @NotNull
         @Override
         public String getDisplayName() {
             return LegacyRepoUtils.getDisplayName(mWrapped.getPkgDesc());
@@ -178,26 +182,26 @@ public class LegacyRemoteRepoLoader implements FallbackRemoteRepoLoader {
             return mWrapped.getLicense();
         }
 
-        @NonNull
+        @NotNull
         @Override
         public Collection<Dependency> getAllDependencies() {
             // TODO: implement (this isn't implemented in the current version either)
             return ImmutableList.of();
         }
 
-        @NonNull
+        @NotNull
         @Override
         public String getPath() {
             return LegacyRepoUtils.getLegacyPath(mWrapped.getPkgDesc(), null);
         }
 
-        @NonNull
+        @NotNull
         @Override
         public CommonFactory createFactory() {
             return RepoManager.getCommonModule().createLatestFactory();
         }
 
-        @NonNull
+        @NotNull
         @Override
         public RepoPackageImpl asMarshallable() {
             return RemotePackageImpl.create(this);
@@ -233,14 +237,14 @@ public class LegacyRemoteRepoLoader implements FallbackRemoteRepoLoader {
             return getPath().hashCode() * 37 + getVersion().hashCode();
         }
 
-        @NonNull
+        @NotNull
         @Override
         public RepositorySource getSource() {
             return mSource;
         }
 
         @Override
-        public void setSource(@NonNull RepositorySource source) {
+        public void setSource(@NotNull RepositorySource source) {
             mSource = source;
         }
 
@@ -275,7 +279,7 @@ public class LegacyRemoteRepoLoader implements FallbackRemoteRepoLoader {
             return null;
         }
 
-        @NonNull
+        @NotNull
         @Override
         public Channel getChannel() {
             if (getVersion().isPreview()) {
@@ -285,10 +289,10 @@ public class LegacyRemoteRepoLoader implements FallbackRemoteRepoLoader {
             return Channel.create(0);
         }
 
-        @NonNull
+        @NotNull
         @Override
         public Path getInstallDir(
-                @NonNull RepoManager manager, @NonNull ProgressIndicator progress) {
+                @NotNull RepoManager manager, @NotNull ProgressIndicator progress) {
             Path path = manager.getLocalPath();
             return mWrapped.getPkgDesc().getCanonicalInstallFolder(path);
         }

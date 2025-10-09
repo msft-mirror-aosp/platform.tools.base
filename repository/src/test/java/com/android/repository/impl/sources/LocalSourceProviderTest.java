@@ -62,7 +62,7 @@ public class LocalSourceProviderTest {
         FileSystem fs = InMemoryFileSystems.createInMemoryFileSystem();
         InMemoryFileSystems.recordExistingFile(
                 fs.getPath(InMemoryFileSystems.getPlatformSpecificPath("/sources")),
-                "#A comment"
+                "#A comment\n"
                         + "enabled00=true\n"
                         + "enabled01=false\n"
                         + "disp00=the display name\n"
@@ -203,7 +203,7 @@ public class LocalSourceProviderTest {
                 fs.getPath(InMemoryFileSystems.getPlatformSpecificPath("/sources"));
         InMemoryFileSystems.recordExistingFile(
                 sourcesPath,
-                "#A comment"
+                "#A comment\n"
                         + "enabled00=true\n"
                         + "enabled01=false\n"
                         + "disp00=the display name\n"

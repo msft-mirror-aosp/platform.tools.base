@@ -161,6 +161,7 @@ class PrivateResourceDetectorTest {
       .expect(expected)
   }
 
+  @Test
   fun testStyle() {
     // Regression test for https://code.google.com/p/android/issues/detail?id=221560
     lint()
@@ -190,6 +191,7 @@ class PrivateResourceDetectorTest {
       .expectClean()
   }
 
+  @Test
   fun testOverride() {
     val expected =
       """
@@ -241,6 +243,42 @@ class PrivateResourceDetectorTest {
       )
       .run()
       .expect(expected)
+  }
+
+  @Test
+  fun testOverrideFileResource() {
+    lint()
+      .files(
+        xml(
+            "src/main/res/values/strings.xml",
+            """
+            <resources>
+                <string name="app_name">LibraryProject</string>
+            </resources>
+            """,
+          )
+          .indented(),
+        xml(
+            "src/main/res/layout/my_private_layout.xml",
+            """
+            <LinearLayout xmlns:tools="http://schemas.android.com/tools" tools:override="true"/>
+            """,
+          )
+          .indented(),
+        gradle(
+            """
+            apply plugin: 'com.android.application'
+
+            dependencies {
+                compile 'com.android.tools:test-library:1.0.0'
+            }
+            """
+          )
+          .indented()
+          .withMockerConfigurator(defaultLibraryMocks),
+      )
+      .run()
+      .expectClean()
   }
 
   @Test

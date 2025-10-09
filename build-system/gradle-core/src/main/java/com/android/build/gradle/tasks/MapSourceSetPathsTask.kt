@@ -70,7 +70,7 @@ abstract class MapSourceSetPathsTask : NonIncrementalTask() {
 
     @get:InputFiles
     @get:PathSensitive(PathSensitivity.RELATIVE)
-    abstract val localResources: ListProperty<Directory>
+    abstract val localResources: ConfigurableFileCollection
 
     @get:InputFiles
     @get:PathSensitive(PathSensitivity.RELATIVE)
@@ -107,7 +107,7 @@ abstract class MapSourceSetPathsTask : NonIncrementalTask() {
             getPathIfPresentOrNull(incrementalMergedDir, listOf(SdkConstants.FD_MERGED_DOT_DIR)),
             getPathIfPresentOrNull(incrementalMergedDir, listOf(SdkConstants.FD_STRIPPED_DOT_DIR)),
         )
-        return localResources.get().map { it.asFile }.asSequence()
+        return localResources.files.asSequence()
             .plus(librarySourceSets.files)
             .plus(uncreatedSourceSets.map(::File))
             .plus(additionalSourceSets.map(::File))
@@ -186,23 +186,22 @@ abstract class MapSourceSetPathsTask : NonIncrementalTask() {
             }
 
             creationConfig.sources.res { resSources ->
+                val list = task.project.objects.listProperty(Directory::class.java)
                 resSources.getVariantSources().forEach { directoryEntries ->
                     directoryEntries.directoryEntries
                         .filter { it.isGenerated }
                         .forEach { directoryEntry ->
-                            val asFiles =
-                                directoryEntry.asFiles(task.project.provider { task.project.layout.projectDirectory })
-                                    .map { directories ->
-                                        directories.map { directory -> directory.asFile.absolutePath }
-                                    }
-                            task.allGeneratedRes.addAll(asFiles)
-                        }
+                            directoryEntry.addTo(task.project.layout.projectDirectory, list) }
                 }
+                task.allGeneratedRes.addAll(
+                    list.map { it.map { directory -> directory.asFile.absolutePath } }
+                )
+
                 creationConfig.oldVariantApiLegacySupport?.registerPostOldVariantApiAction {
                     resSources.getVariantSourcesWithFilter {
                         !it.isUserAdded && !it.isGenerated
                     }.values.forEach {
-                        task.localResources.addAll(it)
+                        task.localResources.from(it)
                     }
                     task.localResources.disallowChanges()
                 }

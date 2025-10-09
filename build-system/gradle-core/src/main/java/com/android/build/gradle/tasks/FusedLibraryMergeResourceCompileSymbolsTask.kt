@@ -36,6 +36,7 @@ import com.android.ide.common.symbols.SymbolTable
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.Property
+import org.gradle.api.services.ServiceReference
 import org.gradle.api.tasks.CacheableTask
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFiles
@@ -56,7 +57,7 @@ abstract class FusedLibraryMergeResourceCompileSymbolsTask : NonIncrementalGloba
     @get:PathSensitive(PathSensitivity.RELATIVE)
     abstract val symbolDependencyTables: ConfigurableFileCollection
 
-    @get:Internal
+    @get:ServiceReference
     abstract val symbolTableBuildService: Property<SymbolTableBuildService>
 
     @get:OutputFile

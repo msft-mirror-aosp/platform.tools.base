@@ -16,7 +16,7 @@
 
 package com.android.build.gradle.integration.manageddevice.application
 
-import com.android.build.api.dsl.androidLibrary
+import com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryTarget
 import com.android.build.gradle.integration.common.fixture.GradleTaskExecutor
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.plugins.KotlinMultiplatformCallback
@@ -27,6 +27,7 @@ import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.truth.PathSubject.assertThat
 import com.android.utils.FileUtils
 import org.gradle.api.Project
+import org.gradle.api.plugins.ExtensionAware
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import org.junit.Rule
 import org.junit.Test
@@ -80,29 +81,31 @@ class KmpManagedDeviceTest {
       project: Project,
       extension: KotlinMultiplatformExtension
     ) {
-      extension.apply {
-        androidLibrary {
-          minSdk = 21
-          withDeviceTest {
-            instrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-            managedDevices.localDevices.create("device1") {
-              it.device = "Pixel 2"
-              it.sdkVersion = System.getProperty("sdk.repo.sysimage.apiLevel").toInt()
-              it.systemImageSource = System.getProperty("sdk.repo.sysimage.source")
-              it.require64Bit = true
+        extension.apply {
+            (this as ExtensionAware).extensions.findByType(
+                KotlinMultiplatformAndroidLibraryTarget::class.java
+            )!!.apply {
+                minSdk = 21
+                withDeviceTest {
+                    instrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+                    managedDevices.localDevices.create("device1") {
+                        it.device = "Pixel 2"
+                        it.sdkVersion = System.getProperty("sdk.repo.sysimage.apiLevel").toInt()
+                        it.systemImageSource = System.getProperty("sdk.repo.sysimage.source")
+                        it.require64Bit = true
+                    }
+                }
             }
-          }
+            sourceSets.getByName("androidDeviceTest") {
+                it.dependencies {
+                    implementation("androidx.test:core:1.4.0-alpha06")
+                    implementation("androidx.test.ext:junit:1.1.3-alpha02")
+                    implementation("androidx.test:monitor:1.4.0-alpha06")
+                    implementation("androidx.test:rules:1.4.0-alpha06")
+                    implementation("androidx.test:runner:1.4.0-alpha06")
+                }
+            }
         }
-        sourceSets.getByName("androidDeviceTest") {
-          it.dependencies {
-            implementation("androidx.test:core:1.4.0-alpha06")
-            implementation("androidx.test.ext:junit:1.1.3-alpha02")
-            implementation("androidx.test:monitor:1.4.0-alpha06")
-            implementation("androidx.test:rules:1.4.0-alpha06")
-            implementation("androidx.test:runner:1.4.0-alpha06")
-          }
-        }
-      }
     }
   }
 

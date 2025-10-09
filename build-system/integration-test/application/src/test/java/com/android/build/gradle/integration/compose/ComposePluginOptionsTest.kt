@@ -93,29 +93,25 @@ class ComposePluginOptionsTest {
 
     /** Regression test for b/318384658. */
     @Test
-    fun `test AGP does not override user-specified plugin options`() {
+    fun `test build fails when the user sets sourceInformation`() {
         val build = rule.build {
             androidApplication {
-                android {
-                    composeOptions {
-                        useLiveLiterals = true
-                    }
-                }
                 kotlin {
                     compilerOptions {
                         freeCompilerArgs.addAll(
                             "-P",
-                            "plugin:androidx.compose.compiler.plugins.kotlin:liveLiterals=true"
+                            "plugin:androidx.compose.compiler.plugins.kotlin:sourceInformation=false"
                         )
                     }
                 }
             }
         }
-        val result =
-            build.executor
-                .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
-                .run(":app:compileDebugKotlin")
-        result.assertOutputContains("androidx.compose.compiler.plugins.kotlin:liveLiterals=true")
+
+        val result = build.executor.expectFailure().run(":app:compileDebugKotlin")
+
+        // The build should fail
+        // (see https://youtrack.jetbrains.com/issue/KT-74415#focus=Comments-27-11464464.0-0)
+        result.assertErrorContains("Multiple values are not allowed for plugin option androidx.compose.compiler.plugins.kotlin:sourceInformation")
     }
 
     /** Regression test for b/362780328. */

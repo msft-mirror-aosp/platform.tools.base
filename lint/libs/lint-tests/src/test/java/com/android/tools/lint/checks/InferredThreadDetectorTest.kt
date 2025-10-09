@@ -984,6 +984,103 @@ class InferredThreadDetectorTest : AbstractCheckTest() {
       .expectClean()
   }
 
+  // Reduced test from com.google.intelligence.trieste.query.parser.Parserkt
+  fun testHoRecursion() {
+    lint()
+      .files(
+        kotlin(
+            """
+          sealed class Result<out T> {
+            class Ok<out T>(val value: T) : Result<T>()
+            object Err : Result<Nothing>()
+          }
+
+          fun<S, T> Result<S>.bind(f: (S) -> Result<T>): Result<T> =
+            when (this) {
+              is Result.Ok -> f(value)
+              is Result.Err -> this
+            }
+
+          interface Parser<T> {
+            fun parse(): Result<T>
+          }
+
+          class ManyOf<T>(val base: Parser<T>): Parser<Nothing> {
+            override fun parse(): Result<Nothing> = base.parse().bind { parse() }
+          }
+          """
+              .trimIndent()
+          )
+          .indented()
+      )
+      .run()
+      .expectClean()
+  }
+
+  // Reduced test from com.google.intelligence.trieste.query.parser.Parserkt
+  fun testHoRecursion_localFn() {
+    lint()
+      .files(
+        kotlin(
+            """
+          sealed class Result<out T> {
+            class Ok<out T>(val value: T) : Result<T>()
+            object Err : Result<Nothing>()
+          }
+
+          fun<S, T> Result<S>.bind(f: (S) -> Result<T>): Result<T> =
+            when (this) {
+              is Result.Ok -> f(value)
+              is Result.Err -> this
+            }
+
+          interface Parser<T> {
+            fun parse(): Result<T>
+          }
+
+          class ManyOf<T>(val base: Parser<T>): Parser<Nothing> {
+            override fun parse(): Result<Nothing> {
+              fun loop(): Result<Nothing> = base.parse().bind { loop() }
+              return loop()
+            }
+          }
+          """
+              .trimIndent()
+          )
+          .indented()
+      )
+      .run()
+      .expectClean()
+  }
+
+  // Reduced test from com.google.common.reflect.TypeToken.TypeCollector
+  fun testRecursiveBranching() {
+    lint()
+      .files(
+        java(
+            """
+            public abstract class Test<T> {
+              private void f(T type) {
+                prop(type).toString();
+                T t1 = next(type);
+                f(t1);
+                T t2 = next(type);
+                f(t2);
+              }
+
+              abstract Object prop(T type);
+
+              abstract T next(T type);
+            }
+          """
+              .trimIndent()
+          )
+          .indented()
+      )
+      .run()
+      .expectClean()
+  }
+
   fun testInterpreter_bigStep() {
     lint()
       .files(

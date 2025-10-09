@@ -284,8 +284,7 @@ abstract class KmpComponentImpl<DslInfoT: KmpComponentDslInfo>(
                 variantServices = variantServices,
                 variantDslFilters = PatternSet().also { filter ->
                     filter.include("**/*.java")
-                },
-                compilation = compilation
+                }
             )
         } else {
             null
@@ -296,8 +295,7 @@ abstract class KmpComponentImpl<DslInfoT: KmpComponentDslInfo>(
             variantServices = variantServices,
             variantDslFilters = PatternSet().also { filter ->
                 filter.include("**/*.kt", "**/*.kts")
-            },
-            compilation = compilation
+            }
         )
 
         override val resources = KotlinMultiplatformFlatSourceDirectoriesImpl(
@@ -305,8 +303,7 @@ abstract class KmpComponentImpl<DslInfoT: KmpComponentDslInfo>(
             variantServices = variantServices,
             variantDslFilters = PatternSet().also { filter ->
                 filter.exclude("**/*.java", "**/*.kt")
-            },
-            compilation = compilation
+            }
         )
 
         override val res = if (buildFeatures.androidResources) {
@@ -332,8 +329,7 @@ abstract class KmpComponentImpl<DslInfoT: KmpComponentDslInfo>(
         override val baselineProfiles = KotlinMultiplatformFlatSourceDirectoriesImpl(
             name = SourceType.BASELINE_PROFILES.folder,
             variantServices = variantServices,
-            variantDslFilters = PatternSet(),
-            compilation = compilation
+            variantDslFilters = PatternSet()
         )
 
         override val jniLibs = LayeredSourceDirectoriesImpl(

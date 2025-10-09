@@ -46,7 +46,7 @@ class JourneysFileSelectorResolver : SelectorResolver {
         val filter = JourneysTestEngineInput.journeysFilter
 
         val matches = files.mapNotNull { file ->
-            if (file.extension.lowercase() != "xml") {
+            if (!file.name.lowercase().endsWith(".journey.xml")) {
                 return@mapNotNull null
             }
 

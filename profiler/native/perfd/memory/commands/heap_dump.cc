@@ -19,8 +19,10 @@
 
 #include "perfd/sessions/sessions_manager.h"
 #include "proto/memory.pb.h"
+#include "utils/log.h"
 
 using grpc::Status;
+using profiler::Log;
 using profiler::proto::Event;
 using profiler::proto::HeapDumpStatus;
 using profiler::proto::MemoryHeapDumpData;
@@ -62,6 +64,13 @@ Status HeapDump::ExecuteOn(Daemon* daemon) {
         dump_info->set_end_time(end_timestamp);
         dump_info->set_success(dump_success);
         daemon->buffer()->Add(end_event);
+        if (dump_success) {
+          Log::D(Log::Tag::PROFILER, "Heap dump SUCCEEDED for dump id: %lld.",
+                 start_event.group_id());
+        } else {
+          Log::W(Log::Tag::PROFILER, "Heap dump FAILED for dump id: %lld.",
+                 start_event.group_id());
+        }
         // In the Task-Based UX, when the heap dump is complete, as indicated by
         // the end event, we want to also end the session wrapping such capture.
         if (is_task_based_ux_enabled) {

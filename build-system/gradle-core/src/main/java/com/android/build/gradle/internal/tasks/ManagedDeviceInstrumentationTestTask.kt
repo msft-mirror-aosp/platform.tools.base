@@ -239,7 +239,7 @@ abstract class ManagedDeviceInstrumentationTestTask: NonIncrementalTask(), Andro
     @Option(
         option="enable-display",
         description = "Adding this option will display the emulator while testing, instead" +
-                "of running the tests on a headless emulator.")
+                " of running the tests on a headless emulator.")
     fun setDisplayEmulatorOption(value: Boolean) = enableEmulatorDisplay.set(value)
 
     public override fun doTaskAction() {

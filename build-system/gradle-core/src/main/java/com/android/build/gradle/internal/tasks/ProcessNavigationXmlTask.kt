@@ -18,10 +18,7 @@ package com.android.build.gradle.internal.tasks
 
 import com.android.SdkConstants.FD_RES_NAVIGATION
 import com.android.build.gradle.internal.DependencyResourcesComputer
-import com.android.build.gradle.internal.component.AarCreationConfig
-import com.android.build.gradle.internal.component.ApkCreationConfig
 import com.android.build.gradle.internal.component.ComponentCreationConfig
-import com.android.build.gradle.internal.component.ConsumableCreationConfig
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.tasks.factory.VariantTaskCreationAction

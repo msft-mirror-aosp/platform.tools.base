@@ -79,7 +79,10 @@ class AdbActivityManagerException(
      */
     val errorOutput: String,
     cause: Throwable? = null
-) : IOException("Error executing '$command' on device: $errorOutput", cause) {
+) : IOException(
+    "Error executing '$command' on ${device.shortDescription}: $errorOutput",
+    cause
+) {
 
     /**
      * The device does not support the specified `am` [command]

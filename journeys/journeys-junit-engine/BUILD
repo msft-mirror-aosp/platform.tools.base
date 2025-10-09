@@ -1,5 +1,6 @@
+load("//tools/base/bazel:kotlin.bzl", "kotlin_test")
 load("//tools/base/bazel:maven.bzl", "maven_library")
-load("//tools/base/journeys:version.bzl", "JOURNEYS_TEST_PLUGIN_VERSION")
+load("//tools/base/journeys:version.bzl", "JOURNEYS_TEST_ENGINE_VERSION")
 
 maven_library(
     name = "journeys-junit-engine",
@@ -9,6 +10,7 @@ maven_library(
     ]),
     # keep sorted
     bundled_deps = [
+        "//tools/base/journeys/journeys-protos:journeys-java-proto",
         "//tools/vendor/robo:crawler_apk",
         "//tools/vendor/robo/client:client",
         "//tools/vendor/robo/cloud/test/appcrawler/proto:crawler_service_java_grpc",
@@ -23,8 +25,9 @@ maven_library(
     coordinates = "com.android.tools.journeys:journeys-junit-engine",
     resource_strip_prefix = "tools/base/journeys/journeys-junit-engine/src/main/resources/",
     resources = glob(["src/main/resources/**"]),
-    version = JOURNEYS_TEST_PLUGIN_VERSION,
+    version = JOURNEYS_TEST_ENGINE_VERSION,
     visibility = ["//visibility:public"],
+    # keep sorted
     deps = [
         "@maven//:com.github.rholder.guava-retrying",
         "@maven//:com.google.auth.google-auth-library-oauth2-http",
@@ -32,6 +35,7 @@ maven_library(
         "@maven//:com.google.flogger.flogger-system-backend",
         "@maven//:com.google.oauth-client.google-oauth-client",
         "@maven//:com.google.protobuf.protobuf-java",
+        "@maven//:com.google.protobuf.protobuf-java-util",
         "@maven//:io.grpc.grpc-auth",
         "@maven//:io.grpc.grpc-core",
         "@maven//:io.grpc.grpc-netty",
@@ -39,5 +43,31 @@ maven_library(
         "@maven//:io.grpc.grpc-stub",
         "@maven//:org.jetbrains.kotlin.kotlin-stdlib-jdk8",
         "@maven//:org.junit.platform.junit-platform-engine",
+    ],
+)
+
+kotlin_test(
+    name = "journeys-junit-engine-tests",
+    srcs = glob([
+        "src/main/java/**/*.java",
+        "src/test/java/**/*.kt",
+    ]),
+    jvm_flags = ["-Dtest.suite.jar=tests.jar"],
+    resources = glob(["src/test/resources/**"]),
+    test_class = "com.android.testutils.JarTestSuite",
+    # keep sorted
+    deps = [
+        ":journeys-junit-engine",
+        "//tools/base/journeys/journeys-protos:journeys-java-proto",
+        "//tools/base/testutils:tools.testutils",
+        "@maven//:com.google.auth.google-auth-library-oauth2-http",
+        "@maven//:com.google.protobuf.protobuf-java",
+        "@maven//:io.grpc.grpc-core",
+        "@maven//:io.grpc.grpc-netty",
+        "@maven//:junit.junit",
+        "@maven//:org.jetbrains.kotlin.kotlin-test",
+        "@maven//:org.junit.platform.junit-platform-engine",
+        "@maven//:org.junit.platform.junit-platform-reporting",
+        "@maven//:org.mockito.kotlin.mockito-kotlin",
     ],
 )

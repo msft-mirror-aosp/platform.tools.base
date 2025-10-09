@@ -75,8 +75,7 @@ class KmpAndroidTestDslInfoImpl(
         get() = true
 
     override val signingConfigResolver: SigningConfigResolver? by lazy {
-        val dslSigningConfig =
-            (extension as KotlinMultiplatformAndroidLibraryExtensionImpl).signingConfig
+        val dslSigningConfig = testOnDeviceConfig.signing
         val overrideConfig = signingConfigOverride?.let {
             // use enableV1 and enableV2 from the DSL if the override values are null
             if (it.enableV1Signing == null) {

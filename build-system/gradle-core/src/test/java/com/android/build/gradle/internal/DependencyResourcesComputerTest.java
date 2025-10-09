@@ -38,6 +38,7 @@ import org.gradle.api.artifacts.component.ComponentArtifactIdentifier;
 import org.gradle.api.artifacts.component.ProjectComponentIdentifier;
 import org.gradle.api.artifacts.result.ResolvedArtifactResult;
 import org.gradle.api.file.Directory;
+import org.gradle.api.file.FileCollection;
 import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.provider.Provider;
 import org.gradle.testfixtures.ProjectBuilder;
@@ -51,7 +52,6 @@ import org.mockito.Mockito;
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -259,8 +259,8 @@ public class DependencyResourcesComputerTest {
                                                 .getProjectDirectory()
                                                 .dir(file.getAbsolutePath()))
                         .collect(Collectors.toList());
-        Provider<Collection<Directory>> artifact = project.provider(() -> directories);
-        Map<String, Provider<Collection<Directory>>> artifactMap = new LinkedHashMap<>();
+        FileCollection artifact = project.getObjects().fileCollection().from(directories);
+        Map<String, FileCollection> artifactMap = new LinkedHashMap<>();
         artifactMap.put(name, artifact);
         mainSet.addSources(Arrays.asList(files));
         folderSets.add(mainSet);

@@ -17,42 +17,38 @@
 package com.android.build.api.dsl
 
 import org.gradle.api.Incubating
+
 /**
  * Extension properties for Fused libraries.
  *
  * @suppress Do not use from production code. Only exposed for prototype.
  **/
-@Incubating
 interface FusedLibraryExtension {
 
+    // Options required to be explicitly specified:
+
     /** Namespace of the Fused Library. */
-    @get:Incubating
-    @set:Incubating
     var namespace: String?
 
-    /** Used to set module-specific experimental property values. */
-    @get:Incubating
-    val experimentalProperties: MutableMap<String, Any>
-
     /**
-     * For basic validation that all included libraries in the fused library are at least the minSdk.
-     * Eventually (b/229956178) this value should be able to be automatically determined by the plugin.
+     * Configures minSdk, see [MinSdkSpec] for available options.
      */
+    fun minSdk(action: MinSdkSpec.() -> Unit)
+
+    // Additional options:
+
     @get:Incubating
-    @set:Incubating
-    var minSdk: Int?
+    /** Used to set module-specific experimental property values. */
+    val experimentalProperties: MutableMap<String, Any>
 
     /** Map with Manifest placeholder key and placeholder resolved value. See
      * [Inject build variables into the manifest](https://developer.android.com/build/manage-manifests#inject_build_variables_into_the_manifest)
      */
-    @get:Incubating
     val manifestPlaceholders: MutableMap<String, String>
 
     /** Options for configuring AAR metadata. */
-    @get:Incubating
     val aarMetadata: AarMetadata
 
-    @Incubating
     /** Options for configuring AAR metadata. */
     fun aarMetadata(action: AarMetadata.() -> Unit)
 }

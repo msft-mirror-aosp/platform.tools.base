@@ -17,7 +17,7 @@
 package com.android.tools.screenshot
 
 import com.android.tools.preview.multipreview.PreviewMethod
-import com.android.tools.render.Renderer
+import com.android.tools.screenshot.renderer.Renderer
 import org.junit.platform.engine.EngineExecutionListener
 import org.junit.platform.engine.support.hierarchical.EngineExecutionContext
 import java.io.File

@@ -27,6 +27,7 @@ import com.android.build.gradle.internal.profile.ProfileAwareWorkAction
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
 import com.android.build.gradle.internal.tasks.factory.AndroidVariantTaskCreationAction
 import com.android.build.gradle.internal.tasks.BuildAnalyzer
+import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationAction
 import com.android.build.gradle.internal.tasks.manifest.ManifestProviderImpl
 import com.android.build.gradle.internal.tasks.manifest.mergeManifests
 import com.android.build.gradle.internal.utils.setDisallowChanges
@@ -121,7 +122,7 @@ abstract class PrivacySandboxSdkManifestMergerTask: FusedLibraryManifestMergerTa
     }
 
     class CreationAction(private val creationConfig: PrivacySandboxSdkVariantScope):
-        AndroidVariantTaskCreationAction<PrivacySandboxSdkManifestMergerTask>() {
+        GlobalTaskCreationAction<PrivacySandboxSdkManifestMergerTask>() {
 
         override val name: String
             get() = "mergeManifest"

@@ -22,6 +22,8 @@ import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.util.PatternFilterable
 import org.gradle.api.tasks.util.PatternSet
 import java.io.File
+import org.gradle.api.file.ConfigurableFileCollection
+import org.gradle.api.provider.ListProperty
 
 /**
  * Implementation of [DirectoryEntry] for an existing directory. The directory is provided as a
@@ -40,12 +42,16 @@ class FileBasedDirectoryEntryImpl(
     override val shouldBeAddedToIdeModel: Boolean = false,
 ): DirectoryEntry {
 
-    override fun asFiles(
-        projectDir: Provider<Directory>
-    ): Provider<out Collection<Directory>> =
-        projectDir.map {
-            setOf(it.dir(directory.absolutePath))
-        }
+    override fun addTo(projectDir: Directory, listProperty: ListProperty<Directory>) {
+        listProperty.add(projectDir.dir(directory.absolutePath))
+    }
+
+    override fun addTo(
+        projectDir: Directory,
+        into: ConfigurableFileCollection,
+    ) {
+        into.from(projectDir.dir(directory.absolutePath))
+    }
 
     override val isGenerated: Boolean = false
 

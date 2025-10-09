@@ -60,6 +60,9 @@ class BuiltInKotlinForLibTest {
                 "com/foo/library/LibFoo",
                 "com/foo/library/KotlinLibFoo"
             )
+
+            // Also check that the AAR contains `.kotlin_module` files (see b/446696613)
+            mainJar().resources().containsExactly("META-INF/lib.kotlin_module")
         }
     }
 
