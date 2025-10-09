@@ -58,14 +58,8 @@ fun RecipeExecutor.archStarterActivityRecipe(
     "com.google.dagger:hilt-android-gradle-plugin",
     "$hiltVersion",
   )
-  // kapt is obsolete, but needed for Hilt
-  addPlugin(
-    "org.jetbrains.kotlin.kapt",
-    "org.jetbrains.kotlin:kotlin-kapt-gradle-plugin",
-    moduleData.projectTemplateData.kotlinVersion,
-  )
 
-  // KSP is needed for Room
+  // KSP is needed for Hilt and Room
   addPlugin(
     "com.google.devtools.ksp",
     "com.google.devtools.ksp:symbol-processing-gradle-plugin",
@@ -82,8 +76,8 @@ fun RecipeExecutor.archStarterActivityRecipe(
   addDependency("androidx.room:room-ktx:2.7.0")
   addDependency("androidx.room:room-compiler:2.7.0", configuration = "ksp")
   addDependency("com.google.dagger:hilt-android:$hiltVersion")
-  addDependency("com.google.dagger:hilt-android-compiler:$hiltVersion", configuration = "kapt")
-  addDependency("com.google.dagger:hilt-compiler:$hiltVersion", configuration = "kapt")
+  addDependency("com.google.dagger:hilt-android-compiler:$hiltVersion", configuration = "ksp")
+  addDependency("com.google.dagger:hilt-compiler:$hiltVersion", configuration = "ksp")
   addDependency(
     "com.google.dagger:hilt-android-testing:$hiltVersion",
     configuration = "androidTestImplementation",
