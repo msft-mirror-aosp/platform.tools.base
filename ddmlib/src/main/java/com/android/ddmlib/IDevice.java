@@ -21,9 +21,11 @@ import com.android.annotations.concurrency.Slow;
 import com.android.ddmlib.clientmanager.DeviceClientManager;
 import com.android.ddmlib.log.LogReceiver;
 import com.android.sdklib.AndroidVersion;
+
 import com.google.common.base.Splitter;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.ListenableFuture;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -103,7 +105,8 @@ public interface IDevice extends IShellEnabledDevice, IUserDataMap {
         WATCH("watch"),
         EMBEDDED("embedded"),
         TV("tv"),
-        AUTOMOTIVE("automotive");
+        AUTOMOTIVE("automotive"),
+        XR_GLASSES("xr glasses");
 
         private final String mCharacteristic;
 
