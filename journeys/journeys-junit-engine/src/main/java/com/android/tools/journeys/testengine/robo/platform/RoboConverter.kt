@@ -116,18 +116,10 @@ object RoboConverter {
                 throw IllegalStateException("Unknown tag: ${element.tagName}")
             }
             val text = element.textContent.trim().replace(Regex("\\s+"), " ").toJsonStringLiteral()
-            if (isAssertion(element)) {
-                writer.addJsonAssertion(text)
-            } else {
-                writer.addJsonAction(text)
-            }
+            writer.addJsonAction(text)
         }
 
         writer.write(jsonFooter)
-    }
-
-    private fun isAssertion(element: Element): Boolean {
-        return assertionKeywords.any { element.textContent.trim().lowercase().startsWith(it) }
     }
 
     /**
@@ -137,14 +129,6 @@ object RoboConverter {
      */
     private fun Writer.addJsonAction(textContent: String) =
         write(actionEntry.replace("\"%CONTENT%\"", textContent))
-
-    /**
-     * Appends a JSON assertion entry to the Writer.
-     *
-     * @param textContent The text content of the assertion.
-     */
-    private fun Writer.addJsonAssertion(textContent: String) =
-        write(assertionEntry.replace("\"%CONTENT%\"", textContent))
 
     /** Converts a NodeList to a standard Kotlin List<Node>. */
     private fun NodeList.toList(): List<Node> = (0 until length).map { item(it) }
@@ -203,26 +187,8 @@ object RoboConverter {
           {
             "eventType": "AI_AGENT",
             "aiAgentInstructions": {
-              "goal": "%CONTENT%",
-              "hint": "$SINGLE_ACTION_HINT"
+              "goal": "%CONTENT%"
             }
           },
     """.trimIndent()
-
-    private val assertionEntry =
-        """
-          {
-            "eventType": "ASSERTION",
-            "contextDescriptor": {
-              "condition": "prompt",
-              "prompt": "%CONTENT%"
-            }
-          },
-    """.trimIndent()
-
-    private val assertionKeywords = listOf("verify", "assert", "check that")
-
-    /** Hint for AI agent to stabilize single actions. */
-    private const val SINGLE_ACTION_HINT =
-        "If the goal describes a single action (like 'click the submit button') then the goal is complete after that single action has been taken once, as described in the list of previous actions."
 }

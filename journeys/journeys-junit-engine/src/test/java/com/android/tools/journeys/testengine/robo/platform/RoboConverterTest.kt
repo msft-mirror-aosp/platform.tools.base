@@ -26,7 +26,7 @@ import java.io.ByteArrayInputStream
 class RoboConverterTest {
 
     @Test
-    fun `convert actions and assertions`() {
+    fun `convert actions`() {
         val xml = """
             <journey>
                 <actions>
@@ -59,38 +59,32 @@ class RoboConverterTest {
               "actions": [{
               "eventType": "AI_AGENT",
               "aiAgentInstructions": {
-                "goal": "Type test",
-                "hint": "If the goal describes a single action (like 'click the submit button') then the goal is complete after that single action has been taken once, as described in the list of previous actions."
-              }
-            },{
-              "eventType": "ASSERTION",
-              "contextDescriptor": {
-                "condition": "prompt",
-                "prompt": "Assert that field is empty"
+                "goal": "Type test"
               }
             },{
               "eventType": "AI_AGENT",
               "aiAgentInstructions": {
-                "goal": "Click Next",
-                "hint": "If the goal describes a single action (like 'click the submit button') then the goal is complete after that single action has been taken once, as described in the list of previous actions."
-              }
-            },{
-              "eventType": "ASSERTION",
-              "contextDescriptor": {
-                "condition": "prompt",
-                "prompt": "Verify that field is empty"
+                "goal": "Assert that field is empty"
               }
             },{
               "eventType": "AI_AGENT",
               "aiAgentInstructions": {
-                "goal": "Action with spaces",
-                "hint": "If the goal describes a single action (like 'click the submit button') then the goal is complete after that single action has been taken once, as described in the list of previous actions."
+                "goal": "Click Next"
               }
             },{
               "eventType": "AI_AGENT",
               "aiAgentInstructions": {
-                "goal": "Action with \"special\" chars like >, &, <",
-                "hint": "If the goal describes a single action (like 'click the submit button') then the goal is complete after that single action has been taken once, as described in the list of previous actions."
+                "goal": "Verify that field is empty"
+              }
+            },{
+              "eventType": "AI_AGENT",
+              "aiAgentInstructions": {
+                "goal": "Action with spaces"
+              }
+            },{
+              "eventType": "AI_AGENT",
+              "aiAgentInstructions": {
+                "goal": "Action with \"special\" chars like >, &, <"
               }
             },  ]
             }]
@@ -248,29 +242,5 @@ class RoboConverterTest {
                 "Action with \"special\" chars like >, &, <"
             )
         )
-    }
-
-    @Test
-    fun `correctly identifies assertion keywords`() {
-        val xmlAction = "<journey><actions><action>perform click</action></actions></journey>"
-        val xmlAssertionVerify =
-            "<journey><actions><action>Verify this</action></actions></journey>"
-        val xmlAssertionAssert =
-            "<journey><actions><action>assert That</action></actions></journey>"
-        val xmlAssertionAssertWithExtraSpaces =
-            "<journey><actions><action>     Assert That</action></actions></journey>"
-
-        val actionJson = RoboConverter.convert(ByteArrayInputStream(xmlAction.toByteArray()))
-        val assertionVerifyJson =
-            RoboConverter.convert(ByteArrayInputStream(xmlAssertionVerify.toByteArray()))
-        val assertionAssertJson =
-            RoboConverter.convert(ByteArrayInputStream(xmlAssertionAssert.toByteArray()))
-        val assertionAssertWithSpaceJson =
-            RoboConverter.convert(ByteArrayInputStream(xmlAssertionAssertWithExtraSpaces.toByteArray()))
-
-        assertTrue(actionJson.contains("\"eventType\": \"AI_AGENT\""))
-        assertTrue(assertionVerifyJson.contains("\"eventType\": \"ASSERTION\""))
-        assertTrue(assertionAssertJson.contains("\"eventType\": \"ASSERTION\""))
-        assertTrue(assertionAssertWithSpaceJson.contains("\"eventType\": \"ASSERTION\""))
     }
 }
