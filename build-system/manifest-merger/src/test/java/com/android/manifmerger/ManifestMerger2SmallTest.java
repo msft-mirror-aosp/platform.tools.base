@@ -3443,6 +3443,64 @@ public class ManifestMerger2SmallTest {
         }
     }
 
+    /** Test related to purpose tag in uses-permission-sdk-23. */
+    @Test
+    public void testPurposeStringInUsesPermissionSdk23() throws Exception {
+        MockLog mockLog = new MockLog();
+        String appInput =
+                "<manifest\n"
+                        + "    xmlns:t=\"http://schemas.android.com/apk/res/android\"\n"
+                        + "    package=\"com.example.app1\">\n"
+                        + "\n"
+                        + "    <uses-permission-sdk-23 t:name=\"a\" t:purposeString = \"Purpose A"
+                        + " App\">\n"
+                        + "    </uses-permission-sdk-23>\n"
+                        + "    <uses-permission-sdk-23 t:name=\"b\">\n"
+                        + "    </uses-permission-sdk-23>\n"
+                        + "</manifest>";
+
+        File appFile = TestUtils.inputAsFile("purposeStringsHandlingLibApp", appInput);
+        assertTrue(appFile.exists());
+
+        String libInput =
+                "<manifest\n"
+                        + "xmlns:t=\"http://schemas.android.com/apk/res/android\"\n"
+                        + "package=\"com.example.lib1\">\n"
+                        + "\n"
+                        + "    <uses-permission-sdk-23 t:name=\"a\" t:purposeString = \"Purpose A"
+                        + " Lib\">\n"
+                        + "    </uses-permission-sdk-23>\n"
+                        + "    <uses-permission-sdk-23 t:name=\"b\" t:purposeString = \"Purpose B"
+                        + " Lib\">\n"
+                        + "    </uses-permission-sdk-23>\n"
+                        + "</manifest>";
+        File libFile = TestUtils.inputAsFile("purposeStringsHandlingLib", libInput);
+        assertTrue(libFile.exists());
+
+        MergingReport mergingReport =
+                ManifestMerger2.newMerger(appFile, mockLog, ManifestMerger2.MergeType.APPLICATION)
+                        .addLibraryManifest(libFile)
+                        .merge();
+
+        assertTrue(mergingReport.getResult().isSuccess());
+        Document xmlDocument = parse(mergingReport.getMergedDocument(MergedManifestKind.MERGED));
+        NodeList nodes = xmlDocument.getElementsByTagName("uses-permission-sdk-23");
+        assertEquals(2, nodes.getLength());
+        Node appUserPermission = nodes.item(0);
+        assertEquals("a", appUserPermission.getAttributes().getNamedItem("t:name").getNodeValue());
+
+        assertEquals(
+                "Purpose A App",
+                appUserPermission.getAttributes().getNamedItem("t:purposeString").getNodeValue());
+
+        Node libUserPermission = nodes.item(1);
+        assertEquals("b", libUserPermission.getAttributes().getNamedItem("t:name").getNodeValue());
+
+        assertEquals(
+                "Purpose B Lib",
+                libUserPermission.getAttributes().getNamedItem("t:purposeString").getNodeValue());
+    }
+
     @Test
     public void testUsesSdkContainingSdkVersionsIsForbidden() throws Exception {
         String appInput =

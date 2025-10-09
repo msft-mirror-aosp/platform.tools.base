@@ -790,7 +790,9 @@ public class ManifestModel implements DocumentModel<ManifestModel.NodeTypes> {
                                                 .REQUIRED_BY_PRIVACY_SANDBOX_SDK_ATTRIBUTE_NAME))
                         .setDefaultValue(SdkConstants.VALUE_FALSE)
                         .setOnReadValidator(BOOLEAN_VALIDATOR)
-                        .setMergingPolicy(AND_MERGING_POLICY)),
+                        .setMergingPolicy(AND_MERGING_POLICY),
+                AttributeModel.newModel("purposeString")
+                        .setMergingPolicy(AttributeModel.NO_MERGING_POLICY)),
 
         /**
          * Uses-sdk (contained in manifest)
