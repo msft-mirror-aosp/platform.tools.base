@@ -18,10 +18,7 @@ package com.android.build.gradle.internal.testing.utp
 
 import com.android.build.gradle.internal.testing.utp.worker.RunUtpWorkAction
 import com.android.build.gradle.internal.testing.utp.worker.RunUtpWorkParameters
-import org.mockito.kotlin.any
-import org.mockito.kotlin.anyOrNull
-import org.mockito.kotlin.argThat
-import org.mockito.kotlin.eq
+import com.android.build.gradle.internal.utils.fromDisallowChanges
 import com.android.testutils.truth.PathSubject.assertThat
 import com.android.tools.utp.plugins.result.listener.gradle.proto.GradleAndroidTestResultListenerProto.TestResultEvent
 import com.android.utils.ILogger
@@ -30,7 +27,6 @@ import com.google.protobuf.Any
 import com.google.protobuf.TextFormat
 import com.google.testing.platform.proto.api.config.RunnerConfigProto
 import com.google.testing.platform.proto.api.core.TestSuiteResultProto
-import com.google.testing.platform.proto.api.service.ServerConfigProto
 import org.gradle.api.Action
 import org.gradle.workers.WorkQueue
 import org.gradle.workers.WorkerExecutor
@@ -39,14 +35,17 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import org.mockito.Answers.RETURNS_DEEP_STUBS
-import org.mockito.kotlin.mock
 import org.mockito.Mockito.contains
+import org.mockito.kotlin.any
+import org.mockito.kotlin.anyOrNull
+import org.mockito.kotlin.argThat
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.inOrder
+import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
-import org.mockito.junit.MockitoJUnit
-import org.mockito.junit.MockitoRule
 import java.io.File
+import java.util.logging.Level
 
 /**
  * Unit tests for UtpTestUtils.kt.
@@ -80,12 +79,10 @@ class UtpTestUtilsTest {
         val utpOutputDir = temporaryFolderRule.newFolder()
         utpResultDir = temporaryFolderRule.newFolder()
         val config = UtpRunnerConfig(
-            jvmExecutable,
             "deviceName",
             "deviceId",
             utpOutputDir,
             { _, _ -> RunnerConfigProto.RunnerConfig.getDefaultInstance() },
-            ServerConfigProto.ServerConfig.getDefaultInstance(),
             mockUtpRunProfile,
             shardConfig
         )
@@ -98,12 +95,14 @@ class UtpTestUtilsTest {
         return runUtpTestSuiteAndWait(
             listOf(config),
             mockWorkerExecutor,
+            jvmExecutable,
             "projectName",
             "variantName",
             utpResultDir,
             mockLogger,
             mockUtpTestResultListener,
-            mockUtpDependencies
+            mockUtpDependencies,
+            Level.WARNING,
         ) {
             capturedUtpTestResultListener = it
             mockUtpTestResultListenerServerRunner
@@ -236,14 +235,11 @@ class UtpTestUtilsTest {
         mockRunUtpWorkParameters.run {
             verify(launcherJar).setFrom(mockUtpDependencies.launcher.files)
             verify(coreJar).setFrom(mockUtpDependencies.core.files)
-            verify(runnerConfig).set(argThat<File> {
-                exists()
+            verify(runnerConfigs).fromDisallowChanges(argThat<ArrayList<File>> {
+                all { it.exists() }
             })
-            verify(serverConfig).set(argThat<File> {
-                exists()
-            })
-            verify(loggingProperties).set(argThat<File> {
-                exists()
+            verify(loggingProperties).fromDisallowChanges(argThat<ArrayList<File>> {
+                all { it.exists() }
             })
         }
     }

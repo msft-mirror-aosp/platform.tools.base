@@ -58,8 +58,8 @@ class ManagedDeviceTestRunner(
         List<UtpRunnerConfig>, String, String, File, ILogger
     ) -> List<UtpTestRunResult> = { runnerConfigs, projectPath, variantName, resultsDir, logger ->
         runUtpTestSuiteAndWait(
-            runnerConfigs, workerExecutor, projectPath, variantName, resultsDir, logger,
-            null, utpDependencies)
+            runnerConfigs, workerExecutor, utpJvmExecutable, projectPath, variantName, resultsDir,
+            logger, null, utpDependencies, utpLoggingLevel)
     },
 ) {
 
@@ -160,19 +160,16 @@ class ManagedDeviceTestRunner(
                     }
                 runnerConfigs.add(
                     UtpRunnerConfig(
-                        utpJvmExecutable,
                         shardedManagedDevice.deviceName,
                         shardedManagedDevice.id,
                         utpOutputDir,
                         runnerConfigProto,
-                        configFactory.createServerConfigProto(),
                         utpRunProfileManager.createTestRunProfile(
                             utpOutputDir,
                             DeviceTestSpanProfile.DeviceType.VIRTUAL_MANAGED_DEVICE,
                             shardedManagedDevice.deviceName
                         ),
                         shardConfig,
-                        utpLoggingLevel
                     )
                 )
             }

@@ -70,15 +70,6 @@ import kotlin.io.path.absolutePathString
 // runner-config so this string is arbitrary.
 private const val UTP_TEST_FIXTURE_ID = "AGP_Test_Fixture"
 
-// A UTP gRPC server address.
-private const val UTP_SERVER_ADDRESS = "localhost:20000"
-
-// Emulator gRPC address
-private const val DEFAULT_EMULATOR_GRPC_ADDRESS = "localhost"
-
-// Default port for adb.
-private const val DEFAULT_ADB_SERVER_PORT = 5037
-
 private const val TEST_RUNNER_LOG_FILE_NAME = "test-results.log"
 
 private val AM_INSTRUMENT_COMMAND_TIME_OUT_SECONDS = TimeUnit.DAYS.toSeconds(365)
@@ -250,16 +241,6 @@ class UtpConfigFactory {
                     device.id,
                 )
             )
-        }.build()
-    }
-
-    /**
-     * Creates a server config proto which you can pass into the Unified Test Platform's
-     * test executor.
-     */
-    fun createServerConfigProto(): ServerConfigProto.ServerConfig {
-        return ServerConfigProto.ServerConfig.newBuilder().apply {
-            address = UTP_SERVER_ADDRESS
         }.build()
     }
 

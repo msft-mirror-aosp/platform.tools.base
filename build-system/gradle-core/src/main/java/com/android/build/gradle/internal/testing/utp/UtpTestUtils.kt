@@ -18,6 +18,7 @@ package com.android.build.gradle.internal.testing.utp
 
 import com.android.build.gradle.internal.testing.CustomTestRunListener
 import com.android.build.gradle.internal.testing.utp.worker.RunUtpWorkAction
+import com.android.build.gradle.internal.utils.fromDisallowChanges
 import com.android.builder.testing.api.DeviceConnector
 import com.android.prefs.AndroidLocationsSingleton
 import com.android.tools.utp.plugins.result.listener.gradle.proto.GradleAndroidTestResultListenerProto
@@ -27,7 +28,6 @@ import com.google.testing.platform.proto.api.config.RunnerConfigProto
 import com.google.testing.platform.proto.api.core.ErrorDetailProto
 import com.google.testing.platform.proto.api.core.TestStatusProto.TestStatus
 import com.google.testing.platform.proto.api.core.TestSuiteResultProto
-import com.google.testing.platform.proto.api.service.ServerConfigProto
 import org.gradle.workers.WorkQueue
 import org.gradle.workers.WorkerExecutor
 import java.io.File
@@ -49,11 +49,9 @@ private const val UNKNOWN_PLATFORM_ERROR_MESSAGE =
  * @property deviceId an identifier for a device
  * @property utpOutputDir a path to the directory to store results from UTP
  * @property runnerConfig a function that constructs and returns UTP runner config proto
- * @property serverConfig a UTP server config proto
  * @property shardConfig an information about test sharding, or null if sharding is not enabled
  */
 data class UtpRunnerConfig(
-    val jvm: File,
     val deviceName: String,
     val deviceId: String,
     val utpOutputDir: File,
@@ -61,10 +59,8 @@ data class UtpRunnerConfig(
         UtpTestResultListenerServerMetadata,
         utpTmpDir: File,
     ) -> RunnerConfigProto.RunnerConfig,
-    val serverConfig: ServerConfigProto.ServerConfig,
     val utpRunProfile: UtpRunProfile,
     val shardConfig: ShardConfig? = null,
-    val utpLoggingLevel: Level = Level.WARNING
 )
 
 /**
@@ -111,12 +107,14 @@ data class UtpTestRunResult(
 fun runUtpTestSuiteAndWait(
     runnerConfigs: List<UtpRunnerConfig>,
     workerExecutor: WorkerExecutor,
+    jvmExecutable: File,
     projectPath: String,
     variantName: String,
     resultsDir: File,
     logger: ILogger,
     utpTestResultListener: UtpTestResultListener?,
     utpDependencies: UtpDependencies,
+    utpLoggingLevel: Level,
     utpTestResultListenerServerRunner: (UtpTestResultListener?) -> UtpTestResultListenerServerRunner = {
         UtpTestResultListenerServerRunner(it)
     }
@@ -161,12 +159,6 @@ fun runUtpTestSuiteAndWait(
                 }
             }
 
-            runUtpTestSuite(
-                config,
-                resultListenerServerMetadata,
-                utpDependencies,
-                workQueue)
-
             val postProcessFunc: () -> UtpTestRunResult = {
                 testResultReporters.remove(config.deviceId)
 
@@ -192,7 +184,14 @@ fun runUtpTestSuiteAndWait(
             postProcessFunc
         }
 
-        workQueue.await()
+        runUtpTestSuiteAndWait(
+            runnerConfigs,
+            resultListenerServerMetadata,
+            utpDependencies,
+            utpLoggingLevel,
+            workQueue,
+            jvmExecutable,
+        )
 
         return postProcessCallback.map {
             it()
@@ -212,42 +211,48 @@ private fun TestStatus.isPassedOrSkipped(): Boolean {
 /**
  * Runs the given runner config using Unified Test Platform.
  */
-private fun runUtpTestSuite(
-    config: UtpRunnerConfig,
+private fun runUtpTestSuiteAndWait(
+    configs: List<UtpRunnerConfig>,
     resultListenerServerMetadata: UtpTestResultListenerServerMetadata,
     utpDependencies: UtpDependencies,
-    workQueue: WorkQueue
+    utpLoggingLevel: Level,
+    workQueue: WorkQueue,
+    jvmExecutable: File,
 ) {
-    val utpRunTempDir = createUtpTempDirectory("utpRunTemp")
-    val runnerConfigProtoFile = createUtpTempFile("runnerConfig", ".pb").also { file ->
-        FileOutputStream(file).use { writer ->
-            config.runnerConfig(resultListenerServerMetadata, utpRunTempDir).writeTo(writer)
+    val runnerConfigFiles = configs.map { config ->
+        val utpRunTempDir = createUtpTempDirectory("utpRunTemp")
+        val runnerConfigProtoFile = createUtpTempFile("runnerConfig", ".pb").also { file ->
+            FileOutputStream(file).use { writer ->
+                config.runnerConfig(resultListenerServerMetadata, utpRunTempDir).writeTo(writer)
+            }
         }
+        runnerConfigProtoFile
     }
-    val serverConfigProtoFile = createUtpTempFile("serverConfig", ".pb").also { file ->
-        FileOutputStream(file).use { writer ->
-            config.serverConfig.writeTo(writer)
-        }
-    }
-    val loggingPropertiesFile = createUtpTempFile("logging", "properties").also { file ->
-        Files.asCharSink(file, Charsets.UTF_8).write("""
+
+    val loggingPropertiesFiles = configs.map { config ->
+        val loggingPropertiesFile = createUtpTempFile("logging", "properties").also { file ->
+            Files.asCharSink(file, Charsets.UTF_8).write("""
                 .level=INFO
                 .handlers=java.util.logging.ConsoleHandler,java.util.logging.FileHandler
-                java.util.logging.ConsoleHandler.level=${config.utpLoggingLevel.name}
+                java.util.logging.ConsoleHandler.level=${utpLoggingLevel.name}
                 java.util.logging.SimpleFormatter.format=%4${'$'}s: %5${'$'}s%n
                 java.util.logging.FileHandler.level=INFO
                 java.util.logging.FileHandler.pattern=${config.utpOutputDir.invariantSeparatorsPath}/utp.%u.log
                 java.util.logging.FileHandler.formatter=java.util.logging.SimpleFormatter
             """.trimIndent())
+        }
+        loggingPropertiesFile
     }
+
     workQueue.submit(RunUtpWorkAction::class.java) { params ->
-        params.jvm.set(config.jvm)
+        params.jvm.set(jvmExecutable)
         params.launcherJar.setFrom(utpDependencies.launcher.files)
         params.coreJar.setFrom(utpDependencies.core.files)
-        params.runnerConfig.set(runnerConfigProtoFile)
-        params.serverConfig.set(serverConfigProtoFile)
-        params.loggingProperties.set(loggingPropertiesFile)
+        params.runnerConfigs.fromDisallowChanges(runnerConfigFiles)
+        params.loggingProperties.fromDisallowChanges(loggingPropertiesFiles)
     }
+
+    workQueue.await()
 }
 
 /**

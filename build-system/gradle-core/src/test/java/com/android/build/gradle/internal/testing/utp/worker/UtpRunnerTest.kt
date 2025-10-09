@@ -19,6 +19,7 @@ package com.android.build.gradle.internal.testing.utp.worker
 import com.android.build.gradle.internal.testing.utp.UtpDependency
 import com.android.testutils.assertThrows
 import com.google.common.truth.Truth.assertThat
+import org.gradle.api.GradleException
 import org.gradle.api.logging.Logger
 import org.junit.Before
 import org.junit.Rule
@@ -29,9 +30,16 @@ import org.mockito.ArgumentCaptor
 import org.mockito.Captor
 import org.mockito.Mock
 import org.mockito.junit.MockitoJUnitRunner
-import org.mockito.kotlin.*
-import java.io.ByteArrayInputStream
+import org.mockito.kotlin.any
+import org.mockito.kotlin.capture
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.times
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 import java.io.File
+import java.util.concurrent.ExecutionException
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Future
 
 @RunWith(MockitoJUnitRunner::class)
 class UtpRunnerTest {
@@ -41,125 +49,156 @@ class UtpRunnerTest {
     val tempDir = TemporaryFolder()
 
     @Mock
-    lateinit var logger: Logger
+    private lateinit var logger: Logger
     @Mock
-    lateinit var processBuilderFactory: (List<String>) -> ProcessBuilder
+    private lateinit var processBuilderFactory: (List<String>) -> ProcessBuilder
     @Mock
-    lateinit var processBuilder: ProcessBuilder
+    private lateinit var processBuilder: ProcessBuilder
     @Mock
-    lateinit var process: Process
+    private lateinit var process: Process
+    @Mock
+    private lateinit var executorServiceFactory: () -> ExecutorService
+    @Mock
+    private lateinit var executorService: ExecutorService
+    @Mock
+    private lateinit var future: Future<*>
 
     @Captor
-    lateinit var commandCaptor: ArgumentCaptor<List<String>>
+    private lateinit var commandCaptor: ArgumentCaptor<List<String>>
+    @Captor
+    private lateinit var taskCaptor: ArgumentCaptor<Runnable>
 
-    // --- Test Fixtures ---
     private lateinit var javaFile: File
-    private lateinit var loggingFile: File
+    private lateinit var loggingFile1: File
+    private lateinit var loggingFile2: File
     private lateinit var launcherJar1: File
     private lateinit var launcherJar2: File
     private lateinit var coreJar1: File
     private lateinit var coreJar2: File
-    private lateinit var runnerConfig: File
-    private lateinit var serverConfig: File
+    private lateinit var runnerConfig1: File
+    private lateinit var runnerConfig2: File
 
     private lateinit var utpRunner: UtpRunner
 
     @Before
     fun setUp() {
-        // Create dummy files using the TemporaryFolder rule
         javaFile = tempDir.newFile("my-java")
-        loggingFile = tempDir.newFile("logging.properties")
+        loggingFile1 = tempDir.newFile("logging1.properties")
+        loggingFile2 = tempDir.newFile("logging2.properties")
         launcherJar1 = tempDir.newFile("launcherA.jar")
         launcherJar2 = tempDir.newFile("launcherB.jar")
         coreJar1 = tempDir.newFile("coreA.jar")
         coreJar2 = tempDir.newFile("coreB.jar")
-        runnerConfig = tempDir.newFile("runner-config.pb")
-        serverConfig = tempDir.newFile("server-config.pb")
+        runnerConfig1 = tempDir.newFile("runner-config-1.pb")
+        runnerConfig2 = tempDir.newFile("runner-config-2.pb")
 
-        // Mock the factory to return our mock ProcessBuilder
-        whenever(processBuilderFactory.invoke(capture(commandCaptor))).thenReturn(processBuilder)
-
-        // Mock the ProcessBuilder to return our mock Process
+        whenever(executorServiceFactory()).thenReturn(executorService)
+        whenever(processBuilderFactory(capture(commandCaptor))).thenReturn(processBuilder)
         whenever(processBuilder.start()).thenReturn(process)
 
-        // Instantiate the class under test
         utpRunner = UtpRunner(
             javaExecFile = javaFile,
-            loggingPropertiesFile = loggingFile,
+            loggingPropertiesFileList = listOf(loggingFile1, loggingFile2),
             utpLauncherJars = listOf(launcherJar1, launcherJar2),
             utpCoreJars = listOf(coreJar1, coreJar2),
-            utpRunnerConfigFile = runnerConfig,
-            utpServerConfigFile = serverConfig,
+            utpRunnerConfigFileList = listOf(runnerConfig1, runnerConfig2),
             logger = logger,
-            processBuilderFactory = processBuilderFactory
+            processBuilderFactory = processBuilderFactory,
+            executorServiceFactory = executorServiceFactory
         )
     }
 
     @Test
-    fun `execute builds correct command, streams output, and waits`() {
+    fun execute_successfulRun_startsAllProcessesInParallel() {
         // Arrange
-        // Simulate a successful process exit
         whenever(process.waitFor()).thenReturn(0)
-
-        // Simulate process output
-        whenever(process.inputStream).thenReturn(
-            "stdout line 1\nstdout line 2".byteInputStream()
-        )
-        whenever(process.errorStream).thenReturn(
-            "stderr line 1".byteInputStream()
-        )
+        whenever(process.inputStream).then { "stdout line".byteInputStream() }
+        whenever(process.errorStream).then { "stderr line".byteInputStream() }
+        val future1 = mock<Future<*>>()
+        val future2 = mock<Future<*>>()
+        whenever(executorService.submit(any<Runnable>())).thenReturn(future1, future2)
+        whenever(future1.get()).thenReturn(Unit)
+        whenever(future2.get()).thenReturn(Unit)
 
         // Act
         utpRunner.execute()
 
-        // Assert
-        // 1. Verify the exact command arguments
-        val command = commandCaptor.value
-        val cpSeparator = File.pathSeparator
+        // Assert: Verify tasks were submitted
+        verify(executorService, times(2)).submit(taskCaptor.capture())
 
-        assertThat(command).containsExactly(
+        // Execute the captured tasks to simulate the threads running
+        taskCaptor.allValues.forEach { it.run() }
+
+        // Assert: Verify commands
+        val cpSeparator = File.pathSeparator
+        val allCommands = commandCaptor.allValues
+        assertThat(allCommands[0]).containsExactly(
             javaFile.absolutePath,
             "-Djava.awt.headless=true",
-            "-Djava.util.logging.config.file=${loggingFile.absolutePath}",
+            "-Djava.util.logging.config.file=${loggingFile1.absolutePath}",
             "-Dfile.encoding=UTF-8",
             "-cp",
             "${launcherJar1.absolutePath}$cpSeparator${launcherJar2.absolutePath}",
             UtpDependency.LAUNCHER.mainClass,
             "${coreJar1.absolutePath}$cpSeparator${coreJar2.absolutePath}",
-            "--proto_config=${runnerConfig.absolutePath}",
-            "--proto_server_config=${serverConfig.absolutePath}"
-        ).inOrder() // Verify all arguments in the correct order
+            "--proto_config=${runnerConfig1.absolutePath}",
+        ).inOrder()
+        assertThat(allCommands[1]).containsExactly(
+            javaFile.absolutePath,
+            "-Djava.awt.headless=true",
+            "-Djava.util.logging.config.file=${loggingFile2.absolutePath}",
+            "-Dfile.encoding=UTF-8",
+            "-cp",
+            "${launcherJar1.absolutePath}$cpSeparator${launcherJar2.absolutePath}",
+            UtpDependency.LAUNCHER.mainClass,
+            "${coreJar1.absolutePath}$cpSeparator${coreJar2.absolutePath}",
+            "--proto_config=${runnerConfig2.absolutePath}",
+        ).inOrder()
 
-        // 2. Verify process lifecycle
-        verify(processBuilder).start()
-        verify(process, times(1)).waitFor()
-        verify(process, never()).destroyForcibly()
-
-        // 3. Verify logging
-        verify(logger).info("stdout line 1")
-        verify(logger).info("stdout line 2")
-        verify(logger).info("stderr line 1")
+        // Assert: Verify process lifecycle and logging for both tasks
+        verify(processBuilder, times(2)).start()
+        verify(process, times(2)).waitFor()
+        verify(logger, times(2)).info("stdout line")
+        verify(logger, times(2)).info("stderr line")
+        verify(executorService).shutdownNow()
     }
 
     @Test
-    fun `execute when interrupted, destroys process and re-throws`() {
+    fun execute_oneTaskFails_throwsGradleException() {
         // Arrange
-        // Mock the process streams to be empty
-        whenever(process.inputStream).thenReturn(ByteArrayInputStream(byteArrayOf()))
-        whenever(process.errorStream).thenReturn(ByteArrayInputStream(byteArrayOf()))
+        val future1 = mock<Future<*>>()
+        val future2 = mock<Future<*>>()
+        val testException = ExecutionException(RuntimeException("Process failed"))
 
-        // Mock the call sequence for process.waitFor()
-        whenever(process.waitFor())
-            .thenThrow(InterruptedException("Test interrupt")) // First call in try-block
-            .thenReturn(143) // Second call in catch-block
+        whenever(executorService.submit(any<Runnable>())).thenReturn(future1, future2)
+        whenever(future1.get()).thenReturn(Unit) // First task succeeds
+        whenever(future2.get()).thenThrow(testException) // Second task fails
 
-        // Act
-        val e = assertThrows<InterruptedException> { utpRunner.execute() }
-        assertThat(e).hasMessageThat().contains("Test interrupt")
+        // Act & Assert
+        val e = assertThrows<GradleException> {
+            utpRunner.execute()
+        }
+        assertThat(e).hasMessageThat().isEqualTo("Test Execution failed")
 
-        // Verify the process lifecycle
-        verify(processBuilder).start()
-        verify(process).destroyForcibly() // Should be called from the catch block
-        verify(process, times(2)).waitFor() // First call in try, second in catch
+        // Assert
+        verify(logger).warn("Test Execution failed", testException)
+        verify(executorService).shutdownNow() // Should be called in finally
+    }
+
+    @Test
+    fun execute_whenInterrupted_rethrows() {
+        // Arrange
+        val testException = InterruptedException("Test interrupt")
+        whenever(executorService.submit(any<Runnable>())).thenReturn(future)
+        whenever(future.get()).thenThrow(testException)
+
+        // Act & Assert
+        val e = assertThrows<InterruptedException> {
+            utpRunner.execute()
+        }
+        assertThat(e).isEqualTo(testException)
+
+        // Assert
+        verify(executorService).shutdownNow()
     }
 }

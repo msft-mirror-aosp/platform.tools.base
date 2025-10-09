@@ -33,12 +33,9 @@ interface RunUtpWorkParameters : WorkParameters {
     // A UTP core jar file.
     val coreJar: ConfigurableFileCollection
 
-    // A UTP runner config binary proto file to be passed into the launcher.
-    val runnerConfig: RegularFileProperty
-
-    // A UTP server config binary proto file to be passed into the launcher.
-    val serverConfig: RegularFileProperty
+    // A UTP runner configs binary proto file to be passed into the launcher.
+    val runnerConfigs: ConfigurableFileCollection
 
     // A Java logging properties file to be loaded to run a UTP java process.
-    val loggingProperties: RegularFileProperty
+    val loggingProperties: ConfigurableFileCollection
 }

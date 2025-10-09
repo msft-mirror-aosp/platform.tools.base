@@ -26,11 +26,10 @@ abstract class RunUtpWorkAction : WorkAction<RunUtpWorkParameters> {
     override fun execute() {
         val utpRunner = UtpRunner(
             parameters.jvm.asFile.get(),
-            parameters.loggingProperties.asFile.get(),
+            parameters.loggingProperties.toList(),
             parameters.launcherJar.toList(),
             parameters.coreJar.toList(),
-            parameters.runnerConfig.asFile.get(),
-            parameters.serverConfig.asFile.get(),
+            parameters.runnerConfigs.toList(),
         )
 
         utpRunner.execute()

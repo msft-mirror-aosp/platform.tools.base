@@ -31,7 +31,6 @@ import com.android.utils.ILogger
 import com.google.common.truth.Truth.assertThat
 import com.google.testing.platform.proto.api.config.RunnerConfigProto
 import com.google.testing.platform.proto.api.core.TestSuiteResultProto.TestSuiteResult
-import com.google.testing.platform.proto.api.service.ServerConfigProto.ServerConfig
 import org.gradle.api.provider.Provider
 import org.gradle.workers.WorkerExecutor
 import org.junit.Before
@@ -124,8 +123,6 @@ class UtpTestRunnerTest {
             )).then {
                 RunnerConfigProto.RunnerConfig.getDefaultInstance()
             }
-            whenever(mockUtpConfigFactory.createServerConfigProto())
-                .thenReturn(ServerConfig.getDefaultInstance())
         }
 
         val runner = UtpTestRunner(

@@ -29,7 +29,6 @@ import com.google.common.truth.Truth.assertThat
 import com.google.testing.platform.proto.api.config.RunnerConfigProto
 import com.google.testing.platform.proto.api.core.TestSuiteResultProto
 import com.google.testing.platform.proto.api.core.TestSuiteResultProto.TestSuiteResult
-import com.google.testing.platform.proto.api.service.ServerConfigProto.ServerConfig
 import org.gradle.api.file.Directory
 import org.gradle.api.logging.Logger
 import org.gradle.api.provider.Provider
@@ -115,9 +114,6 @@ class ManagedDeviceTestRunnerTest {
         }
 
         whenever(mockDslDevice.pageAlignmentSuffix).thenReturn("")
-
-        whenever(mockUtpConfigFactory.createServerConfigProto())
-                .thenReturn(ServerConfig.getDefaultInstance())
 
         whenever(mockAvdComponents.runWithAvds(
             any(), any(),

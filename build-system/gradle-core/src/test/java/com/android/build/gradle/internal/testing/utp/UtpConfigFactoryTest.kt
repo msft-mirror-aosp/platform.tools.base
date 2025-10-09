@@ -658,16 +658,6 @@ class UtpConfigFactoryTest {
     }
 
     @Test
-    fun createServerConfigProto() {
-        val factory = UtpConfigFactory()
-        val serverConfigProto = factory.createServerConfigProto()
-
-        assertThat(serverConfigProto.toString().trim()).isEqualTo("""
-            address: "localhost:20000"
-        """.trimIndent())
-    }
-
-    @Test
     fun multipleDependencyApk() {
         val mockPath1 = mockPath("mockDependencyApkPath1")
         val mockPath2 = mockPath("mockDependencyApkPath2")
