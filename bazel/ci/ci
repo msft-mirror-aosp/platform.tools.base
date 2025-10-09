@@ -21,7 +21,7 @@ fi
 startup_options=("--max_idle_secs=60")
 if [[ "${INCREMENTAL_BUILD}" == "true" ]]; then
   # LINT.IfChange(bazel_user_root)
-  startup_options+=("--output_user_root=${WORKSPACE}/out2/bazel_user_root")
+  startup_options+=("--output_user_root=${WORKSPACE}/out/bazel_user_root")
   startup_options+=("--output_base=${WORKSPACE}/out/bazel_out")
   startup_options+=("--install_base=${WORKSPACE}/out/bazel_install")
   # LINT.ThenChange(/bazel/ci/bazel.py:bazel_user_root)
