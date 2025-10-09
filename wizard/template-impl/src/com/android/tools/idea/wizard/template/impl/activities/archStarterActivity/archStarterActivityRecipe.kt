@@ -92,6 +92,8 @@ fun RecipeExecutor.archStarterActivityRecipe(
   addDependency("androidx.test:runner:1.6.2", configuration = "androidTestImplementation")
 
   addDependency(mavenCoordinate = "androidx.compose.material3:material3")
+  addDependency(mavenCoordinate = "androidx.compose.material:material-icons-core")
+  addDependency(mavenCoordinate = "androidx.compose.material:material-icons-extended")
 
   addPlatformDependency("io.coil-kt.coil3:coil-bom:3.3.0")
   addDependency("io.coil-kt.coil3:coil-compose")
