@@ -17,6 +17,7 @@
 package com.android.tools.journeys.testengine.robo.platform
 
 import androidx.test.tools.crawler.proto.CrawlGuidanceProto.CrawlParameter
+import com.android.tools.journeys.testengine.JourneysTestEngineInput
 import com.google.cloud.test.appcrawler.proto.Artifact
 import com.google.cloud.test.appcrawler.proto.ClientMetadata
 import com.google.cloud.test.appcrawler.proto.CrawlSetup
@@ -60,6 +61,8 @@ class Proxy(
     private val accessTokenPath: String,
     private val channelProvider: (String, String) -> ManagedChannel
 ) {
+
+    private val customAppId = JourneysTestEngineInput.ProxyInput.customAppId
 
     /**
      * Executes a journey defined by the script at the given path.
@@ -148,17 +151,21 @@ class Proxy(
             val tempApkFile = File.createTempFile("extracted_apk", ".apk").apply { deleteOnExit() }
             FileOutputStream(tempApkFile).use { apkStream.copyTo(it) }
             adb.install(deviceId, tempApkFile.absolutePath, getCrawlerInstallFlags(deviceApiLevel))
-            val appApkLocation = File(appApkPath)
-            val appApkPath = if (appApkLocation.isDirectory) {
-                // hopefully, there is only one APK in the directory, we don't handle
-                // multi APKs so far.
-                File(
-                    appApkLocation,
-                    appApkLocation.list()?.single { it.endsWith(".apk") }
-                        ?: throw RuntimeException("no APK present in $appApkPath")
-                ).absolutePath
-            } else appApkPath
-            adb.install(deviceId, appApkPath, getAppInstallFlags(deviceApiLevel))
+            if (customAppId.isBlank()) {
+                val appApkLocation = File(appApkPath)
+                val appApkPath = if (appApkLocation.isDirectory) {
+                    // hopefully, there is only one APK in the directory, we don't handle
+                    // multi APKs so far.
+                    File(
+                        appApkLocation,
+                        appApkLocation.list()?.single { it.endsWith(".apk") }
+                            ?: throw RuntimeException("no APK present in $appApkPath")
+                    ).absolutePath
+                } else appApkPath
+                adb.install(deviceId, appApkPath, getAppInstallFlags(deviceApiLevel))
+            } else {
+                println("Not installing APK, using pre-installed package: $customAppId")
+            }
         } catch (e: Exception) {
             throw JourneyExecutionException(
                 "Installation failure: ${e.message}",
@@ -173,7 +180,8 @@ class Proxy(
                 RoboConfigConstants.CRAWLER_PACKAGE_ID,
                 RoboConfigConstants.TEST_RUNNER_CLASS,
                 args = mapOf(
-                    RoboConfigConstants.ROBO_V2_APP_PACKAGE_FLAG to applicationId,
+                    RoboConfigConstants.ROBO_V2_APP_PACKAGE_FLAG to (customAppId.takeIf { !it.isBlank() }
+                        ?: applicationId),
                     RoboConfigConstants.ROBO_V2_UI_AUTOMATOR_ONLY_MODE to "true",
                     RoboConfigConstants.ROBO_ADB_FORWARD to "true",
                     RoboConfigConstants.ROBO_PICK_OPEN_PORT to "true"
@@ -243,7 +251,9 @@ class Proxy(
         }
 
         try {
-            adb.uninstall(deviceId, applicationId)
+            if (customAppId.isBlank()) {
+                adb.uninstall(deviceId, applicationId)
+            }
         } catch (e: Exception) {
             System.err.println(e.message)
         }
@@ -408,7 +418,7 @@ class Proxy(
     ): GrpcClient.Result {
         val crawlSetup =
             CrawlSetup.newBuilder()
-                .setAppPackageId(applicationId)
+                .setAppPackageId(customAppId.takeIf { !it.isBlank() } ?: applicationId)
                 .setIdentifier(journeyRunId)
                 .setClientMetadata(
                     ClientMetadata.newBuilder()

@@ -62,6 +62,10 @@ object JourneysTestEngineInput {
         val adbPath: File
         val accessTokenPath: String =
             getSystemPropertyOrEnvVar("Proxy.accessTokenPath", "GEMINI_ACCESS_TOKEN_PATH")
+        // For internal testing only.
+        // Overrides the application id provided by the project open in studio and is to allow
+        // testing on any pre-installed apps by opening a dummy project in studio.
+        val customAppId: String = getSystemPropertyOrEnvVar("", "JOURNEYS_CUSTOM_APP_ID")
 
         init {
             if (System.getenv("com.android.junit.engine.input.parameters") != null) {
@@ -78,6 +82,17 @@ object JourneysTestEngineInput {
                 adbPath = getFileFromSystemProperty("Proxy.adbPath")
             }
         }
+    }
+
+    object RoboConverterInput {
+
+        // For internal testing only.
+        // To allow experimenting with different robo agents.
+        val agentName: String = getSystemPropertyOrEnvVar("", "JOURNEYS_AGENT_NAME")
+        // For internal testing only.
+        // To allow enabling experimental features on robo agents.
+        val enableExperimentalMode: Boolean =
+            getSystemPropertyOrEnvVar("", "JOURNEYS_ENABLE_EXPERIMENTAL_MODE").toBoolean()
     }
 }
 

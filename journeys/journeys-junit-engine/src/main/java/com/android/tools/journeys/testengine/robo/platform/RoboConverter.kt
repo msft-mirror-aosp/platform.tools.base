@@ -16,6 +16,7 @@
 
 package com.android.tools.journeys.testengine.robo.platform
 
+import com.android.tools.journeys.testengine.JourneysTestEngineInput
 import java.io.InputStream
 import java.io.StringWriter
 import java.io.Writer
@@ -128,7 +129,7 @@ object RoboConverter {
      * @param textContent The text content of the action.
      */
     private fun Writer.addJsonAction(textContent: String) =
-        write(actionEntry.replace("\"%CONTENT%\"", textContent))
+        write(actionEntry(textContent))
 
     /** Converts a NodeList to a standard Kotlin List<Node>. */
     private fun NodeList.toList(): List<Node> = (0 until length).map { item(it) }
@@ -182,13 +183,27 @@ object RoboConverter {
         }]
     """.trimIndent()
 
-    private val actionEntry =
-        """
-          {
-            "eventType": "AI_AGENT",
-            "aiAgentInstructions": {
-              "goal": "%CONTENT%"
+    private fun actionEntry(content: String): String {
+        val agentName = JourneysTestEngineInput.RoboConverterInput.agentName
+        return buildString {
+            appendLine("{")
+            appendLine("  \"eventType\": \"AI_AGENT\",")
+            appendLine("  \"aiAgentInstructions\": {")
+            append("    \"goal\": $content")
+            if (JourneysTestEngineInput.RoboConverterInput.enableExperimentalMode) {
+                appendLine(",")
+                appendLine("    \"experimental\": \"true\"")
+            } else {
+                appendLine()
             }
-          },
-    """.trimIndent()
+            append("  }")
+            if (agentName.isNotBlank()) {
+                appendLine(",")
+                appendLine("  \"aiAgentName\": \"$agentName\"")
+            } else {
+                appendLine()
+            }
+            append("},")
+        }
+    }
 }
