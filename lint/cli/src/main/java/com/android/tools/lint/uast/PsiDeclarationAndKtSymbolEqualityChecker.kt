@@ -19,6 +19,7 @@ import com.intellij.psi.PsiArrayType
 import com.intellij.psi.PsiEllipsisType
 import com.intellij.psi.PsiMethod
 import com.intellij.psi.PsiParameter
+import com.intellij.psi.PsiPrimitiveType
 import com.intellij.psi.PsiType
 import com.intellij.psi.PsiTypes
 import com.intellij.psi.impl.source.PsiClassReferenceType
@@ -134,7 +135,7 @@ internal object PsiDeclarationAndKtSymbolEqualityChecker {
 
   private fun KaSession.isTheSameTypes(
     context: PsiMethod,
-    psi: PsiType,
+    psiType: PsiType,
     kaType: KaType,
     mode: KaTypeMappingMode = KaTypeMappingMode.DEFAULT,
     isVararg: Boolean = false,
@@ -142,8 +143,8 @@ internal object PsiDeclarationAndKtSymbolEqualityChecker {
     isSuspend: Boolean = false,
   ): Boolean {
     // Shortcut: primitive void == Unit as a function return type
-    if (psi == PsiTypes.voidType() && kaType.isUnitType) return true
-    if (psi.isObject) {
+    if (psiType == PsiTypes.voidType() && kaType.isUnitType) return true
+    if (psiType.isObject) {
       // Without type substitution (from resolved call info), we can't
       // tell their equality: assume they are matched conservatively,
       // when the counterpart [PsiType] is Object, as if it's converted
@@ -169,10 +170,20 @@ internal object PsiDeclarationAndKtSymbolEqualityChecker {
       } else {
         ktTypeRendered
       }
+    // Similar case for DLC (decompiled LC): https://youtrack.jetbrains.com/issue/KT-78076
+    val psiTypeIsPrimitive = psiType is PsiPrimitiveType
+    val ktTypeIsPrimitive = ktTypeToCompare is PsiPrimitiveType
+    // E.g., kotlin.Int -> int v.s. java.lang.Integer from stub
+    if (psiTypeIsPrimitive != ktTypeIsPrimitive) {
+      // Either side is primitive, so try to unbox the opposite side.
+      val t1 = PsiPrimitiveType.getOptionallyUnboxedType(psiType) ?: psiType
+      val t2 = PsiPrimitiveType.getOptionallyUnboxedType(ktTypeToCompare) ?: ktTypeToCompare
+      return t1.canonicalText == t2.canonicalText
+    }
     // b/443080986: `PsiType.equals()` triggers the type resolution.
     // With more "fake" declarations that might not have a proper parent hierarchy,
     // type resolution is not only expensive, but also prone to errors / corner cases.
-    return ktTypeToCompare.canonicalText == psi.canonicalText
+    return ktTypeToCompare.canonicalText == psiType.canonicalText
   }
 
   private const val OBJECT_TYPE = "java.lang.Object"

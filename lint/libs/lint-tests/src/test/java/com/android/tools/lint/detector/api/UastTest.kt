@@ -5143,6 +5143,249 @@ class UastTest : TestCase() {
     }
   }
 
+  fun testComposeMutableStateValue() {
+    // b/446888066 or b/353980920#comment21
+    // Similar case for DLC (decompiled LC): https://youtrack.jetbrains.com/issue/KT-78076
+    val testFiles =
+      arrayOf(
+        kotlin(
+          """
+            import my.compose.runtime.*
+
+            fun test() {
+              val alpha = mutableStateOf(0.0)
+              val position = mutableFloatStateOf(0f)
+
+              val unusedAlphaRead = alpha.value
+              val unusedPositionRead = position.value
+
+              // TODO(b/446888066):
+              //  after https://youtrack.jetbrains.com/issue/KTIJ-35935
+              // alpha.value = 0.42
+              // position.value = 42f
+            }
+          """
+        ),
+        bytecode(
+          "libs/runtime.jar",
+          kotlin(
+              """
+              package my.compose.runtime
+
+              // From https://cs.android.com/androidx/platform/frameworks/support/+/androidx-main:compose/runtime/runtime/src/commonMain/kotlin/androidx/compose/runtime/SnapshotState.kt
+
+              import kotlin.reflect.KProperty
+
+              fun <T> mutableStateOf(
+                value: T,
+              ): MutableState<T> = TODO()
+
+              interface State<out T> {
+                val value: T
+              }
+
+              interface MutableState<T>: State<T> {
+                override var value: T
+              }
+
+              inline operator fun <T> MutableState<T>.setValue(
+                thisObj: Any?,
+                property: KProperty<*>,
+                value: T
+              ) {
+                this.value = value
+              }
+
+              // From https://cs.android.com/androidx/platform/frameworks/support/+/androidx-main:compose/runtime/runtime/src/commonMain/kotlin/androidx/compose/runtime/SnapshotFloatState.kt
+
+              fun mutableFloatStateOf(value: Float): MutableFloatState = TODO()
+
+              interface FloatState : State<Float> {
+                override val value: Float
+                  get() = floatValue
+
+                  val floatValue: Float
+              }
+
+              interface MutableFloatState : FloatState, MutableState<Float> {
+                override var value: Float
+                  get() = floatValue
+                  set(value) { floatValue = value }
+
+                override var floatValue: Float
+              }
+
+              inline operator fun MutableFloatState.setValue(
+                thisObj: Any?,
+                property: KProperty<*>,
+                value: Float,
+              ) {
+                this.floatValue = value
+              }
+            """
+            )
+            .indented(),
+          0x945b3c8f,
+          """
+                META-INF/main.kotlin_module:
+                H4sIAAAAAAAA/2NgYGBmYGBgBGJOBijg4uJiEGILSS0u8S7hkuUSyq3US87P
+                LcgvTtUrKs0rycxNFWIPLkksSfUuUWLQYgAActJuqEMAAAA=
+                """,
+          """
+                my/compose/runtime/FloatState＄DefaultImpls.class:
+                H4sIAAAAAAAA/4VSTW/TQBB9E7d1k7qkLeUjlLaUBkh6wIC49YSKIlkyKaIo
+                l5426TZsst6t7HUE/4ojcOAH8KMQY8dSoZXKwfPx9unNzJN//f7xE8BrdAkH
+                yZdwZJMLm8kwzY1TiQx72gp34oST7bfyXOTaRcmFznwQYW0iZiLUwozD4+FE
+                jpwPj7A8lm4gdC4JrzrxjZKH3fhSooQPCfuxTcfhRLphKpTJQmGMZbKyXPet
+                6+daM2v7RmEfy4RVXqSEqm28TrcXoIGVFdQREJpXZvu4RfBnBfn4nLDZ6V1f
+                L8Aa1htoYoOw2HafVEbY/c+RhPV4ap1WJnwnnTgTTjBWS2YeG09FqBcBBJoW
+                BXtY+6yK6gUh+Nt1NreUfD51hIUje8ZXNWNlZD9PhjL9KIaakY3YjoQeiFQV
+                fQVufZgvFpmZyhRDby5tJbSvvr4XqUikk+k/tCAyRqZHWmSZ5LZxYvN0JHuq
+                GNCqJAbX5PESNSxgfmIdi1iCh73yp+OTOTcOvmOV8A23v3JXw2OOS+XLHvY5
+                BnMWNnGHc7t69Tk/4c+nqvHwtKSxfTxmFy08K+UeocN5h/G7zLl3Ci/C/Qit
+                CA+wFeEhtiPs/AF8MssmCAMAAA==
+                """,
+          """
+                my/compose/runtime/FloatState.class:
+                H4sIAAAAAAAA/31SXW8SQRQ9syz7QaluaVWg1lZbTeuDi40PJhiN0ZBsgtVA
+                QprwNNCBLAy7zc4s0bf+Cn+AD/4IH0zDoz/KeBdqSmzrw9y55849J/djfv3+
+                8RPACzxh2Jp88fvx5DRWwk/SSIcT4TdkzHVbcy1sMIY3zRGfcl/yaOh/7I1E
+                X9eb17DmhFdLuXOZ+us6g/evgA2ToXyTiA2LwRkK3eEyFQzr+wdXZBl2m3Ey
+                9EdC9xIeRsrnURQTO4zJP4r1USolZa2SzJxxoZXbP2gwrDXHsZZh5H8Qmp9w
+                zSnTmExzNBWWGTczYGBjin8OM1Qj7+Q5w6fzM69glI3F8eyC4VjOoHx+duiU
+                zJJRM2qsVfJyVfKOZ9/N2TfLqpqO6eVbG56VRV92jmdf/8Ztz8l0Dxm2r5vp
+                5SaowOqNU6dHKrYwWOozP13cT/+ruvdeDHgqdTA5lcrGFkNxOUJbmKc9G2uG
+                zdaCHkTTUIU9Kd5eDpx4QRSJ5J3kSgmCbjscRlynCZVQaMdp0heNUBKoXKh0
+                rmjQzg3kqQ+bpm3Q/3DgEnpIyMq6Q/ZnVlAkbOIR2QJFHxBnGxXsZhzksDe/
+                d/CY7ga9r5LirS5yAW4H8AKsoUQu1gNs4E4XTOEu7nXhKpQVKgpVhU2FFYWi
+                wn0FR8H9A7KdU7MuAwAA
+                """,
+          """
+                my/compose/runtime/MutableFloatState＄DefaultImpls.class:
+                H4sIAAAAAAAA/41STW/TQBB967R1krqkLaUQCuUjoSQB6kbigsoFFVmy5H6I
+                olw4bdJt2MT2VvY6gn8FN8qBH8CPQsw6FqXpJQfPzM48v3mzs7///PwF4DW6
+                DN3oqztQ0YVKhZtksZaRcA8zzfuh8ELF9anmWjTfi3OehdqPLsLUBmNYHfEJ
+                d0MeD93j/kgMtI0SQ3kodI+HmWB40wrmYd5vB1dMeXqfoRGoZOiOhO4nXMap
+                y+NYEVgqio+UPsrCkFDNefhtlBlWSFaeKrSVWm3PQRXLy6jAYajNSLBxi8Ge
+                GPDxOcNGy7up0sEq1qqoYZ1hsak/y5RhZ76R6Z7Sf/fUmfOevHaPBkmvD7JA
+                ynoO7qFuJrlPSibTAvMY1oKx0qGM3UOh+RnXnBpb0aREm2fGVIwBYccmoO1Z
+                X6SJ9hic//dNcnMJu2NNHQ/UGfHXAhmLoyzqi+SjEcqwHqgBD3s8keZcJLc+
+                TOfx44lMJaXeXW2SFjhbPeEJj4QWyTWY48exSA5CnqaCjtVTlSUD4UnToF5Q
+                9G7QowsLC2ZC8hUsYgkltPNXTyOTr3YuscLwA7e/5ZgO2aW80sILss4UhQ3c
+                If+yqNrkX9Fns+JQwSbu0u+G+i15i3y507jEloXvM8TtnHhziimITfQAD6lu
+                aCtWQUsLwW7en+X6n6MON6drYY/8NuW3CfPoE0o+Hvt44uMpGj6aeOZj5y9L
+                rO9E4gMAAA==
+                """,
+          """
+                my/compose/runtime/MutableFloatState.class:
+                H4sIAAAAAAAA/41S0U4TQRQ9s912t0spW0AtICJQsVXjlsYHE4zRaJpsUjBp
+                k4akT9MybRa2u2RnttE3vsIP8MGP8MEQHv0o490FpQoBH2bOvXfOPXdm7v3x
+                89t3AC/wjKEy/uQMwvFxKIUTxYHyxsLZjRXv+6Lph1x1FFfCAGMQrUM+4Y7P
+                g5HzoX8oBmqndU3yZda1xxfaKeHVlGKatvN6h8H+t4wBnWH1xlIGcgxrt5Qz
+                YDKYI6G63I8Fw0K1duUCDJutMBo5h0L1I+4F0uFBEFK2F5K9F6q92PeJZco/
+                Mnq1WesyzJJwqnERzlRrTYrKv6Ol1lGofC9wdoXiB1xx0tLGkwy1gyVbPtnA
+                wI4o/tFLvDpZB9sMwenJoqWVtctlG5Zm5s1h+fSkodVZw5zX57V6pq61y7a+
+                TNb+2dfi2ZdcYVk3s3ZuQzcN22xX7Hxy1sid48vum+7+2effPMueIV7BNpOq
+                DYatG5o41Wr6/VuGgWH9tnkgDj3dGk79V3Zyjtv/c4vKezHksa/c8bEvDWwy
+                FKYj1LWU9vxIMay0z1XcYOJJj2TeXvaZ8twgENE7n0spyM13vFHAVRzRTaxO
+                GEcD0fR8cpYuVLpXNGgeNWRpGchTE3UaYQsz9LzH5OUIC0jGehbFFOdgp1hK
+                fOio0m4Rq0IKj7CEGvkaMniS4haeErbpfJ5qLPSQcbHo4o6Lu7hHJsou5Sz3
+                wCRWcL9HY4hViQcSaxIPJdYl5iRsiZJEUWJDwpKYkZj9BfhsMhUaBAAA
+                """,
+          """
+                my/compose/runtime/MutableState.class:
+                H4sIAAAAAAAA/3VRTW/TQBB9YzvxJg3BDS244aOUU9JDXSoOiFSVEOIjUiqk
+                Jooq5bRNl8iNY6PsOoKbfwsHfgQHZPXIj0KMU1Qh0l525o3evNl58+v3j58A
+                XmCHsD37GoyT2edEq2CexiacqeA4NfIsUn0jjXJBhPeHg1e9C7mQQSTjSfDx
+                7EKNTedotdS7QW0pczgYdI46BO//FhcOwb+tzUWZICbKDGWUKsJGq706lFBq
+                tVmfmfqaudlaJbaHhHKLmUWy3psmJgrj4FgZeS6N5H5rtrDZGCqeSvGAQFOu
+                fwkLtM/Z+XPC2zyrVy3fqubZMliiJD75ebbriDzz6EA0nIb1gfatE9+zm9bL
+                PDu9/F6//FauNR3heKVnjih7biF2QNi5ybN/L8D/ogGheau3hQGLq63FsrA3
+                NYRKP5zE0qRzLlf7STofq3dhxGDr5Kp5GOqQZ7yO44SbwiTW7LWFEu/s8rIW
+                30WgwuhJgVBlvIbaNb4D+29mY3sZH+MpxzfMqLPK3RHsLrwu1rto4B6n2Ohi
+                E/dHII0H8Ed8LmxpNDUeajzSBaxorGnU/gBbKKxBoQIAAA==
+                """,
+          """
+                my/compose/runtime/State.class:
+                H4sIAAAAAAAA/3VQPU/CUBQ9t4VS6ldFVEQHR3CwaByMoomLCQnGRIgxYXri
+                kxRKa3gPolt/i4M/wsE0jP4o4y06+bHcc8/J/TzvH69vAA6wRSgNn7xuNHyI
+                lPRG41D7Q+m1tNAyByJU6u2jZl9MhBeIsOdd3vZlVx+f/pYI7k8thwzB7kl9
+                LYKxJBQr1b/6spVqu8243BxEOvBD70JqcSe0YM0YTkw+lNKQTwMINGD90U9Z
+                jbO7PUI9iRcdo2Q4SewYbhps074vJfGOZSexS9u0b9SMq4Jrlo3DJL6ZvmSm
+                z5ZVztgZN5vO2CeUm/8ZwXdQm9LV2cnXJ/ZM3x1oQr7l90KhxyOWnVY0HnXl
+                uR8w2bj6mnHtK/82kGdhGHGTH4XK4o3IYvYNO2SBncYGMwM2zO/MRHmGJWwy
+                nnBFnnucDswG5hqYb2ABi5xiqQEXyx2QQgErHVgKRYVVhTWFdZXS3CcDFvA3
+                7wEAAA==
+                """,
+          """
+                my/compose/runtime/StateKt.class:
+                H4sIAAAAAAAA/61VS1PbVhT+rmzLQryMUwIoJTSJE2yHRA6BtI1dtxTioGBI
+                JjCeZlgJI4hADypdM82OVX9I/0FXbdqZlsmy+/6dTs8VwlAMhsx0c865533O
+                d6/01z+//QFgBssMmvtOb/runh9aetDyuO1a+io3ubXE02AMmR1z39Qd09vW
+                X27sWE3SJhgG3BY3Nxwr8ny5xTCbr591LBfq5+RePhVYZpirrD3tjKzm19Yu
+                D6+QU5Vy3Kn7wba+Y/GNwLS9UDc9zye77ZO84vOVluOQl7brc8f2hMZw9xzL
+                tTxubT4LAj9Io4dBrtiezasMC6dHWeWB7W2XjXocvbPv6jYFBp7p6AvWltly
+                +DwV4kGryf1g2Qx2raBcaPShF30qVPQzpPZNp2UxZDsHZVBCizeO7Bv5SxfW
+                meG4scDacuisL70K/D0r4O/O8S00GL6/YOFXW/ZH1K8Uq2WBItXMdQOI0BFF
+                ygIB/tYOqwqGGW6et2/DE2iEdjNMY4RhuPnWau7GCL8yA9O1yJFh8py72Amp
+                wGgMmopR3CAY9uK2FYwzTFyyjDQmqPx5V56SDuFWLz7DbYb+nJ3byp0AzAx6
+                OTkx5CnlrSu8krSIoRJ0iy/Gm+Fa/Cprjm/y9tMs5GvdntKJM2VgNYZGt7tw
+                yvtj7mJNXIM3/39iccmi3LmrZE5DJ1Bo9ZEq3n+S1kOoPcJ0L0p4zHDvqssa
+                Om5r2eLmpslN0knufoI+rUyQHkFAS90VgkTGH2whlUjafMTw9+FBXj08UKVR
+                KWKZ9PFJUhJ0jLVE2k7aAB01qcSm5YxEPKFNZJKakk1mpUW5lLqdVA4PMvKR
+                cVH+8JNMSbX7GYVce4oiTMmoWnKUlXqn1UyfJmepUqn/ONnihx9VrXLkHacq
+                tnN3C12URWhUbkAMN82iudfoXUXLerjLadHz/ibte7Bue9ZKy92wgjWxUvFd
+                9Jum0zADW5xjZc+qve2ZvBWQfOP1EQqGt2+HNpnnTj4gBP1Za/tT8B83ddVv
+                BU2rZovsY3FMoyMfXQQJSQEc0TGkICOBZ3SaJZnGQu/vUN+wJPsFA38KWFEj
+                KkemHjwn2nfkhkFkiC9GPmkYsZdCfIy+Edk4rUvWFPGRYvb6r/h0KnuTaOJJ
+                svjgPe5I+LldQiU+SB+r6xT+PPp7p+isIIe7Ub8juIfJqO8R5Kk0i6RxFChO
+                SKKdRNzONbwgPpyM+2H4JKJKFD6GIu6T0xWHHj8z9BTxs8M+uGzYu+8x0zns
+                Yxp25sJhZ7sOO9Ue9mG3YSUsRXQBdeLfkf4Jlfp8HQkDXxj40sBTlA1U8JWB
+                Kr5eBwvxDebWMRiiGGI2FMK3IVIhJkPMh5BDDEWafETHQxRCZP8FN8oWbHIJ
+                AAA=
+                """,
+        ),
+      )
+
+    val getValueCalls = setOf("getValue", "getFloatValue")
+    val setValueCalls = setOf("setValue", "setFloatValue")
+    var getCount = 0
+    var setCount = 0
+    check(*testFiles) { file ->
+      file.accept(
+        object : AbstractUastVisitor() {
+          var lastAssign: UBinaryExpression? = null
+
+          override fun visitBinaryExpression(node: UBinaryExpression): Boolean {
+            if (node.operator == UastBinaryOperator.ASSIGN) {
+              lastAssign = node
+            }
+            return super.visitBinaryExpression(node)
+          }
+
+          override fun visitQualifiedReferenceExpression(
+            node: UQualifiedReferenceExpression
+          ): Boolean {
+            val getOrSet =
+              if (lastAssign?.leftOperand == node) {
+                setCount++
+                setValueCalls
+              } else {
+                getCount++
+                getValueCalls
+              }
+            val resolvedName = node.resolvedName
+            assertTrue(node.sourcePsi?.text + " ~> " + resolvedName, resolvedName in getOrSet)
+            return super.visitQualifiedReferenceExpression(node)
+          }
+        }
+      )
+    }
+    assertEquals(2, getCount)
+    // TODO(b/446888066): supposed to be 2
+    assertEquals(0, setCount)
+  }
+
   fun testResolutionToInternal_binary() {
     // b/347623812
     // b/390221826
