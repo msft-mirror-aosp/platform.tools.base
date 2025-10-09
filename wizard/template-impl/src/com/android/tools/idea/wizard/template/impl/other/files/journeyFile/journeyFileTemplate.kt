@@ -34,7 +34,7 @@ import com.android.tools.idea.wizard.template.stringParameter
 import com.android.tools.idea.wizard.template.template
 import com.intellij.icons.AllIcons
 import com.intellij.openapi.util.io.FileUtil
-import com.intellij.webSymbols.utils.NameCaseUtils
+import com.intellij.polySymbols.utils.NameCaseUtils
 import java.io.File
 
 val journeyFileTemplate
