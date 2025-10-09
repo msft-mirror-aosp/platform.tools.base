@@ -296,7 +296,10 @@ fun makeLinkCommand(config: AaptPackageConfig): ImmutableList<String> {
             localeFilters.add(SdkConstants.EN_XA)
             localeFilters.add(SdkConstants.AR_XB)
         }
-        builder.add("-c", joiner.join(otherResourceConfigs + localeFilters))
+        val resourceConfigs = (otherResourceConfigs + localeFilters)
+        if (resourceConfigs.none { it.isBlank() }) {
+            builder.add("-c", joiner.join(resourceConfigs))
+        }
     }
 
     if (preferredDensity != null) {

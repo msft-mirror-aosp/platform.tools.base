@@ -498,6 +498,9 @@ class KotlinDslTest {
             resConfigs("two", "three")
             resConfigs(listOf("four"))
             assertThat(resourceConfigurations).containsExactly("one", "two", "three", "four")
+            assertFailsWith<Exception> {
+                resConfigs("")
+            }
         }
     }
 

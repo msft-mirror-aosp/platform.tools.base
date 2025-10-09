@@ -218,21 +218,35 @@ abstract class AbstractProductFlavor(
      * Adds a res config filter (for instance 'hdpi')
      */
     fun addResourceConfiguration(configuration: String) {
-        resourceConfigurations.add(configuration)
+        resourceConfigurations.add(configuration.also {
+            validateResourceConfiguration(it)
+        })
     }
 
     /**
      * Adds a res config filter (for instance 'hdpi')
      */
     fun addResourceConfigurations(vararg configurations: String) {
-        resourceConfigurations.addAll(listOf(*configurations))
+        resourceConfigurations.addAll(listOf(*configurations.onEach {
+            validateResourceConfiguration(it)
+        }))
     }
 
     /**
      * Adds a res config filter (for instance 'hdpi')
      */
     fun addResourceConfigurations(configurations: Collection<String>) {
-        resourceConfigurations.addAll(configurations)
+        resourceConfigurations.addAll(configurations.onEach {
+            validateResourceConfiguration(it)
+        })
+    }
+
+    private fun validateResourceConfiguration(value: String): Boolean {
+        return if (value.isNotBlank()) true else error(
+            """One or more resource configurations were blank.
+            |The following link provides details on how to form valid locale names:
+            |https://developer.android.com/guide/topics/resources/app-languages#locale-names""".trimMargin()
+        )
     }
 
     /** Class representing a request with fallbacks.  */
