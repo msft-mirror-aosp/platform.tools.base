@@ -98,6 +98,10 @@ fun RecipeExecutor.archStarterActivityRecipe(
 
   addDependency(mavenCoordinate = "androidx.compose.material3:material3")
 
+  addPlatformDependency("io.coil-kt.coil3:coil-bom:3.3.0")
+  addDependency("io.coil-kt.coil3:coil-compose")
+  addDependency("io.coil-kt.coil3:coil-network-okhttp")
+
   val themeName = "${moduleData.themesData.appName}Theme"
   val modelName = "${moduleData.themesData.appName}Model"
 
