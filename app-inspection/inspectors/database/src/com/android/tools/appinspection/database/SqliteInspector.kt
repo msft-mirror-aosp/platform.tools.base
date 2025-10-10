@@ -41,6 +41,7 @@ import androidx.inspection.Connection
 import androidx.inspection.Inspector
 import androidx.inspection.InspectorEnvironment
 import androidx.sqlite.SQLiteConnection
+import androidx.sqlite.SQLiteDriver
 import androidx.sqlite.driver.bundled.BundledSQLiteConnection
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import androidx.sqlite.inspection.SqliteInspectorProtocol.AcquireDatabaseLockCommand
@@ -88,7 +89,8 @@ import com.android.tools.appinspection.database.framework.FrameworkDatabase
 import com.android.tools.idea.protobuf.ByteString
 import java.io.PrintWriter
 import java.io.StringWriter
-import java.util.*
+import java.util.Collections
+import java.util.WeakHashMap
 import java.util.concurrent.Executor
 import java.util.concurrent.Future
 import java.util.concurrent.atomic.AtomicReference
@@ -128,8 +130,11 @@ private const val ALL_REFERENCES_RELEASE_COMMAND_SIGNATURE = "onAllReferencesRel
 private val SQLITE_STATEMENT_EXECUTE_METHODS_SIGNATURES: List<String> =
   mutableListOf("execute()V", "executeInsert()J", "executeUpdateDelete()I")
 
-private const val ANDROIDX_DRIVER_OPEN_SIG =
+private const val ANDROIDX_DRIVER_OPEN_WITH_FLAGS_SIG =
   "open(Ljava/lang/String;I)Landroidx/sqlite/SQLiteConnection;"
+
+private const val ANDROIDX_DRIVER_OPEN_SIG =
+  "open(Ljava/lang/String;)Landroidx/sqlite/SQLiteConnection;"
 
 private const val ANDROIDX_CONNECTION_CLOSE_SIG = "close()V"
 
@@ -445,14 +450,22 @@ internal class SqliteInspector(
   }
 
   private fun registerAndroidXOpenHooks(hookRegistry: EntryExitMatchingHookRegistry) {
+    registerAndroidXOpenHooks(hookRegistry, BundledSQLiteDriver::class.java, hasFlags = true)
+  }
+
+  private fun registerAndroidXOpenHooks(
+    hookRegistry: EntryExitMatchingHookRegistry,
+    cls: Class<out SQLiteDriver>,
+    @Suppress("SameParameterValue") hasFlags: Boolean,
+  ) {
     val entryHook = EntryHook { _, args ->
       databaseLockRegistry.waitForUnlockedDatabase(args[0].toString())
     }
     val onExitCallback =
-      OnExitCallback<BundledSQLiteDriver, SQLiteConnection> { _, args, result ->
-        val sqliteConnection = result as? BundledSQLiteConnection ?: return@OnExitCallback null
+      OnExitCallback<SQLiteDriver, SQLiteConnection> { _, args, result ->
+        val sqliteConnection = result ?: return@OnExitCallback null
         val path = args[0] as String
-        val flags = args[1] as Int
+        val flags = if (hasFlags) args[1] as Int else 0
 
         try {
           onDatabaseOpened(AndroidXDatabase(sqliteConnection, path, flags))
@@ -471,17 +484,18 @@ internal class SqliteInspector(
         }
         sqliteConnection
       }
-    hookRegistry.registerHook(ANDROIDX_DRIVER_OPEN_SIG, entryHook, onExitCallback)
+    val sig = if (hasFlags) ANDROIDX_DRIVER_OPEN_WITH_FLAGS_SIG else ANDROIDX_DRIVER_OPEN_SIG
+    hookRegistry.registerHook(cls, sig, entryHook, onExitCallback)
   }
 
   /**
    * Tracking potential database closed events via [ ][.ALL_REFERENCES_RELEASE_COMMAND_SIGNATURE]
    */
   private fun registerFrameworkCloseHooks(hookRegistry: EntryExitMatchingHookRegistry) {
-    hookRegistry.registerHook<SQLiteDatabase, Unit>(ALL_REFERENCES_RELEASE_COMMAND_SIGNATURE) {
-      thisObject,
-      _,
-      _ ->
+    hookRegistry.registerHook<SQLiteDatabase, Unit>(
+      SQLiteDatabase::class.java,
+      ALL_REFERENCES_RELEASE_COMMAND_SIGNATURE,
+    ) { thisObject, _, _ ->
       if (thisObject is SQLiteDatabase) {
         onDatabaseClosed(FrameworkDatabase(thisObject))
       }
@@ -557,10 +571,10 @@ internal class SqliteInspector(
         "Ljava/lang/String;" +
         "Landroid/os/CancellationSignal;" +
         ")Landroid/database/Cursor;")
-    hookRegistry.registerHook<SQLiteDatabase, android.database.Cursor>(rawQueryMethodSignature) {
-      _,
-      args,
-      result ->
+    hookRegistry.registerHook<SQLiteDatabase, android.database.Cursor>(
+      SQLiteDatabase::class.java,
+      rawQueryMethodSignature,
+    ) { _, args, result ->
       val query = stringParam(args[1]!!)
       val cursor = cursorParam(result)
 
@@ -585,14 +599,22 @@ internal class SqliteInspector(
   }
 
   private fun registerAndroidXCloseHooks(hookRegistry: EntryExitMatchingHookRegistry) {
+    registerAndroidXCloseHooks(hookRegistry, BundledSQLiteConnection::class.java)
+  }
+
+  private fun registerAndroidXCloseHooks(
+    hookRegistry: EntryExitMatchingHookRegistry,
+    cls: Class<out SQLiteConnection>,
+  ) {
     val databasePath = AtomicReference<String?>(null)
     // We need to hook both entry and exit hooks because we need to extract the database path from
     // the connection
     // before is closes, and we need the connection to closed when we call onDatabaseClosed
-    hookRegistry.registerHook<BundledSQLiteConnection, Unit>(
+    hookRegistry.registerHook<SQLiteConnection, Unit>(
+      cls,
       ANDROIDX_CONNECTION_CLOSE_SIG,
       { connection, _ ->
-        if (connection is BundledSQLiteConnection) {
+        if (connection is SQLiteConnection) {
           databasePath.set(connection.getDatabasePath())
         }
       },
@@ -605,8 +627,16 @@ internal class SqliteInspector(
   }
 
   private fun registerAndroidXInvalidationHooks(hookRegistry: EntryExitMatchingHookRegistry) {
-    hookRegistry.registerHook<BundledSQLiteConnection, androidx.sqlite.SQLiteStatement>(
-      ANDROIDX_CONNECTION_PREPARE_SIG
+    registerAndroidXInvalidationHooks(hookRegistry, BundledSQLiteConnection::class.java)
+  }
+
+  private fun registerAndroidXInvalidationHooks(
+    hookRegistry: EntryExitMatchingHookRegistry,
+    cls: Class<out SQLiteConnection>,
+  ) {
+    hookRegistry.registerHook<SQLiteConnection, androidx.sqlite.SQLiteStatement>(
+      cls,
+      ANDROIDX_CONNECTION_PREPARE_SIG,
     ) { _, args, result ->
       // if the prepared statement is not a SELECT, we wrap it with a wrapper that triggers
       // invalidation when step() is

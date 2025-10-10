@@ -18,7 +18,6 @@ package com.android.tools.appinspection.database
 import androidx.inspection.ArtTooling.EntryHook
 import androidx.inspection.InspectorEnvironment
 import com.android.tools.appinspection.common.threadLocal
-import com.android.tools.appinspection.database.EntryExitMatchingHookRegistry.OnExitCallback
 import java.util.ArrayDeque
 import java.util.Deque
 
@@ -34,26 +33,28 @@ import java.util.Deque
  * Thread safe by using a [ThreadLocal].
  */
 internal class EntryExitMatchingHookRegistry(private val environment: InspectorEnvironment) {
+
   private val frameStack: Deque<Frame> by threadLocal { ArrayDeque() }
 
   inline fun <reified Origin, Result> registerHook(
+    originClass: Class<out Origin>,
     originMethod: String,
     entryHook: EntryHook? = null,
     onExitCallback: OnExitCallback<Origin, Result>,
   ) {
     val artTooling = environment.artTooling()
 
-    artTooling.registerEntryHook(Origin::class.java, originMethod) { thisObject, args ->
+    artTooling.registerEntryHook(originClass, originMethod) { thisObject, args ->
       frameStack.addLast(Frame(originMethod, thisObject, args))
       entryHook?.onEntry(thisObject, args)
     }
 
-    artTooling.registerExitHook<Result>(Origin::class.java, originMethod) { result ->
+    artTooling.registerExitHook<Result>(originClass, originMethod) { result ->
       val frame = frameStack.pollLast()
       // TODO: make more specific and handle
       check(originMethod == frame.method)
       check(frame.thisObject is Origin?)
-      onExitCallback.onExit(frame.thisObject as Origin?, frame.args, result)
+      onExitCallback.onExit(frame.thisObject, frame.args, result)
     }
   }
 
