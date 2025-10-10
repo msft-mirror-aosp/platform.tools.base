@@ -450,7 +450,7 @@ internal fun maybeAddKotlinStdlibDependency(
             // If the user adds kotlin-stdlib without a version, then set a version
             hasKotlinStdlibDependency(withVersion = false) -> dependencyConstraints.add(
                 project.dependencies.constraints.create("$KOTLIN_GROUP:$KOTLIN_STDLIB") {
-                    it.version { it.prefer(kotlinServices.kotlinAndroidProjectExtension.coreLibrariesVersion) }
+                    it.version { it.require(kotlinServices.kotlinAndroidProjectExtension.coreLibrariesVersion) }
                 }
             )
 

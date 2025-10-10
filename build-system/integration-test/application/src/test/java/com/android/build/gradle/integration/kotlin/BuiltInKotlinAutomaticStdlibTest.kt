@@ -19,7 +19,11 @@ package com.android.build.gradle.integration.kotlin
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.prebuilts.HelloWorldAndroid
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
+import com.android.build.gradle.integration.common.fixture.project.plugins.GenericCallback
 import com.android.testutils.TestUtils
+import org.gradle.api.Project
+import org.gradle.api.publish.PublishingExtension
+import org.gradle.api.publish.maven.MavenPublication
 import org.junit.Rule
 import org.junit.Test
 
@@ -97,5 +101,57 @@ class BuiltInKotlinAutomaticStdlibTest {
         }
         val result = build.executor.run(":app:dependencies", "--configuration", "debugCompileClasspath")
         result.assertOutputContains("--- org.jetbrains.kotlin:kotlin-stdlib -> 2.2.10")
+    }
+
+    /** Regression test for b/450851465. */
+    @Test
+    fun testKotlinStdlibWithoutVersionAndInLibraryPom() {
+        val build = rule.build {
+            androidLibrary {
+                pluginCallbacks += MavenPublishPluginCallback::class.java
+                applyPlugin(PluginType.MAVEN_PUBLISH)
+                applyPlugin(PluginType.ANDROID_BUILT_IN_KOTLIN)
+                android {
+                    publishing {
+                        singleVariant("release")
+                    }
+                }
+                dependencies {
+                    implementation("org.jetbrains.kotlin:kotlin-stdlib")
+                }
+            }
+            gradleProperties {
+                add("kotlin.stdlib.default.dependency", "false")
+            }
+        }
+
+        val result = build.executor.run(":lib:generatePomFileForMavenPublication")
+        result.assertOutputDoesNotContain("suppressPomMetadataWarningsFor")
+    }
+}
+
+private class MavenPublishPluginCallback: GenericCallback {
+    override fun handleProject(project: Project) {
+
+        val publishing = project.extensions.getByType(PublishingExtension::class.java)
+            ?: throw RuntimeException("Could not find extension of type PublishingExtension")
+
+        publishing.apply {
+            publications.register("maven", MavenPublication::class.java) { publication ->
+                publication.groupId = "com.android"
+                publication.artifactId = "lib"
+                publication.version = "1.0"
+
+                repositories { repo ->
+                    repo.maven {
+                        it.url = project.uri(project.projectDir.resolve("build/testRepo"))
+                        it.name = "buildDir"
+                    }
+                }
+                project.afterEvaluate {
+                    publication.from(project.components.getByName("release"))
+                }
+            }
+        }
     }
 }
