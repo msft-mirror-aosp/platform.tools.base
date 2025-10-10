@@ -16,6 +16,8 @@
 package com.android.tools.lint.checks
 
 import com.android.tools.lint.checks.InferredThreadDetector.Thread
+import com.android.tools.lint.checks.ThreadConstraintDetector.ThreadConstraintLattice.Companion.assumeCommonJavaAndKotlinSignatures
+import com.android.tools.lint.checks.fx.AssumptionTableBuilder.Companion.build
 import com.android.tools.lint.detector.api.Category
 import com.android.tools.lint.detector.api.Implementation
 import com.android.tools.lint.detector.api.Issue
@@ -23,7 +25,7 @@ import com.android.tools.lint.detector.api.Scope
 import com.android.tools.lint.detector.api.Severity
 import org.jetbrains.uast.UAnnotation
 
-class InferredThreadDetector : ThreadConstraintDetector<Thread>(ThreadConstraintLattice.of()) {
+class InferredThreadDetector : ThreadConstraintDetector<Thread>(lattice, assumptions) {
 
   override val violationIssue = THREAD
   override val unsatisfiableConstraintIssue = THREAD
@@ -91,5 +93,10 @@ class InferredThreadDetector : ThreadConstraintDetector<Thread>(ThreadConstraint
           implementation = Impl,
         )
         .setAliases(listOf(WrongThreadInterproceduralDetector.ISSUE.id))
+
+    val lattice = ThreadConstraintLattice.of<Thread>()
+
+    val assumptions by
+      lazy(LazyThreadSafetyMode.NONE) { lattice.build { assumeCommonJavaAndKotlinSignatures() } }
   }
 }

@@ -78,6 +78,84 @@ class InferredThreadDetectorTest : AbstractCheckTest() {
       )
   }
 
+  fun testBaseAssumption_forEach() {
+    lint()
+      .files(
+        kotlin(
+            """
+          package test.pkg
+          import androidx.annotation.WorkerThread
+          import androidx.annotation.UiThread
+
+          @WorkerThread fun worker() { }
+
+          @UiThread fun ui(l : List<*>) {
+              l.forEach { worker() }
+          }
+          """
+              .trimIndent()
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
+          src/test/pkg/test.kt:8: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+              l.forEach { worker() }
+                ~~~~~~~~~~~~~~~~~~~~
+          1 error
+        """
+          .trimIndent()
+      )
+  }
+
+  fun testBaseAssumption_commonScopingFunctions() {
+    lint()
+      .files(
+        kotlin(
+            """
+          package test.pkg
+          import androidx.annotation.WorkerThread
+          import androidx.annotation.UiThread
+
+          @WorkerThread fun worker() { }
+
+          @WorkerThread fun Any.slow() { }
+
+          @UiThread fun ui(l : List<*>) {
+              Any().apply { worker() }
+              42.also(Any::slow)
+              with("foo") { slow() }
+              "foo".let(Any::slow)
+          }
+          """
+              .trimIndent()
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
+          src/test/pkg/test.kt:10: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+              Any().apply { worker() }
+                    ~~~~~~~~~~~~~~~~~~
+          src/test/pkg/test.kt:11: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+              42.also(Any::slow)
+                 ~~~~~~~~~~~~~~~
+          src/test/pkg/test.kt:12: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+              with("foo") { slow() }
+              ~~~~~~~~~~~~~~~~~~~~~~
+          src/test/pkg/test.kt:13: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+              "foo".let(Any::slow)
+                    ~~~~~~~~~~~~~~
+          4 errors
+        """
+          .trimIndent()
+      )
+  }
+
   fun testInferredAny_376518592() {
     lint()
       .files(
