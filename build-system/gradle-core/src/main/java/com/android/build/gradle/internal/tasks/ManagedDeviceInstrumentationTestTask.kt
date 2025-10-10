@@ -38,7 +38,6 @@ import com.android.build.gradle.internal.test.report.TestReport
 import com.android.build.gradle.internal.testing.TestData
 import com.android.build.gradle.internal.testing.utp.ManagedDeviceTestRunner
 import com.android.build.gradle.internal.testing.utp.UtpDependencies
-import com.android.build.gradle.internal.testing.utp.UtpRunProfileManager
 import com.android.build.gradle.internal.testing.utp.emulatorcontrol.EmulatorControlConfig
 import com.android.build.gradle.internal.testing.utp.emulatorcontrol.createEmulatorControlConfig
 import com.android.build.gradle.internal.testing.utp.maybeCreateUtpConfigurations
@@ -140,7 +139,7 @@ abstract class ManagedDeviceInstrumentationTestTask: NonIncrementalTask(), Andro
         fun createTestRunner(
             workerExecutor: WorkerExecutor,
             numShards: Int?,
-            utpRunProfileManager: UtpRunProfileManager): ManagedDeviceTestRunner {
+        ): ManagedDeviceTestRunner {
 
             val useOrchestrator = when(executionEnum.get()) {
                 TestOptions.Execution.ANDROIDX_TEST_ORCHESTRATOR,
@@ -162,7 +161,6 @@ abstract class ManagedDeviceInstrumentationTestTask: NonIncrementalTask(), Andro
                 enableEmulatorDisplay.get(),
                 utpLoggingLevel.get(),
                 getTargetIsSplitApk.getOrElse(false),
-                utpRunProfileManager
             )
         }
     }
@@ -263,8 +261,6 @@ abstract class ManagedDeviceInstrumentationTestTask: NonIncrementalTask(), Andro
             null
         }
 
-        val utpRunProfileManager = UtpRunProfileManager()
-
         val success = if (!testsFound()) {
             logger.info("No tests found, nothing to do.")
             true
@@ -272,7 +268,6 @@ abstract class ManagedDeviceInstrumentationTestTask: NonIncrementalTask(), Andro
             val runner = testRunnerFactory.createTestRunner(
                 workerExecutor,
                 testRunnerFactory.testShardsSize.getOrNull(),
-                utpRunProfileManager
             )
 
             try {
@@ -292,11 +287,11 @@ abstract class ManagedDeviceInstrumentationTestTask: NonIncrementalTask(), Andro
                 )
             } catch (e: Exception) {
                 recordCrashedInstrumentedTestRun(
-                        dependencies,
-                        testRunnerFactory.executionEnum.get(),
-                        false,
-                        analyticsService.get(),
-                        utpRunProfileManager)
+                    dependencies,
+                    testRunnerFactory.executionEnum.get(),
+                    false,
+                    analyticsService.get(),
+                )
                 throw e
             }
         }
@@ -308,12 +303,12 @@ abstract class ManagedDeviceInstrumentationTestTask: NonIncrementalTask(), Andro
         val results = report.generateReport()
 
         recordOkInstrumentedTestRun(
-                dependencies,
-                testRunnerFactory.executionEnum.get(),
-                false,
-                results.testCount,
-                analyticsService.get(),
-                utpRunProfileManager)
+            dependencies,
+            testRunnerFactory.executionEnum.get(),
+            false,
+            results.testCount,
+            analyticsService.get(),
+        )
 
         if (!success) {
             val reportUrl = ConsoleRenderer().asClickableFileUrl(

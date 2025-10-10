@@ -60,7 +60,6 @@ import com.android.build.gradle.internal.testing.TestRunner;
 import com.android.build.gradle.internal.testing.androidtest.AndroidTestUtilsKt;
 import com.android.build.gradle.internal.testing.utp.UtpDependencies;
 import com.android.build.gradle.internal.testing.utp.UtpDependencyUtilsKt;
-import com.android.build.gradle.internal.testing.utp.UtpRunProfileManager;
 import com.android.build.gradle.internal.testing.utp.UtpTestResultListener;
 import com.android.build.gradle.internal.testing.utp.UtpTestRunner;
 import com.android.build.gradle.internal.testing.utp.emulatorcontrol.EmulatorControlConfig;
@@ -217,8 +216,8 @@ public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTas
         TestRunner createTestRunner(
                 WorkerExecutor workerExecutor,
                 ExecutorServiceAdapter executorServiceAdapter,
-                @Nullable UtpTestResultListener utpTestResultListener,
-                UtpRunProfileManager utpRunProfileManager) {
+                @Nullable UtpTestResultListener utpTestResultListener
+        ) {
 
             boolean useOrchestrator =
                     (getExecutionEnum().get() == ANDROID_TEST_ORCHESTRATOR
@@ -242,8 +241,8 @@ public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTas
                     utpLoggingLevel(),
                     getInstallApkTimeout().getOrNull(),
                     getTargetIsSplitApk().getOrElse(false),
-                    !getKeepInstalledApks().get(),
-                    utpRunProfileManager);
+                    !getKeepInstalledApks().get()
+            );
         }
 
         private Level utpLoggingLevel() {
@@ -400,8 +399,6 @@ public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTas
 
         boolean success;
 
-        UtpRunProfileManager runProfileManager = new UtpRunProfileManager();
-
         // If there are tests to run, and the test runner returns with no results, we fail (since
         // this is most likely a problem with the device setup). If no, the task will succeed.
         if (!testsFound) {
@@ -415,8 +412,8 @@ public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTas
                     testRunnerFactory.createTestRunner(
                             workerExecutor,
                             executorServiceAdapter,
-                            utpTestResultListener,
-                            runProfileManager);
+                            utpTestResultListener
+                    );
             success =
                     runTestsWithTestRunner(
                             testRunner,
@@ -435,8 +432,8 @@ public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTas
                             privacySandboxSdkApkFiles,
                             dependencies,
                             targetSerials,
-                            testRunnerFactory.getExecutionEnum().get(),
-                            runProfileManager);
+                            testRunnerFactory.getExecutionEnum().get()
+                    );
         }
 
         // run the report from the results.
@@ -451,8 +448,8 @@ public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTas
                 testRunnerFactory.getExecutionEnum().get(),
                 enableCoverage,
                 results.getTestCount(),
-                analyticsService,
-                runProfileManager);
+                analyticsService
+        );
 
         if (!success) {
             String reportUrl = new ConsoleRenderer().asClickableFileUrl(
@@ -483,10 +480,8 @@ public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTas
             @NonNull Set<File> privacySandboxSdkApkFiles,
             @NonNull ArtifactCollection dependencies,
             List<String> targetSerials,
-            Execution execution,
-            @NonNull UtpRunProfileManager utpRunProfileManager)
-            throws DeviceException, ExecutionException {
-
+            Execution execution
+    ) throws DeviceException, ExecutionException {
         return deviceProvider.use(
                 () -> {
                     try {
@@ -515,8 +510,8 @@ public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTas
                                 dependencies,
                                 execution,
                                 enableCoverage,
-                                analyticsService,
-                                utpRunProfileManager);
+                                analyticsService
+                        );
                         throw e;
                     }
                 });

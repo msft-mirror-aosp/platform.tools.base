@@ -27,7 +27,6 @@ import com.android.testutils.truth.PathSubject.assertThat
 import com.android.utils.Environment
 import com.google.common.truth.Truth.assertThat
 import com.google.testing.platform.proto.api.config.RunnerConfigProto
-import com.google.testing.platform.proto.api.core.TestSuiteResultProto
 import com.google.testing.platform.proto.api.core.TestSuiteResultProto.TestSuiteResult
 import org.gradle.api.file.Directory
 import org.gradle.api.logging.Logger
@@ -70,7 +69,6 @@ class ManagedDeviceTestRunnerTest {
     private val emulatorDirectory: Directory = mock()
     private val avdProvider: Provider<Directory> = mock()
     private val avdDirectory: Directory = mock()
-    private val mockUtpRunProfileManager: UtpRunProfileManager = mock(defaultAnswer = Answers.RETURNS_DEEP_STUBS)
     private lateinit var emulatorFolder: File
     private lateinit var avdFolder: File
     private lateinit var outputDirectory: File
@@ -183,7 +181,6 @@ class ManagedDeviceTestRunnerTest {
                 false,
                 Level.WARNING,
                 false,
-                mockUtpRunProfileManager,
                 mockUtpConfigFactory,
                 { runnerConfigs, _, _, resultsDir, _ ->
                     utpInvocationCount++
@@ -222,7 +219,7 @@ class ManagedDeviceTestRunnerTest {
     private fun createTestSuiteResult(
         hasEmulatorTimeoutException: Boolean = false
     ): TestSuiteResult {
-        return TestSuiteResultProto.TestSuiteResult.newBuilder().apply {
+        return TestSuiteResult.newBuilder().apply {
             if (hasEmulatorTimeoutException) {
                 platformErrorBuilder.apply {
                     addErrorsBuilder().apply {

@@ -24,8 +24,6 @@ import com.android.build.gradle.internal.testing.utp.emulatorcontrol.EmulatorCon
 import com.android.builder.testing.api.DeviceConnector
 import com.android.ide.common.process.ProcessExecutor
 import com.android.ide.common.workers.ExecutorServiceAdapter
-import org.mockito.kotlin.any
-import org.mockito.kotlin.mock
 import com.android.testutils.truth.PathSubject.assertThat
 import com.android.utils.ILogger
 import com.google.common.truth.Truth.assertThat
@@ -38,10 +36,12 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import org.mockito.Answers
-import org.mockito.kotlin.anyOrNull
-import org.mockito.kotlin.whenever
 import org.mockito.junit.MockitoJUnit
 import org.mockito.junit.MockitoRule
+import org.mockito.kotlin.any
+import org.mockito.kotlin.anyOrNull
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.whenever
 import org.mockito.quality.Strictness
 import java.io.File
 import java.util.logging.Level
@@ -68,7 +68,6 @@ class UtpTestRunnerTest {
     private val mockUtpConfigFactory: UtpConfigFactory = mock()
     private val mockemulatorControlConfig: EmulatorControlConfig = mock()
     private val mockTestResultListener: UtpTestResultListener = mock()
-    private val mockUtpRunProfileManager: UtpRunProfileManager = mock(defaultAnswer = Answers.RETURNS_DEEP_STUBS)
     private val mockUtpDependencies: UtpDependencies = mock(defaultAnswer = Answers.RETURNS_DEEP_STUBS)
     private val mockUtpTestResultListenerServerMetadata: UtpTestResultListenerServerMetadata = mock(defaultAnswer = Answers.RETURNS_DEEP_STUBS)
 
@@ -141,7 +140,6 @@ class UtpTestRunnerTest {
             null,
             false,
             false,
-            mockUtpRunProfileManager,
             mockUtpConfigFactory,
             { runnerConfigs, _, _, _, _ ->
                 capturedRunnerConfigs = runnerConfigs

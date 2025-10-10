@@ -52,7 +52,6 @@ class ManagedDeviceTestRunner(
     private val enableEmulatorDisplay: Boolean,
     private val utpLoggingLevel: Level = Level.WARNING,
     private val targetIsSplitApk: Boolean,
-    private val utpRunProfileManager: UtpRunProfileManager,
     private val configFactory: UtpConfigFactory = UtpConfigFactory(),
     private val runUtpTestSuiteAndWaitFunc: (
         List<UtpRunnerConfig>, String, String, File, ILogger
@@ -164,11 +163,6 @@ class ManagedDeviceTestRunner(
                         shardedManagedDevice.id,
                         utpOutputDir,
                         runnerConfigProto,
-                        utpRunProfileManager.createTestRunProfile(
-                            utpOutputDir,
-                            DeviceTestSpanProfile.DeviceType.VIRTUAL_MANAGED_DEVICE,
-                            shardedManagedDevice.deviceName
-                        ),
                         shardConfig,
                     )
                 )

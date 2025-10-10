@@ -61,7 +61,6 @@ class UtpTestUtilsTest {
     private val mockLogger: ILogger = mock()
     private val mockUtpTestResultListener: UtpTestResultListener = mock()
     private val mockUtpTestResultListenerServerRunner: UtpTestResultListenerServerRunner = mock(defaultAnswer = RETURNS_DEEP_STUBS)
-    private val mockUtpRunProfile: UtpRunProfile = mock(defaultAnswer = RETURNS_DEEP_STUBS)
 
     lateinit var utpResultDir: File
     lateinit var jvmExecutable: File
@@ -83,7 +82,6 @@ class UtpTestUtilsTest {
             "deviceId",
             utpOutputDir,
             { _, _ -> RunnerConfigProto.RunnerConfig.getDefaultInstance() },
-            mockUtpRunProfile,
             shardConfig
         )
 
@@ -246,7 +244,7 @@ class UtpTestUtilsTest {
 
     @Test
     fun failedToReceiveUtpResults() {
-        val results = runUtp() { /* Do nothing after the work is posted. */ }
+        val results = runUtp { /* Do nothing after the work is posted. */ }
 
         assertThat(results).containsExactly(UtpTestRunResult(false, null))
         verify(mockLogger).error(

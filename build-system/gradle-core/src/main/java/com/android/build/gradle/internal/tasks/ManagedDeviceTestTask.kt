@@ -244,7 +244,7 @@ abstract class ManagedDeviceTestTask: NonIncrementalTask(), AndroidTestTask {
                         parameters.executionEnum.get(),
                         false,
                         parameters.analyticsService.get(),
-                        null)
+                    )
                     throw e
                 }
             }
@@ -262,7 +262,7 @@ abstract class ManagedDeviceTestTask: NonIncrementalTask(), AndroidTestTask {
                 false,
                 results.testCount,
                 parameters.analyticsService.get(),
-                null)
+            )
 
             if (!success) {
                 val reportUrl = ConsoleRenderer().asClickableFileUrl(

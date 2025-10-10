@@ -59,7 +59,6 @@ data class UtpRunnerConfig(
         UtpTestResultListenerServerMetadata,
         utpTmpDir: File,
     ) -> RunnerConfigProto.RunnerConfig,
-    val utpRunProfile: UtpRunProfile,
     val shardConfig: ShardConfig? = null,
 )
 
@@ -134,8 +133,6 @@ fun runUtpTestSuiteAndWait(
         val resultListenerServerMetadata = resultListenerServerRunner.metadata
 
         val postProcessCallback = runnerConfigs.map { config ->
-            config.utpRunProfile.recordSetupStart()
-            val profileListener = config.utpRunProfile.listener()
             var resultsProto: TestSuiteResultProto.TestSuiteResult? = null
             val ddmlibTestResultAdapter = DdmlibTestResultAdapter(
                 config.deviceName,
@@ -149,7 +146,6 @@ fun runUtpTestSuiteAndWait(
             )
             testResultReporters[config.deviceId] = object: UtpTestResultListener {
                 override fun onTestResultEvent(testResultEvent: GradleAndroidTestResultListenerProto.TestResultEvent) {
-                    profileListener.onTestResultEvent(testResultEvent)
                     ddmlibTestResultAdapter.onTestResultEvent(testResultEvent)
 
                     if (testResultEvent.hasTestSuiteFinished()) {
@@ -177,9 +173,7 @@ fun runUtpTestSuiteAndWait(
                     false
                 }
 
-                UtpTestRunResult(testPassed, resultsProto).also {
-                    config.utpRunProfile.recordUtpRunFinished(it)
-                }
+                UtpTestRunResult(testPassed, resultsProto)
             }
             postProcessFunc
         }

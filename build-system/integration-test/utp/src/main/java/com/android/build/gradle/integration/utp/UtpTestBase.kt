@@ -68,7 +68,7 @@ abstract class UtpTestBase(val runWithBuiltInPlatform: Boolean) {
 
     @get:Rule
     val rule: GradleRule by lazy {
-        ruleBuilder.withProfileOutput().from {
+        ruleBuilder.from {
             androidApplication {
                 applyPlugin(PluginType.KOTLIN_ANDROID)
                 android {

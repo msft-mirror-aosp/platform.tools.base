@@ -28,10 +28,9 @@ import com.android.build.gradle.internal.fixtures.FakeGradleProvider
 import com.android.build.gradle.internal.fixtures.FakeGradleWorkExecutor
 import com.android.build.gradle.internal.profile.AnalyticsService
 import com.android.build.gradle.internal.test.AbstractTestDataImpl
-import com.android.build.gradle.internal.testing.utp.emulatorcontrol.EmulatorControlConfig
 import com.android.build.gradle.internal.testing.utp.ManagedDeviceTestRunner
 import com.android.build.gradle.internal.testing.utp.UtpDependencies
-import com.android.build.gradle.internal.testing.utp.UtpRunProfileManager
+import com.android.build.gradle.internal.testing.utp.emulatorcontrol.EmulatorControlConfig
 import com.android.build.gradle.options.BooleanOption
 import com.android.builder.model.TestOptions
 import com.android.repository.Revision
@@ -103,8 +102,6 @@ class ManagedDeviceInstrumentationTestTaskTest {
     private val installOptions: ListProperty<String> = mock()
 
     private val dependencies: ArtifactCollection = mock()
-
-    private val utpRunProfileManager: UtpRunProfileManager = mock()
 
     private lateinit var project: Project
     private lateinit var workerExecutor: WorkerExecutor
@@ -240,7 +237,7 @@ class ManagedDeviceInstrumentationTestTaskTest {
         doReturn(mockFileProperty(utpJvmFile)).whenever(factory).jvmExecutable
         doReturn(utpJvm).whenever(utpJvmFile).asFile
 
-        val testRunner = factory.createTestRunner(workerExecutor, null, utpRunProfileManager)
+        val testRunner = factory.createTestRunner(workerExecutor, null)
         assertThat(testRunner).isInstanceOf(ManagedDeviceTestRunner::class.java)
     }
 
@@ -342,7 +339,7 @@ class ManagedDeviceInstrumentationTestTaskTest {
         println("TestRunner: $testRunner")
 
         doReturn(FakeGradleProperty<Int>()).whenever(runnerFactory).testShardsSize
-        doReturn(testRunner).whenever(runnerFactory).createTestRunner(any(), eq(null), any())
+        doReturn(testRunner).whenever(runnerFactory).createTestRunner(any(), eq(null))
         whenever(runnerFactory.executionEnum)
             .thenReturn(FakeGradleProperty(TestOptions.Execution.ANDROIDX_TEST_ORCHESTRATOR))
 
@@ -393,7 +390,7 @@ class ManagedDeviceInstrumentationTestTaskTest {
 
         doReturn(FakeGradleProperty<Int>()).whenever(runnerFactory).testShardsSize
 
-        doReturn(testRunner).whenever(runnerFactory).createTestRunner(any(), eq(null), any())
+        doReturn(testRunner).whenever(runnerFactory).createTestRunner(any(), eq(null))
         whenever(runnerFactory.executionEnum)
             .thenReturn(FakeGradleProperty(TestOptions.Execution.ANDROIDX_TEST_ORCHESTRATOR))
 
@@ -452,7 +449,7 @@ class ManagedDeviceInstrumentationTestTaskTest {
 
         doReturn(FakeGradleProperty<Int>()).whenever(runnerFactory).testShardsSize
 
-        doReturn(testRunner).whenever(runnerFactory).createTestRunner(any(), eq(null), any())
+        doReturn(testRunner).whenever(runnerFactory).createTestRunner(any(), eq(null))
         whenever(runnerFactory.executionEnum)
             .thenReturn(FakeGradleProperty(TestOptions.Execution.ANDROIDX_TEST_ORCHESTRATOR))
 
