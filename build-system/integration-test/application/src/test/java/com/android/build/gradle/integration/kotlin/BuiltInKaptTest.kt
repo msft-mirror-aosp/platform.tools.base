@@ -57,6 +57,7 @@ class BuiltInKaptTest {
         ).withBuiltInKotlinSupport(true)
             .withKotlinGradlePlugin(true)
             .withComposeCompilerGradlePlugin(true)
+            .disableBuiltInKotlin()
             .create()
 
     @Before

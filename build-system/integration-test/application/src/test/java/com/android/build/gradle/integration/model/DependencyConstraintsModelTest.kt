@@ -18,6 +18,7 @@ package com.android.build.gradle.integration.model
 
 import com.android.build.gradle.integration.common.fixture.model.ModelComparator
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
+import com.android.build.gradle.integration.common.utils.disableBuiltInKotlin
 import com.android.build.gradle.options.BooleanOption
 import org.junit.Rule
 import org.junit.Test
@@ -30,6 +31,7 @@ class DependencyConstraintsModelTest: ModelComparator() {
                 implementation("androidx.lifecycle:lifecycle-common-java8:2.4.0")
             }
         }
+        disableBuiltInKotlin()
     }
 
     @Test

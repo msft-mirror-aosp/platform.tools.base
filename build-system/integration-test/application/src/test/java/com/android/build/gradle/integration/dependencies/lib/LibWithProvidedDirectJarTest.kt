@@ -30,6 +30,7 @@ class LibWithProvidedDirectJarTest : ModelComparator() {
     @get:Rule
     val project = GradleTestProject.builder()
         .fromTestProject("projectWithModules")
+        .disableBuiltInKotlin()
         .create()
 
     @Before

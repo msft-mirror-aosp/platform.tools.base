@@ -18,11 +18,11 @@ package com.android.build.gradle.integration.multiplatform.v1
 
 import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
-import com.android.build.gradle.integration.common.fixture.project.plugins.GenericCallback
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
+import com.android.build.gradle.integration.common.fixture.project.plugins.GenericCallback
+import com.android.build.gradle.integration.common.utils.disableBuiltInKotlin
 import com.android.build.gradle.internal.TaskManager.Companion.COMPOSE_UI_VERSION
 import com.android.build.gradle.options.BooleanOption
-import com.android.testutils.TestUtils
 import com.android.testutils.TestUtils.KOTLIN_VERSION_FOR_COMPOSE_TESTS
 import org.gradle.api.JavaVersion
 import org.gradle.api.Project
@@ -80,6 +80,7 @@ class KotlinMultiplatformComposeTest {
                     """.trimIndent()
                 )
             }
+            disableBuiltInKotlin()
         }
 
     class Callback: GenericCallback {

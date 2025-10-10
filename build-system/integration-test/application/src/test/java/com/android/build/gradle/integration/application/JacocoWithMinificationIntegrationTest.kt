@@ -32,6 +32,7 @@ class JacocoWithMinificationIntegrationTest {
     @get:Rule
     val project = builder()
         .fromTestApp(KotlinHelloWorldApp.forPlugin("com.android.application"))
+        .disableBuiltInKotlin()
         .create()
 
     @Before

@@ -1,22 +1,22 @@
 package com.android.build.gradle.integration.application
 
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNotNull
-
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.utils.getVariantByName
 import com.android.builder.model.v2.ide.LibraryType
-import com.android.builder.model.v2.ide.ProjectInfo
 import com.google.common.truth.Truth
-import java.io.IOException
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
 import org.junit.Rule
 import org.junit.Test
+import java.io.IOException
 
 /** Assemble tests for customArtifactDep.  */
 class CustomArtifactDepTest {
 
     @get:Rule
-    var project = GradleTestProject.builder().fromTestProject("customArtifactDep").create()
+    var project = GradleTestProject.builder().fromTestProject("customArtifactDep")
+        .disableBuiltInKotlin()
+        .create()
 
     @Test
     @Throws(IOException::class)

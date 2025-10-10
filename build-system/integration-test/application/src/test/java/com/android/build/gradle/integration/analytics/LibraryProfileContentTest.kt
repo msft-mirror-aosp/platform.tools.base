@@ -36,6 +36,7 @@ class LibraryProfileContentTest {
     var project = GradleTestProject.builder()
         .fromTestApp(KotlinHelloWorldApp.forPlugin("com.android.library"))
         .enableProfileOutput()
+        .disableBuiltInKotlin()
         .create()
 
     @Test

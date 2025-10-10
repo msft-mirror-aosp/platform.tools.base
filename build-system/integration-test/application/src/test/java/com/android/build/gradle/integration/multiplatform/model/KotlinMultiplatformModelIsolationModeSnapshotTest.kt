@@ -24,8 +24,6 @@ import com.android.testutils.TestInputsGenerator
 import com.android.testutils.generateAarWithContent
 import com.android.utils.FileUtils
 import com.google.common.collect.ImmutableList
-import com.google.common.truth.TruthJUnit.assume
-import org.gradle.util.GradleVersion
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -34,6 +32,7 @@ class KotlinMultiplatformModelIsolationModeSnapshotTest: BaseModelComparator {
     @get:Rule
     val project = GradleTestProjectBuilder()
         .fromTestProject("kotlinMultiplatform")
+        .disableBuiltInKotlin()
         .create()
 
     @Before

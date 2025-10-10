@@ -27,6 +27,7 @@ class AppWithClassifierDepTest : ModelComparator() {
     @get:Rule
     val project = GradleTestProject.builder()
         .fromTestProject("projectWithClassifierDep")
+        .disableBuiltInKotlin()
         .create()
 
     @Test

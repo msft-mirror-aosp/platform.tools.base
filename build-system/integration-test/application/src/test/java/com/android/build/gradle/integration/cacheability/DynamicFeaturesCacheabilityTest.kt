@@ -243,6 +243,7 @@ class DynamicFeaturesCacheabilityTest {
             .builder()
             .withName(projectName)
             .fromTestProject("dynamicApp")
+            .disableBuiltInKotlin()
             .create()
     }
 

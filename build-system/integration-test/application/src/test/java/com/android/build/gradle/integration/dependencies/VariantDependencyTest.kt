@@ -24,6 +24,7 @@ import com.android.build.gradle.integration.common.truth.TruthHelper
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.build.gradle.integration.common.utils.getSingleOutputFile
 import com.android.build.gradle.integration.common.utils.getVariantByName
+import com.android.build.gradle.integration.common.utils.disableBuiltInKotlin
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.options.BooleanOption
 import com.android.builder.model.v2.ide.Variant
@@ -32,7 +33,6 @@ import com.google.common.collect.Sets
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
-import java.io.File
 import java.nio.file.Paths
 
 class VariantDependencyTest : ModelComparator() {
@@ -43,6 +43,7 @@ class VariantDependencyTest : ModelComparator() {
         // Enforcing unique package names to prevent regressions. Remove when b/116109681 fixed.
         .addGradleProperties("${BooleanOption.ENFORCE_UNIQUE_PACKAGE_NAMES.propertyName}=true")
         .addGradleProperties("${BooleanOption.USE_ANDROID_X.propertyName}=true")
+        .disableBuiltInKotlin()
         .withHeap("2048m")
         .create()
 

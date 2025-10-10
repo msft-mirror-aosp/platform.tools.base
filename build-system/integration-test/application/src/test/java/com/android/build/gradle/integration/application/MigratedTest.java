@@ -23,16 +23,18 @@ import com.android.build.gradle.integration.common.fixture.ModelContainerV2;
 import com.android.build.gradle.integration.common.utils.SourceProviderHelper;
 import com.android.builder.core.ComponentType;
 import com.android.builder.model.v2.ide.ProjectType;
-import java.io.File;
-import java.io.IOException;
+
 import org.junit.Rule;
 import org.junit.Test;
+
+import java.io.File;
+import java.io.IOException;
 
 /** Assemble tests for migrated. */
 public class MigratedTest {
     @Rule
     public GradleTestProject project =
-            GradleTestProject.builder().fromTestProject("migrated").create();
+            GradleTestProject.builder().fromTestProject("migrated").disableBuiltInKotlin().create();
 
     @Test
     public void checkModelReflectsMigratedSourceProviders() throws IOException {

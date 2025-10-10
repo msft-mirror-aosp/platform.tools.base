@@ -63,7 +63,9 @@ android {
                 .subproject(":without", withoutCompose)
                 .subproject(":explicitWithout", explicitWithoutCompose)
                 .build()
-        ).create()
+        )
+        .disableBuiltInKotlin()
+        .create()
 
     @Test
     fun verifyFlagInModel() {

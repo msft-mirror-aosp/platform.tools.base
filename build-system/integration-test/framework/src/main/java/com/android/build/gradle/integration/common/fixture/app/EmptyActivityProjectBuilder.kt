@@ -18,15 +18,11 @@ package com.android.build.gradle.integration.common.fixture.app
 
 import com.android.build.gradle.integration.common.fixture.ANDROIDX_APPCOMPAT_APPCOMPAT_VERSION
 import com.android.build.gradle.integration.common.fixture.ANDROIDX_CONSTRAINT_LAYOUT_VERSION
-import com.android.build.gradle.integration.common.fixture.ANDROIDX_VERSION
 import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
 import com.android.build.gradle.integration.common.fixture.DEFAULT_MIN_SDK_VERSION
 import com.android.build.gradle.integration.common.fixture.EmptyGradleProject
 import com.android.build.gradle.integration.common.fixture.GradleProject
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.fixture.GradleTestProjectBuilder
-import com.android.build.gradle.integration.common.fixture.SUPPORT_LIB_VERSION
-import com.android.build.gradle.integration.common.fixture.SUPPORT_LIB_CONSTRAINT_LAYOUT_VERSION
 import com.android.build.gradle.options.BooleanOption
 import java.io.File
 
@@ -74,12 +70,21 @@ class EmptyActivityProjectBuilder {
      */
     private var kotlinUsedInLibrarySubprojects: Boolean = false
 
+    /** Whether built-in Kotlin should be enabled. */
+    private var builtInKotlin: Boolean = true
+
     init {
         if (useGradleBuildCache) {
             checkNotNull(gradleBuildCacheDir) {
                 "gradleBuildCacheDir must be specified when useGradleBuildCache=true"
             }
         }
+    }
+
+    @Deprecated("Do not use this method. Try to migrate the test to built-in Kotlin instead (b/385745419).")
+    fun disableBuiltInKotlin(): EmptyActivityProjectBuilder {
+        builtInKotlin = false
+        return this
     }
 
     fun build(): GradleTestProject {
@@ -100,6 +105,7 @@ class EmptyActivityProjectBuilder {
         rootProjectBuilder
             .addGradleProperties(BooleanOption.USE_ANDROID_X.propertyName + "=true")
             .addGradleProperties(BooleanOption.ENABLE_JETIFIER.propertyName + "=true")
+            .addGradleProperty(BooleanOption.BUILT_IN_KOTLIN, builtInKotlin)
 
         if (useGradleBuildCache) {
             rootProjectBuilder.withGradleBuildCacheDirectory(gradleBuildCacheDir!!)

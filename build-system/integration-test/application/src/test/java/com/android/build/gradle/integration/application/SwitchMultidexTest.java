@@ -50,6 +50,7 @@ public class SwitchMultidexTest {
     public GradleTestProject project =
             GradleTestProject.builder()
                     .fromTestApp(HelloWorldApp.forPlugin("com.android.application"))
+                    .disableBuiltInKotlin()
                     .create();
 
     @Before

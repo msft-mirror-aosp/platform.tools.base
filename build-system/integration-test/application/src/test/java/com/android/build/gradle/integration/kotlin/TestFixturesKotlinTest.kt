@@ -21,13 +21,11 @@ import com.android.build.gradle.integration.common.fixture.GradleTaskExecutor
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.GradleTestProject.Companion.VERSION_CATALOG
 import com.android.build.gradle.integration.common.utils.TestFileUtils
+import com.android.build.gradle.integration.common.utils.disableBuiltInKotlin
 import com.android.testutils.TestUtils
 import com.android.testutils.apk.Apk
 import com.android.testutils.truth.PathSubject.assertThat
 import com.google.common.truth.Truth
-import com.google.common.truth.TruthJUnit.assume
-import org.gradle.util.GradleVersion
-import org.junit.Assume
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -49,7 +47,10 @@ class TestFixturesKotlinTest(private val kotlinVersion: String) {
 
     @get:Rule
     val project: GradleTestProject =
-        GradleTestProject.builder().fromTestProject("testFixturesKotlinApp").create()
+        GradleTestProject.builder()
+            .fromTestProject("testFixturesKotlinApp")
+            .disableBuiltInKotlin()
+            .create()
 
     @Before
     fun before() {

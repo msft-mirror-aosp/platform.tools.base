@@ -40,7 +40,10 @@ class JavaPreCompileTest(private val useKapt: Boolean) {
     }
 
     @get:Rule
-    val project = EmptyActivityProjectBuilder().apply { useKotlin = useKapt }.build()
+    val project = EmptyActivityProjectBuilder()
+        .apply { useKotlin = useKapt }
+        .disableBuiltInKotlin()
+        .build()
 
     @Before
     fun setUp() {

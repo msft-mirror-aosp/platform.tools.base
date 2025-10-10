@@ -143,6 +143,7 @@ fun createGradleTestProject(name: String, heapSize: String = "2048M"): GradleTes
         )
         // Enforcing unique package names to prevent regressions. Remove when b/116109681 fixed.
         .addGradleProperties("${BooleanOption.ENFORCE_UNIQUE_PACKAGE_NAMES.propertyName}=true")
+        .disableBuiltInKotlin()
         .withHeap(heapSize)
         .create()
 }

@@ -51,6 +51,7 @@ class AppWithRuntimeDependencyTest {
                             aar)))
     @get:Rule val project = GradleTestProject.builder()
             .fromTestProject("projectWithModules")
+            .disableBuiltInKotlin()
             .withAdditionalMavenRepo(mavenRepo)
             .create()
 

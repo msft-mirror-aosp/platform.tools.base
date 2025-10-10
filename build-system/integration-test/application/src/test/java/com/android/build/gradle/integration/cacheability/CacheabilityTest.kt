@@ -137,6 +137,7 @@ class CacheabilityTest {
         return with(EmptyActivityProjectBuilder()) {
             this.projectName = projectName
             this.withUnitTest = true
+            disableBuiltInKotlin()
             withHeap("2048m")
             build()
         }

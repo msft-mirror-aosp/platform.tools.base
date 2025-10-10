@@ -18,8 +18,8 @@ package com.android.build.gradle.integration.kotlin
 
 import com.android.build.gradle.integration.common.fixture.project.ApkSelector
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
-import com.android.build.gradle.integration.common.fixture.project.prebuilts.HelloWorldAndroid
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
+import com.android.build.gradle.integration.common.fixture.project.prebuilts.HelloWorldAndroid
 import com.android.build.gradle.internal.dsl.ModulePropertyKey.BooleanWithDefault.SCREENSHOT_TEST
 import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.truth.PathSubject
@@ -344,9 +344,7 @@ class BuiltInKotlinForAppTest(
                 applyPlugin(PluginType.KOTLIN_ANDROID, applyFirst = true)
             }
         }
-        val result = build.executor
-            .with(BooleanOption.BUILT_IN_KOTLIN, builtInKotlinBooleanOption)
-            .expectFailure().run(":app:assembleDebug")
+        val result = build.executor.expectFailure().run(":app:assembleDebug")
         result.assertErrorContains(
             "The 'org.jetbrains.kotlin.android' plugin is no longer required for Kotlin support since AGP 9.0."
         )

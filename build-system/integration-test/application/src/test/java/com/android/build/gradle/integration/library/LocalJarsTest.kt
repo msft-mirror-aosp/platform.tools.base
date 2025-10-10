@@ -18,6 +18,7 @@ package com.android.build.gradle.integration.library
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.model.ModelComparator
+import com.android.build.gradle.integration.common.utils.disableBuiltInKotlin
 import org.junit.Rule
 import org.junit.Test
 
@@ -26,6 +27,7 @@ class LocalJarsTest : ModelComparator() {
     @get:Rule
     val project = GradleTestProject.builder()
         .fromTestProject("localJars")
+        .disableBuiltInKotlin()
         .create()
 
     @Test

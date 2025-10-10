@@ -58,6 +58,7 @@ public class DataBindingIntegrationTestAppsTest {
                                 BooleanOption.ENABLE_LEGACY_API.getPropertyName()
                                         + "="
                                         + enableLegacyApi)
+                        .disableBuiltInKotlin()
                         .withDependencyChecker(!"KotlinTestApp".equals(projectName));
         if (SdkVersionInfo.HIGHEST_KNOWN_STABLE_API < 28 && useAndroidX) {
             builder.withCompileSdkVersion("28");

@@ -51,6 +51,7 @@ public class PackagingOptionsFilteringTest {
     public GradleTestProject project =
             GradleTestProject.builder()
                     .fromTestProject("kotlinApp")
+                    .disableBuiltInKotlin()
                     .create();
 
     @Before

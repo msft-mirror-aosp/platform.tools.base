@@ -33,6 +33,7 @@ class JavaCompileWithToolChainTest {
     val project = GradleTestProject.builder()
         .fromTestApp(HelloWorldApp.forPlugin("com.android.application"))
         .withKotlinGradlePlugin(true)
+        .disableBuiltInKotlin()
         .create()
 
     @Test

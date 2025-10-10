@@ -150,7 +150,7 @@ gradle_integration_test(
 )
 
 gradle_integration_test(
-    name = "LintAlighUastWithLanguageVersionTest",
+    name = "LintAlignUastWithLanguageVersionTest",
     srcs = glob(
         include = LINT_ALIGN_UAST_TEST,
     ),

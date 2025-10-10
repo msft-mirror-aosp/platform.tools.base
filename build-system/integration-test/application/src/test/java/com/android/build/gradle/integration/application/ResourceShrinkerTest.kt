@@ -23,6 +23,7 @@ import com.android.build.gradle.integration.common.fixture.GradleTestProject.Apk
 import com.android.build.gradle.integration.common.fixture.GradleTestProject.ApkType.Companion.RELEASE
 import com.android.build.gradle.integration.common.fixture.GradleTestProject.Companion.builder
 import com.android.build.gradle.integration.common.utils.TestFileUtils
+import com.android.build.gradle.integration.common.utils.disableBuiltInKotlin
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.scope.getOutputDir
 import com.android.build.gradle.options.BooleanOption
@@ -68,6 +69,7 @@ class ResourceShrinkerTest(
     var project = builder().fromTestProject("shrink")
         .addGradleProperty(BooleanOption.USE_NON_FINAL_RES_IDS, nonFinalResIds)
         .addGradleProperty(BooleanOption.R8_OPTIMIZED_RESOURCE_SHRINKING, r8OptimizedShrinking)
+        .disableBuiltInKotlin()
         .create()
 
     @get:Rule

@@ -37,6 +37,7 @@ class LibraryAllClassesAccessTest(val scope: ScopedArtifacts.Scope) {
     val project =
         GradleTestProject.builder()
             .fromTestApp(KotlinHelloWorldApp.forPlugin("com.android.library"))
+            .disableBuiltInKotlin()
             .create()
 
     companion object {

@@ -30,6 +30,7 @@ class AnalyticsCompositeBuildTest {
             .fromTestProject("multiCompositeBuild")
             .withDependencyChecker(false)
             .enableProfileOutput()
+            .disableBuiltInKotlin()
             .create()
 
     // regression test for b/226095015

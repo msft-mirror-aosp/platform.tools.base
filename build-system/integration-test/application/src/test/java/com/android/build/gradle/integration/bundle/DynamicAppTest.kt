@@ -75,6 +75,7 @@ class DynamicAppTest {
     val project: GradleTestProject = GradleTestProject.builder()
         .fromTestProject("dynamicApp")
         .addGradleProperty(BooleanOption.USE_ANDROID_X, false)
+        .disableBuiltInKotlin()
         .create()
 
     private val bundleContent: Array<String> = arrayOf(

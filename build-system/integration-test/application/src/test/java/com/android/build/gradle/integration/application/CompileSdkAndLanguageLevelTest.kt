@@ -61,6 +61,7 @@ class CompileSdkAndLanguageLevelTest(
     @Rule
     val project = GradleTestProject.builder()
         .fromTestApp(MinimalSubProject.app("com.example"))
+        .disableBuiltInKotlin()
         .create()
 
     private fun warnsOnVersion(javaVersion: JavaVersion) =

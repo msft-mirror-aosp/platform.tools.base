@@ -25,6 +25,7 @@ import com.android.build.gradle.integration.common.fixture.project.builder.Gradl
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
 import com.android.build.gradle.integration.common.fixture.project.builder.kotlin.KotlinExtension
 import com.android.build.gradle.integration.common.fixture.project.plugins.GenericCallback
+import com.android.build.gradle.integration.common.utils.disableBuiltInKotlin
 import com.android.build.gradle.internal.dsl.ModulePropertyKey.OptionalBoolean
 import com.android.build.gradle.internal.lint.AndroidLintAnalysisTask
 import com.android.build.gradle.options.OptionalBooleanOption
@@ -333,6 +334,8 @@ class LintAlignUastWithLanguageVersionTest(private val useBuiltInKotlinSupport: 
                     experimentalProperties[OptionalBoolean.LINT_USE_K2_UAST.key] = false
                 }
             }
+
+            disableBuiltInKotlin()
         }
 
         build.executor.run("clean", "lint")
@@ -450,6 +453,8 @@ class LintAlignUastWithLanguageVersionTest(private val useBuiltInKotlinSupport: 
                     jvm()
                 }
             }
+
+            disableBuiltInKotlin()
         }
 
     /**

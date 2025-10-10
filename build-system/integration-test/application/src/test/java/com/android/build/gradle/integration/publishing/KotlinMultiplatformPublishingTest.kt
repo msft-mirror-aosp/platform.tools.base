@@ -19,9 +19,10 @@ package com.android.build.gradle.integration.publishing
 import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
 import com.android.build.gradle.integration.common.fixture.model.normalizeVersionsOfCommonDependencies
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
-import com.android.build.gradle.integration.common.fixture.project.plugins.GenericCallback
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
+import com.android.build.gradle.integration.common.fixture.project.plugins.GenericCallback
 import com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
+import com.android.build.gradle.integration.common.utils.disableBuiltInKotlin
 import org.gradle.api.Project
 import org.gradle.api.publish.PublishingExtension
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
@@ -54,6 +55,7 @@ class KotlinMultiplatformPublishingTest {
                     version = "0.1.2"
                 }
             }
+            disableBuiltInKotlin()
         }
 
     class Callback: GenericCallback {

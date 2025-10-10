@@ -24,6 +24,7 @@ import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType.PluginTypeWithExtension
 import com.android.build.gradle.integration.common.fixture.project.plugins.GenericCallback
 import com.android.build.gradle.integration.common.truth.ScannerSubject.Companion.assertThat
+import com.android.build.gradle.integration.common.utils.disableBuiltInKotlin
 import com.android.build.gradle.integration.manageddevice.utils.simpleProject
 import com.google.firebase.testlab.gradle.TestLabGradlePluginExtension
 import org.gradle.api.Project
@@ -57,6 +58,7 @@ class FirebaseTestLabDeviceTest {
             pluginCallbacks += CreateGMDGroupCallback::class.java
             pluginCallbacks += RemoveFTLDevice3Callback::class.java
         }
+        disableBuiltInKotlin()
     }
 
     private val project: AndroidApplicationProject

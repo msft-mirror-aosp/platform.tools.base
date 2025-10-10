@@ -16,7 +16,6 @@
 
 package com.android.build.gradle.integration.lint;
 
-import static com.android.build.gradle.integration.common.truth.ScannerSubject.assertThat;
 import static com.android.testutils.truth.PathSubject.assertThat;
 
 import com.android.build.gradle.integration.common.fixture.GradleBuildResult;
@@ -41,6 +40,7 @@ public class LintFixTest {
             GradleTestProject.builder()
                     .fromTestProject("lintKotlin")
                     .addGradleProperties(BooleanOption.USE_ANDROID_X.getPropertyName() + "=true")
+                    .disableBuiltInKotlin()
                     .create();
 
     @Test

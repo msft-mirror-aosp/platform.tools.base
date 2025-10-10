@@ -18,6 +18,7 @@ package com.android.build.gradle.integration.application
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.model.ModelComparator
+import com.android.build.gradle.integration.common.utils.disableBuiltInKotlin
 import com.google.common.truth.Truth.assertThat
 import org.junit.Rule
 import org.junit.Test
@@ -57,7 +58,9 @@ class MultiCompositeBuildTest: ModelComparator() {
                     "TestCompositeApp",
                     "TestCompositeLib1",
                     "TestCompositeLib3"
-            ).create()
+            )
+            .disableBuiltInKotlin()
+            .create()
 
     @Test
     fun `dependencies for root app module`() {

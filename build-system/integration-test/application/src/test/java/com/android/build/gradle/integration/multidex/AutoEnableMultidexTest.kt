@@ -62,6 +62,7 @@ class AutoEnableMultidexTest {
                 )
             }
         })
+        .disableBuiltInKotlin()
         .create()
 
     @Test

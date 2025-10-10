@@ -22,6 +22,7 @@ import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.GradleTestProject.Companion.DEFAULT_NDK_SIDE_BY_SIDE_VERSION
 import com.android.build.gradle.integration.common.fixture.model.recoverExistingCxxAbiModels
 import com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk
+import com.android.build.gradle.integration.common.utils.disableBuiltInKotlin
 import com.android.build.gradle.internal.core.Abi
 import com.android.build.gradle.internal.cxx.model.CxxAbiModel
 import com.android.build.gradle.internal.cxx.model.metadataGenerationCommandFile
@@ -46,12 +47,14 @@ class PrefabTest(private val buildSystem: NativeBuildSystem, val cmakeVersion: S
     @JvmField
     val project = GradleTestProject.builder().fromTestProject("prefabApp")
         .setSideBySideNdkVersion(DEFAULT_NDK_SIDE_BY_SIDE_VERSION)
+        .disableBuiltInKotlin()
         .create()
 
     @Rule
     @JvmField
     val prefabNoDepsProject = GradleTestProject.builder().fromTestProject("prefabNoDeps")
         .setSideBySideNdkVersion(DEFAULT_NDK_SIDE_BY_SIDE_VERSION)
+        .disableBuiltInKotlin()
         .create()
 
     companion object {

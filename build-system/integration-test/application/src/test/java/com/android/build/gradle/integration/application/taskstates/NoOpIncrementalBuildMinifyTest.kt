@@ -22,6 +22,7 @@ import com.android.build.gradle.integration.common.truth.TaskStateList.Execution
 import com.android.build.gradle.integration.common.truth.TaskStateList.ExecutionState.SKIPPED
 import com.android.build.gradle.integration.common.truth.TaskStateList.ExecutionState.UP_TO_DATE
 import com.android.build.gradle.integration.common.utils.TaskStateAssertionHelper
+import com.android.build.gradle.integration.common.utils.disableBuiltInKotlin
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -166,6 +167,7 @@ class NoOpIncrementalBuildMinifyTest {
     @get:Rule
     val project = GradleTestProject.builder()
         .fromTestApp(HelloWorldApp.forPlugin("com.android.application"))
+        .disableBuiltInKotlin()
         .create()
 
     @Before

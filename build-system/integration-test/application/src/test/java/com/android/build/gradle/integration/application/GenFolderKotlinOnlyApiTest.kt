@@ -34,6 +34,7 @@ class GenFolderKotlinOnlyApiTest {
     var project =
         GradleTestProject.builder()
             .fromTestApp(KotlinHelloWorldApp.forPlugin("com.android.library"))
+            .disableBuiltInKotlin()
             .create()
 
     @JvmField

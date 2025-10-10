@@ -79,12 +79,6 @@ public class ProjectOptionsBuilder {
             suppressWarnings.add(BooleanOption.ENABLE_LEGACY_VARIANT_API);
         }
 
-        // TODO(b/385745419): Migrate to built-in Kotlin
-        if (!booleans.containsKey(BooleanOption.BUILT_IN_KOTLIN)) {
-            booleans.put(BooleanOption.BUILT_IN_KOTLIN, false);
-            suppressWarnings.add(BooleanOption.BUILT_IN_KOTLIN);
-        }
-
         // TODO(b/418804641): Migrate to the new DSL
         if (!booleans.containsKey(BooleanOption.USE_NEW_DSL)) {
             booleans.put(BooleanOption.USE_NEW_DSL, false);

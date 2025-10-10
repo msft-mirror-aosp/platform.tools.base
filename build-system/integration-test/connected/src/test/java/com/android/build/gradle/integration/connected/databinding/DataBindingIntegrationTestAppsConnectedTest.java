@@ -59,6 +59,7 @@ public class DataBindingIntegrationTestAppsConnectedTest {
                         .addGradleProperties(
                                 BooleanOption.ENFORCE_UNIQUE_PACKAGE_NAMES.getPropertyName()
                                         + "=false")
+                        .disableBuiltInKotlin()
                         .withDependencyChecker(!"KotlinTestApp".equals(projectName));
         if (SdkVersionInfo.HIGHEST_KNOWN_STABLE_API < 28 && useAndroidX) {
             builder.withCompileSdkVersion("28");

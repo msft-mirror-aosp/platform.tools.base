@@ -62,6 +62,7 @@ public class DexArchivesTest {
             GradleTestProject.builder()
                     .fromTestApp(HelloWorldApp.forPlugin("com.android.application"))
                     .withGradleBuildCacheDirectory(new File("local-build-cache"))
+                    .disableBuiltInKotlin()
                     .create();
 
     @Before

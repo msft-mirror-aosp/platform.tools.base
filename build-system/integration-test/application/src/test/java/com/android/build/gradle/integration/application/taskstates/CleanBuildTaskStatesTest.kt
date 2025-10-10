@@ -100,7 +100,9 @@ class CleanBuildTaskStatesTest {
     }
 
     @get:Rule
-    var project = EmptyActivityProjectBuilder().also { it.withUnitTest = true }.build()
+    var project = EmptyActivityProjectBuilder().also { it.withUnitTest = true }
+        .disableBuiltInKotlin()
+        .build()
 
     @Before
     fun setUp() {

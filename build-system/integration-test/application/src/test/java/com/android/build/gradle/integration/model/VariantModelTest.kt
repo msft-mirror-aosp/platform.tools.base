@@ -21,6 +21,7 @@ import com.android.build.gradle.integration.common.fixture.model.ModelComparator
 import com.android.build.gradle.integration.common.fixture.model.ReferenceModelComparator
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.plugins.ApplicationComponentCallback
+import com.android.build.gradle.integration.common.utils.disableBuiltInKotlin
 import com.android.builder.model.v2.ide.SyncIssue
 import org.gradle.api.Project
 import org.junit.Rule
@@ -39,6 +40,7 @@ class FlavoredAppModelTest: ModelComparator() {
             }
             pluginCallbacks += DisableSomeVariantCallback::class.java
         }
+        disableBuiltInKotlin()
     }
 
     class DisableSomeVariantCallback: ApplicationComponentCallback {
@@ -88,6 +90,7 @@ class MultiFlavoredAppModelTest: ModelComparator() {
             }
             pluginCallbacks += DisableBunchOfVariantCallback::class.java
         }
+        disableBuiltInKotlin()
     }
 
     class DisableBunchOfVariantCallback: ApplicationComponentCallback {

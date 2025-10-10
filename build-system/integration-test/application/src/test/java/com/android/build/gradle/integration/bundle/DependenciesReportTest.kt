@@ -59,7 +59,9 @@ class DependenciesReportTest {
             .fileDependency(lib, "local_in_lib.jar")
             .build()
     @get:Rule
-    val project = GradleTestProject.builder().fromTestApp(testApp).create()
+    val project = GradleTestProject.builder().fromTestApp(testApp)
+        .disableBuiltInKotlin()
+        .create()
 
     @Test
     fun testDependenciesFile() {

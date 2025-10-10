@@ -48,6 +48,7 @@ class BuiltInKaptForScreenshotTestTest {
             )
         ).withKotlinGradlePlugin(true)
             .withBuiltInKotlinSupport(true)
+            .disableBuiltInKotlin()
             .create()
 
     @Before

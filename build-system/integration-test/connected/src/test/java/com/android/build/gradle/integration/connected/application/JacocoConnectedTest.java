@@ -47,6 +47,7 @@ public class JacocoConnectedTest {
     public final GradleTestProject project =
             GradleTestProject.builder()
                     .fromTestApp(KotlinHelloWorldApp.forPlugin("com.android.application"))
+                    .disableBuiltInKotlin()
                     .create();
 
     @Before

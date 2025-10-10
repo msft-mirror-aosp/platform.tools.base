@@ -20,14 +20,15 @@ import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.KotlinHelloWorldApp
 import com.android.utils.FileUtils
 import com.google.common.base.Charsets
-import java.nio.file.Files
 import org.junit.Rule
 import org.junit.Test
+import java.nio.file.Files
 
 class DexArchivesKotlinTest {
     @get:Rule
     val project = GradleTestProject.builder()
         .fromTestApp(KotlinHelloWorldApp.forPlugin("com.android.application"))
+        .disableBuiltInKotlin()
         .create()
 
     /** Regression test for http://b/65363841.  */

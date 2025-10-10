@@ -21,6 +21,7 @@ import com.android.build.gradle.integration.common.fixture.ModelContainerV2
 import com.android.build.gradle.integration.common.fixture.model.ModelComparator
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
+import com.android.build.gradle.integration.common.utils.disableBuiltInKotlin
 import com.android.builder.model.v2.ide.SyncIssue
 import org.junit.Before
 import org.junit.Rule
@@ -45,7 +46,9 @@ class HelloWorldCompositeModelTest: ModelComparator() {
                 group = "com.composite-build"
                 version = "1.2"
             }
+            disableBuiltInKotlin()
         }
+        disableBuiltInKotlin()
     }
 
     private lateinit var result: ModelBuilderV2.FetchResult<ModelContainerV2>
@@ -105,6 +108,7 @@ class CompositeBuildWithSameNameTest: ModelComparator() {
                 group = "com.androidlib"
                 version = "1.0"
             }
+            disableBuiltInKotlin()
         }
         includedBuild("includedBuild2") {
             genericProject(":lib") {
@@ -112,7 +116,9 @@ class CompositeBuildWithSameNameTest: ModelComparator() {
                 group = "com.javalib"
                 version = "1.0"
             }
+            disableBuiltInKotlin()
         }
+        disableBuiltInKotlin()
     }
 
     private lateinit var result: ModelBuilderV2.FetchResult<ModelContainerV2>
@@ -151,7 +157,9 @@ class DependencySubstitutionInCompositeModelTest: ModelComparator() {
                     substitute(module("com.example.included:lib")).using(project(":lib"))
                 }
             }
+            disableBuiltInKotlin()
         }
+        disableBuiltInKotlin()
     }
 
     private lateinit var result: ModelBuilderV2.FetchResult<ModelContainerV2>

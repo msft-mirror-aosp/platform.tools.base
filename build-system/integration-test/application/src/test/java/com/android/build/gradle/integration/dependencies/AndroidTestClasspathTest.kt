@@ -19,6 +19,7 @@ package com.android.build.gradle.integration.dependencies
 import com.android.build.gradle.integration.common.fixture.project.ApkSelector
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.truth.ScannerSubject
+import com.android.build.gradle.integration.common.utils.disableBuiltInKotlin
 import org.junit.Rule
 import org.junit.Test
 
@@ -67,6 +68,7 @@ class AndroidTestClasspathTest {
                         """.trimIndent())
                 }
             }
+            disableBuiltInKotlin()
         }
 
     @Test

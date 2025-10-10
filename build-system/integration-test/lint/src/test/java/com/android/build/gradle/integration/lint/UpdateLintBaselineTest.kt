@@ -21,6 +21,7 @@ import com.android.build.gradle.integration.common.truth.ScannerSubject
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.build.gradle.options.BooleanOption
 import com.android.Version
+import com.android.build.gradle.integration.common.utils.disableBuiltInKotlin
 import com.android.testutils.truth.PathSubject
 import com.google.common.truth.Truth.assertThat
 import org.junit.Rule
@@ -33,12 +34,15 @@ import java.io.File
 class UpdateLintBaselineTest {
 
     @get:Rule
-    val project = builder().fromTestProject("lintBaseline").create()
+    val project = builder().fromTestProject("lintBaseline")
+        .disableBuiltInKotlin()
+        .create()
 
     @get:Rule
     val projectWithoutIssues =
         builder().fromTestApp(MinimalSubProject.app("com.example.app"))
             .withName("projectWithoutIssues")
+            .disableBuiltInKotlin()
             .create()
 
     @Test

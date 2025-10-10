@@ -87,7 +87,9 @@ class CoreLibraryDesugarTest {
     val project = GradleTestProject.builder()
         .withAdditionalMavenRepo(mavenRepo)
         .withGradleBuildCacheDirectory(File("local-build-cache"))
-        .fromTestApp(setUpTestProject()).create()
+        .fromTestApp(setUpTestProject())
+        .disableBuiltInKotlin()
+        .create()
 
     @get:Rule
     var adb = Adb()

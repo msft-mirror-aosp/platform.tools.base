@@ -101,6 +101,7 @@ class DataBindingCachingTest(private val withKotlin: Boolean) {
     val project = GradleTestProject.builder()
         .fromTestProject("databinding")
         .withKotlinGradlePlugin(withKotlin)
+        .disableBuiltInKotlin()
         .withName("project")
         .create()
 
@@ -108,6 +109,7 @@ class DataBindingCachingTest(private val withKotlin: Boolean) {
     val projectCopy = GradleTestProject.builder()
         .fromTestProject("databinding")
         .withKotlinGradlePlugin(withKotlin)
+        .disableBuiltInKotlin()
         .withName("projectCopy")
         .create()
 

@@ -39,6 +39,7 @@ public class JacocoWithKotlinTest {
     public GradleTestProject project =
             GradleTestProject.builder()
                     .fromTestApp(KotlinHelloWorldApp.forPlugin("com.android.application"))
+                    .disableBuiltInKotlin()
                     .create();
 
     @Before
