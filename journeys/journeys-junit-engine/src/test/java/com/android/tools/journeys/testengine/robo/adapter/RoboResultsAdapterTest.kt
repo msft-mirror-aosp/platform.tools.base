@@ -231,7 +231,7 @@ class RoboResultAdapterTest {
                     Timestamp.newBuilder().setSeconds(1746708049).setNanos(46000000).build(),
                     buildResult(
                         Status.FAILED,
-                        "Journey terminated unexpectedly with model response: The 'Saved' tab should have navigated to the saved posts within the app. Since a browser window opened instead, something went wrong, and the goal cannot be completed."
+                        "Prompt failed with model response: The 'Saved' tab should have navigated to the saved posts within the app. Since a browser window opened instead, something went wrong, and the goal cannot be completed."
                     )
                 )
             )

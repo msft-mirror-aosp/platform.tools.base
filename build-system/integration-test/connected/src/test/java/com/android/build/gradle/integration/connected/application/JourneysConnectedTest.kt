@@ -847,11 +847,11 @@ class JourneysConnectedTest {
             buildStepFinishedEvent(
                 Timestamp.newBuilder().setSeconds(1750247096).setNanos(665000000).build(),
                 Status.FAILED,
-                "Journey terminated unexpectedly with model response: The goal was to save the first post. Tapping on the bookmark icon should have saved the post, but it led to a Chrome welcome screen instead. This is unexpected and indicates a problem."
+                "Prompt failed with model response: The goal was to save the first post. Tapping on the bookmark icon should have saved the post, but it led to a Chrome welcome screen instead. This is unexpected and indicates a problem."
             ),
             buildRunFinishedEvent(
                 Status.FAILED,
-                "Journey terminated unexpectedly with model response: The goal was to save the first post. Tapping on the bookmark icon should have saved the post, but it led to a Chrome welcome screen instead. This is unexpected and indicates a problem."
+                "Prompt failed with model response: The goal was to save the first post. Tapping on the bookmark icon should have saved the post, but it led to a Chrome welcome screen instead. This is unexpected and indicates a problem."
             )
         )
         assertJourneyEvents(result, "$DEVICE_SERIAL > simple.journey.xml", "", expectedEvents)

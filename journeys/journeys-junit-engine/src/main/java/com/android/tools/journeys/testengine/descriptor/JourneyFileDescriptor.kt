@@ -159,7 +159,7 @@ class JourneyFileDescriptor(
         )
 
         if (!crawlProcessingState.journeyResult.errorMessage.isNullOrBlank()) {
-            throw AssertionError("Journey failed: ${crawlProcessingState.journeyResult.errorMessage}")
+            throw JourneysAssertionError(crawlProcessingState.journeyResult.errorMessage)
         }
     }
 
@@ -204,4 +204,8 @@ class JourneyFileDescriptor(
                     ).build()
             ).build()
     }
+}
+
+private class JourneysAssertionError(message: String?) : AssertionError(message) {
+    override fun fillInStackTrace(): Throwable = this
 }

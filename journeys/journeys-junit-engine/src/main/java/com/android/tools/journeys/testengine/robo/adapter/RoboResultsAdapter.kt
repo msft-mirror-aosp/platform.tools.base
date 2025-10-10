@@ -394,7 +394,7 @@ class RoboResultAdapter(
                 val modelReasoning = config.crawlProcessingState.currentModelReasoning
                 val errorMessage =
                     if (!modelReasoning.isNullOrBlank() && modelReasoning != RoboConfigConstants.DEFAULT_MODEL_REASONING) {
-                        "Journey terminated unexpectedly with model response: $modelReasoning"
+                        "Prompt failed with model response: $modelReasoning"
                     } else {
                         getErrorMessageFromTerminationCause(roboScript.terminationCause)
                     }
