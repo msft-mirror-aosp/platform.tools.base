@@ -46,6 +46,7 @@ import com.android.manifmerger.ManifestMerger2
 import com.android.manifmerger.ManifestMerger2.Invoker
 import com.android.manifmerger.ManifestProvider
 import com.google.common.base.Preconditions
+import org.apache.commons.io.FileUtils.readFileToString
 import org.gradle.api.InvalidUserDataException
 import org.gradle.api.artifacts.ArtifactCollection
 import org.gradle.api.artifacts.component.ModuleComponentIdentifier
@@ -230,7 +231,7 @@ abstract class ProcessApplicationManifest : ManifestProcessorTask() {
                 list
             } else try {
                 for (file in dependencyFeatureNameArtifacts!!.files) {
-                    list.add(org.apache.commons.io.FileUtils.readFileToString(file))
+                    list.add(readFileToString(file, Charsets.UTF_8))
                 }
                 list
             } catch (e: IOException) {
