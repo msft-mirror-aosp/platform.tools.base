@@ -1081,6 +1081,62 @@ class InferredThreadDetectorTest : AbstractCheckTest() {
       .expectClean()
   }
 
+  // Test reduced from org.locationtech.jts.geom.Geometry.java
+  fun testSymbolExplosion() {
+    lint()
+      .files(
+        java(
+            """
+            public abstract class Geometry {
+              public boolean intersects(Geometry g) {
+                if (!getEnvelopeInternal().intersects(g.getEnvelopeInternal()))
+                  return false;
+
+                if (isRectangle()) return true;
+                if (g.isRectangle()) return true;
+
+                if (isGeometryCollection() || g.isGeometryCollection()) {
+                  for (int i = 0; i < getNumEntries(); i++) {
+                    for (int j = 0; j < g.getNumEntries(); j++) {
+                      if (getGeometryN(i).intersects(g.getGeometryN(j))) {
+                        return true;
+                      }
+                    }
+                  }
+                  return false;
+                }
+                return relate(g).isIntersects();
+              }
+
+              abstract public Envelope getEnvelopeInternal();
+
+              abstract public boolean isRectangle();
+
+              abstract public boolean isGeometryCollection();
+
+              abstract public int getNumEntries();
+
+              abstract public Geometry getGeometryN(int i);
+
+              abstract IntersectionMatrix relate(Geometry g);
+
+              interface Envelope {
+                boolean intersects(Envelope e);
+              }
+
+              interface IntersectionMatrix {
+                boolean isIntersects();
+              }
+            }
+          """
+              .trimIndent()
+          )
+          .indented()
+      )
+      .run()
+      .expectClean()
+  }
+
   fun testInterpreter_bigStep() {
     lint()
       .files(

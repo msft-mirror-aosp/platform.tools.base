@@ -446,6 +446,6 @@ fun <FX> Lattice<Type<FX>>.widen(t: Type<FX>): Type<FX> =
           )
       }
     }
-    is Type.Union -> t.cases.joinedOver(::widen)
+    is Type.Union -> widen(Type.None, t.cases.joinedOver(::widen))
     else -> t
   }

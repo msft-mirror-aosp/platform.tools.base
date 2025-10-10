@@ -1191,7 +1191,13 @@ internal open class Analysis<FX : Any>(
             val substArgs = args.map { it.substAndInvoke(base) }
             val args = substArgs.map { it.value }
             val argsFx = substArgs.fold(bottom) { fx, arg -> fx join arg.effect }
-            val (res, invFx) = invokeVirtual(rec, substReceivers, method, args)
+            val (res, invFx) =
+              invokeVirtual(
+                rec,
+                typeLattice.widen(substReceivers),
+                method,
+                args.map(typeLattice::widen),
+              )
             Result(res, recvFx join argsFx join invFx)
           }
           is Type.Application,
