@@ -95,9 +95,7 @@ fun RecipeExecutor.archStarterActivityRecipe(
   addDependency(mavenCoordinate = "androidx.compose.material:material-icons-core")
   addDependency(mavenCoordinate = "androidx.compose.material:material-icons-extended")
 
-  addPlatformDependency("io.coil-kt.coil3:coil-bom:3.3.0")
-  addDependency("io.coil-kt.coil3:coil-compose")
-  addDependency("io.coil-kt.coil3:coil-network-okhttp")
+  addDependency("io.coil-kt:coil-compose:2.7.0")
 
   copy(File("arch-sample-activity").resolve("drawable"), resOut.resolve("drawable"))
 
