@@ -120,16 +120,16 @@ sealed interface ClassId {
   }
 
   private enum class Common(val aliases: List<String>) : ClassId {
-    Boolean("java.lang.Boolean", "kotlin.Boolean"),
-    Int("java.lang.Integer", "kotlin.Int"),
-    Char("java.lang.Char", "kotlin.Char"),
-    Byte("java.lang.Byte", "kotlin.Byte"),
-    Short("java.lang.Short", "kotlin.Short"),
-    Long("java.lang.Long", "kotlin.Long"),
-    Float("java.lang.Float", "kotlin.Float"),
-    Double("java.lang.Double", "kotlin.Double"),
+    Boolean("java.lang.Boolean", "kotlin.Boolean", "boolean"),
+    Int("java.lang.Integer", "kotlin.Int", "int"),
+    Char("java.lang.Char", "kotlin.Char", "char"),
+    Byte("java.lang.Byte", "kotlin.Byte", "byte"),
+    Short("java.lang.Short", "kotlin.Short", "short"),
+    Long("java.lang.Long", "kotlin.Long", "long"),
+    Float("java.lang.Float", "kotlin.Float", "float"),
+    Double("java.lang.Double", "kotlin.Double", "double"),
     String("java.lang.String", "kotlin.String"),
-    Unit("kotlin.Unit"),
+    Unit("kotlin.Unit", "void"),
     Array("kotlin.Array");
 
     constructor(vararg aliases: String) : this(aliases.asList())

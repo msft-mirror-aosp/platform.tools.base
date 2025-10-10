@@ -19,6 +19,8 @@ import com.android.tools.lint.checks.fx.utils.InterningPool
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiMethod
 import com.intellij.psi.PsiModifier
+import kotlin.reflect.KFunction
+import kotlin.reflect.KParameter
 import org.jetbrains.kotlin.psi.KtNamedFunction
 import org.jetbrains.kotlin.psi.psiUtil.containingClass
 import org.jetbrains.uast.UElement
@@ -45,18 +47,24 @@ class MethodId(val isVirtual: Boolean, name: String, paramTags: List<ClassId?>) 
     private val namePool = InterningPool<String>()
     private val paramListPool = InterningPool<List<ClassId?>>()
 
-    operator fun invoke(method: PsiMethod): MethodId {
-      val typeParams = buildSet {
-        for (x in method.containingClass?.typeParameters ?: arrayOf()) x.name?.let(::add)
-        for (x in method.typeParameters) x.name?.let(::add)
-      }
-      val isVirtual = !method.isStatic() && !method.isConstructor
-      val params =
-        method.parameterList.parameters.map {
-          PsiTypeAdapter.translate(typeParams, it.type).erased()
+    operator fun invoke(method: PsiMethod): MethodId =
+      when {
+        method.name == "invoke" &&
+          method.containingClass?.qualifiedName?.startsWith("kotlin.jvm.functions.Function") ==
+            true -> Invoke[method.parameterList.parametersCount]
+        else -> {
+          val typeParams = buildSet {
+            for (x in method.containingClass?.typeParameters ?: arrayOf()) x.name?.let(::add)
+            for (x in method.typeParameters) x.name?.let(::add)
+          }
+          val isVirtual = !method.isStatic() && !method.isConstructor
+          val params =
+            method.parameterList.parameters.map {
+              PsiTypeAdapter.translate(typeParams, it.type).erased()
+            }
+          MethodId(isVirtual, method.name, params)
         }
-      return MethodId(isVirtual, method.name, params)
-    }
+      }
 
     operator fun invoke(method: KtNamedFunction): MethodId {
       val typeParams = buildSet {
@@ -69,6 +77,43 @@ class MethodId(val isVirtual: Boolean, name: String, paramTags: List<ClassId?>) 
         }
       return MethodId(false, method.name!!, params)
     }
+
+    fun ofVirtual(method: KFunction<*>): MethodId {
+      require(
+        method.parameters.isNotEmpty() && method.parameters[0].kind == KParameter.Kind.INSTANCE
+      ) {
+        "Method ${method.name} is static"
+      }
+      return MethodId(
+        true,
+        method.name,
+        method.parameters.subList(1, method.parameters.size).map {
+          KTypeAdapter.translate(setOf(), it.type).erased()
+        },
+      )
+    }
+
+    fun ofStatic(method: KFunction<*>): MethodId {
+      require(
+        method.parameters.isEmpty() || method.parameters[0].kind != KParameter.Kind.INSTANCE
+      ) {
+        "Method ${method.name} is not static"
+      }
+      return MethodId(
+        false,
+        method.name,
+        method.parameters.map { KTypeAdapter.translate(setOf(), it.type).erased() },
+      )
+    }
+  }
+
+  // We create `MethodId` for most methods through reflection. But those for `FunctionN.invoke`
+  // aren't available. So we maintain a factory here.
+  object Invoke {
+    private val cache = HashMap<Int, MethodId>()
+
+    operator fun get(arity: Int): MethodId =
+      cache.getOrPut(arity) { MethodId(true, "invoke", List(arity) { null }) }
   }
 }
 
