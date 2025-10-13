@@ -19,7 +19,8 @@ package com.android.build.gradle.tasks
 import com.android.build.gradle.internal.component.ComponentCreationConfig
 import com.android.build.gradle.internal.component.NestedComponentCreationConfig
 import com.android.build.gradle.internal.profile.PROPERTY_VARIANT_NAME_KEY
-import com.android.build.gradle.internal.publishing.AndroidArtifacts
+import com.android.build.gradle.internal.publishing.AndroidArtifacts.ConsumedConfigType.COMPILE_CLASSPATH
+import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactType.CLASSES_JAR
 import com.android.build.gradle.internal.publishing.PublishingSpecs
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.scope.InternalArtifactType.BUILT_IN_KAPT_CLASSES_DIR
@@ -32,7 +33,6 @@ import org.gradle.api.JavaVersion
 import org.gradle.api.Task
 import org.gradle.api.tasks.TaskProvider
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-import org.jetbrains.kotlin.gradle.dsl.KotlinJvmCompilerOptions
 import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
 
 class KotlinCompileCreationAction(
@@ -64,55 +64,16 @@ class KotlinCompileCreationAction(
     }
 
     override fun configureTask(task: KotlinJvmCompile) {
-        creationConfig.sources.kotlin {
-            task.source(it.getAsFileTrees())
+        task.configureKotlinJvmCompile(creationConfig)
+
+        creationConfig.getBuiltInKaptArtifact(BUILT_IN_KAPT_GENERATED_JAVA_SOURCES)?.let {
+            task.source(it)
         }
-        creationConfig.sources.java {
-            task.source(it.getAsFileTrees())
+        creationConfig.getBuiltInKaptArtifact(BUILT_IN_KAPT_GENERATED_KOTLIN_SOURCES)?.let {
+            task.source(it)
         }
-        creationConfig.getBuiltInKaptArtifact(BUILT_IN_KAPT_GENERATED_JAVA_SOURCES)?.let { task.source(it) }
-        creationConfig.getBuiltInKaptArtifact(BUILT_IN_KAPT_GENERATED_KOTLIN_SOURCES)
-            ?.let { task.source(it) }
-
-        val taskClasspath =
-            creationConfig.services.fileCollection().from(
-                creationConfig.global.bootClasspath,
-                creationConfig.getJavaClasspath(
-                    AndroidArtifacts.ConsumedConfigType.COMPILE_CLASSPATH,
-                    AndroidArtifacts.ArtifactType.CLASSES_JAR,
-                    null
-                ),
-            )
-        creationConfig.getBuiltInKaptArtifact(BUILT_IN_KAPT_CLASSES_DIR)?.let { taskClasspath.from(it) }
-        task.libraries.setFrom(taskClasspath)
-
-        task.sourceSetName.set(creationConfig.name)
-        task.useModuleDetection.set(true)
-        task.multiPlatformEnabled.set(false)
-        task.pluginClasspath.from(kotlinJvmFactory.getCompilerPlugins())
-
-        // TODO(b/259523353) - fix this
-        // task.pluginOptions.addAll(creationConfig.kotlinCompilerOptions!!)
-
-        // Add friendPaths to allow access to internal properties of main variant
-        if (creationConfig is NestedComponentCreationConfig) {
-            val mainVariant = creationConfig.mainVariant
-            val internalArtifactType =
-                PublishingSpecs.getVariantPublishingSpec(mainVariant.componentType)
-                    .getSpec(
-                        AndroidArtifacts.ArtifactType.CLASSES_JAR,
-                        AndroidArtifacts.ConsumedConfigType.COMPILE_CLASSPATH.publishedTo
-                    )
-                    ?.outputType
-            internalArtifactType?.let {
-                task.friendPaths.from(
-                    creationConfig.services.fileCollection(mainVariant.artifacts.get(it))
-                )
-            }
-        }
-
-        if (kotlinServices.kgpVersion < KgpVersion.KGP_2_1_0) {
-            task.applyCompilerOptions(kotlinServices.kotlinAndroidProjectExtension.compilerOptions)
+        creationConfig.getBuiltInKaptArtifact(BUILT_IN_KAPT_CLASSES_DIR)?.let {
+            task.libraries.from(it)
         }
 
         task.ensureConsistentJvmTargetWithJavaCompileTask()
@@ -175,25 +136,29 @@ abstract class KotlinTaskCreationAction<TASK : Task>(
     }
 }
 
-/**
- * Add conventions for KotlinJvmCompile.compilerOptions properties based on [options].
- *
- * TODO(b/341765853) remove this after [MINIMUM_BUILT_IN_KOTLIN_VERSION] >= 2.1.0-Beta2 because the
- *  compiler options are passed to the task registration functions starting with Kotlin 2.1.0-Beta2
- */
-internal fun KotlinJvmCompile.applyCompilerOptions(options: KotlinJvmCompilerOptions) {
-    compilerOptions {
-        jvmTarget.convention(options.jvmTarget)
-        javaParameters.convention(options.javaParameters)
-        moduleName.convention(options.moduleName)
-        noJdk.convention(options.noJdk)
-
-        apiVersion.convention(options.apiVersion)
-        languageVersion.convention(options.languageVersion)
-
-        freeCompilerArgs.convention(options.freeCompilerArgs)
-        allWarningsAsErrors.convention(options.allWarningsAsErrors)
-        suppressWarnings.convention(options.suppressWarnings)
-        verbose.convention(options.verbose)
+internal fun KotlinJvmCompile.configureKotlinJvmCompile(creationConfig: ComponentCreationConfig) {
+    creationConfig.sources.kotlin {
+        source(it.getAsFileTrees())
     }
+    creationConfig.sources.java {
+        source(it.getAsFileTrees())
+    }
+
+    libraries.from(creationConfig.global.bootClasspath)
+    libraries.from(creationConfig.getJavaClasspath(COMPILE_CLASSPATH, CLASSES_JAR))
+
+    // Set friendPaths to allow tests/test fixtures to access internal functions/properties of the
+    // main component
+    if (creationConfig is NestedComponentCreationConfig) {
+        val mainComponent = creationConfig.mainVariant
+        val mainComponentClassesJar =
+            PublishingSpecs.getVariantPublishingSpec(mainComponent.componentType)
+                .getSpec(CLASSES_JAR, COMPILE_CLASSPATH.publishedTo)!!.outputType
+        friendPaths.from(mainComponent.artifacts.get(mainComponentClassesJar))
+    }
+
+    sourceSetName.set(creationConfig.name)
+    useModuleDetection.set(true)
+    multiPlatformEnabled.set(false)
+    pluginClasspath.from(creationConfig.services.builtInKotlinServices.kotlinBaseApiPlugin.getCompilerPlugins())
 }

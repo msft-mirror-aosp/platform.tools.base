@@ -100,7 +100,7 @@ class BuiltInKotlinForTestFixturesTest {
     }
 
     @Test
-    fun testInternalModifierAccessible() {
+    fun `test internal methods in main component are accessible from test fixtures`() {
         val build = rule.build {
             enableTestFixturesKotlinSupport()
             androidLibrary {

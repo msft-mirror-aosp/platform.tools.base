@@ -327,7 +327,7 @@ internal fun ComponentCreationConfig.createKotlinCompilation(): KotlinCompilatio
     // `debugUnitTest`, KGP automatically adds a source directory named `src/debugUnitTest/kotlin`,
     // but this directory is not intended by AGP. The directories should be `src/test/kotlin`,
     // `src/test/java`, `src/testDebug/kotlin`, `src/testDebug/java`.
-    kotlinCompilation.defaultSourceSet.kotlin.setSrcDirs(listOf(sources.kotlin!!.directories))
+    kotlinCompilation.defaultSourceSet.kotlin.setSrcDirs(listOf(sources.kotlin!!.all))
 
     // Also add kotlinCompilation to KotlinAndroidTarget.compilations (the IDE requires this info to
     // configure Kotlin).
