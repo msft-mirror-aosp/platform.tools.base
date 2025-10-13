@@ -1634,7 +1634,7 @@ class ConnectedDeviceTest {
         deviceState.deviceStatus = com.android.fakeadbserver.DeviceState.DeviceStatus.ONLINE
         val connectedDevice =
             fakeAdbRule.adbSession.connectedDevicesTracker.waitForDevice(deviceState.deviceId)
-        connectedDevice.deviceInfoFlow.first { it.deviceState == com.android.adblib.DeviceState.ONLINE }
+        connectedDevice.waitUntilOnline()
         return connectedDevice
     }
 

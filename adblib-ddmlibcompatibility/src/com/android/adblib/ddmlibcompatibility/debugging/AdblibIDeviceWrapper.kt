@@ -35,6 +35,7 @@ import com.android.adblib.syncStat
 import com.android.adblib.tools.EmulatorCommandException
 import com.android.adblib.tools.localConsoleAddress
 import com.android.adblib.tools.openEmulatorConsole
+import com.android.adblib.waitUntilOnline
 import com.android.adblib.withErrorTimeout
 import com.android.ddmlib.AdbCommandRejectedException
 import com.android.ddmlib.AdbHelper
@@ -274,9 +275,7 @@ internal class AdblibIDeviceWrapper(
             // Note that extra care should be taken when using `connectedDevice.deviceInfoFlow.deviceState`
             // instead of `AdblibIDeviceWrapper.deviceStateProvider`. In this case it's ok to use
             // the former as all we care about is populating avd data as soon as possible.
-            connectedDevice.deviceInfoFlow.first {
-                it.deviceState == com.android.adblib.DeviceState.ONLINE
-            }
+            connectedDevice.waitUntilOnline()
 
             if (!isEmulator) {
                 mAvdData = Result.success(null)

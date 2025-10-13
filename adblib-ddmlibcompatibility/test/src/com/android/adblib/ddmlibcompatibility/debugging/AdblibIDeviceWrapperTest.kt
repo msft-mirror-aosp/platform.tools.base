@@ -14,6 +14,7 @@ import com.android.adblib.testingutils.CoroutineTestUtils.runBlockingWithTimeout
 import com.android.adblib.testingutils.CoroutineTestUtils.yieldUntil
 import com.android.adblib.testingutils.FakeAdbServerProviderRule
 import com.android.adblib.waitForDevice
+import com.android.adblib.waitUntilState
 import com.android.ddmlib.AdbCommandRejectedException
 import com.android.ddmlib.AdbHelper
 import com.android.ddmlib.AndroidDebugBridge
@@ -1127,7 +1128,7 @@ class AdblibIDeviceWrapperTest {
         val connectedDevice = session.connectedDevicesTracker.waitForDevice(serialNumber)
 
         val targetState = com.android.adblib.DeviceState.parseState(deviceStatus.state)
-        connectedDevice.deviceInfoFlow.first { it.deviceState == targetState }
+        connectedDevice.waitUntilState(targetState)
         return connectedDevice
     }
 

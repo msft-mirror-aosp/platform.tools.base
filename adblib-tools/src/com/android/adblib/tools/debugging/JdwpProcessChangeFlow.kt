@@ -17,6 +17,7 @@ package com.android.adblib.tools.debugging
 
 import com.android.adblib.ConnectedDevice
 import com.android.adblib.DeviceState
+import com.android.adblib.waitUntilOnline
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.Flow
@@ -43,7 +44,7 @@ val ConnectedDevice.jdwpProcessChangeFlow: Flow<JdwpProcessChange>
         var currentProcesses = mapOf<Int, JdwpProcess>()
         val currentProcessTrackingJobs: MutableMap<Int, Job> = mutableMapOf()
 
-        waitForDeviceOnline(device)
+        device.waitUntilOnline()
         val flow = when (device.isTrackAppSupported()) {
             true -> device.appProcessFlow.asJdwpProcessFlow()
             false -> device.jdwpProcessFlow
@@ -92,12 +93,6 @@ val ConnectedDevice.jdwpProcessChangeFlow: Flow<JdwpProcessChange>
             currentProcesses = processesById
         }
     }
-
-private suspend fun waitForDeviceOnline(connectedDevice: ConnectedDevice) {
-    connectedDevice.deviceInfoFlow.first { deviceInfo ->
-        deviceInfo.deviceState == com.android.adblib.DeviceState.ONLINE
-    }
-}
 
 private fun Flow<List<AppProcess>>.asJdwpProcessFlow() =
     transform { emit(it.mapNotNull { process -> process.jdwpProcess }) }
