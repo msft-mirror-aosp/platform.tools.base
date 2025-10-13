@@ -10,10 +10,10 @@ import com.android.adblib.connectedDevicesTracker
 import com.android.adblib.ddmlibcompatibility.testutils.InitAndroidDebugBridgeRule
 import com.android.adblib.ddmlibcompatibility.testutils.UseAdbLibAndroidDebugBridgeRule
 import com.android.adblib.deviceInfo
-import com.android.adblib.serialNumber
 import com.android.adblib.testingutils.CoroutineTestUtils.runBlockingWithTimeout
 import com.android.adblib.testingutils.CoroutineTestUtils.yieldUntil
 import com.android.adblib.testingutils.FakeAdbServerProviderRule
+import com.android.adblib.waitForDevice
 import com.android.ddmlib.AdbCommandRejectedException
 import com.android.ddmlib.AdbHelper
 import com.android.ddmlib.AndroidDebugBridge
@@ -27,7 +27,6 @@ import com.android.fakeadbserver.DeviceState
 import com.android.sdklib.AndroidApiLevel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.launch
 import org.hamcrest.CoreMatchers
 import org.junit.Assert.assertArrayEquals
@@ -1125,13 +1124,11 @@ class AdblibIDeviceWrapperTest {
     private suspend fun waitForConnectedDevice(
         session: AdbSession, serialNumber: String, deviceStatus: DeviceState.DeviceStatus
     ): ConnectedDevice {
-        return session.connectedDevicesTracker.connectedDevices.mapNotNull { connectedDevices ->
-            connectedDevices.firstOrNull { device ->
-                device.deviceInfo.deviceState == com.android.adblib.DeviceState.parseState(
-                    deviceStatus.state
-                ) && device.serialNumber == serialNumber
-            }
-        }.first()
+        val connectedDevice = session.connectedDevicesTracker.waitForDevice(serialNumber)
+
+        val targetState = com.android.adblib.DeviceState.parseState(deviceStatus.state)
+        connectedDevice.deviceInfoFlow.first { it.deviceState == targetState }
+        return connectedDevice
     }
 
     private fun createAdblibIDeviceWrapper(
