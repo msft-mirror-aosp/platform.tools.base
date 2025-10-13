@@ -189,7 +189,6 @@ class JourneysConnectedTest {
         )
         val result =
             executor.expectFailure()
-                .withEnvironmentVariables(mapOf("JOURNEYS_ENABLE_STDOUT_REPORT" to "true"))
                 .run(":app:testJourneysTestT1DebugTestSuite")
 
         val outputDir =
@@ -255,7 +254,6 @@ class JourneysConnectedTest {
         val result =
             executor.withArgument("-DroboResultsPath=$roboResultsPath")
                 .withEnvironmentVariables(mapOf("JOURNEYS_FILTER" to "journey1.journey.xml, journey2.journey.xml"))
-                .withEnvironmentVariables(mapOf("JOURNEYS_ENABLE_STDOUT_REPORT" to "true"))
                 .run(":app:testJourneysTestT1DebugTestSuite")
 
         val journey1OutputDir =
@@ -379,6 +377,7 @@ class JourneysConnectedTest {
         createRoboResults("journeys/robo_results_default.textproto", roboResultsPath)
         val result =
             executor.withArgument("-DroboResultsPath=$roboResultsPath")
+                .withEnvironmentVariables(mapOf("JOURNEYS_ENABLE_STDOUT_REPORT" to "false"))
                 .run(":app:testJourneysTestT1DebugTestSuite")
 
         val journey1OutputDir =
@@ -424,7 +423,6 @@ class JourneysConnectedTest {
         val result =
             executor
                 .withEnvironmentVariables(mapOf("JOURNEYS_FILTER" to "journey2.xml, journey3.journey.xml"))
-                .withEnvironmentVariables(mapOf("JOURNEYS_ENABLE_STDOUT_REPORT" to "true"))
                 .run(":app:testJourneysTestT1DebugTestSuite")
 
         result.assertOutputDoesNotContain("$DEVICE_SERIAL > journey1.journey.xml")
@@ -445,7 +443,6 @@ class JourneysConnectedTest {
         val result =
             executor
                 .expectFailure()
-                .withEnvironmentVariables(mapOf("JOURNEYS_ENABLE_STDOUT_REPORT" to "true"))
                 .run(":app:testJourneysTestT1DebugTestSuite")
 
         val outputDir =
@@ -485,7 +482,6 @@ class JourneysConnectedTest {
             executor
                 .expectFailure()
                 .withArgument("-DshouldInduceServerError=true")
-                .withEnvironmentVariables(mapOf("JOURNEYS_ENABLE_STDOUT_REPORT" to "true"))
                 .run(":app:testJourneysTestT1DebugTestSuite")
 
         val outputDir =
@@ -529,7 +525,6 @@ class JourneysConnectedTest {
         val roboResultsPath = appProject.resolve("robo_results.textproto")
         createRoboResults("journeys/robo_results_successful.textproto", roboResultsPath)
         val result = executor.withArgument("-DroboResultsPath=$roboResultsPath")
-            .withEnvironmentVariables(mapOf("JOURNEYS_ENABLE_STDOUT_REPORT" to "true"))
             .run(":app:testJourneysTestT1DebugTestSuite")
 
         val outputDir =
@@ -727,7 +722,6 @@ class JourneysConnectedTest {
         val roboResultsPath = appProject.resolve("robo_results.textproto")
         createRoboResults("journeys/robo_results_failed.textproto", roboResultsPath)
         val result = executor.expectFailure().withArgument("-DroboResultsPath=$roboResultsPath")
-            .withEnvironmentVariables(mapOf("JOURNEYS_ENABLE_STDOUT_REPORT" to "true"))
             .run(":app:testJourneysTestT1DebugTestSuite")
 
         val outputDir =
