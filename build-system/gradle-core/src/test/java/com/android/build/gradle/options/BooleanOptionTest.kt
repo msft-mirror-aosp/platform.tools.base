@@ -55,6 +55,7 @@ class BooleanOptionTest {
         // Experimental features should have an (estimated) FutureStage -- see FutureStage's kdoc.
         // If you can't estimate a FutureStage, add it to the following ignore list.
         val ignoreList = listOf(
+            BooleanOption.DISABLE_KMP_RUNTIME_CLASSPATH,
             BooleanOption.BUILD_FEATURE_MLMODELBINDING,
             BooleanOption.ENABLE_DEFAULT_DEBUG_SIGNING_CONFIG,
             BooleanOption.ENABLE_PROFILE_JSON,

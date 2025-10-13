@@ -35,6 +35,7 @@ import com.android.build.gradle.internal.plugins.KotlinMultiplatformAndroidPlugi
 import com.android.build.gradle.internal.services.DslServices
 import com.android.build.gradle.internal.utils.KOTLIN_MPP_PLUGIN_ID
 import com.android.build.gradle.internal.utils.getKotlinPluginVersionFromPlugin
+import com.android.build.gradle.options.BooleanOption
 import com.android.ide.common.gradle.Version
 import org.gradle.api.Project
 import org.gradle.api.file.DuplicatesStrategy
@@ -131,7 +132,8 @@ internal class KotlinMultiplatformAndroidHandlerImpl(
                         extraSourceSetsToIncludeInResolution = lazy {
                             addSourceSetsThatShouldBeResolvedAsAndroid()
                             extraSourceSetsToIncludeInResolution
-                        }
+                        },
+                        dslServices.projectOptions[BooleanOption.DISABLE_KMP_RUNTIME_CLASSPATH]
                     )
                 }
             }

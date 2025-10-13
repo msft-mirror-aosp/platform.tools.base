@@ -41,7 +41,8 @@ import org.jetbrains.kotlin.gradle.plugin.ide.IdeDependencyResolver
 @OptIn(ExternalKotlinTargetApi::class)
 internal class ProjectDependencyResolver(
     libraryResolver: LibraryResolver,
-    sourceSetToCreationConfigMap: Lazy<Map<KotlinSourceSet, KmpComponentCreationConfig>>
+    sourceSetToCreationConfigMap: Lazy<Map<KotlinSourceSet, KmpComponentCreationConfig>>,
+    val configType: AndroidArtifacts.ConsumedConfigType
 ) : BaseIdeDependencyResolver(
     libraryResolver,
     sourceSetToCreationConfigMap
@@ -49,14 +50,15 @@ internal class ProjectDependencyResolver(
     override fun resolve(sourceSet: KotlinSourceSet): Set<IdeaKotlinDependency> {
         val component = sourceSetToCreationConfigMap.value[sourceSet] ?: return emptySet()
 
-        libraryResolver.registerSourceSetArtifacts(sourceSet)
+        libraryResolver.registerSourceSetArtifacts(sourceSet, configType)
 
         // The actual artifact type doesn't matter, this will be picked up on the IDE side and
         // mapped to a project dependency. We query for jar artifacts since both android and
         // non-android projects will produce it.
         val artifacts = getArtifactsForComponent(
             component,
-            AndroidArtifacts.ArtifactType.JAR
+            AndroidArtifacts.ArtifactType.JAR,
+            configType
         ) {
             it is ProjectComponentIdentifier
         }
@@ -85,7 +87,8 @@ internal class ProjectDependencyResolver(
             ).also { dependency ->
                 val library = libraryResolver.getLibrary(
                     variant = artifact.variant,
-                    sourceSet = sourceSet
+                    sourceSet = sourceSet,
+                    configType = configType
                 )
                 if (library != null && isAndroidProject(artifact)) {
                     // Android project, could be kmp or android lib, let the IDE extension points

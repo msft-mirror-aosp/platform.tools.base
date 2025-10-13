@@ -34,20 +34,39 @@ internal abstract class BaseIdeDependencyResolver(
     protected fun getArtifactsForComponent(
         component: KmpComponentCreationConfig,
         artifactType: AndroidArtifacts.ArtifactType,
+        configType: AndroidArtifacts.ConsumedConfigType,
         componentFilter: ((ComponentIdentifier) -> Boolean)?
-    ): ArtifactCollection = component
-        .variantDependencies
-        .compileClasspath
-        .incoming
-        .artifactView { config ->
-            config.lenient(true)
+    ): ArtifactCollection = if (configType == AndroidArtifacts.ConsumedConfigType.COMPILE_CLASSPATH) {
+        component
+            .variantDependencies
+            .compileClasspath
+            .incoming
+            .artifactView { config ->
+                config.lenient(true)
 
-            componentFilter?.let {
-                config.componentFilter(it)
-            }
-            config.attributes.attribute(
-                AndroidArtifacts.ARTIFACT_TYPE,
-                artifactType.type
-            )
-        }.artifacts
+                componentFilter?.let {
+                    config.componentFilter(it)
+                }
+                config.attributes.attribute(
+                    AndroidArtifacts.ARTIFACT_TYPE,
+                    artifactType.type
+                )
+            }.artifacts
+    } else {
+        component
+            .variantDependencies
+            .runtimeClasspath
+            .incoming
+            .artifactView { config ->
+                config.lenient(true)
+
+                componentFilter?.let {
+                    config.componentFilter(it)
+                }
+                config.attributes.attribute(
+                    AndroidArtifacts.ARTIFACT_TYPE,
+                    artifactType.type
+                )
+            }.artifacts
+    }
 }

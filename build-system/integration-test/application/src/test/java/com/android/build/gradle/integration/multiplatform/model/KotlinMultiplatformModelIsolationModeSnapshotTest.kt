@@ -31,6 +31,7 @@ import org.junit.Test
 class KotlinMultiplatformModelIsolationModeSnapshotTest: BaseModelComparator {
     @get:Rule
     val project = GradleTestProjectBuilder()
+        .addGradleProperties("android.kmp.disable.runtime.classpath=true")
         .fromTestProject("kotlinMultiplatform")
         .disableBuiltInKotlin()
         .create()
