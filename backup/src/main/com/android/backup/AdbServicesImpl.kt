@@ -20,7 +20,7 @@ import com.android.adblib.OutputStreamCollector
 import com.android.adblib.ShellCommandOutput
 import com.android.adblib.TextShellV2Collector
 import com.android.adblib.connectedDevicesTracker
-import com.android.adblib.serialNumber
+import com.android.adblib.device
 import com.android.adblib.shellCommand
 import com.android.adblib.withTextCollector
 import com.android.backup.AdbServices.AdbOutput
@@ -54,7 +54,7 @@ internal class AdbServicesImpl(
           .execute()
           .first()
       } catch (e: IOException) {
-        val connectedDevice = adbSession.findConnectedDevice(serialNumber)
+        val connectedDevice = adbSession.connectedDevicesTracker.device(serialNumber)
         val code = if (connectedDevice != null) DEVICE_DISCONNECTED else UNEXPECTED_ERROR
         throw BackupException(code, "Failed to run '$command' on $serialNumber", e)
       }
@@ -112,6 +112,3 @@ private fun ShellCommandOutput.describe() = buildString {
     append("Stdout:\n${stderr}\n")
   }
 }
-
-private fun AdbSession.findConnectedDevice(serialNumber: String) =
-  connectedDevicesTracker.connectedDevices.value.find { it.serialNumber == serialNumber }
