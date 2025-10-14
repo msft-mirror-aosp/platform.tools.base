@@ -42,8 +42,17 @@ message Command {
 message TrackDatabasesCommand {
   // If true, agent will open databases found on disk that are not already open.
   bool force_open = 1;
+  // Additional SQLiteDriver implementations to track
+  repeated AdditionalDriver additional_drivers = 2;
 }
 
+message AdditionalDriver {
+  // A name of a class that implements SQLiteDriver
+  string driver_class = 1;
+  // [Optional] A name of a class that implements SQLiteConnection. If not specified, will be
+  // derived from the driver name.
+  string connection_class = 2;
+}
 // Request for the Inspector to return schema information for a given database.
 message GetSchemaCommand {
   // Id uniquely identifying a connection to the database.
@@ -115,7 +124,10 @@ message Response {
 }
 
 // Object expected as a response to TrackDatabasesCommand.
-message TrackDatabasesResponse {}
+message TrackDatabasesResponse {
+  // Successfully registered additional drivers
+  repeated AdditionalDriver tracked_additional_drivers = 1;
+}
 
 // Object expected as a response to GetSchemaCommand.
 message GetSchemaResponse {
@@ -272,7 +284,7 @@ message DatabaseClosedEvent {
 // been detected. The event might be used in triggering a refresh of currently displayed query
 // results to keep the results current.
 message DatabasePossiblyChangedEvent {
-    // TODO: add database id
+  // TODO: add database id
 }
 
 // General Error message.

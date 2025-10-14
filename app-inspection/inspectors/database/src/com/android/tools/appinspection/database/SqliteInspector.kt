@@ -46,6 +46,7 @@ import androidx.sqlite.driver.bundled.BundledSQLiteConnection
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import androidx.sqlite.inspection.SqliteInspectorProtocol.AcquireDatabaseLockCommand
 import androidx.sqlite.inspection.SqliteInspectorProtocol.AcquireDatabaseLockResponse
+import androidx.sqlite.inspection.SqliteInspectorProtocol.AdditionalDriver
 import androidx.sqlite.inspection.SqliteInspectorProtocol.CellValue
 import androidx.sqlite.inspection.SqliteInspectorProtocol.Column
 import androidx.sqlite.inspection.SqliteInspectorProtocol.Command
@@ -265,17 +266,34 @@ internal class SqliteInspector(
     throttler.dispose()
   }
 
-  private fun handleTrackDatabases(command: TrackDatabasesCommand, callback: CommandCallback) {
-    callback.reply(
-      Response.newBuilder()
-        .setTrackDatabases(TrackDatabasesResponse.getDefaultInstance())
-        .build()
-        .toByteArray()
+  private fun CommandCallback.replyTrackDatabasesCommand(
+    trackedDriverClasses: List<AdditionalDriverClasses>
+  ) {
+    val trackDatabasesResponseBuilder = TrackDatabasesResponse.newBuilder()
+    trackedDriverClasses.forEach {
+      trackDatabasesResponseBuilder.addTrackedAdditionalDrivers(
+        AdditionalDriver.newBuilder()
+          .setDriverClass(it.driverClass.name)
+          .setConnectionClass(it.connectionClass.name)
+      )
+    }
+    reply(
+      Response.newBuilder().setTrackDatabases(trackDatabasesResponseBuilder).build().toByteArray()
     )
+  }
 
+  private fun handleTrackDatabases(command: TrackDatabasesCommand, callback: CommandCallback) {
     val hookRegistry = EntryExitMatchingHookRegistry(environment)
     registerFrameworkHooks(hookRegistry)
-    registerAndroidXHooks(hookRegistry)
+
+    val classes = command.additionalDriversList.mapNotNull { it.toClasses() }
+    registerAndroidXHooks(
+      hookRegistry,
+      classes.map { it.driverClass },
+      classes.map { it.connectionClass },
+    )
+
+    callback.replyTrackDatabasesCommand(classes)
 
     // Check for database instances in memory
     val artTooling = environment.artTooling()
@@ -288,12 +306,15 @@ internal class SqliteInspector(
         onDatabaseClosed(database)
       }
     }
-    artTooling.findInstances(BundledSQLiteConnection::class.java).forEach { sqlConnection ->
-      val file = sqlConnection.getDatabasePath()
+    (classes.map { it.connectionClass } + BundledSQLiteConnection::class.java).forEach {
+      Log.i(TAG, "Finding instances of ${it.name}")
+      artTooling.findInstances(it).forEach { sqlConnection ->
+        val file = sqlConnection.getDatabasePath()
 
-      val database = AndroidXDatabase(sqlConnection, file)
-      if (database.isOpen()) {
-        onDatabaseOpened(database)
+        val database = AndroidXDatabase(sqlConnection, file)
+        if (database.isOpen()) {
+          onDatabaseOpened(database)
+        }
       }
     }
 
@@ -318,11 +339,15 @@ internal class SqliteInspector(
     registerFrameworkInvalidationHooks(hookRegistry)
   }
 
-  private fun registerAndroidXHooks(hookRegistry: EntryExitMatchingHookRegistry) {
+  private fun registerAndroidXHooks(
+    hookRegistry: EntryExitMatchingHookRegistry,
+    driverClasses: List<Class<SQLiteDriver>>,
+    connectionClasses: List<Class<SQLiteConnection>>,
+  ) {
     try {
-      registerAndroidXOpenHooks(hookRegistry)
-      registerAndroidXCloseHooks(hookRegistry)
-      registerAndroidXInvalidationHooks(hookRegistry)
+      registerAndroidXOpenHooks(hookRegistry, driverClasses)
+      registerAndroidXCloseHooks(hookRegistry, connectionClasses)
+      registerAndroidXInvalidationHooks(hookRegistry, connectionClasses)
     } catch (_: NoClassDefFoundError) {
       Log.i(TAG, "App does not use AndroidX Sqlite APIs")
     }
@@ -449,15 +474,20 @@ internal class SqliteInspector(
     }
   }
 
-  private fun registerAndroidXOpenHooks(hookRegistry: EntryExitMatchingHookRegistry) {
+  private fun registerAndroidXOpenHooks(
+    hookRegistry: EntryExitMatchingHookRegistry,
+    driverClasses: List<Class<SQLiteDriver>>,
+  ) {
     registerAndroidXOpenHooks(hookRegistry, BundledSQLiteDriver::class.java, hasFlags = true)
+    driverClasses.forEach { registerAndroidXOpenHooks(hookRegistry, it, hasFlags = false) }
   }
 
   private fun registerAndroidXOpenHooks(
     hookRegistry: EntryExitMatchingHookRegistry,
     cls: Class<out SQLiteDriver>,
-    @Suppress("SameParameterValue") hasFlags: Boolean,
+    hasFlags: Boolean,
   ) {
+    Log.i(TAG, "registerAndroidXOpenHooks: ${cls.name}")
     val entryHook = EntryHook { _, args ->
       databaseLockRegistry.waitForUnlockedDatabase(args[0].toString())
     }
@@ -598,14 +628,19 @@ internal class SqliteInspector(
     }
   }
 
-  private fun registerAndroidXCloseHooks(hookRegistry: EntryExitMatchingHookRegistry) {
+  private fun registerAndroidXCloseHooks(
+    hookRegistry: EntryExitMatchingHookRegistry,
+    connectionClasses: List<Class<SQLiteConnection>>,
+  ) {
     registerAndroidXCloseHooks(hookRegistry, BundledSQLiteConnection::class.java)
+    connectionClasses.forEach { registerAndroidXCloseHooks(hookRegistry, it) }
   }
 
   private fun registerAndroidXCloseHooks(
     hookRegistry: EntryExitMatchingHookRegistry,
     cls: Class<out SQLiteConnection>,
   ) {
+    Log.i(TAG, "registerAndroidXCloseHooks: ${cls.name}")
     val databasePath = AtomicReference<String?>(null)
     // We need to hook both entry and exit hooks because we need to extract the database path from
     // the connection
@@ -626,14 +661,19 @@ internal class SqliteInspector(
     }
   }
 
-  private fun registerAndroidXInvalidationHooks(hookRegistry: EntryExitMatchingHookRegistry) {
+  private fun registerAndroidXInvalidationHooks(
+    hookRegistry: EntryExitMatchingHookRegistry,
+    connectionClasses: List<Class<SQLiteConnection>>,
+  ) {
     registerAndroidXInvalidationHooks(hookRegistry, BundledSQLiteConnection::class.java)
+    connectionClasses.forEach { registerAndroidXInvalidationHooks(hookRegistry, it) }
   }
 
   private fun registerAndroidXInvalidationHooks(
     hookRegistry: EntryExitMatchingHookRegistry,
     cls: Class<out SQLiteConnection>,
   ) {
+    Log.i(TAG, "registerAndroidXInvalidationHooks: ${cls.name}")
     hookRegistry.registerHook<SQLiteConnection, androidx.sqlite.SQLiteStatement>(
       cls,
       ANDROIDX_CONNECTION_PREPARE_SIG,
@@ -1133,5 +1173,35 @@ internal class SqliteInspector(
       exception.printStackTrace(PrintWriter(writer))
       return writer.toString()
     }
+  }
+
+  private class AdditionalDriverClasses(
+    val driverClass: Class<SQLiteDriver>,
+    val connectionClass: Class<SQLiteConnection>,
+  )
+
+  private fun AdditionalDriver.toClasses(): AdditionalDriverClasses? {
+    val connectionClassName =
+      connectionClass.ifEmpty { driverClass.replace("Driver", "Connection") }
+    val driverClass = loadClass<SQLiteDriver>(driverClass)
+    val connectionClass = loadClass<SQLiteConnection>(connectionClassName)
+    return when (driverClass != null && connectionClass != null) {
+      true -> AdditionalDriverClasses(driverClass, connectionClass)
+      false -> null
+    }
+  }
+}
+
+private inline fun <reified T> loadClass(className: String): Class<T>? {
+  return try {
+    val cls = SqliteInspector::class.java.classLoader.loadClass(className)
+    if (!T::class.java.isAssignableFrom(cls)) {
+      throw ClassCastException("$className is not a ${T::class.java.name}")
+    }
+    @Suppress("UNCHECKED_CAST")
+    cls as Class<T>
+  } catch (e: Throwable) {
+    Log.w("SqliteInspector", "Can't load class '$className'", e)
+    null
   }
 }
