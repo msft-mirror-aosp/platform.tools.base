@@ -100,6 +100,11 @@ sealed class Parameter<T> {
   abstract val enabled: Boolean
   abstract val visible: Boolean
   abstract val loggable: Boolean
+
+  /** Resets the parameter's value to its default. */
+  fun reset() {
+    value = defaultValue
+  }
 }
 
 /**
