@@ -227,6 +227,8 @@ build:ci --strategy=kotlinc=worker
 build:ci --strategy=Turbine=local
 # Verify lockfile for CI runs.
 common:ci --lockfile_mode=error
+# Upload artifacts to RBE cache.
+common:ci --remote_build_event_upload=all
 
 ## Enables dynamic scheduling. This will run some actions locally
 ## as well as remotely, choosing whichever finishes first.
