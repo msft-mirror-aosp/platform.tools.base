@@ -719,6 +719,7 @@ internal class SqliteInspector(
     path: String,
     isForced: Boolean,
     isReadOnly: Boolean,
+    apiClassName: String,
   ) {
     Log.v(HIDDEN_TAG, "dispatchDatabaseOpenedEvent: ${path.substringAfterLast("/")}")
     connection.sendEvent(
@@ -729,6 +730,7 @@ internal class SqliteInspector(
             .setPath(path)
             .setIsForcedConnection(isForced)
             .setIsReadOnly(isReadOnly)
+            .setApiClassName(apiClassName)
         )
         .build()
         .toByteArray()

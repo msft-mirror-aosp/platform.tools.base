@@ -200,12 +200,14 @@ internal class DatabaseRegistryTest(private val databaseType: DatabaseType) {
 
     // Transition from no db to a read-only db
     registry.notifyDatabaseOpened(readOnlyDb)
-    assertThat(events).containsExactly(DbOpenedEvent(1, path, isReadOnly = true))
+    assertThat(events)
+      .containsExactly(DbOpenedEvent(1, path, isReadOnly = true, databaseType.apiClassName))
     events.clear()
 
     // Transition from read-only db to writable db
     registry.notifyDatabaseOpened(readWriteDb1)
-    assertThat(events).containsExactly(DbOpenedEvent(1, path, isReadOnly = false))
+    assertThat(events)
+      .containsExactly(DbOpenedEvent(1, path, isReadOnly = false, databaseType.apiClassName))
     events.clear()
 
     // Opening another writeable db does not trigger an event
@@ -220,7 +222,8 @@ internal class DatabaseRegistryTest(private val databaseType: DatabaseType) {
     // Closing the second writeable db does results in a transition to read-only
     readWriteDb2.close()
     registry.notifyAllDatabaseReferencesReleased(readWriteDb2)
-    assertThat(events).containsExactly(DbOpenedEvent(1, path, isReadOnly = true))
+    assertThat(events)
+      .containsExactly(DbOpenedEvent(1, path, isReadOnly = true, databaseType.apiClassName))
     events.clear()
 
     // Closing the read-only db triggers a `close` event.
@@ -237,8 +240,9 @@ internal class DatabaseRegistryTest(private val databaseType: DatabaseType) {
       path: String,
       isForced: Boolean,
       isReadOnly: Boolean,
+      apiClassName: String,
     ) {
-      events.add(DbOpenedEvent(databaseId, path, isReadOnly))
+      events.add(DbOpenedEvent(databaseId, path, isReadOnly, apiClassName))
     }
   }
 
@@ -255,6 +259,7 @@ internal class DatabaseRegistryTest(private val databaseType: DatabaseType) {
       override val id: Int,
       override val path: String,
       val isReadOnly: Boolean,
+      val apiClassName: String,
     ) : DbEvent(id, path)
 
     data class DbClosedEvent(override val id: Int, override val path: String) : DbEvent(id, path)

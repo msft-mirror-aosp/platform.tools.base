@@ -267,6 +267,10 @@ message DatabaseOpenedEvent {
   // database can be opened in situations where a read-write database is not possible. For example,
   // if the file system in full.
   bool is_read_only = 4;
+  // The name of the SQL API class used with this connection. This is either
+  // `android.database.sqlite.SQLiteDatabase` or an implementation of
+  // `androidx.sqlite.SQLiteConnection`.
+  string api_class_name = 5;
 }
 
 // Notification of a database connection closed (database no longer query-able)

@@ -30,6 +30,8 @@ internal class AndroidXDatabase(connection: SQLiteConnection, path: String, flag
   // TODO(aalbert): Try to tst for RO status from DB without flags
   override val isReadOnly = flags and SQLITE_OPEN_READONLY != 0
 
+  override val apiClassName: String = connection::class.java.name
+
   override fun isOpen(): Boolean {
     return try {
       delegate.prepare("SELECT 1").close()

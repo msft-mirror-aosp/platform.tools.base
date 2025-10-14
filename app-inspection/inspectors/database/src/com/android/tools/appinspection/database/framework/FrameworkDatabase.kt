@@ -21,10 +21,15 @@ import android.os.CancellationSignal
 import com.android.tools.appinspection.database.AbstractDatabase
 import com.android.tools.appinspection.database.Cursor
 
-/** A [Database] wrapping the Android Framework [SQLiteDatabase] */
+/**
+ * A [com.android.tools.appinspection.database.Database] wrapping the Android Framework
+ * [SQLiteDatabase]
+ */
 internal class FrameworkDatabase(database: SQLiteDatabase) :
   AbstractDatabase<SQLiteDatabase>(database, database.path) {
   override val isReadOnly = delegate.isReadOnly
+
+  override val apiClassName = "android.database.sqlite.SQLiteDatabase"
 
   override fun isOpen() = delegate.isOpen
 

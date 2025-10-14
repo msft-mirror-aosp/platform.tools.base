@@ -268,7 +268,13 @@ internal class DatabaseRegistry(
   }
 
   internal fun interface OnDatabaseOpenedCallback {
-    fun onDatabaseOpened(databaseId: Int, path: String, isForced: Boolean, isReadOnly: Boolean)
+    fun onDatabaseOpened(
+      databaseId: Int,
+      path: String,
+      isForced: Boolean,
+      isReadOnly: Boolean,
+      apiClassName: String,
+    )
   }
 
   internal fun interface OnDatabaseClosedCallback {
@@ -360,7 +366,13 @@ internal class DatabaseRegistry(
   }
 
   private fun OnDatabaseOpenedCallback.onDatabaseOpened(id: Int, database: Database) {
-    onDatabaseOpened(id, database.key, isForcedConnection(database), database.isReadOnly)
+    onDatabaseOpened(
+      id,
+      database.key,
+      isForcedConnection(database),
+      database.isReadOnly,
+      database.apiClassName,
+    )
   }
 
   private fun findKeepOpenReference(database: Database): KeepOpenReference? {

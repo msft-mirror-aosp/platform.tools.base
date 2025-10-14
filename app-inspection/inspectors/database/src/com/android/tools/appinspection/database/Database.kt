@@ -27,6 +27,8 @@ interface Database : AutoCloseable {
 
   val isReadOnly: Boolean
 
+  val apiClassName: String
+
   fun isOpen(): Boolean
 
   fun isWriteAheadLoggingEnabled(): Boolean

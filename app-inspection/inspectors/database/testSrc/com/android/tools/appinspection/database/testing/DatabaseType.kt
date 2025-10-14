@@ -19,13 +19,19 @@ import com.android.testutils.CloseablesRule
 
 internal enum class DatabaseType {
   FRAMEWORK {
+    override val apiClassName = "android.database.sqlite.SQLiteDatabase"
+
     override fun getDatabaseProvider(path: String, closeablesRule: CloseablesRule) =
       FrameworkDatabaseProvider(path, closeablesRule)
   },
   ANDROID_X {
+    override val apiClassName = "androidx.sqlite.driver.bundled.BundledSQLiteConnection"
+
     override fun getDatabaseProvider(path: String, closeablesRule: CloseablesRule) =
       AndroidXDatabaseProvider(path)
   };
+
+  abstract val apiClassName: String
 
   abstract fun getDatabaseProvider(path: String, closeablesRule: CloseablesRule): DatabaseProvider
 }
