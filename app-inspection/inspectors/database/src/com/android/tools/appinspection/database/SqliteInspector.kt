@@ -711,7 +711,7 @@ internal class SqliteInspector(
 
   // Gets a String from a passed-in Object (if possible)
   private fun stringParam(string: Any): String? {
-    return if (string is String) string else null
+    return string as? String
   }
 
   private fun dispatchDatabaseOpenedEvent(
@@ -930,14 +930,15 @@ internal class SqliteInspector(
           if (tableBuilder != null) {
             schemaBuilder.addTables(tableBuilder.build())
           }
-          tableBuilder = Table.newBuilder()
-          tableBuilder.setName(tableName)
-          tableBuilder.setIsView("view".equals(cursor.getString(objectTypeIx), ignoreCase = true))
-          tableBuilder.withoutRowid = withoutRowidMap.getOrDefault(tableName, true)
+          tableBuilder =
+            Table.newBuilder()
+              .setName(tableName)
+              .setIsView("view".equals(cursor.getString(objectTypeIx), ignoreCase = true))
+              .setWithoutRowid(withoutRowidMap.getOrDefault(tableName, true))
         }
 
         // append column information to the current table info
-        tableBuilder!!.addColumns(
+        tableBuilder.addColumns(
           Column.newBuilder()
             .setName(cursor.getString(columnNameIx))
             .setType(cursor.getString(typeIx))
@@ -1100,10 +1101,10 @@ internal class SqliteInspector(
 
       when (cursor.getType(index)) {
         FIELD_TYPE_NULL -> {}
-        FIELD_TYPE_BLOB -> builder.setBlobValue(ByteString.copyFrom(cursor.getBlob(index)))
-        FIELD_TYPE_STRING -> builder.setStringValue(cursor.getString(index))
-        FIELD_TYPE_INTEGER -> builder.setLongValue(cursor.getLong(index))
-        FIELD_TYPE_FLOAT -> builder.setDoubleValue(cursor.getDouble(index))
+        FIELD_TYPE_BLOB -> builder.blobValue = ByteString.copyFrom(cursor.getBlob(index))
+        FIELD_TYPE_STRING -> builder.stringValue = cursor.getString(index)
+        FIELD_TYPE_INTEGER -> builder.longValue = cursor.getLong(index)
+        FIELD_TYPE_FLOAT -> builder.doubleValue = cursor.getDouble(index)
       }
       return builder.build()
     }
@@ -1116,18 +1117,16 @@ internal class SqliteInspector(
     ): ErrorContent {
       val builder = ErrorContent.newBuilder()
       if (message != null) {
-        builder.setMessage(message)
+        builder.message = message
       }
       if (stackTrace != null) {
-        builder.setStackTrace(stackTrace)
+        builder.stackTrace = stackTrace
       }
       val recoverability = ErrorRecoverability.newBuilder()
       if (isRecoverable != null) { // leave unset otherwise, which translates to 'unknown'
-        recoverability.setIsRecoverable(isRecoverable)
+        recoverability.isRecoverable = isRecoverable
       }
-      builder.setRecoverability(recoverability.build())
-      builder.setErrorCode(errorCode)
-      return builder.build()
+      return builder.setRecoverability(recoverability.build()).setErrorCode(errorCode).build()
     }
 
     private fun createErrorOccurredResponse(
