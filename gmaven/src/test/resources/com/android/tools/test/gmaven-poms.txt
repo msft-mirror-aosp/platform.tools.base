@@ -247,7 +247,6 @@ com.android.tools:repository
     com.android.tools.analytics-library:shared (runtime)
     com.android.tools:common (runtime)
     com.google.jimfs:jimfs (runtime)
-    com.sun.activation:javax.activation (runtime)
     org.apache.commons:commons-compress (runtime)
     org.glassfish.jaxb:jaxb-runtime (runtime)
     org.jetbrains.kotlin:kotlin-stdlib-jdk8 (runtime)
