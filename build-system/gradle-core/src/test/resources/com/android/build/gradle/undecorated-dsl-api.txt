@@ -973,6 +973,7 @@ com.android.build.gradle.internal.dsl.TestOptions.setReportDir: void (java.lang.
 com.android.build.gradle.internal.dsl.TestOptions.setResultsDir: void (java.lang.String)
 com.android.build.gradle.internal.dsl.TestOptions.setTargetSdk: void (java.lang.Integer)
 com.android.build.gradle.internal.dsl.TestOptions.setTargetSdkPreview: void (java.lang.String)
+com.android.build.gradle.internal.dsl.TestOptions.targetSdk: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.TargetSdkSpec, kotlin.Unit>)
 com.android.build.gradle.internal.dsl.TestOptions.unitTests: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.UnitTestOptions, kotlin.Unit>)
 com.android.build.gradle.internal.dsl.TestSuiteHostJarSpecImpl.dependencies: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.AgpTestSuiteDependencies, kotlin.Unit>)
 com.android.build.gradle.internal.dsl.TestSuiteHostJarSpecImpl.getDependencies: com.android.build.api.dsl.AgpTestSuiteDependencies ()

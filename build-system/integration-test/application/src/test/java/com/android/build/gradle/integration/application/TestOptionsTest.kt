@@ -46,4 +46,46 @@ class TestOptionsTest {
                 .contains("targetSdk is set as 22 in testOptions for non library module")
         }
     }
+
+    @Test
+    fun testApplicationBuildFailedWhenSetTestOptionsTargetSdkSpecRelease() {
+        project.buildFile.appendText("""
+            android {
+                testOptions {
+                    targetSdk {
+                        version = release(22)
+                    }
+                    unitTests {
+                        includeAndroidResources = true
+                    }
+                }
+            }
+        """.trimIndent())
+        val result = project.executor().expectFailure().run("assemble")
+        result.stderr.use {
+            ScannerSubject.assertThat(it)
+                .contains("targetSdk is set as version = release(22) in testOptions for non library module")
+        }
+    }
+
+    @Test
+    fun testApplicationBuildFailedWhenSetTestOptionsTargetSdkSpecPreview() {
+        project.buildFile.appendText("""
+            android {
+                testOptions {
+                    targetSdk {
+                        version = preview("T")
+                    }
+                    unitTests {
+                        includeAndroidResources = true
+                    }
+                }
+            }
+        """.trimIndent())
+        val result = project.executor().expectFailure().run("assemble")
+        result.stderr.use {
+            ScannerSubject.assertThat(it)
+                .contains("targetSdk is set as version = preview(\"T\") in testOptions for non library module")
+        }
+    }
 }

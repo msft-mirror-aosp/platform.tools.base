@@ -1947,6 +1947,8 @@ com.android.build.gradle.internal.dsl.TestOptions$UnitTestOptions.isReturnDefaul
 com.android.build.gradle.internal.dsl.TestOptions$UnitTestOptions.setIncludeAndroidResources: void (boolean)
 com.android.build.gradle.internal.dsl.TestOptions$UnitTestOptions.setReturnDefaultValues: void (boolean)
 com.android.build.gradle.internal.dsl.TestOptions.<init>: com.android.build.gradle.internal.dsl.TestOptions (com.android.build.gradle.internal.services.DslServices)
+com.android.build.gradle.internal.dsl.TestOptions.access$checkNonLibraryModule: void (com.android.build.gradle.internal.dsl.TestOptions, com.android.build.api.dsl.TargetSdkVersion)
+com.android.build.gradle.internal.dsl.TestOptions.access$setTargetSdkVersion$p: void (com.android.build.gradle.internal.dsl.TestOptions, com.android.build.api.dsl.TargetSdkVersion)
 com.android.build.gradle.internal.dsl.TestOptions.emulatorControl: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.EmulatorControl, kotlin.Unit>)
 com.android.build.gradle.internal.dsl.TestOptions.emulatorControl: void (org.gradle.api.Action<com.android.build.api.dsl.EmulatorControl>)
 com.android.build.gradle.internal.dsl.TestOptions.getAnimationsDisabled: boolean ()
@@ -1970,6 +1972,9 @@ com.android.build.gradle.internal.dsl.TestOptions.setReportDir: void (java.lang.
 com.android.build.gradle.internal.dsl.TestOptions.setResultsDir: void (java.lang.String)
 com.android.build.gradle.internal.dsl.TestOptions.setTargetSdk: void (java.lang.Integer)
 com.android.build.gradle.internal.dsl.TestOptions.setTargetSdkPreview: void (java.lang.String)
+com.android.build.gradle.internal.dsl.TestOptions.targetSdk: void (java.lang.Integer)
+com.android.build.gradle.internal.dsl.TestOptions.targetSdk: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.TargetSdkSpec, kotlin.Unit>)
+com.android.build.gradle.internal.dsl.TestOptions.targetSdk: void (org.gradle.api.Action<com.android.build.api.dsl.TargetSdkSpec>)
 com.android.build.gradle.internal.dsl.TestOptions.unitTests: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.UnitTestOptions, kotlin.Unit>)
 com.android.build.gradle.internal.dsl.TestOptions.unitTests: void (org.gradle.api.Action<com.android.build.gradle.internal.dsl.TestOptions$UnitTestOptions>)
 com.android.build.gradle.internal.dsl.ValidationUtilKt

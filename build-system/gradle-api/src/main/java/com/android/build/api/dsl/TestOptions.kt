@@ -115,6 +115,14 @@ interface TestOptions {
     var targetSdkPreview: String?
 
     /**
+     * Specifies value that overrides all aspects regarding target sdk for tests in libraries.
+     *
+     * See [TargetSdkSpec] for available options.
+     * Important: Setting this value will cause an error for application and other module types.
+     */
+    fun targetSdk(action: TargetSdkSpec.() -> Unit)
+
+    /**
      * Available test suites in this project.
      *
      * Test suites provide a way to define groups of tests that can be executed together.  Each
