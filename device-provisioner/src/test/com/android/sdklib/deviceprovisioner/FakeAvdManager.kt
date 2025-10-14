@@ -129,15 +129,7 @@ class FakeAvdManager(val session: FakeAdbSession, val avdRoot: Path) :
   }
 
   override suspend fun downloadAvdSystemImage(avdInfo: AvdInfo) {
-    avds[avds.indexOf(avdInfo)] =
-      AvdInfo(
-        avdInfo.iniFile,
-        avdInfo.dataFolderPath,
-        avdInfo.systemImage,
-        avdInfo.properties,
-        avdInfo.userSettings,
-        AvdInfo.AvdStatus.OK,
-      )
+    avds[avds.indexOf(avdInfo)] = avdInfo.copy(status = AvdInfo.AvdStatus.OK)
   }
 
   fun close() {

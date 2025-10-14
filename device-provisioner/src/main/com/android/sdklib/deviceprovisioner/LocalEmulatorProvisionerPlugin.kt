@@ -28,7 +28,6 @@ import com.android.adblib.tools.openEmulatorConsole
 import com.android.adblib.utils.createChildScope
 import com.android.annotations.concurrency.GuardedBy
 import com.android.sdklib.AndroidVersion
-import com.android.sdklib.ISystemImage
 import com.android.sdklib.SdkVersionInfo
 import com.android.sdklib.SystemImageTags
 import com.android.sdklib.deviceprovisioner.DeviceState.Connected
@@ -1000,15 +999,6 @@ internal object AvdChangedError : DeviceError {
   override val severity = DeviceError.Severity.INFO
   override val message = "Changes will apply on restart"
 }
-
-internal fun AvdInfo.copy(
-  iniFile: Path = this.iniFile,
-  folderPath: Path = this.dataFolderPath,
-  systemImage: ISystemImage? = this.systemImage,
-  properties: Map<String, String> = this.properties,
-  userSettings: Map<String, String?>? = this.userSettings,
-  status: AvdInfo.AvdStatus = this.status,
-): AvdInfo = AvdInfo(iniFile, folderPath, systemImage, properties, userSettings, status)
 
 /**
  * We ignore these keys when deciding if the AVD properties have changed in a way that merits
