@@ -87,7 +87,7 @@ class MultiCompositeBuildTest: ModelComparator() {
             .getSubproject("TestCompositeLib1")
             .modelV2()
             .withFailOnWarning(false)
-            .fetchModels(variantName = "debug")
+            .fetchModels(variantName = "prodDebug")
 
         val rootModelMap = model.container.rootInfoMap
         assertThat(rootModelMap.entries).hasSize(2)

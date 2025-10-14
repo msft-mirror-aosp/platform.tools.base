@@ -38,6 +38,7 @@
       - vectorDrawables:
          - generatedDensities = ["hdpi", "ldpi", "mdpi", "xhdpi", "xxhdpi", "xxxhdpi"]
          - useSupportLibrary  = false
+      - matchingFallbacks                  = []
    < defaultConfig
    > buildTypes:
       > debug:

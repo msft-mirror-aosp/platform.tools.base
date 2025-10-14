@@ -317,6 +317,7 @@ private fun ModelSnapshotter<ProductFlavor>.snapshotProductFlavor() {
         list("generatedDensities", VectorDrawablesOptions::generatedDensities)
         item("useSupportLibrary", VectorDrawablesOptions::useSupportLibrary)
     }
+    valueList("matchingFallbacks", ProductFlavor::matchingFallbacks)
 }
 
 private fun ModelSnapshotter<BuildType>.snapshotBuildType() {
