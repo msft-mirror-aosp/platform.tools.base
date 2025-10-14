@@ -22,6 +22,7 @@ import com.android.sdklib.devices.Device
 import com.android.sdklib.devices.DeviceManager
 import com.android.sdklib.devices.Storage
 import java.nio.file.Path
+import kotlin.io.path.extension
 import kotlin.io.path.name
 
 /**
@@ -69,6 +70,7 @@ class AvdBuilder(var metadataIniPath: Path, avdFolder: Path, var device: Device)
 
   var sdCard: SdCard? = null
   var skin: Skin? = null
+  var background: Path? = null
 
   var showDeviceFrame = true
   var screenOrientation: ScreenOrientation = ScreenOrientation.PORTRAIT
@@ -122,6 +124,15 @@ class AvdBuilder(var metadataIniPath: Path, avdFolder: Path, var device: Device)
     properties.putAll(bootMode.properties())
     binding.write(this, properties)
     return properties
+  }
+
+  fun environment(): Map<String, String> {
+    val environment = mutableMapOf<String, String>()
+    when (background?.extension?.lowercase()) {
+      in setOf("png") -> environment[EnvironmentKey.IMAGE] = background.toString()
+      in setOf("mov", "mp4") -> environment[EnvironmentKey.VIDEO] = background.toString()
+    }
+    return environment
   }
 
   /**

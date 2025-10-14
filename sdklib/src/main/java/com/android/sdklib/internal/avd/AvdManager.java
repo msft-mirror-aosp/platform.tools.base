@@ -19,6 +19,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 
+import static java.util.Collections.emptyMap;
 import static java.util.stream.Collectors.joining;
 
 import com.android.SdkConstants;
@@ -107,6 +108,7 @@ public class AvdManager {
     public static final String USER_SETTINGS_INI = "user-settings.ini"; // $NON-NLS-1$
 
     private static final String BOOT_PROP = "boot.prop";
+    private static final String ENVIRONMENT_INI = "environment.ini";
     static final String CONFIG_INI = "config.ini";
     private static final String HARDWARE_QEMU_INI = "hardware-qemu.ini";
     private static final String SDCARD_IMG = "sdcard.img";
@@ -453,6 +455,7 @@ public class AvdManager {
                 builder.configProperties(),
                 builder.getUserSettings(),
                 builder.getDevice().getBootProps(),
+                builder.environment(),
                 builder.getDevice().hasPlayStore(),
                 false,
                 true);
@@ -472,6 +475,7 @@ public class AvdManager {
      * @param hardwareConfig the hardware setup for the AVD. Can be null to use defaults.
      * @param userSettings optional settings for the AVD. Can be null.
      * @param bootProps the optional boot properties for the AVD. Can be null.
+     * @param environment configuration of the simulated environment of an XR device
      * @param removePrevious If true remove any previous files.
      * @param editExisting If true, edit an existing AVD, changing only the minimum required. This
      *     won't remove files unless required or unless {@code removePrevious} is set.
@@ -490,6 +494,7 @@ public class AvdManager {
             @Nullable Map<String, String> hardwareConfig,
             @Nullable Map<String, String> userSettings,
             @Nullable Map<String, String> bootProps,
+            @Nullable Map<String, String> environment,
             boolean deviceHasPlayStore,
             boolean removePrevious,
             boolean editExisting) throws AvdManagerException {
@@ -592,7 +597,7 @@ public class AvdManager {
                 configValues.putAll(sdcard.configEntries());
             }
             if (sdcard instanceof InternalSdCard) {
-                createAvdSdCard((InternalSdCard) sdcard, editExisting, avdFolder);
+                createAvdSdCard((InternalSdCard)sdcard, editExisting, avdFolder);
             }
 
             // Finally write configValues to config.ini
@@ -613,6 +618,17 @@ public class AvdManager {
                 writeIniFile(bootPropsFile, bootProps, false);
             }
 
+            Map<String, String> updatedEnvironment = environment;
+            if (environment != null && !environment.isEmpty()) {
+                Path environmentIniPath = avdFolder.resolve(ENVIRONMENT_INI);
+                updatedEnvironment = new HashMap<>(environment);
+                copyBackground(updatedEnvironment, EnvironmentKey.IMAGE, avdFolder);
+                copyBackground(updatedEnvironment, EnvironmentKey.VIDEO, avdFolder);
+                writeIniFile(environmentIniPath, updatedEnvironment, false);
+            } else {
+                updatedEnvironment = emptyMap();
+            }
+
             AvdInfo oldAvdInfo = getAvd(avdName, false /*validAvdOnly*/);
 
             if (newAvdInfo == null) {
@@ -625,7 +641,8 @@ public class AvdManager {
                                 avdFolder,
                                 oldAvdInfo,
                                 configValues,
-                                userSettings);
+                                userSettings == null ? emptyMap() : userSettings,
+                                updatedEnvironment);
             }
 
             if ((removePrevious || editExisting) &&
@@ -664,6 +681,30 @@ public class AvdManager {
         }
     }
 
+    /**
+     * Copies a background file (image or video) to the AVD directory. Updates the environment to
+     * use the path relative to the AVD directory.
+     *
+     * @param environment the environment configuration
+     * @param key the EnvironmentKey to check and update
+     * @param avdFolder the AVD's data folder
+     * @throws AvdManagerException if the copy fails
+     */
+    private void copyBackground(Map<String, String> environment, String key, Path avdFolder)
+            throws AvdManagerException {
+        String value = environment.get(key);
+        if (value != null) {
+            Path source = avdFolder.getFileSystem().getPath(value);
+            Path destination = avdFolder.resolve(source.getFileName());
+            try {
+                FileUtils.copyFile(source, destination);
+                environment.put(key, avdFolder.relativize(destination).toString());
+            } catch (IOException e) {
+                throw new AvdManagerException("Unable to copy background to AVD directory", e);
+            }
+        }
+    }
+
     /** Checks if the given file is one of the files created at the AVD creation time. */
     public boolean isFoundationalAvdFile(@NonNull Path file, @NonNull AvdInfo avd) {
         Path avdFolder = avd.getDataFolderPath();
@@ -674,7 +715,11 @@ public class AvdManager {
         return relative.equals(CONFIG_INI) ||
                relative.equals(SDCARD_IMG) ||
                relative.equals(USER_SETTINGS_INI) ||
-               relative.equals(USERDATA_IMG);
+               relative.equals(BOOT_PROP) ||
+               relative.equals(ENVIRONMENT_INI) ||
+               relative.equals(USERDATA_IMG) ||
+               relative.equals(avd.getEnvironment().get(EnvironmentKey.IMAGE)) ||
+               relative.equals(avd.getEnvironment().get(EnvironmentKey.VIDEO));
     }
 
     /**
@@ -709,6 +754,8 @@ public class AvdManager {
             Map<String, String> configVals = parseIniFile(new PathFileWrapper(configIni), mLog);
             Map<String, String> userSettingsVals =
                     AvdInfo.parseUserSettingsFile(destAvdFolder, mLog);
+            Map<String, String> environment =
+                    parseEnvironmentFile(destAvdFolder, mLog);
             configVals.put(ConfigKey.AVD_ID, newAvdName);
             configVals.put(ConfigKey.DISPLAY_NAME, newAvdName);
             writeIniFile(configIni, configVals, true);
@@ -718,9 +765,12 @@ public class AvdManager {
             String origAvdFolder = avdFolder.toAbsolutePath().toString();
             String newAvdFolder = destAvdFolder.toAbsolutePath().toString();
 
-            configVals =
+            Map<String, String> updatedConfigVals =
                     updateNameAndIniPaths(
                             configIni, origAvdName, origAvdFolder, newAvdName, newAvdFolder);
+            if (updatedConfigVals != null) {
+                configVals = updatedConfigVals;
+            }
 
             Path hwQemu = destAvdFolder.resolve(HARDWARE_QEMU_INI);
             updateNameAndIniPaths(hwQemu, origAvdName, origAvdFolder, newAvdName, newAvdFolder);
@@ -732,8 +782,15 @@ public class AvdManager {
 
             // Create an AVD object from these files
             return new AvdInfo(
-                    metadataIniFile, destAvdFolder, systemImage, configVals, userSettingsVals);
-        } catch (AndroidLocationsException | IOException e) {
+                    metadataIniFile,
+                    destAvdFolder,
+                    systemImage,
+                    configVals,
+                    userSettingsVals,
+                    environment,
+                    AvdStatus.OK);
+        }
+        catch (AndroidLocationsException | IOException e) {
             throw new AvdManagerException("An error occurred while duplicating an AVD: " + e.getMessage(), e);
         }
     }
@@ -980,7 +1037,9 @@ public class AvdManager {
                                 newAvdFolder,
                                 avdInfo.getSystemImage(),
                                 avdInfo.getProperties(),
-                                avdInfo.getUserSettings());
+                                avdInfo.getUserSettings(),
+                                avdInfo.getEnvironment(),
+                                AvdStatus.OK);
                 replaceAvd(avdInfo, info);
 
                 // update the ini file
@@ -1015,7 +1074,9 @@ public class AvdManager {
                                 avdInfo.getDataFolderPath(),
                                 avdInfo.getSystemImage(),
                                 avdInfo.getProperties(),
-                                avdInfo.getUserSettings());
+                                avdInfo.getUserSettings(),
+                                avdInfo.getEnvironment(),
+                                AvdStatus.OK);
                 replaceAvd(avdInfo, info);
             }
 
@@ -1277,9 +1338,15 @@ public class AvdManager {
         }
 
         Map<String, String> userSettings = AvdInfo.parseUserSettingsFile(avdFolder, mLog);
-
+        Map<String, String> environment = parseEnvironmentFile(mBaseAvdFolder, mLog);
         AvdInfo info =
-                new AvdInfo(metadataIniFile, avdFolder, sysImage, properties, userSettings, status);
+                new AvdInfo(metadataIniFile,
+                            avdFolder,
+                            sysImage,
+                            properties,
+                            userSettings,
+                            environment,
+                            status);
 
         if (updateHashV2) {
             try {
@@ -1289,6 +1356,19 @@ public class AvdManager {
 
         return info;
     }
+
+    static Map<String, String> parseEnvironmentFile(
+            @NonNull Path dataFolder, @Nullable ILogger logger) {
+        PathFileWrapper environmentPath = new PathFileWrapper(dataFolder.resolve(ENVIRONMENT_INI));
+        if (environmentPath.exists()) {
+            Map<String, String> parsedSettings = AvdManager.parseIniFile(environmentPath, logger);
+            if (parsedSettings != null) {
+                return parsedSettings;
+            }
+        }
+        return new HashMap<>();
+    }
+
 
     private boolean isDirectoryOutsideSdkDirectory(@NonNull String imageSysDir) {
         Path dir = Paths.get(imageSysDir);
@@ -1467,7 +1547,9 @@ public class AvdManager {
                         avd.getDataFolderPath(),
                         avd.getSystemImage(),
                         newProperties,
-                        avd.getUserSettings());
+                        avd.getUserSettings(),
+                        avd.getEnvironment(),
+                        AvdStatus.OK);
 
         replaceAvd(avd, newAvd);
 
@@ -1739,11 +1821,18 @@ public class AvdManager {
             @NonNull Path avdFolder,
             @Nullable AvdInfo oldAvdInfo,
             @Nullable Map<String, String> values,
-            @Nullable Map<String, String> userSettings) {
+            @Nullable Map<String, String> userSettings,
+            Map<String, String> environment) {
 
         // create the AvdInfo object, and add it to the list
         AvdInfo theAvdInfo =
-                new AvdInfo(metadataIniFile, avdFolder, systemImage, values, userSettings);
+                new AvdInfo(metadataIniFile,
+                            avdFolder,
+                            systemImage,
+                            values,
+                            userSettings,
+                            environment,
+                            AvdStatus.OK);
 
         synchronized (mAllAvdList) {
             if (oldAvdInfo != null && (removePrevious || editExisting)) {

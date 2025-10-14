@@ -173,6 +173,7 @@ class AvdManager(
                 hardwareConfig,
                 null,
                 device.bootProps,
+                null,
                 device.hasPlayStore(),
                 false,
                 false

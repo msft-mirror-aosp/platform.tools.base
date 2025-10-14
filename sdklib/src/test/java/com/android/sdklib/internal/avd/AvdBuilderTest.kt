@@ -23,10 +23,12 @@ import com.android.sdklib.devices.Storage
 import com.android.sdklib.repository.AndroidSdkHandler
 import com.android.sdklib.testing.TestSystemImages
 import com.android.testutils.file.createInMemoryFileSystem
+import com.android.testutils.file.recordExistingFile
 import com.android.testutils.file.someRoot
 import com.android.utils.NullLogger
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
+import kotlin.io.path.exists
 import kotlin.reflect.full.memberProperties
 import org.junit.Test
 
@@ -216,4 +218,21 @@ class AvdBuilderTest {
     assertThat(avdInfo2.userSettings[UserSettingsKey.PREFERRED_ABI])
       .isEqualTo(Abi.X86_64.toString())
   }
+
+    @Test
+    fun createAvdWithBackground() {
+        val testSystemImages = TestSystemImages(sdkHandler)
+        val android33ext4 = testSystemImages.api33ext4.image
+
+        val avdBuilder = avdManager.createAvdBuilder(deviceManager.getDevice("resizable", "Generic")!!)
+        avdBuilder.systemImage = android33ext4
+        val backgroundFile = root.resolve("tmp").resolve("img1.png")
+        backgroundFile.recordExistingFile(contents = "abcd")
+        avdBuilder.background = backgroundFile
+
+        val avdInfo = avdManager.createAvd(avdBuilder)
+
+        assertThat(avdInfo.environment).containsExactly(EnvironmentKey.IMAGE, "img1.png")
+        assertThat(avdInfo.dataFolderPath.resolve("img1.png").exists()).isTrue()
+    }
 }

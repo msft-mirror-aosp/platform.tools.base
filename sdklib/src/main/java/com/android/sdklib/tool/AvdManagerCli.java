@@ -909,6 +909,7 @@ class AvdManagerCli extends CommandLineParser {
                         hardwareConfig,
                         null,
                         device == null ? null : device.getBootProps(),
+                        null,
                         true,
                         removePrevious,
                         false);

@@ -113,13 +113,15 @@ public final class AvdManagerTest {
     }
 
     @Test
-    public void getPidHardwareQemuIniLockScannerHasNextLong() throws IOException, AvdManagerException {
+    public void getPidHardwareQemuIniLockScannerHasNextLong()
+            throws IOException, AvdManagerException {
         // Arrange
         AvdInfo avd =
                 mAvdManager.createAvd(
                         mAvdFolder,
                         name.getMethodName(),
                         systemImages.getApi23().getImage(),
+                        null,
                         null,
                         null,
                         null,
@@ -154,6 +156,7 @@ public final class AvdManagerTest {
                         null,
                         null,
                         null,
+                        null,
                         false,
                         false,
                         false);
@@ -171,13 +174,15 @@ public final class AvdManagerTest {
     }
 
     @Test
-    public void getPidHardwareQemuIniLockScannerDoesntHaveNextLong() throws IOException, AvdManagerException {
+    public void getPidHardwareQemuIniLockScannerDoesntHaveNextLong()
+            throws IOException, AvdManagerException {
         // Arrange
         AvdInfo avd =
                 mAvdManager.createAvd(
                         mAvdFolder,
                         name.getMethodName(),
                         systemImages.getApi23().getImage(),
+                        null,
                         null,
                         null,
                         null,
@@ -200,13 +205,15 @@ public final class AvdManagerTest {
     }
 
     @Test
-    public void getPidUserdataQemuImgLockScannerHasNextLong() throws IOException, AvdManagerException {
+    public void getPidUserdataQemuImgLockScannerHasNextLong()
+            throws IOException, AvdManagerException {
         // Arrange
         AvdInfo avd =
                 mAvdManager.createAvd(
                         mAvdFolder,
                         name.getMethodName(),
                         systemImages.getApi23().getImage(),
+                        null,
                         null,
                         null,
                         null,
@@ -241,6 +248,7 @@ public final class AvdManagerTest {
                         null,
                         null,
                         null,
+                        null,
                         false,
                         false,
                         false);
@@ -263,12 +271,14 @@ public final class AvdManagerTest {
                 null,
                 null,
                 null,
+                null,
                 false,
                 false,
                 false);
 
         Path metadataIniFile = mAvdFolder.getParent().resolve(name.getMethodName() + ".ini");
-        Map<String, String> metadata = AvdManager.parseIniFile(new PathFileWrapper(metadataIniFile), null);
+        Map<String, String> metadata =
+                AvdManager.parseIniFile(new PathFileWrapper(metadataIniFile), null);
         assertEquals("android-23", metadata.get("target"));
 
         Path avdConfigFile = mAvdFolder.resolve("config.ini");
@@ -298,6 +308,7 @@ public final class AvdManagerTest {
                 mAvdFolder,
                 name.getMethodName(),
                 systemImages.getApi21().getImage(),
+                null,
                 null,
                 null,
                 null,
@@ -340,6 +351,7 @@ public final class AvdManagerTest {
                 null,
                 userSettings,
                 null,
+                null,
                 false,
                 false,
                 false);
@@ -371,8 +383,8 @@ public final class AvdManagerTest {
     public void createAvdWithBootProps() throws AvdManagerException {
         Map<String, String> expected = Maps.newTreeMap();
         expected.put("ro.build.display.id", "sdk-eng 4.3 JB_MR2 774058 test-keys");
-        expected.put("ro.board.platform",   "");
-        expected.put("ro.build.tags",       "test-keys");
+        expected.put("ro.board.platform", "");
+        expected.put("ro.build.tags", "test-keys");
 
         mAvdManager.createAvd(
                 mAvdFolder,
@@ -383,6 +395,7 @@ public final class AvdManagerTest {
                 null,
                 expected,
                 expected,
+                null,
                 false,
                 false,
                 false);
@@ -402,6 +415,7 @@ public final class AvdManagerTest {
                 mAvdFolder,
                 name.getMethodName(),
                 systemImages.getChromeOs().getImage(),
+                null,
                 null,
                 null,
                 null,
@@ -430,6 +444,7 @@ public final class AvdManagerTest {
                 null,
                 null,
                 null,
+                null,
                 false,
                 false,
                 false);
@@ -443,11 +458,13 @@ public final class AvdManagerTest {
     }
 
     @Test
-    public void createAvdForGradleManagedDevice() throws AndroidLocationsException, AvdManagerException {
+    public void createAvdForGradleManagedDevice()
+            throws AndroidLocationsException, AvdManagerException {
         mGradleManagedDeviceAvdManager.createAvd(
                 mGradleManagedDeviceAvdFolder,
                 name.getMethodName(),
                 systemImages.getApi23().getImage(),
+                null,
                 null,
                 null,
                 null,
@@ -471,6 +488,7 @@ public final class AvdManagerTest {
                 mAvdFolder,
                 name.getMethodName(),
                 systemImages.getApi34TabletPlayStore().getImage(),
+                null,
                 null,
                 null,
                 null,
@@ -507,8 +525,9 @@ public final class AvdManagerTest {
 
         mAvdManager.createAvd(builder);
 
-        Map<String, String> config = AvdManager.parseIniFile(
-                new PathFileWrapper(mAvdFolder.resolve("config.ini")), null);
+        Map<String, String> config =
+                AvdManager.parseIniFile(
+                        new PathFileWrapper(mAvdFolder.resolve("config.ini")), null);
         assertThat(config.get(ConfigKey.SKIN_NAME)).isEqualTo(skinPath.getFileName().toString());
         assertThat(config.get(ConfigKey.SKIN_PATH)).isEqualTo(skinPath.toString());
     }
@@ -519,6 +538,9 @@ public final class AvdManagerTest {
                 ImmutableMap.of("ro.build.display.id", "sdk-eng 4.3 JB_MR2 774058 test-keys");
         Map<String, String> userSettings = ImmutableMap.of("abi.type.preferred", "x86");
         Map<String, String> bootProps = ImmutableMap.of("ro.emulator.circular", "true");
+        Path backgroundFile = InMemoryFileSystems.getSomeRoot(mMockFs).resolve("tmp").resolve("img1.png");
+        Map<String, String> environment = ImmutableMap.of(EnvironmentKey.IMAGE, backgroundFile.toString());
+        InMemoryFileSystems.recordExistingFile(backgroundFile, "abcd");
 
         AvdInfo avdInfo =
                 mAvdManager.createAvd(
@@ -530,6 +552,7 @@ public final class AvdManagerTest {
                         hardwareConfig,
                         userSettings,
                         bootProps,
+                        environment,
                         true,
                         false,
                         false);
@@ -539,6 +562,7 @@ public final class AvdManagerTest {
         assertTrue(Files.exists(metadataIniFile));
         assertTrue(Files.exists(mAvdFolder.resolve("boot.prop")));
         assertTrue(Files.exists(mAvdFolder.resolve("user-settings.ini")));
+        assertTrue(Files.exists(mAvdFolder.resolve(backgroundFile.getFileName())));
 
         // Move the AVD, updating its name and data folder path
         String newAvdName = avdInfo.getName() + "_2";
@@ -551,13 +575,15 @@ public final class AvdManagerTest {
         Path newMetadataIniPath = metadataIniFile.resolveSibling(newAvdName + ".ini");
         assertTrue(Files.exists(newMetadataIniPath));
         assertTrue(Files.isDirectory(newAvdFolder));
+        assertTrue(Files.exists(newAvdFolder.resolve(backgroundFile.getFileName())));
 
         // The contents of the metadata .ini reflect the new paths
-        Map <String, String> metadata =
+        Map<String, String> metadata =
                 AvdManager.parseIniFile(new PathFileWrapper(newMetadataIniPath), null);
         assertThat(metadata.get(MetadataKey.ABS_PATH)).isEqualTo(newAvdFolder.toString());
         assertThat(metadata.get(MetadataKey.REL_PATH))
-                .isEqualTo(newAvdFolder.getParent().getParent().relativize(newAvdFolder).toString());
+                .isEqualTo(
+                        newAvdFolder.getParent().getParent().relativize(newAvdFolder).toString());
 
         Map<String, String> movedBootProps =
                 AvdManager.parseIniFile(
@@ -587,6 +613,7 @@ public final class AvdManagerTest {
                         mAvdFolder,
                         name.getMethodName(),
                         systemImages.getApi23().getImage(),
+                        null,
                         null,
                         null,
                         null,
@@ -623,6 +650,7 @@ public final class AvdManagerTest {
                         null,
                         null,
                         properties,
+                        null,
                         null,
                         false,
                         false,
@@ -698,6 +726,7 @@ public final class AvdManagerTest {
                         origAvdConfig,
                         origAvdConfig,
                         null,
+                        null,
                         false,
                         false,
                         false);
@@ -726,6 +755,7 @@ public final class AvdManagerTest {
                         null,
                         new InternalSdCard(222 << 20), // Different SD card size
                         newAvdConfig,
+                        null,
                         null,
                         null,
                         false,
@@ -816,7 +846,10 @@ public final class AvdManagerTest {
         newBuilder.setBackCamera(AvdCamera.WEBCAM);
         newBuilder.setDisplayName("Copy of " + initialAvdInfo.getDisplayName());
         newBuilder.setAvdName("Copy_of_" + name.getMethodName());
-        newBuilder.setAvdFolder(initialAvdInfo.getDataFolderPath().resolveSibling("Copy_of_" + name.getMethodName() + ".avd"));
+        newBuilder.setAvdFolder(
+                initialAvdInfo
+                        .getDataFolderPath()
+                        .resolveSibling("Copy_of_" + name.getMethodName() + ".avd"));
 
         AvdInfo duplicatedAvd = mAvdManager.duplicateAvd(initialAvdInfo, newBuilder);
 
@@ -843,9 +876,11 @@ public final class AvdManagerTest {
                 configProperties.get("image.sysdir.1"));
         assertEquals(newName, configProperties.get("AvdId"));
         assertEquals(newBuilder.getDisplayName(), configProperties.get("avd.ini.displayname"));
-        assertThat(configProperties.get(ConfigKey.SDCARD_PATH)).isEqualTo(newFolder.resolve("custom_sdcard.img").toString());
+        assertThat(configProperties.get(ConfigKey.SDCARD_PATH))
+                .isEqualTo(newFolder.resolve("custom_sdcard.img").toString());
         assertEquals(AvdCamera.NONE.getAsParameter(), configProperties.get(ConfigKey.CAMERA_FRONT));
-        assertEquals(AvdCamera.WEBCAM.getAsParameter(), configProperties.get(ConfigKey.CAMERA_BACK));
+        assertEquals(
+                AvdCamera.WEBCAM.getAsParameter(), configProperties.get(ConfigKey.CAMERA_BACK));
         assertFalse(
                 "Expected NO " + AvdManager.USERDATA_IMG + " in " + newFolder,
                 Files.exists(newFolder.resolve(AvdManager.USERDATA_IMG)));
@@ -859,13 +894,13 @@ public final class AvdManagerTest {
                         new PathFileWrapper(newFolder.resolve("hardware-qemu.ini")), null);
         assertThat(hardwareProperties.get("avd.name")).isEqualTo(newName);
         assertThat(hardwareProperties.get("hw.sdCard.path"))
-            .isEqualTo(
-                mAvdFolder
-                    .getParent()
-                    .toAbsolutePath()
-                    .resolve(newName + ".avd")
-                    .resolve("sdcard.img")
-                    .toString());
+                .isEqualTo(
+                        mAvdFolder
+                                .getParent()
+                                .toAbsolutePath()
+                                .resolve(newName + ".avd")
+                                .resolve("sdcard.img")
+                                .toString());
 
         // Quick check that the original AVD directory still exists
         assertTrue(Files.exists(mAvdFolder.resolve("foo.bar")));
@@ -890,6 +925,7 @@ public final class AvdManagerTest {
                         null,
                         null,
                         null,
+                        null,
                         false,
                         false,
                         false);
@@ -908,8 +944,8 @@ public final class AvdManagerTest {
     public void playStoreProperty() throws AvdManagerException {
         Map<String, String> expected = Maps.newTreeMap();
         expected.put("ro.build.display.id", "sdk-eng 4.3 JB_MR2 774058 test-keys");
-        expected.put("ro.board.platform",   "");
-        expected.put("ro.build.tags",       "test-keys");
+        expected.put("ro.board.platform", "");
+        expected.put("ro.build.tags", "test-keys");
 
         // Play Store image with Play Store device
         mAvdManager.createAvd(
@@ -921,6 +957,7 @@ public final class AvdManagerTest {
                 null,
                 expected,
                 expected,
+                null,
                 true, // deviceHasPlayStore
                 false,
                 false);
@@ -940,6 +977,7 @@ public final class AvdManagerTest {
                 null,
                 null,
                 expected,
+                null,
                 false, // deviceHasPlayStore
                 true,
                 false);
@@ -956,6 +994,7 @@ public final class AvdManagerTest {
                 null,
                 null,
                 expected,
+                null,
                 true, // deviceHasPlayStore
                 true,
                 false);
@@ -972,6 +1011,7 @@ public final class AvdManagerTest {
                 null,
                 null,
                 expected,
+                null,
                 true, // deviceHasPlayStore
                 true,
                 false);
@@ -989,6 +1029,7 @@ public final class AvdManagerTest {
                 null,
                 null,
                 expected,
+                null,
                 true, // deviceHasPlayStore
                 true,
                 false);
@@ -1005,6 +1046,7 @@ public final class AvdManagerTest {
                 null,
                 null,
                 expected,
+                null,
                 true, // deviceHasPlayStore
                 true,
                 false);
@@ -1039,16 +1081,17 @@ public final class AvdManagerTest {
                         baseHardwareProperties,
                         baseHardwareProperties,
                         null,
+                        null,
                         true,
                         true,
                         false);
 
         // Verify all the parameters that we changed and the parameter that we added
         Map<String, String> firstHardwareProperties = myDeviceInfo.getProperties();
-        assertEquals("960",  firstHardwareProperties.get("hw.lcd.height"));
-        assertEquals("480",  firstHardwareProperties.get("hw.displayRegion.0.1.height"));
+        assertEquals("960", firstHardwareProperties.get("hw.lcd.height"));
+        assertEquals("480", firstHardwareProperties.get("hw.displayRegion.0.1.height"));
         assertEquals("1536", firstHardwareProperties.get("hw.ramSize"));
-        assertEquals("yes",  firstHardwareProperties.get("hw.keyboard"));
+        assertEquals("yes", firstHardwareProperties.get("hw.keyboard"));
 
         // Update the device using the original hardware definition
         AvdInfo updatedDeviceInfo = mAvdManager.updateDeviceChanged(myDeviceInfo);
@@ -1057,9 +1100,9 @@ public final class AvdManagerTest {
         // property and the user-settable property did not change.
         Map<String, String> updatedHardwareProperties = updatedDeviceInfo.getProperties();
         assertEquals("2208", updatedHardwareProperties.get("hw.lcd.height"));
-        assertEquals("2208",  updatedHardwareProperties.get("hw.displayRegion.0.1.height"));
+        assertEquals("2208", updatedHardwareProperties.get("hw.displayRegion.0.1.height"));
         assertEquals("1536", updatedHardwareProperties.get("hw.ramSize"));
-        assertEquals("yes",  updatedHardwareProperties.get("hw.keyboard"));
+        assertEquals("yes", updatedHardwareProperties.get("hw.keyboard"));
     }
 
     @Test
@@ -1068,6 +1111,7 @@ public final class AvdManagerTest {
                 mAvdFolder,
                 name.getMethodName(),
                 systemImages.getApi23().getImage(),
+                null,
                 null,
                 null,
                 null,
@@ -1128,6 +1172,7 @@ public final class AvdManagerTest {
                 null,
                 null,
                 null,
+                null,
                 false,
                 false,
                 false);
@@ -1151,6 +1196,7 @@ public final class AvdManagerTest {
                 mAvdFolder,
                 name.getMethodName(),
                 systemImages.getApi23().getImage(),
+                null,
                 null,
                 null,
                 null,

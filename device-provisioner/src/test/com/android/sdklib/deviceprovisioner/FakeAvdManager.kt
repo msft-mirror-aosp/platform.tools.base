@@ -169,20 +169,20 @@ fun makeAvdInfo(
   tag: IdDisplay = SystemImageTags.DEFAULT_TAG,
 ): AvdInfo {
   return AvdInfo(
-    avdRoot.resolve("fake_avd_${index}.ini"),
-    avdRoot.resolve("fake_avd_${index}.avd"),
-    null,
-    mapOf(
-      ConfigKey.DEVICE_MANUFACTURER to LocalEmulatorProvisionerPluginTest.MANUFACTURER,
-      ConfigKey.DEVICE_NAME to LocalEmulatorProvisionerPluginTest.MODEL,
-      ConfigKey.TARGET to AndroidTargetHash.getPlatformHashString(androidVersion),
-      ConfigKey.ABI_TYPE to LocalEmulatorProvisionerPluginTest.ABI.toString(),
-      ConfigKey.DISPLAY_NAME to "Fake Device $index",
-      ConfigKey.PLAYSTORE_ENABLED to hasPlayStore.toString(),
-      ConfigKey.TAG_ID to tag.id,
-      ConfigKey.TAG_DISPLAY to tag.display,
-    ),
-    null,
-    avdStatus,
+    iniFile = avdRoot.resolve("fake_avd_${index}.ini"),
+    dataFolderPath = avdRoot.resolve("fake_avd_${index}.avd"),
+    systemImage = null,
+    properties =
+      mapOf(
+        ConfigKey.DEVICE_MANUFACTURER to LocalEmulatorProvisionerPluginTest.MANUFACTURER,
+        ConfigKey.DEVICE_NAME to LocalEmulatorProvisionerPluginTest.MODEL,
+        ConfigKey.TARGET to AndroidTargetHash.getPlatformHashString(androidVersion),
+        ConfigKey.ABI_TYPE to LocalEmulatorProvisionerPluginTest.ABI.toString(),
+        ConfigKey.DISPLAY_NAME to "Fake Device $index",
+        ConfigKey.PLAYSTORE_ENABLED to hasPlayStore.toString(),
+        ConfigKey.TAG_ID to tag.id,
+        ConfigKey.TAG_DISPLAY to tag.display,
+      ),
+    status = avdStatus,
   )
 }
