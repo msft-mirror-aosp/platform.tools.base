@@ -106,7 +106,6 @@ ARTIFACTS = [
     "com.squareup.okhttp3:okhttp:4.12.0",
     "com.squareup.okio:okio:1.15.0",
     "com.squareup.okio:okio-jvm:3.0.0",
-    "com.sun.activation:javax.activation:1.2.0",
     "commons-cli:commons-cli:1.4",
     "commons-io:commons-io:2.16.1",
     "commons-lang:commons-lang:2.6",
