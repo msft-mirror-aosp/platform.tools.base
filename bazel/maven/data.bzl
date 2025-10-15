@@ -945,6 +945,7 @@ DATA = [
     "org.apache.commons:commons-text:1.11.0",
     "org.apache.lucene:lucene-analysis-common:9.12.0",
     "org.apache.lucene:lucene-core:9.12.0",  # Match the Lucene version here with the one used by IJ pre-2025.1. See b/460307944.
+    "org.apache.lucene:lucene-highlighter:9.12.0",  # Match the version of Lucene with the one used by IntelliJ
     "org.apache.lucene:lucene-queryparser:9.12.0",
     "org.bouncycastle:bcprov-jdk16:1.46",
     "org.bouncycastle:bcprov-jdk18on:1.77",
