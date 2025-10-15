@@ -27,7 +27,6 @@ import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp;
 import com.android.build.gradle.integration.common.utils.TestFileUtils;
 import com.android.build.gradle.internal.scope.InternalArtifactType;
-import com.android.build.gradle.options.BooleanOption;
 import com.android.testutils.apk.Apk;
 import com.android.testutils.apk.Dex;
 
@@ -51,7 +50,6 @@ public class SwitchMultidexTest {
     public GradleTestProject project =
             GradleTestProject.builder()
                     .fromTestApp(HelloWorldApp.forPlugin("com.android.application"))
-                    .addGradleProperty(BooleanOption.USE_ANDROID_X, false) // b/440266494
                     .create();
 
     @Before
@@ -111,14 +109,14 @@ public class SwitchMultidexTest {
         assertThat(debug.getMainDexFile().get())
                 .containsExactlyClassesIn(
                         ImmutableList.of(
-                                "Landroid/support/multidex/MultiDex$V19;",
-                                "Landroid/support/multidex/MultiDex;",
-                                "Landroid/support/multidex/MultiDexApplication;",
-                                "Landroid/support/multidex/MultiDexExtractor$1;",
-                                "Landroid/support/multidex/MultiDexExtractor$ExtractedDex;",
-                                "Landroid/support/multidex/MultiDexExtractor;",
-                                "Landroid/support/multidex/ZipUtil$CentralDirectory;",
-                                "Landroid/support/multidex/ZipUtil;",
+                                "Landroidx/multidex/MultiDex$V19;",
+                                "Landroidx/multidex/MultiDex;",
+                                "Landroidx/multidex/MultiDexApplication;",
+                                "Landroidx/multidex/MultiDexExtractor$1;",
+                                "Landroidx/multidex/MultiDexExtractor$ExtractedDex;",
+                                "Landroidx/multidex/MultiDexExtractor;",
+                                "Landroidx/multidex/ZipUtil$CentralDirectory;",
+                                "Landroidx/multidex/ZipUtil;",
                                 "Lcom/example/helloworld/HelloWorld;"));
 
         Set<String> secondaryClasses = Sets.newHashSet();
@@ -135,8 +133,8 @@ public class SwitchMultidexTest {
                 .exists()) {
             assertThat(secondaryClasses)
                     .containsExactly(
-                            "Landroid/support/multidex/R;",
-                            "Landroid/support/multidex/BuildConfig;",
+                            "Landroidx/multidex/R;",
+                            "Landroidx/multidex/BuildConfig;",
                             "Lcom/example/helloworld/A0;",
                             "Lcom/example/helloworld/A1;",
                             "Lcom/example/helloworld/R$id;",
@@ -146,10 +144,14 @@ public class SwitchMultidexTest {
         } else {
             assertThat(secondaryClasses)
                     .containsExactly(
-                            "Landroid/support/multidex/BuildConfig;",
-                            "Landroid/support/multidex/MultiDex$V14;",
-                            "Landroid/support/multidex/MultiDex$V4;",
-                            "Landroid/support/multidex/R;",
+                            "Landroidx/multidex/R;",
+                            "Landroidx/multidex/BuildConfig;",
+                            "Landroidx/multidex/MultiDex$V14;",
+                            "Landroidx/multidex/MultiDex$V4;",
+                            "Landroidx/multidex/MultiDex$V14$JBMR2ElementConstructor;",
+                            "Landroidx/multidex/MultiDex$V14$ICSElementConstructor;",
+                            "Landroidx/multidex/MultiDex$V14$ElementConstructor;",
+                            "Landroidx/multidex/MultiDex$V14$JBMR11ElementConstructor;",
                             "Lcom/example/helloworld/A0;",
                             "Lcom/example/helloworld/A1;",
                             "Lcom/example/helloworld/BuildConfig;",
