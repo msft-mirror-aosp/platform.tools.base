@@ -71,6 +71,7 @@ single_version_override(
         # Disables ImportDepsChecker for //prebuilts/tools/common/m2:androidx-monitor
         # See https://github.com/bazelbuild/rules_android/issues/332
         "//tools/base/bazel/bzlmod:rules_android_aar_import_fallback.patch",
+        "//tools/base/bazel/bzlmod:rules_android_fix_maven_lock_file.patch",
     ],
     patch_strip = 1,
 )
