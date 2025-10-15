@@ -19,21 +19,20 @@ else
 fi
 
 if [[ -n "${BUILD_NUMBER}" ]]; then
-  echo "common --credential_helper=*.pkg.dev=%workspace%/build/bazel/tools/ci_credhelper.py" > ci.bazelrc
+  echo "common --credential_helper=*.pkg.dev=%workspace%/build/bazel/tools/ci_credhelper.py" >> ci.bazelrc
 fi
-
-startup_options=("--max_idle_secs=60")
+echo "startup --max_idle_secs=60" >> ci.bazelrc
 if [[ "${INCREMENTAL_BUILD}" == "true" ]]; then
-  # LINT.IfChange(bazel_user_root)
-  startup_options+=("--output_user_root=${WORKSPACE}/out/bazel_user_root")
-  startup_options+=("--output_base=${WORKSPACE}/out/bazel_out")
-  startup_options+=("--install_base=${WORKSPACE}/out/bazel_install")
-  # LINT.ThenChange(/bazel/ci/bazel.py:bazel_user_root)
+  # Use the out/ directory as the output_user_root for incremental builds,
+  # as this directory persists between builds.
+  echo "startup --output_user_root=${WORKSPACE}/out/bazel_user_root" >> ci.bazelrc
+  echo "startup --output_base=${WORKSPACE}/out/bazel_out" >> ci.bazelrc
+  echo "startup --install_base=${WORKSPACE}/out/bazel_install" >> ci.bazelrc
 fi
 
 # Add JDK to the PATH, so rules_jvm_external can find the 'java' binary.
 export PATH="${JDK_HOME}:${PYTHON3_HOME}:${PATH}"
 BAZELISK="$WORKSPACE/prebuilts/tools/$PLATFORM/bazel/bazelisk"
-"$BAZELISK" "${startup_options[@]}" run \
+"$BAZELISK" run \
   --config=ci \
   //tools/base/bazel/ci -- $1
