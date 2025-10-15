@@ -1463,6 +1463,11 @@ open class LintCliClient : LintClient {
       config.kotlinCompilerConfig.put(JVMConfigurationKeys.NO_JDK, false)
     }
 
+    config.useKlibLightElementProvider = flags.useKlibLightElementProvider()
+    if (config.useKlibLightElementProvider) {
+      log(Severity.INFORMATIONAL, null, "Using KlibLightElementProvider")
+    }
+
     val env = UastEnvironment.create(config)
     uastEnvironment = env
     kotlinPerformanceManager?.notifyPhaseFinished(PhaseType.Initialization)

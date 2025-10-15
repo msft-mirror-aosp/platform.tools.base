@@ -19,6 +19,7 @@ import com.android.tools.lint.UastEnvironment.Configuration.Companion.isKMP
 import com.android.tools.lint.uast.DecompiledPsiDeclarationProvider
 import com.android.tools.lint.uast.KotlinPsiDeclarationProviderFactory
 import com.android.tools.lint.uast.KotlinStaticPsiDeclarationProviderFactory
+import com.android.tools.lint.uast.klib.KlibLightElementProvider
 import com.intellij.core.CoreApplicationEnvironment
 import com.intellij.mock.MockApplication
 import com.intellij.mock.MockProject
@@ -69,6 +70,8 @@ private constructor(
 
     override val modules = mutableListOf<UastEnvironment.Module>()
     override val classPaths = mutableSetOf<File>()
+
+    override var useKlibLightElementProvider: Boolean = false
 
     override fun addModules(
       modules: List<UastEnvironment.Module>,
@@ -159,7 +162,7 @@ private fun createAnalysisSession(
       buildKtModuleProvider(configureAnalysisApiProjectStructure(config))
     }
   appLock.withLock {
-    configureFirApplicationEnvironment(analysisSession.coreApplicationEnvironment)
+    configureFirApplicationEnvironment(analysisSession.coreApplicationEnvironment, config)
     // https://youtrack.jetbrains.com/issue/KT-80366
     // To not trigger warnings on reading unloaded registry key,
     // this should be _after_ [configureApplicationEnvironment].
@@ -190,13 +193,19 @@ private fun configureFirProjectEnvironment(
   )
 }
 
-private fun configureFirApplicationEnvironment(appEnv: CoreApplicationEnvironment) {
+private fun configureFirApplicationEnvironment(
+  appEnv: CoreApplicationEnvironment,
+  config: FirUastEnvironment.Configuration,
+) {
   configureApplicationEnvironment(appEnv) {
     it.addExtension(UastLanguagePlugin.EP, FirKotlinUastLanguagePlugin())
 
     it.application.registerService(
       FirKotlinUastLibraryPsiProviderService::class.java,
-      DecompiledPsiDeclarationProvider::class.java,
+      when (config.useKlibLightElementProvider) {
+        true -> KlibLightElementProvider::class.java
+        else -> DecompiledPsiDeclarationProvider::class.java
+      },
     )
 
     it.application.registerService(

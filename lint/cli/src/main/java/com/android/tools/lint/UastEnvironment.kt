@@ -162,6 +162,10 @@ interface UastEnvironment {
       set(value) {
         kotlinCompilerConfig.languageVersionSettings = value
       }
+
+    var useKlibLightElementProvider: Boolean
+      get() = false
+      set(_) {}
   }
 
   companion object {
