@@ -37,6 +37,7 @@ import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.scope.InternalArtifactType.MERGED_TEST_ONLY_NATIVE_LIBS
 import com.android.build.gradle.internal.scope.InternalArtifactType.RENDERSCRIPT_LIB
 import com.android.build.gradle.internal.scope.InternalMultipleArtifactType
+import com.android.build.gradle.internal.tasks.MergeNativeLibsTask.InputFile
 import com.android.build.gradle.internal.tasks.factory.VariantTaskCreationAction
 import com.android.build.gradle.internal.utils.setDisallowChanges
 import com.android.buildanalyzer.common.TaskCategory
@@ -181,111 +182,15 @@ abstract class MergeNativeLibsTask : NonIncrementalTask() {
         ProfileAwareWorkAction<MergeNativeLibsTaskWorkAction.Parameters>() {
 
         override fun run() {
-
-            // A map of pickFirst pattern strings to their compiled globs.
-            val pickFirstsPathMatchers: Map<String, PathMatcher> =
-                parameters.pickFirsts.get().associateWith { compileGlob(it) }
-
-            val excludesPathMatchers: List<PathMatcher> =
-                parameters.excludes.get().map { compileGlob(it) }
-
-            val testOnlyPathMatchers: List<PathMatcher> =
-                parameters.testOnly.get().map { compileGlob(it) }
-
-            // Keep track of the files matching each relative path so we can create a useful error
-            // message if necessary
-            val usedRelativePaths =
-                mutableMapOf<String, MutableList<File>>().withDefault { mutableListOf() }
-
-            val outputDir = parameters.outputDirectory.get().asFile
-            val testOnlyDir = parameters.testOnlyDir.orNull?.asFile
-
-            for (inputFile in parameters.inputFiles.get()) {
-                val systemDependentPath =
-                    Paths.get("$separatorChar${inputFile.relativePath.replace('/', separatorChar)}")
-                val pickFirstMatches =
-                    pickFirstsPathMatchers.filter { it.value.matches(systemDependentPath) }.keys
-                val destinationDir =
-                    if (testOnlyDir != null
-                        && testOnlyPathMatchers.any { it.matches(systemDependentPath)}) {
-                        testOnlyDir
-                    } else {
-                        outputDir
-                    }
-                if (pickFirstMatches.isNotEmpty()) {
-                    // if the path matches a pickFirst pattern, we copy the file only if the
-                    // relative path hasn't already been used.
-                    if (!usedRelativePaths.containsKey(inputFile.relativePath)) {
-                        copyInputFileToOutput(inputFile, destinationDir, usedRelativePaths)
-                    }
-                } else if (excludesPathMatchers.none { it.matches(systemDependentPath) }) {
-                    copyInputFileToOutput(inputFile, destinationDir, usedRelativePaths)
-                }
-            }
-
-            // Check usedRelativePaths and throw an exception or log warning(s) if necessary
-            // Files that have the same content are considered to be the same (and no error or
-            // warning is emitted).
-            val deduplicatedUsedRelativePaths = usedRelativePaths
-                .map { (k, v) -> k to removeDuplicateFiles(v) }
-                .toMap()
-
-            for (entry in deduplicatedUsedRelativePaths) {
-                if (entry.value.size > 1) {
-                    val projectFiles =
-                        entry.value.filter { parameters.projectNativeLibs.get().contains(it) }
-                    if (projectFiles.size == 1) {
-                        // TODO(b/141758241) enforce the use of pickFirst or pickFrom in this case
-                        //  and throw an error instead of logging a warning.
-                        val logger =
-                            LoggerWrapper(Logging.getLogger(MergeNativeLibsTask::class.java))
-                        val message =
-                            StringBuilder().apply {
-                                append(entry.value.size)
-                                append(" files found for path '")
-                                append(entry.key)
-                                append(
-                                    "'. This version of the Android Gradle Plugin chooses the file "
-                                            + "from the app or dynamic-feature module, but this "
-                                            + "can cause unexpected behavior or errors at runtime. "
-                                            + "Future versions of the Android Gradle Plugin may "
-                                            + "throw an error in this case.\n"
-                                )
-                                append("Inputs:\n")
-                                for (file in entry.value) {
-                                    append(" - ").append(file).append("\n")
-                                }
-                            }.toString()
-                        logger.warning(message)
-                    } else {
-                        throw DuplicateRelativeFileException(
-                            entry.key,
-                            entry.value.size,
-                            entry.value.map { it.absolutePath },
-                            null
-                        )
-                    }
-                }
-            }
-        }
-
-        /**
-         * Copy inputFile.file to the outputDirectory and update usedRelativePaths.
-         */
-        private fun copyInputFileToOutput(
-            inputFile: InputFile,
-            outputDir: File,
-            usedRelativePaths: MutableMap<String, MutableList<File>>
-        ) {
-            // Update usedRelativePaths
-            usedRelativePaths[inputFile.relativePath] =
-                usedRelativePaths.getValue(inputFile.relativePath).also { it.add(inputFile.file) }
-
-            val outputFile =
-                FileUtils.join(outputDir, inputFile.relativePath.replace('/', separatorChar))
-            if (!outputFile.exists()) {
-                inputFile.file.copyTo(outputFile, overwrite = false)
-            }
+            mergeJavaNativeLibs(
+                parameters.inputFiles.get(),
+                parameters.pickFirsts.get(),
+                parameters.excludes.get(),
+                parameters.testOnly.get(),
+                parameters.testOnlyDir.orNull?.asFile,
+                parameters.projectNativeLibs.get(),
+                parameters.outputDirectory.get().asFile
+            )
         }
 
         abstract class Parameters: ProfileAwareWorkAction.Parameters() {
@@ -444,6 +349,121 @@ abstract class MergeNativeLibsTask : NonIncrementalTask() {
     }
 
     data class InputFile(val file: File, val relativePath: String) : Serializable
+}
+
+/**
+ * Allows for consistent JNI merging outcomes between [MergeJavaLibsTask] and [FusedLibraryMergeArtifactsTask]
+ */
+fun mergeJavaNativeLibs(
+    inputFiles: List<InputFile>,
+    pickFirst: Set<String>,
+    exclude: Set<String>,
+    testOnly: Set<String>,
+    testOnlyDir: File?,
+    projectNativeLibs: Set<File>,
+    outputDir: File
+) {
+    // A map of pickFirst pattern strings to their compiled globs.
+    val pickFirstsPathMatchers: Map<String, PathMatcher> =
+        pickFirst.associateWith { compileGlob(it) }
+
+    val excludesPathMatchers: List<PathMatcher> =
+        exclude.map { compileGlob(it) }
+
+    val testOnlyPathMatchers: List<PathMatcher> =
+        testOnly.map { compileGlob(it) }
+
+    // Keep track of the files matching each relative path so we can create a useful error
+    // message if necessary
+    val usedRelativePaths =
+        mutableMapOf<String, MutableList<File>>().withDefault { mutableListOf() }
+
+    for (inputFile in inputFiles) {
+        val systemDependentPath =
+            Paths.get("$separatorChar${inputFile.relativePath.replace('/', separatorChar)}")
+        val pickFirstMatches =
+            pickFirstsPathMatchers.filter { it.value.matches(systemDependentPath) }.keys
+        val destinationDir =
+            if (testOnlyDir != null
+                && testOnlyPathMatchers.any { it.matches(systemDependentPath) }
+            ) {
+                testOnlyDir
+            } else {
+                outputDir
+            }
+        if (pickFirstMatches.isNotEmpty()) {
+            // if the path matches a pickFirst pattern, we copy the file only if the
+            // relative path hasn't already been used.
+            if (!usedRelativePaths.containsKey(inputFile.relativePath)) {
+                copyInputFileToOutput(inputFile, destinationDir, usedRelativePaths)
+            }
+        } else if (excludesPathMatchers.none { it.matches(systemDependentPath) }) {
+            copyInputFileToOutput(inputFile, destinationDir, usedRelativePaths)
+        }
+    }
+
+    // Check usedRelativePaths and throw an exception or log warning(s) if necessary
+    // Files that have the same content are considered to be the same (and no error or
+    // warning is emitted).
+    val deduplicatedUsedRelativePaths = usedRelativePaths
+        .map { (k, v) -> k to removeDuplicateFiles(v) }
+        .toMap()
+
+    for (entry in deduplicatedUsedRelativePaths) {
+        if (entry.value.size > 1) {
+            val projectFiles =
+                entry.value.filter { projectNativeLibs.contains(it) }
+            if (projectFiles.size == 1) {
+                // TODO(b/141758241) enforce the use of pickFirst or pickFrom in this case
+                //  and throw an error instead of logging a warning.
+                val logger =
+                    LoggerWrapper(Logging.getLogger(MergeNativeLibsTask::class.java))
+                val message =
+                    StringBuilder().apply {
+                        append(entry.value.size)
+                        append(" files found for path '")
+                        append(entry.key)
+                        append(
+                            "'. This version of the Android Gradle Plugin chooses the file "
+                                    + "from the app or dynamic-feature module, but this "
+                                    + "can cause unexpected behavior or errors at runtime. "
+                                    + "Future versions of the Android Gradle Plugin may "
+                                    + "throw an error in this case.\n"
+                        )
+                        append("Inputs:\n")
+                        for (file in entry.value) {
+                            append(" - ").append(file).append("\n")
+                        }
+                    }.toString()
+                logger.warning(message)
+            } else {
+                throw DuplicateRelativeFileException(
+                    entry.key,
+                    entry.value.size,
+                    entry.value.map { it.absolutePath },
+                    null
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Copy inputFile.file to the outputDirectory and update usedRelativePaths.
+ */
+private fun copyInputFileToOutput(
+    inputFile: InputFile,
+    outputDir: File,
+    usedRelativePaths: MutableMap<String, MutableList<File>>
+) {
+    usedRelativePaths[inputFile.relativePath] =
+        usedRelativePaths.getValue(inputFile.relativePath).also { it.add(inputFile.file) }
+
+    val outputFile =
+        FileUtils.join(outputDir, inputFile.relativePath.replace('/', separatorChar))
+    if (!outputFile.exists()) {
+        inputFile.file.copyTo(outputFile, overwrite = false)
+    }
 }
 
 fun getProjectNativeLibs(

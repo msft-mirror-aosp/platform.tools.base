@@ -16,9 +16,9 @@
 
 package com.android.build.gradle.tasks
 
-import com.android.SdkConstants
 import com.android.SdkConstants.DOT_JAVA
 import com.android.SdkConstants.DOT_KT
+import com.android.SdkConstants.FD_JNI
 import com.android.SdkConstants.FN_NAVIGATION_JSON
 import com.android.build.api.artifact.Artifact
 import com.android.build.api.artifact.ArtifactKind
@@ -30,16 +30,16 @@ import com.android.build.gradle.internal.profile.ProfileAwareWorkAction
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
 import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactType
 import com.android.build.gradle.internal.tasks.AarMetadataTask.Companion.AAR_METADATA_FILE_NAME
-import com.android.build.gradle.internal.tasks.AarMetadataTask.Companion.AAR_METADATA_RELATIVE_PATH
 import com.android.build.gradle.internal.tasks.BuildAnalyzer
+import com.android.build.gradle.internal.tasks.MergeNativeLibsTask
 import com.android.build.gradle.internal.tasks.NonIncrementalGlobalTask
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationAction
+import com.android.build.gradle.internal.tasks.mergeJavaNativeLibs
 import com.android.build.gradle.internal.utils.setDisallowChanges
 import com.android.buildanalyzer.common.TaskCategory
 import com.android.builder.packaging.JarFlinger
 import com.android.utils.usLocaleCapitalize
 import org.gradle.api.attributes.DocsType
-import org.gradle.api.attributes.Usage
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.Directory
 import org.gradle.api.file.DirectoryProperty
@@ -57,7 +57,7 @@ import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskProvider
-import java.io.File
+import java.io.File.*
 
 /**
  * Responsible for merging multiple library artifacts of the same artifact type into a single
@@ -126,11 +126,25 @@ abstract class FusedLibraryMergeArtifactTask : NonIncrementalGlobalTask() {
                         }
                     }
                     ArtifactType.JNI -> {
-                        val aarOutputJniOutputDir =
-                                File(output.get().asFile, SdkConstants.FD_JNI)
-                        copyFilesToDirRecursivelyWithOverriding(inputFiles, aarOutputJniOutputDir) {
-                            it.toString().substringAfterLast("${File.separator}jni${File.separator}")
-                        }
+                        val aarOutputJniOutputDir = output.get().asFile.resolve(FD_JNI)
+                        val relativeInputFiles = inputFiles
+                            .flatMap { it.walkBottomUp() }
+                            .filter { it.isFile }
+                            .map {
+                                MergeNativeLibsTask.InputFile(it,
+                                    it.toString()
+                                        .substringAfter("$separator$FD_JNI$separator")
+                                )
+                            }
+                        mergeJavaNativeLibs(
+                            inputFiles = relativeInputFiles,
+                            emptySet(),
+                            emptySet(),
+                            emptySet(),
+                            testOnlyDir = null,
+                            projectNativeLibs = emptySet(),
+                            outputDir = aarOutputJniOutputDir
+                        )
                     }
                     ArtifactType.SOURCES_JAR -> {
                         output.get().asFile.createNewFile()

@@ -85,27 +85,3 @@ internal fun writeMergedMetadata(
             minCompileSdkExtension = mergedMetadata.minCompileSdkExtension
     )
 }
-
-internal fun copyFilesToDirRecursivelyWithOverriding(
-        toCopy: Collection<File>,
-        outputDirectory: File,
-        relativeTo: (File) -> String = { it.name }) {
-    copyFilesRecursively(toCopy, outputDirectory, true, relativeTo)
-}
-
-private fun copyFilesRecursively(
-        toCopy: Collection<File>,
-        outputDirectory: File,
-        overrideDuplicates: Boolean,
-        relativeTo: (File) -> String = { it.name }) {
-    val dependencyOrderedFiles = toCopy
-            // Reversed, to preserve dependency ordering, for overriding lower ordered libs.
-            .reversed()
-            .flatMap { it.walkBottomUp() }
-            .filter { it.isFile }
-    for (file in dependencyOrderedFiles) {
-        val maybeRelativePath = relativeTo(file)
-        val candidateFile = File(outputDirectory, maybeRelativePath)
-        file.copyRecursively(candidateFile, overwrite = overrideDuplicates)
-    }
-}
