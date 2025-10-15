@@ -488,8 +488,6 @@ https://issuetracker.google.com/331936874
   * com.android.build.api.variant.HostTestBuilder.getEnable: boolean ()
   * com.android.build.api.variant.HostTestBuilder.getType: java.lang.String ()
   * com.android.build.api.variant.HostTestBuilder.setEnable: void (boolean)
-https://issuetracker.google.com/333537222
-  * com.android.build.api.dsl.AndroidSourceDirectorySet.getDirectories: java.util.Set<java.lang.String> ()
 https://issuetracker.google.com/335848584
   * com.android.build.api.variant.DeviceTest.getCodeCoverageEnabled: boolean ()
   * com.android.build.api.variant.HostTest.getCodeCoverageEnabled: boolean ()

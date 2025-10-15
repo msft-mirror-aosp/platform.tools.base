@@ -4,6 +4,9 @@ ATTENTION REVIEWER: If this needs to be changed, please make sure changes
 are announced on go/as-release-notes.
 -------------------------------------------------------------------------
 Deprecated from AGP 9.0.0
+  * com.android.build.api.dsl.AndroidSourceDirectorySet.setSrcDirs: java.lang.Object (java.lang.Iterable<?>)
+  * com.android.build.api.dsl.AndroidSourceDirectorySet.srcDir: java.lang.Object (java.lang.Object)
+  * com.android.build.api.dsl.AndroidSourceDirectorySet.srcDirs: java.lang.Object (java.lang.Object[])
   * com.android.build.api.dsl.BuildFeatures.getRenderScript: java.lang.Boolean ()
   * com.android.build.api.dsl.BuildFeatures.setRenderScript: void (java.lang.Boolean)
   * com.android.build.api.variant.AndroidComponentsExtension.finalizeDSl: void (org.gradle.api.Action)

@@ -16,7 +16,6 @@
 
 package com.android.build.api.dsl
 
-import org.gradle.api.Incubating
 import org.gradle.api.Named
 
 /**
@@ -36,6 +35,7 @@ interface AndroidSourceDirectorySet : Named {
      *
      * This method has a return value for legacy reasons.
      */
+    @Deprecated("Use `directories` mutable set instead")
     fun srcDir(srcDir: Any): Any
 
     /**
@@ -46,7 +46,6 @@ interface AndroidSourceDirectorySet : Named {
      * Note that tasks or buildscript may add more directories, so you should not read this property
      * and use Variant API instead.
      */
-    @get:Incubating
     val directories: MutableSet<String>
 
     /**
@@ -56,6 +55,7 @@ interface AndroidSourceDirectorySet : Named {
      *
      * This method has a return value for legacy reasons.
      */
+    @Deprecated("Use `directories` mutable set instead")
     fun srcDirs(vararg srcDirs: Any): Any
 
     /**
@@ -66,5 +66,6 @@ interface AndroidSourceDirectorySet : Named {
      *
      *  This method has a return value for legacy reasons.
      */
+    @Deprecated("Use `directories` mutable set instead")
     fun setSrcDirs(srcDirs: Iterable<*>): Any
 }
