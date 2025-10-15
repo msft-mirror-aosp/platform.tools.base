@@ -201,8 +201,9 @@ build:remote --config=remote-exec
 build:remote --config=sponge
 
 ## Config used for continous integration testing scripts.
+# The downloader.cfg requires a --credential_helper for certain domains, and
+# is added by tools/base/bazel/ci/ci and ci.cmd scripts.
 common:ci --downloader_config=tools/base/bazel/ci/data/downloader.cfg
-common:ci --credential_helper=*.pkg.dev=%workspace%/build/bazel/tools/ci_credhelper.py
 build:ci --config=_remote_base
 build:ci --config=sponge
 build:ci --config=release
