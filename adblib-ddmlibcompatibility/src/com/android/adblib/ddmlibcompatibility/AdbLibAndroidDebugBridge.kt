@@ -677,12 +677,17 @@ class AdbLibAndroidDebugBridge(
     }
 
     override fun getAdbVersion(adbFile: File): ListenableFuture<AdbVersion> {
-        return logUsage(AdbDelegateUsageTracker.Method.GET_ADB_VERSION) {
-            getAdbVersion(adbFile.toPath())
+        unsupportedMethod()
+    }
+
+    internal fun getAdbVersionForTesting(adbPath: Path): ListenableFuture<AdbVersion> {
+        return withLock {
+            getAdbVersion(adbPath)
         }
     }
 
-    internal fun getAdbVersion(adbPath: Path): ListenableFuture<AdbVersion> {
+    private fun getAdbVersion(adbPath: Path): ListenableFuture<AdbVersion> {
+        assert(lock.isHeldByCurrentThread)
         return session.scope.async {
             val processResult =
                 session.host.processRunner.runProcess(
@@ -777,7 +782,7 @@ class AdbLibAndroidDebugBridge(
         }
 
         val adb = File(mAdbOsLocation)
-        val future = getAdbVersion(adb)
+        val future = getAdbVersion(adb.toPath())
         try {
             return future[DEFAULT_START_ADB_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS]
         } catch (_: InterruptedException) {
