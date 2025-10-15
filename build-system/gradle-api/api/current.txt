@@ -2613,7 +2613,7 @@ package com.android.build.api.variant {
     property @org.gradle.api.Incubating public abstract boolean generateLocaleConfig;
   }
 
-  public interface ApplicationVariant extends com.android.build.api.variant.GeneratesApk com.android.build.api.variant.CanMinifyAndroidResources com.android.build.api.variant.CanMinifyCode com.android.build.api.variant.HasAndroidTest com.android.build.api.variant.HasDeviceTests com.android.build.api.variant.HasHostTests com.android.build.api.variant.HasTestFixtures com.android.build.api.variant.HasUnitTest com.android.build.api.variant.Variant {
+  public interface ApplicationVariant extends com.android.build.api.variant.GeneratesApk com.android.build.api.variant.CanMinifyAndroidResources com.android.build.api.variant.CanMinifyCode com.android.build.api.variant.HasAndroidTest com.android.build.api.variant.HasDeviceTests com.android.build.api.variant.HasHostTests com.android.build.api.variant.HasTestFixtures com.android.build.api.variant.HasTestSuites com.android.build.api.variant.HasUnitTest com.android.build.api.variant.Variant {
     method @org.gradle.api.Incubating public com.android.build.api.variant.ApplicationAndroidResources getAndroidResources();
     method public org.gradle.api.provider.Property<java.lang.String> getApplicationId();
     method @org.gradle.api.Incubating public com.android.build.api.variant.BundleConfig getBundleConfig();
@@ -2630,7 +2630,7 @@ package com.android.build.api.variant {
     property public abstract com.android.build.api.variant.SigningConfig signingConfig;
   }
 
-  public interface ApplicationVariantBuilder extends com.android.build.api.variant.VariantBuilder com.android.build.api.variant.CanMinifyAndroidResourcesBuilder com.android.build.api.variant.CanMinifyCodeBuilder com.android.build.api.variant.GeneratesApkBuilder com.android.build.api.variant.HasAndroidTestBuilder com.android.build.api.variant.HasDeviceTestsBuilder com.android.build.api.variant.HasHostTestsBuilder com.android.build.api.variant.HasTestFixturesBuilder com.android.build.api.variant.HasUnitTestBuilder {
+  public interface ApplicationVariantBuilder extends com.android.build.api.variant.VariantBuilder com.android.build.api.variant.CanMinifyAndroidResourcesBuilder com.android.build.api.variant.CanMinifyCodeBuilder com.android.build.api.variant.GeneratesApkBuilder com.android.build.api.variant.HasAndroidTestBuilder com.android.build.api.variant.HasDeviceTestsBuilder com.android.build.api.variant.HasHostTestsBuilder com.android.build.api.variant.HasTestFixturesBuilder com.android.build.api.variant.HasTestSuitesBuilder com.android.build.api.variant.HasUnitTestBuilder {
     method public com.android.build.api.variant.ApplicationAndroidResourcesBuilder getAndroidResources();
     method public com.android.build.api.variant.DependenciesInfoBuilder getDependenciesInfo();
     method @Deprecated public boolean getProfileable();
@@ -2912,7 +2912,7 @@ package com.android.build.api.variant {
     property public abstract com.android.build.api.variant.TestedApkPackaging packaging;
   }
 
-  public interface DynamicFeatureVariantBuilder extends com.android.build.api.variant.VariantBuilder com.android.build.api.variant.GeneratesApkBuilder com.android.build.api.variant.HasAndroidTestBuilder com.android.build.api.variant.HasDeviceTestsBuilder com.android.build.api.variant.HasHostTestsBuilder com.android.build.api.variant.HasTestFixturesBuilder com.android.build.api.variant.HasUnitTestBuilder {
+  public interface DynamicFeatureVariantBuilder extends com.android.build.api.variant.VariantBuilder com.android.build.api.variant.GeneratesApkBuilder com.android.build.api.variant.HasAndroidTestBuilder com.android.build.api.variant.HasDeviceTestsBuilder com.android.build.api.variant.HasHostTestsBuilder com.android.build.api.variant.HasTestFixturesBuilder com.android.build.api.variant.HasTestSuitesBuilder com.android.build.api.variant.HasUnitTestBuilder {
   }
 
   public interface ExternalNativeBuild {
@@ -3063,6 +3063,11 @@ package com.android.build.api.variant {
     property public abstract java.util.Map<java.lang.String,com.android.build.api.variant.TestSuite> suites;
   }
 
+  @org.gradle.api.Incubating public interface HasTestSuitesBuilder {
+    method @org.gradle.api.Incubating public java.util.Map<java.lang.String,com.android.build.api.variant.TestSuiteBuilder> getSuites();
+    property @org.gradle.api.Incubating public abstract java.util.Map<java.lang.String,com.android.build.api.variant.TestSuiteBuilder> suites;
+  }
+
   public interface HasUnitTest {
     method public com.android.build.api.variant.UnitTest? getUnitTest();
     property public abstract com.android.build.api.variant.UnitTest? unitTest;
@@ -3171,7 +3176,7 @@ package com.android.build.api.variant {
     property public abstract com.android.build.api.variant.Renderscript? renderscript;
   }
 
-  public interface LibraryVariantBuilder extends com.android.build.api.variant.VariantBuilder com.android.build.api.variant.CanMinifyCodeBuilder com.android.build.api.variant.HasAndroidTestBuilder com.android.build.api.variant.HasDeviceTestsBuilder com.android.build.api.variant.HasHostTestsBuilder com.android.build.api.variant.HasTestFixturesBuilder com.android.build.api.variant.HasUnitTestBuilder {
+  public interface LibraryVariantBuilder extends com.android.build.api.variant.VariantBuilder com.android.build.api.variant.CanMinifyCodeBuilder com.android.build.api.variant.HasAndroidTestBuilder com.android.build.api.variant.HasDeviceTestsBuilder com.android.build.api.variant.HasHostTestsBuilder com.android.build.api.variant.HasTestFixturesBuilder com.android.build.api.variant.HasTestSuitesBuilder com.android.build.api.variant.HasUnitTestBuilder {
   }
 
   public interface LifecycleTasks {

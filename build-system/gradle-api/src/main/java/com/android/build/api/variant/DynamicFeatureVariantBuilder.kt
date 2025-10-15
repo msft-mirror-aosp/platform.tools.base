@@ -27,4 +27,5 @@ interface DynamicFeatureVariantBuilder : VariantBuilder,
     HasHostTestsBuilder,
     HasUnitTestBuilder,
     HasTestFixturesBuilder,
+    HasTestSuitesBuilder,
     GeneratesApkBuilder

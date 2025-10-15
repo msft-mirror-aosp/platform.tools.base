@@ -651,6 +651,8 @@ https://issuetracker.google.com/438803230
   * com.android.build.api.variant.CanProduceConsumerProguardFiles
   * com.android.build.api.variant.CanProduceConsumerProguardFiles.getConsumerProguardFiles: org.gradle.api.provider.ListProperty<org.gradle.api.file.RegularFile> ()
 https://issuetracker.google.com/443174826
+  * com.android.build.api.variant.HasTestSuitesBuilder
+  * com.android.build.api.variant.HasTestSuitesBuilder.getSuites: java.util.Map<java.lang.String, com.android.build.api.variant.TestSuiteBuilder> ()
   * com.android.build.api.variant.JUnitEngineSpec
   * com.android.build.api.variant.JUnitEngineSpec.addInputProperty: void (java.lang.String, java.lang.String)
   * com.android.build.api.variant.JUnitEngineSpec.addInputProperty: void (java.lang.String, org.gradle.api.provider.Provider<java.lang.String>)

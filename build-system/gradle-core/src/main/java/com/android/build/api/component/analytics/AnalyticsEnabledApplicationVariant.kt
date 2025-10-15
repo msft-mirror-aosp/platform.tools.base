@@ -32,6 +32,7 @@ import com.android.build.api.variant.TestFixtures
 import com.android.build.api.variant.TestedApkPackaging
 import com.android.build.api.variant.VariantOutput
 import com.android.build.api.variant.ApkOutputProviders
+import com.android.build.api.variant.TestSuite
 import com.android.tools.build.gradle.internal.profile.VariantPropertiesMethodType
 import com.google.wireless.android.sdk.stats.GradleBuildVariant
 import org.gradle.api.model.ObjectFactory
@@ -216,4 +217,15 @@ open class AnalyticsEnabledApplicationVariant @Inject constructor(
 
     override val outputProviders: ApkOutputProviders
         get() = generatesApk.outputProviders
+
+    override val suites: Map<String, TestSuite>
+        get() {
+            stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
+                VariantPropertiesMethodType.TEST_SUITES_VALUE
+            // return a new list everytime as items may eventually be added through future APIs.
+            // we may consider returning a live list instead.
+            return  delegate.suites.mapValues {
+                AnalyticsEnabledTestSuite(it.value, stats, objectFactory)
+            }
+        }
 }
