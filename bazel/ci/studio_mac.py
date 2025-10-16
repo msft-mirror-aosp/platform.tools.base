@@ -5,6 +5,7 @@ from typing import List
 
 from tools.base.bazel.ci import bazel
 from tools.base.bazel.ci import studio
+from tools.base.bazel.ci.presubmit import impacted_targets
 
 _ARTIFACTS = [
     ('tools/adt/idea/studio/android-studio.linux.zip', 'artifacts'),
@@ -59,21 +60,20 @@ def studio_mac(build_env: bazel.BuildEnv) -> None:
 
 def studio_mac_arm(build_env: bazel.BuildEnv) -> None:
   """Runs studio-mac-arm target."""
-  flags = build_flags(
-      build_env,
-      test_tag_filters='ci:studio-mac-arm',
+  query = ['attr(tags, ci:studio-mac-arm, //tools/...)']
+  test_targets = (
+      build_env.bazel_query(*query).stdout.decode('utf-8').splitlines()
   )
-  flags.append('--discard_analysis_cache')
-  flags.append('--nokeep_state_after_build')
-  targets = [
-      '//tools/...',
-      '-//tools/vendor/google/aswb/...',
-      '-//tools/vendor/google3/aswb/...',
-      '-//tools/adt/idea/aswb/...',
+  targets = test_targets + [
       '//tools/vendor/google/skia:skiaparser',
       '//tools/vendor/google/skia:skia_test_support',
       '//tools/base/profiler/native/trace_processor_daemon',
       '//tools/base/profiler/native/sherlock:sherlock_trace_processor',
+      '//tools/adt/idea/android/native/diagnostics/heap:libjni_object_tagger',
+  ]
+  flags = build_flags(build_env) + [
+      '--discard_analysis_cache',
+      '--nokeep_state_after_build',
   ]
   result = studio.run_bazel_test(build_env, flags, targets)
   if studio.is_build_successful(result):
