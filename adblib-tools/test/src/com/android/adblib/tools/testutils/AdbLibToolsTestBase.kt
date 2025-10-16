@@ -22,16 +22,14 @@ import com.android.adblib.AdbSessionHost
 import com.android.adblib.ConnectedDevice
 import com.android.adblib.SOCKET_CONNECT_TIMEOUT_MS
 import com.android.adblib.connectedDevicesTracker
-import com.android.adblib.isOnline
-import com.android.adblib.serialNumber
 import com.android.adblib.testingutils.CloseablesRule
 import com.android.adblib.testingutils.FakeAdbServerProvider
 import com.android.adblib.testingutils.FakeAdbServerProviderRule
 import com.android.adblib.testingutils.TestingAdbSessionHost
+import com.android.adblib.waitForDevice
+import com.android.adblib.waitUntilOnline
 import com.android.fakeadbserver.DeviceState
 import com.android.sdklib.AndroidApiLevel
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.mapNotNull
 import org.hamcrest.CoreMatchers
 import org.junit.Assert
 import org.junit.Rule
@@ -106,10 +104,7 @@ open class AdbLibToolsTestBase {
 }
 
 suspend fun AdbSession.waitForOnlineConnectedDevice(serialNumber: String): ConnectedDevice {
-    return connectedDevicesTracker.connectedDevices
-        .mapNotNull { connectedDevices ->
-            connectedDevices.firstOrNull { device ->
-                device.isOnline && device.serialNumber == serialNumber
-            }
-        }.first()
+    val connectedDevice = connectedDevicesTracker.waitForDevice(serialNumber)
+    connectedDevice.waitUntilOnline()
+    return connectedDevice
 }

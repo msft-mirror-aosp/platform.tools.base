@@ -23,6 +23,7 @@ import com.android.fakeadbserver.DeviceState
 import com.android.sdklib.AndroidApiLevel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 import org.junit.Assert
 import org.junit.Rule
 import org.junit.Test
@@ -192,6 +193,52 @@ class ConnectedDevicesTrackerTest {
             ),
             deviceInfoList.map { it.deviceState }.toList()
         )
+    }
+
+    @Test
+    fun connectedDevicesDoesNotEmitOnDeviceStateChanges() = runBlockingWithTimeout {
+        // Prepare
+        val fakeDevice = fakeAdb.connectDevice(
+            "1234",
+            "test1",
+            "test2",
+            "model",
+            sdk = AndroidApiLevel(23),
+            DeviceState.HostConnectionType.USB
+        )
+        fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
+
+        val deviceCacheManager = ConnectedDevicesTrackerImpl(session)
+        yieldUntil {
+            deviceCacheManager.connectedDevices.value.isNotEmpty()
+        }
+        val connectedDevice = deviceCacheManager.connectedDevices.value.first()
+        connectedDevice.waitUntilOnline()
+
+        // Act
+        var connectedDevicesCollections = 0
+        val job = launch {
+            deviceCacheManager.connectedDevices.collect {
+                connectedDevicesCollections++
+            }
+        }
+        yieldUntil { connectedDevicesCollections == 1 }
+
+        fakeDevice.deviceStatus = DeviceState.DeviceStatus.UNAUTHORIZED
+        yieldUntil {
+            connectedDevice.deviceInfoFlow.value.deviceState == com.android.adblib.DeviceState.UNAUTHORIZED
+        }
+        fakeDevice.deviceStatus = DeviceState.DeviceStatus.RECOVERY
+        yieldUntil {
+            connectedDevice.deviceInfoFlow.value.deviceState == com.android.adblib.DeviceState.RECOVERY
+        }
+        // Delay a little longer to allow collector to collect
+        delay(50)
+
+        // Assert: despite device state changing to `UNAUTHORIZED` and then `RECOVERY`
+        // the `connectedDevices` flow didn't emit updates
+        Assert.assertEquals(1, connectedDevicesCollections)
+        job.cancel()
     }
 
     @Test
