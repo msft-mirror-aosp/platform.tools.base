@@ -19,6 +19,7 @@ package com.android.build.gradle.internal.profile;
 import static com.google.common.truth.Truth.assertThat;
 
 import com.android.annotations.NonNull;
+import com.android.build.api.artifact.MultipleArtifact;
 import com.android.build.api.artifact.SingleArtifact;
 import com.android.build.gradle.internal.dsl.ModulePropertyKey;
 import com.android.build.gradle.internal.dsl.Splits;
@@ -153,10 +154,18 @@ public class AnalyticsUtilTest {
     }
 
     @Test
-    public void checkAllArtifactTypesHaveEnumValues() {
+    public void checkAllSingleArtifactTypesHaveEnumValues() {
+        checkAllArtifactTypesHaveEnumValues(SingleArtifact.class);
+    }
+
+    @Test
+    public void checkAllMultipleArtifactTypesHaveEnumValues() {
+        checkAllArtifactTypesHaveEnumValues(MultipleArtifact.class);
+    }
+
+    private void checkAllArtifactTypesHaveEnumValues(Class<?> type) {
         List<String> missingArtifactTypes =
-                kotlin.jvm.JvmClassMappingKt.getKotlinClass(SingleArtifact.class).getNestedClasses()
-                        .stream()
+                kotlin.jvm.JvmClassMappingKt.getKotlinClass(type).getNestedClasses().stream()
                         .map(kClazz -> kotlin.jvm.JvmClassMappingKt.getJavaClass(kClazz))
                         .filter(
                                 clazz ->
@@ -169,8 +178,10 @@ public class AnalyticsUtilTest {
         if (missingArtifactTypes.isEmpty()) return;
 
         displayMissingEnumValues(
-                SingleArtifact.class, VariantApiArtifactType.getDescriptor(), missingArtifactTypes);
+                type, VariantApiArtifactType.getDescriptor(), missingArtifactTypes);
     }
+
+
 
     private <T, U extends ProtocolMessageEnum> void displayMissingEnumValues(
             Class<T> itemClass, Descriptors.EnumDescriptor protoEnum, List<String> missingItems) {
