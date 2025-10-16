@@ -518,7 +518,7 @@ class AvdManagerCli extends CommandLineParser {
         }
 
         // Are there some unused AVDs?
-        List<AvdInfo> badAvds = Arrays.asList(avdManager.getAllAvds()).stream().filter(
+        List<AvdInfo> badAvds = avdManager.getAllAvds().stream().filter(
                 avd -> avd.getStatus() != AvdInfo.AvdStatus.OK).collect(Collectors.toList());
 
         if (badAvds.isEmpty()) {

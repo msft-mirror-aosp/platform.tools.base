@@ -114,7 +114,7 @@ class AvdBuilderTest {
     checkNotNull(createdAvd)
 
     avdManager.reloadAvds()
-    assertThat(avdManager.allAvds).hasLength(1)
+    assertThat(avdManager.allAvds).hasSize(1)
 
     val avd = avdManager.allAvds[0]
     val builderFromDisk = AvdBuilder.createForExistingDevice(pixel8, avd)

@@ -285,12 +285,12 @@ public class AvdManagerCliTest {
                     "-d", "Nexus 6P"
                 });
         mAvdManager.reloadAvds();
-        assertEquals(2, mAvdManager.getAllAvds().length);
+        assertEquals(2, mAvdManager.getAllAvds().size());
 
         mCli.run(new String[] {"delete", "avd", "--name", "testAvd1"});
 
         mAvdManager.reloadAvds();
-        assertEquals(1, mAvdManager.getAllAvds().length);
+        assertEquals(1, mAvdManager.getAllAvds().size());
 
         AvdInfo info = mAvdManager.getAvd("testAvd2", true);
         assertNotNull(info);
@@ -314,7 +314,7 @@ public class AvdManagerCliTest {
                     "-r", "newName"
                 });
         mAvdManager.reloadAvds();
-        assertEquals(1, mAvdManager.getAllAvds().length);
+        assertEquals(1, mAvdManager.getAllAvds().size());
 
         AvdInfo info = mAvdManager.getAvd("newName", true);
         assertEquals(moved.toAbsolutePath(), info.getDataFolderPath());

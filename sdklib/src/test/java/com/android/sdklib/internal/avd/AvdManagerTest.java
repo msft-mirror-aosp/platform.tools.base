@@ -131,7 +131,7 @@ public final class AvdManagerTest {
                         false,
                         false);
 
-        Path file = mAvdManager.resolve(avd, "hardware-qemu.ini.lock");
+        Path file = mAvdManager.resolveLockFile(avd, "hardware-qemu.ini.lock");
 
         Files.createDirectories(file.getParent());
         Files.write(file, "412503".getBytes());
@@ -161,7 +161,7 @@ public final class AvdManagerTest {
                         false,
                         false);
 
-        Path file = mAvdManager.resolve(avd, "hardware-qemu.ini.lock");
+        Path file = mAvdManager.resolveLockFile(avd, "hardware-qemu.ini.lock");
 
         Files.createDirectories(file.getParent());
         Files.createFile(file);
@@ -192,7 +192,7 @@ public final class AvdManagerTest {
                         false,
                         false);
 
-        Path file = mAvdManager.resolve(avd, "hardware-qemu.ini.lock");
+        Path file = mAvdManager.resolveLockFile(avd, "hardware-qemu.ini.lock");
 
         Files.createDirectories(file.getParent());
         Files.write(file, "notlong".getBytes());
@@ -223,7 +223,7 @@ public final class AvdManagerTest {
                         false,
                         false);
 
-        Path file = mAvdManager.resolve(avd, "userdata-qemu.img.lock");
+        Path file = mAvdManager.resolveLockFile(avd, "userdata-qemu.img.lock");
 
         Files.createDirectories(file.getParent());
         Files.write(file, "412503".getBytes());
@@ -474,7 +474,7 @@ public final class AvdManagerTest {
                 false,
                 false);
 
-        assertThat(mGradleManagedDeviceAvdManager.getAllAvds()).hasLength(1);
+        assertThat(mGradleManagedDeviceAvdManager.getAllAvds()).hasSize(1);
 
         // Creating AVD in Gradle Managed Device folder (.android/avd/gradle-managed) should not
         // confuse the standard AVD manager (.android/avd).
