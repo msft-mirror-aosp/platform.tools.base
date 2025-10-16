@@ -60,7 +60,7 @@ class AvdBuilderTest {
       assertThat(showDeviceFrame).isTrue()
       assertThat(screenOrientation).isEqualTo(ScreenOrientation.PORTRAIT)
 
-      assertThat(cpuCoreCount).isAtLeast(2)  // depends on what machine this test runs on
+      assertThat(cpuCoreCount).isAtLeast(2) // depends on what machine this test runs on
       assertThat(ram).isEqualTo(EmulatedProperties.MAX_DEFAULT_RAM_SIZE)
       assertThat(vmHeap.size).isGreaterThan(0)
       assertThat(internalStorage).isEqualTo(EmulatedProperties.DEFAULT_INTERNAL_STORAGE)
@@ -219,20 +219,31 @@ class AvdBuilderTest {
       .isEqualTo(Abi.X86_64.toString())
   }
 
-    @Test
-    fun createAvdWithBackground() {
-        val testSystemImages = TestSystemImages(sdkHandler)
-        val android33ext4 = testSystemImages.api33ext4.image
+  @Test
+  fun createAvdWithBackground() {
+    val testSystemImages = TestSystemImages(sdkHandler)
+    val android33ext4 = testSystemImages.api33ext4.image
 
-        val avdBuilder = avdManager.createAvdBuilder(deviceManager.getDevice("resizable", "Generic")!!)
-        avdBuilder.systemImage = android33ext4
-        val backgroundFile = root.resolve("tmp").resolve("img1.png")
-        backgroundFile.recordExistingFile(contents = "abcd")
-        avdBuilder.background = backgroundFile
+    val device = deviceManager.getDevice("resizable", "Generic")!!
+    val avdBuilder = avdManager.createAvdBuilder(device)
+    avdBuilder.systemImage = android33ext4
+    val backgroundFile = root.resolve("tmp").resolve("img1.png")
+    backgroundFile.recordExistingFile(contents = "abcd")
+    avdBuilder.background = backgroundFile
 
-        val avdInfo = avdManager.createAvd(avdBuilder)
+    val avdInfo = avdManager.createAvd(avdBuilder)
 
-        assertThat(avdInfo.environment).containsExactly(EnvironmentKey.IMAGE, "img1.png")
-        assertThat(avdInfo.dataFolderPath.resolve("img1.png").exists()).isTrue()
+    assertThat(avdBuilder.avdFolder.resolve(AvdManager.ENVIRONMENT_INI).exists()).isTrue()
+    assertThat(avdInfo.environment).containsExactly(EnvironmentKey.IMAGE, "img1.png")
+    assertThat(avdInfo.dataFolderPath.resolve("img1.png").exists()).isTrue()
+
+    // Verify that we can read the background back from disk
+    avdManager.reloadAvds()
+    val newAvdInfo = avdManager.getAvd(avdInfo.name, true)!!
+    assertThat(newAvdInfo.environment).containsExactly(EnvironmentKey.IMAGE, "img1.png")
+    AvdBuilder.createForExistingDevice(device, newAvdInfo).let {
+      assertThat(it.background?.nameCount).isEqualTo(1)
+      assertThat(it.background?.fileName.toString()).isEqualTo("img1.png")
     }
+  }
 }

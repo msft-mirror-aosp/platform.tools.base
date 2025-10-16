@@ -70,6 +70,12 @@ class AvdBuilder(var metadataIniPath: Path, avdFolder: Path, var device: Device)
 
   var sdCard: SdCard? = null
   var skin: Skin? = null
+  /**
+   * An image or video to be used as the background environment of an XR device. If this is a
+   * fully-constructed AVD, this should be a relative path, which is interpreted relative to
+   * [avdFolder]. If it is an AVD in the process of being created, this should be an absolute path;
+   * it will be copied to the AVD directory upon creation.
+   */
   var background: Path? = null
 
   var showDeviceFrame = true
@@ -135,6 +141,15 @@ class AvdBuilder(var metadataIniPath: Path, avdFolder: Path, var device: Device)
     return environment
   }
 
+  private fun backgroundFromConfig(environment: Map<String, String>): Path? {
+    for (key in listOf(EnvironmentKey.IMAGE, EnvironmentKey.VIDEO)) {
+      environment[key]?.let {
+        return avdFolder.relativize(avdFolder.resolve(it))
+      }
+    }
+    return null
+  }
+
   /**
    * When the AVD folder changes, updates absolute paths that point to a location within the old AVD
    * folder to a corresponding location within the new AVD folder.
@@ -191,6 +206,7 @@ class AvdBuilder(var metadataIniPath: Path, avdFolder: Path, var device: Device)
 
         sdCard = sdCardFromConfig(avdInfo.properties)
         skin = skinFromConfig(avdInfo.properties)
+        background = backgroundFromConfig(avdInfo.environment)
 
         bootMode = BootMode.fromProperties(avdInfo.properties)
         binding.read(this, avdInfo.properties)

@@ -568,7 +568,9 @@ private constructor(
       val source = avdFolder.fileSystem.getPath(value)
       val destination = avdFolder.resolve(source.fileName)
       try {
-        FileUtils.copyFile(source, destination)
+        if (source != destination) {
+          FileUtils.copyFile(source, destination)
+        }
         environment[key] = avdFolder.relativize(destination).toString()
       } catch (e: IOException) {
         throw AvdManagerException("Unable to copy background to AVD directory", e)
@@ -1166,7 +1168,7 @@ private constructor(
     }
 
     val userSettings = parseUserSettingsFile(avdFolder, log)
-    val environment = parseEnvironmentFile(this.baseAvdFolder, log)
+    val environment = parseEnvironmentFile(avdFolder, log)
     val info =
       AvdInfo(metadataIniFile, avdFolder, sysImage, properties, userSettings, environment, status)
 
@@ -1545,7 +1547,7 @@ private constructor(
     const val USER_SETTINGS_INI: String = "user-settings.ini" // $NON-NLS-1$
 
     private const val BOOT_PROP = "boot.prop"
-    private const val ENVIRONMENT_INI = "environment.ini"
+    const val ENVIRONMENT_INI = "environment.ini"
     const val CONFIG_INI: String = "config.ini"
     private const val HARDWARE_QEMU_INI = "hardware-qemu.ini"
     private const val SDCARD_IMG = "sdcard.img"
@@ -1571,7 +1573,8 @@ private constructor(
     fun parseEnvironmentFile(dataFolder: Path, logger: ILogger?): Map<String, String> {
       val environmentPath = PathFileWrapper(dataFolder.resolve(ENVIRONMENT_INI))
       if (environmentPath.exists()) {
-        parseIniFile(environmentPath, logger)?.let {
+        // We always write this in UTF-8.
+        parseIniFileImpl(environmentPath, logger, Charsets.UTF_8)?.let {
           return it
         }
       }
