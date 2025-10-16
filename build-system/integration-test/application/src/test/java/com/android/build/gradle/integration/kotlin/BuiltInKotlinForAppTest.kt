@@ -331,9 +331,8 @@ class BuiltInKotlinForAppTest(
             }
         }
         val result = build.executor.expectFailure().run(":app:assembleDebug")
-        // See b/438711106
         result.assertErrorContains(
-            "Cannot add extension with name 'kotlin', as there is an extension already registered with that name."
+            "The 'org.jetbrains.kotlin.android' plugin is no longer required for Kotlin support since AGP 9.0."
         )
     }
 
