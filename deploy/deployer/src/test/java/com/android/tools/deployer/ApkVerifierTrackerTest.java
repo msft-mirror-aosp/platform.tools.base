@@ -15,10 +15,10 @@
  */
 package com.android.tools.deployer;
 
-import static com.android.ddmlib.IDevice.CHANGE_STATE;
 import static com.android.ddmlib.IDevice.PROP_BUILD_CODENAME;
 import static com.android.tools.deployer.ApkVerifierTracker.SKIP_VERIFICATION_OPTION;
 import static com.android.tools.deployer.ApkVerifierTracker.getSkipVerificationInstallationFlag;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -33,8 +33,14 @@ import com.android.fakeadbserver.FakeAdbServer;
 import com.android.tools.deployer.devices.FakeDevice;
 import com.android.tools.deployer.devices.FakeDeviceHandler;
 import com.android.tools.deployer.devices.shell.GetProp;
+
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
+
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -44,9 +50,6 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
 
 public class ApkVerifierTrackerTest {
     private static final long WAIT_TIME_MS = TimeUnit.SECONDS.toMillis(10);
@@ -222,28 +225,30 @@ public class ApkVerifierTrackerTest {
                 new AndroidDebugBridge.IDeviceChangeListener() {
                     @Override
                     public void deviceConnected(@NonNull IDevice device) {
-                        deviceChanged(device, CHANGE_STATE);
-                    }
-
-                    @Override
-                    public void deviceDisconnected(@NonNull IDevice device) {
-                        deviceChanged(device, CHANGE_STATE);
-                    }
-
-                    @Override
-                    public void deviceChanged(@NonNull IDevice device, int changeMask) {
-                        if (deviceId.equals(device.getSerialNumber()) && device.isOnline()) {
-                            AndroidDebugBridge.removeDeviceChangeListener(this);
+                        if (deviceId.equals(device.getSerialNumber())) {
                             countDownLatch.countDown();
                         }
                     }
+
+                    @Override
+                    public void deviceDisconnected(@NonNull IDevice device) {}
+
+                    @Override
+                    public void deviceChanged(@NonNull IDevice device, int changeMask) {}
                 };
 
-        AndroidDebugBridge.addDeviceChangeListener(deviceChangeListener);
-        waitFor(() -> AndroidDebugBridge.getBridge().hasInitialDeviceList());
-        for (IDevice device : AndroidDebugBridge.getBridge().getDevices()) {
-            deviceChangeListener.deviceConnected(device);
+        try {
+            AndroidDebugBridge.addDeviceChangeListener(deviceChangeListener);
+            for (IDevice device : AndroidDebugBridge.getBridge().getDevices()) {
+                if (deviceId.equals(device.getSerialNumber())) {
+                    // Device is already connected
+                    return;
+                }
+            }
+            // Wait for device to get connected
+            countDownLatch.await();
+        } finally {
+            AndroidDebugBridge.removeDeviceChangeListener(deviceChangeListener);
         }
-        countDownLatch.await();
     }
 }
