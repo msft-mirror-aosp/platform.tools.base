@@ -70,7 +70,7 @@ class JdwpProcessResumeProcessTest : AdbLibToolsJdwpTestBase() {
         }
 
         testJdwpProcessResumeWorksWithJdwpPropertiesCollector(
-            adbSessions = createTwoSessions().toList(),
+            adbSessionsProvider = { createTwoSessions().toList() },
             pickProcess = processPicker
         )
     }
@@ -93,7 +93,7 @@ class JdwpProcessResumeProcessTest : AdbLibToolsJdwpTestBase() {
             processWithJdwpConnectionOpen
         }
         testJdwpProcessResumeWorksWithJdwpPropertiesCollector(
-            adbSessions = createTwoSessions().toList(),
+            adbSessionsProvider = { createTwoSessions().toList() },
             pickProcess = processPicker
         )
     }
@@ -107,7 +107,7 @@ class JdwpProcessResumeProcessTest : AdbLibToolsJdwpTestBase() {
         }
 
         testJdwpProcessResumeWorksWithJdwpPropertiesCollector(
-            adbSessions = createTwoSessionsAndTwoDelegateSessions().toList(),
+            adbSessionsProvider = { createTwoSessionsAndTwoDelegateSessions().toList() },
             pickProcess = processPicker
         )
     }
@@ -153,7 +153,7 @@ class JdwpProcessResumeProcessTest : AdbLibToolsJdwpTestBase() {
     }
 
     private suspend fun testJdwpProcessResumeWorksWithJdwpPropertiesCollector(
-        adbSessions: List<AdbSession>,
+        adbSessionsProvider: () -> List<AdbSession>,
         pickProcess: suspend (List<JdwpProcess>) -> JdwpProcess
     ) {
         // Prepare
@@ -172,6 +172,7 @@ class JdwpProcessResumeProcessTest : AdbLibToolsJdwpTestBase() {
             AdbLibToolsProperties.PROCESS_PROPERTIES_COLLECTOR_DELAY_DEFAULT,
             Duration.ofMillis(20)
         )
+        val adbSessions = adbSessionsProvider()
 
         // Act: create 2 adb sessions with one device, and call `resumeProcess`
         val jdwpProcessList = createDeviceAndProcessInAdbSessions(
