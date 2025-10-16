@@ -22,7 +22,7 @@ option java_outer_classname = "MdnsProto";
 
 package adb.proto;
 
-// See proto https://source.corp.google.com/h/googleplex-android/platform/superproject/main/+/124967b0fb712eb69ca625a11448e3f169e07e2c:packages/modules/adb/proto/adb_host.proto
+// See proto https://source.corp.google.com/h/googleplex-android/platform/superproject/main/+/main:packages/modules/adb/proto/adb_host.proto
 
 message MdnsServices {
     repeated ServiceAdbTcp tcp = 1;
@@ -53,4 +53,7 @@ message MdnsService {
     uint32 port = 6;
     optional string device_model = 7;
     optional string build_version_sdk_full = 8;
+    optional string given_name = 9;
+    optional string serial = 10;
+    optional string mdns_service_version = 11;
 }

@@ -58,4 +58,10 @@ data class MdnsTrackServiceInfo(
   val deviceModel: String?,
   // Comes from device property "ro.build.version.sdk_full"
   val buildVersionSdkFull: String?,
+  // The name of the device, e.g. "Foo's Pixel 10".
+  val givenName: String?,
+  // Comes from device property "ro.serialno"
+  val serial: String?,
+  // Used by clients to manage changes to the MdnsService.
+  val mdnsServiceVersion: String?
 )

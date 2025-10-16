@@ -85,6 +85,9 @@ internal class TrackMdnsService(private val serviceRunner: AdbServiceRunner) {
       port,
       deviceModel,
       buildVersionSdkFull,
+      givenName,
+      serial,
+      mdnsServiceVersion
     )
   }
 }
