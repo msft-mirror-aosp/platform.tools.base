@@ -43,6 +43,10 @@ abstract class FusedLibraryExtensionImpl @Inject constructor(val dslServices: Ds
         minSdkDelegate.minSdk(action)
     }
 
+    override fun minSdk(action: MinSdkSpec.() -> Unit) {
+        minSdkDelegate.minSdk(action)
+    }
+
     abstract override val manifestPlaceholders: MutableMap<String, String>
 
     abstract override val experimentalProperties: MutableMap<String, Any>

@@ -653,6 +653,7 @@ com.android.build.gradle.internal.dsl.ExternalNativeNdkBuildOptions.getCFlags: j
 com.android.build.gradle.internal.dsl.ExternalNativeNdkBuildOptions.getCppFlags: java.util.List<java.lang.String> ()
 com.android.build.gradle.internal.dsl.ExternalNativeNdkBuildOptions.getTargets: java.util.Set<java.lang.String> ()
 com.android.build.gradle.internal.dsl.ExternalNativeNdkBuildOptions.targets: void (java.lang.String[])
+com.android.build.gradle.internal.dsl.FusedLibraryExtensionImpl.minSdk: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.MinSdkSpec, kotlin.Unit>)
 com.android.build.gradle.internal.dsl.HasConfigurableValueImpl.configure: void (kotlin.jvm.functions.Function1<? super T, kotlin.Unit>)
 com.android.build.gradle.internal.dsl.JUnitEngineSpecImpl.addInputProperty: void (java.lang.String, java.lang.String)
 com.android.build.gradle.internal.dsl.JUnitEngineSpecImpl.addInputProperty: void (java.lang.String, org.gradle.api.provider.Provider<java.lang.String>)
