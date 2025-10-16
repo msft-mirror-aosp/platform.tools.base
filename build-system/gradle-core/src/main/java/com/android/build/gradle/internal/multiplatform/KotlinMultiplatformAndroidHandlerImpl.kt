@@ -106,9 +106,16 @@ internal class KotlinMultiplatformAndroidHandlerImpl(
 
             kotlinExtension = project.extensions.getByName("kotlin") as KotlinMultiplatformExtension
 
+            val kotlinPlatformType =
+                if(dslServices.projectOptions[BooleanOption.KMP_USE_JVM_PLATFORM_TYPE]) {
+                    KotlinPlatformType.jvm
+                } else {
+                    KotlinPlatformType.androidJvm
+                }
+
             androidTarget = kotlinExtension.createExternalKotlinTarget {
                 targetName = KotlinMultiplatformAndroidPlugin.ANDROID_TARGET_NAME
-                platformType = KotlinPlatformType.jvm
+                platformType = kotlinPlatformType
                 configureAttributes(apiElements, runtimeElements, sourcesElements, apiElementsPublished, runtimeElementsPublished, sourcesElementsPublished)
                 targetFactory = ExternalKotlinTargetDescriptor.TargetFactory { delegate ->
                     dslServices.newInstance(

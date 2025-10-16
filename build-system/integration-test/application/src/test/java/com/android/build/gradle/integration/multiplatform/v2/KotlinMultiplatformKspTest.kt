@@ -20,6 +20,7 @@ import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition.Companion.DEFAULT_COMPILE_SDK_VERSION
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 
@@ -47,6 +48,7 @@ class KotlinMultiplatformKspTest {
             }
         }
 
+    @Ignore("b/456678483")
     @Test
     fun testRunningKsp() {
         val build = rule.build

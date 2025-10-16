@@ -244,6 +244,7 @@ enum class BooleanOption(
     /* ---------------------
      * EXPERIMENTAL FEATURES
      */
+    KMP_USE_JVM_PLATFORM_TYPE("android.kmp.use.jvm.platform.type", false, FeatureStage.Experimental),
     DISABLE_KMP_RUNTIME_CLASSPATH("android.kmp.disable.runtime.classpath", false, FeatureStage.Experimental),
     ENABLE_PROFILE_JSON("android.enableProfileJson", false, FeatureStage.Experimental),
     DISALLOW_DEPENDENCY_RESOLUTION_AT_CONFIGURATION("android.dependencyResolutionAtConfigurationTime.disallow", false, FeatureStage.Experimental),

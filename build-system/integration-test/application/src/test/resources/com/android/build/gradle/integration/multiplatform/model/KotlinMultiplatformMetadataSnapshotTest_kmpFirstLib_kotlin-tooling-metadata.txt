@@ -12,7 +12,7 @@
   "projectTargets": [
     {
       "target": "com.android.build.api.variant.impl.KotlinMultiplatformAndroidLibraryTargetImpl",
-      "platformType": "jvm"
+      "platformType": "androidJvm"
     },
     {
       "target": "org.jetbrains.kotlin.gradle.plugin.mpp.KotlinMetadataTarget",
