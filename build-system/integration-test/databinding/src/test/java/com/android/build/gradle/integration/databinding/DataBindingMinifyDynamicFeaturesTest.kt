@@ -129,15 +129,11 @@ class DataBindingMinifyDynamicFeaturesTest {
             .appendText("\nandroid.buildTypes.minified.consumerProguardFiles \"proguard-rules.pro\"")
     }
 
-    /**
-     * TODO turned off androidx. b/440264272
-     */
     @Test
     fun assembleMinified() {
         project.executor()
             // Disabled due to a dependency on com.android.support:animated-vector-drawable:28.0.0
             .with(BooleanOption.ENFORCE_UNIQUE_PACKAGE_NAMES, false)
-            .with(BooleanOption.USE_ANDROID_X, false)
             .run("assembleMinified")
 
         val minifiedApk = "minified"
@@ -229,8 +225,8 @@ class DataBindingMinifyDynamicFeaturesTest {
     private val BASE = "$PROJECT_PACKAGE.app"
     private val FEATURE_A = "$PROJECT_PACKAGE.featureA"
     private val FEATURE_B = "$PROJECT_PACKAGE.featureB"
-    private val MERGED_MAPPER = "Landroid/databinding/DataBinderMapperImpl;"
-    private val DATA_BINDING_COMPONENT = "Landroid/databinding/DataBindingComponent;"
+    private val MERGED_MAPPER = "Landroidx/databinding/DataBinderMapperImpl;"
+    private val DATA_BINDING_COMPONENT = "Landroidx/databinding/DataBindingComponent;"
     private val LIBRARY_MODULE = "$PROJECT_PACKAGE.libraryModule"
     private val FEATURE_A_ACTIVITY = "ActivityMainBinding"
     private val FEATURE_A_ACTIVITY_IMPL = "ActivityMainBindingImpl"
