@@ -41,7 +41,7 @@ class IntellijInferredThreadDetectorTest {
 
                     @UiThread @WorkerThread
                     fun doHeavyWorkFromAnywhere() {
-                      val application = ApplicationManager.getApplication() Ó// TODO import, or placeholder
+                      val application = ApplicationManager.getApplication() // TODO import, or placeholder
                       if (application.isDispatchThread)
                         execOnPooledThread(::doHeavyWork)
                       else

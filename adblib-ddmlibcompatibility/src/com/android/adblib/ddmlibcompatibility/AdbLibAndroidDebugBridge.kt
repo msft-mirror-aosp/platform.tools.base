@@ -688,7 +688,7 @@ class AdbLibAndroidDebugBridge(
                 session.host.processRunner.runProcess(
                     adbPath,
                     listOf("version"),
-                    envVars = emptyMap()
+                    adbEnvVars
                 )
 
             processResult.stdout.forEach { line ->

@@ -4289,29 +4289,6 @@ maven_import(
 )
 
 maven_artifact(
-    name = "com.sun.activation.javax.activation_1.2.0",
-    pom = "repository/com/sun/activation/javax.activation/1.2.0/javax.activation-1.2.0.pom",
-    repo_root_path = "repository",
-    repo_path = "com/sun/activation/javax.activation/1.2.0",
-    parent = "com.sun.activation.all_1.2.0",
-    visibility = ["//visibility:public"],
-)
-
-maven_import(
-    name = "com.sun.activation.javax.activation",
-    classifiers = [],
-    parent = "com.sun.activation.all_1.2.0",
-    jars = [
-        "repository/com/sun/activation/javax.activation/1.2.0/javax.activation-1.2.0.jar"
-    ],
-    original_deps = [],
-    pom = "repository/com/sun/activation/javax.activation/1.2.0/javax.activation-1.2.0.pom",
-    repo_root_path = "repository",
-    repo_path = "com/sun/activation/javax.activation/1.2.0",
-    visibility = ["//visibility:public"],
-)
-
-maven_artifact(
     name = "com.sun.istack.istack-commons-runtime_3.0.8",
     pom = "repository/com/sun/istack/istack-commons-runtime/3.0.8/istack-commons-runtime-3.0.8.pom",
     repo_root_path = "repository",
@@ -69238,6 +69215,15 @@ maven_artifact(
     deps = [
         "org.jetbrains.kotlin.kotlin-stdlib_2.1.10",
     ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.sun.activation.javax.activation_1.2.0",
+    pom = "repository/com/sun/activation/javax.activation/1.2.0/javax.activation-1.2.0.pom",
+    repo_root_path = "repository",
+    repo_path = "com/sun/activation/javax.activation/1.2.0",
+    parent = "com.sun.activation.all_1.2.0",
     visibility = ["//visibility:public"],
 )
 

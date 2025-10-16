@@ -8,7 +8,6 @@ java_library(
     deps = [
         "//tools/base/annotations",
         "@maven//:com.google.guava.guava",
-        "@maven//:com.sun.activation.javax.activation",
         "@maven//:org.glassfish.jaxb.jaxb-xjc",
     ],
 )

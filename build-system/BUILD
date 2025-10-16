@@ -622,7 +622,6 @@ maven_repository(
         "@maven//:com.googlecode.juniversalchardet.juniversalchardet",
         "@maven//:com.squareup.javapoet",
         "@maven//:com.squareup.javawriter",
-        "@maven//:com.sun.activation.javax.activation",
         "@maven//:commons-io.commons-io",
         "@maven//:gradle.plugin.org.jetbrains.gradle.plugin.idea-ext.gradle-idea-ext",
         "@maven//:io.grpc.grpc-all",

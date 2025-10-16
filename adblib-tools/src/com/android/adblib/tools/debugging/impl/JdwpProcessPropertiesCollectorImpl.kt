@@ -77,36 +77,40 @@ internal class JdwpProcessPropertiesCollectorImpl(
 
         // Launch external collectors (e.g. out of process inventory) if available
         processScope.launch(device.session.ioDispatcher) {
-            if (device.useAppInfoForProcessProperties()) {
-                // Don't call external collectors if we use app info, because app info
-                // is always the source of truth
-                return@launch
-            }
+            runCatching {
+                if (device.useAppInfoForProcessProperties()) {
+                    // Don't call external collectors if we use app info, because app info
+                    // is always the source of truth
+                    return@launch
+                }
 
-            device.session.externalJdwpProcessPropertiesCollectorFactoryList.mapNotNull { factory ->
-                factory.create(process)
-            }.forEach { externalCollector ->
-                launch {
-                    runCatching {
-                        val handler = ExternalPropertiesCollectorHandler(
-                            externalCollector,
-                            propertiesAtomicStateFlow
-                        )
-                        handler.execute()
-                    }.onFailure { throwable ->
-                        logger.logIOCompletionErrors(throwable)
+                device.session.externalJdwpProcessPropertiesCollectorFactoryList.mapNotNull { factory ->
+                    factory.create(process)
+                }.forEach { externalCollector ->
+                    launch {
+                        runCatching {
+                            val handler = ExternalPropertiesCollectorHandler(
+                                externalCollector,
+                                propertiesAtomicStateFlow
+                            )
+                            handler.execute()
+                        }.onFailure { throwable ->
+                            logger.logIOCompletionErrors(throwable)
+                        }
                     }
                 }
-            }
 
-            process.externalJdwpProcessCommandDispatcherList().forEach { externalDispatcher ->
-                launch {
-                    runCatching {
-                        externalDispatcher.start()
-                    }.onFailure { throwable ->
-                        logger.logIOCompletionErrors(throwable)
+                process.externalJdwpProcessCommandDispatcherList().forEach { externalDispatcher ->
+                    launch {
+                        runCatching {
+                            externalDispatcher.start()
+                        }.onFailure { throwable ->
+                            logger.logIOCompletionErrors(throwable)
+                        }
                     }
                 }
+            }.onFailure { throwable ->
+                logger.logIOCompletionErrors(throwable)
             }
         }
     }
