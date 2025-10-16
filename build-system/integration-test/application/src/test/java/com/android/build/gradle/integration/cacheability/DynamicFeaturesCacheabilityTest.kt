@@ -51,6 +51,7 @@ class DynamicFeaturesCacheabilityTest {
                     ":app:clean",
                     ":app:generateDebugAssets",
                     ":app:preBuild",
+                    ":app:preDebugBuild",
 
                     ":feature1:clean",
                     ":feature1:generateDebugAssets",
@@ -172,7 +173,6 @@ class DynamicFeaturesCacheabilityTest {
                     ":app:mergeDebugJavaResource", /* Bug 181142260 */
                     ":app:mergeDebugJniLibFolders",
                     ":app:packageDebug", /* Bug 74595859 */
-                    ":app:preDebugBuild", /** Intentionally not cacheable. See [com.android.build.gradle.internal.tasks.AppPreBuildTask]*/
                     ":app:signingConfigWriterDebug", /** Intentionally not cacheable. See [com.android.build.gradle.internal.tasks.SigningConfigWriterTask]*/
                     ":app:validateSigningDebug", /** Intentionally not cacheable. See [com.android.build.gradle.internal.tasks.ValidateSigningTask] */
                     ":app:writeDebugModuleMetadata",

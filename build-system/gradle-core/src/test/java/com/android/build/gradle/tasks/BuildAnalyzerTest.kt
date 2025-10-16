@@ -17,7 +17,6 @@
 package com.android.build.gradle.tasks
 
 import com.android.build.gradle.internal.tasks.AndroidVariantTask
-import com.android.build.gradle.internal.tasks.AppPreBuildTask
 import com.android.build.gradle.internal.tasks.BaseTask
 import com.android.build.gradle.internal.tasks.BuildAnalyzer
 import com.android.build.gradle.internal.tasks.GeneratePrivacySandboxSdkRuntimeConfigFile
@@ -53,7 +52,6 @@ class BuildAnalyzerTest {
             NewIncrementalGlobalTask::class.java,
             NonIncrementalGlobalTask::class.java,
             UnsafeOutputsGlobalTask::class.java,
-            AppPreBuildTask::class.java,
             TestPreBuildTask::class.java,
             PackageAndroidArtifact::class.java,
             BuildPrivacySandboxSdkApks::class.java,
