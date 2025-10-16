@@ -68,7 +68,7 @@ public class LiveUpdateDeployerTest {
                         false);
         AndroidDebugBridge.init(AdbInitOptions.DEFAULT);
         AndroidDebugBridge bridge = AndroidDebugBridge.createBridge();
-        while (!bridge.hasInitialDeviceList()) {
+        while (bridge.getDevices().length == 0) {
             Thread.sleep(100);
         }
         IDevice iDevice = bridge.getDevices()[0];

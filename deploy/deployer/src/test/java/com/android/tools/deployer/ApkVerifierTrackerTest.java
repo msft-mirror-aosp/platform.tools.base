@@ -101,7 +101,7 @@ public class ApkVerifierTrackerTest {
         bridge = AndroidDebugBridge.createBridge();
 
         // Wait for ADB.
-        waitFor(() -> bridge.isConnected() && bridge.hasInitialDeviceList());
+        waitFor(() -> bridge.isConnected());
 
         for (FakeDevice device : fakeDevices) {
             handler.connect(device, fakeAdbServer);
