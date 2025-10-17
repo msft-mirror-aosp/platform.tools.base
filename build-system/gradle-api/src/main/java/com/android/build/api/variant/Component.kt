@@ -77,8 +77,7 @@ interface Component: ComponentIdentity {
     /**
      * Access to the variant's java compilation options.
      */
-    @get:Incubating
-    val javaCompilation: JavaCompilation
+    val javaCompilation: JavaCompilation?
 
     @Deprecated(
         level = DeprecationLevel.HIDDEN,

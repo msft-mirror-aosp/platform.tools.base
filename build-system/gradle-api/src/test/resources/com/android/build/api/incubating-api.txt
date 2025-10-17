@@ -362,8 +362,6 @@ https://issuetracker.google.com/328749020
   * com.android.build.api.dsl.ManagedVirtualDevice.setRequire64Bit: void (boolean)
   * com.android.build.api.dsl.ManagedVirtualDevice.setSystemImageSource: void (java.lang.String)
 https://issuetracker.google.com/328749039
-  * com.android.build.api.variant.Component.getJavaCompilation: com.android.build.api.variant.JavaCompilation ()
-  * com.android.build.api.variant.JavaCompilation
   * com.android.build.api.variant.JavaCompilation.getAnnotationProcessor: com.android.build.api.variant.AnnotationProcessor ()
   * com.android.build.api.variant.JavaCompilation.getAnnotationProcessorConfiguration: org.gradle.api.artifacts.Configuration ()
 https://issuetracker.google.com/328749058

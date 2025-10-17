@@ -2730,7 +2730,7 @@ package com.android.build.api.variant {
     method public org.gradle.api.artifacts.Configuration getCompileConfiguration();
     method public boolean getDebuggable();
     method public com.android.build.api.variant.Instrumentation getInstrumentation();
-    method @org.gradle.api.Incubating public com.android.build.api.variant.JavaCompilation getJavaCompilation();
+    method public com.android.build.api.variant.JavaCompilation? getJavaCompilation();
     method @org.gradle.api.Incubating public com.android.build.api.variant.LifecycleTasks getLifecycleTasks();
     method public org.gradle.api.provider.Provider<java.lang.String> getNamespace();
     method @org.gradle.api.Incubating public org.gradle.api.artifacts.Configuration getResolvableConfiguration(String sourceSetConfigurationsAffix);
@@ -2744,7 +2744,7 @@ package com.android.build.api.variant {
     property public abstract org.gradle.api.artifacts.Configuration compileConfiguration;
     property public abstract boolean debuggable;
     property public abstract com.android.build.api.variant.Instrumentation instrumentation;
-    property @org.gradle.api.Incubating public abstract com.android.build.api.variant.JavaCompilation javaCompilation;
+    property public abstract com.android.build.api.variant.JavaCompilation? javaCompilation;
     property @org.gradle.api.Incubating public abstract com.android.build.api.variant.LifecycleTasks lifecycleTasks;
     property public abstract org.gradle.api.provider.Provider<java.lang.String> namespace;
     property public abstract org.gradle.api.artifacts.Configuration runtimeConfiguration;
@@ -3122,10 +3122,10 @@ package com.android.build.api.variant {
     property @org.gradle.api.Incubating public abstract java.util.List<com.android.build.api.dsl.AgpTestSuiteInputParameters> inputs;
   }
 
-  @org.gradle.api.Incubating public interface JavaCompilation {
-    method public com.android.build.api.variant.AnnotationProcessor getAnnotationProcessor();
+  public interface JavaCompilation {
+    method @org.gradle.api.Incubating public com.android.build.api.variant.AnnotationProcessor getAnnotationProcessor();
     method @org.gradle.api.Incubating public org.gradle.api.artifacts.Configuration getAnnotationProcessorConfiguration();
-    property public abstract com.android.build.api.variant.AnnotationProcessor annotationProcessor;
+    property @org.gradle.api.Incubating public abstract com.android.build.api.variant.AnnotationProcessor annotationProcessor;
     property @org.gradle.api.Incubating public abstract org.gradle.api.artifacts.Configuration annotationProcessorConfiguration;
   }
 
