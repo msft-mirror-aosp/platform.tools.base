@@ -51,7 +51,7 @@ import java.nio.file.StandardOpenOption
 import kotlin.io.path.absolutePathString
 
 /**
- * Unit tests for [UtpConfigFactory].
+ * Unit tests for UtpConfigFactory.kt.
  */
 class UtpConfigFactoryTest {
     @get:Rule var temporaryFolder = TemporaryFolder()
@@ -179,7 +179,7 @@ class UtpConfigFactoryTest {
             extractedSdkApks: List<List<Path>> = testExtractedSdkApks,
             cleanTestArtifacts: Boolean = false,
     ): RunnerConfigProto.RunnerConfig {
-        return UtpConfigFactory().createRunnerConfigProtoForLocalDevice(
+        return createRunnerConfigProtoForLocalDevice(
                 mockDevice,
                 testData,
                 targetApkConfigBundle,
@@ -225,7 +225,7 @@ class UtpConfigFactoryTest {
                 ":app:deviceNameDebugAndroidTest",
                 "path/to/emulator",
                 false)
-        return UtpConfigFactory().createRunnerConfigProtoForManagedDevice(
+        return createRunnerConfigProtoForManagedDevice(
                 managedDevice,
                 "mockDeviceSerialNumber",
                 testData,

@@ -26,7 +26,6 @@ import com.android.testutils.SystemPropertyOverrides
 import com.android.testutils.truth.PathSubject.assertThat
 import com.android.utils.Environment
 import com.google.common.truth.Truth.assertThat
-import com.google.testing.platform.proto.api.config.RunnerConfigProto
 import com.google.testing.platform.proto.api.core.TestSuiteResultProto.TestSuiteResult
 import org.gradle.api.file.Directory
 import org.gradle.api.logging.Logger
@@ -38,7 +37,6 @@ import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import org.mockito.Answers
 import org.mockito.kotlin.any
-import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 import java.io.File
@@ -58,12 +56,10 @@ class ManagedDeviceTestRunnerTest {
     private val mockAppApk: File = mock()
     private val mockHelperApk: File = mock()
     private val mockLogger: Logger = mock()
-    private val mockUtpConfigFactory: UtpConfigFactory = mock()
     private val mockEmulatorControlConfig: EmulatorControlConfig = mock()
     private val mockCoverageOutputDir: File = mock()
     private val mockAdditionalTestOutputDir: File = mock()
     private val mockDslDevice: ManagedVirtualDevice = mock(defaultAnswer = Answers.RETURNS_DEEP_STUBS)
-    private val mockUtpTestResultListenerServerMetadata: UtpTestResultListenerServerMetadata = mock()
     private val mockUtpDependencies: UtpDependencies = mock(defaultAnswer = Answers.RETURNS_DEEP_STUBS)
     private val emulatorProvider: Provider<Directory> = mock()
     private val emulatorDirectory: Directory = mock()
@@ -88,28 +84,6 @@ class ManagedDeviceTestRunnerTest {
         whenever(mockTestData.minSdkVersion).thenReturn(AndroidVersionImpl(28))
         whenever(mockTestData.testedApkFinder).thenReturn { listOf(mockAppApk) }
         whenever(mockTestData.privacySandboxInstallBundlesFinder).thenReturn { extractedSdkApks }
-        whenever(mockUtpConfigFactory.createRunnerConfigProtoForManagedDevice(
-                any(),
-                any(),
-                any(),
-                any(),
-                any(),
-                any(),
-                any(),
-                any(),
-                any(),
-                any(),
-                any(),
-                any(),
-                any(),
-                any(),
-                any(),
-                any(),
-                anyOrNull<Int>(),
-                any(),
-                anyOrNull<ShardConfig>(),)).then {
-            RunnerConfigProto.RunnerConfig.getDefaultInstance()
-        }
 
         whenever(mockDslDevice.pageAlignmentSuffix).thenReturn("")
 
@@ -181,7 +155,6 @@ class ManagedDeviceTestRunnerTest {
                 false,
                 Level.WARNING,
                 false,
-                mockUtpConfigFactory,
                 { runnerConfigs, _, _, resultsDir, _ ->
                     utpInvocationCount++
                     capturedRunnerConfigs = runnerConfigs
@@ -240,10 +213,6 @@ class ManagedDeviceTestRunnerTest {
 
         assertThat(utpInvocationCount).isEqualTo(1)
         assertThat(capturedRunnerConfigs).hasSize(1)
-        assertThat(capturedRunnerConfigs[0].runnerConfig(
-            mockUtpTestResultListenerServerMetadata,
-            temporaryFolderRule.newFolder("tmp")))
-            .isEqualTo(RunnerConfigProto.RunnerConfig.getDefaultInstance())
 
         assertThat(result).isTrue()
         assertThat(File(outputDirectory, TEST_RESULT_PB_FILE_NAME)).exists()
@@ -255,11 +224,6 @@ class ManagedDeviceTestRunnerTest {
 
         assertThat(utpInvocationCount).isEqualTo(1)
         assertThat(capturedRunnerConfigs).hasSize(1)
-        assertThat(capturedRunnerConfigs[0].runnerConfig(
-            mockUtpTestResultListenerServerMetadata,
-            temporaryFolderRule.newFolder("tmp")))
-            .isEqualTo(RunnerConfigProto.RunnerConfig.getDefaultInstance())
-
         assertThat(result).isFalse()
     }
 
@@ -268,15 +232,7 @@ class ManagedDeviceTestRunnerTest {
         val result = runUtp(result = true, numShards = 2)
 
         assertThat(capturedRunnerConfigs).hasSize(2)
-        assertThat(capturedRunnerConfigs[0].runnerConfig(
-            mockUtpTestResultListenerServerMetadata,
-            temporaryFolderRule.newFolder("tmp1")))
-            .isEqualTo(RunnerConfigProto.RunnerConfig.getDefaultInstance())
         assertThat(capturedRunnerConfigs[0].shardConfig).isEqualTo(ShardConfig(2, 0))
-        assertThat(capturedRunnerConfigs[1].runnerConfig(
-            mockUtpTestResultListenerServerMetadata,
-            temporaryFolderRule.newFolder("tmp2")))
-            .isEqualTo(RunnerConfigProto.RunnerConfig.getDefaultInstance())
         assertThat(capturedRunnerConfigs[1].shardConfig).isEqualTo(ShardConfig(2, 1))
 
         assertThat(result).isTrue()

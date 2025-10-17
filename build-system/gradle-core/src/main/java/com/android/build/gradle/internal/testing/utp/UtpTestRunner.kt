@@ -50,7 +50,6 @@ class UtpTestRunner @JvmOverloads constructor(
         private val installApkTimeout: Int?,
         private val targetIsSplitApk: Boolean,
         private val uninstallApksAfterTest: Boolean,
-        private val configFactory: UtpConfigFactory = UtpConfigFactory(),
         private val runUtpTestSuiteAndWaitFunc: (
             List<UtpRunnerConfig>, String, String, File, ILogger
         ) -> List<UtpTestRunResult> = { runnerConfigs, projectName, variantName, resultsDir, logger ->
@@ -89,7 +88,7 @@ class UtpTestRunner @JvmOverloads constructor(
                 UtpTestResultListenerServerMetadata,
                 File
             ) -> RunnerConfigProto.RunnerConfig = { resultListenerServerMetadata, utpTmpDir ->
-                configFactory.createRunnerConfigProtoForLocalDevice(
+                createRunnerConfigProtoForLocalDevice(
                     deviceConnector,
                     testData,
                     TargetApkConfigBundle(apks, targetIsSplitApk || apks.size > 1),

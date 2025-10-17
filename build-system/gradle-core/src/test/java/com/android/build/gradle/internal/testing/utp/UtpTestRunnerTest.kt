@@ -27,7 +27,6 @@ import com.android.ide.common.workers.ExecutorServiceAdapter
 import com.android.testutils.truth.PathSubject.assertThat
 import com.android.utils.ILogger
 import com.google.common.truth.Truth.assertThat
-import com.google.testing.platform.proto.api.config.RunnerConfigProto
 import com.google.testing.platform.proto.api.core.TestSuiteResultProto.TestSuiteResult
 import org.gradle.api.provider.Provider
 import org.gradle.workers.WorkerExecutor
@@ -39,7 +38,6 @@ import org.mockito.Answers
 import org.mockito.junit.MockitoJUnit
 import org.mockito.junit.MockitoRule
 import org.mockito.kotlin.any
-import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 import org.mockito.quality.Strictness
@@ -65,11 +63,9 @@ class UtpTestRunnerTest {
     private val mockHelperApk: File = mock()
     private val mockDevice: DeviceConnector = mock()
     private val mockLogger: ILogger = mock()
-    private val mockUtpConfigFactory: UtpConfigFactory = mock()
     private val mockemulatorControlConfig: EmulatorControlConfig = mock()
     private val mockTestResultListener: UtpTestResultListener = mock()
     private val mockUtpDependencies: UtpDependencies = mock(defaultAnswer = Answers.RETURNS_DEEP_STUBS)
-    private val mockUtpTestResultListenerServerMetadata: UtpTestResultListenerServerMetadata = mock(defaultAnswer = Answers.RETURNS_DEEP_STUBS)
 
     private lateinit var resultsDirectory: File
     private lateinit var jvmExecutable: File
@@ -87,41 +83,12 @@ class UtpTestRunnerTest {
         val adbHelperProvider: Provider<AdbHelper> = mock()
         whenever(adbHelperProvider.get()).thenReturn(mockAdbHelper)
         whenever(mockVersionedSdkLoader.adbHelper).thenReturn(adbHelperProvider)
-
-
     }
 
     private fun runUtp(result: UtpTestRunResult, expectedToRunTests: Boolean = true): Boolean {
         if (expectedToRunTests) {
             // need to set up additional stubbing here, b/c of strict stubbing mode.
             whenever(mockDevice.name).thenReturn("mockDeviceName")
-            whenever(mockUtpConfigFactory.createRunnerConfigProtoForLocalDevice(
-                any(),
-                any(),
-                any(),
-                any(),
-                any(),
-                any(),
-                any(),
-                any(),
-                any(),
-                any(),
-                any(),
-                any(),
-                any(),
-                any(),
-                anyOrNull<File>(),
-                any(),
-                any(),
-                any(),
-                any(),
-                anyOrNull<Int>(),
-                any(),
-                any(),
-                anyOrNull<ShardConfig>(),
-            )).then {
-                RunnerConfigProto.RunnerConfig.getDefaultInstance()
-            }
         }
 
         val runner = UtpTestRunner(
@@ -140,7 +107,6 @@ class UtpTestRunnerTest {
             null,
             false,
             false,
-            mockUtpConfigFactory,
             { runnerConfigs, _, _, _, _ ->
                 capturedRunnerConfigs = runnerConfigs
                 listOf(result)
@@ -172,11 +138,6 @@ class UtpTestRunnerTest {
                                              TestSuiteResult.getDefaultInstance()))
 
         assertThat(capturedRunnerConfigs).hasSize(1)
-        assertThat(capturedRunnerConfigs[0].runnerConfig(
-            mockUtpTestResultListenerServerMetadata,
-            temporaryFolderRule.newFolder("tmp")))
-            .isEqualTo(RunnerConfigProto.RunnerConfig.getDefaultInstance())
-
         assertThat(result).isTrue()
         assertThat(File(resultsDirectory, TEST_RESULT_PB_FILE_NAME)).exists()
     }
@@ -188,11 +149,6 @@ class UtpTestRunnerTest {
         val result = runUtp(UtpTestRunResult(testPassed = false, null))
 
         assertThat(capturedRunnerConfigs).hasSize(1)
-        assertThat(capturedRunnerConfigs[0].runnerConfig(
-            mockUtpTestResultListenerServerMetadata,
-            temporaryFolderRule.newFolder("tmp")))
-            .isEqualTo(RunnerConfigProto.RunnerConfig.getDefaultInstance())
-
         assertThat(result).isFalse()
     }
 
