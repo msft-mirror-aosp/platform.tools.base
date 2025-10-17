@@ -2072,7 +2072,9 @@ class LintDriver(
     uElementVisitor.visitGroups(projectContext, allContexts)
 
     if (checkGeneratedSources) {
-      if (visitUastDetectors(generatedContexts, uElementVisitor)) {
+      // Generated sources (excluding those that are also test sources).
+      val genContextsExcludingTest = generatedContexts.filter { !it.isTestSource }
+      if (visitUastDetectors(genContextsExcludingTest, uElementVisitor)) {
         return
       }
     }
@@ -2082,15 +2084,32 @@ class LintDriver(
     }
 
     if (testContexts.isNotEmpty()) {
-      // Normally we only run test-specific lint checks on sources in test folders,
-      // but with checkTestSources you can turn on running all checks on these
+      // Normally we only run test-specific lint checks on test sources,
+      // but with checkTestSources we run all checks.
       val testScanners = if (checkTestSources) uastScanners else filterTestScanners(uastScanners)
       if (testScanners.isNotEmpty()) {
+        // Test sources (excluding those that are also generated).
+        val testContextsExcludingGen = testContexts.filter { !it.isGeneratedSource }
         val uTestVisitor = UElementVisitor(this, parser, testScanners)
-        if (visitUastDetectors(testContexts, uTestVisitor)) {
+        if (visitUastDetectors(testContextsExcludingGen, uTestVisitor)) {
           return
         }
-        testSourceCount += testContexts.size
+        testSourceCount += testContextsExcludingGen.size
+
+        // Sources that are both test and generated.
+        // We assume the lists are disjoint.
+        if (checkGeneratedSources) {
+          val genTest = generatedContexts.filter { it.isTestSource }
+          val testGen = testContexts.filter { it.isGeneratedSource }
+
+          if (genTest.isNotEmpty() || testGen.isNotEmpty()) {
+            val combined = genTest + testGen
+            if (visitUastDetectors(combined, uTestVisitor)) {
+              return
+            }
+            testSourceCount += combined.size
+          }
+        }
       }
     }
   }
