@@ -60,7 +60,6 @@ import com.android.build.gradle.internal.testing.TestRunner;
 import com.android.build.gradle.internal.testing.androidtest.AndroidTestUtilsKt;
 import com.android.build.gradle.internal.testing.utp.UtpDependencies;
 import com.android.build.gradle.internal.testing.utp.UtpDependencyUtilsKt;
-import com.android.build.gradle.internal.testing.utp.UtpTestResultListener;
 import com.android.build.gradle.internal.testing.utp.UtpTestRunner;
 import com.android.build.gradle.internal.testing.utp.emulatorcontrol.EmulatorControlConfig;
 import com.android.build.gradle.options.BooleanOption;
@@ -95,6 +94,7 @@ import org.gradle.api.file.RegularFile;
 import org.gradle.api.file.RegularFileProperty;
 import org.gradle.api.logging.Logger;
 import org.gradle.api.logging.Logging;
+import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.plugins.JavaBasePlugin;
 import org.gradle.api.provider.ListProperty;
 import org.gradle.api.provider.Property;
@@ -215,9 +215,8 @@ public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTas
 
         TestRunner createTestRunner(
                 WorkerExecutor workerExecutor,
-                ExecutorServiceAdapter executorServiceAdapter,
-                @Nullable UtpTestResultListener utpTestResultListener
-        ) {
+                ObjectFactory objectFactory,
+                ExecutorServiceAdapter executorServiceAdapter) {
 
             boolean useOrchestrator =
                     (getExecutionEnum().get() == ANDROID_TEST_ORCHESTRATOR
@@ -225,6 +224,7 @@ public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTas
             return new UtpTestRunner(
                     new GradleProcessExecutor(getExecOperations()::exec),
                     workerExecutor,
+                    objectFactory,
                     executorServiceAdapter,
                     getJvmExecutable().get().getAsFile(),
                     getUtpDependencies(),
@@ -237,12 +237,10 @@ public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTas
                     useOrchestrator,
                     getForceCompilation().get(),
                     getUninstallIncompatibleApks().get(),
-                    utpTestResultListener,
                     utpLoggingLevel(),
                     getInstallApkTimeout().getOrNull(),
                     getTargetIsSplitApk().getOrElse(false),
-                    !getKeepInstalledApks().get()
-            );
+                    !getKeepInstalledApks().get());
         }
 
         private Level utpLoggingLevel() {
@@ -276,22 +274,6 @@ public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTas
 
     // For analytics only
     private ArtifactCollection dependencies;
-
-    @Nullable private UtpTestResultListener utpTestResultListener;
-
-    /**
-     * Sets a listener to receive live updates on test execution progress.
-     *
-     * <p><b>Note:</b> This method is a hook for Android Studio and is called via reflection to
-     * monitor test results in real time. It is intentionally marked as {@code @SuppressWarnings("unused")}.
-     *
-     * @param utpTestResultListener The listener instance for receiving test results, or {@code null}
-     * to clear it.
-     */
-    @SuppressWarnings("unused")
-    public void setUtpTestResultListener(@Nullable UtpTestResultListener utpTestResultListener) {
-        this.utpTestResultListener = utpTestResultListener;
-    }
 
     /**
      * The workers object is of type ExecutorServiceAdapter instead of WorkerExecutorFacade to
@@ -338,9 +320,9 @@ public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTas
                     getInstallOptions().getOrElse(ImmutableList.of()),
                     testsFound(),
                     getWorkerExecutor(),
+                    getObjectFactory(),
                     getPrivacySandboxSdkApksFiles().getFiles(),
                     getExecutorServiceAdapter(),
-                    utpTestResultListener,
                     dependencies);
         }
     }
@@ -364,9 +346,9 @@ public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTas
             List<String> installOptions,
             boolean testsFound,
             WorkerExecutor workerExecutor,
+            ObjectFactory objectFactory,
             Set<File> privacySandboxSdkApkFiles,
             ExecutorServiceAdapter executorServiceAdapter,
-            UtpTestResultListener utpTestResultListener,
             ArtifactCollection dependencies)
             throws IOException, ExecutionException, DeviceException {
         String environmentSerials =
@@ -410,10 +392,7 @@ public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTas
         } else {
             TestRunner testRunner =
                     testRunnerFactory.createTestRunner(
-                            workerExecutor,
-                            executorServiceAdapter,
-                            utpTestResultListener
-                    );
+                            workerExecutor, objectFactory, executorServiceAdapter);
             success =
                     runTestsWithTestRunner(
                             testRunner,
@@ -609,6 +588,10 @@ public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTas
 
     @OutputDirectory
     public abstract DirectoryProperty getCoverageDirectory();
+
+    @SuppressWarnings("JavaxInjectOnAbstractMethod")
+    @Inject
+    public abstract ObjectFactory getObjectFactory();
 
     @Input
     public abstract Property<Boolean> getCodeCoverageEnabled();

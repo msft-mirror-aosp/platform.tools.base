@@ -58,6 +58,7 @@ import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.logging.Logging
+import org.gradle.api.model.ObjectFactory
 import org.gradle.api.plugins.JavaBasePlugin
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
@@ -77,6 +78,7 @@ import org.gradle.work.DisableCachingByDefault
 import org.gradle.workers.WorkerExecutor
 import java.io.File
 import java.util.logging.Level
+import javax.inject.Inject
 
 /**
  * Runs instrumentation tests of a variant on a device defined in the DSL.
@@ -138,6 +140,7 @@ abstract class ManagedDeviceInstrumentationTestTask: NonIncrementalTask(), Andro
 
         fun createTestRunner(
             workerExecutor: WorkerExecutor,
+            objectFactory: ObjectFactory,
             numShards: Int?,
         ): ManagedDeviceTestRunner {
 
@@ -149,6 +152,7 @@ abstract class ManagedDeviceInstrumentationTestTask: NonIncrementalTask(), Andro
 
             return ManagedDeviceTestRunner(
                 workerExecutor,
+                objectFactory,
                 utpDependencies,
                 jvmExecutable.get().asFile,
                 sdkBuildService.get().sdkLoader(compileSdkVersion, buildToolsRevision),
@@ -164,6 +168,9 @@ abstract class ManagedDeviceInstrumentationTestTask: NonIncrementalTask(), Andro
             )
         }
     }
+
+    @get:Inject
+    abstract val objectFactory: ObjectFactory
 
     @get: Nested
     abstract val testRunnerFactory: TestRunnerFactory
@@ -267,6 +274,7 @@ abstract class ManagedDeviceInstrumentationTestTask: NonIncrementalTask(), Andro
         } else {
             val runner = testRunnerFactory.createTestRunner(
                 workerExecutor,
+                objectFactory,
                 testRunnerFactory.testShardsSize.getOrNull(),
             )
 

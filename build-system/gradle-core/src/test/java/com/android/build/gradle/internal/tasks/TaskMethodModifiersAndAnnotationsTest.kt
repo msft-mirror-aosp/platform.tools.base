@@ -251,7 +251,6 @@ class TaskMethodModifiersAndAnnotationsTest {
                 "com.android.build.gradle.internal.tasks.AndroidVariantTask::setVariantName",
                 "com.android.build.gradle.internal.tasks.DeviceProviderInstrumentTestTask::setIgnoreFailures",
                 "com.android.build.gradle.internal.tasks.DeviceProviderInstrumentTestTask::setSerialOption",
-                "com.android.build.gradle.internal.tasks.DeviceProviderInstrumentTestTask::setUtpTestResultListener",
                 "com.android.build.gradle.internal.tasks.DeviceSerialTestTask::setSerialOption",
                 "com.android.build.gradle.internal.tasks.InstallVariantTask::setInstallOptions",
                 "com.android.build.gradle.internal.tasks.InstallVariantTask::setTimeOutInMs",

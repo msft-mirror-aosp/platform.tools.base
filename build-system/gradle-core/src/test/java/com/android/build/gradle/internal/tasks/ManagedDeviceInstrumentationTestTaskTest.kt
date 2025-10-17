@@ -58,6 +58,7 @@ import org.junit.rules.TemporaryFolder
 import org.mockito.Answers.CALLS_REAL_METHODS
 import org.mockito.Answers.RETURNS_DEEP_STUBS
 import org.mockito.kotlin.any
+import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.argThat
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.eq
@@ -237,7 +238,7 @@ class ManagedDeviceInstrumentationTestTaskTest {
         doReturn(mockFileProperty(utpJvmFile)).whenever(factory).jvmExecutable
         doReturn(utpJvm).whenever(utpJvmFile).asFile
 
-        val testRunner = factory.createTestRunner(workerExecutor, null)
+        val testRunner = factory.createTestRunner(workerExecutor, project.objects, null)
         assertThat(testRunner).isInstanceOf(ManagedDeviceTestRunner::class.java)
     }
 
@@ -327,7 +328,7 @@ class ManagedDeviceInstrumentationTestTaskTest {
             runId = any(),
             outputDirectory = any(),
             coverageOutputDirectory = any(),
-            additionalTestOutputDir = eq(null),
+            additionalTestOutputDir = anyOrNull(),
             projectPath = any(),
             variantName = any(),
             testData = any(),
@@ -339,7 +340,7 @@ class ManagedDeviceInstrumentationTestTaskTest {
         println("TestRunner: $testRunner")
 
         doReturn(FakeGradleProperty<Int>()).whenever(runnerFactory).testShardsSize
-        doReturn(testRunner).whenever(runnerFactory).createTestRunner(any(), eq(null))
+        doReturn(testRunner).whenever(runnerFactory).createTestRunner(any(), anyOrNull(), anyOrNull())
         whenever(runnerFactory.executionEnum)
             .thenReturn(FakeGradleProperty(TestOptions.Execution.ANDROIDX_TEST_ORCHESTRATOR))
 
@@ -378,7 +379,7 @@ class ManagedDeviceInstrumentationTestTaskTest {
             runId = any(),
             outputDirectory = any(),
             coverageOutputDirectory = any(),
-            additionalTestOutputDir = eq(null),
+            additionalTestOutputDir = anyOrNull(),
             projectPath = any(),
             variantName = any(),
             testData = any(),
@@ -390,7 +391,7 @@ class ManagedDeviceInstrumentationTestTaskTest {
 
         doReturn(FakeGradleProperty<Int>()).whenever(runnerFactory).testShardsSize
 
-        doReturn(testRunner).whenever(runnerFactory).createTestRunner(any(), eq(null))
+        doReturn(testRunner).whenever(runnerFactory).createTestRunner(any(), anyOrNull(), anyOrNull())
         whenever(runnerFactory.executionEnum)
             .thenReturn(FakeGradleProperty(TestOptions.Execution.ANDROIDX_TEST_ORCHESTRATOR))
 
@@ -449,7 +450,7 @@ class ManagedDeviceInstrumentationTestTaskTest {
 
         doReturn(FakeGradleProperty<Int>()).whenever(runnerFactory).testShardsSize
 
-        doReturn(testRunner).whenever(runnerFactory).createTestRunner(any(), eq(null))
+        doReturn(testRunner).whenever(runnerFactory).createTestRunner(any(), any(),eq(null))
         whenever(runnerFactory.executionEnum)
             .thenReturn(FakeGradleProperty(TestOptions.Execution.ANDROIDX_TEST_ORCHESTRATOR))
 

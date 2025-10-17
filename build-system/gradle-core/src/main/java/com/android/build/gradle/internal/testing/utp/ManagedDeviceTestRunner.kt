@@ -30,9 +30,8 @@ import com.android.builder.testing.api.DeviceException
 import com.android.builder.testing.api.TestException
 import com.android.utils.ILogger
 import com.google.common.base.Preconditions
-import com.google.testing.platform.proto.api.config.RunnerConfigProto
-import com.google.wireless.android.sdk.stats.DeviceTestSpanProfile
 import org.gradle.api.logging.Logger
+import org.gradle.api.model.ObjectFactory
 import org.gradle.workers.WorkerExecutor
 import java.io.File
 import java.nio.file.Path
@@ -40,6 +39,7 @@ import java.util.logging.Level
 
 class ManagedDeviceTestRunner(
     private val workerExecutor: WorkerExecutor,
+    private val objectFactory: ObjectFactory,
     private val utpDependencies: UtpDependencies,
     private val utpJvmExecutable: File,
     private val versionedSdkLoader: SdkComponentsBuildService.VersionedSdkLoader,
@@ -56,8 +56,8 @@ class ManagedDeviceTestRunner(
         List<UtpRunnerConfig>, String, String, File, ILogger
     ) -> List<UtpTestRunResult> = { runnerConfigs, projectPath, variantName, resultsDir, logger ->
         runUtpTestSuiteAndWait(
-            runnerConfigs, workerExecutor, utpJvmExecutable, projectPath, variantName, resultsDir,
-            logger, null, utpDependencies, utpLoggingLevel)
+            runnerConfigs, workerExecutor, objectFactory, utpJvmExecutable, projectPath,
+            variantName, resultsDir, logger, utpDependencies, utpLoggingLevel)
     },
 ) {
 
@@ -129,33 +129,27 @@ class ManagedDeviceTestRunner(
                 } else {
                     utpManagedDevice.forShard(currentShard)
                 }
-                val runnerConfigProto: (
-                    UtpTestResultListenerServerMetadata,
-                    File
-                ) -> RunnerConfigProto.RunnerConfig =
-                    { resultListenerServerMetadata, utpTmpDir ->
-                        createRunnerConfigProtoForManagedDevice(
-                            shardedManagedDevice,
-                            deviceSerial,
-                            testData,
-                            TargetApkConfigBundle(testedApks, targetIsSplitApk),
-                            additionalInstallOptions,
-                            helperApks,
-                            utpDependencies,
-                            versionedSdkLoader,
-                            utpOutputDir,
-                            utpTmpDir,
-                            emulatorControlConfig,
-                            coverageOutputDirectory,
-                            additionalTestOutputDir,
-                            useOrchestrator,
-                            forceCompilation,
-                            resultListenerServerMetadata,
-                            installApkTimeout,
-                            extractedSdkApks,
-                            shardConfig,
-                        )
-                    }
+                val runnerConfigProto = createRunnerConfigProtoForManagedDevice(
+                    shardedManagedDevice,
+                    deviceSerial,
+                    testData,
+                    TargetApkConfigBundle(testedApks, targetIsSplitApk),
+                    additionalInstallOptions,
+                    helperApks,
+                    utpDependencies,
+                    versionedSdkLoader,
+                    utpOutputDir,
+                    createUtpTempDirectory("utpRunTemp"),
+                    emulatorControlConfig,
+                    coverageOutputDirectory,
+                    additionalTestOutputDir,
+                    useOrchestrator,
+                    forceCompilation,
+                    installApkTimeout,
+                    extractedSdkApks,
+                    shardConfig,
+                )
+
                 runnerConfigs.add(
                     UtpRunnerConfig(
                         shardedManagedDevice.deviceName,
@@ -185,9 +179,7 @@ class ManagedDeviceTestRunner(
             }
         }
 
-        val resultProtos = results
-            .map(UtpTestRunResult::resultsProto)
-            .filterNotNull()
+        val resultProtos = results.mapNotNull(UtpTestRunResult::resultsProto)
         if (resultProtos.isNotEmpty()) {
             // Create a merged result pb file in the outputDirectory. If it's a sharded
             // test, a result pb file is generated in a subdirectory per shard. If it's a

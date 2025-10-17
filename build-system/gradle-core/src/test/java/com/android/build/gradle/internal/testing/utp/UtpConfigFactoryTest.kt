@@ -71,16 +71,10 @@ class UtpConfigFactoryTest {
     private val mockBuildToolInfo: BuildToolInfo = mock()
     private val mockBuildToolInfoProvider: Provider<BuildToolInfo> = mock()
     private val mockEmulatorControlConfig: EmulatorControlConfig = mock()
-    private val mockResultListenerClientCert: File = mock()
-    private val mockResultListenerClientPrivateKey: File = mock()
-    private val mockTrustCertCollection: File = mock()
     private val mockDependencyApk: File = mock()
 
-    private lateinit var testResultListenerServerMetadata: UtpTestResultListenerServerMetadata
     private lateinit var testExtractedSdkApks: List<List<Path>>
     private lateinit var testTargetApkConfigBundle: TargetApkConfigBundle
-
-
 
     private val testData = StaticTestData(
         testedApplicationId = "com.example.application",
@@ -150,16 +144,8 @@ class UtpConfigFactoryTest {
                 else -> null
             }
         }
-        whenever(mockResultListenerClientCert.absolutePath).thenReturn("mockResultListenerClientCertPath")
-        whenever(mockResultListenerClientPrivateKey.absolutePath).thenReturn("mockResultListenerClientPrivateKeyPath")
-        whenever(mockTrustCertCollection.absolutePath).thenReturn("mockTrustCertCollectionPath")
         whenever(mockDependencyApk.toPath()).thenReturn(mockDependencyApkPath)
-        testResultListenerServerMetadata = UtpTestResultListenerServerMetadata(
-                serverCert = mockTrustCertCollection,
-                serverPort = 1234,
-                clientCert = mockResultListenerClientCert,
-                clientPrivateKey = mockResultListenerClientPrivateKey
-        )
+
         testExtractedSdkApks = listOf(listOf(mockPath("mockDependencyApkPath")))
         testTargetApkConfigBundle = TargetApkConfigBundle(
                 appApks = listOf(mockAppApk, mockTestApk),
@@ -195,10 +181,6 @@ class UtpConfigFactoryTest {
                 useOrchestrator,
                 forceCompilation,
                 additionalTestOutputDir,
-                1234,
-                mockResultListenerClientCert,
-                mockResultListenerClientPrivateKey,
-                mockTrustCertCollection,
                 installApkTimeout,
                 extractedSdkApks,
                 cleanTestArtifacts,
@@ -241,7 +223,6 @@ class UtpConfigFactoryTest {
                 additionalTestOutputDir,
                 useOrchestrator,
                 forceCompilation,
-                testResultListenerServerMetadata,
                 installApkTimeout,
                 testExtractedSdkApks,
                 shardConfig,

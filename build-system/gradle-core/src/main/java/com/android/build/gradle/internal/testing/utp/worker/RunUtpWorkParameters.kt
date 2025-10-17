@@ -16,8 +16,11 @@
 
 package com.android.build.gradle.internal.testing.utp.worker
 
-import org.gradle.api.file.ConfigurableFileCollection
+import com.android.build.gradle.internal.testing.utp.UtpDependencies
+import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.RegularFileProperty
+import org.gradle.api.provider.ListProperty
+import org.gradle.api.provider.Property
 import org.gradle.workers.WorkParameters
 
 /**
@@ -27,15 +30,36 @@ interface RunUtpWorkParameters : WorkParameters {
     // Java executable to run JAVA commands
     val jvm: RegularFileProperty
 
-    // A UTP launcher jar file to run.
-    val launcherJar: ConfigurableFileCollection
+    /** List of configurations for each UTP test run to be executed. */
+    val utpRunConfigs: ListProperty<UtpRunConfig>
 
-    // A UTP core jar file.
-    val coreJar: ConfigurableFileCollection
+    /** A property holding the resolved UTP dependency artifacts. */
+    val utpDependencies: Property<UtpDependencies>
 
-    // A UTP runner configs binary proto file to be passed into the launcher.
-    val runnerConfigs: ConfigurableFileCollection
+    /** The project path, used for creating the XML test report. */
+    val projectPath: Property<String>
 
-    // A Java logging properties file to be loaded to run a UTP java process.
-    val loggingProperties: ConfigurableFileCollection
+    /** The variant name, used for creating the XML test report. */
+    val variantName: Property<String>
+
+    /** The directory where XML test reports should be generated. */
+    val xmlTestReportOutputDirectory: DirectoryProperty
+
+    /**
+     * Configuration for a single UTP test run.
+     */
+    interface UtpRunConfig {
+        /** The UTP runner config binary proto file. */
+        val runnerConfigFile: RegularFileProperty
+        /** The Java logging properties file for this UTP process. */
+        val loggingPropertiesFile: RegularFileProperty
+        /** The device ID (e.g., serial number) for this run. */
+        val deviceId: Property<String>
+        /** The device name, used in the XML test report. */
+        val deviceName: Property<String>
+        /** The unique name for this test shard, used as the test suite name in the XML report. */
+        val deviceShardName: Property<String>
+        /** The output file where the binary test-result.pb for this run should be written. */
+        val utpResultProtoOutputFile: RegularFileProperty
+    }
 }

@@ -16,22 +16,45 @@
 
 package com.android.build.gradle.internal.testing.utp.worker
 
+import org.gradle.api.provider.ProviderFactory
 import org.gradle.workers.WorkAction
+import javax.inject.Inject
 
 /**
  * A work action that runs UTP in an external java process.
  */
 abstract class RunUtpWorkAction : WorkAction<RunUtpWorkParameters> {
 
+    @get:Inject
+    abstract val provider: ProviderFactory
+
     override fun execute() {
+        // This Gradle property key is hard coded in Android Studio.
+        // We will remove it once Android Studio can consume test report using
+        // the tooling api.
+        val enableUtpTestReportingForAndroidStudio =
+            provider.gradleProperty(
+                "com.android.tools.utp.GradleAndroidProjectResolverExtension.enable"
+            ).orNull?.toBoolean() ?: false
+
         val utpRunner = UtpRunner(
             parameters.jvm.asFile.get(),
-            parameters.loggingProperties.toList(),
-            parameters.launcherJar.toList(),
-            parameters.coreJar.toList(),
-            parameters.runnerConfigs.toList(),
+            parameters.utpDependencies.get(),
+            enableUtpTestReportingForAndroidStudio,
         )
 
-        utpRunner.execute()
+        val utpRunConfigs = parameters.utpRunConfigs.get()
+
+        utpRunner.execute(
+            utpRunConfigs.map { it.runnerConfigFile.get().asFile },
+            utpRunConfigs.map { it.loggingPropertiesFile.get().asFile },
+            utpRunConfigs.map { it.deviceId.get() },
+            utpRunConfigs.map { it.deviceName.get() },
+            utpRunConfigs.map { it.deviceShardName.get() },
+            parameters.projectPath.get(),
+            parameters.variantName.get(),
+            parameters.xmlTestReportOutputDirectory.asFile.get(),
+            utpRunConfigs.map { it.utpResultProtoOutputFile.get().asFile },
+        )
     }
 }

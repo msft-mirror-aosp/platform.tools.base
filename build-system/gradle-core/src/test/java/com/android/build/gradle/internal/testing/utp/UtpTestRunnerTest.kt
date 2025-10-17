@@ -24,10 +24,13 @@ import com.android.build.gradle.internal.testing.utp.emulatorcontrol.EmulatorCon
 import com.android.builder.testing.api.DeviceConnector
 import com.android.ide.common.process.ProcessExecutor
 import com.android.ide.common.workers.ExecutorServiceAdapter
+import com.android.mockito.kotlin.whenever
 import com.android.testutils.truth.PathSubject.assertThat
 import com.android.utils.ILogger
 import com.google.common.truth.Truth.assertThat
+import com.google.testing.platform.proto.api.config.RunnerConfigProto.RunnerConfig
 import com.google.testing.platform.proto.api.core.TestSuiteResultProto.TestSuiteResult
+import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.Provider
 import org.gradle.workers.WorkerExecutor
 import org.junit.Before
@@ -35,14 +38,17 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import org.mockito.Answers
+import org.mockito.Mockito.mockStatic
 import org.mockito.junit.MockitoJUnit
 import org.mockito.junit.MockitoRule
 import org.mockito.kotlin.any
+import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 import org.mockito.quality.Strictness
 import java.io.File
 import java.util.logging.Level
+import kotlin.reflect.jvm.javaMethod
 
 /**
  * Unit tests for [UtpTestRunner].
@@ -54,6 +60,7 @@ class UtpTestRunnerTest {
 
     private val mockProcessExecutor: ProcessExecutor = mock()
     private val mockWorkerExecutor: WorkerExecutor = mock()
+    private val mockObjectFactory: ObjectFactory = mock()
     private val mockExecutorServiceAdapter: ExecutorServiceAdapter = mock()
     private val mockVersionedSdkLoader: SdkComponentsBuildService.VersionedSdkLoader = mock()
     private val mockAdbHelper: AdbHelper = mock()
@@ -64,7 +71,6 @@ class UtpTestRunnerTest {
     private val mockDevice: DeviceConnector = mock()
     private val mockLogger: ILogger = mock()
     private val mockemulatorControlConfig: EmulatorControlConfig = mock()
-    private val mockTestResultListener: UtpTestResultListener = mock()
     private val mockUtpDependencies: UtpDependencies = mock(defaultAnswer = Answers.RETURNS_DEEP_STUBS)
 
     private lateinit var resultsDirectory: File
@@ -94,6 +100,7 @@ class UtpTestRunnerTest {
         val runner = UtpTestRunner(
             mockProcessExecutor,
             mockWorkerExecutor,
+            mockObjectFactory,
             mockExecutorServiceAdapter,
             jvmExecutable,
             mockUtpDependencies,
@@ -102,7 +109,6 @@ class UtpTestRunnerTest {
             useOrchestrator = false,
             forceCompilation = false,
             uninstallIncompatibleApks = false,
-            mockTestResultListener,
             Level.WARNING,
             null,
             false,
@@ -114,20 +120,47 @@ class UtpTestRunnerTest {
         )
 
         resultsDirectory = temporaryFolderRule.newFolder("results")
-        return runner.runTests(
-            "projectName",
-            "variantName",
-            mockTestData,
-            setOf(mockPrivacySandboxSdkApk),
-            setOf(mockHelperApk),
-            listOf(mockDevice),
-            0,
-            setOf(),
-            resultsDirectory,
-            false,
-            null,
-            temporaryFolderRule.newFolder("coverageDir"),
-            mockLogger)
+
+        mockStatic(::createRunnerConfigProtoForLocalDevice.javaMethod!!.declaringClass).use { mockedStatic ->
+            mockedStatic.whenever<RunnerConfig> {
+                createRunnerConfigProtoForLocalDevice(
+                    any(),
+                    any(),
+                    any(),
+                    any(),
+                    any(),
+                    any(),
+                    any(),
+                    any(),
+                    any(),
+                    any(),
+                    any(),
+                    any(),
+                    any(),
+                    any(),
+                    anyOrNull(),
+                    anyOrNull(),
+                    any(),
+                    any(),
+                    anyOrNull(),
+                )
+            }.thenReturn(RunnerConfig.getDefaultInstance())
+
+            return runner.runTests(
+                "projectName",
+                "variantName",
+                mockTestData,
+                setOf(mockPrivacySandboxSdkApk),
+                setOf(mockHelperApk),
+                listOf(mockDevice),
+                0,
+                setOf(),
+                resultsDirectory,
+                false,
+                null,
+                temporaryFolderRule.newFolder("coverageDir"),
+                mockLogger)
+        }
     }
 
     @Test

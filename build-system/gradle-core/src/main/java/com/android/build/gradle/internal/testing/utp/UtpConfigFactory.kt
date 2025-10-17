@@ -102,10 +102,6 @@ fun createRunnerConfigProtoForLocalDevice(
     useOrchestrator: Boolean,
     forceCompilation: Boolean,
     additionalTestOutputDir: File?,
-    testResultListenerServerPort: Int,
-    resultListenerClientCert: File,
-    resultListenerClientPrivateKey: File,
-    trustCertCollection: File,
     installApkTimeout: Int?,
     extractedSdkApks: List<List<Path>>,
     uninstallApksAfterTest: Boolean,
@@ -141,36 +137,23 @@ fun createRunnerConfigProtoForLocalDevice(
             )
         )
         singleDeviceExecutor = createSingleDeviceExecutor(device.serialNumber, shardConfig)
-        addTestResultListener(
-            createTestResultListener(
-                utpDependencies,
-                testResultListenerServerPort,
-                resultListenerClientCert,
-                resultListenerClientPrivateKey,
-                trustCertCollection,
-                device.serialNumber
-            )
-        )
     }.build()
 }
 
-private fun createTestResultListener(
+fun RunnerConfigProto.RunnerConfig.Builder.addTestResultListenerPlugin(
     utpDependencies: UtpDependencies,
-    testResultListenerServerPort: Int,
-    resultListenerClientCert: File,
-    resultListenerClientPrivateKey: File,
-    trustCertCollection: File,
-    deviceId: String
-): ExtensionProto.Extension {
-    return ANDROID_TEST_PLUGIN_RESULT_LISTENER_GRADLE.toExtensionProto(
+    serverMetadata: UtpTestResultListenerServerMetadata,
+    deviceId: String,
+) {
+    addTestResultListener(ANDROID_TEST_PLUGIN_RESULT_LISTENER_GRADLE.toExtensionProto(
         utpDependencies, GradleAndroidTestResultListenerConfig::newBuilder
     ) {
-        resultListenerServerPort = testResultListenerServerPort
-        resultListenerClientCertFilePath = resultListenerClientCert.absolutePath
-        resultListenerClientPrivateKeyFilePath = resultListenerClientPrivateKey.absolutePath
-        trustCertCollectionFilePath = trustCertCollection.absolutePath
+        resultListenerServerPort = serverMetadata.serverPort
+        resultListenerClientCertFilePath = serverMetadata.clientCert.absolutePath
+        resultListenerClientPrivateKeyFilePath = serverMetadata.clientPrivateKey.absolutePath
+        trustCertCollectionFilePath = serverMetadata.serverCert.absolutePath
         this.deviceId = deviceId
-    }
+    })
 }
 
 /**
@@ -197,7 +180,6 @@ fun createRunnerConfigProtoForManagedDevice(
     additionalTestOutputDir: File?,
     useOrchestrator: Boolean,
     forceCompilation: Boolean,
-    testResultListenerServerMetadata: UtpTestResultListenerServerMetadata,
     installApkTimeout: Int?,
     extractedSdkApks: List<List<Path>>,
     shardConfig: ShardConfig? = null,
@@ -223,16 +205,6 @@ fun createRunnerConfigProtoForManagedDevice(
             )
         )
         singleDeviceExecutor = createSingleDeviceExecutor(deviceSerialNumber, shardConfig)
-        addTestResultListener(
-            createTestResultListener(
-                utpDependencies,
-                testResultListenerServerMetadata.serverPort,
-                testResultListenerServerMetadata.clientCert,
-                testResultListenerServerMetadata.clientPrivateKey,
-                testResultListenerServerMetadata.serverCert,
-                device.id,
-            )
-        )
     }.build()
 }
 

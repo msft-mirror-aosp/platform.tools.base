@@ -25,8 +25,7 @@ import com.android.ide.common.process.ProcessExecutor
 import com.android.ide.common.workers.ExecutorServiceAdapter
 import com.android.utils.ILogger
 import com.google.common.collect.ImmutableList
-import com.google.testing.platform.proto.api.config.RunnerConfigProto
-import com.google.wireless.android.sdk.stats.DeviceTestSpanProfile
+import org.gradle.api.model.ObjectFactory
 import org.gradle.workers.WorkerExecutor
 import java.io.File
 import java.util.logging.Level
@@ -37,6 +36,7 @@ import java.util.logging.Level
 class UtpTestRunner @JvmOverloads constructor(
         processExecutor: ProcessExecutor,
         private val workerExecutor: WorkerExecutor,
+        private val objectFactory: ObjectFactory,
         executor: ExecutorServiceAdapter,
         private val utpJvmExecutable: File,
         private val utpDependencies: UtpDependencies,
@@ -45,7 +45,6 @@ class UtpTestRunner @JvmOverloads constructor(
         private val useOrchestrator: Boolean,
         private val forceCompilation: Boolean,
         private val uninstallIncompatibleApks: Boolean,
-        private val utpTestResultListener: UtpTestResultListener?,
         private val utpLoggingLevel: Level,
         private val installApkTimeout: Int?,
         private val targetIsSplitApk: Boolean,
@@ -54,8 +53,9 @@ class UtpTestRunner @JvmOverloads constructor(
             List<UtpRunnerConfig>, String, String, File, ILogger
         ) -> List<UtpTestRunResult> = { runnerConfigs, projectName, variantName, resultsDir, logger ->
             runUtpTestSuiteAndWait(
-                runnerConfigs, workerExecutor, utpJvmExecutable, projectName, variantName,
-                resultsDir, logger, utpTestResultListener, utpDependencies, utpLoggingLevel)
+                runnerConfigs, workerExecutor, objectFactory, utpJvmExecutable,
+                projectName, variantName, resultsDir, logger, utpDependencies,
+                utpLoggingLevel)
         },
 )
     : BaseTestRunner(processExecutor, executor) {
@@ -75,20 +75,17 @@ class UtpTestRunner @JvmOverloads constructor(
             coverageDir: File,
             logger: ILogger): MutableList<TestResult> {
 
-        val runnerConfigs = apksForDevice.filter { (device, apks) ->
-            !versionedSdkLoader.adbHelper.get().isManagedDevice(
-                device.getSerialNumber(), logger)
-        }.map { (deviceConnector, apks) ->
-            val utpOutputDir = File(resultsDir, deviceConnector.name).apply {
-                if (!exists()) {
-                    mkdirs()
-                }
+        val runnerConfigs = apksForDevice
+            .filter { (device, _) ->
+                !versionedSdkLoader.adbHelper.get().isManagedDevice(device.getSerialNumber(), logger)
             }
-            val runnerConfig: (
-                UtpTestResultListenerServerMetadata,
-                File
-            ) -> RunnerConfigProto.RunnerConfig = { resultListenerServerMetadata, utpTmpDir ->
-                createRunnerConfigProtoForLocalDevice(
+            .map { (deviceConnector, apks) ->
+                val utpOutputDir = File(resultsDir, deviceConnector.name).apply {
+                    if (!exists()) {
+                        mkdirs()
+                    }
+                }
+                val runnerConfig = createRunnerConfigProtoForLocalDevice(
                     deviceConnector,
                     testData,
                     TargetApkConfigBundle(apks, targetIsSplitApk || apks.size > 1),
@@ -98,7 +95,7 @@ class UtpTestRunner @JvmOverloads constructor(
                     utpDependencies,
                     versionedSdkLoader,
                     utpOutputDir,
-                    utpTmpDir,
+                    createUtpTempDirectory("utpRunTemp"),
                     emulatorControlConfig,
                     File(coverageDir, deviceConnector.name),
                     useOrchestrator,
@@ -108,22 +105,17 @@ class UtpTestRunner @JvmOverloads constructor(
                     } else {
                         null
                     },
-                    resultListenerServerMetadata.serverPort,
-                    resultListenerServerMetadata.clientCert,
-                    resultListenerServerMetadata.clientPrivateKey,
-                    resultListenerServerMetadata.serverCert,
                     installApkTimeout,
-                    privacySandboxSdkInstallBundle.extractedApkMap[deviceConnector]?: emptyList(),
+                    privacySandboxSdkInstallBundle.extractedApkMap[deviceConnector] ?: emptyList(),
                     uninstallApksAfterTest,
                 )
-            }
-            UtpRunnerConfig(
-                deviceConnector.name,
-                deviceConnector.serialNumber,
-                utpOutputDir,
-                runnerConfig,
-            )
-        }.toList()
+                UtpRunnerConfig(
+                    deviceConnector.name,
+                    deviceConnector.serialNumber,
+                    utpOutputDir,
+                    runnerConfig,
+                )
+            }.toList()
 
         val testSuiteResults = runUtpTestSuiteAndWaitFunc(
             runnerConfigs,
@@ -142,9 +134,7 @@ class UtpTestRunner @JvmOverloads constructor(
             }
         }
 
-        val resultProtos = testSuiteResults
-            .map(UtpTestRunResult::resultsProto)
-            .filterNotNull()
+        val resultProtos = testSuiteResults.mapNotNull(UtpTestRunResult::resultsProto)
         if (resultProtos.isNotEmpty()) {
             val mergedTestResultPbFile = File(resultsDir, TEST_RESULT_PB_FILE_NAME)
             val resultsMerger = UtpTestSuiteResultMerger()
@@ -165,9 +155,3 @@ class UtpTestRunner @JvmOverloads constructor(
         }.toMutableList()
     }
 }
-
-fun DeviceConnector.getDeviceType() = if(serialNumber.startsWith("emulator")) {
-        DeviceTestSpanProfile.DeviceType.CONNECTED_DEVICE_EMULATOR
-    } else {
-        DeviceTestSpanProfile.DeviceType.CONNECTED_DEVICE_PHYSICAL
-    }

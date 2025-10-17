@@ -16,51 +16,168 @@
 
 package com.android.build.gradle.internal.testing.utp.worker
 
+import com.android.build.gradle.internal.LoggerWrapper
+import com.android.build.gradle.internal.testing.CustomTestRunListener
+import com.android.build.gradle.internal.testing.utp.DdmlibTestResultAdapter
+import com.android.build.gradle.internal.testing.utp.UtpDependencies
 import com.android.build.gradle.internal.testing.utp.UtpDependency
+import com.android.build.gradle.internal.testing.utp.UtpTestResultListener
+import com.android.build.gradle.internal.testing.utp.UtpTestResultListenerServerRunner
+import com.android.build.gradle.internal.testing.utp.addTestResultListenerPlugin
+import com.android.tools.utp.plugins.result.listener.gradle.proto.GradleAndroidTestResultListenerProto
 import com.android.utils.GrabProcessOutput
+import com.google.testing.platform.proto.api.config.RunnerConfigProto
+import com.google.testing.platform.proto.api.core.TestSuiteResultProto
 import org.gradle.api.GradleException
 import org.gradle.api.logging.Logger
 import org.gradle.api.logging.Logging
 import java.io.File
+import java.util.Base64
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
 /**
- * Launches multiple Unified Test Platform (UTP) test suites in parallel as external Java processes.
+ * Runs UTP test suites in external Java processes.
  *
- * @param javaExecFile The [File] pointing to the `java` executable.
- * @param loggingPropertiesFileList A list of [File]s for `java.util.logging` configurations.
- * Each file corresponds to a single UTP process.
- * @param utpLauncherJars The list of JARs to be used as the classpath for the UTP launcher.
- * @param utpCoreJars The list of UTP core JARs, passed as an argument to the launcher.
- * @param utpRunnerConfigFileList A list of [File]s for the UTP runner protobuf configurations.
- * Each file corresponds to a single UTP test suite execution.
- * @param logger The [Logger] instance to which UTP process output will be streamed.
- * @param processBuilderFactory A factory function to create the [ProcessBuilder], primarily for
- * testing.
- * @param executorServiceFactory A factory function to create the [ExecutorService] for running
- * tests in parallel, primarily for testing.
+ * This class is designed to be used within a Gradle WorkAction. It handles the
+ * entire lifecycle of running UTP, including:
+ * 1. Starting a [UtpTestResultListenerServerRunner] to receive test results.
+ * 2. Launching all UTP processes in parallel using an [ExecutorService].
+ * 3. Collecting results via the listener, which generates XML reports and writes
+ *    the final `test-result.pb` file.
+ *
+ * @param javaExecFile The path to the `java` executable.
+ * @param utpDependencies Resolved UTP dependency artifacts.
+ * @param enableUtpTestReportingForAndroidStudio If true, test results are also printed
+ * to stdout in a base64-encoded format for Android Studio to parse.
+ * @param logger A Gradle logger instance.
+ * @param processBuilderFactory A factory function to create [ProcessBuilder] instances.
+ * @param executorServiceFactory A factory function to create the [ExecutorService]
+ * used for parallel process execution.
+ * @param utpTestResultListenerServerRunnerFactory A factory function to create the
+ * [UtpTestResultListenerServerRunner].
  */
 class UtpRunner(
     private val javaExecFile: File,
-    private val loggingPropertiesFileList: List<File>,
-    private val utpLauncherJars: List<File>,
-    private val utpCoreJars: List<File>,
-    private val utpRunnerConfigFileList: List<File>,
+    private val utpDependencies: UtpDependencies,
+    private val enableUtpTestReportingForAndroidStudio: Boolean,
     private val logger: Logger = Logging.getLogger(UtpRunner::class.java),
     private val processBuilderFactory: (List<String>) -> ProcessBuilder = { ProcessBuilder(it) },
     private val executorServiceFactory: () -> ExecutorService = Executors::newCachedThreadPool,
+    private val utpTestResultListenerServerRunnerFactory: (UtpTestResultListener) -> UtpTestResultListenerServerRunner = {
+        UtpTestResultListenerServerRunner(it)
+    }
 ) {
+    /**
+     * Executes all UTP test runs.
+     *
+     * This method orchestrates the entire test execution. It starts the result listener
+     * server, configures all test runs to report to that server, and then executes
+     * them in parallel, waiting for all to complete.
+     *
+     * @param utpRunnerConfigFileList List of base UTP runner config files (one per shard/run).
+     * @param loggingPropertiesFileList List of logging properties files (one per shard/run).
+     * @param deviceIDs List of device IDs, used to tag results and create listener plugins.
+     * @param deviceNames List of device names, used for XML report generation.
+     * @param deviceShardNames List of shard names, used for XML report generation.
+     * @param projectPath The Gradle project path, passed to the XML report listener.
+     * @param variantName The Gradle variant name, passed to the XML report listener.
+     * @param xmlTestReportOutputDirectory The final directory for the `TEST-*.xml` reports.
+     * @param utpResultProtoOutputFileList List of file paths where the final
+     * `test-result.pb` for each run should be written.
+     */
+    fun execute(
+        utpRunnerConfigFileList: List<File>,
+        loggingPropertiesFileList: List<File>,
+        deviceIDs: List<String>,
+        deviceNames: List<String>,
+        deviceShardNames: List<String>,
+        projectPath: String,
+        variantName: String,
+        xmlTestReportOutputDirectory: File,
+        utpResultProtoOutputFileList: List<File>,
+    ) {
+        val xmlReportCreators = deviceIDs.withIndex().associate { (i, deviceID) ->
+            val ddmlibTestResultAdapter = DdmlibTestResultAdapter(
+                deviceNames[i],
+                CustomTestRunListener(
+                    deviceShardNames[i],
+                    projectPath,
+                    variantName,
+                    LoggerWrapper(logger)
+                ).apply { setReportDir(xmlTestReportOutputDirectory) }
+            )
+            deviceID to ddmlibTestResultAdapter
+        }
+
+        val utpProtoFileMap = deviceIDs.zip(utpResultProtoOutputFileList).toMap()
+
+        val testResultListener = object: UtpTestResultListener {
+            @Synchronized
+            override fun onTestResultEvent(testResultEvent: GradleAndroidTestResultListenerProto.TestResultEvent) {
+                xmlReportCreators[testResultEvent.deviceId]?.onTestResultEvent(testResultEvent)
+                if (testResultEvent.hasTestSuiteFinished()) {
+                    val resultProto = testResultEvent.testSuiteFinished.testSuiteResult
+                        .unpack(TestSuiteResultProto.TestSuiteResult::class.java)
+                    utpProtoFileMap[testResultEvent.deviceId]?.let { outputFile ->
+                        outputFile.outputStream().use { outputFileStream ->
+                            resultProto.writeTo(outputFileStream)
+                        }
+                    }
+                }
+
+                if (enableUtpTestReportingForAndroidStudio) {
+                    println(
+                        "<UTP_TEST_RESULT_ON_TEST_RESULT_EVENT>" +
+                        Base64.getEncoder().encodeToString(testResultEvent.toByteArray()) +
+                        "</UTP_TEST_RESULT_ON_TEST_RESULT_EVENT>"
+                    )
+                }
+            }
+        }
+
+        utpTestResultListenerServerRunnerFactory(testResultListener).use { server ->
+            val utpRunnerConfigFileWithListenerList =
+                deviceIDs.zip(utpRunnerConfigFileList).map { (deviceID, runnerConfigFile) ->
+                val runnerConfig = runnerConfigFile.inputStream().use { inputStream ->
+                    RunnerConfigProto.RunnerConfig.parseFrom(inputStream).toBuilder()
+                }
+
+                runnerConfig.addTestResultListenerPlugin(
+                    utpDependencies,
+                    server.metadata,
+                    deviceID,
+                )
+
+                val runConfigWithListenerPlugin = File(
+                    runnerConfigFile.parentFile,
+                    runnerConfigFile.nameWithoutExtension + "_withListener.pb")
+                runConfigWithListenerPlugin.deleteOnExit()
+                runConfigWithListenerPlugin.outputStream().use {
+                    runnerConfig.build().writeTo(it)
+                }
+                runConfigWithListenerPlugin
+            }
+
+            execute(utpRunnerConfigFileWithListenerList, loggingPropertiesFileList)
+        }
+    }
+
     /**
      * Executes all the configured UTP test suites in parallel.
      *
-     * This method submits each test suite to an [ExecutorService] and waits for all of them to
-     * complete. If any of the test executions fail, it logs the failures and throws a final
-     * [GradleException] to fail the build. If the Gradle build is cancelled, the executor is
-     * shut down immediately.
+     * This private method launches the external Java processes, each configured with a
+     * runner config and logging properties. It waits for all processes to complete.
+     *
+     * @param utpRunnerConfigFileList List of base UTP runner config files (one per shard/run).
+     * @param loggingPropertiesFileList List of logging properties files (one per shard/run).
+     * @throws GradleException if any UTP process fails or an exception occurs.
      */
-    fun execute() {
+    private fun execute(
+        utpRunnerConfigFileList: List<File>,
+        loggingPropertiesFileList: List<File>,
+    ) {
         val executorService = executorServiceFactory()
         try {
             val futures = utpRunnerConfigFileList.zip(loggingPropertiesFileList)
@@ -106,9 +223,9 @@ class UtpRunner(
                 "-Djava.util.logging.config.file=${loggingPropertiesFile.absolutePath}",
                 "-Dfile.encoding=UTF-8",
                 "-cp",
-                utpLauncherJars.joinToString(File.pathSeparator) { it.absolutePath },
+                utpDependencies.launcher.files.joinToString(File.pathSeparator) { it.absolutePath },
                 UtpDependency.LAUNCHER.mainClass,
-                utpCoreJars.joinToString(File.pathSeparator) { it.absolutePath },
+                utpDependencies.core.files.joinToString(File.pathSeparator) { it.absolutePath },
                 "--proto_config=${utpRunnerConfigFile.absolutePath}",
             )
         )
@@ -143,6 +260,7 @@ class UtpRunner(
                 process.waitFor()
 
                 // Re-throw the exception so Gradle knows the work was cancelled.
+                Thread.currentThread().interrupt()
                 throw e
             }
         } finally {
