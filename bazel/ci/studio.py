@@ -62,7 +62,7 @@ class BazelTestResult:
 
 def last_incremental_build_id(build_env: bazel.BuildEnv) -> str:
   """Returns the incremental build id."""
-  last_build_file = pathlib.Path(f'{build_env.workspace_dir}/out/last_build.info')
+  last_build_file = pathlib.Path(f'{build_env.dist_dir}/logs/last_build.info')
   if not last_build_file.exists():
     return ''
   last_build_info = last_build_file.read_text().strip()
