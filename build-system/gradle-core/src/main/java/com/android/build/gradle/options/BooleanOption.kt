@@ -575,12 +575,6 @@ enum class BooleanOption(
         FeatureStage.SoftlyEnforced(VERSION_9_0),
     ),
 
-    /**
-     * When enabled, Gradle Managed Device allows a custom managed device type that can be provided
-     * by a plugin by implementing ManagedDeviceTestRunner APIs.
-     */
-    GRADLE_MANAGED_DEVICE_CUSTOM_DEVICE("android.experimental.testOptions.managedDevices.customDevice", true, FeatureStage.SoftlyEnforced(VERSION_9_0)),
-
     PRIVACY_SANDBOX_SDK_ENABLE_LINT(
         "android.experimental.privacysandboxsdk.enableLint",
         true,
@@ -1116,6 +1110,17 @@ enum class BooleanOption(
             additionalMessage = "Precise shrinking is always enabled and this property no longer has any effect."
         )
     ),
+
+    /**
+     * When enabled, Gradle Managed Device allows a custom managed device type that can be provided
+     * by a plugin by implementing ManagedDeviceTestRunner APIs.
+     */
+    GRADLE_MANAGED_DEVICE_CUSTOM_DEVICE(
+        "android.experimental.testOptions.managedDevices.customDevice",
+        true,
+        FeatureStage.Enforced(Version.VERSION_9_0)
+    ),
+
 
     /* ----------------
      * REMOVED API
