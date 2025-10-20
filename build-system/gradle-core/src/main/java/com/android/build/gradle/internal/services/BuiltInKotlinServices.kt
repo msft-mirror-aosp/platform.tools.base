@@ -255,7 +255,7 @@ private fun failIfIncompatiblePluginsArePresent(project: Project) {
             The '$KOTLIN_ANDROID_PLUGIN_ID' plugin is no longer required for Kotlin support since AGP 9.0.
             Solution:
               - [Recommended] Migrate this project to built-in Kotlin (https://developer.android.com/r/tools/built-in-kotlin).
-              - Or set the Gradle property '${BooleanOption.BUILT_IN_KOTLIN.propertyName}=false' to temporarily bypass this issue.
+              - Or set the Gradle property '${BooleanOption.BUILT_IN_KOTLIN.propertyName}=false' and '${BooleanOption.USE_NEW_DSL.propertyName}=false' to temporarily bypass this issue.
             """.trimIndent()
         )
     }
@@ -266,7 +266,7 @@ private fun failIfIncompatiblePluginsArePresent(project: Project) {
             The '$KOTLIN_KAPT_PLUGIN_ID' plugin is not compatible with built-in Kotlin support.
             Solution:
               - [Recommended] Migrate this project to built-in Kotlin (https://developer.android.com/r/tools/built-in-kotlin).
-              - Or set the Gradle property '${BooleanOption.BUILT_IN_KOTLIN.propertyName}=false' to temporarily bypass this issue.
+              - Or set the Gradle property '${BooleanOption.BUILT_IN_KOTLIN.propertyName}=false' and '${BooleanOption.USE_NEW_DSL.propertyName}=false' to temporarily bypass this issue.
             """.trimIndent()
         )
     }
@@ -277,7 +277,7 @@ private fun failIfIncompatiblePluginsArePresent(project: Project) {
             The 'com.android.library' (or 'com.android.application') plugin is not compatible with the '$KOTLIN_MPP_PLUGIN_ID' plugin since AGP 9.0.
             Solution:
               - [Recommended] Replace the 'com.android.library' plugin with the '$ANDROID_KOTLIN_MPP_LIBRARY_PLUGIN_ID' plugin (see https://developer.android.com/r/tools/built-in-kotlin).
-              - Or set the Gradle property '${BooleanOption.BUILT_IN_KOTLIN.propertyName}=false' to temporarily bypass this issue.
+              - Or set the Gradle property '${BooleanOption.BUILT_IN_KOTLIN.propertyName}=false' and '${BooleanOption.USE_NEW_DSL.propertyName}=false' to temporarily bypass this issue.
             """.trimIndent()
         )
     }
