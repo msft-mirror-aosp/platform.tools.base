@@ -13,12 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.android.tools.idea.wizard.template.impl.activities.xrGlassesActivity.res.values
+package com.android.tools.idea.wizard.template.impl.activities.aiGlassesActivity.res.values
 
-fun stringsXml() = """
+fun stringsXml() =
+  """
 <resources>
     <string name="app_name">Basic Glasses Activity</string>
-    <string name="welcome_android_xr_glasses">Hello Android XR.</string>
+    <string name="welcome_android_ai_glasses">Hello Android XR.</string>
     <string name="click_me">Click Me!</string>
 </resources>
 """

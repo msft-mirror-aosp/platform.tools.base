@@ -134,7 +134,7 @@ public class DeviceManagerTest {
         // cf /sdklib/src/main/java/com/android/sdklib/devices/nexus.xml
         assertThat(listDisplayNames(dm.getDevices(DeviceCategory.VENDOR)))
                 .containsExactly(
-                        "XR Glasses",
+                        "AI Glasses",
                         "Television (4K)",
                         "Television (1080p)",
                         "Television (720p)",
@@ -288,7 +288,7 @@ public class DeviceManagerTest {
                         "Pixel 9 Pro Fold",
                         "Pixel 9a",
                         "XR Headset",
-                        "XR Glasses");
+                        "AI Glasses");
     }
 
     @Test
@@ -366,7 +366,7 @@ public class DeviceManagerTest {
         // cf /sdklib/src/main/java/com/android/sdklib/devices/nexus.xml
         assertThat(listDisplayNames(dm2.getDevices(DeviceCategory.VENDOR)))
                 .containsExactly(
-                        "XR Glasses",
+                        "AI Glasses",
                         "Television (4K)",
                         "Television (1080p)",
                         "Television (720p)",
@@ -519,7 +519,7 @@ public class DeviceManagerTest {
                         "Pixel 9 Pro Fold",
                         "Pixel 9a",
                         "XR Headset",
-                        "XR Glasses");
+                        "AI Glasses");
     }
 
     @Test
@@ -591,7 +591,7 @@ public class DeviceManagerTest {
         // cf /sdklib/src/main/java/com/android/sdklib/devices/nexus.xml
         assertThat(listDisplayNames(dm.getDevices(DeviceCategory.VENDOR)))
                 .containsExactly(
-                        "XR Glasses",
+                        "AI Glasses",
                         "Television (4K)",
                         "Television (1080p)",
                         "Television (720p)",
@@ -744,7 +744,7 @@ public class DeviceManagerTest {
                         "Pixel 9 Pro Fold",
                         "Pixel 9a",
                         "XR Headset",
-                        "XR Glasses");
+                        "AI Glasses");
     }
 
     @Test
@@ -1134,6 +1134,6 @@ public class DeviceManagerTest {
                             + "Warning: Unsupported device desktop_medium\n"
                             + "Warning: Unsupported device desktop_large\n"
                             + "Warning: Unsupported device xr_headset_device\n"
-                            + "Warning: Unsupported device xr_glasses_device\n");
+                            + "Warning: Unsupported device ai_glasses_device\n");
     }
 }

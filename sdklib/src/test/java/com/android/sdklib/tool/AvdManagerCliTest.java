@@ -416,6 +416,7 @@ public class AvdManagerCliTest {
         mCli.run(new String[] {"list", "devices", "-c"});
         assertEquals(
                 ImmutableList.of(
+                        "P ai_glasses_device\n",
                         "P automotive_1024p_landscape\n",
                         "P automotive_1080p_landscape\n",
                         "P automotive_1408p_landscape_with_google_apis\n",
@@ -481,7 +482,6 @@ public class AvdManagerCliTest {
                         "P wearos_small_round\n",
                         "P wearos_square\n",
                         "P wearos_xl_round\n",
-                        "P xr_glasses_device\n",
                         "P xr_headset_device\n",
                         "P 2.7in QVGA\n",
                         "P 2.7in QVGA slider\n",

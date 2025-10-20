@@ -53,7 +53,7 @@ public final class DeviceSystemImageMatcher {
                     && !SystemImageTags.isTvImage(tags)
                     && !SystemImageTags.isAutomotiveImage(tags)
                     && !SystemImageTags.isXrHeadsetImage(tags)
-                    && !SystemImageTags.isXrGlassesImage(tags)
+                    && !SystemImageTags.isAiGlassesImage(tags)
                     && !tags.contains(SystemImageTags.CHROMEOS_TAG);
         }
 

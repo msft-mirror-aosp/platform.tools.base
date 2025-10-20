@@ -1031,7 +1031,7 @@ private fun AvdInfo.toDeviceType(): DeviceType {
     SystemImageTags.isWearImage(tags) -> DeviceType.WEAR
     SystemImageTags.isDesktopImage(tags) -> DeviceType.DESKTOP
     SystemImageTags.isXrHeadsetImage(tags) -> DeviceType.XR_HEADSET
-    SystemImageTags.isXrGlassesImage(tags) -> DeviceType.XR_GLASSES
+    SystemImageTags.isAiGlassesImage(tags) -> DeviceType.AI_GLASSES
     else -> DeviceType.HANDHELD
   }
 }

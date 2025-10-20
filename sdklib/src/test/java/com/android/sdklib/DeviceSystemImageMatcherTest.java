@@ -281,10 +281,10 @@ public final class DeviceSystemImageMatcherTest {
     }
 
     @Test
-    public void matchesDeviceTagIdEqualsXrGlassesTagIdAndImageIsXrGlassesImage() {
+    public void matchesDeviceTagIdEqualsAIGlassesTagIdAndImageIsAiGlassesImage() {
         // Arrange
-        Device device = mockDevice(SystemImageTags.XR_GLASSES_TAG.getId());
-        ISystemImage image = mockImage(Collections.singletonList(SystemImageTags.XR_GLASSES_TAG));
+        Device device = mockDevice(SystemImageTags.AI_GLASSES_TAG.getId());
+        ISystemImage image = mockImage(Collections.singletonList(SystemImageTags.AI_GLASSES_TAG));
 
         // Act
         boolean matches = DeviceSystemImageMatcher.matches(device, image);

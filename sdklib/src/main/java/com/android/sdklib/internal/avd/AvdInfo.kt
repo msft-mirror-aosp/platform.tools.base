@@ -188,8 +188,8 @@ data class AvdInfo(
   val isXrHeadsetDevice: Boolean
     get() = hasTag(SystemImageTags.XR_HEADSET_TAG.getId())
 
-  val isXrGlassesDevice: Boolean
-    get() = hasTag(SystemImageTags.XR_GLASSES_TAG.getId())
+  val isAiGlassesDevice: Boolean
+    get() = hasTag(SystemImageTags.AI_GLASSES_TAG.getId())
 
   companion object {
     /** Extracts the name of the AVD from the file name. */

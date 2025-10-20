@@ -85,8 +85,8 @@
         <d:tag-id>android-xr</d:tag-id>
     </d:device>
     <d:device>
-        <d:name>XR Glasses</d:name>
-        <d:id>xr_glasses_device</d:id>
+        <d:name>AI Glasses</d:name>
+        <d:id>ai_glasses_device</d:id>
         <d:manufacturer>Google</d:manufacturer>
         <d:hardware>
             <d:screen>
@@ -153,6 +153,6 @@
             <d:keyboard-state>keyshidden</d:keyboard-state>
             <d:nav-state>nonav</d:nav-state>
         </d:state>
-        <d:tag-id>android-xr-glasses</d:tag-id>
+        <d:tag-id>android-ai-glasses</d:tag-id>
     </d:device>
 </d:devices>

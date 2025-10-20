@@ -13,18 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.android.tools.idea.wizard.template.impl.activities.xrGlassesActivity
+package com.android.tools.idea.wizard.template.impl.activities.aiGlassesActivity
 
 import com.android.tools.idea.wizard.template.ModuleTemplateData
 import com.android.tools.idea.wizard.template.RecipeExecutor
+import com.android.tools.idea.wizard.template.impl.activities.aiGlassesActivity.res.values.stringsXml
+import com.android.tools.idea.wizard.template.impl.activities.aiGlassesActivity.src.app_package.mainActivityKt
 import com.android.tools.idea.wizard.template.impl.activities.common.addAllKotlinDependencies
 import com.android.tools.idea.wizard.template.impl.activities.common.addComposeDependencies
 import com.android.tools.idea.wizard.template.impl.activities.common.generateManifest
 import com.android.tools.idea.wizard.template.impl.activities.composeActivityMaterial3.res.values.themesXml
-import com.android.tools.idea.wizard.template.impl.activities.xrGlassesActivity.res.values.stringsXml
-import com.android.tools.idea.wizard.template.impl.activities.xrGlassesActivity.src.app_package.mainActivityKt
 
-fun RecipeExecutor.xrGlassesActivityRecipe(
+fun RecipeExecutor.aiGlassesActivityRecipe(
   moduleData: ModuleTemplateData,
   activityClass: String,
   packageName: String,
@@ -52,8 +52,8 @@ fun RecipeExecutor.xrGlassesActivityRecipe(
   )
 
   mergeXml(
-      themesXml(themeName = moduleData.themesData.main.name),
-      resOut.resolve("values/themes.xml"),
+    themesXml(themeName = moduleData.themesData.main.name),
+    resOut.resolve("values/themes.xml"),
   )
   mergeXml(stringsXml(), resOut.resolve("values/strings.xml"))
 
