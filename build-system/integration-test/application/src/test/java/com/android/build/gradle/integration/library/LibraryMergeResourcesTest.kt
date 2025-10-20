@@ -16,38 +16,39 @@
 
 package com.android.build.gradle.integration.library
 
-import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
-import com.android.build.gradle.integration.common.utils.TestFileUtils
+import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.google.common.truth.Truth
+import com.google.common.truth.Truth.assertThat
 import org.junit.Rule
 import org.junit.Test
 
 class LibraryMergeResourcesTest {
+
     @get:Rule
-    var project: GradleTestProject = GradleTestProject.builder()
-        .fromTestApp(HelloWorldApp.forPlugin("com.android.library"))
-        .create()
+    val project: GradleRule = GradleRule.from {
+        androidLibrary {}
+    }
 
     /**
      * Regression test for b/355397971
      */
     @Test
     fun `merge res task not executed when includeAndroidResources disabled`() {
-        TestFileUtils.appendToFile(
-            project.buildFile,
-            """
-            android.testOptions.unitTests.includeAndroidResources = false
-            """.trimIndent()
-        )
+        val build = project.build {
+            androidLibrary {
+                android {
+                    testOptions.unitTests.isIncludeAndroidResources = false
+                }
+            }
+        }
 
-        var result = project.executor().run("clean", ":compileDebugSources")
-        Truth.assertThat(result.didWorkTasks).contains(":packageDebugResources")
-        Truth.assertThat(result.didWorkTasks).doesNotContain(":mergeDebugResources")
+        var result = build.executor.run("clean", ":lib:compileDebugSources")
+        assertThat(result.didWorkTasks).contains(":lib:packageDebugResources")
+        assertThat(result.didWorkTasks).doesNotContain(":lib:mergeDebugResources")
 
-        result = project.executor().run("clean", ":compileDebugUnitTestSources")
-        Truth.assertThat(result.didWorkTasks).doesNotContain(":mergeDebugUnitTestResources")
-        Truth.assertThat(result.didWorkTasks).doesNotContain(":packageDebugUnitTestForUnitTest")
+        result = build.executor.run("clean", ":lib:compileDebugUnitTestSources")
+        assertThat(result.didWorkTasks).doesNotContain(":lib:mergeDebugUnitTestResources")
+        assertThat(result.didWorkTasks).doesNotContain(":lib:packageDebugUnitTestForUnitTest")
     }
 
     /**
@@ -55,46 +56,56 @@ class LibraryMergeResourcesTest {
      */
     @Test
     fun `merge res task executed when includeAndroidResources enabled`() {
-        TestFileUtils.appendToFile(
-            project.buildFile,
-            """
-            android.testOptions.unitTests.includeAndroidResources = true
-            """.trimIndent()
-        )
+        val build = project.build {
+            androidLibrary {
+                android {
+                    testOptions.unitTests.isIncludeAndroidResources = true
+                }
+            }
+        }
 
-        var result = project.executor().run("clean", ":compileDebugSources")
-        Truth.assertThat(result.didWorkTasks).contains(":packageDebugResources")
-        Truth.assertThat(result.didWorkTasks).doesNotContain(":mergeDebugResources")
+        var result = build.executor.run("clean", ":lib:compileDebugSources")
+        assertThat(result.didWorkTasks).contains(":lib:packageDebugResources")
+        assertThat(result.didWorkTasks).doesNotContain(":lib:mergeDebugResources")
 
-        result = project.executor().run("clean", ":compileDebugUnitTestSources")
-        Truth.assertThat(result.didWorkTasks).contains(":mergeDebugUnitTestResources")
-        Truth.assertThat(result.didWorkTasks).contains(":packageDebugUnitTestForUnitTest")
+        result = build.executor.run("clean", ":lib:compileDebugUnitTestSources")
+        assertThat(result.didWorkTasks).contains(":lib:mergeDebugUnitTestResources")
+        assertThat(result.didWorkTasks).contains(":lib:packageDebugUnitTestForUnitTest")
 
     }
 
     @Test
     fun `test trailing text in xml`() {
-        project.mainResDir.resolve("layout/trailing_content_layout.xml").also {
-            it.writeText(
-                """<?xml version="1.0" encoding="utf-8"?>
+        val build = project.build {
+            androidLibrary {
+                files {
+                    add(
+                        "src/main/res/layout/trailing_content_layout.xml",
+                        """<?xml version="1.0" encoding="utf-8"?>
             <FrameLayout>content</FrameLayout> trailing content
             """
-            )
+                    )
+                    add(
+                        "src/main/res/layout/trailing_crlf_layout.xml",
+                        """<?xml version="1.0" encoding="utf-8"?>
+            <FrameLayout>content</FrameLayout>
+            """.trimIndent() + "\r\n"
+                    )
+                    // Check valid XML layout does not trigger warning (regression test for b/453573619)
+                    add(
+                        "src/main/res/values/layout/valid_layout.xml",
+                        """<?xml version="1.0" encoding="utf-8"?>
+                <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                    android:orientation="vertical"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"/>""".trimIndent()
+                    )
+                }
+            }
         }
-        //Check valid XML layout does not trigger warning (regression test for b/453573619)
-        project.mainResDir.resolve("layout/valid_layout.xml").also {
-            it.writeText(
-                """<?xml version="1.0" encoding="utf-8"?>
-            <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-                android:orientation="vertical"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"/>""".trimIndent()
-            )
-        }
-        project.executor().run("clean", ":parseDebugLocalResources").also {
-            it.assertOutputDoesNotContain(
-                """main.xml contains trailing content."""
-            )
+
+        build.executor.run("clean", ":lib:parseDebugLocalResources").also {
+            // trailing_content_layout.xml
             it.assertOutputContains(
                 "trailing_content_layout.xml contains trailing content. Trailing is stripped during XML parsing."
             )
@@ -102,31 +113,30 @@ class LibraryMergeResourcesTest {
                 """Trailing content was: ' trailing content
         '"""
             )
+            // trailing_crlf_layout.xml
+            it.assertOutputDoesNotContain("trailing_crlf_layout.xml contains trailing content.")
+            // valid_layout.xml
             it.assertOutputDoesNotContain("valid_layout.xml contains trailing content.")
         }
 
-        val valuesColorsWithXmlTrailingContent =
-            project.mainResDir.resolve("values/colors.xml").also {
-                it.writeText(
-                    """<?xml version="1.0" encoding="utf-8"?>
+        build.androidLibrary().files.add("src/main/res/values/colors.xml",
+            """<?xml version="1.0" encoding="utf-8"?>
             <resources>
                 <color
                     name="color_name"
                     >hex_color</color>
             </resources> trailing content
-            """
-                )
-            }
-        project.executor().expectFailure().run("clean", ":parseDebugLocalResources").also {
-            it.assertFailureMessage()
-                .contains("colors.xml:6:26: Error: Content is not allowed in trailing section.")
-        }
-        valuesColorsWithXmlTrailingContent.delete()
+            """)
 
-        project.mainResDir.resolve("layout/empty_layout.xml").also {
-            it.writeText("content")
+        // Error when trailing content in values resource
+        build.executor.expectFailure().run("clean", ":lib:parseDebugLocalResources").also {
+            it.assertFailureMessage().contains("colors.xml:6:26: Error: Content is not allowed in trailing section.")
         }
-        project.executor().expectFailure().run("clean", ":parseDebugLocalResources").also {
+        build.androidLibrary().files.remove("src/main/res/values/colors.xml")
+
+        // Error when empty layout
+        build.androidLibrary().files.add("src/main/res/layout/empty_layout.xml", "content")
+        build.executor.expectFailure().run("clean", ":lib:parseDebugLocalResources").also {
             it.assertFailureMessage().contains("Content is not allowed in prolog.")
         }
     }
