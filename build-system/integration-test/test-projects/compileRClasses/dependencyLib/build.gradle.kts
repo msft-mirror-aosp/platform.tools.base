@@ -1,6 +1,6 @@
 plugins {
   id("com.android.library")
-  id("com.android.experimental.built-in-kotlin")
+  id("com.android.built-in-kotlin")
 }
 
 android {

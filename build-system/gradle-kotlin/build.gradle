@@ -9,6 +9,13 @@ plugins {
 
 gradlePlugin {
     plugins {
+        comAndroidKotlinSupport {
+            id = "com.android.built-in-kotlin"
+            implementationClass = "com.android.build.gradle.AndroidKotlinPlugin"
+        }
+        // The `com.android.experimental.built-in-kotlin` plugin was renamed to
+        // `com.android.built-in-kotlin`, but we keep it here so it doesn't break users
+        // (see b/453960410).
         comAndroidExperimentalKotlinSupport {
             id = "com.android.experimental.built-in-kotlin"
             implementationClass = "com.android.build.gradle.AndroidKotlinPlugin"

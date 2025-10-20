@@ -292,7 +292,7 @@ class BuiltInKaptTest {
 
         val result = app.executor().expectFailure().run(":app:assembleDebug")
         result.assertErrorContains(
-            "The 'com.android.legacy-kapt' plugin requires the 'com.android.experimental.built-in-kotlin' plugin to be applied."
+            "The 'com.android.legacy-kapt' plugin requires the 'com.android.built-in-kotlin' plugin to be applied."
         )
     }
 

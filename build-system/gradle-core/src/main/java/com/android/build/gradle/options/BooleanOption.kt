@@ -647,13 +647,13 @@ enum class BooleanOption(
      * requiring users to apply the `org.jetbrains.kotlin.android` plugin.
      *   - If the user applies the `org.jetbrains.kotlin.android` plugin, the build will fail as AGP
      *   already provides Kotlin support.
-     *   - If the user applies the `com.android.experimental.built-in-kotlin` plugin, the build
+     *   - If the user applies the `com.android.built-in-kotlin` plugin, the build
      *   doesn't fail, but it also doesn't have any further effect.
      *
      * When this property is disabled, the users will need to apply either the
-     * `com.android.experimental.built-in-kotlin` plugin or the `org.jetbrains.kotlin.android`
+     * `com.android.built-in-kotlin` plugin or the `org.jetbrains.kotlin.android`
      * plugin to have Kotlin support.
-     *   - If the user applies the `com.android.experimental.built-in-kotlin` plugin (recommended),
+     *   - If the user applies the `com.android.built-in-kotlin` plugin (recommended),
      *   AGP will provide Kotlin support for the current [Project] that the plugin is applied to.
      *   - If the user applies the `org.jetbrains.kotlin.android` plugin (legacy behavior), that
      *   plugin will provide Kotlin support for the current [Project] that the plugin is applied to.
