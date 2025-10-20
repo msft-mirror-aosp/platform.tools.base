@@ -18,6 +18,7 @@ package com.android.tools.idea.wizard.template.impl
 
 import com.android.tools.idea.wizard.template.Template
 import com.android.tools.idea.wizard.template.WizardTemplateProvider
+import com.android.tools.idea.wizard.template.impl.activities.aiStarter.aiStarterTemplate
 import com.android.tools.idea.wizard.template.impl.activities.androidTVActivity.androidTVActivityTemplate
 import com.android.tools.idea.wizard.template.impl.activities.archStarterActivity.archStarterActivityTemplate
 import com.android.tools.idea.wizard.template.impl.activities.basicActivity.basicActivityTemplate
@@ -73,68 +74,67 @@ import com.android.tools.idea.wizard.template.impl.other.service.serviceTemplate
 import com.android.tools.idea.wizard.template.impl.other.sliceProvider.sliceProviderTemplate
 import com.android.tools.idea.wizard.template.impl.other.wearDeclarativeWatchFace.wearDeclarativeWatchFaceTemplate
 
-/**
- * Implementation of the Android Wizard Template plugin extension point.
- */
+/** Implementation of the Android Wizard Template plugin extension point. */
 class WizardTemplateProviderImpl : WizardTemplateProvider() {
-  override fun getTemplates(): List<Template> = listOf(
+  override fun getTemplates(): List<Template> =
+    listOf(
       composeActivityMaterial3Template,
       composeNavigationUiActivityMaterial3Template,
       archStarterActivityTemplate,
+      aiStarterTemplate,
       xrActivityTemplate,
       xrGlassesActivityTemplate,
-    androidTVActivityTemplate,
-    basicActivityTemplate,
-    composeWearActivityWithTileAndComplicationTemplate,
-    composeWearActivityTemplate,
-    composeTvActivityTemplate,
-    bottomNavigationActivityTemplate,
-    emptyActivityTemplate,
-    fullscreenActivityTemplate,
-    googleAdMobAdsActivityTemplate,
-    googleMapsActivityTemplate,
-    googlePayActivityTemplate,
-    googleWalletActivityTemplate,
-    loginActivityTemplate,
-    primaryDetailFlowTemplate,
-    navigationDrawerActivityTemplate,
-    responsiveActivityTemplate,
-    settingsActivityTemplate,
-    scrollActivityTemplate,
-    tabbedActivityTemplate,
-    viewModelActivityTemplate,
-    cppGameActivityTemplate,
-    cppEmptyActivityTemplate, // Keep last as per UX design
+      androidTVActivityTemplate,
+      basicActivityTemplate,
+      composeWearActivityWithTileAndComplicationTemplate,
+      composeWearActivityTemplate,
+      composeTvActivityTemplate,
+      bottomNavigationActivityTemplate,
+      emptyActivityTemplate,
+      fullscreenActivityTemplate,
+      googleAdMobAdsActivityTemplate,
+      googleMapsActivityTemplate,
+      googlePayActivityTemplate,
+      googleWalletActivityTemplate,
+      loginActivityTemplate,
+      primaryDetailFlowTemplate,
+      navigationDrawerActivityTemplate,
+      responsiveActivityTemplate,
+      settingsActivityTemplate,
+      scrollActivityTemplate,
+      tabbedActivityTemplate,
+      viewModelActivityTemplate,
+      cppGameActivityTemplate,
+      cppEmptyActivityTemplate, // Keep last as per UX design
+      blankFragmentTemplate,
+      fullscreenFragmentTemplate,
+      googleAdMobAdsFragmentTemplate,
+      googleMapsFragmentTemplate,
+      listFragmentTemplate,
+      loginFragmentTemplate,
+      modalBottomSheetTemplate,
+      settingsFragmentTemplate,
+      scrollFragmentTemplate,
+      viewModelFragmentTemplate,
+      androidManifestTemplate,
+      appWidgetTemplate,
+      automotiveMediaServiceTemplate,
+      automotiveMessagingServiceTemplate,
+      broadcastReceiverTemplate,
+      contentProviderTemplate,
+      customViewTemplate,
+      intentServiceTemplate,
+      serviceTemplate,
+      sliceProviderTemplate,
+      wearDeclarativeWatchFaceTemplate,
+    ) + folderTemplates + fileTemplates
 
-    blankFragmentTemplate,
-    fullscreenFragmentTemplate,
-    googleAdMobAdsFragmentTemplate,
-    googleMapsFragmentTemplate,
-    listFragmentTemplate,
-    loginFragmentTemplate,
-    modalBottomSheetTemplate,
-    settingsFragmentTemplate,
-    scrollFragmentTemplate,
-    viewModelFragmentTemplate,
-
-    androidManifestTemplate,
-    appWidgetTemplate,
-    automotiveMediaServiceTemplate,
-    automotiveMessagingServiceTemplate,
-    broadcastReceiverTemplate,
-    contentProviderTemplate,
-    customViewTemplate,
-    intentServiceTemplate,
-    serviceTemplate,
-    sliceProviderTemplate,
-    wearDeclarativeWatchFaceTemplate,
-  ) + folderTemplates + fileTemplates
-
-  private val fileTemplates = listOf(
-    aidlFileTemplate,
-    layoutResourceFileTemplate,
-    shortcutsResourceFileTemplate,
-    valueResourceFileTemplate,
-    journeyFileTemplate,
-  )
+  private val fileTemplates =
+    listOf(
+      aidlFileTemplate,
+      layoutResourceFileTemplate,
+      shortcutsResourceFileTemplate,
+      valueResourceFileTemplate,
+      journeyFileTemplate,
+    )
 }
