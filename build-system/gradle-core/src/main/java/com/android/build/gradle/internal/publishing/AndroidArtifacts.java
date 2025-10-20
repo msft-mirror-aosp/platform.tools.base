@@ -228,6 +228,8 @@ public class AndroidArtifacts {
     public enum ConsumedConfigType {
         COMPILE_CLASSPATH("compileClasspath", API_ELEMENTS, true),
         RUNTIME_CLASSPATH("runtimeClasspath", RUNTIME_ELEMENTS, true),
+        LINT_CHECKS_CLASSPATH("lintChecksClasspath", RUNTIME_ELEMENTS, true),
+
         /**
          * A 'true' runtime classpath for consuming the PACKAGED_DEPENDENCIES artifact in separate
          * test projects and dynamic feature projects.

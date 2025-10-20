@@ -57,6 +57,7 @@ import org.gradle.api.artifacts.ArtifactView
 import org.gradle.api.artifacts.Configuration
 import org.gradle.api.artifacts.Dependency
 import org.gradle.api.artifacts.FileCollectionDependency
+import org.gradle.api.artifacts.ResolutionStrategy
 import org.gradle.api.artifacts.component.ComponentIdentifier
 import org.gradle.api.artifacts.component.ModuleComponentIdentifier
 import org.gradle.api.artifacts.component.ProjectComponentIdentifier
@@ -138,6 +139,7 @@ class VariantDependencies internal constructor(
     override fun getResolutionResult(configType: ConsumedConfigType): ResolutionResult = when (configType) {
         ConsumedConfigType.COMPILE_CLASSPATH -> compileClasspath.incoming.resolutionResult
         ConsumedConfigType.RUNTIME_CLASSPATH -> runtimeClasspath.incoming.resolutionResult
+        ConsumedConfigType.LINT_CHECKS_CLASSPATH -> lintChecksClasspath.incoming.resolutionResult
         else -> throw RuntimeException("Unsupported ConsumedConfigType value: $configType")
     }
 
@@ -148,6 +150,7 @@ class VariantDependencies internal constructor(
         val configuration = when (configType) {
             ConsumedConfigType.COMPILE_CLASSPATH -> compileClasspath
             ConsumedConfigType.RUNTIME_CLASSPATH -> runtimeClasspath
+            ConsumedConfigType.LINT_CHECKS_CLASSPATH -> lintChecksClasspath
             else -> throw RuntimeException("Unsupported ConsumedConfigType value: $configType")
         }
         val docsType = when(type) {
@@ -292,6 +295,7 @@ class VariantDependencies internal constructor(
         return when (configType) {
             ConsumedConfigType.COMPILE_CLASSPATH -> compileClasspath
             ConsumedConfigType.RUNTIME_CLASSPATH -> runtimeClasspath
+            ConsumedConfigType.LINT_CHECKS_CLASSPATH -> lintChecksClasspath
             ConsumedConfigType.PROVIDED_CLASSPATH -> providedClasspath!!
             ConsumedConfigType.ANNOTATION_PROCESSOR -> annotationProcessorConfiguration!!
             ConsumedConfigType.REVERSE_METADATA_VALUES ->
@@ -369,6 +373,31 @@ class VariantDependencies internal constructor(
         PACKAGED_DEPENDENCIES,
         null
     ).artifactFiles
+
+    private val lintChecksClasspath: Configuration by lazy {
+        project.configurations.maybeCreate("${variantName}LintChecksClasspath").also {
+            it.isVisible = false
+            it.description =
+                "Resolved configuration for lint check compilation for variant: $variantName"
+            it.extendsFrom(compileClasspath, runtimeClasspath)
+            it.isCanBeConsumed = false
+            it.resolutionStrategy.sortArtifacts(ResolutionStrategy.SortOrder.CONSUMER_FIRST)
+            runtimeClasspath.attributes.keySet().forEach { key ->
+                copyAttribute(key, runtimeClasspath.attributes, it.attributes)
+            }
+        }
+    }
+
+    private fun <T> copyAttribute(
+        key: Attribute<T>,
+        from: AttributeContainer,
+        to: AttributeContainer
+    ) {
+        val value = from.getAttribute(key)
+        if (value != null) {
+            to.attribute(key, value)
+        }
+    }
 
     companion object {
         const val CONFIG_NAME_ANDROID_APIS = "androidApis"

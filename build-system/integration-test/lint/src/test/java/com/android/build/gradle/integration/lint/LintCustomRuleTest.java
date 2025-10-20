@@ -61,6 +61,18 @@ public class LintCustomRuleTest {
         assertThat(file).contentWithUnixLineSeparatorsIsExactly(expected);
     }
 
+    @Test
+    public void checkCustomLintFromRuntimeAndCompileDependency() throws Exception {
+        TestFileUtils.searchAndReplace(
+                project.getSubproject(":app").getBuildFile(),
+                "implementation project(':library')",
+                "implementation project(':library')\ncompileOnly project(':library')");
+        executor().expectFailure().run(":app:clean", ":app:lintDebug");
+        File file = new File(project.getSubproject("app").getProjectDir(), "lint-results.txt");
+        assertThat(file).exists();
+        assertThat(file).contentWithUnixLineSeparatorsIsExactly(expected);
+    }
+
     private GradleTaskExecutor executor() {
         return project.executor().withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON);
     }

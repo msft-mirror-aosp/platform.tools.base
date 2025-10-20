@@ -303,15 +303,7 @@ abstract class AndroidLintAnalysisTask : NonIncrementalTask() {
                 variantScope
                     .dependencies
                     .getArtifactFileCollection(
-                        AndroidArtifacts.ConsumedConfigType.RUNTIME_CLASSPATH,
-                        AndroidArtifacts.ArtifactType.LINT
-                    )
-            )
-            task.lintRuleJars.from(
-                variantScope
-                    .dependencies
-                    .getArtifactFileCollection(
-                        AndroidArtifacts.ConsumedConfigType.COMPILE_CLASSPATH,
+                        AndroidArtifacts.ConsumedConfigType.LINT_CHECKS_CLASSPATH,
                         AndroidArtifacts.ArtifactType.LINT
                     )
             )
@@ -387,16 +379,7 @@ abstract class AndroidLintAnalysisTask : NonIncrementalTask() {
                 creationConfig
                     .variantDependencies
                     .getArtifactFileCollection(
-                        AndroidArtifacts.ConsumedConfigType.RUNTIME_CLASSPATH,
-                        AndroidArtifacts.ArtifactScope.ALL,
-                        AndroidArtifacts.ArtifactType.LINT
-                    )
-            )
-            task.lintRuleJars.from(
-                creationConfig
-                    .variantDependencies
-                    .getArtifactFileCollection(
-                        AndroidArtifacts.ConsumedConfigType.COMPILE_CLASSPATH,
+                        AndroidArtifacts.ConsumedConfigType.LINT_CHECKS_CLASSPATH,
                         AndroidArtifacts.ArtifactScope.ALL,
                         AndroidArtifacts.ArtifactType.LINT
                     )
@@ -495,16 +478,7 @@ abstract class AndroidLintAnalysisTask : NonIncrementalTask() {
                 mainVariant
                     .variantDependencies
                     .getArtifactFileCollection(
-                        AndroidArtifacts.ConsumedConfigType.RUNTIME_CLASSPATH,
-                        AndroidArtifacts.ArtifactScope.ALL,
-                        AndroidArtifacts.ArtifactType.LINT
-                    )
-            )
-            task.lintRuleJars.from(
-                mainVariant
-                    .variantDependencies
-                    .getArtifactFileCollection(
-                        AndroidArtifacts.ConsumedConfigType.COMPILE_CLASSPATH,
+                        AndroidArtifacts.ConsumedConfigType.LINT_CHECKS_CLASSPATH,
                         AndroidArtifacts.ArtifactScope.ALL,
                         AndroidArtifacts.ArtifactType.LINT
                     )
