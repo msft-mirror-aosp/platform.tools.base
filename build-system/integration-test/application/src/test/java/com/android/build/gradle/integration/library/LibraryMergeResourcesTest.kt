@@ -74,28 +74,39 @@ class LibraryMergeResourcesTest {
 
     @Test
     fun `test trailing text in xml`() {
-        val layoutWithXmlTrailingContent =
-            project.mainResDir.resolve("layout/trailing_content_layout.xml").also {
-                it.writeText(
-                    """<?xml version="1.0" encoding="utf-8"?>
+        project.mainResDir.resolve("layout/trailing_content_layout.xml").also {
+            it.writeText(
+                """<?xml version="1.0" encoding="utf-8"?>
             <FrameLayout>content</FrameLayout> trailing content
             """
-                )
-            }
-        val execution = project.executor().run("clean", ":parseDebugLocalResources")
-        execution.assertOutputDoesNotContain(
-            """main.xml contains trailing content."""
-        )
-        execution.assertOutputContains(
-            "trailing_content_layout.xml contains trailing content. Trailing is stripped during XML parsing."
-        )
-        execution.assertOutputContains(
-            """Trailing content was: ' trailing content
+            )
+        }
+        //Check valid XML layout does not trigger warning (regression test for b/453573619)
+        project.mainResDir.resolve("layout/valid_layout.xml").also {
+            it.writeText(
+                """<?xml version="1.0" encoding="utf-8"?>
+            <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                android:orientation="vertical"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"/>""".trimIndent()
+            )
+        }
+        project.executor().run("clean", ":parseDebugLocalResources").also {
+            it.assertOutputDoesNotContain(
+                """main.xml contains trailing content."""
+            )
+            it.assertOutputContains(
+                "trailing_content_layout.xml contains trailing content. Trailing is stripped during XML parsing."
+            )
+            it.assertOutputContains(
+                """Trailing content was: ' trailing content
         '"""
-        )
-        layoutWithXmlTrailingContent.delete()
+            )
+            it.assertOutputDoesNotContain("valid_layout.xml contains trailing content.")
+        }
+
         val valuesColorsWithXmlTrailingContent =
-            project.mainResDir.resolve("layout/colors.xml").also {
+            project.mainResDir.resolve("values/colors.xml").also {
                 it.writeText(
                     """<?xml version="1.0" encoding="utf-8"?>
             <resources>
@@ -106,14 +117,17 @@ class LibraryMergeResourcesTest {
             """
                 )
             }
-        project.executor().run("clean", ":parseDebugLocalResources")
+        project.executor().expectFailure().run("clean", ":parseDebugLocalResources").also {
+            it.assertFailureMessage()
+                .contains("colors.xml:6:26: Error: Content is not allowed in trailing section.")
+        }
         valuesColorsWithXmlTrailingContent.delete()
 
-        val noValidXmlLayout = project.mainResDir.resolve("layout/empty_layout.xml").also {
+        project.mainResDir.resolve("layout/empty_layout.xml").also {
             it.writeText("content")
         }
-        val failure = project.executor().expectFailure().run("clean", ":parseDebugLocalResources")
-        failure.assertFailureMessage().contains("Content is not allowed in prolog.")
-        noValidXmlLayout.delete()
+        project.executor().expectFailure().run("clean", ":parseDebugLocalResources").also {
+            it.assertFailureMessage().contains("Content is not allowed in prolog.")
+        }
     }
 }
