@@ -17,6 +17,7 @@
 package com.android.build.gradle.integration.multiplatform.v2
 
 import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
+import com.android.build.gradle.integration.common.fixture.project.GradleBuild
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition.Companion.DEFAULT_COMPILE_SDK_VERSION
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
@@ -29,6 +30,10 @@ import org.gradle.api.publish.PublishingExtension
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import org.junit.Rule
 import org.junit.Test
+import java.nio.file.Path
+import kotlin.io.path.exists
+import kotlin.io.path.readText
+import kotlin.io.path.writeText
 
 class KotlinMultiplatformPublishingTest {
 
@@ -70,12 +75,19 @@ class KotlinMultiplatformPublishingTest {
             }
         }
         build.executor.run(":producer:publish")
-        val buildResult = build.executor.run(
+        var buildResult = build.executor.run(
             ":consumer:dependencyInsight",
             "--configuration", "androidCompileClasspath",
             "--dependency", "com.example.producer:producer:1.0"
         )
+        ScannerSubject.assertThat(buildResult.stdout).contains("Variant androidApiElements-published")
 
+        simulateDifferentProducerArtifact(build)
+        buildResult = build.executor.run(
+            ":consumer:dependencyInsight",
+            "--configuration", "androidCompileClasspath",
+            "--dependency", "com.example.producer:producer:1.0"
+        )
         ScannerSubject.assertThat(buildResult.stdout).contains("Variant androidApiElements-published")
     }
 
@@ -96,12 +108,19 @@ class KotlinMultiplatformPublishingTest {
             disableBuiltInKotlin()
         }
         build.executor.run(":producer:publish")
-        val buildResult = build.executor.run(
+        var buildResult = build.executor.run(
             ":oldKmpConsumer:dependencyInsight",
             "--configuration", "androidDebugCompileClasspath",
             "--dependency", "com.example.producer:producer:1.0"
         )
+        ScannerSubject.assertThat(buildResult.stdout).contains("Variant androidApiElements-published")
 
+        simulateDifferentProducerArtifact(build)
+        buildResult = build.executor.run(
+            ":oldKmpConsumer:dependencyInsight",
+            "--configuration", "androidDebugCompileClasspath",
+            "--dependency", "com.example.producer:producer:1.0"
+        )
         ScannerSubject.assertThat(buildResult.stdout).contains("Variant androidApiElements-published")
     }
 
@@ -120,12 +139,18 @@ class KotlinMultiplatformPublishingTest {
             }
         }
         build.executor.run(":producer:publish")
-        val buildResult = build.executor.run(
+        var buildResult = build.executor.run(
             ":plainAndroidLibConsumer:dependencyInsight",
             "--configuration", "debugCompileClasspath",
             "--dependency", "com.example.producer:producer:1.0"
         )
-
+        ScannerSubject.assertThat(buildResult.stdout).contains("Variant androidApiElements-published")
+        simulateDifferentProducerArtifact(build)
+        buildResult = build.executor.run(
+            ":plainAndroidLibConsumer:dependencyInsight",
+            "--configuration", "debugCompileClasspath",
+            "--dependency", "com.example.producer:producer:1.0"
+        )
         ScannerSubject.assertThat(buildResult.stdout).contains("Variant androidApiElements-published")
     }
 
@@ -133,8 +158,6 @@ class KotlinMultiplatformPublishingTest {
      * Here we have a consumer with jvm + common targets consuming an
      * artifact with android + common targets. And the androidApiElements variant is successfully
      * resolved which is wrong. jvmMain cannot consume androidMain
-     *
-     * This test should actually fail with Gradle resolution error
      */
     @Test
     fun `test kmp consumer without android target`() {
@@ -147,12 +170,14 @@ class KotlinMultiplatformPublishingTest {
             }
         }
         build.executor.run(":producer:publish")
+        // the build succeeds but the Gradle resolution actually fails here
         val buildResult = build.executor.run(
             ":kmpWithoutAndroidTargetConsumer:dependencyInsight",
             "--configuration", "jvmCompileClasspath",
             "--dependency", "com.example.producer:producer:1.0"
         )
-        ScannerSubject.assertThat(buildResult.stdout).contains("Variant androidApiElements-published")
+        ScannerSubject.assertThat(buildResult.stdout)
+            .contains("No matching variant of com.example.producer:producer:1.0 was found")
     }
 
     @Test
@@ -176,8 +201,32 @@ class KotlinMultiplatformPublishingTest {
             "--configuration", "jvmCompileClasspath",
             "--dependency", "com.example.producer:producer:1.0"
         )
-
         ScannerSubject.assertThat(buildResult.stdout).contains("Variant jvmApiElements-published")
+    }
+
+    /**
+     * This update the metadata file changes the org.jetbrains.kotlin.platform.type attribute
+     * in all publication configurations from androidJvm to jvm in order to simulate consuming
+     * AGP-KMP library published with "jvm" value
+     */
+    fun simulateDifferentProducerArtifact(build: GradleBuild) {
+        val gradleModuleFile =
+            build.directory.resolve("repo/com/example/producer/producer/1.0/producer-1.0.module")
+
+        val toReplace = "\"org.jetbrains.kotlin.platform.type\": \"androidJvm\""
+        val replacement = "\"org.jetbrains.kotlin.platform.type\": \"jvm\""
+        replaceInFile(gradleModuleFile, toReplace, replacement)
+    }
+
+    fun replaceInFile(path: Path, oldString: String, newString: String) {
+        if (!path.exists()) {
+            println("Error: File does not exist at path: $path")
+            return
+        }
+
+        val originalContent = path.readText()
+        val modifiedContent = originalContent.replace(oldString, newString)
+        path.writeText(modifiedContent)
     }
 }
 

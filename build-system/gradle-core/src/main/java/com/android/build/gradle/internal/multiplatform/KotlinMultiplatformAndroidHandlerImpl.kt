@@ -45,6 +45,7 @@ import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSet
 import org.jetbrains.kotlin.gradle.plugin.mpp.external.DecoratedExternalKotlinCompilation
+import org.jetbrains.kotlin.gradle.plugin.mpp.external.ExternalKotlinTargetConfigurationDescriptorBuilder
 import org.jetbrains.kotlin.gradle.plugin.mpp.external.ExternalKotlinTargetDescriptor
 import org.jetbrains.kotlin.gradle.plugin.mpp.external.createExternalKotlinTarget
 import org.jetbrains.kotlin.gradle.plugin.mpp.external.sourcesJarTask
@@ -107,6 +108,7 @@ internal class KotlinMultiplatformAndroidHandlerImpl(
             androidTarget = kotlinExtension.createExternalKotlinTarget {
                 targetName = KotlinMultiplatformAndroidPlugin.ANDROID_TARGET_NAME
                 platformType = KotlinPlatformType.jvm
+                configureAttributes(apiElements, runtimeElements, sourcesElements, apiElementsPublished, runtimeElementsPublished, sourcesElementsPublished)
                 targetFactory = ExternalKotlinTargetDescriptor.TargetFactory { delegate ->
                     dslServices.newInstance(
                         KotlinMultiplatformAndroidLibraryTargetImpl::class.java,
@@ -160,6 +162,19 @@ internal class KotlinMultiplatformAndroidHandlerImpl(
         }
 
         return androidExtension
+    }
+
+    private fun configureAttributes(
+        vararg elements: ExternalKotlinTargetConfigurationDescriptorBuilder<KotlinMultiplatformAndroidLibraryTargetImpl>,
+    ) {
+        elements.forEach {
+            it.configure { _, configuration ->
+                configuration.attributes.attribute(
+                    KotlinPlatformType.attribute,
+                    KotlinPlatformType.androidJvm
+                )
+            }
+        }
     }
 
     private fun registerAndroidTargetExtension(

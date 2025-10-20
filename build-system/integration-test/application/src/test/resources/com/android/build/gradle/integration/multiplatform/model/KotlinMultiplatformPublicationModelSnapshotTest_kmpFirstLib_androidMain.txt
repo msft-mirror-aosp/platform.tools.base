@@ -147,7 +147,7 @@
         "org.gradle.libraryelements": "aar",
         "org.gradle.status": "release",
         "org.gradle.usage": "java-api",
-        "org.jetbrains.kotlin.platform.type": "jvm"
+        "org.jetbrains.kotlin.platform.type": "androidJvm"
       }
     },
     "extras": {
@@ -165,7 +165,7 @@
                 "org.gradle.libraryelements": "aar",
                 "org.gradle.status": "release",
                 "org.gradle.usage": "java-api",
-                "org.jetbrains.kotlin.platform.type": "jvm"
+                "org.jetbrains.kotlin.platform.type": "androidJvm"
               },
               "capabilities": [
                 "com.example:kmpSecondLib-android:1.0"
