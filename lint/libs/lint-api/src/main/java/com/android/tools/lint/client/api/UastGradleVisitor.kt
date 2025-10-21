@@ -24,6 +24,7 @@ import com.android.tools.lint.detector.api.acceptSourceFile
 import com.android.tools.lint.detector.api.getMethodName
 import com.intellij.psi.PsiElement
 import org.jetbrains.kotlin.psi.KtLiteralStringTemplateEntry
+import org.jetbrains.kotlin.psi.KtValueArgument
 import org.jetbrains.uast.UBinaryExpression
 import org.jetbrains.uast.UBlockExpression
 import org.jetbrains.uast.UCallExpression
@@ -128,14 +129,24 @@ class UastGradleVisitor(override val javaContext: JavaContext) : GradleVisitor()
         getMethodCallHierarchy(node).drop(1) + getParentsN(node, 1) + getParentsN(node, 2)
       val parentName = parents.getOrNull(0)
       val parentParentName = parents.getOrNull(1)
-      val unnamedArguments = valueArguments.map { it.getSource() }
+      val unnamedArguments = mutableListOf<String>()
+      val namedArguments = mutableMapOf<String, String>()
+      for (arg in valueArguments) {
+        val name =
+          (arg.sourcePsi?.parent as? KtValueArgument)?.getArgumentName()?.asName?.identifier
+        val src = arg.getSource()
+        when (name) {
+          null -> unnamedArguments.add(src)
+          else -> namedArguments[name] = src
+        }
+      }
       for (scanner in detectors) {
         scanner.checkMethodCall(
           context,
           propertyName,
           parentName,
           parentParentName,
-          mapOf(),
+          namedArguments,
           unnamedArguments,
           node,
         )
