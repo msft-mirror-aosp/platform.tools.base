@@ -571,11 +571,12 @@ abstract class AndroidLintTask : NonIncrementalTask() {
                 lintMode
             )
             task.lintRuleJars.from(creationConfig.global.localCustomLintChecks)
-            task.lintRuleJars.addRuntimeAndCompileArtifacts(
-                creationConfig,
+            task.lintRuleJars.from(
+                creationConfig.variantDependencies.getArtifactFileCollection(
+                    AndroidArtifacts.ConsumedConfigType.LINT_CHECKS_CLASSPATH,
                 ArtifactScope.ALL,
                 ArtifactType.LINT
-            )
+            ))
             task.lintRuleJars.disallowChanges()
             task.fatalOnly.setDisallowChanges(fatalOnly)
             task.autoFix.setDisallowChanges(autoFix)
