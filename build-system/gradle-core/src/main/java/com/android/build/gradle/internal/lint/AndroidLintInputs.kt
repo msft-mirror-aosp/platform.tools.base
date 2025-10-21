@@ -104,6 +104,9 @@ import org.gradle.api.Task
 import org.gradle.api.UnknownDomainObjectException
 import org.gradle.api.artifacts.ArtifactCollection
 import org.gradle.api.artifacts.Configuration
+import org.gradle.api.artifacts.ResolutionStrategy
+import org.gradle.api.attributes.Attribute
+import org.gradle.api.attributes.AttributeContainer
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.Directory
 import org.gradle.api.file.DirectoryProperty
@@ -1971,6 +1974,12 @@ abstract class AndroidArtifactInput : ArtifactInput() {
             componentType = ComponentTypeImpl.JAVA_LIBRARY,
             compileClasspath = project.configurations.getByName(sourceSet.compileClasspathConfigurationName),
             runtimeClasspath = project.configurations.getByName(sourceSet.runtimeClasspathConfigurationName),
+            lintChecksClasspath = maybeCreateLintChecksClasspath(
+                project,
+                sourceSet.name,
+                project.configurations.getByName(sourceSet.compileClasspathConfigurationName),
+                project.configurations.getByName(sourceSet.runtimeClasspathConfigurationName)
+            ),
             sourceSetRuntimeConfigurations = listOf(),
             sourceSetImplementationConfigurations = listOf(),
             elements = mapOf(),
@@ -2023,6 +2032,12 @@ abstract class AndroidArtifactInput : ArtifactInput() {
             componentType = ComponentTypeImpl.JAVA_LIBRARY,
             compileClasspath = project.configurations.getByName(compilation.compileDependencyConfigurationName),
             runtimeClasspath = project.configurations.getByName(compilation.runtimeDependencyConfigurationName ?: compilation.compileDependencyConfigurationName),
+            lintChecksClasspath = maybeCreateLintChecksClasspath(
+                project,
+                compilation.name,
+                project.configurations.getByName(compilation.compileDependencyConfigurationName),
+                project.configurations.getByName(compilation.runtimeDependencyConfigurationName ?: compilation.compileDependencyConfigurationName)
+            ),
             sourceSetRuntimeConfigurations = listOf(),
             sourceSetImplementationConfigurations = listOf(),
             elements = mapOf(),
@@ -2074,6 +2089,7 @@ abstract class AndroidArtifactInput : ArtifactInput() {
             componentType = ComponentTypeImpl.PRIVACY_SANDBOX_SDK,
             compileClasspath = project.configurations.getByName("includeApiClasspath"),
             runtimeClasspath = project.configurations.getByName("includeRuntimeClasspath"),
+            lintChecksClasspath = project.configurations.getByName("includeLintChecksClasspath"),
             sourceSetRuntimeConfigurations = listOf(),
             sourceSetImplementationConfigurations = listOf(),
             elements = mapOf(),
@@ -2275,6 +2291,12 @@ abstract class JavaArtifactInput : ArtifactInput() {
             componentType = ComponentTypeImpl.JAVA_LIBRARY,
             compileClasspath = compileClasspath ?: project.configurations.getByName(sourceSet.compileClasspathConfigurationName),
             runtimeClasspath = runtimeClasspath ?: project.configurations.getByName(sourceSet.runtimeClasspathConfigurationName),
+            lintChecksClasspath = maybeCreateLintChecksClasspath(
+                project,
+                sourceSet.name,
+                compileClasspath ?: project.configurations.getByName(sourceSet.compileClasspathConfigurationName),
+                runtimeClasspath ?: project.configurations.getByName(sourceSet.runtimeClasspathConfigurationName),
+            ),
             sourceSetRuntimeConfigurations = listOf(),
             sourceSetImplementationConfigurations = listOf(),
             elements = mapOf(),
@@ -2360,6 +2382,12 @@ abstract class JavaArtifactInput : ArtifactInput() {
             componentType = ComponentTypeImpl.JAVA_LIBRARY,
             compileClasspath = compileClasspathForLint,
             runtimeClasspath = runtimeClasspathForLint,
+            lintChecksClasspath = maybeCreateLintChecksClasspath(
+                project,
+                compilation.name,
+                compileClasspathForLint,
+                runtimeClasspathForLint
+            ),
             sourceSetRuntimeConfigurations = listOf(),
             sourceSetImplementationConfigurations = listOf(),
             elements = mapOf(),
@@ -2918,3 +2946,38 @@ enum class LintMode {
 }
 
 const val LINT_XML_CONFIG_FILE_NAME = "lint.xml"
+
+internal fun maybeCreateLintChecksClasspath(
+    project: Project,
+    variantName: String?,
+    compileClasspath: Configuration,
+    runtimeClasspath: Configuration
+): Configuration {
+    val lintChecksClasspathName = variantName + "LintChecksClasspath"
+    val lintChecksClasspath = project.configurations.maybeCreate(lintChecksClasspathName)
+    lintChecksClasspath.isVisible = false
+    lintChecksClasspath.description = "Resolved configuration for lint check compilation for variant: $variantName"
+    lintChecksClasspath.extendsFrom(compileClasspath, runtimeClasspath)
+    lintChecksClasspath.isCanBeConsumed = false
+    lintChecksClasspath
+        .resolutionStrategy
+        .sortArtifacts(ResolutionStrategy.SortOrder.CONSUMER_FIRST)
+    for (attributeKey in runtimeClasspath.attributes.keySet()) {
+        copyAttribute(
+            attributeKey as Attribute<*>,
+            runtimeClasspath.attributes,
+            lintChecksClasspath.attributes
+        )
+    }
+    return lintChecksClasspath
+}
+
+private fun <T> copyAttribute(
+    key: Attribute<T>,
+    from: AttributeContainer,
+    to: AttributeContainer
+) {
+    if (from.contains(key)) {
+        to.attribute(key, from.getAttribute(key)!!)
+    }
+}

@@ -231,6 +231,8 @@ maven_repository(
         "@maven//:androidx.constraintlayout.constraintlayout_2.1.4",
         "@maven//:androidx.core.core-ktx_1.13.0",
         "@maven//:androidx.core.core-ktx_1.9.0",
+        "@maven//:androidx.lifecycle.lifecycle-runtime-desktop_2.8.7",
+        "@maven//:androidx.lifecycle.lifecycle-viewmodel-desktop_2.8.7",
         "@maven//:androidx.lifecycle.lifecycle-viewmodel-savedstate_2.6.2",
         "@maven//:androidx.lifecycle.lifecycle-viewmodel-savedstate_2.8.7",
         "@maven//:androidx.lifecycle.lifecycle-viewmodel_2.6.2",

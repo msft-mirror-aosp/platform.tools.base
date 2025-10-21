@@ -256,9 +256,29 @@ class PrivacySandboxSdkPlugin @Inject constructor(
                 it.extendsFrom(optionalSdkConfiguration.get())
             }
 
+        val includeLintChecksClasspath = project.configurations.register("includeLintChecksClasspath") {
+            it.isCanBeConsumed = false
+
+            it.attributes.attribute(
+                Usage.USAGE_ATTRIBUTE,
+                project.objects.named(Usage::class.java, Usage.JAVA_RUNTIME)
+            )
+            it.attributes.attribute(
+                BuildTypeAttr.ATTRIBUTE,
+                buildType,
+            )
+            it.attributes.attribute(
+                TargetJvmEnvironment.TARGET_JVM_ENVIRONMENT_ATTRIBUTE,
+                jvmEnvironment
+            )
+
+            it.extendsFrom(includeApiClasspath.get(), includeRuntimeClasspath.get())
+
+        }
+
         if (!projectServices.projectOptions[BooleanOption.DISABLE_KOTLIN_ATTRIBUTE_SETUP]) {
             configureKotlinPlatformAttribute(
-                listOf(includeApiClasspath.get(), includeRuntimeClasspath.get()),
+                listOf(includeApiClasspath.get(), includeRuntimeClasspath.get(), includeLintChecksClasspath.get()),
                 project
             )
         }
@@ -287,7 +307,7 @@ class PrivacySandboxSdkPlugin @Inject constructor(
             configurePrivacySandboxElements(runtimeElements, Usage.JAVA_RUNTIME)
             runtimeElements.extendsFrom(requiredSdkConfiguration.get())
         }
-        val incomingConfigurationsToAdd = listOf(includeApiClasspath.get(), includeRuntimeClasspath.get())
+        val incomingConfigurationsToAdd = listOf(includeApiClasspath.get(), includeRuntimeClasspath.get(), includeLintChecksClasspath.get())
         variantScope.incomingConfigurations.addAll(incomingConfigurationsToAdd)
     }
 

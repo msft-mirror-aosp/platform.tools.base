@@ -57,7 +57,6 @@ import org.gradle.api.artifacts.ArtifactView
 import org.gradle.api.artifacts.Configuration
 import org.gradle.api.artifacts.Dependency
 import org.gradle.api.artifacts.FileCollectionDependency
-import org.gradle.api.artifacts.ResolutionStrategy
 import org.gradle.api.artifacts.component.ComponentIdentifier
 import org.gradle.api.artifacts.component.ModuleComponentIdentifier
 import org.gradle.api.artifacts.component.ProjectComponentIdentifier
@@ -98,6 +97,7 @@ class VariantDependencies internal constructor(
     private val componentType: ComponentType,
     val compileClasspath: Configuration,
     val runtimeClasspath: Configuration,
+    val lintChecksClasspath: Configuration,
     private val sourceSetRuntimeConfigurations: Collection<Configuration>,
     val sourceSetImplementationConfigurations: Collection<Configuration>,
     private val elements: Map<PublishedConfigSpec, Configuration>,
@@ -374,31 +374,6 @@ class VariantDependencies internal constructor(
         null
     ).artifactFiles
 
-    private val lintChecksClasspath: Configuration by lazy {
-        project.configurations.maybeCreate("${variantName}LintChecksClasspath").also {
-            it.isVisible = false
-            it.description =
-                "Resolved configuration for lint check compilation for variant: $variantName"
-            it.extendsFrom(compileClasspath, runtimeClasspath)
-            it.isCanBeConsumed = false
-            it.resolutionStrategy.sortArtifacts(ResolutionStrategy.SortOrder.CONSUMER_FIRST)
-            runtimeClasspath.attributes.keySet().forEach { key ->
-                copyAttribute(key, runtimeClasspath.attributes, it.attributes)
-            }
-        }
-    }
-
-    private fun <T> copyAttribute(
-        key: Attribute<T>,
-        from: AttributeContainer,
-        to: AttributeContainer
-    ) {
-        val value = from.getAttribute(key)
-        if (value != null) {
-            to.attribute(key, value)
-        }
-    }
-
     companion object {
         const val CONFIG_NAME_ANDROID_APIS = "androidApis"
         const val CONFIG_NAME_LINTCHECKS = "lintChecks"
@@ -465,6 +440,7 @@ class VariantDependencies internal constructor(
             apiClasspath: Configuration,
             compileClasspath: Configuration,
             runtimeClasspath: Configuration,
+            lintChecksClasspath: Configuration,
             apiElements: Configuration?,
             runtimeElements: Configuration?,
             sourcesElements: Configuration?,
@@ -473,7 +449,7 @@ class VariantDependencies internal constructor(
             sourcesPublication: Configuration?,
             kmpVariantApiOperationsRegistrar: VariantApiOperationsRegistrar<KotlinMultiplatformAndroidLibraryExtension, KotlinMultiplatformAndroidVariantBuilder, KotlinMultiplatformAndroidVariant>,
         ): VariantDependencies {
-            val incomingConfigurations = listOf(compileClasspath, runtimeClasspath)
+            val incomingConfigurations = listOf(compileClasspath, runtimeClasspath, lintChecksClasspath)
             val outgoingConfigurations = listOfNotNull(apiElements, runtimeElements, sourcesElements)
             val publicationConfigurations = listOfNotNull(apiPublication, runtimePublication, sourcesPublication)
 
@@ -593,6 +569,7 @@ class VariantDependencies internal constructor(
                 componentType = ComponentTypeImpl.KMP_ANDROID,
                 compileClasspath = compileClasspath,
                 runtimeClasspath = runtimeClasspath,
+                lintChecksClasspath = lintChecksClasspath,
                 sourceSetRuntimeConfigurations = emptySet(),
                 sourceSetImplementationConfigurations = emptySet(),
                 elements = elements,
