@@ -120,6 +120,7 @@ def studio_linux(build_env: bazel.BuildEnv) -> None:
       build_env,
       test_tag_filters=test_tag_filters,
   )
+  flags.append('--bes_keywords=cinder')
 
   targets = _BASE_TARGETS
 
@@ -127,6 +128,7 @@ def studio_linux(build_env: bazel.BuildEnv) -> None:
   if build_type == studio.BuildType.POSTSUBMIT:
     impacted_targets.generate_and_upload_hash_file(build_env)
     targets += _EXTRA_TARGETS
+    flags.append('--build_metadata=cinder_pipelines=component-owners')
 
   if build_type == studio.BuildType.PRESUBMIT:
     result = presubmit.find_test_targets(
