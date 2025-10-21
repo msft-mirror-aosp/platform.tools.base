@@ -794,6 +794,7 @@ DATA = [
     "com.google.errorprone:error_prone_type_annotations:2.33.0",
     "com.google.firebase:firebase-common:12.0.1",
     "com.google.firebase:firebase-crashlytics-gradle:2.5.1",
+    "com.google.firebase.testlab:testlab-gradle-plugin:0.0.1-alpha11",
     "com.google.flogger:flogger:0.8",
     "com.google.guava:guava:20.0",
     "com.google.guava:guava:28.2-jre",
