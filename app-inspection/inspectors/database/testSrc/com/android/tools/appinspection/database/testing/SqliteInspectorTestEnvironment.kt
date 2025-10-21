@@ -353,6 +353,8 @@ sealed class Hook(val originClass: Class<*>, val originMethod: String) {
     originMethod: String,
     @Suppress("unused") val entryHook: ArtTooling.EntryHook,
   ) : Hook(originClass, originMethod)
+
+  override fun toString() = "Hook(originClass=${originClass.name}, originMethod='$originMethod')"
 }
 
 val Hook.asEntryHook

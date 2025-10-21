@@ -48,9 +48,16 @@ fun GetSchemaResponse.toTableList(): List<Table> =
   tablesList.map { t -> Table(t.name, t.columnsList.map { c -> Column(c.name, c.type) }) }
 
 object MessageFactory {
-  fun createTrackDatabasesCommand(forceOpen: Boolean = false): Command =
+  fun createTrackDatabasesCommand(
+    forceOpen: Boolean = false,
+    ignoreFrameworkApi: Boolean = false,
+  ): Command =
     Command.newBuilder()
-      .setTrackDatabases(TrackDatabasesCommand.newBuilder().setForceOpen(forceOpen))
+      .setTrackDatabases(
+        TrackDatabasesCommand.newBuilder()
+          .setForceOpen(forceOpen)
+          .setIgnoreFrameworkApi(ignoreFrameworkApi)
+      )
       .build()
 
   fun createTrackDatabasesResponse(): Response =
