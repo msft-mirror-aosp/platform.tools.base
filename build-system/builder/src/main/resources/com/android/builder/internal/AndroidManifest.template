@@ -4,10 +4,6 @@
 
     <uses-sdk android:minSdkVersion="#MINSDKVERSION#" android:targetSdkVersion="#TARGETSDKVERSION#" />
 
-    <application>
-        <uses-library android:name="android.test.runner" />
-    </application>
-
     <instrumentation android:name="#TESTRUNNER#"
                      android:targetPackage="#TESTEDPACKAGE#"
                      android:handleProfiling="#HANDLEPROFILING#"
