@@ -53,7 +53,6 @@ import com.android.build.gradle.internal.test.report.CompositeTestResults;
 import com.android.build.gradle.internal.test.report.ReportType;
 import com.android.build.gradle.internal.test.report.TestReport;
 import com.android.build.gradle.internal.testing.ConnectedDeviceProvider;
-import com.android.build.gradle.internal.testing.SimpleTestRunnable;
 import com.android.build.gradle.internal.testing.StaticTestData;
 import com.android.build.gradle.internal.testing.TestData;
 import com.android.build.gradle.internal.testing.TestRunner;
@@ -386,7 +385,7 @@ public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTas
         if (!testsFound) {
             logger.info("No tests found, nothing to do.");
             // If we don't create the coverage file, createXxxCoverageReport task will fail.
-            File emptyCoverageFile = new File(coverageDir, SimpleTestRunnable.FILE_COVERAGE_EC);
+            File emptyCoverageFile = new File(coverageDir, "coverage.ec");
             emptyCoverageFile.createNewFile();
             success = true;
         } else {
