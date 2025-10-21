@@ -333,6 +333,8 @@ abstract class CommonExtensionImpl<
         return ProguardFiles.getDefaultProguardFile(name, dslServices.buildDirectory)
     }
 
+    override var enableKotlin: Boolean = true
+
     override val experimentalProperties: MutableMap<String, Any> = mutableMapOf()
 
     fun flavorDimensions(vararg dimensions: String) {

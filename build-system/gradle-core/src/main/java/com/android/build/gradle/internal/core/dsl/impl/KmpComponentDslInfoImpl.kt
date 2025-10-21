@@ -59,4 +59,7 @@ abstract class KmpComponentDslInfoImpl(
                 get() = false // TODO(b/312469467)
         }
 
+    // For KMP, Kotlin is always enabled
+    override val enableKotlin: Boolean = true
+
 }

@@ -78,6 +78,9 @@ internal abstract class ComponentDslInfoImpl internal constructor(
 
     override val privacySandboxDsl: PrivacySandboxDslInfo = PrivacySandboxDslInfoImpl(extension)
 
+    override val enableKotlin: Boolean
+        get() = extension.enableKotlin
+
     init {
         computeMergedOptions(
             defaultConfig,

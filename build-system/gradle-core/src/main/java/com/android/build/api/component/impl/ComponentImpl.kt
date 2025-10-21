@@ -226,8 +226,8 @@ abstract class ComponentImpl<DslInfoT: ComponentDslInfo>(
 
     override val builtInKotlinSupportMode: BuiltInKotlinSupportMode by lazy {
         when {
-            internalServices.projectOptions.get(BooleanOption.BUILT_IN_KOTLIN) -> BuiltInKotlinSupportMode.Supported.BuiltInKotlinBooleanOptionEnabled
-            internalServices.projectInfo.hasPlugin(ANDROID_BUILT_IN_KOTLIN_PLUGIN_ID) -> BuiltInKotlinSupportMode.Supported.BuiltInKotlinPluginApplied
+            internalServices.projectOptions.get(BooleanOption.BUILT_IN_KOTLIN) && dslInfo.enableKotlin -> BuiltInKotlinSupportMode.Supported.BuiltInKotlinBooleanOptionEnabled
+            internalServices.projectInfo.hasPlugin(ANDROID_BUILT_IN_KOTLIN_PLUGIN_ID) && dslInfo.enableKotlin -> BuiltInKotlinSupportMode.Supported.BuiltInKotlinPluginApplied
             else -> BuiltInKotlinSupportMode.NotSupported
         }
     }

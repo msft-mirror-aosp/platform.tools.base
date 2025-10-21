@@ -102,4 +102,8 @@ interface ComponentDslInfo {
     val androidResourcesDsl: AndroidResourcesDslInfo?
 
     val privacySandboxDsl: PrivacySandboxDslInfo
+
+    /** Enables the compilation of Kotlin sources. */
+    val enableKotlin: Boolean
+
 }

@@ -970,6 +970,7 @@ package com.android.build.api.dsl {
     method public com.android.build.api.dsl.DataBinding getDataBinding();
     method public com.android.build.api.dsl.DefaultConfig getDefaultConfig();
     method @org.gradle.declarative.dsl.model.annotations.Restricted public java.io.File getDefaultProguardFile(String name);
+    method @org.gradle.declarative.dsl.model.annotations.Restricted public boolean getEnableKotlin();
     method @org.gradle.api.Incubating public java.util.Map<java.lang.String,java.lang.Object> getExperimentalProperties();
     method public com.android.build.api.dsl.ExternalNativeBuild getExternalNativeBuild();
     method public java.util.List<java.lang.String> getFlavorDimensions();
@@ -1001,6 +1002,7 @@ package com.android.build.api.dsl {
     method public void setCompileSdkExtension(Integer?);
     method public void setCompileSdkMinor(Integer?);
     method public void setCompileSdkPreview(String?);
+    method public void setEnableKotlin(boolean);
     method public void setNamespace(String?);
     method public void setNdkPath(String?);
     method public void setNdkVersion(String);
@@ -1027,6 +1029,7 @@ package com.android.build.api.dsl {
     property public abstract com.android.build.api.dsl.ComposeOptions composeOptions;
     property public abstract com.android.build.api.dsl.DataBinding dataBinding;
     property public abstract com.android.build.api.dsl.DefaultConfig defaultConfig;
+    property @org.gradle.declarative.dsl.model.annotations.Restricted public abstract boolean enableKotlin;
     property @org.gradle.api.Incubating public abstract java.util.Map<java.lang.String,java.lang.Object> experimentalProperties;
     property public abstract com.android.build.api.dsl.ExternalNativeBuild externalNativeBuild;
     property public abstract java.util.List<java.lang.String> flavorDimensions;

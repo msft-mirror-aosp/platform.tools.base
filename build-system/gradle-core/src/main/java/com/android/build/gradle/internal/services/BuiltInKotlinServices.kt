@@ -51,6 +51,7 @@ import org.jetbrains.kotlin.gradle.plugin.KotlinBaseApiPlugin
 import org.jetbrains.kotlin.gradle.plugin.KotlinCompilation
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinJvmAndroidCompilation
 import org.jetbrains.kotlin.gradle.plugin.sources.android.AndroidVariantType
+import com.android.build.api.dsl.CommonExtension
 
 /**
  * Services related to the built-in Kotlin support, to be used when
@@ -126,23 +127,27 @@ sealed class BuiltInKotlinSupportMode {
     sealed class Supported : BuiltInKotlinSupportMode() {
 
         /**
-         * Built-in Kotlin support is available because [BooleanOption.BUILT_IN_KOTLIN] is enabled.
+         * Built-in Kotlin support is available because [BooleanOption.BUILT_IN_KOTLIN] and
+         * [CommonExtension.enableKotlin] are enabled.
          */
         object BuiltInKotlinBooleanOptionEnabled : Supported()
 
-        /** Built-in Kotlin support is available because the built-in Kotlin plugin is applied. */
+        /**
+         * Built-in Kotlin support is available because the built-in Kotlin plugin is applied
+         * and [CommonExtension.enableKotlin] is enabled.
+         */
         object BuiltInKotlinPluginApplied : Supported()
 
         /**
          * Built-in Kotlin support is available because this is a screenshot test component and
-         * the `kotlin-android` plugin is applied.
+         * the `kotlin-android` plugin is applied and [CommonExtension.enableKotlin] is enabled.
          */
         object ScreenshotTestAndKgpApplied : Supported()
 
         /**
          * Built-in Kotlin support is available because this is a test-fixtures component and
          * [BooleanOption.ENABLE_TEST_FIXTURES_KOTLIN_SUPPORT] is enabled and the `kotlin-android`
-         * plugin is applied.
+         * plugin is applied and [CommonExtension.enableKotlin] is enabled.
          */
         object TestFixturesSupportEnabledAndKgpApplied : Supported()
     }
