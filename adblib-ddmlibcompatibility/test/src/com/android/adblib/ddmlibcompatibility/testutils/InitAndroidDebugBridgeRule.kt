@@ -29,11 +29,18 @@ import org.junit.rules.ExternalResource
  *  Use `portSuppier` to feed a server port from an outer rule
  *  like `FakeAdbServerProviderRule`.
  */
-class InitAndroidDebugBridgeRule(private val portSuppier: () -> Int)
-    : ExternalResource() {
+class InitAndroidDebugBridgeRule(
+    private val alsoCreateBridge: Boolean = false,
+    private val portSuppier: () -> Int
+) : ExternalResource() {
+
     public override fun before() {
         AndroidDebugBridge.enableFakeAdbServerMode(portSuppier())
         AndroidDebugBridge.init(AdbInitOptions.DEFAULT)
+        if (alsoCreateBridge) {
+            AndroidDebugBridge.createBridge(10, TimeUnit.SECONDS)
+                ?: error("InitAndroidDebugBridgeRule could not create ADB bridge ")
+        }
     }
 
     override fun after() {
