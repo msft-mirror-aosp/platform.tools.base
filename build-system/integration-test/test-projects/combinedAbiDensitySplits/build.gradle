@@ -32,10 +32,6 @@ android {
             reset()
             include 'x86', 'armeabi-v7a'
         }
-        density {
-            enable = true
-            exclude "ldpi", "tvdpi", "xxxhdpi"
-        }
     }
 }
 

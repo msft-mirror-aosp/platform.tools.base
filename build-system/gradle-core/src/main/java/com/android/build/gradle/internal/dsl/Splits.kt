@@ -21,11 +21,7 @@ import javax.inject.Inject
 
 abstract class Splits @Inject constructor(dslServices: DslServices) :
     com.android.build.api.dsl.Splits {
-    abstract override val density: DensitySplitOptions
     abstract override val abi: AbiSplitOptions
-
-    override val densityFilters: Set<String>
-        get() = density.applicableFilters
 
     override val abiFilters: Set<String>
         get() = abi.applicableFilters

@@ -313,15 +313,9 @@ class VariantPathHelper(
     val targetFilterConfigurations: Collection<FilterConfiguration>?
         by lazy {
             val filterConfigurations = mutableListOf<FilterConfiguration>()
-            dslServices.projectOptions.get(StringOption.IDE_BUILD_TARGET_ABI)?.
-            let {
+            dslServices.projectOptions.get(StringOption.IDE_BUILD_TARGET_ABI)?.let {
                 filterConfigurations.add(
                     FilterConfigurationImpl(FilterConfiguration.FilterType.ABI, it))
-            }
-            dslServices.projectOptions.get(StringOption.IDE_BUILD_TARGET_DENSITY)?.
-            let {
-                filterConfigurations.add(
-                        FilterConfigurationImpl(FilterConfiguration.FilterType.DENSITY, it))
             }
             filterConfigurations.ifEmpty { null }
     }

@@ -90,7 +90,6 @@ TEST_DATA = [
     "//tools/base/build-system/integration-test:test-projects/customArtifactDep",
     "//tools/base/build-system/integration-test:test-projects/daggerTwo",
     "//tools/base/build-system/integration-test:test-projects/databindingIncremental",
-    "//tools/base/build-system/integration-test:test-projects/densitySplit",
     "//tools/base/build-system/integration-test:test-projects/dependencies",
     "//tools/base/build-system/integration-test:test-projects/dynamicApp",
     "//tools/base/build-system/integration-test:test-projects/embedded",

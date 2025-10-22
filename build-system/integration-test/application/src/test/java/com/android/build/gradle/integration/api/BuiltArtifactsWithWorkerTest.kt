@@ -54,16 +54,6 @@ android {
     }
 }
 
-android {
-  splits {
-    density {
-      enable = true
-      exclude "ldpi", "tvdpi", "xxxhdpi", "400dpi", "560dpi"
-      compatibleScreens 'small', 'normal', 'large', 'xlarge'
-    }
-  }
-}
-
 import javax.inject.Inject
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.api.artifact.SingleArtifact

@@ -129,18 +129,6 @@ public class AnalyticsUtil {
     @NonNull
     public static GradleBuildSplits toProto(@NonNull Splits splits) {
         GradleBuildSplits.Builder builder = GradleBuildSplits.newBuilder();
-        if (splits.getDensity().isEnable()) {
-            builder.setDensityEnabled(true);
-
-            for (String compatibleScreen : splits.getDensity().getCompatibleScreens()) {
-                builder.addDensityCompatibleScreens(getCompatibleScreen(compatibleScreen));
-            }
-
-            for (String filter : splits.getDensity().getApplicableFilters()) {
-                Density density = Density.getEnum(filter);
-                builder.addDensityValues(density == null ? -1 : density.getDpiValue());
-            }
-        }
 
         if (splits.getAbi().isEnable()) {
             builder.setAbiEnabled(true);

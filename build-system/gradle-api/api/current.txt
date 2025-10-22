@@ -1129,15 +1129,6 @@ package com.android.build.api.dsl {
   public interface DefaultConfig extends com.android.build.api.dsl.BaseFlavor {
   }
 
-  @Deprecated public interface DensitySplit extends com.android.build.api.dsl.Split {
-    method @Deprecated public void compatibleScreens(java.lang.String... sizes);
-    method @Deprecated public java.util.Set<java.lang.String> getCompatibleScreens();
-    method @Deprecated public boolean isStrict();
-    method @Deprecated public void setStrict(boolean);
-    property @Deprecated public abstract java.util.Set<java.lang.String> compatibleScreens;
-    property @Deprecated public abstract boolean isStrict;
-  }
-
   public interface DependenciesInfo {
     method public boolean getIncludeInApk();
     method public boolean getIncludeInBundle();
@@ -2147,15 +2138,10 @@ package com.android.build.api.dsl {
 
   public interface Splits {
     method public void abi(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.AbiSplit,kotlin.Unit> action);
-    method public void density(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.DensitySplit,kotlin.Unit> action);
     method public com.android.build.api.dsl.AbiSplit getAbi();
     method public java.util.Collection<java.lang.String> getAbiFilters();
-    method public com.android.build.api.dsl.DensitySplit getDensity();
-    method public java.util.Collection<java.lang.String> getDensityFilters();
     property public abstract com.android.build.api.dsl.AbiSplit abi;
     property public abstract java.util.Collection<java.lang.String> abiFilters;
-    property public abstract com.android.build.api.dsl.DensitySplit density;
-    property public abstract java.util.Collection<java.lang.String> densityFilters;
   }
 
   public interface TestAndroidResources extends com.android.build.api.dsl.AndroidResources {

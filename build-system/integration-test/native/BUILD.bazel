@@ -170,15 +170,6 @@ single_gradle_integration_test(
 )
 
 single_gradle_integration_test(
-    name = "CombinedAbiDensitySplits",
-    srcs = "src/test/java/com/android/build/gradle/integration/nativebuild/",
-    data = DATA + NDK + ["//tools/base/build-system/integration-test:test-projects/combinedAbiDensitySplits"],
-    maven_repo_zips = MAVEN_REPO_ZIPS,
-    maven_repos = MAVEN_REPOS,
-    deps = DEPS,
-)
-
-single_gradle_integration_test(
     name = "HeaderInCmakeListsTest",
     srcs = "src/test/java/com/android/build/gradle/integration/nativebuild/",
     data = DATA + CMAKE + NDK,

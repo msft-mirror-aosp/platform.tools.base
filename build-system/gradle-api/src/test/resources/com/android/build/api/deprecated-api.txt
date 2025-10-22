@@ -65,11 +65,6 @@ Deprecated from AGP 8.3.0
   * com.android.build.api.variant.ApplicationVariantBuilder.getProfileable: boolean ()
   * com.android.build.api.variant.GeneratesApkBuilder.getEnableMultiDex: java.lang.Boolean ()
 Deprecated from AGP 8.1.0
-  * com.android.build.api.dsl.DensitySplit implements com.android.build.api.dsl.Split
-  * com.android.build.api.dsl.DensitySplit.compatibleScreens: void (java.lang.String[])
-  * com.android.build.api.dsl.DensitySplit.getCompatibleScreens: java.util.Set<java.lang.String> ()
-  * com.android.build.api.dsl.DensitySplit.isStrict: boolean ()
-  * com.android.build.api.dsl.DensitySplit.setStrict: void (boolean)
   * com.android.build.api.variant.DependenciesInfoBuilder.getIncludedInApk: boolean ()
   * com.android.build.api.variant.DependenciesInfoBuilder.getIncludedInBundle: boolean ()
   * com.android.build.api.variant.DependenciesInfoBuilder.setIncludedInApk: void (boolean)

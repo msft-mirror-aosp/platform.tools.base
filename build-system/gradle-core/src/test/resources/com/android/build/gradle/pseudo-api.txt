@@ -1363,14 +1363,6 @@ com.android.build.gradle.internal.dsl.DefaultAapt.getExecutable: org.gradle.api.
 com.android.build.gradle.internal.dsl.DefaultAapt.getVersion: org.gradle.api.provider.Provider<java.lang.String> ()
 com.android.build.gradle.internal.dsl.DefaultConfig extends com.android.build.gradle.internal.dsl.BaseFlavor implements com.android.build.api.dsl.ApplicationDefaultConfig, com.android.build.api.dsl.DynamicFeatureDefaultConfig, com.android.build.api.dsl.LibraryDefaultConfig, com.android.build.api.dsl.TestDefaultConfig
 com.android.build.gradle.internal.dsl.DefaultConfig.<init>: com.android.build.gradle.internal.dsl.DefaultConfig (java.lang.String, com.android.build.gradle.internal.services.DslServices)
-com.android.build.gradle.internal.dsl.DensitySplitOptions extends com.android.build.gradle.internal.dsl.SplitOptions implements com.android.build.api.dsl.DensitySplit
-com.android.build.gradle.internal.dsl.DensitySplitOptions.<init>: com.android.build.gradle.internal.dsl.DensitySplitOptions (com.android.build.gradle.internal.services.DslServices)
-com.android.build.gradle.internal.dsl.DensitySplitOptions.compatibleScreens: void (java.lang.String[])
-com.android.build.gradle.internal.dsl.DensitySplitOptions.getDslServices: com.android.build.gradle.internal.services.DslServices ()
-com.android.build.gradle.internal.dsl.DensitySplitOptions.isEnable: boolean ()
-com.android.build.gradle.internal.dsl.DensitySplitOptions.setAuto: void (boolean)
-com.android.build.gradle.internal.dsl.DensitySplitOptions.setCompatibleScreens: void (java.util.List<java.lang.String>)
-com.android.build.gradle.internal.dsl.DensitySplitOptions.setEnable: void (boolean)
 com.android.build.gradle.internal.dsl.DeviceGroup implements com.android.build.api.dsl.DeviceGroup
 com.android.build.gradle.internal.dsl.DeviceGroup.<init>: com.android.build.gradle.internal.dsl.DeviceGroup (com.android.build.gradle.internal.services.DslServices, java.lang.String)
 com.android.build.gradle.internal.dsl.DeviceGroup.getName: java.lang.String ()
@@ -1949,9 +1941,6 @@ com.android.build.gradle.internal.dsl.Splits.<init>: com.android.build.gradle.in
 com.android.build.gradle.internal.dsl.Splits.getAbi: com.android.build.gradle.internal.dsl.AbiSplitOptions ()
 com.android.build.gradle.internal.dsl.Splits.getAbiFilters: java.util.Collection ()
 com.android.build.gradle.internal.dsl.Splits.getAbiFilters: java.util.Set<java.lang.String> ()
-com.android.build.gradle.internal.dsl.Splits.getDensity: com.android.build.gradle.internal.dsl.DensitySplitOptions ()
-com.android.build.gradle.internal.dsl.Splits.getDensityFilters: java.util.Collection ()
-com.android.build.gradle.internal.dsl.Splits.getDensityFilters: java.util.Set<java.lang.String> ()
 com.android.build.gradle.internal.dsl.TestOptions implements com.android.build.api.dsl.TestOptions
 com.android.build.gradle.internal.dsl.TestOptions$UnitTestOptions implements com.android.build.api.dsl.UnitTestOptions
 com.android.build.gradle.internal.dsl.TestOptions$UnitTestOptions.<init>: com.android.build.gradle.internal.dsl.TestOptions$UnitTestOptions (com.android.build.gradle.internal.services.DslServices)

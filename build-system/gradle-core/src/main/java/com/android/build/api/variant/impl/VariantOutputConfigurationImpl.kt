@@ -91,11 +91,7 @@ fun Collection<FilterConfiguration>.joinToString() =
 
 fun Collection<FilterConfiguration>.getFilterName(): String {
     val sb = StringBuilder()
-    val densityFilter = firstOrNull { it.filterType == FilterConfiguration.FilterType.DENSITY }?.identifier
-    if (densityFilter != null) {
-        sb.append(densityFilter)
-    }
-    val abiFilter = firstOrNull() { it.filterType == FilterConfiguration.FilterType.ABI }?.identifier
+    val abiFilter = firstOrNull { it.filterType == FilterConfiguration.FilterType.ABI }?.identifier
     if (abiFilter != null) {
         sb.appendCamelCase(abiFilter)
     }
