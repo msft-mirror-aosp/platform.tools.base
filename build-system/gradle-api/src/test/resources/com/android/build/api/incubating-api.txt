@@ -631,6 +631,14 @@ https://issuetracker.google.com/392162853
   * com.android.build.api.testsuites.TestSuiteExecutionClient.<init>: com.android.build.api.testsuites.TestSuiteExecutionClient (java.util.Collection<com.android.build.api.testsuites.TestEngineInputProperty>)
   * com.android.build.api.testsuites.TestSuiteExecutionClient.getInputParameter: java.lang.String (java.lang.String)
   * com.android.build.api.testsuites.TestSuiteExecutionClient.getInputParameters: java.util.Collection<com.android.build.api.testsuites.TestEngineInputProperty> ()
+  * com.android.build.api.variant.TestSuite.getSources: java.util.Collection<com.android.build.api.variant.TestSuiteSource> ()
+  * com.android.build.api.variant.TestSuiteSource implements org.gradle.api.Named
+  * com.android.build.api.variant.TestSuiteSource.getDependencies: com.android.build.api.dsl.AgpTestSuiteDependencies ()
+  * com.android.build.api.variant.TestSuiteSource.getType: com.android.build.api.variant.TestSuiteSourceType ()
+  * com.android.build.api.variant.TestSuiteSourceType extends java.lang.Enum
+  * com.android.build.api.variant.TestSuiteSourceType.getEntries: kotlin.enums.EnumEntries<com.android.build.api.variant.TestSuiteSourceType> ()
+  * com.android.build.api.variant.TestSuiteSourceType.valueOf: com.android.build.api.variant.TestSuiteSourceType (java.lang.String)
+  * com.android.build.api.variant.TestSuiteSourceType.values: com.android.build.api.variant.TestSuiteSourceType[] ()
 https://issuetracker.google.com/398918561
   * com.android.build.api.dsl.ManagedVirtualDevice.getTestedAbi: java.lang.String ()
   * com.android.build.api.dsl.ManagedVirtualDevice.setTestedAbi: void (java.lang.String)

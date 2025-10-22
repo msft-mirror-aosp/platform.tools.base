@@ -26,6 +26,7 @@ import com.android.build.api.dsl.CommonExtension
 import com.android.build.api.dsl.TestExtension
 import com.android.build.api.variant.ScopedArtifacts.Scope.ALL
 import com.android.build.api.variant.ScopedArtifacts.Scope.PROJECT
+import com.android.build.api.variant.TestSuiteSourceType
 import com.android.build.api.variant.impl.BuiltArtifactsImpl
 import com.android.build.api.variant.impl.HasDeviceTestsCreationConfig
 import com.android.build.api.variant.impl.HasHostTestsCreationConfig
@@ -1368,6 +1369,14 @@ class ModelBuilder<ExtensionT : CommonExtension>(
         additionalArtifactsInModel: Boolean,
     ) = getGraphBuilder(dontBuildRuntimeClasspath, additionalArtifactsInModel, component, libraryService).build()
 
+    private fun createTestSuiteType(variantApiType: TestSuiteSourceType): SourceType {
+        return when(variantApiType) {
+            TestSuiteSourceType.ASSETS -> SourceType.ASSETS
+            TestSuiteSourceType.HOST_JAR -> SourceType.HOST_JAR
+            TestSuiteSourceType.TEST_APK -> SourceType.TEST_APK
+        }
+    }
+
     private fun createDependencies(
         testSuite: TestSuiteCreationConfig,
         libraryServices: LibraryService,
@@ -1375,7 +1384,7 @@ class ModelBuilder<ExtensionT : CommonExtension>(
         testSuite.sources.map { testSuiteSourceContainer ->
                     TestSuiteSourceDependenciesImpl(
                         testSuiteSourceContainer.name,
-                        testSuiteSourceContainer.source.type,
+                        createTestSuiteType(testSuiteSourceContainer.source.type),
                         getGraphBuilder(testSuiteSourceContainer, libraryServices).build()
                     )
                 }
@@ -1405,7 +1414,7 @@ class ModelBuilder<ExtensionT : CommonExtension>(
             testSuite.sources.map { testSuiteSourceContainer ->
                 TestSuiteSourceDependenciesAdjacencyListImpl(
                     testSuiteSourceContainer.name,
-                    testSuiteSourceContainer.source.type,
+                    createTestSuiteType(testSuiteSourceContainer.source.type),
                     getGraphBuilder(
                         testSuiteSourceContainer,
                         libraryService,
@@ -1438,7 +1447,7 @@ class ModelBuilder<ExtensionT : CommonExtension>(
         artifactsProvider = { configType, root -> getArtifactsForModelBuilder(testSuiteSourceContainer, configType) },
         projectPath = project.path,
 
-        resolutionResultProvider = testSuiteSourceContainer.dependencies,
+        resolutionResultProvider = testSuiteSourceContainer.suiteSourceClasspath,
         libraryService = libraryService,
         graphEdgeCache = graphEdgeCache,
         addAdditionalArtifactsInModel = false,

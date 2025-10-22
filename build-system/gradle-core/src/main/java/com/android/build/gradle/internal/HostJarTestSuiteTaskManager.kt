@@ -14,9 +14,19 @@
  * limitations under the License.
  */
 
-package com.android.builder.model.v2.models
+package com.android.build.gradle.internal
 
-/**
- * Types of source associated to the test suite with its own set of dependencies
- */
-enum class SourceType { ASSETS, HOST_JAR, TEST_APK }
+import com.android.build.api.variant.impl.TestSuiteSourceContainer
+import com.android.build.gradle.internal.services.TaskCreationServices
+import com.android.build.gradle.internal.tasks.factory.TaskFactory
+
+class HostJarTestSuiteTaskManager(
+) {
+
+    fun createTasks(
+        sourceContainer: TestSuiteSourceContainer,
+        taskFactory: TaskFactory,
+        taskCreationServices: TaskCreationServices
+    ) {
+    }
+}

@@ -288,7 +288,7 @@ abstract class TestSuiteTestTask: Test(), GlobalTask {
             task.classpath = creationConfig.services.fileCollection().also {
                 it.from(classesDir)
                 creationConfig.sources.forEach { sourceContainer: TestSuiteSourceContainer ->
-                    it.from(sourceContainer.dependencies.runtimeClasspath)
+                    it.from(sourceContainer.suiteSourceClasspath.runtimeClasspath)
                 }
             }
 

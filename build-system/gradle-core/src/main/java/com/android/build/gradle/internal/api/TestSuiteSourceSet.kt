@@ -17,7 +17,7 @@
 package com.android.build.gradle.internal.api
 
 import com.android.build.api.variant.SourceDirectories
-import com.android.builder.model.v2.models.SourceType
+import com.android.build.api.variant.TestSuiteSourceType
 import org.gradle.api.Incubating
 
 /**
@@ -30,15 +30,15 @@ import org.gradle.api.Incubating
 @Incubating
 sealed interface TestSuiteSourceSet{
 
-    val type:  SourceType
+    val type: TestSuiteSourceType
 
     @Incubating
     interface Assets: TestSuiteSourceSet {
         @Incubating
         fun get(): SourceDirectories.Flat
 
-        override val type: SourceType
-            get() = SourceType.ASSETS
+        override val type: TestSuiteSourceType
+            get() = TestSuiteSourceType.ASSETS
     }
 
     @Incubating
@@ -46,8 +46,8 @@ sealed interface TestSuiteSourceSet{
         @Incubating
         fun get(): SourceDirectories.Flat
 
-        override val type: SourceType
-            get() = SourceType.HOST_JAR
+        override val type: TestSuiteSourceType
+            get() = TestSuiteSourceType.HOST_JAR
     }
 
     @Incubating
@@ -55,7 +55,7 @@ sealed interface TestSuiteSourceSet{
         @Incubating
         fun getByName(name: String): SourceDirectories.Flat
 
-        override val type: SourceType
-            get() = SourceType.TEST_APK
+        override val type: TestSuiteSourceType
+            get() = TestSuiteSourceType.TEST_APK
     }
 }

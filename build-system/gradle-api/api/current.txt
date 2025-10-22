@@ -3346,9 +3346,11 @@ package com.android.build.api.variant {
     method public void configureTestTasks(kotlin.jvm.functions.Function2<? super org.gradle.api.tasks.testing.Test,? super com.android.build.api.dsl.TestTaskContext,kotlin.Unit> action);
     method @org.gradle.api.Incubating public org.gradle.api.provider.Property<java.lang.Boolean> getCodeCoverage();
     method @org.gradle.api.Incubating public com.android.build.api.variant.JUnitEngineSpec getJunitEngineSpec();
+    method @org.gradle.api.Incubating public java.util.Collection<com.android.build.api.variant.TestSuiteSource> getSources();
     method public java.util.Map<java.lang.String,com.android.build.api.variant.TestSuiteTarget> getTargets();
     property @org.gradle.api.Incubating public abstract org.gradle.api.provider.Property<java.lang.Boolean> codeCoverage;
     property @org.gradle.api.Incubating public abstract com.android.build.api.variant.JUnitEngineSpec junitEngineSpec;
+    property @org.gradle.api.Incubating public abstract java.util.Collection<com.android.build.api.variant.TestSuiteSource> sources;
     property public abstract java.util.Map<java.lang.String,com.android.build.api.variant.TestSuiteTarget> targets;
   }
 
@@ -3360,6 +3362,19 @@ package com.android.build.api.variant {
     property public abstract boolean enable;
     property public abstract com.android.build.api.variant.JUnitEngineSpecBuilder junitEngineSpec;
     property public abstract java.util.Map<java.lang.String,com.android.build.api.variant.TestSuiteTargetBuilder> targets;
+  }
+
+  @org.gradle.api.Incubating public interface TestSuiteSource extends org.gradle.api.Named {
+    method @org.gradle.api.Incubating public com.android.build.api.dsl.AgpTestSuiteDependencies? getDependencies();
+    method @org.gradle.api.Incubating public com.android.build.api.variant.TestSuiteSourceType getType();
+    property @org.gradle.api.Incubating public abstract com.android.build.api.dsl.AgpTestSuiteDependencies? dependencies;
+    property @org.gradle.api.Incubating public abstract com.android.build.api.variant.TestSuiteSourceType type;
+  }
+
+  @org.gradle.api.Incubating public enum TestSuiteSourceType {
+    enum_constant public static final com.android.build.api.variant.TestSuiteSourceType ASSETS;
+    enum_constant public static final com.android.build.api.variant.TestSuiteSourceType HOST_JAR;
+    enum_constant public static final com.android.build.api.variant.TestSuiteSourceType TEST_APK;
   }
 
   @org.gradle.api.Incubating public interface TestSuiteTarget extends org.gradle.api.Named {

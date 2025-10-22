@@ -19,6 +19,7 @@ package com.android.build.api.component.analytics
 import com.android.build.api.dsl.TestTaskContext
 import com.android.build.api.variant.JUnitEngineSpec
 import com.android.build.api.variant.TestSuite
+import com.android.build.api.variant.TestSuiteSource
 import com.android.build.api.variant.TestSuiteTarget
 import com.android.tools.build.gradle.internal.profile.VariantPropertiesMethodType
 import org.gradle.api.model.ObjectFactory
@@ -30,6 +31,15 @@ open class AnalyticsEnabledTestSuite(
     val stats: com.google.wireless.android.sdk.stats.GradleBuildVariant.Builder,
     val objectFactory: ObjectFactory
 ): TestSuite {
+
+    override val sources: Collection<TestSuiteSource>
+        get() {
+            stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
+                VariantPropertiesMethodType.TEST_SUITE_SOURCES_VALUE
+            return delegate.sources.map { source ->
+                AnalyticsEnabledTestSuiteSource(source, stats)
+            }
+        }
 
     override fun configureTestTasks(action: Test.(context: TestTaskContext) -> Unit) {
         stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =

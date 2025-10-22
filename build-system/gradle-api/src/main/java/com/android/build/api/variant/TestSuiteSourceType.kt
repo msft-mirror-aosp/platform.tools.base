@@ -14,9 +14,14 @@
  * limitations under the License.
  */
 
-package com.android.builder.model.v2.models
+package com.android.build.api.variant
+
+import org.gradle.api.Incubating
 
 /**
- * Types of source associated to the test suite with its own set of dependencies
+ * Type of a source abstraction.
  */
-enum class SourceType { ASSETS, HOST_JAR, TEST_APK }
+@Incubating
+enum class TestSuiteSourceType {
+    ASSETS, HOST_JAR, TEST_APK
+}
