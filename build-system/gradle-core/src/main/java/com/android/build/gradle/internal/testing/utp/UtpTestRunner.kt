@@ -85,8 +85,18 @@ class UtpTestRunner @JvmOverloads constructor(
                         mkdirs()
                     }
                 }
+                val additionalTestOutputDir = if (additionalTestOutputEnabled && additionalTestOutputDir != null) {
+                    File(additionalTestOutputDir, deviceConnector.name)
+                } else {
+                    null
+                }
+                val additionalTestOutputOnDeviceDir = if (additionalTestOutputDir != null) {
+                    findAdditionalTestOutputDirectoryOnDevice(deviceConnector, testData)
+                } else {
+                    null
+                }
                 val runnerConfig = createRunnerConfigProtoForLocalDevice(
-                    deviceConnector,
+                    deviceConnector.serialNumber,
                     testData,
                     TargetApkConfigBundle(apks, targetIsSplitApk || apks.size > 1),
                     installOptions,
@@ -100,11 +110,8 @@ class UtpTestRunner @JvmOverloads constructor(
                     File(coverageDir, deviceConnector.name),
                     useOrchestrator,
                     forceCompilation,
-                    if (additionalTestOutputEnabled && additionalTestOutputDir != null) {
-                        File(additionalTestOutputDir, deviceConnector.name)
-                    } else {
-                        null
-                    },
+                    additionalTestOutputDir,
+                    additionalTestOutputOnDeviceDir,
                     installApkTimeout,
                     privacySandboxSdkInstallBundle.extractedApkMap[deviceConnector] ?: emptyList(),
                     uninstallApksAfterTest,

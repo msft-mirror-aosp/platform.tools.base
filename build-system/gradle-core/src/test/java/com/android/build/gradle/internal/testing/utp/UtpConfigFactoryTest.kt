@@ -27,7 +27,6 @@ import com.android.build.gradle.internal.testing.StaticTestData
 import com.android.build.gradle.internal.testing.utp.emulatorcontrol.EmulatorControlConfig
 import com.android.build.gradle.internal.testing.utp.emulatorcontrol.computeRegistrationDirectoryContainer
 import com.android.builder.testing.api.DeviceConfigProvider
-import com.android.builder.testing.api.DeviceConnector
 import com.android.sdklib.BuildToolInfo
 import com.google.common.truth.Truth.assertThat
 import com.google.protobuf.TextFormat.escapeDoubleQuotesAndBackslashes
@@ -60,7 +59,6 @@ class UtpConfigFactoryTest {
     private val mockAppApk: File = mock()
     private val mockTestApk: File = mock()
     private val mockHelperApk: File = mock()
-    private val mockDevice: DeviceConnector = mock()
     private val mockOutputDir: File = mock()
     private val mockCoverageOutputDir: File = mock()
     private val mockTmpDir: File = mock()
@@ -116,9 +114,6 @@ class UtpConfigFactoryTest {
 
     @Before
     fun setupMocks() {
-        whenever(mockDevice.apiLevel).thenReturn(30)
-        whenever(mockDevice.serialNumber).thenReturn("mockDeviceSerialNumber")
-        whenever(mockDevice.name).thenReturn("mockDeviceName")
         whenever(mockOutputDir.absolutePath).thenReturn("mockOutputDirPath")
         whenever(mockCoverageOutputDir.absolutePath).thenReturn("mockCoverageOutputDir")
         whenever(mockTmpDir.absolutePath).thenReturn("mockTmpDirPath")
@@ -159,6 +154,7 @@ class UtpConfigFactoryTest {
             forceCompilation: Boolean = false,
             uninstallIncompatibleApks: Boolean = false,
             additionalTestOutputDir: File? = null,
+            additionalTestOutputOnDeviceDir: String? = null,
             installApkTimeout: Int? = null,
             shardConfig: ShardConfig? = null,
             targetApkConfigBundle: TargetApkConfigBundle = testTargetApkConfigBundle,
@@ -166,7 +162,7 @@ class UtpConfigFactoryTest {
             cleanTestArtifacts: Boolean = false,
     ): RunnerConfigProto.RunnerConfig {
         return createRunnerConfigProtoForLocalDevice(
-                mockDevice,
+            "emulator-mockDeviceSerialNumber",
                 testData,
                 targetApkConfigBundle,
                 listOf("-additional_install_option"),
@@ -181,6 +177,7 @@ class UtpConfigFactoryTest {
                 useOrchestrator,
                 forceCompilation,
                 additionalTestOutputDir,
+                additionalTestOutputOnDeviceDir,
                 installApkTimeout,
                 extractedSdkApks,
                 cleanTestArtifacts,
@@ -209,7 +206,7 @@ class UtpConfigFactoryTest {
                 false)
         return createRunnerConfigProtoForManagedDevice(
                 managedDevice,
-                "mockDeviceSerialNumber",
+                "emulator-mockDeviceSerialNumber",
                 testData,
                 targetApkConfigBundle,
                 listOf("-additional_install_option"),
@@ -269,8 +266,8 @@ class UtpConfigFactoryTest {
     @Test
     fun createRunnerConfigProtoForManagedDeviceInstallApkWithFullForceCompilation() {
         val runnerConfigProto = createForManagedDevice(forceCompilation = true)
-        assertRunnerConfigProto(runnerConfigProto,
-            deviceId = ":app:deviceNameDebugAndroidTest",
+        assertRunnerConfigProto(
+            runnerConfigProto,
             forceCompilation = true,
             isForceReinstallBeforeTest = true,
         )
@@ -309,7 +306,6 @@ class UtpConfigFactoryTest {
 
         whenever(mockEmulatorControlConfig.enabled).thenReturn(true)
         whenever(mockEmulatorControlConfig.secondsValid).thenReturn(100)
-        whenever(mockDevice.serialNumber).thenReturn("emulator-mockDeviceSerialNumber")
 
         assertThat(mockEmulatorControlConfig.enabled).isTrue()
 
@@ -332,8 +328,6 @@ class UtpConfigFactoryTest {
 
         assertRunnerConfigProto(
             runnerConfigProto,
-            deviceSerial = "emulator-mockDeviceSerialNumber",
-            deviceId = "emulator-mockDeviceSerialNumber",
             instrumentationArgs = mapOf("grpc.port" to "1234", "grpc.token" to token),
             emulatorControlConfig = """
                 emulator_grpc_port: 1234
@@ -355,7 +349,6 @@ class UtpConfigFactoryTest {
         val runnerConfigProto = createForManagedDevice()
         assertRunnerConfigProto(
             runnerConfigProto,
-            deviceId = ":app:deviceNameDebugAndroidTest",
             isForceReinstallBeforeTest = true,
             emulatorControlConfig = """
                 seconds_valid: 100
@@ -371,7 +364,6 @@ class UtpConfigFactoryTest {
 
         assertRunnerConfigProto(
             runnerConfigProto,
-            deviceId = ":app:deviceNameDebugAndroidTest",
             isForceReinstallBeforeTest = true
         )
     }
@@ -387,7 +379,6 @@ class UtpConfigFactoryTest {
 
         assertRunnerConfigProto(
             runnerConfigProto,
-            deviceId = ":app:deviceNameDebugAndroidTest",
             isForceReinstallBeforeTest = true,
             isSplitApk = true,
         )
@@ -399,7 +390,6 @@ class UtpConfigFactoryTest {
 
         assertRunnerConfigProto(
             runnerConfigProto,
-            deviceId = ":app:deviceNameDebugAndroidTest",
             useOrchestrator = true,
             isForceReinstallBeforeTest = true
         )
@@ -409,7 +399,6 @@ class UtpConfigFactoryTest {
     fun createRunnerConfigProtoForManagedDeviceInstallApkTimeout() {
         val runnerConfigProto = createForManagedDevice(installApkTimeout = 5)
         assertRunnerConfigProto(runnerConfigProto,
-            deviceId = ":app:deviceNameDebugAndroidTest",
             isForceReinstallBeforeTest = true,
             installApkTimeout = 5)
     }
@@ -493,7 +482,6 @@ class UtpConfigFactoryTest {
         val outputOnHost = "mockCoverageOutputDir${File.separator}"
         assertRunnerConfigProto(
             runnerConfigProto,
-            deviceId = ":app:deviceNameDebugAndroidTest",
             isForceReinstallBeforeTest = true,
             instrumentationArgs = mapOf(
                 "coverage" to "true",
@@ -553,7 +541,6 @@ class UtpConfigFactoryTest {
             shardConfig = ShardConfig(totalCount = 10, index = 2))
         assertRunnerConfigProto(
             runnerConfigProto,
-            deviceId = ":app:deviceNameDebugAndroidTest",
             // TODO(b/201577913): remove
             instrumentationArgs = mapOf(
                 "numShards" to "10",
@@ -580,11 +567,12 @@ class UtpConfigFactoryTest {
 
     @Test
     fun createRunnerConfigProtoForLocalDeviceWithAdditionalTestOutput() {
+        val onDeviceDir = "/sdcard/Android/media/com.example.application/additional_test_output"
         val runnerConfigProto = createForLocalDevice(
-            additionalTestOutputDir = mockFile("additionalTestOutputDir")
+            additionalTestOutputDir = mockFile("additionalTestOutputDir"),
+            additionalTestOutputOnDeviceDir = onDeviceDir,
         )
 
-        val onDeviceDir = "/sdcard/Android/media/com.example.application/additional_test_output"
         val onHostDir = "additionalTestOutputDir${File.separator}"
         assertRunnerConfigProto(
             runnerConfigProto,
@@ -599,24 +587,6 @@ class UtpConfigFactoryTest {
     }
 
     @Test
-    fun createRunnerConfigProtoForLocalDeviceWithAdditionalTestOutputNotSupported() {
-        whenever(mockDevice.apiLevel).thenReturn(15)
-        val runnerConfigProto = createForLocalDevice(
-            additionalTestOutputDir = mockFile("additionalTestOutputDir")
-        )
-
-        // Setting up on device directory for additional test output is not supported on
-        // API level 15 but the plugin can still copy files from TestStorage service.
-        val onHostDir = "additionalTestOutputDir${File.separator}"
-        assertRunnerConfigProto(
-            runnerConfigProto,
-            additionalTestOutputConfig = """
-               additional_output_directory_on_host: "${escapeDoubleQuotesAndBackslashes(onHostDir)}"
-            """.trimIndent(),
-        )
-    }
-
-    @Test
     fun createRunnerConfigProtoForManagedDeviceWithAdditionalTestOutput() {
         val runnerConfigProto = createForManagedDevice(
             additionalTestOutputDir = mockFile("additionalTestOutputDir")
@@ -626,7 +596,6 @@ class UtpConfigFactoryTest {
         val onHostDir = "additionalTestOutputDir${File.separator}"
         assertRunnerConfigProto(
             runnerConfigProto,
-            deviceId = ":app:deviceNameDebugAndroidTest",
             isForceReinstallBeforeTest = true,
             instrumentationArgs = mapOf(
                 "additionalTestOutputDir" to onDeviceDir,

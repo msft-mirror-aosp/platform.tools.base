@@ -55,8 +55,7 @@ fun printProto(runnerConfig: RunnerConfigProto.RunnerConfig) : String{
  */
 fun assertRunnerConfigProto(
     runnerConfig: RunnerConfigProto.RunnerConfig,
-    deviceSerial: String = "mockDeviceSerialNumber",
-    deviceId: String = "mockDeviceSerialNumber",
+    deviceSerial: String = "emulator-mockDeviceSerialNumber",
     useOrchestrator: Boolean = false,
     forceCompilation: Boolean = false,
     useTestStorageService: Boolean = false,

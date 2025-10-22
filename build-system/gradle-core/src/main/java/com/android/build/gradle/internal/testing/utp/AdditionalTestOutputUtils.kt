@@ -20,8 +20,8 @@ import com.android.build.api.instrumentation.StaticTestData
 import com.android.builder.testing.api.DeviceConnector
 import com.android.ddmlib.DdmPreferences
 import com.android.ddmlib.MultiLineReceiver
-import java.util.concurrent.TimeUnit
 import org.gradle.api.logging.Logging.getLogger
+import java.util.concurrent.TimeUnit
 
 private val logger = getLogger("AdditionalTestOutputUtils")
 
@@ -52,7 +52,7 @@ fun findAdditionalTestOutputDirectoryOnDevice(
         return "/sdcard/Android/media/${testData.instrumentationTargetPackageId}/additional_test_output"
     }
 
-    val additionalTestOutputLocation = queryAdditionalTestOutputLocation(device, testData)
+    val additionalTestOutputLocation = queryAdditionalTestOutputLocation(device)
     if (additionalTestOutputLocation == null) {
         logger.warn("additionalTestOutput is not supported on this device running API level ${device.getApiLevel()} because the additional test output directory could not be found")
         return null
@@ -88,10 +88,7 @@ fun findAdditionalTestOutputDirectoryOnManagedDevice(
     return "/sdcard/Android/media/${testData.instrumentationTargetPackageId}/additional_test_output"
 }
 
-private fun queryAdditionalTestOutputLocation(
-    device: DeviceConnector,
-    testData: StaticTestData
-): String? {
+private fun queryAdditionalTestOutputLocation(device: DeviceConnector): String? {
     var result: String? = null
     val receiver: MultiLineReceiver = object : MultiLineReceiver() {
         override fun processNewLines(lines: Array<String>) {

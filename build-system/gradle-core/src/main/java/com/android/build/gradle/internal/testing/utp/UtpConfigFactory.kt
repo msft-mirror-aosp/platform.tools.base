@@ -33,7 +33,6 @@ import com.android.build.gradle.internal.testing.utp.emulatorcontrol.EmulatorGrp
 import com.android.build.gradle.internal.testing.utp.emulatorcontrol.INVALID_JWT_CONFIG
 import com.android.build.gradle.internal.testing.utp.emulatorcontrol.createTokenConfig
 import com.android.build.gradle.internal.testing.utp.emulatorcontrol.findGrpcInfo
-import com.android.builder.testing.api.DeviceConnector
 import com.android.sdklib.BuildToolInfo
 import com.android.tools.utp.plugins.deviceprovider.ddmlib.proto.AndroidDeviceProviderDdmlibConfigProto.DdmlibAndroidDeviceProviderConfig
 import com.android.tools.utp.plugins.host.additionaltestoutput.proto.AndroidAdditionalTestOutputConfigProto.AndroidAdditionalTestOutputConfig
@@ -87,7 +86,7 @@ private const val TEST_LOG_DIR = "testlog"
  *     when disabled.
  */
 fun createRunnerConfigProtoForLocalDevice(
-    device: DeviceConnector,
+    deviceSerialNumber: String,
     testData: StaticTestData,
     targetApkConfigBundle: TargetApkConfigBundle,
     additionalInstallOptions: Iterable<String>,
@@ -102,14 +101,15 @@ fun createRunnerConfigProtoForLocalDevice(
     useOrchestrator: Boolean,
     forceCompilation: Boolean,
     additionalTestOutputDir: File?,
+    additionalTestOutputOnDeviceDir: String?,
     installApkTimeout: Int?,
     extractedSdkApks: List<List<Path>>,
     uninstallApksAfterTest: Boolean,
     shardConfig: ShardConfig? = null,
 ): RunnerConfigProto.RunnerConfig {
     return RunnerConfigProto.RunnerConfig.newBuilder().apply {
-        val grpcInfo = findGrpcInfo(device.serialNumber)
-        addDevice(createLocalDevice(device, uninstallIncompatibleApks, utpDependencies))
+        val grpcInfo = findGrpcInfo(deviceSerialNumber)
+        addDevice(createLocalDevice(deviceSerialNumber, uninstallIncompatibleApks, utpDependencies))
         addTestFixture(
             createTestFixture(
                 grpcInfo,
@@ -125,9 +125,7 @@ fun createRunnerConfigProtoForLocalDevice(
                 useOrchestrator,
                 forceCompilation,
                 additionalTestOutputDir,
-                additionalTestOutputDir?.let {
-                    findAdditionalTestOutputDirectoryOnDevice(device, testData)
-                },
+                additionalTestOutputOnDeviceDir,
                 coverageOutputDir,
                 installApkTimeout,
                 shardConfig,
@@ -136,7 +134,7 @@ fun createRunnerConfigProtoForLocalDevice(
                 reinstallIncompatibleApksBeforeTest = false,
             )
         )
-        singleDeviceExecutor = createSingleDeviceExecutor(device.serialNumber, shardConfig)
+        singleDeviceExecutor = createSingleDeviceExecutor(deviceSerialNumber, shardConfig)
     }.build()
 }
 
@@ -209,15 +207,15 @@ fun createRunnerConfigProtoForManagedDevice(
 }
 
 private fun createLocalDevice(
-    device: DeviceConnector,
+    deviceSerialNumber: String,
     uninstallIncompatibleApks: Boolean,
     utpDependencies: UtpDependencies
 ): DeviceProto.Device {
     return DeviceProto.Device.newBuilder().apply {
         deviceIdBuilder.apply {
-            id = device.serialNumber
+            id = deviceSerialNumber
         }
-        provider = createLocalDeviceProvider(device.serialNumber, uninstallIncompatibleApks, utpDependencies)
+        provider = createLocalDeviceProvider(deviceSerialNumber, uninstallIncompatibleApks, utpDependencies)
     }.build()
 }
 

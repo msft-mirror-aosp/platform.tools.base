@@ -140,6 +140,7 @@ class UtpTestRunnerTest {
                     any(),
                     anyOrNull(),
                     anyOrNull(),
+                    anyOrNull(),
                     any(),
                     any(),
                     anyOrNull(),
