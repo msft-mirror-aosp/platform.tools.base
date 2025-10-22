@@ -31,8 +31,8 @@ class RichVersionTest {
             assertThat(version.require).isEqualTo(VersionRange.parse("+"))
             assertThat(version.prefer).isNull()
             assertThat(version.exclude).isEmpty()
-            assertThat(version.toIdentifier()).isEqualTo("+")
-            assertThat(version.toString()).isEqualTo("+")
+            assertThat(version.toIdentifier()).isEqualTo(string)
+            assertThat(version.toString()).isEqualTo(string)
         }
     }
 
@@ -44,8 +44,8 @@ class RichVersionTest {
             assertThat(version.require).isNull()
             assertThat(version.prefer).isNull()
             assertThat(version.exclude).isEmpty()
-            assertThat(version.toIdentifier()).isEqualTo("+!!")
-            assertThat(version.toString()).isEqualTo("+!!")
+            assertThat(version.toIdentifier()).isEqualTo("${string}!!")
+            assertThat(version.toString()).isEqualTo("${string}!!")
         }
     }
 
