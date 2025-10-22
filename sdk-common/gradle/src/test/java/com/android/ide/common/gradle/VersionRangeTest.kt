@@ -57,9 +57,31 @@ class VersionRangeTest {
     }
 
     @Test
-    fun testParsePrefixRangeWithoutFinalSeparator() {
-        assertThat(VersionRange.parse("1+").toString()).isEqualTo("1.+")
-        assertThat(VersionRange.parse("1+").toIdentifier()).isEqualTo("1.+")
+    fun testParsePrefixRangePreservesIdentifier() {
+        assertThat(VersionRange.parse("1+").toString()).isEqualTo("1+")
+        assertThat(VersionRange.parse("1+").toIdentifier()).isEqualTo("1+")
+        assertThat(VersionRange.parse("1++").toString()).isEqualTo("1++")
+        assertThat(VersionRange.parse("1++").toIdentifier()).isEqualTo("1++")
+        assertThat(VersionRange.parse("1-+").toString()).isEqualTo("1-+")
+        assertThat(VersionRange.parse("1-+").toIdentifier()).isEqualTo("1-+")
+        assertThat(VersionRange.parse("1_+").toString()).isEqualTo("1_+")
+        assertThat(VersionRange.parse("1_+").toIdentifier()).isEqualTo("1_+")
+    }
+
+    @Test
+    fun testParsePrefixRangeSameRangeSemantics() {
+        assertThat(VersionRange.parse("1+").encloses(VersionRange.parse("1.+"))).isTrue()
+        assertThat(VersionRange.parse("1.+").encloses(VersionRange.parse("1+"))).isTrue()
+        assertThat(VersionRange.parse("1.+")).isEqualTo(VersionRange.parse("1+"))
+        assertThat(VersionRange.parse("1++").encloses(VersionRange.parse("1.+"))).isTrue()
+        assertThat(VersionRange.parse("1.+").encloses(VersionRange.parse("1++"))).isTrue()
+        assertThat(VersionRange.parse("1.+")).isEqualTo(VersionRange.parse("1++"))
+        assertThat(VersionRange.parse("1-+").encloses(VersionRange.parse("1.+"))).isTrue()
+        assertThat(VersionRange.parse("1.+").encloses(VersionRange.parse("1-+"))).isTrue()
+        assertThat(VersionRange.parse("1.+")).isEqualTo(VersionRange.parse("1-+"))
+        assertThat(VersionRange.parse("1_+").encloses(VersionRange.parse("1.+"))).isTrue()
+        assertThat(VersionRange.parse("1.+").encloses(VersionRange.parse("1_+"))).isTrue()
+        assertThat(VersionRange.parse("1.+")).isEqualTo(VersionRange.parse("1_+"))
     }
 
     @Test

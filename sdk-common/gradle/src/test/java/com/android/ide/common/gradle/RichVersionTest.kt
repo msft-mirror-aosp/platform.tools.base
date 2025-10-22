@@ -94,6 +94,28 @@ class RichVersionTest {
     }
 
     @Test
+    fun testParsePrefixVersionWithDifferentSeparator() {
+        val version = RichVersion.parse("1.0-+")
+        assertThat(version.strictly).isNull()
+        assertThat(version.require).isEqualTo(VersionRange.parse("1.0.+"))
+        assertThat(version.prefer).isNull()
+        assertThat(version.exclude).isEmpty()
+        assertThat(version.toIdentifier()).isEqualTo("1.0-+")
+        assertThat(version.toString()).isEqualTo("1.0-+")
+    }
+
+    @Test
+    fun testParseStrictPrefixVersionWithDifferentSeparator() {
+        val version = RichVersion.parse("1.0-+!!")
+        assertThat(version.strictly).isEqualTo(VersionRange.parse("1.0.+"))
+        assertThat(version.require).isNull()
+        assertThat(version.prefer).isNull()
+        assertThat(version.exclude).isEmpty()
+        assertThat(version.toIdentifier()).isEqualTo("1.0-+!!")
+        assertThat(version.toString()).isEqualTo("1.0-+!!")
+    }
+
+    @Test
     fun testParseSingleVersion() {
         val version = RichVersion.parse("1.2.3")
         assertThat(version.strictly).isNull()

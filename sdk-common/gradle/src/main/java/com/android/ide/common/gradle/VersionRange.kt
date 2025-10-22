@@ -32,7 +32,10 @@ import com.google.common.collect.Range
  * This is intended to support string specifiers of artifact versions in Gradle build files.  It
  * does not attempt to model directly the strictly/required/preferred hierarchy of specifications.
  */
-class VersionRange(private val range: Range<Version>) {
+class VersionRange(
+    private val range: Range<Version>,
+    private val prefixRangeSeparator: Char? = '.',
+) {
     fun hasLowerBound() = range.hasLowerBound()
     fun lowerEndpoint() = range.lowerEndpoint()
     fun lowerBoundType() = range.lowerBoundType()
@@ -66,7 +69,7 @@ class VersionRange(private val range: Range<Version>) {
             }
         }
         if (isPrefixRange()) {
-            return "${lowerEndpoint().prefixVersion()}.+"
+            return "${lowerEndpoint().prefixVersion()}${prefixRangeSeparator ?: ""}+"
         }
         if (isEmpty() || (validLowerBoundForMavenRange() && validUpperBoundForMavenRange())) {
             val sb = StringBuilder()
@@ -157,13 +160,15 @@ class VersionRange(private val range: Range<Version>) {
          */
         @JvmStatic
         fun parse(string: String): VersionRange {
-            val range = when {
-                string == "+" -> Range.all()
-                string.matches(MAVEN_STYLE_REGEX) -> parseMavenRange(string)
-                string.endsWith("+") -> parsePrefixRange(string)
-                else -> parseSingletonRange(string)
+            return when {
+                string == "+" -> VersionRange(Range.all())
+                string.matches(MAVEN_STYLE_REGEX) -> VersionRange(parseMavenRange(string))
+                string.endsWith("+") -> parsePrefixRange(string).let { range ->
+                    val regex = Regex("([-+_.])\\+$")
+                    VersionRange(range, regex.find(string)?.groupValues[0]?.first())
+                }
+                else -> VersionRange(parseSingletonRange(string))
             }
-            return VersionRange(range)
         }
         private fun parseMavenRange(string: String): Range<Version> {
             val commaIndex = string.indexOf(',')
