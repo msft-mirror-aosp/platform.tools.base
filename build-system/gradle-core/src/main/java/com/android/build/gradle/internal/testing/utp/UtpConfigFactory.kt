@@ -105,6 +105,7 @@ fun createRunnerConfigProtoForLocalDevice(
     installApkTimeout: Int?,
     extractedSdkApks: List<List<Path>>,
     uninstallApksAfterTest: Boolean,
+    reinstallIncompatibleApksBeforeTest: Boolean,
     shardConfig: ShardConfig? = null,
 ): RunnerConfigProto.RunnerConfig {
     return RunnerConfigProto.RunnerConfig.newBuilder().apply {
@@ -131,7 +132,7 @@ fun createRunnerConfigProtoForLocalDevice(
                 shardConfig,
                 uninstallApksAfterTest,
                 extractedSdkApks,
-                reinstallIncompatibleApksBeforeTest = false,
+                reinstallIncompatibleApksBeforeTest,
             )
         )
         singleDeviceExecutor = createSingleDeviceExecutor(deviceSerialNumber, shardConfig)
@@ -152,58 +153,6 @@ fun RunnerConfigProto.RunnerConfig.Builder.addTestResultListenerPlugin(
         trustCertCollectionFilePath = serverMetadata.serverCert.absolutePath
         this.deviceId = deviceId
     })
-}
-
-/**
- * Creates a runner config proto which you can pass into the Unified Test Platform's
- * test executor.
- *
- * This is for devices managed by the Gradle Plugin for Android as defined in the dsl.
- *
- * @param additionalTestOutputDir output directory for additional test output, or null if disabled
- */
-fun createRunnerConfigProtoForManagedDevice(
-    device: UtpManagedDevice,
-    deviceSerialNumber: String,
-    testData: StaticTestData,
-    targetApkConfigBundle: TargetApkConfigBundle,
-    additionalInstallOptions: Iterable<String>,
-    helperApks: Iterable<File>,
-    utpDependencies: UtpDependencies,
-    versionedSdkLoader: SdkComponentsBuildService.VersionedSdkLoader,
-    outputDir: File,
-    tmpDir: File,
-    emulatorControlConfig: EmulatorControlConfig,
-    coverageOutputDir: File,
-    additionalTestOutputDir: File?,
-    useOrchestrator: Boolean,
-    forceCompilation: Boolean,
-    installApkTimeout: Int?,
-    extractedSdkApks: List<List<Path>>,
-    shardConfig: ShardConfig? = null,
-): RunnerConfigProto.RunnerConfig {
-    return RunnerConfigProto.RunnerConfig.newBuilder().apply {
-        addDevice(
-            createGradleManagedDevice(
-                deviceSerialNumber, utpDependencies,
-            )
-        )
-        addTestFixture(
-            createTestFixture(
-                null, targetApkConfigBundle, additionalInstallOptions, helperApks, testData,
-                utpDependencies, versionedSdkLoader,
-                outputDir, tmpDir, emulatorControlConfig, useOrchestrator,
-                forceCompilation,
-                additionalTestOutputDir,
-                additionalTestOutputDir?.let {
-                    findAdditionalTestOutputDirectoryOnManagedDevice(device, testData)
-                },
-                coverageOutputDir, installApkTimeout, shardConfig, uninstallApksAfterTest = false,
-                extractedSdkApks, reinstallIncompatibleApksBeforeTest = true,
-            )
-        )
-        singleDeviceExecutor = createSingleDeviceExecutor(deviceSerialNumber, shardConfig)
-    }.build()
 }
 
 private fun createLocalDevice(
@@ -233,19 +182,6 @@ private fun createLocalDeviceProvider(
         localAndroidDeviceProviderConfig = Any.pack(localConfig)
         this.uninstallIncompatibleApks = uninstallIncompatibleApks
     }
-}
-
-private fun createGradleManagedDevice(
-    deviceSerialNumber: String,
-    utpDependencies: UtpDependencies,
-): DeviceProto.Device {
-    return DeviceProto.Device.newBuilder().apply {
-        deviceIdBuilder.apply {
-            id = deviceSerialNumber
-        }
-        provider = createLocalDeviceProvider(
-            deviceSerialNumber, uninstallIncompatibleApks = false, utpDependencies)
-    }.build()
 }
 
 /**

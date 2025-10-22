@@ -180,9 +180,11 @@ class ManagedDeviceTestRunnerTest {
 
             outputDirectory = temporaryFolderRule.newFolder("results")
 
-            mockStatic(::createRunnerConfigProtoForManagedDevice.javaMethod!!.declaringClass).use { mockedStatic ->
+            mockStatic(::createRunnerConfigProtoForLocalDevice.javaMethod!!.declaringClass).use { mockedStatic ->
                 mockedStatic.whenever<RunnerConfig> {
-                    createRunnerConfigProtoForManagedDevice(
+                    createRunnerConfigProtoForLocalDevice(
+                        any(),
+                        any(),
                         any(),
                         any(),
                         any(),
@@ -196,9 +198,10 @@ class ManagedDeviceTestRunnerTest {
                         any(),
                         any(),
                         anyOrNull(),
-                        any(),
-                        any(),
                         anyOrNull(),
+                        anyOrNull(),
+                        any(),
+                        any(),
                         any(),
                         anyOrNull(),
                     )

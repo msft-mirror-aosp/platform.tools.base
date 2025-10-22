@@ -129,24 +129,27 @@ class ManagedDeviceTestRunner(
                 } else {
                     utpManagedDevice.forShard(currentShard)
                 }
-                val runnerConfigProto = createRunnerConfigProtoForManagedDevice(
-                    shardedManagedDevice,
+                val runnerConfigProto = createRunnerConfigProtoForLocalDevice(
                     deviceSerial,
                     testData,
                     TargetApkConfigBundle(testedApks, targetIsSplitApk),
                     additionalInstallOptions,
                     helperApks,
+                    uninstallIncompatibleApks = true,
                     utpDependencies,
                     versionedSdkLoader,
                     utpOutputDir,
                     createUtpTempDirectory("utpRunTemp"),
                     emulatorControlConfig,
                     coverageOutputDirectory,
-                    additionalTestOutputDir,
                     useOrchestrator,
                     forceCompilation,
+                    additionalTestOutputDir,
+                    findAdditionalTestOutputDirectoryOnManagedDevice(utpManagedDevice, testData),
                     installApkTimeout,
                     extractedSdkApks,
+                    uninstallApksAfterTest = false,
+                    reinstallIncompatibleApksBeforeTest = true,
                     shardConfig,
                 )
 

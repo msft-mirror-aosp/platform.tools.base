@@ -115,6 +115,7 @@ class UtpTestRunner @JvmOverloads constructor(
                     installApkTimeout,
                     privacySandboxSdkInstallBundle.extractedApkMap[deviceConnector] ?: emptyList(),
                     uninstallApksAfterTest,
+                    reinstallIncompatibleApksBeforeTest = false,
                 )
                 UtpRunnerConfig(
                     deviceConnector.name,

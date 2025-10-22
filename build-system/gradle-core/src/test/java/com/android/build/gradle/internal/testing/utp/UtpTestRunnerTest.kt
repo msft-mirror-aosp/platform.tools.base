@@ -143,6 +143,7 @@ class UtpTestRunnerTest {
                     anyOrNull(),
                     any(),
                     any(),
+                    any(),
                     anyOrNull(),
                 )
             }.thenReturn(RunnerConfig.getDefaultInstance())

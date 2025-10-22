@@ -30,7 +30,7 @@ import com.android.builder.testing.api.DeviceConfigProvider
 import com.android.sdklib.BuildToolInfo
 import com.google.common.truth.Truth.assertThat
 import com.google.protobuf.TextFormat.escapeDoubleQuotesAndBackslashes
-import com.google.testing.platform.proto.api.config.RunnerConfigProto
+import com.google.testing.platform.proto.api.config.RunnerConfigProto.RunnerConfig
 import org.gradle.api.file.RegularFile
 import org.gradle.api.provider.Provider
 import org.junit.Assert.assertThrows
@@ -148,6 +148,24 @@ class UtpConfigFactoryTest {
         )
     }
 
+    @Before
+    fun setupForEmulatorAccess() {
+        // We write a "fake" discover file that indicate we have security features enabled.
+        val discoveryDirectory = computeRegistrationDirectoryContainer()!!.resolve("avd/running/")
+        if (!discoveryDirectory.toFile().exists()) {
+            discoveryDirectory.toFile().mkdirs()
+        }
+        val filePath = discoveryDirectory.resolve("pid_123.ini")
+        val jwkFolder = temporaryFolder.newFolder("jwks")
+        val content = """
+            port.serial=mockDeviceSerialNumber
+            grpc.port=1234
+            grpc.jwks=${jwkFolder}
+            grpc.allowlist=/unused/access.json
+        """.trimIndent()
+        Files.writeString(filePath, content, StandardCharsets.UTF_8, StandardOpenOption.CREATE)
+    }
+
     private fun createForLocalDevice(
             testData: StaticTestData = this.testData,
             useOrchestrator: Boolean = false,
@@ -160,7 +178,8 @@ class UtpConfigFactoryTest {
             targetApkConfigBundle: TargetApkConfigBundle = testTargetApkConfigBundle,
             extractedSdkApks: List<List<Path>> = testExtractedSdkApks,
             cleanTestArtifacts: Boolean = false,
-    ): RunnerConfigProto.RunnerConfig {
+            reinstallIncompatibleApksBeforeTest: Boolean = false,
+    ): RunnerConfig {
         return createRunnerConfigProtoForLocalDevice(
             "emulator-mockDeviceSerialNumber",
                 testData,
@@ -181,6 +200,7 @@ class UtpConfigFactoryTest {
                 installApkTimeout,
                 extractedSdkApks,
                 cleanTestArtifacts,
+                reinstallIncompatibleApksBeforeTest,
                 shardConfig,
         )
     }
@@ -190,39 +210,33 @@ class UtpConfigFactoryTest {
             useOrchestrator: Boolean = false,
             forceCompilation: Boolean = false,
             additionalTestOutputDir: File? = null,
+            additionalTestOutputOnDeviceDir: String? = null,
             shardConfig: ShardConfig? = null,
             installApkTimeout: Int? = null,
             targetApkConfigBundle: TargetApkConfigBundle = testTargetApkConfigBundle,
-    ): RunnerConfigProto.RunnerConfig {
-        val managedDevice = UtpManagedDevice(
-                "deviceName",
-                "avdName",
-                29,
-                "x86",
-                "x86",
-                "path/to/gradle/avd",
-                ":app:deviceNameDebugAndroidTest",
-                "path/to/emulator",
-                false)
-        return createRunnerConfigProtoForManagedDevice(
-                managedDevice,
-                "emulator-mockDeviceSerialNumber",
-                testData,
-                targetApkConfigBundle,
-                listOf("-additional_install_option"),
-                listOf(mockHelperApk),
-                utpDependencies,
-                versionedSdkLoader,
-                mockOutputDir,
-                mockTmpDir,
-                mockEmulatorControlConfig,
-                mockCoverageOutputDir,
-                additionalTestOutputDir,
-                useOrchestrator,
-                forceCompilation,
-                installApkTimeout,
-                testExtractedSdkApks,
-                shardConfig,
+    ): RunnerConfig {
+        return createRunnerConfigProtoForLocalDevice(
+            "emulator-mockDeviceSerialNumber",
+            testData,
+            targetApkConfigBundle,
+            listOf("-additional_install_option"),
+            listOf(mockHelperApk),
+            uninstallIncompatibleApks = true,
+            utpDependencies,
+            versionedSdkLoader,
+            mockOutputDir,
+            mockTmpDir,
+            mockEmulatorControlConfig,
+            mockCoverageOutputDir,
+            useOrchestrator,
+            forceCompilation,
+            additionalTestOutputDir,
+            additionalTestOutputOnDeviceDir,
+            installApkTimeout,
+            testExtractedSdkApks,
+            uninstallApksAfterTest = false,
+            reinstallIncompatibleApksBeforeTest = true,
+            shardConfig,
         )
     }
 
@@ -270,6 +284,7 @@ class UtpConfigFactoryTest {
             runnerConfigProto,
             forceCompilation = true,
             isForceReinstallBeforeTest = true,
+            uninstallIncompatibleApks = true,
         )
     }
 
@@ -288,22 +303,6 @@ class UtpConfigFactoryTest {
 
     @Test
     fun createRunnerConfigProtoWithEmulatorAccess() {
-        // First we write a "fake" discover file
-        // That indicate we have security features enabled
-        val discoveryDirectory = computeRegistrationDirectoryContainer()!!.resolve("avd/running/")
-        if (!discoveryDirectory.toFile().exists()) {
-            discoveryDirectory.toFile().mkdirs()
-        }
-        val filePath = discoveryDirectory.resolve("pid_123.ini")
-        val jwkFolder = temporaryFolder.newFolder("jwks")
-        val content = """
-            port.serial=mockDeviceSerialNumber
-            grpc.port=1234
-            grpc.jwks=${jwkFolder}
-            grpc.allowlist=/unused/access.json
-        """.trimIndent()
-        Files.writeString(filePath, content, StandardCharsets.UTF_8, StandardOpenOption.CREATE)
-
         whenever(mockEmulatorControlConfig.enabled).thenReturn(true)
         whenever(mockEmulatorControlConfig.secondsValid).thenReturn(100)
 
@@ -311,20 +310,7 @@ class UtpConfigFactoryTest {
 
         val runnerConfigProto = createForLocalDevice()
 
-        // Next we extract the token and jkwfile as those
-        // are dynamically created.
-        val printed = printProto(runnerConfigProto)
-        val tokenRegex = "token: \"(.*)\""
-        val jwkfileRegex = "jwk_file: \"(.*)\""
-
-        // Both the token and the location where we wrote the file
-        // should be set.
-        assertThat(printed).containsMatch(tokenRegex)
-        assertThat(printed).containsMatch(jwkfileRegex)
-
-        // Let's extract them
-        val token = tokenRegex.toRegex().find(printed)?.groupValues?.getOrNull(1) ?: "Not Found"
-        val jwkfile = jwkfileRegex.toRegex().find(printed)?.groupValues?.getOrNull(1) ?: "Not found"
+        val (token, jwkfile) = extractJwkFileInfo(runnerConfigProto)
 
         assertRunnerConfigProto(
             runnerConfigProto,
@@ -338,19 +324,44 @@ class UtpConfigFactoryTest {
         )
     }
 
+    private fun extractJwkFileInfo(runnerConfigProto: RunnerConfig): Pair<String, String> {
+        // We extract the token and jkwfile as those are dynamically created.
+        val printed = printProto(runnerConfigProto)
+        val tokenRegex = "token: \"(.*)\""
+        val jwkfileRegex = "jwk_file: \"(.*)\""
+
+        // Both the token and the location where we wrote the file should be set.
+        assertThat(printed).containsMatch(tokenRegex)
+        assertThat(printed).containsMatch(jwkfileRegex)
+
+        // Let's extract them.
+        val token = tokenRegex.toRegex().find(printed)?.groupValues?.getOrNull(1) ?: "Not Found"
+        val jwkfile = jwkfileRegex.toRegex().find(printed)?.groupValues?.getOrNull(1) ?: "Not found"
+
+        return token to jwkfile
+    }
+
     @Test
     fun createRunnerConfigProtoWithEmulatorAccessForManagedDevice() {
-        val aud = setOf(*arrayOf("a", "b"))
         whenever(mockEmulatorControlConfig.enabled).thenReturn(true)
         whenever(mockEmulatorControlConfig.secondsValid).thenReturn(100)
-        whenever(mockEmulatorControlConfig.allowedEndpoints).thenReturn(aud)
+        whenever(mockEmulatorControlConfig.allowedEndpoints).thenReturn(setOf("a", "b"))
+
         assertThat(mockEmulatorControlConfig.enabled).isTrue()
 
         val runnerConfigProto = createForManagedDevice()
+
+        val (token, jwkfile) = extractJwkFileInfo(runnerConfigProto)
+
         assertRunnerConfigProto(
             runnerConfigProto,
             isForceReinstallBeforeTest = true,
+            uninstallIncompatibleApks = true,
+            instrumentationArgs = mapOf("grpc.port" to "1234", "grpc.token" to token),
             emulatorControlConfig = """
+                emulator_grpc_port: 1234
+                token: "${token}"
+                jwk_file: "${jwkfile}"
                 seconds_valid: 100
                 allowed_endpoints: "a"
                 allowed_endpoints: "b"
@@ -364,7 +375,8 @@ class UtpConfigFactoryTest {
 
         assertRunnerConfigProto(
             runnerConfigProto,
-            isForceReinstallBeforeTest = true
+            isForceReinstallBeforeTest = true,
+            uninstallIncompatibleApks = true,
         )
     }
 
@@ -381,6 +393,7 @@ class UtpConfigFactoryTest {
             runnerConfigProto,
             isForceReinstallBeforeTest = true,
             isSplitApk = true,
+            uninstallIncompatibleApks = true,
         )
     }
 
@@ -391,16 +404,20 @@ class UtpConfigFactoryTest {
         assertRunnerConfigProto(
             runnerConfigProto,
             useOrchestrator = true,
-            isForceReinstallBeforeTest = true
+            isForceReinstallBeforeTest = true,
+            uninstallIncompatibleApks = true,
         )
     }
 
     @Test
     fun createRunnerConfigProtoForManagedDeviceInstallApkTimeout() {
         val runnerConfigProto = createForManagedDevice(installApkTimeout = 5)
-        assertRunnerConfigProto(runnerConfigProto,
+        assertRunnerConfigProto(
+            runnerConfigProto,
             isForceReinstallBeforeTest = true,
-            installApkTimeout = 5)
+            installApkTimeout = 5,
+            uninstallIncompatibleApks = true,
+        )
     }
 
     @Test
@@ -483,6 +500,7 @@ class UtpConfigFactoryTest {
         assertRunnerConfigProto(
             runnerConfigProto,
             isForceReinstallBeforeTest = true,
+            uninstallIncompatibleApks = true,
             instrumentationArgs = mapOf(
                 "coverage" to "true",
                 "coverageFile" to "/data/data/com.example.application/coverage.ec",
@@ -547,6 +565,7 @@ class UtpConfigFactoryTest {
                 "shardIndex" to "2"
             ),
             isForceReinstallBeforeTest = true,
+            uninstallIncompatibleApks = true,
             shardingConfig = """
                 shard_count: 10
                 shard_index: 2
@@ -588,15 +607,17 @@ class UtpConfigFactoryTest {
 
     @Test
     fun createRunnerConfigProtoForManagedDeviceWithAdditionalTestOutput() {
+        val onDeviceDir = "/sdcard/Android/media/com.example.application/additional_test_output"
         val runnerConfigProto = createForManagedDevice(
-            additionalTestOutputDir = mockFile("additionalTestOutputDir")
+            additionalTestOutputDir = mockFile("additionalTestOutputDir"),
+            additionalTestOutputOnDeviceDir = onDeviceDir,
         )
 
-        val onDeviceDir = "/sdcard/Android/media/com.example.application/additional_test_output"
         val onHostDir = "additionalTestOutputDir${File.separator}"
         assertRunnerConfigProto(
             runnerConfigProto,
             isForceReinstallBeforeTest = true,
+            uninstallIncompatibleApks = true,
             instrumentationArgs = mapOf(
                 "additionalTestOutputDir" to onDeviceDir,
             ),
