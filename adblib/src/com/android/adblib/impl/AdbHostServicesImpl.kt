@@ -206,7 +206,9 @@ internal class AdbHostServicesImpl(
 
         return ServerStatus(usbBackend, status.usbBackendForced, mdnsBackend, status.mdnsBackendForced,
                             status.version, status.build, status.logAbsolutePath,
-                            status.executableAbsolutePath, status.os)
+                            status.executableAbsolutePath, status.os,
+                            status.traceLevel, status.burstMode, status.mdnsEnabled,
+                            status.keystorePath, status.knownHostsPath)
     }
 
     override suspend fun listForward(): ForwardSocketList {

@@ -32,14 +32,19 @@ class ServerStatusCommandHandler :  SimpleHostCommandHandler("server-status") {
         val stream = responseSocket.getOutputStream()
 
         val status =  DevicesProto.AdbServerStatus.newBuilder()
-        status.setUsbBackend(DevicesProto.AdbServerStatus.UsbBackend.LIBUSB)
-        status.setUsbBackendForced(true)
-        status.setMdnsBackend(DevicesProto.AdbServerStatus.MdnsBackend.OPENSCREEN)
-        status.setMdnsBackendForced(true)
-        status.setVersion("35.0.2")
-        status.setExecutableAbsolutePath("/path/to/adb")
-        status.setLogAbsolutePath("/tmp/adb.log")
-        status.setOs(System.getProperty("os.name"))
+        status.usbBackend = DevicesProto.AdbServerStatus.UsbBackend.LIBUSB
+        status.usbBackendForced = true
+        status.mdnsBackend = DevicesProto.AdbServerStatus.MdnsBackend.OPENSCREEN
+        status.mdnsBackendForced = true
+        status.version = "35.0.2"
+        status.executableAbsolutePath = "/path/to/adb"
+        status.logAbsolutePath = "/tmp/adb.log"
+        status.os = System.getProperty("os.name")
+        status.traceLevel = "all"
+        status.burstMode = true
+        status.mdnsEnabled = true
+        status.keystorePath = "/path/to/keystore"
+        status.knownHostsPath = "/path/to/knownhosts"
 
         writeOkay(stream)
         val statusBytes = ByteBuffer.wrap(status.build().toByteArray())
