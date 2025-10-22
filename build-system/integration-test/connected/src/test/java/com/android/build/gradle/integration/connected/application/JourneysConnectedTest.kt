@@ -358,6 +358,68 @@ class JourneysConnectedTest {
     }
 
     @Test
+    fun `expect journey filter to select nested journeys`() {
+        val build = rule.build
+        val appProject = build.androidApplication()
+        val journeyFileContent =
+            """
+                <?xml version="1.0" encoding="utf-8"?>
+                <journey name="Journey Sample">
+                    <actions>
+                        <action>Action 1</action>
+                        <action>Action 2</action>
+                    </actions>
+                </journey>
+            """.trimIndent()
+
+        appProject.files.add("src/journeysTest/auth/login.journey.xml", journeyFileContent)
+        appProject.files.add(
+            "src/journeysTest/auth/newUsers/signup.journey.xml",
+            journeyFileContent
+        )
+        appProject.files.add(
+            "src/journeysTest/auth/newUsers/file with spaces & special characters {}[]!@+().journey.xml",
+            journeyFileContent
+        )
+        appProject.files.add(
+            "src/journeysTest/file with spaces & special characters {}[]!@+().journey.xml",
+            journeyFileContent
+        )
+        appProject.files.add("src/journeysTest/shopping/checkout.journey.xml", journeyFileContent)
+        appProject.files.add("src/journeysTest/shopping/login.journey.xml", journeyFileContent)
+        appProject.files.add(
+            "src/journeysTest/profile/info.journey.xml",
+            journeyFileContent
+        )
+
+        val roboResultsPath = appProject.resolve("robo_results.textproto")
+        createRoboResults("journeys/robo_results_default.textproto", roboResultsPath)
+        val result =
+            executor.withArgument("-DroboResultsPath=$roboResultsPath")
+                .withEnvironmentVariables(
+                    mapOf("JOURNEYS_FILTER" to "auth/**,file with spaces & special characters \\{\\}\\[\\]!@+().journey.xml,login.journey.xml,profile")
+                )
+                .run(":app:testJourneysTestT1DebugTestSuite")
+
+        result.assertOutputContains("$DEVICE_SERIAL > file with spaces & special characters {}[]!@+().journey.xml")
+        result.assertOutputContains("$DEVICE_SERIAL > auth/login.journey.xml")
+        result.assertOutputContains("$DEVICE_SERIAL > auth/newUsers/signup.journey.xml")
+        result.assertOutputContains("$DEVICE_SERIAL > auth/newUsers/file with spaces & special characters {}[]!@+().journey.xml")
+        result.assertOutputContains("$DEVICE_SERIAL > profile/info.journey.xml")
+        result.assertOutputDoesNotContain("$DEVICE_SERIAL > shopping/checkout.journey.xml")
+        result.assertOutputDoesNotContain("$DEVICE_SERIAL > shopping/signup.journey.xml")
+
+        val baseOutputDir =
+            appProject.buildDir.resolve("intermediates/debug/testJourneysTestT1DebugTestSuite/results/$DEVICE_SERIAL")
+        assertThat(baseOutputDir.resolve("file with spaces & special characters {}[]!@+()")).exists()
+        assertThat(baseOutputDir.resolve("auth/login")).exists()
+        assertThat(baseOutputDir.resolve("auth/newUsers/signup")).exists()
+        assertThat(baseOutputDir.resolve("auth/newUsers/file with spaces & special characters {}[]!@+()")).exists()
+        assertThat(baseOutputDir.resolve("shopping/checkout")).doesNotExist()
+        assertThat(baseOutputDir.resolve("shopping/login")).doesNotExist()
+    }
+
+    @Test
     fun `expect no artifact output with stdout reporting disabled`() {
         val build = rule.build
         val appProject = build.androidApplication()
