@@ -406,7 +406,7 @@ class AndroidTestTaskManager(
     }
 
     private fun createTestDevicesTasks() {
-        if (globalConfig.androidTestOptions.managedDevices.devices.isEmpty()) {
+        if (globalConfig.androidTestOptions.managedDevices.allDevices.isEmpty()) {
             return
         }
 

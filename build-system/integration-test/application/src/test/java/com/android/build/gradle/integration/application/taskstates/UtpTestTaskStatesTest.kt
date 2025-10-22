@@ -16,7 +16,6 @@
 
 package com.android.build.gradle.integration.application.taskstates
 
-import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.EmptyActivityProjectBuilder
 import org.junit.Before
@@ -247,7 +246,7 @@ class UtpTestTaskStatesTest {
                         }
                         groups {
                             test {
-                                targetDevices.add(devices.device1)
+                                targetDevices.add(allDevices.device1)
                            }
                         }
                     }

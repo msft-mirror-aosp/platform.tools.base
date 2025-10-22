@@ -243,7 +243,6 @@ Deprecated from AGP UNKNOWN_VERSION
   * com.android.build.api.dsl.LintOptions.textOutput: void (java.lang.String)
   * com.android.build.api.dsl.LintOptions.warning: void (java.lang.String)
   * com.android.build.api.dsl.LintOptions.warning: void (java.lang.String[])
-  * com.android.build.api.dsl.ManagedDevices.getDevices: org.gradle.api.ExtensiblePolymorphicDomainObjectContainer<com.android.build.api.dsl.Device> ()
   * com.android.build.api.dsl.ProductFlavor.setMatchingFallbacks: void (java.lang.String[])
   * com.android.build.api.dsl.ProductFlavor.setMatchingFallbacks: void (java.util.List<java.lang.String>)
   * com.android.build.api.dsl.TestBaseFlavor.maxSdkVersion: void (int)
