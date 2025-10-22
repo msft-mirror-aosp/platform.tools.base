@@ -171,41 +171,6 @@ class UtpTestUtilsTest {
     }
 
     @Test
-    fun resultHasEmulatorTimeoutException() {
-        val testResult = TestSuiteResult.newBuilder().apply {
-            platformErrorBuilder.apply {
-                addErrorsBuilder().apply {
-                    causeBuilder.apply {
-                        summaryBuilder.apply {
-                            stackTrace = "EmulatorTimeoutException"
-                        }
-                    }
-                }
-            }
-        }.build()
-
-        assertThat(hasEmulatorTimeoutException(testResult)).isTrue()
-    }
-
-    @Test
-    fun resultDoesNotHaveEmulatorTimeoutException() {
-        val testResult = TestSuiteResult.newBuilder().apply {
-            platformErrorBuilder.apply {
-                addErrorsBuilder().apply {
-                    causeBuilder.apply {
-                        summaryBuilder.apply {
-                            stackTrace = "Exception"
-                        }
-                    }
-                }
-            }
-        }.build()
-
-        assertThat(hasEmulatorTimeoutException(testResult)).isFalse()
-        assertThat(hasEmulatorTimeoutException(null)).isFalse()
-    }
-
-    @Test
     fun getPlatformErrorMessageShouldReturnErrorMessage() {
         val resultProto = createResultProto("""
             test_status: ERROR

@@ -256,23 +256,6 @@ fun getUtpPreferenceRootDir(): File {
 }
 
 /**
- * Returns true if the root cause of the Platform error is the EmulatorTimeoutException.
- */
-fun hasEmulatorTimeoutException(resultsProto: TestSuiteResultProto.TestSuiteResult?): Boolean {
-    resultsProto ?: return false
-    return resultsProto.platformError.errorsList.any(::hasEmulatorTimeoutException)
-}
-
-private fun hasEmulatorTimeoutException(error: ErrorDetailProto.ErrorDetail): Boolean {
-    return when {
-        getExceptionFromStackTrace(error.summary.stackTrace)
-            .contains("EmulatorTimeoutException") -> true
-        error.hasCause() -> hasEmulatorTimeoutException(error.cause)
-        else -> false
-    }
-}
-
-/**
  * Finds the root cause of the Platform Error and returns the error message.
  */
 fun getPlatformErrorMessage(resultsProto: TestSuiteResultProto.TestSuiteResult?): String {
@@ -303,23 +286,4 @@ private fun getPlatformErrorMessage(
         errorMessageBuilder.append(error.summary.stackTrace)
     }
     return errorMessageBuilder
-}
-
-/**
- * Attempts to get a simple string by which the exception can be easily parsed.
- *
- * Due to the nature of UTP error details, the exception may be in a serialized string format, or
- * in a simple toString() format. This method is meant to separate the parent exception from the
- * stacktrace (which may include more exceptions)
- *
- * @param stackTrace the stackTrace of the exception in either serialized or toString() format
- * @return A simple string, that the only exception that is contained is the top-level exception.
- */
-private fun getExceptionFromStackTrace(stackTrace: String): String {
-    val endIndex = stackTrace.indexOf(':')
-    return if (endIndex >= 0) {
-        stackTrace.substring(0, endIndex)
-    } else {
-        stackTrace.lineSequence().firstOrNull() ?: ""
-    }
 }

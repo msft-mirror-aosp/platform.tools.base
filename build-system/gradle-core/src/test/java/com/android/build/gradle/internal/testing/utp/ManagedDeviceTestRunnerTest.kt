@@ -271,16 +271,4 @@ class ManagedDeviceTestRunnerTest {
         assertThat(result).isTrue()
         assertThat(File(outputDirectory, TEST_RESULT_PB_FILE_NAME)).exists()
     }
-
-    @Test
-    fun rerunUtpWhenEmulatorTimeoutExceptionOccurs() {
-        val result = runUtp(
-            result = true,
-            numShards = 2,
-            hasEmulatorTimeoutException = listOf(true, false))
-
-        assertThat(utpInvocationCount).isEqualTo(2)
-        assertThat(result).isTrue()
-        assertThat(File(outputDirectory, TEST_RESULT_PB_FILE_NAME)).exists()
-    }
 }
