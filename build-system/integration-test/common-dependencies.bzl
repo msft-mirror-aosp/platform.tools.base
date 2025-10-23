@@ -5,7 +5,7 @@ and can be combined together
 
 # KGP version used in AGP tests
 # when editing this consider making a copy below so that our recipe tests can use any versions of Kotlin
-KGP_VERSION_FOR_TESTS = "2.2.21-RC2"
+KGP_VERSION_FOR_TESTS = "2.3.0-Beta2"
 
 # KSP version used in AGP tests
 KSP_VERSION_FOR_TESTS = "2.2.20-RC-2.0.2"
@@ -17,12 +17,14 @@ KGP_FOR_TESTS = [
     "@maven//:org.jetbrains.kotlin.jvm.org.jetbrains.kotlin.jvm.gradle.plugin_" + KGP_VERSION_FOR_TESTS,
     "@maven//:org.jetbrains.kotlin.kapt.org.jetbrains.kotlin.kapt.gradle.plugin_" + KGP_VERSION_FOR_TESTS,
     "@maven//:org.jetbrains.kotlin.kotlin-annotation-processing-gradle_" + KGP_VERSION_FOR_TESTS,
+    "@maven//:org.jetbrains.kotlin.kotlin-build-tools-compat_" + KGP_VERSION_FOR_TESTS,
     "@maven//:org.jetbrains.kotlin.kotlin-build-tools-impl_" + KGP_VERSION_FOR_TESTS,
     "@maven//:org.jetbrains.kotlin.kotlin-compiler_" + KGP_VERSION_FOR_TESTS,
     "@maven//:org.jetbrains.kotlin.kotlin-compose-compiler-plugin-embeddable_" + KGP_VERSION_FOR_TESTS,
     "@maven//:org.jetbrains.kotlin.kotlin-gradle-plugin-api_" + KGP_VERSION_FOR_TESTS,
     "@maven//:org.jetbrains.kotlin.kotlin-gradle-plugin_" + KGP_VERSION_FOR_TESTS,
     "@maven//:org.jetbrains.kotlin.kotlin-reflect_" + KGP_VERSION_FOR_TESTS,
+    "@maven//:org.jetbrains.kotlin.kotlin-scripting-compiler-embeddable_" + KGP_VERSION_FOR_TESTS,
     "@maven//:org.jetbrains.kotlin.kotlin-script-runtime_" + KGP_VERSION_FOR_TESTS,
     "@maven//:org.jetbrains.kotlin.kotlin-stdlib_" + KGP_VERSION_FOR_TESTS,
     "@maven//:org.jetbrains.kotlin.kotlin-stdlib-common_" + KGP_VERSION_FOR_TESTS,

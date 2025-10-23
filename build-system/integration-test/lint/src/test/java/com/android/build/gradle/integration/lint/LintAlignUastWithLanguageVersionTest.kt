@@ -118,7 +118,7 @@ class LintAlignUastWithLanguageVersionTest(private val useBuiltInKotlinSupport: 
     fun testKotlinExperimentalTryNext() {
         // When updating the Kotlin version used for tests, be sure to also update this constant to
         // the next version.
-        val nextLanguageVersion = "2.3"
+        val nextLanguageVersion = "2.4"
         check(nextLanguageVersion != kotlinLanguageVersion) {
             "nextLanguageVersion must be higher than the current language version ($kotlinLanguageVersion)"
         }
