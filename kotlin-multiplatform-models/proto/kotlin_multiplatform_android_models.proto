@@ -112,6 +112,9 @@ message MainVariantInfo {
 
     // Whether code shrinking is enabled.
     optional bool minification_enabled = 7;
+
+    // Folders containing assets generated during the build and should be included in the main AAR.
+    repeated File generated_asset_folders = 8;
 }
 
 // The info of the unit test component of the android kotlin multiplatform target.
@@ -137,6 +140,9 @@ message InstrumentedTestInfo {
     // Returns the absolute path for the listing file that will get updated after each build. The
     // model file will contain deployment related information like applicationId, list of APKs.
     optional File assemble_task_output_listing_file = 5;
+
+    // Folders containing assets generated during the build and should be included in the test APK.
+    repeated File generated_asset_folders = 6;
 }
 
 message AndroidCompilation {
