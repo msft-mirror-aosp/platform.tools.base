@@ -51,6 +51,9 @@ import java.util.jar.JarFile;
  */
 public class TestUtils {
 
+    /** Kotlin Gradle plugin version that AGP depends on. */
+    public static final String BUILT_IN_KOTLIN_VERSION = "2.2.10";
+
     /**
      * Kotlin version that is used in AGP integration tests. Please note that this version does not
      * have to be the same as the version of kotlinc used to build AGP (in Gradle or Bazel).

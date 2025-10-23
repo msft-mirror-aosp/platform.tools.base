@@ -22,7 +22,6 @@ import com.android.build.api.dsl.AndroidSourceSet
 import com.android.build.gradle.internal.api.DefaultAndroidSourceDirectorySet
 import com.android.build.gradle.internal.component.ComponentCreationConfig
 import com.android.build.gradle.internal.profile.AnalyticsConfiguratorService
-import com.android.build.gradle.internal.services.BuiltInKotlinServices
 import com.android.build.gradle.internal.services.ProjectServices
 import com.android.build.gradle.internal.services.getBuildService
 import com.android.utils.appendCapitalized
@@ -360,6 +359,83 @@ fun syncAgpAndKgpSources(
 }
 
 /**
+ * Adds kotlin-stdlib dependency to the `api` configurations if it's not yet added by the user.
+ *
+ * This is to match the `kotlin-android` plugin's behavior
+ * (see https://youtrack.jetbrains.com/issue/KT-38221).
+ *
+ * Note: When KGP provides an API to do this (https://youtrack.jetbrains.com/issue/KT-73997), we can
+ * remove this method.
+ */
+internal fun maybeAddKotlinStdlibDependency(
+    project: Project,
+    projectServices: ProjectServices,
+    androidSourceSets: NamedDomainObjectContainer<out AndroidSourceSet>,
+) {
+    val kotlinServices = projectServices.builtInKotlinServices
+    val kotlinVersion = kotlinServices.kotlinAndroidProjectExtension.coreLibrariesVersion
+
+    // This is similar to https://github.com/JetBrains/kotlin/blob/1cfbb801b77eaf00a7806631d29415dfd40f2fcd/libraries/tools/kotlin-gradle-plugin/src/common/kotlin/org/jetbrains/kotlin/gradle/internal/KotlinDependenciesManagement.kt#L60-L82
+    fun handleKotlinStdlibWithoutVersion() {
+        project.configurations.configureEach { configuration ->
+            configuration.withDependencies { dependencySet ->
+                dependencySet.forEach { dependency ->
+                    if (dependency is ExternalDependency
+                        && dependency.group == KOTLIN_GROUP
+                        && dependency.name in KOTLIN_STDLIB_MODULES
+                        && dependency.version.isNullOrEmpty()
+                    ) {
+                        configuration.dependencyConstraints.add(
+                            project.dependencies.constraints.create(dependency.module.toString()) { constraint ->
+                                constraint.version { it.require(kotlinVersion) }
+                            }
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    fun Configuration.hasKotlinStdlib(): Boolean {
+        return allDependencies.any {
+            it is ExternalDependency
+                    && it.group == KOTLIN_GROUP
+                    && it.name in KOTLIN_STDLIB_MODULES
+        }
+    }
+
+    fun hasKotlinStdlibDependency(): Boolean {
+        return androidSourceSets.any {
+            project.configurations.getByName(it.apiConfigurationName).hasKotlinStdlib()
+            project.configurations.getByName(it.implementationConfigurationName).hasKotlinStdlib()
+        }
+    }
+
+    fun kotlinStdlibDefaultDependencyProperty(): Boolean? =
+        project.providers.gradleProperty("kotlin.stdlib.default.dependency")
+            .orNull?.lowercase(Locale.US)?.toBooleanStrictOrNull()
+
+    fun Configuration.addKotlinStdlib() {
+        dependencies.add(project.dependencies.create("$KOTLIN_GROUP:$KOTLIN_STDLIB:$kotlinVersion"))
+    }
+
+    // If the user adds kotlin-stdlib without a version, then set a version (b/443037365)
+    handleKotlinStdlibWithoutVersion()
+
+    // If the user has added kotlin-stdlib or if they set `kotlin.stdlib.default.dependency=false`,
+    // then do not add kotlin-stdlib automatically
+    if (hasKotlinStdlibDependency() || kotlinStdlibDefaultDependencyProperty() == false) {
+        return
+    }
+
+    // Otherwise, add kotlin-stdlib to the `api` configuration of the main source set.
+    // This is similar to https://github.com/JetBrains/kotlin/blob/fd1d3d967df9eab306bdc9707229bd22a2d5d1c2/libraries/tools/kotlin-gradle-plugin/src/common/kotlin/org/jetbrains/kotlin/gradle/internal/stdlibDependencyManagement.kt#L105-L111
+    val mainSourceSet = androidSourceSets.getByName(SourceSet.MAIN_SOURCE_SET_NAME)
+    val apiConfiguration = project.configurations.getByName(mainSourceSet.apiConfigurationName)
+    apiConfiguration.addKotlinStdlib()
+}
+
+/**
  * Attempts to find the corresponding `kapt` or `ksp` configurations for the source sets of the
  * given variant. The returned list may be incomplete or empty if unsuccessful.
  */
@@ -374,58 +450,6 @@ fun findKaptOrKspConfigurationsForVariant(
             kaptOrKsp
         creationConfig.services.configurations.findByName(configurationName)
     }
-}
-
-/**
- * Adds kotlin-stdlib dependency to compile and runtime classpath if it's not yet added by the user.
- * Similar to https://youtrack.jetbrains.com/issue/KT-38221 and
- * https://github.com/JetBrains/kotlin/blob/1cfbb801b77eaf00a7806631d29415dfd40f2fcd/libraries/tools/kotlin-gradle-plugin/src/common/kotlin/org/jetbrains/kotlin/gradle/internal/KotlinDependenciesManagement.kt#L60-L82
- *
- * Note: If KGP provides an API to do this (https://youtrack.jetbrains.com/issue/KT-73997), we can
- * remove this method.
- */
-internal fun maybeAddKotlinStdlibDependency(
-    project: Project,
-    creationConfig: ComponentCreationConfig,
-    kotlinServices: BuiltInKotlinServices
-) {
-    fun kotlinStdlibDefaultDependencyProperty(): Boolean? =
-        project.providers.gradleProperty("kotlin.stdlib.default.dependency")
-            .orNull?.lowercase(Locale.US)?.toBooleanStrictOrNull()
-
-    fun Configuration.hasKotlinStdlibDependency(withVersion: Boolean): Boolean {
-        val externalDependencies = allDependencies.matching { it is ExternalDependency }
-        return externalDependencies.any {
-            it.group == KOTLIN_GROUP
-                    && it.name in KOTLIN_STDLIB_MODULES
-                    && (!withVersion && it.version == null || withVersion && it.version != null)
-        }
-    }
-
-    fun Configuration.maybeAddKotlinStdlibDependency() {
-        when {
-            // If the user already adds kotlin-stdlib with a version, do not add it
-            hasKotlinStdlibDependency(withVersion = true) -> Unit
-
-            // If the user adds kotlin-stdlib without a version, then set a version
-            hasKotlinStdlibDependency(withVersion = false) -> dependencyConstraints.add(
-                project.dependencies.constraints.create("$KOTLIN_GROUP:$KOTLIN_STDLIB") {
-                    it.version { it.require(kotlinServices.kotlinAndroidProjectExtension.coreLibrariesVersion) }
-                }
-            )
-
-            // If the user has not added kotlin-stdlib, then add it (unless
-            // `kotlin.stdlib.default.dependency == false`)
-            kotlinStdlibDefaultDependencyProperty() != false -> dependencies.add(
-                project.dependencies.create(
-                    "$KOTLIN_GROUP:$KOTLIN_STDLIB:${kotlinServices.kotlinAndroidProjectExtension.coreLibrariesVersion}"
-                )
-            )
-        }
-    }
-
-    creationConfig.variantDependencies.compileClasspath.maybeAddKotlinStdlibDependency()
-    creationConfig.variantDependencies.runtimeClasspath.maybeAddKotlinStdlibDependency()
 }
 
 private const val KOTLIN_GROUP = "org.jetbrains.kotlin"

@@ -9,6 +9,7 @@ import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.tasks.DependenciesUsageReport
 import com.android.testutils.MavenRepoGenerator
 import com.android.testutils.TestInputsGenerator
+import com.android.testutils.TestUtils
 import com.android.testutils.generateAarWithContent
 import com.android.testutils.truth.PathSubject
 import com.android.utils.usLocaleCapitalize
@@ -225,7 +226,8 @@ class AnalyzeDependenciesTest {
         assertThat(parsedJson.remove).containsExactly(
             "com.analyzedependenciesTest:emptyAar:1",
             "com.analyzedependenciesTest:unUsedResAar:1",
-            "com.analyzedependenciesTest:unusedJar:1"
+            "com.analyzedependenciesTest:unusedJar:1",
+            "org.jetbrains.kotlin:kotlin-stdlib:${TestUtils.BUILT_IN_KOTLIN_VERSION}"
         )
         assertThat(parsedJson.add.size).isEqualTo(0)
     }

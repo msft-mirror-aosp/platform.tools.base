@@ -28,6 +28,7 @@ import com.android.build.gradle.internal.fusedlibrary.FusedLibraryInternalArtifa
 import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.tasks.FusedLibraryReport
 import com.android.testutils.MavenRepoGenerator
+import com.android.testutils.TestUtils
 import com.android.testutils.truth.PathSubject
 import org.gradle.api.JavaVersion
 import org.junit.Ignore
@@ -352,9 +353,9 @@ class FusedLibraryClassesVerificationTest(private val publicationOnlyMode: Boole
         build.checkFusedLibReportContents(
             include = listOf("project :androidLib2"),
             dependencies = listOf(
-                "project.:androidLib1:unspecified",
                 "org.jetbrains.kotlin:kotlin-stdlib:<version>",
-                "org.jetbrains:annotations:<version>"
+                "org.jetbrains:annotations:<version>",
+                "project.:androidLib1:unspecified",
             )
         )
     }
@@ -575,10 +576,10 @@ class FusedLibraryClassesVerificationTest(private val publicationOnlyMode: Boole
         build.checkFusedLibReportContents(
             include = listOf("project :lib"),
             dependencies = listOf(
+                "org.jetbrains.kotlin:kotlin-stdlib:<version>",
+                "org.jetbrains:annotations:<version>",
                 "project.:my-platform:unspecified",
                 "com.externaldep.externalaar:externalaar:<version>",
-                "org.jetbrains.kotlin:kotlin-stdlib:<version>",
-                "org.jetbrains:annotations:<version>"
             )
         )
 
@@ -588,10 +589,10 @@ class FusedLibraryClassesVerificationTest(private val publicationOnlyMode: Boole
             build.fusedLibrary(":$FUSED_LIBRARY_PROJECT_NAME").buildDir
                 .resolve("publications/maven/pom-default.xml"),
             listOf(
+                "org.jetbrains.kotlin:kotlin-stdlib:${TestUtils.BUILT_IN_KOTLIN_VERSION} scope:runtime",
+                "org.jetbrains:annotations:13.0 scope:runtime",
                 "project.:my-platform:unspecified scope:runtime",
                 "com.externaldep.externalaar:externalaar:1.0 scope:runtime",
-                "org.jetbrains.kotlin:kotlin-stdlib:2.2.10 scope:runtime",
-                "org.jetbrains:annotations:13.0 scope:runtime"
             )
         )
     }

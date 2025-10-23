@@ -2,8 +2,8 @@ androidx.databinding:databinding-adapters
   pomName=
   description=
   dependencies:
+    org.jetbrains.kotlin:kotlin-stdlib (compile)
     androidx.databinding:databinding-common (compile)
-    org.jetbrains.kotlin:kotlin-stdlib (runtime)
     androidx.databinding:databinding-runtime (runtime)
 
 androidx.databinding:databinding-common
@@ -62,7 +62,7 @@ androidx.databinding:databinding-runtime
     androidx.databinding:databinding-common (compile)
     androidx.databinding:viewbinding (compile)
     androidx.lifecycle:lifecycle-runtime (compile)
-    org.jetbrains.kotlin:kotlin-stdlib (runtime)
+    org.jetbrains.kotlin:kotlin-stdlib (compile)
     androidx.collection:collection (runtime)
 
 androidx.databinding:viewbinding
@@ -70,7 +70,7 @@ androidx.databinding:viewbinding
   description=
   dependencies:
     androidx.annotation:annotation (compile)
-    org.jetbrains.kotlin:kotlin-stdlib (runtime)
+    org.jetbrains.kotlin:kotlin-stdlib (compile)
 
 com.android:signflinger
   pomName=com.android.signflinger
@@ -120,8 +120,8 @@ com.android.databinding:adapters
   pomName=
   description=
   dependencies:
+    org.jetbrains.kotlin:kotlin-stdlib (compile)
     com.android.databinding:baseLibrary (compile)
-    org.jetbrains.kotlin:kotlin-stdlib (runtime)
     com.android.databinding:library (runtime)
 
 com.android.databinding:baseLibrary
@@ -134,7 +134,7 @@ com.android.databinding:library
   dependencies:
     com.android.databinding:viewbinding (compile)
     android.arch.lifecycle:runtime (compile)
-    org.jetbrains.kotlin:kotlin-stdlib (runtime)
+    org.jetbrains.kotlin:kotlin-stdlib (compile)
     com.android.support:support-core-utils (runtime)
     com.android.databinding:baseLibrary (runtime)
 
@@ -143,7 +143,7 @@ com.android.databinding:viewbinding
   description=
   dependencies:
     com.android.support:support-annotations (compile)
-    org.jetbrains.kotlin:kotlin-stdlib (runtime)
+    org.jetbrains.kotlin:kotlin-stdlib (compile)
 
 com.android.dynamic-feature:com.android.dynamic-feature.gradle.plugin
   pomName=com.android.tools.build.gradle
