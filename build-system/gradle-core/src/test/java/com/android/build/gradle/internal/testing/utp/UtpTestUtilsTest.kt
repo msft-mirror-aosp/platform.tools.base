@@ -16,14 +16,13 @@
 
 package com.android.build.gradle.internal.testing.utp
 
+import com.android.build.gradle.internal.SdkComponentsBuildService
 import com.android.build.gradle.internal.testing.utp.worker.RunUtpWorkAction
 import com.android.build.gradle.internal.testing.utp.worker.RunUtpWorkParameters
 import com.android.utils.ILogger
 import com.google.common.truth.Truth.assertThat
 import com.google.protobuf.TextFormat
-import com.google.testing.platform.proto.api.config.RunnerConfigProto.RunnerConfig
 import com.google.testing.platform.proto.api.core.TestSuiteResultProto.TestSuiteResult
-import org.gradle.api.model.ObjectFactory
 import org.gradle.workers.WorkQueue
 import org.gradle.workers.WorkerExecutor
 import org.junit.Before
@@ -39,7 +38,6 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import java.io.File
-import java.util.logging.Level
 
 /**
  * Unit tests for UtpTestUtils.kt.
@@ -50,7 +48,7 @@ class UtpTestUtilsTest {
 
     private val mockUtpDependencies: UtpDependencies = mock(defaultAnswer = RETURNS_DEEP_STUBS)
     private val mockWorkerExecutor: WorkerExecutor = mock()
-    private val mockObjectFactory: ObjectFactory = mock()
+    private val mockVersionedSdkLoader: SdkComponentsBuildService.VersionedSdkLoader = mock()
     private val mockWorkQueue: WorkQueue = mock()
     private val mockLogger: ILogger = mock()
 
@@ -61,24 +59,16 @@ class UtpTestUtilsTest {
     fun setupMocks() {
         jvmExecutable = temporaryFolderRule.newFile()
         whenever(mockWorkerExecutor.noIsolation()).thenReturn(mockWorkQueue)
-        whenever(mockObjectFactory.newInstance(
-            eq(RunUtpWorkParameters.UtpRunConfig::class.java))
-        ).thenReturn(mock(defaultAnswer = RETURNS_DEEP_STUBS))
     }
 
     private fun runUtp(
-        shardConfig: ShardConfig? = null,
         expectedResult: TestSuiteResult? = createStubResultProto(),
     ): List<UtpTestRunResult> {
         val utpOutputDir = temporaryFolderRule.newFolder()
         utpResultDir = temporaryFolderRule.newFolder()
-        val config = UtpRunnerConfig(
-            "deviceName",
-            "deviceId",
-            utpOutputDir,
-            RunnerConfig.getDefaultInstance(),
-            shardConfig
-        )
+
+        val config: RunUtpWorkParameters.UtpRunConfig = mock(defaultAnswer = RETURNS_DEEP_STUBS)
+        whenever(config.utpResultProtoOutputFile.asFile.get()).thenReturn(File(utpOutputDir, TEST_RESULT_PB_FILE_NAME))
 
         if (expectedResult != null) {
             whenever(mockWorkQueue.submit(eq(RunUtpWorkAction::class.java), any())).then {
@@ -90,14 +80,13 @@ class UtpTestUtilsTest {
         return runUtpTestSuiteAndWait(
             listOf(config),
             mockWorkerExecutor,
-            mockObjectFactory,
             jvmExecutable,
             "projectName",
             "variantName",
             utpResultDir,
             mockLogger,
             mockUtpDependencies,
-            Level.WARNING,
+            mockVersionedSdkLoader,
         )
     }
 
@@ -150,13 +139,6 @@ class UtpTestUtilsTest {
     @Test
     fun runSuccessfully() {
         val results = runUtp()
-
-        assertThat(results).containsExactly(UtpTestRunResult(true, createStubResultProto()))
-    }
-
-    @Test
-    fun runSuccessfullyWithSharding() {
-        val results = runUtp(ShardConfig(totalCount = 2, index = 0))
 
         assertThat(results).containsExactly(UtpTestRunResult(true, createStubResultProto()))
     }

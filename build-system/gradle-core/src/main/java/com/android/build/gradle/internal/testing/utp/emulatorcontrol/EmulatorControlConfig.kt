@@ -23,7 +23,9 @@ import java.io.Serializable
 
 // Information needed to access the emulator from within the tests.
 data class EmulatorControlConfig(
-    val enabled: Boolean, val allowedEndpoints: Set<String>, val secondsValid: Int
+    val enabled: Boolean,
+    val allowedEndpoints: Set<String>,
+    val secondsValid: Int,
 ) : Serializable
 
 fun createEmulatorControlConfig(

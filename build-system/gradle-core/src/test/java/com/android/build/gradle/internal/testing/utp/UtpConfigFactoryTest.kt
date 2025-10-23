@@ -17,29 +17,22 @@
 package com.android.build.gradle.internal.testing.utp
 
 import com.android.build.api.variant.impl.AndroidVersionImpl
-import com.android.build.gradle.internal.SdkComponentsBuildService.VersionedSdkLoader
 import com.android.build.gradle.internal.fixtures.FakeConfigurableFileCollection
-import com.android.build.gradle.internal.fixtures.FakeGradleDirectory
-import com.android.build.gradle.internal.fixtures.FakeGradleProvider
 import com.android.build.gradle.internal.test.ApkBundlesFinder
 import com.android.build.gradle.internal.test.ApksFinder
 import com.android.build.gradle.internal.testing.StaticTestData
 import com.android.build.gradle.internal.testing.utp.emulatorcontrol.EmulatorControlConfig
 import com.android.build.gradle.internal.testing.utp.emulatorcontrol.computeRegistrationDirectoryContainer
 import com.android.builder.testing.api.DeviceConfigProvider
-import com.android.sdklib.BuildToolInfo
 import com.google.common.truth.Truth.assertThat
 import com.google.protobuf.TextFormat.escapeDoubleQuotesAndBackslashes
 import com.google.testing.platform.proto.api.config.RunnerConfigProto.RunnerConfig
-import org.gradle.api.file.RegularFile
-import org.gradle.api.provider.Provider
 import org.junit.Assert.assertThrows
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import org.mockito.Answers
-import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 import java.io.File
@@ -55,19 +48,12 @@ import kotlin.io.path.absolutePathString
 class UtpConfigFactoryTest {
     @get:Rule var temporaryFolder = TemporaryFolder()
 
-    private val versionedSdkLoader: VersionedSdkLoader = mock()
     private val mockAppApk: File = mock()
     private val mockTestApk: File = mock()
     private val mockHelperApk: File = mock()
     private val mockOutputDir: File = mock()
     private val mockCoverageOutputDir: File = mock()
     private val mockTmpDir: File = mock()
-    private val mockSdkDir: File = mock()
-    private val mockAdb: RegularFile = mock()
-    private val mockAdbFile: File = mock()
-    private val mockAdbProvider: Provider<RegularFile> = mock()
-    private val mockBuildToolInfo: BuildToolInfo = mock()
-    private val mockBuildToolInfoProvider: Provider<BuildToolInfo> = mock()
     private val mockEmulatorControlConfig: EmulatorControlConfig = mock()
     private val mockDependencyApk: File = mock()
 
@@ -120,25 +106,6 @@ class UtpConfigFactoryTest {
         whenever(mockAppApk.absolutePath).thenReturn("mockAppApkPath")
         whenever(mockTestApk.absolutePath).thenReturn("mockTestApkPath")
         whenever(mockHelperApk.absolutePath).thenReturn("mockHelperApkPath")
-        whenever(versionedSdkLoader.sdkDirectoryProvider).thenReturn(
-            FakeGradleProvider(
-                FakeGradleDirectory(mockSdkDir)
-            )
-        )
-        whenever(mockSdkDir.absolutePath).thenReturn("mockSdkDirPath")
-        whenever(versionedSdkLoader.adbExecutableProvider).thenReturn(mockAdbProvider)
-        whenever(mockAdbProvider.get()).thenReturn(mockAdb)
-        whenever(mockAdb.asFile).thenReturn(mockAdbFile)
-        whenever(mockAdbFile.absolutePath).thenReturn("mockAdbPath")
-        whenever(versionedSdkLoader.buildToolInfoProvider).thenReturn(mockBuildToolInfoProvider)
-        whenever(mockBuildToolInfoProvider.get()).thenReturn(mockBuildToolInfo)
-        whenever(mockBuildToolInfo.getPath(any())).then {
-            when (it.getArgument<BuildToolInfo.PathId>(0)) {
-                BuildToolInfo.PathId.AAPT -> "mockAaptPath"
-                BuildToolInfo.PathId.DEXDUMP -> "mockDexdumpPath"
-                else -> null
-            }
-        }
         whenever(mockDependencyApk.toPath()).thenReturn(mockDependencyApkPath)
 
         testExtractedSdkApks = listOf(listOf(mockPath("mockDependencyApkPath")))
@@ -182,26 +149,29 @@ class UtpConfigFactoryTest {
     ): RunnerConfig {
         return createRunnerConfigProtoForLocalDevice(
             "emulator-mockDeviceSerialNumber",
-                testData,
-                targetApkConfigBundle,
-                listOf("-additional_install_option"),
-                listOf(mockHelperApk),
-                uninstallIncompatibleApks,
-                utpDependencies,
-                versionedSdkLoader,
-                mockOutputDir,
-                mockTmpDir,
-                mockEmulatorControlConfig,
-                mockCoverageOutputDir,
-                useOrchestrator,
-                forceCompilation,
-                additionalTestOutputDir,
-                additionalTestOutputOnDeviceDir,
-                installApkTimeout,
-                extractedSdkApks,
-                cleanTestArtifacts,
-                reinstallIncompatibleApksBeforeTest,
-                shardConfig,
+            testData,
+            targetApkConfigBundle,
+            listOf("-additional_install_option"),
+            listOf(mockHelperApk),
+            uninstallIncompatibleApks,
+            utpDependencies,
+            "mockSdkDirPath",
+            "mockAdbPath",
+            "mockAaptPath",
+            "mockDexdumpPath",
+            mockOutputDir,
+            mockTmpDir,
+            mockEmulatorControlConfig,
+            mockCoverageOutputDir,
+            useOrchestrator,
+            forceCompilation,
+            additionalTestOutputDir,
+            additionalTestOutputOnDeviceDir,
+            installApkTimeout,
+            extractedSdkApks,
+            cleanTestArtifacts,
+            reinstallIncompatibleApksBeforeTest,
+            shardConfig,
         )
     }
 
@@ -223,7 +193,10 @@ class UtpConfigFactoryTest {
             listOf(mockHelperApk),
             uninstallIncompatibleApks = true,
             utpDependencies,
-            versionedSdkLoader,
+            "mockSdkDirPath",
+            "mockAdbPath",
+            "mockAaptPath",
+            "mockDexdumpPath",
             mockOutputDir,
             mockTmpDir,
             mockEmulatorControlConfig,

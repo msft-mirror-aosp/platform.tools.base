@@ -32,7 +32,6 @@ import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
 import java.io.File
-import java.nio.file.Path
 
 /**
  * Implementation of [TestData] for tests that run against
@@ -40,7 +39,7 @@ import java.nio.file.Path
  *
  * For the moment, that is only dynamic feature modules.
  */
-internal class BundleTestDataImpl constructor(
+internal class BundleTestDataImpl(
     namespace: Provider<String>,
     creationConfig: DeviceTestCreationConfig,
     testApkDir: Provider<Directory>,
@@ -71,14 +70,14 @@ internal class BundleTestDataImpl constructor(
 
     override val testedApksFinder: ApksFinder
         get() = _testedApksFinder ?:
-            BundleApksFinder(apkBundle.singleFile.toPath(), moduleName).also {
+            BundleApksFinder(apkBundle.singleFile, moduleName).also {
                 _testedApksFinder = it
             }
 
     private var _testedApksFinder: BundleApksFinder? = null
 
-    internal class BundleApksFinder(
-        private val apkPath: Path,
+    private class BundleApksFinder(
+        private val apkFile: File,
         private val moduleName: String?
     ): ApksFinder {
 
@@ -93,7 +92,7 @@ internal class BundleTestDataImpl constructor(
                 return ImmutableList.of<File>()
             }
             return getApkFiles(
-                apkPath,
+                apkFile.toPath(),
                 deviceConfigProvider,
                 moduleName
             ).map { it.toFile() }.toImmutableList()

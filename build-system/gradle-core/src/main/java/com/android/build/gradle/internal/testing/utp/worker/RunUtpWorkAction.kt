@@ -16,6 +16,10 @@
 
 package com.android.build.gradle.internal.testing.utp.worker
 
+import com.android.build.gradle.internal.testing.utp.createRunnerConfigProtoForLocalDevice
+import com.android.build.gradle.internal.testing.utp.createUtpTempDirectory
+import com.android.build.gradle.internal.testing.utp.createUtpTempFile
+import com.google.common.io.Files
 import org.gradle.api.provider.ProviderFactory
 import org.gradle.workers.WorkAction
 import javax.inject.Inject
@@ -45,9 +49,56 @@ abstract class RunUtpWorkAction : WorkAction<RunUtpWorkParameters> {
 
         val utpRunConfigs = parameters.utpRunConfigs.get()
 
+        val utpRunnerConfigFileList = utpRunConfigs.map {
+            val utpRunConfigProto = createRunnerConfigProtoForLocalDevice(
+                it.deviceSerialNumber.get(),
+                it.testData.get(),
+                it.targetApkConfigBundle.get(),
+                it.additionalInstallOptions.get(),
+                it.helperApks.toList(),
+                it.uninstallIncompatibleApks.get(),
+                parameters.utpDependencies.get(),
+                parameters.androidSdkDirectory.get().asFile.absolutePath,
+                parameters.adbExecutable.get().asFile.absolutePath,
+                parameters.aaptExecutable.get().asFile.absolutePath,
+                parameters.dexdumpExecutable.get().asFile.absolutePath,
+                it.outputDir.get().asFile,
+                createUtpTempDirectory("utpRunTemp"),
+                it.emulatorControlConfig.get(),
+                it.coverageOutputDir.get().asFile,
+                it.useOrchestrator.get(),
+                it.forceCompilation.get(),
+                it.additionalTestOutputDir.orNull?.asFile,
+                it.additionalTestOutputOnDeviceDir.orNull,
+                it.installApkTimeout.orNull,
+                it.extractedSdkApks.get().map { it.map { it.toPath() } },
+                it.uninstallApksAfterTest.get(),
+                it.reinstallIncompatibleApksBeforeTest.get(),
+                it.shardConfig.orNull,
+            )
+
+            createUtpTempFile("runnerConfig", ".pb").also { file ->
+                file.writeBytes(utpRunConfigProto.toByteArray())
+            }
+        }
+
+        val loggingPropertiesFileList = utpRunConfigs.map {
+            createUtpTempFile("logging", "properties").also { file ->
+                Files.asCharSink(file, Charsets.UTF_8).write("""
+                .level=INFO
+                .handlers=java.util.logging.ConsoleHandler,java.util.logging.FileHandler
+                java.util.logging.ConsoleHandler.level=${it.loggingLevel.get().name}
+                java.util.logging.SimpleFormatter.format=%4${'$'}s: %5${'$'}s%n
+                java.util.logging.FileHandler.level=INFO
+                java.util.logging.FileHandler.pattern=${it.outputDir.get().asFile.invariantSeparatorsPath}/utp.%u.log
+                java.util.logging.FileHandler.formatter=java.util.logging.SimpleFormatter
+            """.trimIndent())
+            }
+        }
+
         utpRunner.execute(
-            utpRunConfigs.map { it.runnerConfigFile.get().asFile },
-            utpRunConfigs.map { it.loggingPropertiesFile.get().asFile },
+            utpRunnerConfigFileList,
+            loggingPropertiesFileList,
             utpRunConfigs.map { it.deviceId.get() },
             utpRunConfigs.map { it.deviceName.get() },
             utpRunConfigs.map { it.deviceShardName.get() },

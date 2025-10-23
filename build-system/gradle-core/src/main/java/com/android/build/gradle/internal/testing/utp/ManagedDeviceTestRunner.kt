@@ -18,14 +18,15 @@ package com.android.build.gradle.internal.testing.utp
 
 import com.android.SdkConstants.FN_EMULATOR
 import com.android.build.api.dsl.Device
-import com.android.build.api.instrumentation.StaticTestData
 import com.android.build.gradle.internal.AvdComponentsBuildService
 import com.android.build.gradle.internal.LoggerWrapper
 import com.android.build.gradle.internal.SdkComponentsBuildService
 import com.android.build.gradle.internal.computeAbiFromArchitecture
 import com.android.build.gradle.internal.computeAvdName
 import com.android.build.gradle.internal.dsl.ManagedVirtualDevice
+import com.android.build.gradle.internal.testing.StaticTestData
 import com.android.build.gradle.internal.testing.utp.emulatorcontrol.EmulatorControlConfig
+import com.android.build.gradle.internal.testing.utp.worker.createUtpRunConfig
 import com.android.builder.testing.api.DeviceException
 import com.android.builder.testing.api.TestException
 import com.android.utils.ILogger
@@ -50,15 +51,8 @@ class ManagedDeviceTestRunner(
     private val avdComponents: AvdComponentsBuildService,
     private val installApkTimeout: Int?,
     private val enableEmulatorDisplay: Boolean,
-    private val utpLoggingLevel: Level = Level.WARNING,
+    private val utpLoggingLevel: Level,
     private val targetIsSplitApk: Boolean,
-    private val runUtpTestSuiteAndWaitFunc: (
-        List<UtpRunnerConfig>, String, String, File, ILogger
-    ) -> List<UtpTestRunResult> = { runnerConfigs, projectPath, variantName, resultsDir, logger ->
-        runUtpTestSuiteAndWait(
-            runnerConfigs, workerExecutor, objectFactory, utpJvmExecutable, projectPath,
-            variantName, resultsDir, logger, utpDependencies, utpLoggingLevel)
-    },
 ) {
 
     /**
@@ -99,7 +93,7 @@ class ManagedDeviceTestRunner(
         )
         val testedApks = getTestedApks(testData, utpManagedDevice, logger)
         val extractedSdkApks = getExtractedSdkApks(testData, utpManagedDevice)
-        val runnerConfigs = mutableListOf<UtpRunnerConfig>()
+
         val results = avdComponents.runWithAvds(
             utpManagedDevice.avdName, numShards ?: 1) { deviceSerials ->
             val devicesAcquired = deviceSerials.size
@@ -111,7 +105,7 @@ class ManagedDeviceTestRunner(
                 )
             }
 
-            deviceSerials.forEachIndexed { currentShard, deviceSerial ->
+            val runnerConfigs = deviceSerials.mapIndexed { currentShard, deviceSerial ->
                 val shardConfig = numShards?.let {
                     ShardConfig(totalCount = devicesAcquired, index = currentShard)
                 }
@@ -129,17 +123,18 @@ class ManagedDeviceTestRunner(
                 } else {
                     utpManagedDevice.forShard(currentShard)
                 }
-                val runnerConfigProto = createRunnerConfigProtoForLocalDevice(
+
+                createUtpRunConfig(
+                    objectFactory,
+                    shardedManagedDevice.id,
+                    shardedManagedDevice.deviceName,
                     deviceSerial,
                     testData,
                     TargetApkConfigBundle(testedApks, targetIsSplitApk),
                     additionalInstallOptions,
                     helperApks,
                     uninstallIncompatibleApks = true,
-                    utpDependencies,
-                    versionedSdkLoader,
                     utpOutputDir,
-                    createUtpTempDirectory("utpRunTemp"),
                     emulatorControlConfig,
                     coverageOutputDirectory,
                     useOrchestrator,
@@ -151,25 +146,20 @@ class ManagedDeviceTestRunner(
                     uninstallApksAfterTest = false,
                     reinstallIncompatibleApksBeforeTest = true,
                     shardConfig,
-                )
-
-                runnerConfigs.add(
-                    UtpRunnerConfig(
-                        shardedManagedDevice.deviceName,
-                        shardedManagedDevice.id,
-                        utpOutputDir,
-                        runnerConfigProto,
-                        shardConfig,
-                    )
+                    utpLoggingLevel,
                 )
             }
 
-            runUtpTestSuiteAndWaitFunc(
+            runUtpTestSuiteAndWait(
                 runnerConfigs,
+                workerExecutor,
+                utpJvmExecutable,
                 projectPath,
                 variantName,
                 outputDirectory,
-                logger
+                logger,
+                utpDependencies,
+                versionedSdkLoader,
             )
         }
 
