@@ -2712,25 +2712,15 @@ abstract class UastInputs  {
 
     /**
      * The kotlin language version used by the corresponding [KotlinCompile] task. This property is
-     * set via [KotlinCompile.compilerOptions], which is the replacement for the deprecated
-     * [KotlinCompile.kotlinOptions].
+     * set via [KotlinCompile.compilerOptions].
      */
     @get:Input
     @get:Optional
     abstract val compilerOptionsKotlinLanguageVersion: Property<String>
 
     /**
-     * The kotlin language version used by the corresponding [KotlinCompile] task. This property is
-     * set via the deprecated [KotlinCompile.kotlinOptions].
-     */
-    @get:Input
-    @get:Optional
-    abstract val kotlinOptionsKotlinLanguageVersion: Property<String>
-
-    /**
      * The default kotlin language version used by the corresponding [KotlinCompile] task, which is
-     * used if the language version is not set on [KotlinCompile.compilerOptions] or
-     * [KotlinCompile.kotlinOptions].
+     * used if the language version is not set on [KotlinCompile.compilerOptions].
      */
     @get:Input
     @get:Optional
@@ -2750,7 +2740,6 @@ abstract class UastInputs  {
     val kotlinLanguageVersion: String?
         get() =
             compilerOptionsKotlinLanguageVersion.orNull
-                ?: kotlinOptionsKotlinLanguageVersion.orNull
                 ?: defaultKotlinLanguageVersion.orNull
 
     fun initialize(project: Project, variant: VariantCreationConfig) {
@@ -2814,18 +2803,6 @@ abstract class UastInputs  {
             }
         )
         this.compilerOptionsKotlinLanguageVersion.disallowChanges()
-        // Ignore the type mismatch warning because the Gradle docs say "May return null"
-        this.kotlinOptionsKotlinLanguageVersion.set(
-            kotlinCompileTaskProvider.flatMap { kotlinCompileTask ->
-                // languageVersion is defined as a String? so it's ok to wrap it in a Provider
-                // as no task dependency needs to be carried over.
-                @Suppress("DEPRECATION_ERROR") // TODO(b/435372615): Remove this suppression
-                runCatching { kotlinCompileTask.kotlinOptions.languageVersion }.getOrNull()?.let {
-                    project.provider { it }
-                } ?: project.provider { null }
-            }
-        )
-        this.kotlinOptionsKotlinLanguageVersion.disallowChanges()
         this.defaultKotlinLanguageVersion.setDisallowChanges(
             runCatching { DEFAULT.version }.getOrNull()
         )

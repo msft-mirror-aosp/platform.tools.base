@@ -1340,13 +1340,9 @@ package com.android.build.api.dsl {
 
   public interface KotlinMultiplatformAndroidCompilation extends org.jetbrains.kotlin.gradle.plugin.KotlinCompilation<java.lang.Object> {
     method public org.gradle.api.tasks.TaskProvider<? extends org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask<org.jetbrains.kotlin.gradle.dsl.KotlinJvmCompilerOptions>> getCompileTaskProvider();
-    method @Deprecated public org.jetbrains.kotlin.gradle.plugin.HasCompilerOptions<org.jetbrains.kotlin.gradle.dsl.KotlinJvmCompilerOptions> getCompilerOptions();
     method public String getComponentName();
-    method @Deprecated public org.jetbrains.kotlin.gradle.dsl.KotlinCommonOptions getKotlinOptions();
     property public abstract org.gradle.api.tasks.TaskProvider<? extends org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask<org.jetbrains.kotlin.gradle.dsl.KotlinJvmCompilerOptions>> compileTaskProvider;
-    property @Deprecated public abstract org.jetbrains.kotlin.gradle.plugin.HasCompilerOptions<org.jetbrains.kotlin.gradle.dsl.KotlinJvmCompilerOptions> compilerOptions;
     property public abstract String componentName;
-    property @Deprecated public abstract org.jetbrains.kotlin.gradle.dsl.KotlinCommonOptions kotlinOptions;
   }
 
   public interface KotlinMultiplatformAndroidCompilationBuilder {

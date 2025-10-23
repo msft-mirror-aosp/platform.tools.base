@@ -20,9 +20,7 @@ package com.android.build.gradle.internal.utils
 
 import com.android.build.api.dsl.AndroidSourceSet
 import com.android.build.gradle.internal.api.DefaultAndroidSourceDirectorySet
-import com.android.build.gradle.internal.component.ApkCreationConfig
 import com.android.build.gradle.internal.component.ComponentCreationConfig
-import com.android.build.gradle.internal.component.LibraryCreationConfig
 import com.android.build.gradle.internal.profile.AnalyticsConfiguratorService
 import com.android.build.gradle.internal.services.BuiltInKotlinServices
 import com.android.build.gradle.internal.services.ProjectServices
@@ -38,7 +36,6 @@ import org.gradle.api.artifacts.ExternalDependency
 import org.gradle.api.file.FileCollection
 import org.gradle.api.file.SourceDirectorySet
 import org.gradle.api.logging.Logger
-import org.gradle.api.tasks.ClasspathNormalizer
 import org.gradle.api.tasks.SourceSet
 import org.jetbrains.kotlin.gradle.plugin.CompilerPluginConfig
 import org.jetbrains.kotlin.gradle.plugin.KotlinBaseApiPlugin
@@ -210,9 +207,7 @@ fun recordKotlinCompilePropertiesForAnalytics(
  * (e.g., because the compile and runtime versions of KGP differ), this method will return `null`.
  */
 private fun getLanguageVersionUnsafe(kotlinCompile: KotlinCompile): String? {
-    @Suppress("DEPRECATION_ERROR") // TODO(b/435372615): Remove this suppression
-    return runCatching { kotlinCompile.kotlinOptions.languageVersion }.getOrNull()
-        ?: runCatching { kotlinCompile.compilerOptions.languageVersion.orNull?.version }.getOrNull()
+    return runCatching { kotlinCompile.compilerOptions.languageVersion.orNull?.version }.getOrNull()
         ?: runCatching { org.jetbrains.kotlin.gradle.dsl.KotlinVersion.DEFAULT.version }.getOrNull()
 }
 
@@ -223,16 +218,11 @@ fun addComposeArgsToKotlinCompile(
 ) {
     val kotlinVersion = getProjectKotlinPluginKotlinVersion(task.project)
 
-    task.addPluginClasspath(kotlinVersion, compilerExtension)
+    task.pluginClasspath.from(compilerExtension)
 
     task.maybeAddSourceInformationOption(kotlinVersion)
 
-    if (kotlinVersion.isVersionAtLeast(1, 8)) {
-        task.compilerOptions.freeCompilerArgs.add("-Xallow-unstable-dependencies")
-    } else {
-        @Suppress("DEPRECATION_ERROR") // TODO(b/435372615): Remove this suppression
-        task.kotlinOptions.freeCompilerArgs += "-Xallow-unstable-dependencies"
-    }
+    task.compilerOptions.freeCompilerArgs.add("-Xallow-unstable-dependencies")
 }
 
 fun maybeUseInlineScopesNumbers(
@@ -255,51 +245,22 @@ fun maybeUseInlineScopesNumbers(
     task.compilerOptions.freeCompilerArgs.add("-Xuse-inline-scopes-numbers")
 }
 
-private fun KotlinCompile.addPluginClasspath(
-    kotlinVersion: KotlinVersion?, compilerExtension: FileCollection
-) {
-    if (kotlinVersion.isVersionAtLeast(1, 7)) {
-        pluginClasspath.from(compilerExtension)
-    } else {
-        inputs.files(compilerExtension)
-            .withPropertyName("composeCompilerExtension")
-            .withNormalizer(ClasspathNormalizer::class.java)
-        doFirst {
-            @Suppress("DEPRECATION_ERROR") // TODO(b/435372615): Remove this suppression
-            (it as KotlinCompile).kotlinOptions.freeCompilerArgs +=
-                "-Xplugin=${compilerExtension.files.single().path}"
-        }
-    }
-}
-
 private fun KotlinCompile.addPluginOption(
-    kotlinVersion: KotlinVersion?,
     pluginId: String,
     key: String,
     value: String
 ) {
-    val freeCompilerArgs =
-        if (kotlinVersion.isVersionAtLeast(1, 8)) {
-            compilerOptions.freeCompilerArgs.getOrElse(emptyList())
-        } else {
-            @Suppress("DEPRECATION_ERROR") // TODO(b/435372615): Remove this suppression
-            kotlinOptions.freeCompilerArgs
-        }
+    val freeCompilerArgs = compilerOptions.freeCompilerArgs.getOrElse(emptyList())
     val pluginOption = "plugin:$pluginId:$key"
     // Only add the plugin option if it was not previously added by the user (see b/318384658)
     if (freeCompilerArgs.any { it.startsWith("$pluginOption=") }) {
         return
     }
-    if (kotlinVersion.isVersionAtLeast(1, 9, 20)) {
-         pluginOptions.add(
-             CompilerPluginConfig().apply {
-                 addPluginArgument(pluginId, SubpluginOption(key, value))
-             }
-         )
-    } else {
-        @Suppress("DEPRECATION_ERROR") // TODO(b/435372615): Remove this suppression
-        kotlinOptions.freeCompilerArgs += listOf("-P", "$pluginOption=$value")
-    }
+    pluginOptions.add(
+        CompilerPluginConfig().apply {
+            addPluginArgument(pluginId, SubpluginOption(key, value))
+        }
+    )
 }
 
 private fun KotlinVersion?.isVersionAtLeast(major: Int, minor: Int, patch: Int? = null): Boolean =
@@ -320,7 +281,6 @@ private fun KotlinCompile.maybeAddSourceInformationOption(kotlinVersion: KotlinV
         return
     }
     addPluginOption(
-        kotlinVersion,
         "androidx.compose.compiler.plugins.kotlin",
         "sourceInformation",
         "true"
