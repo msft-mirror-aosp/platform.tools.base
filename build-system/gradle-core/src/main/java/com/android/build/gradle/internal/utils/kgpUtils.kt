@@ -25,7 +25,6 @@ import com.android.build.gradle.internal.profile.AnalyticsConfiguratorService
 import com.android.build.gradle.internal.services.BuiltInKotlinServices
 import com.android.build.gradle.internal.services.ProjectServices
 import com.android.build.gradle.internal.services.getBuildService
-import com.android.build.gradle.options.BooleanOption
 import com.android.utils.appendCapitalized
 import com.google.wireless.android.sdk.stats.GradleBuildVariant
 import org.gradle.api.NamedDomainObjectContainer
@@ -295,13 +294,13 @@ private fun KotlinCompile.maybeAddSourceInformationOption(kotlinVersion: KotlinV
 fun syncAgpAndKgpSources(
     project: Project,
     projectServices: ProjectServices,
-    androidSourceSets: NamedDomainObjectContainer<out AndroidSourceSet>
+    androidSourceSets: NamedDomainObjectContainer<out AndroidSourceSet>,
+    useBuiltInKotlinSupport: Boolean
 ) {
     // Create Kotlin source sets if built-in Kotlin support is available
     // (similar to what `kotlin-android` plugin does at
     // org.jetbrains.kotlin.gradle.plugin.sources.android.KotlinAndroidSourceSetFactory)
-    if (projectServices.projectOptions.get(BooleanOption.BUILT_IN_KOTLIN)
-        || projectServices.projectInfo.hasPlugin(ANDROID_BUILT_IN_KOTLIN_PLUGIN_ID)) {
+    if (useBuiltInKotlinSupport) {
         val kotlinSourceSetContainer =
             projectServices.builtInKotlinServices.kotlinAndroidProjectExtension.sourceSets
         androidSourceSets.forEach {
@@ -348,12 +347,13 @@ fun syncAgpAndKgpSources(
     }
 
     androidSourceSets.configureEach {
-        val kotlinSourceSet = it.findKotlinSourceSet()
-        if (kotlinSourceSet != null) {
-            if (!hasMpp) {
-                kotlinSourceSet.srcDirs((it.java as DefaultAndroidSourceDirectorySet).srcDirs)
-                kotlinSourceSet.srcDirs((it.kotlin as DefaultAndroidSourceDirectorySet).srcDirs)
-            }
+        val kotlinSourceSet = it.findKotlinSourceSet() ?: return@configureEach
+        if (hasMpp) {
+            it.kotlin.setSrcDirs(kotlinSourceSet.srcDirs)
+        } else if (!useBuiltInKotlinSupport) {
+            // Only sync AGP and KGP source sets if built-in Kotlin is disabled (b/386221070)
+            kotlinSourceSet.srcDirs((it.java as DefaultAndroidSourceDirectorySet).srcDirs)
+            kotlinSourceSet.srcDirs((it.kotlin as DefaultAndroidSourceDirectorySet).srcDirs)
             it.kotlin.setSrcDirs(kotlinSourceSet.srcDirs)
         }
     }

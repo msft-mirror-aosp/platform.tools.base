@@ -171,17 +171,15 @@ class BuiltInKotlinForAppTest2 {
                     )
                 }
                 // Add the custom source directories to the source sets.
-                kotlin {
-                    sourceSets {
-                        create("main") {
-                            it.kotlin.srcDir("src/fooMain/kotlin")
-                        }
-                        create("debug") {
-                            it.kotlin.srcDir("src/fooDebug/kotlin")
-                        }
-                        create("androidTest") {
-                            it.kotlin.srcDir("src/fooAndroidTest/kotlin")
-                        }
+                android {
+                    sourceSets.named("main") {
+                        it.kotlin.directories += "src/fooMain/kotlin"
+                    }
+                    sourceSets.named("debug") {
+                        it.kotlin.directories += "src/fooDebug/kotlin"
+                    }
+                    sourceSets.named("androidTest") {
+                        it.kotlin.directories += "src/fooAndroidTest/kotlin"
                     }
                 }
             }

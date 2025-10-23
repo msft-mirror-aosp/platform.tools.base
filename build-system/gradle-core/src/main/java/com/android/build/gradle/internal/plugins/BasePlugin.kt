@@ -688,9 +688,6 @@ To learn more, go to https://d.android.com/r/tools/java-8-support-message.html
         variantInputModel.lock()
         extension.disableWrite()
 
-        @Suppress("DEPRECATION")
-        syncAgpAndKgpSources(project, projectServices, extension.sourceSets)
-
         val projectBuilder = configuratorService.getProjectBuilder(
             project.path
         )
@@ -823,6 +820,10 @@ To learn more, go to https://d.android.com/r/tools/java-8-support-message.html
 
         // Make sure no SourceSets were added through the DSL without being properly configured
         variantInputModel.sourceSetManager.checkForUnconfiguredSourceSets()
+
+        // Built-in Kotlin
+        val useBuiltInKotlinSupport = variantManager.mainComponents.any { it.variant.useBuiltInKotlinSupport }
+        syncAgpAndKgpSources(project, projectServices, extension.sourceSets, useBuiltInKotlinSupport)
 
         // configure compose related tasks.
         taskManager.createPostApiTasks()
