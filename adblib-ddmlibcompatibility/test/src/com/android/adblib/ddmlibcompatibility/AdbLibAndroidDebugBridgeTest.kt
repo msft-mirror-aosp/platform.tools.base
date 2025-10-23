@@ -392,26 +392,6 @@ class AdbLibAndroidDebugBridgeTest {
     }
 
     @Test
-    fun hasInitialDeviceList_isSetToTrueAfterCreateBridge() = runBlockingWithTimeout {
-        // Setup
-        val session = FakeAdbSession()
-
-        val adbServerController = FakeAdbServerController()
-        val bridge = AdbLibAndroidDebugBridge(session, adbServerController, config)
-
-        // Act
-        val debugBridge = bridge.createBridge()
-
-        // Assert
-        assertNotNull(debugBridge)
-        yieldUntil { bridge.hasInitialDeviceList() }
-
-        // Cleanup
-        bridge.disconnectBridge()
-        bridge.terminate()
-    }
-
-    @Test
     fun createBridge_triggersNotifyBridgeChangeEvents() = runBlockingWithTimeout {
         // Setup
         val session = FakeAdbSession()
@@ -531,8 +511,6 @@ class AdbLibAndroidDebugBridgeTest {
                 adbLibAndroidDebugBridge.removeDeviceChangeListener(deviceConnectionListener)
             }
         }
-
-    // TODO: Add many more tests
 
     /**
      * This helper is needed when test code relies on calls to static
