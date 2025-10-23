@@ -30,6 +30,8 @@ import com.android.build.gradle.internal.dsl.NdkOptions
 interface NativeBuildCreationConfig {
     val supportedAbis: Set<String>
 
+    val userDefinedAbis: Set<String>
+
     val ndkConfig: MergedNdkConfig
 
     val isJniDebuggable: Boolean

@@ -732,33 +732,42 @@ abstract class PackageAndroidArtifact : NewIncrementalTask() {
                                         .getArtifactFileCollection(ConsumedConfigType.COMPILE_CLASSPATH, ArtifactScope.PROJECT, AndroidArtifacts.ArtifactType.BASE_MODULE_METADATA))
             }
             packageAndroidArtifact.baseModuleMetadata.disallowChanges()
-            val supportedAbis: Set<String> = if (creationConfig.nativeBuildCreationConfig != null) {
-                creationConfig.nativeBuildCreationConfig!!.supportedAbis
+            val userDefinedAbis: Set<String> = if (creationConfig.nativeBuildCreationConfig != null) {
+                creationConfig.nativeBuildCreationConfig!!.userDefinedAbis
             } else {
                 emptySet()
             }
-            if (supportedAbis.isNotEmpty()) {
+            var abiFilters: Set<String>? = null
+            if (userDefinedAbis.isNotEmpty()) {
                 // If the build author has set the supported Abis that is respected
-                packageAndroidArtifact.abiFilters.set(supportedAbis)
+                abiFilters = userDefinedAbis
                 packageAndroidArtifact.buildAllAbis.set(false)
             } else {
                 // Otherwise, use the injected Abis if set.
-                packageAndroidArtifact.abiFilters.set(
-                    if (projectOptions[BooleanOption.BUILD_ONLY_TARGET_ABI]) {
+                if (projectOptions[BooleanOption.BUILD_ONLY_TARGET_ABI]) {
+                    abiFilters =
                         firstValidInjectedAbi(projectOptions[StringOption.IDE_BUILD_TARGET_ABI])
-                    } else {
-                        setOf()
+                }
+
+                // if no user abiFilter or injected - fallback to supportedAbis with defaults
+                if (abiFilters == null) {
+                    if (creationConfig.nativeBuildCreationConfig != null) {
+                        abiFilters = creationConfig.nativeBuildCreationConfig!!.supportedAbis
                     }
-                )
-                packageAndroidArtifact.abiFilters.disallowChanges()
+                }
+
                 // However, if the flag to build all ABIs ignoring IDE optimizations is true, we
                 // will remove the abiFilters in task execution
                 packageAndroidArtifact.buildAllAbis.setDisallowChanges(
                     (creationConfig as? VariantCreationConfig)?.experimentalProperties?.map {
-                        BooleanWithDefault.BUILD_ALL_ABIS_IGNORING_IDE_OPTIMIZATIONS.getValue(it)
+                        BooleanWithDefault.BUILD_ALL_ABIS_IGNORING_IDE_OPTIMIZATIONS.getValue(
+                            it
+                        )
                     } ?: creationConfig.services.provider { false }
                 )
             }
+            packageAndroidArtifact.abiFilters.setDisallowChanges(abiFilters ?: setOf())
+
             packageAndroidArtifact.createdBy.set(creationConfig.global.createdBy)
             if (creationConfig.componentType.isBaseModule
                     && creationConfig
@@ -1196,13 +1205,13 @@ abstract class PackageAndroidArtifact : NewIncrementalTask() {
                 if (missingAbis.isNotEmpty()) {
                     val logger = LoggerWrapper(Logging.getLogger(PackageAndroidArtifact::class.java))
                     logger.warning(String.format(
-                            "There are no .so files available to package in the APK for %s.",
-                            Joiner.on(", ")
-                                    .join(
-                                            missingAbis
-                                                    .stream()
-                                                    .sorted()
-                                                    .collect(Collectors.toList()))))
+                        "There are no .so files available to package in the APK for %s.",
+                        Joiner.on(", ")
+                            .join(
+                                missingAbis
+                                    .stream()
+                                    .sorted()
+                                    .collect(Collectors.toList()))))
                 }
             }
             return acceptedAbis

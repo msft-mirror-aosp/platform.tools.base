@@ -300,13 +300,19 @@ class ApplicationVariantFactory(
         variantOutputs: VariantOutputList,
         globalConfig: GlobalTaskCreationConfig
     ) {
-        val supportedAbis: Set<String> = component.supportedAbis
+        // TODO
         val projectOptions = dslServices.projectOptions
         val buildTargetAbi =
             (if (projectOptions[BooleanOption.BUILD_ONLY_TARGET_ABI]
                 || globalConfig.splits.abi.isEnable
             ) projectOptions[StringOption.IDE_BUILD_TARGET_ABI] else null)
                 ?: return
+        val supportedAbis: Set<String> =
+            component.userDefinedAbis.takeIf { it.isNotEmpty() } ?: if (Strings.nullToEmpty(
+                    buildTargetAbi
+                ).isEmpty()
+            ) component.supportedAbis else setOf()
+
         val genericBuiltArtifacts = variantOutputs
             .map { variantOutput ->
                 GenericBuiltArtifact(

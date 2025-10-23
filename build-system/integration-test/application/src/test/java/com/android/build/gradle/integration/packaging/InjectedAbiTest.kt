@@ -155,7 +155,7 @@ class InjectedAbiTest {
 
         // Run the first build with a target ABI, check that no split APKs are generated
         // and main APK only contains native libraries for target ABI
-        var result = build.executor
+        build.executor
             .with(StringOption.IDE_BUILD_TARGET_ABI, "x86")
             .with(BooleanOption.ENABLE_LEGACY_API, true)
             .run("assembleDebug")
@@ -169,7 +169,7 @@ class InjectedAbiTest {
 
         project.assertApk(DEBUG.fromIntermediates()) {
             jniLibs().containsExactly("${Abi.X86.tag}/libapp.so")
-       }
+        }
 
         val apkLastModifiedTime = java.nio.file.Files.getLastModifiedTime(
             project.getApkLocationForCopy(DEBUG.fromIntermediates())
@@ -236,6 +236,29 @@ class InjectedAbiTest {
         project.assertApk(DEBUG.fromIntermediates()) {
             jniLibs().containsExactly("${Abi.X86.tag}/libapp.so")
        }
+    }
+
+    @Test
+    fun testDefaultFilter() {
+        val build = rule.build
+        val project = build.androidApplication()
+
+        // When no abiFilters defined and no injections it falls back to all default all filters
+        // which includes all abis
+        build.executor
+            .run("clean", "assembleDebug")
+            .apply {
+                assertTask(":app:packageDebug").didWork()
+            }
+
+        project.assertApk(DEBUG) {
+            jniLibs().containsExactly(
+                "x86_64/libapp.so",
+                "x86/libapp.so",
+                "arm64-v8a/libapp.so",
+                "armeabi-v7a/libapp.so"
+            )
+        }
     }
 
     @Test
