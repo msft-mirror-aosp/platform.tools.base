@@ -34,6 +34,7 @@ maven_library(
     name = "adblib.tools",
     srcs = glob([
         "src/com/android/adblib/tools/*.kt",
+        "src/com/android/adblib/tools/aiglasses/*.kt",
         "src/com/android/adblib/tools/debugging/**/*.kt",
         "src/com/android/adblib/tools/impl/**/*.kt",
         "src/com/android/adblib/tools/tcpserver/**/*.kt",
