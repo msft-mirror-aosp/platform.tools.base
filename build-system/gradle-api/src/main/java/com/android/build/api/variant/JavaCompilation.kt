@@ -24,12 +24,12 @@ import org.gradle.api.artifacts.Configuration
  *
  * This is accessed via [Component.javaCompilation]
  */
-@Incubating
 interface JavaCompilation {
 
     /**
      * Returns the [AnnotationProcessor] for configuring Java annotation processor.
      */
+    @get:Incubating
     val annotationProcessor: AnnotationProcessor
 
     /**

@@ -25,8 +25,6 @@ import org.gradle.api.tasks.testing.Test
 internal class UnitTestOptionsDslInfoImpl(
     private val extension: CommonExtensionImpl<*, *, *>,
 ): UnitTestOptionsDslInfo {
-    override val isIncludeAndroidResources: Boolean
-        get() = extension.testOptions.unitTests.isIncludeAndroidResources
     override val isReturnDefaultValues: Boolean
         get() = extension.testOptions.unitTests.isReturnDefaultValues
     override fun applyConfiguration(task: Test) {

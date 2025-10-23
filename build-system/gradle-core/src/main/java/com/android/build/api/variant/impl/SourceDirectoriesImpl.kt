@@ -46,13 +46,25 @@ abstract class SourceDirectoriesImpl(
         }
     }
 
-    override fun <T : Task> addGeneratedSourceDirectory(taskProvider: TaskProvider<T>, wiredWith: (T) -> DirectoryProperty) {
+    override fun <T : Task> addGeneratedSourceDirectory(
+        taskProvider: TaskProvider<T>,
+        wiredWith: (T) -> DirectoryProperty
+    ) = addGeneratedSourceDirectory(taskProvider, wiredWith, DirectoryEntry.Kind.GENERIC)
+
+    // Internal API used to register the KAPT/KSP generators.
+    fun <T : Task> addGeneratedSourceDirectory(
+        taskProvider: TaskProvider<T>,
+        wiredWith: (T) -> DirectoryProperty,
+        kind: DirectoryEntry.Kind
+    ) {
         val mappedValue: Provider<Directory> = taskProvider.flatMap {
             wiredWith(it)
         }
         taskProvider.configure { task ->
             wiredWith.invoke(task).convention(
-                variantServices.projectInfo.buildDirectory.dir("${SdkConstants.FD_GENERATED}/$_name/${taskProvider.name}")
+                variantServices.projectInfo.buildDirectory.dir(
+                    "${SdkConstants.FD_GENERATED}/$_name/${taskProvider.name}"
+                )
             )
         }
         addSource(
@@ -61,7 +73,8 @@ abstract class SourceDirectoriesImpl(
                 mappedValue,
                 isGenerated = true,
                 isUserAdded = true,
-                shouldBeAddedToIdeModel = true
+                shouldBeAddedToIdeModel = true,
+                kind = kind
             )
         )
     }

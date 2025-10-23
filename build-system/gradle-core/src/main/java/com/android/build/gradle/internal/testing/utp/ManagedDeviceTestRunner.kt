@@ -30,9 +30,8 @@ import com.android.builder.testing.api.DeviceException
 import com.android.builder.testing.api.TestException
 import com.android.utils.ILogger
 import com.google.common.base.Preconditions
-import com.google.testing.platform.proto.api.config.RunnerConfigProto
-import com.google.wireless.android.sdk.stats.DeviceTestSpanProfile
 import org.gradle.api.logging.Logger
+import org.gradle.api.model.ObjectFactory
 import org.gradle.workers.WorkerExecutor
 import java.io.File
 import java.nio.file.Path
@@ -40,6 +39,7 @@ import java.util.logging.Level
 
 class ManagedDeviceTestRunner(
     private val workerExecutor: WorkerExecutor,
+    private val objectFactory: ObjectFactory,
     private val utpDependencies: UtpDependencies,
     private val utpJvmExecutable: File,
     private val versionedSdkLoader: SdkComponentsBuildService.VersionedSdkLoader,
@@ -52,13 +52,12 @@ class ManagedDeviceTestRunner(
     private val enableEmulatorDisplay: Boolean,
     private val utpLoggingLevel: Level = Level.WARNING,
     private val targetIsSplitApk: Boolean,
-    private val configFactory: UtpConfigFactory = UtpConfigFactory(),
     private val runUtpTestSuiteAndWaitFunc: (
         List<UtpRunnerConfig>, String, String, File, ILogger
     ) -> List<UtpTestRunResult> = { runnerConfigs, projectPath, variantName, resultsDir, logger ->
         runUtpTestSuiteAndWait(
-            runnerConfigs, workerExecutor, utpJvmExecutable, projectPath, variantName, resultsDir,
-            logger, null, utpDependencies, utpLoggingLevel)
+            runnerConfigs, workerExecutor, objectFactory, utpJvmExecutable, projectPath,
+            variantName, resultsDir, logger, utpDependencies, utpLoggingLevel)
     },
 ) {
 
@@ -130,33 +129,30 @@ class ManagedDeviceTestRunner(
                 } else {
                     utpManagedDevice.forShard(currentShard)
                 }
-                val runnerConfigProto: (
-                    UtpTestResultListenerServerMetadata,
-                    File
-                ) -> RunnerConfigProto.RunnerConfig =
-                    { resultListenerServerMetadata, utpTmpDir ->
-                        configFactory.createRunnerConfigProtoForManagedDevice(
-                            shardedManagedDevice,
-                            deviceSerial,
-                            testData,
-                            TargetApkConfigBundle(testedApks, targetIsSplitApk),
-                            additionalInstallOptions,
-                            helperApks,
-                            utpDependencies,
-                            versionedSdkLoader,
-                            utpOutputDir,
-                            utpTmpDir,
-                            emulatorControlConfig,
-                            coverageOutputDirectory,
-                            additionalTestOutputDir,
-                            useOrchestrator,
-                            forceCompilation,
-                            resultListenerServerMetadata,
-                            installApkTimeout,
-                            extractedSdkApks,
-                            shardConfig,
-                        )
-                    }
+                val runnerConfigProto = createRunnerConfigProtoForLocalDevice(
+                    deviceSerial,
+                    testData,
+                    TargetApkConfigBundle(testedApks, targetIsSplitApk),
+                    additionalInstallOptions,
+                    helperApks,
+                    uninstallIncompatibleApks = true,
+                    utpDependencies,
+                    versionedSdkLoader,
+                    utpOutputDir,
+                    createUtpTempDirectory("utpRunTemp"),
+                    emulatorControlConfig,
+                    coverageOutputDirectory,
+                    useOrchestrator,
+                    forceCompilation,
+                    additionalTestOutputDir,
+                    findAdditionalTestOutputDirectoryOnManagedDevice(utpManagedDevice, testData),
+                    installApkTimeout,
+                    extractedSdkApks,
+                    uninstallApksAfterTest = false,
+                    reinstallIncompatibleApksBeforeTest = true,
+                    shardConfig,
+                )
+
                 runnerConfigs.add(
                     UtpRunnerConfig(
                         shardedManagedDevice.deviceName,
@@ -168,7 +164,7 @@ class ManagedDeviceTestRunner(
                 )
             }
 
-            runUtpWithRetryForEmulatorTimeoutException(
+            runUtpTestSuiteAndWaitFunc(
                 runnerConfigs,
                 projectPath,
                 variantName,
@@ -186,9 +182,7 @@ class ManagedDeviceTestRunner(
             }
         }
 
-        val resultProtos = results
-            .map(UtpTestRunResult::resultsProto)
-            .filterNotNull()
+        val resultProtos = results.mapNotNull(UtpTestRunResult::resultsProto)
         if (resultProtos.isNotEmpty()) {
             // Create a merged result pb file in the outputDirectory. If it's a sharded
             // test, a result pb file is generated in a subdirectory per shard. If it's a
@@ -207,66 +201,7 @@ class ManagedDeviceTestRunner(
         return results.all(UtpTestRunResult::testPassed)
     }
 
-    private fun runUtpWithRetryForEmulatorTimeoutException(
-        runnerConfigs: List<UtpRunnerConfig>,
-        projectPath: String,
-        variantName: String,
-        outputDirectory: File,
-        logger: ILogger
-    ): List<UtpTestRunResult> {
-        val results: MutableList<UtpTestRunResult> = mutableListOf()
-
-        // A pairs of remaining utp runner config and its previous utp test run result.
-        var remainingConfigs: List<Pair<UtpRunnerConfig, UtpTestRunResult?>> = runnerConfigs.map {
-            it to null
-        }
-        for (i in 0..MAX_RETRY_FOR_EMULATOR_TIMEOUT_UTP_ERROR) {
-            val runResults = runUtpTestSuiteAndWaitFunc(
-                remainingConfigs.map { it.first },
-                projectPath,
-                variantName,
-                outputDirectory,
-                logger
-            )
-
-            val nextConfigs: MutableList<Pair<UtpRunnerConfig, UtpTestRunResult?>> = mutableListOf()
-            for ((runResult, runConfig) in runResults.zip(remainingConfigs)) {
-                if (hasEmulatorTimeoutException(runResult.resultsProto)) {
-                    // Rerun UTP if it failed due to the emulator timeout exception.
-                    nextConfigs.add(runConfig.first to runResult)
-                } else {
-                    results.add(runResult)
-                }
-            }
-
-            val noProgress = remainingConfigs.size == nextConfigs.size
-            remainingConfigs = nextConfigs
-
-            // If all UTP runs failed due to emulator timeout exception, we don't retry
-            // and simply gave up because it will likely fail again.
-            if (remainingConfigs.isEmpty() || noProgress) {
-                break
-            }
-        }
-
-        remainingConfigs.forEach { (runConfig, runResult) ->
-            if (runResult != null) {
-                results.add(runResult)
-            }
-
-            logger.error(
-                null,
-                "Could not finish tests for device: ${runConfig.shardName()}.\n" +
-                "${getPlatformErrorMessage(runResult?.resultsProto)}\n"
-            )
-        }
-
-        return results
-    }
-
     companion object {
-        private const val MAX_RETRY_FOR_EMULATOR_TIMEOUT_UTP_ERROR = 1
-
         /**
          * Returns the tested apk for the given managed device and test data.
          */

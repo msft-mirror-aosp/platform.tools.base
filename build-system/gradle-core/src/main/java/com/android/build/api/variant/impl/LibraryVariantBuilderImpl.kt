@@ -28,7 +28,6 @@ import com.android.build.gradle.internal.core.dsl.LibraryVariantDslInfo
 import com.android.build.gradle.internal.errors.DeprecationReporter
 import com.android.build.gradle.internal.services.ProjectServices
 import com.android.build.gradle.internal.services.VariantBuilderServices
-import com.android.build.gradle.internal.testsuites.HasTestSuitesBuilder
 import com.android.build.gradle.internal.testsuites.impl.TestSuiteBuilderImpl
 import com.google.wireless.android.sdk.stats.GradleBuildVariant
 import javax.inject.Inject
@@ -43,7 +42,7 @@ open class LibraryVariantBuilderImpl @Inject constructor(
     dslInfo,
     componentIdentity,
     variantBuilderServices
-), LibraryVariantBuilder, HasTestSuitesBuilder {
+), LibraryVariantBuilder {
 
     override var androidTestEnabled: Boolean
         get() = androidTest.enable

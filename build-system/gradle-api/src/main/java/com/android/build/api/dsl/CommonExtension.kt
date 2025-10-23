@@ -777,6 +777,10 @@ interface CommonExtension {
     @Restricted
     fun getDefaultProguardFile(name: String): File
 
+    /** Enables the compilation of Kotlin sources. The default value is `true`. */
+    @get:Restricted
+    var enableKotlin: Boolean
+
     /**
      * Additional per module experimental properties.
      *

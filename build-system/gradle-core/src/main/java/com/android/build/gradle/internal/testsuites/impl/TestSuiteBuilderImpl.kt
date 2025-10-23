@@ -90,6 +90,7 @@ internal abstract class TestSuiteBuilderImpl @Inject internal constructor(
         }
     }
 
+    internal val codeCoverage = testSuiteDslInfo.testSuite.codeCoverage
 
     override val junitEngineSpec: JUnitEngineSpecBuilder =
         JUnitEngineSpecForVariantBuilder(

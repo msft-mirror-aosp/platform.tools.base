@@ -105,7 +105,7 @@ def get_impacted_targets_info(
     write_modified_files(gerrit_info, modified_files)
     impacted_targets_info = ImpactedTargetsInfo(
         all_targets=_find_impacted_targets(build_env, modified_files),
-        baseline_targets=_query_baseline_targets(
+        baseline_targets=query_baseline_targets(
             build_env,
             base_targets,
             test_flag_filters,
@@ -250,7 +250,7 @@ def _find_impacted_targets(
     ]
 
 
-def _query_baseline_targets(
+def query_baseline_targets(
     build_env: bazel.BuildEnv,
     base_targets: Sequence[str],
     test_flag_filters: str,

@@ -18,6 +18,7 @@ package com.android.build.gradle.integration.model
 
 import com.android.build.gradle.integration.common.fixture.model.ModelComparator
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
+import com.android.build.gradle.integration.common.utils.disableBuiltInKotlin
 import com.android.builder.model.v2.ide.SyncIssue
 import com.android.testutils.TestInputsGenerator
 import com.android.testutils.generateAarWithContent
@@ -44,6 +45,7 @@ class LocalAarModelTest: ModelComparator() {
             )
 
         }
+        disableBuiltInKotlin()
     }
 
     @Test

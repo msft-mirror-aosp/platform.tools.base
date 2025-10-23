@@ -18,6 +18,7 @@ package com.android.build.gradle.integration.lint;
 
 import static com.android.build.gradle.integration.common.truth.ScannerSubject.assertThat;
 import static com.android.testutils.truth.PathSubject.assertThat;
+
 import static com.google.common.truth.Truth.assertThat;
 
 import com.android.build.gradle.integration.common.fixture.GradleBuildResult;
@@ -25,11 +26,13 @@ import com.android.build.gradle.integration.common.fixture.GradleTaskExecutor;
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.runner.FilterableParameterized;
 import com.android.build.gradle.options.BooleanOption;
-import java.io.File;
+
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+
+import java.io.File;
 
 /** Integration test for lint analyzing Kotlin code from Gradle. */
 @RunWith(FilterableParameterized.class)
@@ -47,10 +50,12 @@ public class LintKotlinTest {
     public final GradleTestProject project =
             GradleTestProject.builder()
                     .fromTestProject("lintKotlin")
-                    // Enforcing unique package names to prevent regressions. Remove when b/116109681 fixed.
-                    .addGradleProperties(BooleanOption.ENFORCE_UNIQUE_PACKAGE_NAMES.getPropertyName()
-                            + "=true")
+                    // Enforcing unique package names to prevent regressions. Remove when
+                    // b/116109681 fixed.
+                    .addGradleProperties(
+                            BooleanOption.ENFORCE_UNIQUE_PACKAGE_NAMES.getPropertyName() + "=true")
                     .addGradleProperties(BooleanOption.USE_ANDROID_X.getPropertyName() + "=true")
+                    .disableBuiltInKotlin()
                     .create();
 
     @Test
@@ -78,7 +83,8 @@ public class LintKotlinTest {
         File lintReport = project.file("app/lint-report.xml");
         assertThat(lintReport)
                 .contains(
-                        "errorLine1=\"    public SampleFragment(String foo) { // Deliberate lint error\"");
+                        "errorLine1=\"    public SampleFragment(String foo) { // Deliberate lint"
+                                + " error\"");
         assertThat(lintReport).contains("id=\"ValidFragment\"");
         assertThat(lintReport).doesNotContain("id=\"CallSuper\"");
 

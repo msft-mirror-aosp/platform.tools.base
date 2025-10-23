@@ -6,6 +6,7 @@ import json
 import logging
 import os
 import pathlib
+import re
 import shutil
 import subprocess
 from typing import Iterable, List, Sequence, Tuple
@@ -57,6 +58,19 @@ class BazelTestResult:
   """Represents the output of a bazel test."""
   exit_code: int
   bes_path: pathlib.Path
+
+
+def last_incremental_build_id(build_env: bazel.BuildEnv) -> str:
+  """Returns the incremental build id."""
+  last_build_file = pathlib.Path(f'{build_env.dist_dir}/logs/last_build.info')
+  if not last_build_file.exists():
+    return ''
+  last_build_info = last_build_file.read_text().strip()
+  match = re.match(r'.*@ (\w+)', last_build_info)
+  if match:
+    return match.group(1)
+  logging.warning('Failed to parse last_build.info: %s', last_build_info)
+  return ''
 
 
 def run_bazel_test(
@@ -115,6 +129,8 @@ def run_bazel_test(
       '--build_metadata=cluster=bazel',
       '--build_metadata=run_target=bazel',
   ])
+  if (last_build_id := last_incremental_build_id(build_env)):
+    flags.append(f'--build_metadata=last_incremental_build_id={last_build_id}')
 
   target_file = dist_path / 'targets.txt'
   target_file.write_text('\n'.join(targets))

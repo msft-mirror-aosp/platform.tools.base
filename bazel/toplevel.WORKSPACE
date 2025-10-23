@@ -4,6 +4,11 @@ load("//tools/base/bazel:repositories.bzl", "setup_external_repositories", "vend
 http_archive(
     name = "perfetto",
     patch_args = ["-p1"],
+    patches = [
+        # The patch is the same as https://github.com/google/perfetto/pull/3033
+        # applied to the 52.0 release.
+        "@//tools/base/bazel/bzlmod:perfetto_pr_3033.patch",
+    ],
     sha256 = "8bfada46f61b938ec26a777db3c8facf562af8aa22049d478f169f3105f53b4c",
     strip_prefix = "perfetto-52.0",
     url = "https://github.com/google/perfetto/archive/refs/tags/v52.0.zip",

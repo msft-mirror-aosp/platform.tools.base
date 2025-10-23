@@ -167,4 +167,13 @@ interface AgpTestSuite: TestSuite {
      */
     @Incubating
     fun configureTestTasks(action: Test.(context: TestTaskContext) -> Unit)
+
+    /**
+     * Turns on or off the code coverage support.
+     *
+     * By default, the code coverage is disabled.
+     */
+    @get:Incubating
+    @set:Incubating
+    var codeCoverage: Boolean
 }

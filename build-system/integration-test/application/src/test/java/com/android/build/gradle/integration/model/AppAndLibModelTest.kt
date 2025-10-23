@@ -21,6 +21,7 @@ import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_APP_PATH
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_LIB_PATH
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
+import com.android.build.gradle.integration.common.utils.disableBuiltInKotlin
 import com.android.builder.model.v2.ide.SyncIssue
 import com.android.testutils.MavenRepoGenerator
 import com.android.testutils.TestInputsGenerator
@@ -38,6 +39,7 @@ class HelloWorldAppAndLibModelTest: ModelComparator() {
             }
         }
         androidLibrary { }
+        disableBuiltInKotlin()
     }
 
     @Test
@@ -71,6 +73,7 @@ class AppAndLibTestFixturesModelTest: ModelComparator() {
                 }
             }
         }
+        disableBuiltInKotlin()
     }
 
     @Test
@@ -100,6 +103,7 @@ class AppAndJavaLibTestFixturesModelTest: ModelComparator() {
             applyPlugin(PluginType.JAVA_TEST_FIXTURES)
             version = "1.2.3"
         }
+        disableBuiltInKotlin()
     }
 
     @Test
@@ -142,6 +146,7 @@ class AppAndExternalJavaLibTestFixturesModelTest: ModelComparator() {
                 )
             }
         }
+        disableBuiltInKotlin()
     }
 
     @Test
@@ -196,6 +201,7 @@ class AppAndExternalAarLibTestFixturesModelTest: ModelComparator() {
                 )
             }
         }
+        disableBuiltInKotlin()
     }
 
     @Test

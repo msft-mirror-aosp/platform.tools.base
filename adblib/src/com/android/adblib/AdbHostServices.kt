@@ -295,6 +295,31 @@ data class ServerStatus(
      */
     val os: String = UNKNOWN,
 
+    /**
+     * The trace level set by ADB_TRACE env variable, e.g. "all".
+     */
+    val traceLevel: String? = null,
+
+    /**
+     * Whether burst mode is enabled or not. Controlled by ADB_DELAYED_ACK env variable.
+     */
+    val burstMode: Boolean? = null,
+
+    /**
+     * Whether mDNS is enabled or not. Controlled by ADB_MDNS env variable.
+     */
+    val mdnsEnabled: Boolean? = null,
+
+    /**
+     * Path of private adb host key.
+     */
+    val keystorePath: String? = null,
+
+    /**
+     * Path of known hosts file. Contains names of devices that are wirelessly paired.
+     */
+    val knownHostsPath: String? = null,
+
 ) {
     enum class UsbBackend{UNKNOWN, LIBUSB, NATIVE}
     enum class MdnsBackend{UNKNOWN, BONJOUR, OPENSCREEN}

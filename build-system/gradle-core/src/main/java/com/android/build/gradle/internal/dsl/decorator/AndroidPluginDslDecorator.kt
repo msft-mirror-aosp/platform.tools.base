@@ -77,6 +77,7 @@ import com.android.build.api.dsl.MaxSdkVersion
 import com.android.build.api.dsl.MinSdkSpec
 import com.android.build.api.dsl.TargetSdkSpec
 import com.android.build.api.dsl.TargetSdkVersion
+import com.android.build.api.dsl.TestOptions
 import com.android.build.gradle.internal.dsl.AarMetadataImpl
 import com.android.build.gradle.internal.dsl.AbiSplitOptions
 import com.android.build.gradle.internal.dsl.AndroidTestImpl
@@ -181,6 +182,7 @@ val AGP_SUPPORTED_PROPERTY_TYPES: List<SupportedPropertyType> = listOf(
     SupportedPropertyType.Block(SigningConfig::class.java, com.android.build.gradle.internal.dsl.SigningConfigImpl::class.java),
     SupportedPropertyType.Block(Split::class.java, SplitOptions::class.java),
     SupportedPropertyType.Block(Splits::class.java, com.android.build.gradle.internal.dsl.Splits::class.java),
+    SupportedPropertyType.Block(TestOptions::class.java, com.android.build.gradle.internal.dsl.TestOptions::class.java),
     SupportedPropertyType.Block(ViewBinding::class.java, ViewBindingOptionsImpl::class.java),
     SupportedPropertyType.Block(ConfigurableFiles::class.java, ConfigurableFilesImpl::class.java),
     SupportedPropertyType.Block(KmpOptimization::class.java, KmpOptimizationImpl::class.java),

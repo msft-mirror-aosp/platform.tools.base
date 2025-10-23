@@ -23,7 +23,6 @@ import com.android.build.api.variant.HasTestSuites
 import com.android.build.api.variant.TestSuite
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.plugins.ApplicationComponentCallback
-import com.android.build.gradle.internal.testsuites.HasTestSuitesBuilder
 import com.android.build.gradle.options.BooleanOption
 import com.google.common.truth.Truth
 import org.gradle.api.Project
@@ -82,14 +81,13 @@ class MyAppCallback: ApplicationComponentCallback {
         }
 
         androidComponents.beforeVariants(androidComponents.selector().withBuildType("debug")) { variantBuilder ->
-            val testSuitesBuilder = variantBuilder as HasTestSuitesBuilder
-            val listOfTestSuites = testSuitesBuilder.suites.values.joinToString { it.name }
-            if (testSuitesBuilder.suites.size != 1) {
+            val listOfTestSuites = variantBuilder.suites.values.joinToString { it.name }
+            if (variantBuilder.suites.size != 1) {
                 throw RuntimeException("Expected 1 testSuites Tests, got $listOfTestSuites")
             }
-            val testSuiteBuilder = testSuitesBuilder.suites["first"]
+            val testSuiteBuilder = variantBuilder.suites["first"]
                 ?: throw RuntimeException("Cannot find first test suite in test suites : " +
-                        testSuitesBuilder.suites.keys.joinToString(", ")
+                        variantBuilder.suites.keys.joinToString(", ")
                 )
 
             val inputs = testSuiteBuilder.junitEngineSpec.inputs

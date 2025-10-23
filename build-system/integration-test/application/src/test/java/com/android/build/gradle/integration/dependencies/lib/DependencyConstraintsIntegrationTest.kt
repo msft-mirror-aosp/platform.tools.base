@@ -40,6 +40,7 @@ class DependencyConstraintsIntegrationTest {
     val app: GradleTestProject = GradleTestProject.builder()
         .withName("app")
         .fromTestApp(MinimalSubProject.app())
+        .disableBuiltInKotlin()
         .withAdditionalMavenRepo(mavenRepoGenerator).create()
 
     @JvmField
@@ -47,6 +48,7 @@ class DependencyConstraintsIntegrationTest {
     val lib: GradleTestProject = GradleTestProject.builder()
         .withName("lib")
         .fromTestApp(MinimalSubProject.lib())
+        .disableBuiltInKotlin()
         .withAdditionalMavenRepo(mavenRepoGenerator).create()
 
     @Before

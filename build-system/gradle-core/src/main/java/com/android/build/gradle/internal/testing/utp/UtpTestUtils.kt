@@ -16,24 +16,22 @@
 
 package com.android.build.gradle.internal.testing.utp
 
-import com.android.build.gradle.internal.testing.CustomTestRunListener
 import com.android.build.gradle.internal.testing.utp.worker.RunUtpWorkAction
-import com.android.build.gradle.internal.utils.fromDisallowChanges
+import com.android.build.gradle.internal.testing.utp.worker.RunUtpWorkParameters
+import com.android.build.gradle.internal.utils.setDisallowChanges
 import com.android.builder.testing.api.DeviceConnector
 import com.android.prefs.AndroidLocationsSingleton
-import com.android.tools.utp.plugins.result.listener.gradle.proto.GradleAndroidTestResultListenerProto
 import com.android.utils.ILogger
 import com.google.common.io.Files
 import com.google.testing.platform.proto.api.config.RunnerConfigProto
 import com.google.testing.platform.proto.api.core.ErrorDetailProto
 import com.google.testing.platform.proto.api.core.TestStatusProto.TestStatus
 import com.google.testing.platform.proto.api.core.TestSuiteResultProto
-import org.gradle.workers.WorkQueue
+import org.gradle.api.model.ObjectFactory
 import org.gradle.workers.WorkerExecutor
 import java.io.File
 import java.io.FileOutputStream
 import java.nio.file.Path
-import java.util.concurrent.ConcurrentHashMap
 import java.util.logging.Level
 
 const val TEST_RESULT_PB_FILE_NAME = "test-result.pb"
@@ -55,10 +53,7 @@ data class UtpRunnerConfig(
     val deviceName: String,
     val deviceId: String,
     val utpOutputDir: File,
-    val runnerConfig: (
-        UtpTestResultListenerServerMetadata,
-        utpTmpDir: File,
-    ) -> RunnerConfigProto.RunnerConfig,
+    val runnerConfig: RunnerConfigProto.RunnerConfig,
     val shardConfig: ShardConfig? = null,
 )
 
@@ -106,90 +101,48 @@ data class UtpTestRunResult(
 fun runUtpTestSuiteAndWait(
     runnerConfigs: List<UtpRunnerConfig>,
     workerExecutor: WorkerExecutor,
+    objectFactory: ObjectFactory,
     jvmExecutable: File,
     projectPath: String,
     variantName: String,
     resultsDir: File,
     logger: ILogger,
-    utpTestResultListener: UtpTestResultListener?,
     utpDependencies: UtpDependencies,
     utpLoggingLevel: Level,
-    utpTestResultListenerServerRunner: (UtpTestResultListener?) -> UtpTestResultListenerServerRunner = {
-        UtpTestResultListenerServerRunner(it)
-    }
 ): List<UtpTestRunResult> {
-    val workQueue = workerExecutor.noIsolation()
+    val utpTestResultProtoFiles = runUtpTestSuiteAndWait(
+        workerExecutor,
+        objectFactory,
+        runnerConfigs,
+        utpDependencies,
+        utpLoggingLevel,
+        jvmExecutable,
+        projectPath,
+        variantName,
+        resultsDir,
+    )
 
-    val testResultReporters: ConcurrentHashMap<String, UtpTestResultListener> = ConcurrentHashMap()
-    val testResultListener = object : UtpTestResultListener {
-        @Synchronized
-        override fun onTestResultEvent(testResultEvent: GradleAndroidTestResultListenerProto.TestResultEvent) {
-            testResultReporters[testResultEvent.deviceId]?.onTestResultEvent(testResultEvent)
-            utpTestResultListener?.onTestResultEvent(testResultEvent)
+    return utpTestResultProtoFiles.map { protoFile ->
+        if (protoFile.exists()) {
+            protoFile.inputStream().use {
+                TestSuiteResultProto.TestSuiteResult.parseFrom(it)
+            }
+        } else {
+            null
         }
-    }
-
-    utpTestResultListenerServerRunner(testResultListener).use { resultListenerServerRunner ->
-        val resultListenerServerMetadata = resultListenerServerRunner.metadata
-
-        val postProcessCallback = runnerConfigs.map { config ->
-            var resultsProto: TestSuiteResultProto.TestSuiteResult? = null
-            val ddmlibTestResultAdapter = DdmlibTestResultAdapter(
-                config.deviceName,
-                CustomTestRunListener(
-                    config.shardName(),
-                    projectPath,
-                    variantName,
-                    logger).apply {
-                    setReportDir(resultsDir)
-                }
-            )
-            testResultReporters[config.deviceId] = object: UtpTestResultListener {
-                override fun onTestResultEvent(testResultEvent: GradleAndroidTestResultListenerProto.TestResultEvent) {
-                    ddmlibTestResultAdapter.onTestResultEvent(testResultEvent)
-
-                    if (testResultEvent.hasTestSuiteFinished()) {
-                        resultsProto = testResultEvent.testSuiteFinished.testSuiteResult
-                            .unpack(TestSuiteResultProto.TestSuiteResult::class.java)
-                    }
-                }
+    }.map { resultProto ->
+        val testPassed = if (resultProto != null) {
+            val testSuitePassed = resultProto.testStatus.isPassedOrSkipped()
+            val hasAnyFailedTestCase = resultProto.testResultList.any { testCaseResult ->
+                !testCaseResult.testStatus.isPassedOrSkipped()
             }
-
-            val postProcessFunc: () -> UtpTestRunResult = {
-                testResultReporters.remove(config.deviceId)
-
-                val resultsProto = resultsProto
-                val testPassed = if (resultsProto != null) {
-                    File(config.utpOutputDir, TEST_RESULT_PB_FILE_NAME).outputStream().use {
-                        resultsProto.writeTo(it)
-                    }
-                    val testSuitePassed = resultsProto.testStatus.isPassedOrSkipped()
-                    val hasAnyFailedTestCase = resultsProto.testResultList.any { testCaseResult ->
-                        !testCaseResult.testStatus.isPassedOrSkipped()
-                    }
-                    testSuitePassed && !hasAnyFailedTestCase && !resultsProto.hasPlatformError()
-                } else {
-                    logger.error(null, "Failed to receive the UTP test results")
-                    false
-                }
-
-                UtpTestRunResult(testPassed, resultsProto)
-            }
-            postProcessFunc
+            testSuitePassed && !hasAnyFailedTestCase && !resultProto.hasPlatformError()
+        } else {
+            logger.error(null, "Failed to receive the UTP test results")
+            false
         }
 
-        runUtpTestSuiteAndWait(
-            runnerConfigs,
-            resultListenerServerMetadata,
-            utpDependencies,
-            utpLoggingLevel,
-            workQueue,
-            jvmExecutable,
-        )
-
-        return postProcessCallback.map {
-            it()
-        }.toList()
+        UtpTestRunResult(testPassed, resultProto)
     }
 }
 
@@ -206,24 +159,28 @@ private fun TestStatus.isPassedOrSkipped(): Boolean {
  * Runs the given runner config using Unified Test Platform.
  */
 private fun runUtpTestSuiteAndWait(
+    workerExecutor: WorkerExecutor,
+    objectFactory: ObjectFactory,
     configs: List<UtpRunnerConfig>,
-    resultListenerServerMetadata: UtpTestResultListenerServerMetadata,
     utpDependencies: UtpDependencies,
     utpLoggingLevel: Level,
-    workQueue: WorkQueue,
     jvmExecutable: File,
-) {
-    val runnerConfigFiles = configs.map { config ->
-        val utpRunTempDir = createUtpTempDirectory("utpRunTemp")
+    projectPath: String,
+    variantName: String,
+    xmlTestReportOutputDirectory: File,
+): List<File> {
+    val utpRunConfigs = configs.map { config ->
         val runnerConfigProtoFile = createUtpTempFile("runnerConfig", ".pb").also { file ->
             FileOutputStream(file).use { writer ->
-                config.runnerConfig(resultListenerServerMetadata, utpRunTempDir).writeTo(writer)
+                config.runnerConfig.writeTo(writer)
             }
         }
-        runnerConfigProtoFile
-    }
 
-    val loggingPropertiesFiles = configs.map { config ->
+        val utpRunConfig = objectFactory.newInstance(RunUtpWorkParameters.UtpRunConfig::class.java)
+
+        utpRunConfig.runnerConfigFile.set(runnerConfigProtoFile)
+        utpRunConfig.runnerConfigFile.disallowChanges()
+
         val loggingPropertiesFile = createUtpTempFile("logging", "properties").also { file ->
             Files.asCharSink(file, Charsets.UTF_8).write("""
                 .level=INFO
@@ -235,18 +192,34 @@ private fun runUtpTestSuiteAndWait(
                 java.util.logging.FileHandler.formatter=java.util.logging.SimpleFormatter
             """.trimIndent())
         }
-        loggingPropertiesFile
+        utpRunConfig.loggingPropertiesFile.set(loggingPropertiesFile)
+        utpRunConfig.loggingPropertiesFile.disallowChanges()
+
+        utpRunConfig.deviceId.setDisallowChanges(config.deviceId)
+        utpRunConfig.deviceName.setDisallowChanges(config.deviceName)
+        utpRunConfig.deviceShardName.setDisallowChanges(config.shardName())
+
+        utpRunConfig.utpResultProtoOutputFile.set(
+            File(config.utpOutputDir, TEST_RESULT_PB_FILE_NAME))
+        utpRunConfig.utpResultProtoOutputFile.disallowChanges()
+
+        utpRunConfig
     }
+
+    val workQueue = workerExecutor.noIsolation()
 
     workQueue.submit(RunUtpWorkAction::class.java) { params ->
         params.jvm.set(jvmExecutable)
-        params.launcherJar.setFrom(utpDependencies.launcher.files)
-        params.coreJar.setFrom(utpDependencies.core.files)
-        params.runnerConfigs.fromDisallowChanges(runnerConfigFiles)
-        params.loggingProperties.fromDisallowChanges(loggingPropertiesFiles)
+        params.utpRunConfigs.setDisallowChanges(utpRunConfigs)
+        params.utpDependencies.setDisallowChanges(utpDependencies)
+        params.projectPath.setDisallowChanges(projectPath)
+        params.variantName.setDisallowChanges(variantName)
+        params.xmlTestReportOutputDirectory.fileValue(xmlTestReportOutputDirectory).disallowChanges()
     }
 
     workQueue.await()
+
+    return configs.map { File(it.utpOutputDir, TEST_RESULT_PB_FILE_NAME) }
 }
 
 /**
@@ -283,23 +256,6 @@ fun getUtpPreferenceRootDir(): File {
 }
 
 /**
- * Returns true if the root cause of the Platform error is the EmulatorTimeoutException.
- */
-fun hasEmulatorTimeoutException(resultsProto: TestSuiteResultProto.TestSuiteResult?): Boolean {
-    resultsProto ?: return false
-    return resultsProto.platformError.errorsList.any(::hasEmulatorTimeoutException)
-}
-
-private fun hasEmulatorTimeoutException(error: ErrorDetailProto.ErrorDetail): Boolean {
-    return when {
-        getExceptionFromStackTrace(error.summary.stackTrace)
-            .contains("EmulatorTimeoutException") -> true
-        error.hasCause() -> hasEmulatorTimeoutException(error.cause)
-        else -> false
-    }
-}
-
-/**
  * Finds the root cause of the Platform Error and returns the error message.
  */
 fun getPlatformErrorMessage(resultsProto: TestSuiteResultProto.TestSuiteResult?): String {
@@ -330,23 +286,4 @@ private fun getPlatformErrorMessage(
         errorMessageBuilder.append(error.summary.stackTrace)
     }
     return errorMessageBuilder
-}
-
-/**
- * Attempts to get a simple string by which the exception can be easily parsed.
- *
- * Due to the nature of UTP error details, the exception may be in a serialized string format, or
- * in a simple toString() format. This method is meant to separate the parent exception from the
- * stacktrace (which may include more exceptions)
- *
- * @param stackTrace the stackTrace of the exception in either serialized or toString() format
- * @return A simple string, that the only exception that is contained is the top-level exception.
- */
-private fun getExceptionFromStackTrace(stackTrace: String): String {
-    val endIndex = stackTrace.indexOf(':')
-    return if (endIndex >= 0) {
-        stackTrace.substring(0, endIndex)
-    } else {
-        stackTrace.lineSequence().firstOrNull() ?: ""
-    }
 }

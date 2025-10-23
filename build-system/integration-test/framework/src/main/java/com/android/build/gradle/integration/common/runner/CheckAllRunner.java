@@ -36,7 +36,7 @@ public class CheckAllRunner extends FilterableParameterized {
 
         public ThreadPoolScheduler() {
             int cpus = Runtime.getRuntime().availableProcessors();
-            int threads = Math.min(cpus / 4, 8);
+            int threads = Math.min(cpus / 4, 10);
             executor = Executors.newFixedThreadPool(threads);
         }
 

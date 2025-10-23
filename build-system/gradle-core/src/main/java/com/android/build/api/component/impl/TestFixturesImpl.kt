@@ -179,6 +179,7 @@ open class TestFixturesImpl @Inject constructor(
         if (support is BuiltInKotlinSupportMode.NotSupported
             && internalServices.projectOptions.get(ENABLE_TEST_FIXTURES_KOTLIN_SUPPORT)
             && internalServices.projectInfo.hasPlugin(KOTLIN_ANDROID_PLUGIN_ID)
+            && dslInfo.enableKotlin
         ) {
             BuiltInKotlinSupportMode.Supported.TestFixturesSupportEnabledAndKgpApplied
         } else {

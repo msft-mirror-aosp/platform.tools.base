@@ -175,6 +175,11 @@ class AdbHostServicesTest {
         Assert.assertEquals(status.absoluteLogPath, "/tmp/adb.log")
         Assert.assertEquals(status.version, "35.0.2")
         Assert.assertEquals(status.os, System.getProperty("os.name"))
+        Assert.assertEquals(status.traceLevel, "all")
+        Assert.assertEquals(status.burstMode, true)
+        Assert.assertEquals(status.mdnsEnabled, true)
+        Assert.assertEquals(status.keystorePath, "/path/to/keystore")
+        Assert.assertEquals(status.knownHostsPath, "/path/to/knownhosts")
     }
 
     @Test

@@ -58,6 +58,8 @@ test --jvmopt='-Dembedded.jdk.path=prebuilts/studio/jdk/jbr-next'
 
 # Enable Kotlin K2 mode (b/373746515).
 test --jvmopt='-Didea.kotlin.plugin.use.k2=true'
+# Enable K2 UAST by default (b/448273436)
+test --jvmopt='-Dlint.use.fir.uast=true'
 
 # Local runs require longer timeouts.
 test:local --test_timeout=120,600,1800,7200
@@ -200,10 +202,13 @@ build:remote --config=_remote_base
 build:remote --config=remote-exec
 build:remote --config=sponge
 
+common:dl-staging --downloader_config=tools/base/bazel/ci/data/downloader-staging.cfg
+common:dl-ci --downloader_config=tools/base/bazel/ci/data/downloader.cfg
+
 ## Config used for continous integration testing scripts.
 # The downloader.cfg requires a --credential_helper for certain domains, and
 # is added by tools/base/bazel/ci/ci and ci.cmd scripts.
-common:ci --downloader_config=tools/base/bazel/ci/data/downloader.cfg
+common:ci --config=dl-ci
 build:ci --config=_remote_base
 build:ci --config=sponge
 build:ci --config=release

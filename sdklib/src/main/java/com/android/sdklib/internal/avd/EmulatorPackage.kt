@@ -79,6 +79,9 @@ class EmulatorPackage(private val emulator: LocalPackage) {
     return null
   }
 
+  val location: Path
+    get() = emulator.location
+
   private fun getBinaryLocation(filename: String): Path? {
     return emulator.location.resolve(filename).takeIf { CancellableFileIo.exists(it) }
   }

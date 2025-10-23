@@ -47,7 +47,8 @@ class PluginConfigurations {
         return when(this) {
             AndroidArtifacts.ConsumedConfigType.COMPILE_CLASSPATH -> Usage.JAVA_API
             AndroidArtifacts.ConsumedConfigType.RUNTIME_CLASSPATH -> Usage.JAVA_RUNTIME
-            else -> error("${getName()} cannot be converted to Usage.")
+            AndroidArtifacts.ConsumedConfigType.LINT_CHECKS_CLASSPATH -> Usage.JAVA_RUNTIME
+            else -> error("$name cannot be converted to Usage.")
         }
     }
 }

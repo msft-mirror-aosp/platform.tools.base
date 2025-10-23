@@ -34,6 +34,7 @@ public class SimpleCompositeBuildTest {
             GradleTestProject.builder()
                     .fromTestProject("simpleCompositeBuild")
                     .withDependencyChecker(false)
+                    .disableBuiltInKotlin()
                     .create();
 
     @Test

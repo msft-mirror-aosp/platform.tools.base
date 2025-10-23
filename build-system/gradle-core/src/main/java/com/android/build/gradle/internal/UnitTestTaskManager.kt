@@ -16,7 +16,6 @@
 
 package com.android.build.gradle.internal
 
-import com.android.build.api.artifact.SingleArtifact
 import com.android.build.api.artifact.impl.InternalScopedArtifacts
 import com.android.build.gradle.internal.component.HostTestCreationConfig
 import com.android.build.gradle.internal.res.GenerateLibraryRFileTask
@@ -42,7 +41,6 @@ class UnitTestTaskManager(
     fun createTasks(hostTestCreationConfig: HostTestCreationConfig) {
         val taskContainer = hostTestCreationConfig.taskContainer
         val testedVariant = hostTestCreationConfig.mainVariant
-        val includeAndroidResources = globalConfig.unitTestOptions.isIncludeAndroidResources
         createAnchorTasks(hostTestCreationConfig)
 
         // Create all current streams (dependencies mostly at this point)
@@ -51,7 +49,7 @@ class UnitTestTaskManager(
         // process java resources
         createProcessJavaResTask(hostTestCreationConfig)
 
-        if (includeAndroidResources) {
+        if (hostTestCreationConfig.androidResourcesIncluded) {
             setupAndroidRequiredTasks(testedVariant, hostTestCreationConfig)
             setupCompilationTaskDependencies(hostTestCreationConfig, taskContainer)
         } else {

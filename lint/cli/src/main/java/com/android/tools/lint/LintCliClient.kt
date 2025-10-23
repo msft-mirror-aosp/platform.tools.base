@@ -1406,7 +1406,7 @@ open class LintCliClient : LintClient {
       val config =
         UastEnvironment.Configuration.create(
           enableKotlinScripting = false,
-          useFirUast = flags.useK2Uast() || useFirUast(),
+          useFirUast = flags.useK2Uast() && useFirUast(),
         )
       val env = UastEnvironment.create(config)
       uastEnvironment = env
@@ -1450,7 +1450,7 @@ open class LintCliClient : LintClient {
     val config =
       UastEnvironment.Configuration.create(
         enableKotlinScripting = mayNeedKotlinScripting(allProjects),
-        useFirUast = flags.useK2Uast() || useFirUast(),
+        useFirUast = flags.useK2Uast() && useFirUast(),
       )
     config.javaLanguageLevel = maxLevel
     config.addModules(allModules, bootClassPaths)

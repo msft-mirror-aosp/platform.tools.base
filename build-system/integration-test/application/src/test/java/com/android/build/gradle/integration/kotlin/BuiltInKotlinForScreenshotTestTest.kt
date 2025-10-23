@@ -18,6 +18,7 @@ package com.android.build.gradle.integration.kotlin
 
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
+import com.android.build.gradle.integration.common.utils.disableBuiltInKotlin
 import com.android.build.gradle.internal.dsl.ModulePropertyKey.BooleanWithDefault.SCREENSHOT_TEST
 import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.truth.PathSubject
@@ -37,6 +38,7 @@ class BuiltInKotlinForScreenshotTestTest {
                 jvmToolchain(17)
             }
         }
+        disableBuiltInKotlin()
     }
 
     /**

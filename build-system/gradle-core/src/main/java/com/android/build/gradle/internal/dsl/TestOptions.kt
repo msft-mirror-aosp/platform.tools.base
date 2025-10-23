@@ -17,7 +17,10 @@
 package com.android.build.gradle.internal.dsl
 
 import com.android.build.api.dsl.AgpTestSuite
+import com.android.build.api.dsl.TargetSdkSpec
+import com.android.build.api.dsl.TargetSdkVersion
 import com.android.build.gradle.internal.services.DslServices
+import com.android.build.gradle.internal.utils.updateIfChanged
 import com.android.builder.core.DefaultApiVersion
 import com.android.builder.core.apiVersionFromString
 import com.android.builder.errors.IssueReporter
@@ -30,6 +33,7 @@ import com.google.common.base.Verify
 import org.gradle.api.Action
 import org.gradle.api.ExtensiblePolymorphicDomainObjectContainer
 import org.gradle.api.Incubating
+import org.gradle.api.NamedDomainObjectFactory
 import org.gradle.api.tasks.testing.Test
 import javax.inject.Inject
 
@@ -134,33 +138,93 @@ abstract class TestOptions @Inject constructor(
         action.execute(emulatorControl)
     }
 
-    private var targetSdkApiVersion: ApiVersion? = null
+    private var targetSdkVersion: TargetSdkVersion? = null
 
-    override var targetSdk:Int?
-        get() = targetSdkApiVersion?.apiLevel
+    override var targetSdk: Int?
+        get() = targetSdkVersion?.apiLevel
         set(value) {
             if(dslServices.projectType != ProjectType.LIBRARY){
                 dslServices.issueReporter.reportError(IssueReporter.Type.GENERIC,
                     RuntimeException("targetSdk is set as $value in testOptions for non library module"))
             }
-            targetSdkApiVersion = if (value == null) null
-            else DefaultApiVersion(value)
+            targetSdk {
+                version = value?.let{ release(it) }
+            }
         }
     override var targetSdkPreview: String?
-        get() = targetSdkApiVersion?.codename
+        get() = targetSdkVersion?.codeName
         set(value) {
             if(dslServices.projectType != ProjectType.LIBRARY){
                 dslServices.issueReporter.reportError(IssueReporter.Type.GENERIC,
-                     RuntimeException("targetSdkPreview is set as $value in testOptions for non library module"))
+                    RuntimeException("targetSdkPreview is set as $value in testOptions for non library module"))
             }
-            targetSdkApiVersion = apiVersionFromString(value)
+            targetSdk {
+                version = value?.let { preview(it) }
+            }
         }
 
-    override val suites: ExtensiblePolymorphicDomainObjectContainer< AgpTestSuite> =
-        dslServices.polymorphicDomainObjectContainer( AgpTestSuite::class.java).apply {
-            registerBinding(
+    //TODO(b/421964815): remove the support for groovy space assignment(e.g `targetSdk 24`).
+    @Deprecated(
+        "To be removed after Gradle drops space assignment support",
+        ReplaceWith("targetSdk { version = release(value) }")
+    )
+    open fun targetSdk(version: Int?) {
+        this.targetSdk = version
+    }
+
+    override fun targetSdk(action: TargetSdkSpec.() -> Unit) {
+        createTargetSdkSpec().also {
+            action.invoke(it)
+            updateIfChanged(targetSdkVersion, it.version ) { version ->
+                checkNonLibraryModule(version)
+                targetSdkVersion = version
+            }
+        }
+    }
+
+    open fun targetSdk(action: Action<TargetSdkSpec>) {
+        createTargetSdkSpec().also {
+            action.execute(it)
+            updateIfChanged(targetSdkVersion, it.version) { version ->
+                checkNonLibraryModule(version)
+                targetSdkVersion = version
+            }
+        }
+    }
+
+
+    override val suites: ExtensiblePolymorphicDomainObjectContainer< AgpTestSuite> by lazy {
+        class AgpTestSuiteFactory : NamedDomainObjectFactory<AgpTestSuite> {
+
+            override fun create(name: String): AgpTestSuite {
+                return dslServices.newInstance(
+                    AgpTestSuiteImpl::class.java,
+                    name,
+                    dslServices,
+                    unitTests.isIncludeAndroidResources
+                )
+            }
+
+        }
+        dslServices.polymorphicDomainObjectContainer(AgpTestSuite::class.java).apply {
+            registerFactory(
                 AgpTestSuite::class.java,
-                AgpTestSuiteImpl::class.java
+                AgpTestSuiteFactory()
             )
         }
+    }
+
+    private fun createTargetSdkSpec(): TargetSdkSpecImpl {
+        return dslServices.newDecoratedInstance(TargetSdkSpecImpl::class.java, dslServices).also {
+            it.version = targetSdkVersion
+        }
+    }
+
+    private fun checkNonLibraryModule(version: TargetSdkVersion?) {
+        if(dslServices.projectType != ProjectType.LIBRARY && version != null){
+            val representation = if (version.codeName != null) "preview(\"${version.codeName}\")" else "release(${version.apiLevel})"
+            dslServices.issueReporter.reportError(IssueReporter.Type.GENERIC,
+                RuntimeException("targetSdk is set as version = $representation in testOptions for non library module"))
+        }
+    }
 }

@@ -51,6 +51,7 @@ import org.jetbrains.kotlin.gradle.plugin.KotlinBaseApiPlugin
 import org.jetbrains.kotlin.gradle.plugin.KotlinCompilation
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinJvmAndroidCompilation
 import org.jetbrains.kotlin.gradle.plugin.sources.android.AndroidVariantType
+import com.android.build.api.dsl.CommonExtension
 
 /**
  * Services related to the built-in Kotlin support, to be used when
@@ -126,23 +127,27 @@ sealed class BuiltInKotlinSupportMode {
     sealed class Supported : BuiltInKotlinSupportMode() {
 
         /**
-         * Built-in Kotlin support is available because [BooleanOption.BUILT_IN_KOTLIN] is enabled.
+         * Built-in Kotlin support is available because [BooleanOption.BUILT_IN_KOTLIN] and
+         * [CommonExtension.enableKotlin] are enabled.
          */
         object BuiltInKotlinBooleanOptionEnabled : Supported()
 
-        /** Built-in Kotlin support is available because the built-in Kotlin plugin is applied. */
+        /**
+         * Built-in Kotlin support is available because the built-in Kotlin plugin is applied
+         * and [CommonExtension.enableKotlin] is enabled.
+         */
         object BuiltInKotlinPluginApplied : Supported()
 
         /**
          * Built-in Kotlin support is available because this is a screenshot test component and
-         * the `kotlin-android` plugin is applied.
+         * the `kotlin-android` plugin is applied and [CommonExtension.enableKotlin] is enabled.
          */
         object ScreenshotTestAndKgpApplied : Supported()
 
         /**
          * Built-in Kotlin support is available because this is a test-fixtures component and
          * [BooleanOption.ENABLE_TEST_FIXTURES_KOTLIN_SUPPORT] is enabled and the `kotlin-android`
-         * plugin is applied.
+         * plugin is applied and [CommonExtension.enableKotlin] is enabled.
          */
         object TestFixturesSupportEnabledAndKgpApplied : Supported()
     }
@@ -255,7 +260,7 @@ private fun failIfIncompatiblePluginsArePresent(project: Project) {
             The '$KOTLIN_ANDROID_PLUGIN_ID' plugin is no longer required for Kotlin support since AGP 9.0.
             Solution:
               - [Recommended] Migrate this project to built-in Kotlin (https://developer.android.com/r/tools/built-in-kotlin).
-              - Or set the Gradle property '${BooleanOption.BUILT_IN_KOTLIN.propertyName}=false' to temporarily bypass this issue.
+              - Or set the Gradle property '${BooleanOption.BUILT_IN_KOTLIN.propertyName}=false' and '${BooleanOption.USE_NEW_DSL.propertyName}=false' to temporarily bypass this issue.
             """.trimIndent()
         )
     }
@@ -266,7 +271,7 @@ private fun failIfIncompatiblePluginsArePresent(project: Project) {
             The '$KOTLIN_KAPT_PLUGIN_ID' plugin is not compatible with built-in Kotlin support.
             Solution:
               - [Recommended] Migrate this project to built-in Kotlin (https://developer.android.com/r/tools/built-in-kotlin).
-              - Or set the Gradle property '${BooleanOption.BUILT_IN_KOTLIN.propertyName}=false' to temporarily bypass this issue.
+              - Or set the Gradle property '${BooleanOption.BUILT_IN_KOTLIN.propertyName}=false' and '${BooleanOption.USE_NEW_DSL.propertyName}=false' to temporarily bypass this issue.
             """.trimIndent()
         )
     }
@@ -277,7 +282,7 @@ private fun failIfIncompatiblePluginsArePresent(project: Project) {
             The 'com.android.library' (or 'com.android.application') plugin is not compatible with the '$KOTLIN_MPP_PLUGIN_ID' plugin since AGP 9.0.
             Solution:
               - [Recommended] Replace the 'com.android.library' plugin with the '$ANDROID_KOTLIN_MPP_LIBRARY_PLUGIN_ID' plugin (see https://developer.android.com/r/tools/built-in-kotlin).
-              - Or set the Gradle property '${BooleanOption.BUILT_IN_KOTLIN.propertyName}=false' to temporarily bypass this issue.
+              - Or set the Gradle property '${BooleanOption.BUILT_IN_KOTLIN.propertyName}=false' and '${BooleanOption.USE_NEW_DSL.propertyName}=false' to temporarily bypass this issue.
             """.trimIndent()
         )
     }
@@ -327,7 +332,7 @@ internal fun ComponentCreationConfig.createKotlinCompilation(): KotlinCompilatio
     // `debugUnitTest`, KGP automatically adds a source directory named `src/debugUnitTest/kotlin`,
     // but this directory is not intended by AGP. The directories should be `src/test/kotlin`,
     // `src/test/java`, `src/testDebug/kotlin`, `src/testDebug/java`.
-    kotlinCompilation.defaultSourceSet.kotlin.setSrcDirs(listOf(sources.kotlin!!.directories))
+    kotlinCompilation.defaultSourceSet.kotlin.setSrcDirs(listOf(sources.kotlin!!.all))
 
     // Also add kotlinCompilation to KotlinAndroidTarget.compilations (the IDE requires this info to
     // configure Kotlin).

@@ -2246,7 +2246,7 @@ src/pkg1/Foo.kt:12: Error: DEFINITION usage associated with @MyKotlinAnnotation 
       "No issues found.",
       "",
       ERRNO_SUCCESS,
-      arrayOf("--XuseK2Uast", "--project", File(root, "project.xml").path),
+      arrayOf("--project", File(root, "project.xml").path),
       { it.replace(root.canonicalPath, "ROOT").replace(root.path, "ROOT").dos2unix() },
       { _, _, _, _ -> },
     )

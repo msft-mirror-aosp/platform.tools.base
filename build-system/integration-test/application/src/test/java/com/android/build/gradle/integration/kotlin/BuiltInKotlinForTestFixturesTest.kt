@@ -19,9 +19,10 @@ package com.android.build.gradle.integration.kotlin
 import com.android.build.gradle.integration.common.fixture.project.AarSelector
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition
-import com.android.build.gradle.integration.common.fixture.project.plugins.GenericCallback
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
+import com.android.build.gradle.integration.common.fixture.project.plugins.GenericCallback
 import com.android.build.gradle.integration.common.truth.ScannerSubject
+import com.android.build.gradle.integration.common.utils.disableBuiltInKotlin
 import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.TestUtils
 import org.gradle.api.Project
@@ -44,6 +45,7 @@ class BuiltInKotlinForTestFixturesTest {
                 jvmToolchain(17)
             }
         }
+        disableBuiltInKotlin()
     }
 
     /**
@@ -98,7 +100,7 @@ class BuiltInKotlinForTestFixturesTest {
     }
 
     @Test
-    fun testInternalModifierAccessible() {
+    fun `test internal methods in main component are accessible from test fixtures`() {
         val build = rule.build {
             enableTestFixturesKotlinSupport()
             androidLibrary {

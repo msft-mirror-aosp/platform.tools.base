@@ -127,26 +127,21 @@ def make_build_env(
   if is_studio_only_release is None:
     match = None
     with open(os.path.join(workspace_dir, "tools/base/common/release_version.bzl")) as f:
-        for line in f:
-            match = re.match("IS_AGP_RELEASE_BRANCH *= *\"(true|false)\"", line)
+      for line in f:
+        match = re.match("IS_AGP_RELEASE_BRANCH *= *\"(true|false)\"", line)
     if not match:
-        raise Exception("Unable to determine if is_studio_only_release. Expected IS_AGP_RELEASE_BRANCH = \"true\" (or \"false\") in tools/base/common/release_version.bzl")
+      raise Exception("Unable to determine if is_studio_only_release. Expected IS_AGP_RELEASE_BRANCH = \"true\" (or \"false\") in tools/base/common/release_version.bzl")
     is_studio_only_release = match[1] == "false"
 
-  startup_options = ["--max_idle_secs=60"]
-  if build_target_name and user == "android-build":  # AB environment
-    parent_out_dir = tmp_dir
-    # When on BYOC builders, use the 'out' directory for incremental builds.
-    if os.environ.get("INCREMENTAL_BUILD") == "true":
-      parent_out_dir = os.path.join(workspace_dir, "out")
-      # LINT.IfChange(bazel_user_root)
-      incremental_user_root = os.path.join(parent_out_dir, "bazel_user_root")
-      startup_options.append(f"--output_user_root={incremental_user_root}")
-      # LINT.ThenChange(/bazel/ci/ci:bazel_user_root)
-
-    install_base = os.path.join(parent_out_dir, "bazel_install", bazel_version)
+  # Prefer setting startup options in ci.bazelrc, via ci/ci.cmd scripts.
+  startup_options = []
+  if build_target_name and user == "android-build" and os.environ.get("INCREMENTAL_BUILD") != "true":  # AB environment
+    # If INCREMENTAL_BUILD is set, bazel/ci and bazel/ci.cmd will set the
+    # startup options in ci.bazelrc. If INCREMENTAL_BUILD is not set,
+    # then TMPDIR is used for the output base to avoid disk space issues.
+    install_base = os.path.join(tmp_dir, "bazel_install", bazel_version)
     startup_options.extend([
-        f"--output_base={os.path.join(parent_out_dir, 'bazel_out')}",
+        f"--output_base={os.path.join(tmp_dir, 'bazel_out')}",
         f"--install_base={install_base}",
     ])
 

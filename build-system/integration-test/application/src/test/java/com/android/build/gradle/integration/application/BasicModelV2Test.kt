@@ -27,6 +27,7 @@ class BasicModelV2Test: ModelComparator() {
     @get:Rule
     val project = builder()
         .fromTestProject("basic")
+        .disableBuiltInKotlin()
         .create()
 
     @Test

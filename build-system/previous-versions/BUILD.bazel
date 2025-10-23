@@ -353,6 +353,20 @@ maven_repository(
     visibility = ["//visibility:public"],
 )
 
+AGP_4_2_2_ARTIFACTS = [
+    "@maven//:com.android.databinding.adapters_4.2.2",
+    "@maven//:com.android.databinding.viewbinding_4.2.2",
+    "@maven//:com.android.tools.build.gradle_4.2.2",
+    "@maven//:com.android.tools.build.aapt2_4.2.2-7147631",
+    "@maven//:com.android.tools.lint.lint-gradle_27.2.2",
+]
+
+maven_repository(
+    name = "4.2.2",
+    artifacts = AGP_4_2_2_ARTIFACTS,
+    visibility = ["//visibility:public"],
+)
+
 AGP_4_2_0_ARTIFACTS = [
     "@maven//:com.android.databinding.adapters_4.2.0",
     "@maven//:com.android.databinding.viewbinding_4.2.0",

@@ -611,7 +611,7 @@ class KotlinMultiplatformAndroidPlugin @Inject constructor(
             internalServices = variantServices,
             buildFeatures = KotlinMultiplatformHostTestBuildFeaturesValuesImpl(
                 androidExtension.androidResources,
-                global.unitTestOptions.isIncludeAndroidResources,
+                androidExtension.androidTestOnJvmOptions?.isIncludeAndroidResources ?: false
             ),
             variantDependencies = createVariantDependencies(project, dslInfo, kotlinCompilation, androidTarget),
             paths = paths,

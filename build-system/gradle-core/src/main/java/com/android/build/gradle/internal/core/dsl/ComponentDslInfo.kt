@@ -48,6 +48,7 @@ interface ComponentDslInfo {
     class DslDefinedHostTest(
         val type: String,
         val codeCoverageEnabled: Boolean,
+        val isIncludeAndroidResources: Boolean,
     )
 
     class DslDefinedDeviceTest(
@@ -101,4 +102,8 @@ interface ComponentDslInfo {
     val androidResourcesDsl: AndroidResourcesDslInfo?
 
     val privacySandboxDsl: PrivacySandboxDslInfo
+
+    /** Enables the compilation of Kotlin sources. */
+    val enableKotlin: Boolean
+
 }

@@ -427,7 +427,7 @@ class UastEnvironmentSourceSetTest {
       ERRNO_SUCCESS,
 
       // Args
-      arrayOf("--XuseK2Uast", "--check", "NewApi", "--project", File(root, "project.xml").path),
+      arrayOf("--check", "NewApi", "--project", File(root, "project.xml").path),
       { it.dos2unix() },
       null,
     )

@@ -114,9 +114,9 @@ fun RecipeExecutor.archStarterActivityRecipe(
   addDependency("com.squareup.retrofit2:converter-moshi:$retroFitVersion")
 
   // Coroutines
-  val coroutinesVersion = "1.10.2"
-  addDependency("org.jetbrains.kotlinx:kotlinx-coroutines-android:$coroutinesVersion")
-  addDependency("org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion")
+  addPlatformDependency("org.jetbrains.kotlinx:kotlinx-coroutines-bom:1.10.2")
+  addDependency("org.jetbrains.kotlinx:kotlinx-coroutines-android")
+  addDependency("org.jetbrains.kotlinx:kotlinx-coroutines-core")
 
   // Accompanist
   val accompanistVersion = "0.37.3"

@@ -18,16 +18,12 @@ package com.android.build.gradle.internal.testing.utp
 
 import com.android.build.gradle.internal.testing.utp.worker.RunUtpWorkAction
 import com.android.build.gradle.internal.testing.utp.worker.RunUtpWorkParameters
-import com.android.build.gradle.internal.utils.fromDisallowChanges
-import com.android.testutils.truth.PathSubject.assertThat
-import com.android.tools.utp.plugins.result.listener.gradle.proto.GradleAndroidTestResultListenerProto.TestResultEvent
 import com.android.utils.ILogger
 import com.google.common.truth.Truth.assertThat
-import com.google.protobuf.Any
 import com.google.protobuf.TextFormat
-import com.google.testing.platform.proto.api.config.RunnerConfigProto
-import com.google.testing.platform.proto.api.core.TestSuiteResultProto
-import org.gradle.api.Action
+import com.google.testing.platform.proto.api.config.RunnerConfigProto.RunnerConfig
+import com.google.testing.platform.proto.api.core.TestSuiteResultProto.TestSuiteResult
+import org.gradle.api.model.ObjectFactory
 import org.gradle.workers.WorkQueue
 import org.gradle.workers.WorkerExecutor
 import org.junit.Before
@@ -38,9 +34,7 @@ import org.mockito.Answers.RETURNS_DEEP_STUBS
 import org.mockito.Mockito.contains
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
-import org.mockito.kotlin.argThat
 import org.mockito.kotlin.eq
-import org.mockito.kotlin.inOrder
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
@@ -56,11 +50,9 @@ class UtpTestUtilsTest {
 
     private val mockUtpDependencies: UtpDependencies = mock(defaultAnswer = RETURNS_DEEP_STUBS)
     private val mockWorkerExecutor: WorkerExecutor = mock()
+    private val mockObjectFactory: ObjectFactory = mock()
     private val mockWorkQueue: WorkQueue = mock()
-    private val mockRunUtpWorkParameters: RunUtpWorkParameters = mock(defaultAnswer = RETURNS_DEEP_STUBS)
     private val mockLogger: ILogger = mock()
-    private val mockUtpTestResultListener: UtpTestResultListener = mock()
-    private val mockUtpTestResultListenerServerRunner: UtpTestResultListenerServerRunner = mock(defaultAnswer = RETURNS_DEEP_STUBS)
 
     lateinit var utpResultDir: File
     lateinit var jvmExecutable: File
@@ -69,11 +61,14 @@ class UtpTestUtilsTest {
     fun setupMocks() {
         jvmExecutable = temporaryFolderRule.newFile()
         whenever(mockWorkerExecutor.noIsolation()).thenReturn(mockWorkQueue)
+        whenever(mockObjectFactory.newInstance(
+            eq(RunUtpWorkParameters.UtpRunConfig::class.java))
+        ).thenReturn(mock(defaultAnswer = RETURNS_DEEP_STUBS))
     }
 
     private fun runUtp(
         shardConfig: ShardConfig? = null,
-        stubUtpAction: UtpTestResultListener.() -> Unit = { stubTestSuitePassing() }
+        expectedResult: TestSuiteResult? = createStubResultProto(),
     ): List<UtpTestRunResult> {
         val utpOutputDir = temporaryFolderRule.newFolder()
         utpResultDir = temporaryFolderRule.newFolder()
@@ -81,106 +76,32 @@ class UtpTestUtilsTest {
             "deviceName",
             "deviceId",
             utpOutputDir,
-            { _, _ -> RunnerConfigProto.RunnerConfig.getDefaultInstance() },
+            RunnerConfig.getDefaultInstance(),
             shardConfig
         )
 
-        var capturedUtpTestResultListener: UtpTestResultListener? = null
-        whenever(mockWorkQueue.submit(eq(RunUtpWorkAction::class.java), any())).then {
-            requireNotNull(capturedUtpTestResultListener).stubUtpAction()
+        if (expectedResult != null) {
+            whenever(mockWorkQueue.submit(eq(RunUtpWorkAction::class.java), any())).then {
+                File(utpOutputDir, TEST_RESULT_PB_FILE_NAME)
+                    .writeBytes(expectedResult.toByteArray())
+            }
         }
 
         return runUtpTestSuiteAndWait(
             listOf(config),
             mockWorkerExecutor,
+            mockObjectFactory,
             jvmExecutable,
             "projectName",
             "variantName",
             utpResultDir,
             mockLogger,
-            mockUtpTestResultListener,
             mockUtpDependencies,
             Level.WARNING,
-        ) {
-            capturedUtpTestResultListener = it
-            mockUtpTestResultListenerServerRunner
-        }
+        )
     }
 
-    private fun UtpTestResultListener.stubTestSuitePassing() {
-        val testSuiteResult = createStubResultProto()
-        onTestResultEvent(TestResultEvent.newBuilder().apply {
-            testSuiteStartedBuilder.apply {
-                deviceId = "deviceId"
-                testSuiteMetadata = Any.pack(testSuiteResult.testSuiteMetaData)
-            }
-        }.build())
-        testSuiteResult.testResultList.forEach { testResult ->
-            onTestResultEvent(TestResultEvent.newBuilder().apply {
-                testCaseStartedBuilder.apply {
-                    deviceId = "deviceId"
-                    testCase = Any.pack(testResult.testCase)
-                }
-            }.build())
-            onTestResultEvent(TestResultEvent.newBuilder().apply {
-                testCaseFinishedBuilder.apply {
-                    deviceId = "deviceId"
-                    testCaseResult = Any.pack(testResult)
-                }
-            }.build())
-        }
-        onTestResultEvent(TestResultEvent.newBuilder().apply {
-            testSuiteFinishedBuilder.apply {
-                deviceId = "deviceId"
-                this.testSuiteResult = Any.pack(testSuiteResult)
-            }
-        }.build())
-    }
-
-    private fun UtpTestResultListener.stubTestSuiteFailing() {
-        val testSuiteResult = createFailedStubResultProto()
-        onTestResultEvent(TestResultEvent.newBuilder().apply {
-            testSuiteFinishedBuilder.apply {
-                deviceId = "deviceId"
-                this.testSuiteResult = Any.pack(testSuiteResult)
-            }
-        }.build())
-    }
-
-    private fun verifyTestListenerIsInvoked() {
-        val testSuiteResult = createStubResultProto()
-        inOrder(mockUtpTestResultListener).apply {
-            verify(mockUtpTestResultListener).onTestResultEvent(eq(TestResultEvent.newBuilder().apply {
-                testSuiteStartedBuilder.apply {
-                    deviceId = "deviceId"
-                    testSuiteMetadata = Any.pack(testSuiteResult.testSuiteMetaData)
-                }
-            }.build()))
-            testSuiteResult.testResultList.forEach { testResult ->
-                verify(mockUtpTestResultListener).onTestResultEvent(eq(TestResultEvent.newBuilder().apply {
-                    testCaseStartedBuilder.apply {
-                        deviceId = "deviceId"
-                        testCase = Any.pack(testResult.testCase)
-                    }
-                }.build()))
-                verify(mockUtpTestResultListener).onTestResultEvent(eq(TestResultEvent.newBuilder().apply {
-                    testCaseFinishedBuilder.apply {
-                        deviceId = "deviceId"
-                        testCaseResult = Any.pack(testResult)
-                    }
-                }.build()))
-            }
-            verify(mockUtpTestResultListener).onTestResultEvent(eq(TestResultEvent.newBuilder().apply {
-                testSuiteFinishedBuilder.apply {
-                    deviceId = "deviceId"
-                    this.testSuiteResult = Any.pack(testSuiteResult)
-                }
-            }.build()))
-            verifyNoMoreInteractions()
-        }
-    }
-
-    private fun createStubResultProto(): TestSuiteResultProto.TestSuiteResult {
+    private fun createStubResultProto(): TestSuiteResult {
         return createResultProto("""
             test_suite_meta_data {
               scheduled_test_case_count: 1
@@ -197,7 +118,7 @@ class UtpTestUtilsTest {
         """)
     }
 
-    private fun createFailedStubResultProto(): TestSuiteResultProto.TestSuiteResult {
+    private fun createFailedStubResultProto(): TestSuiteResult {
         return createResultProto("""
             test_status: FAILED
             issue {
@@ -212,39 +133,13 @@ class UtpTestUtilsTest {
         """)
     }
 
-    private fun createResultProto(asciiProto: String): TestSuiteResultProto.TestSuiteResult {
-        return TextFormat.parse(asciiProto, TestSuiteResultProto.TestSuiteResult::class.java)
-    }
-
-    @Test
-    fun runUtpWorkParametersShouldBeConfiguredAsExpected() {
-        runUtp()
-
-        lateinit var setRunUtpWorkParametersAction: Action<in RunUtpWorkParameters>
-        verify(mockWorkQueue).submit(
-            eq(RunUtpWorkAction::class.java),
-            argThat {
-                setRunUtpWorkParametersAction = this
-                true
-            })
-
-        setRunUtpWorkParametersAction.execute(mockRunUtpWorkParameters)
-
-        mockRunUtpWorkParameters.run {
-            verify(launcherJar).setFrom(mockUtpDependencies.launcher.files)
-            verify(coreJar).setFrom(mockUtpDependencies.core.files)
-            verify(runnerConfigs).fromDisallowChanges(argThat<ArrayList<File>> {
-                all { it.exists() }
-            })
-            verify(loggingProperties).fromDisallowChanges(argThat<ArrayList<File>> {
-                all { it.exists() }
-            })
-        }
+    private fun createResultProto(asciiProto: String): TestSuiteResult {
+        return TextFormat.parse(asciiProto, TestSuiteResult::class.java)
     }
 
     @Test
     fun failedToReceiveUtpResults() {
-        val results = runUtp { /* Do nothing after the work is posted. */ }
+        val results = runUtp(expectedResult = null)
 
         assertThat(results).containsExactly(UtpTestRunResult(false, null))
         verify(mockLogger).error(
@@ -257,18 +152,6 @@ class UtpTestUtilsTest {
         val results = runUtp()
 
         assertThat(results).containsExactly(UtpTestRunResult(true, createStubResultProto()))
-
-        verifyTestListenerIsInvoked()
-
-        val resultsXml = utpResultDir.resolve("TEST-deviceName-projectName-variantName.xml")
-        assertThat(resultsXml).exists()
-        assertThat(resultsXml).containsAllOf(
-            """<testsuite name="com.example.application.ExampleInstrumentedTest" tests="1" failures="0" errors="0" skipped="0"""",
-            """<property name="device" value="deviceName" />""",
-            """<property name="flavor" value="variantName" />""",
-            """<property name="project" value="projectName" />""",
-            """<testcase name="useAppContext" classname="com.example.application.ExampleInstrumentedTest""""
-        )
     }
 
     @Test
@@ -276,70 +159,15 @@ class UtpTestUtilsTest {
         val results = runUtp(ShardConfig(totalCount = 2, index = 0))
 
         assertThat(results).containsExactly(UtpTestRunResult(true, createStubResultProto()))
-
-        verifyTestListenerIsInvoked()
-
-        val resultsXml = utpResultDir.resolve("TEST-deviceName_0-projectName-variantName.xml")
-        assertThat(resultsXml).exists()
-        assertThat(resultsXml).containsAllOf(
-            """<testsuite name="com.example.application.ExampleInstrumentedTest" tests="1" failures="0" errors="0" skipped="0"""",
-            """<property name="device" value="deviceName_0" />""",
-            """<property name="flavor" value="variantName" />""",
-            """<property name="project" value="projectName" />""",
-            """<testcase name="useAppContext" classname="com.example.application.ExampleInstrumentedTest""""
-        )
     }
 
     @Test
     fun runSuccessfullyButTestFailed() {
-        val results = runUtp { stubTestSuiteFailing() }
+        val expectedResult = createFailedStubResultProto()
 
-        assertThat(results).containsExactly(UtpTestRunResult(false, createFailedStubResultProto()))
+        val results = runUtp(expectedResult = expectedResult)
 
-        val resultsXml = utpResultDir.resolve("TEST-deviceName-projectName-variantName.xml")
-        assertThat(resultsXml).exists()
-        assertThat(resultsXml).containsAllOf(
-            """<testsuite tests="0" failures="0" errors="0" skipped="0"""",
-            """<property name="device" value="deviceName" />""",
-            """<property name="flavor" value="variantName" />""",
-            """<property name="project" value="projectName" />""",
-            """<system-err>Test run failed to complete. Instrumentation run failed due to Process crashed."""
-        )
-    }
-
-    @Test
-    fun resultHasEmulatorTimeoutException() {
-        val testResult = TestSuiteResultProto.TestSuiteResult.newBuilder().apply {
-            platformErrorBuilder.apply {
-                addErrorsBuilder().apply {
-                    causeBuilder.apply {
-                        summaryBuilder.apply {
-                            stackTrace = "EmulatorTimeoutException"
-                        }
-                    }
-                }
-            }
-        }.build()
-
-        assertThat(hasEmulatorTimeoutException(testResult)).isTrue()
-    }
-
-    @Test
-    fun resultDoesNotHaveEmulatorTimeoutException() {
-        val testResult = TestSuiteResultProto.TestSuiteResult.newBuilder().apply {
-            platformErrorBuilder.apply {
-                addErrorsBuilder().apply {
-                    causeBuilder.apply {
-                        summaryBuilder.apply {
-                            stackTrace = "Exception"
-                        }
-                    }
-                }
-            }
-        }.build()
-
-        assertThat(hasEmulatorTimeoutException(testResult)).isFalse()
-        assertThat(hasEmulatorTimeoutException(null)).isFalse()
+        assertThat(results).containsExactly(UtpTestRunResult(false, expectedResult))
     }
 
     @Test

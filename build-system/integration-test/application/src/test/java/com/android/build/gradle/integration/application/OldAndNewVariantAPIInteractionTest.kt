@@ -88,16 +88,18 @@ class OldAndNewVariantAPIInteractionTest {
                 onVariants(selector().withName("debug")) {
 
                     println("Write variant object with New API")
-                    it.javaCompilation.annotationProcessor.apply {
+                    it.javaCompilation?.annotationProcessor?.apply {
                         classNames.add("className-SetByNewApi")
                         arguments.put("argument-SetByNewApi", "abc")
                         argumentProviders.add(ArgumentProvider("argumentProvider-SetByNewApi", "abc"))
                     }
 
                     taskProvider.configure {
-                        newApiClassNames.set(it.javaCompilation.annotationProcessor.classNames)
-                        newApiArguments.set(it.javaCompilation.annotationProcessor.arguments)
-                        newApiArgumentProviders.set(it.javaCompilation.annotationProcessor.argumentProviders)
+                        it.javaCompilation?.annotationProcessor?.let { annotationProcessor ->
+                            newApiClassNames.set(annotationProcessor.classNames)
+                            newApiArguments.set(annotationProcessor.arguments)
+                            newApiArgumentProviders.set(annotationProcessor.argumentProviders)
+                        }
                     }
                 }
             }

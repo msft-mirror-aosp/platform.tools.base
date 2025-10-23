@@ -20,8 +20,8 @@ package com.android.build.gradle.integration.common.fixture
 import com.android.SdkConstants
 import com.android.build.gradle.integration.common.fixture.gradle_project.ProjectLocation
 import com.android.build.gradle.integration.common.fixture.project.options.GradleOptionBuilder
-import com.android.build.gradle.integration.common.fixture.project.options.GradleOptionsDelegate
 import com.android.build.gradle.integration.common.fixture.project.options.GradleOptions
+import com.android.build.gradle.integration.common.fixture.project.options.GradleOptionsDelegate
 import com.android.build.gradle.integration.common.utils.JacocoAgent
 import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.options.IntegerOption
@@ -190,6 +190,12 @@ abstract class BaseGradleExecutor<T : BaseGradleExecutor<T>> internal constructo
     /** Forces JVM exit in the event of an OutOfMemoryError, without collecting a heap dump.  */
     fun crashOnOutOfMemory(): T {
         this.crashOnOutOfMemory = true
+        return this as T
+    }
+
+    @Deprecated("Do not use this method. Try to migrate the test to built-in Kotlin instead (b/385745419).")
+    fun disableBuiltInKotlin(): T {
+        with(BooleanOption.BUILT_IN_KOTLIN, false)
         return this as T
     }
 

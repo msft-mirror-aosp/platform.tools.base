@@ -28,6 +28,7 @@ class LibTestDepTest : ModelComparator() {
     @get:Rule
     val project = GradleTestProject.builder()
         .fromTestProject("libTestDep")
+        .disableBuiltInKotlin()
         .create()
 
     @Test

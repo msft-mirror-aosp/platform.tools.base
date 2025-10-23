@@ -398,7 +398,7 @@ class ProjectInitializerTest {
 
       // Args
       arrayOf(
-        if (useFirUast()) "--XuseK2Uast" else "",
+        if (useFirUast()) "" else "--XuseK1Uast",
         "--check",
         "UniquePermission,DuplicateDefinition,SdCardPath",
         "--config",
@@ -3371,7 +3371,7 @@ src/main/AndroidManifest.xml:7: Warning: You must set android:targetSdkVersion t
       """,
       "",
       ERRNO_SUCCESS,
-      arrayOf("--XuseK2Uast", "--project", File(root, "project.xml").path),
+      arrayOf("--project", File(root, "project.xml").path),
       { it.replace(root.canonicalPath, "ROOT").replace(root.path, "ROOT").dos2unix() },
       { _, _, _, _ -> },
     )
@@ -3783,7 +3783,7 @@ src/main/AndroidManifest.xml:7: Warning: You must set android:targetSdkVersion t
       """,
       "",
       ERRNO_SUCCESS,
-      arrayOf("--XuseK2Uast", "--project", File(root, "project.xml").path),
+      arrayOf("--project", File(root, "project.xml").path),
       { it.replace(root.canonicalPath, "ROOT").replace(root.path, "ROOT").dos2unix() },
       { _, _, _, _ -> },
     )
@@ -4196,7 +4196,7 @@ src/main/AndroidManifest.xml:7: Warning: You must set android:targetSdkVersion t
       """,
       "",
       ERRNO_SUCCESS,
-      arrayOf("--XuseK2Uast", "--project", File(root, "project.xml").path),
+      arrayOf("--project", File(root, "project.xml").path),
       { it.replace(root.canonicalPath, "ROOT").replace(root.path, "ROOT").dos2unix() },
       { _, _, _, _ -> },
     )
@@ -4479,13 +4479,12 @@ src/main/AndroidManifest.xml:7: Warning: You must set android:targetSdkVersion t
       """,
       "",
       ERRNO_SUCCESS,
-      arrayOf("--XuseK2Uast", "--project", File(root, "project.xml").path),
+      arrayOf("--project", File(root, "project.xml").path),
       { it.replace(root.canonicalPath, "ROOT").replace(root.path, "ROOT").dos2unix() },
       { _, _, _, _ -> },
     )
 
     task
-      .configureOptions { it.setUseK2Uast(true) }
       .skipTestModes(TestMode.PARTIAL) // TODO no iosApp with `TestMode.PARTIAL`
       .allowDuplicates()
       .run()

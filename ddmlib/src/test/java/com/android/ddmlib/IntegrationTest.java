@@ -141,8 +141,6 @@ public class IntegrationTest {
         }
     }
 
-    // ignored because we shouldn't be relying on a hard coded port (5037): fakeadbserver should
-    // be changed to use any available port, and that selected port should be passed on to ddmlib
     @Test
     public void testListDevices() throws Exception {
         // Build the server and configure it to use the default ADB command handlers.

@@ -110,6 +110,7 @@ public class DataBindingIncrementalTest {
                         .fromTestProject("databindingIncremental")
                         .addGradleProperties(
                                 BooleanOption.USE_ANDROID_X.getPropertyName() + "=" + useAndroidX)
+                        .disableBuiltInKotlin()
                         .withKotlinGradlePlugin(withKotlin);
 
         project = builder.create();

@@ -42,6 +42,7 @@ class CompileAndRuntimeClasspathTest(private val enableAlignment: Boolean) {
     val project: GradleTestProject = GradleTestProject.builder()
         .fromTestApp(HelloWorldApp.forPlugin("com.android.application"))
         .addGradleProperties("${BooleanOption.USE_DEPENDENCY_CONSTRAINTS.propertyName}=$enableAlignment")
+        .disableBuiltInKotlin()
         .create()
 
     @Test

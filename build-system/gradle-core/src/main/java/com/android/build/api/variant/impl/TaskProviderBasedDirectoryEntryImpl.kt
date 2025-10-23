@@ -37,6 +37,7 @@ class TaskProviderBasedDirectoryEntryImpl(
     override val isGenerated: Boolean = true,
     override val isUserAdded: Boolean = false,
     override val shouldBeAddedToIdeModel: Boolean = false,
+    override val kind: DirectoryEntry.Kind = DirectoryEntry.Kind.GENERIC
 ): DirectoryEntry {
 
     /**

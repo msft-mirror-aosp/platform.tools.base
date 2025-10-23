@@ -31,9 +31,9 @@ import com.android.build.gradle.internal.component.VariantCreationConfig;
 import com.android.build.gradle.internal.feature.BundleAllClasses;
 import com.android.build.gradle.internal.profile.AnalyticsConfiguratorService;
 import com.android.build.gradle.internal.publishing.AndroidArtifacts;
+import com.android.build.gradle.internal.tasks.AndroidVariantTask;
 import com.android.build.gradle.internal.tasks.ApkZipPackagingTask;
 import com.android.build.gradle.internal.tasks.AppClasspathCheckTask;
-import com.android.build.gradle.internal.tasks.AppPreBuildTask;
 import com.android.build.gradle.internal.tasks.ApplicationIdWriterTask;
 import com.android.build.gradle.internal.tasks.CheckManifest;
 import com.android.build.gradle.internal.tasks.CheckMultiApkLibrariesTask;
@@ -63,6 +63,7 @@ import org.gradle.api.Task;
 import org.gradle.api.resources.TextResourceFactory;
 import org.gradle.api.tasks.TaskProvider;
 import org.gradle.api.tasks.compile.JavaCompile;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
 import java.util.Set;
@@ -211,7 +212,14 @@ public abstract class AbstractAppTaskManager<
                         .get(BooleanOption.ENABLE_CLASSPATH_CHECK_TASKS);
 
         TaskProvider<? extends Task> task =
-                taskFactory.register(AppPreBuildTask.getCreationAction(creationConfig));
+                taskFactory.register(
+                        new TaskManager.AbstractPreBuildCreationAction<>(creationConfig) {
+
+                            @Override
+                            public @NotNull Class<@NotNull AndroidVariantTask> getType() {
+                                return AndroidVariantTask.class;
+                            }
+                        });
 
         if (!useDependencyConstraints && enableClasspathCheckTask) {
             TaskProvider<AppClasspathCheckTask> classpathCheck =

@@ -88,6 +88,7 @@ public class VariantsApiTest {
         project =
                 GradleTestProject.builder()
                         .fromTestApp(HelloWorldApp.forPlugin(plugin))
+                        .disableBuiltInKotlin()
                         .create();
 
         this.dslProperty = dslProperty;

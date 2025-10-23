@@ -488,6 +488,15 @@ public class GradleTestProjectBuilder implements GradleOptionBuilder<GradleTestP
         return this;
     }
 
+    /**
+     * @deprecated Do not use this method. Try to migrate the test to built-in Kotlin instead
+     *     (b/385745419).
+     */
+    public GradleTestProjectBuilder disableBuiltInKotlin() {
+        addGradleProperty(BooleanOption.BUILT_IN_KOTLIN, false);
+        return this;
+    }
+
     private static class EmptyTestApp extends GradleProject {
         @Override
         public boolean containsFullBuildScript() {

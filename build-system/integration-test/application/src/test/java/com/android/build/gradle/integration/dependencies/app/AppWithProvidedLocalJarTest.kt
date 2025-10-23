@@ -30,6 +30,7 @@ class AppWithProvidedLocalJarTest : ModelComparator() {
     @get:Rule
     val project = GradleTestProject.builder()
         .fromTestProject("projectWithLocalDeps")
+        .disableBuiltInKotlin()
         .create()
 
     @Before

@@ -29,6 +29,7 @@ import com.android.build.gradle.integration.common.fixture.project.builder.Plugi
 import com.android.build.gradle.integration.common.fixture.project.plugins.GenericCallback
 import com.android.build.gradle.integration.common.truth.ScannerSubject.Companion.assertThat
 import com.android.build.gradle.integration.common.truth.forEachLine
+import com.android.build.gradle.integration.common.utils.disableBuiltInKotlin
 import com.android.build.gradle.internal.TaskManager
 import com.android.build.gradle.options.BooleanOption
 import com.android.compose.screenshot.gradle.ScreenshotTestOptions
@@ -72,6 +73,7 @@ class ScreenshotTest {
             gradleProperties {
                 add(BooleanOption.ENABLE_SCREENSHOT_TEST, true)
             }
+            disableBuiltInKotlin()
         }
 
     @JvmField

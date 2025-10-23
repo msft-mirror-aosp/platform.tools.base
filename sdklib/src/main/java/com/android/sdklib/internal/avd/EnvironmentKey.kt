@@ -13,24 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.android.sdklib.internal.avd
 
-package com.android.build.gradle.internal.testsuites
-
-import com.android.build.api.variant.TestSuiteBuilder
-import org.gradle.api.Incubating
-
-/**
- * Container of [com.android.build.api.variant.TestSuiteBuilder]
- */
-@Incubating
-interface HasTestSuitesBuilder {
-    /**
-     * Variant's [com.android.build.api.variant.TestSuiteBuilder] configuration to configure test suites associated with this
-     * variant.
-     *
-     * @return a [Map] which keys are unique names within the test suites
-     *
-     */
-    @get:Incubating
-    val suites: Map<String, TestSuiteBuilder>
+object EnvironmentKey {
+  const val IMAGE = "image"
+  const val VIDEO = "video"
 }

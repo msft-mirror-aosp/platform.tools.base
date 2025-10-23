@@ -23,22 +23,29 @@ import com.android.build.api.dsl.TestSuiteAssetsSpec
 import com.android.build.api.dsl.TestSuiteHostJarSpec
 import com.android.build.api.dsl.TestSuiteTestApkSpec
 import com.android.build.api.dsl.TestTaskContext
+import com.android.build.gradle.internal.services.DslServices
 import com.android.build.gradle.internal.testsuites.TestSuiteSourceCreationConfig
 import org.gradle.api.Action
 import org.gradle.api.NamedDomainObjectContainer
-import org.gradle.api.model.ObjectFactory
 import org.gradle.api.tasks.testing.Test
 import java.util.concurrent.atomic.AtomicBoolean
+import javax.inject.Inject
 
 /**
  * Implementation of the [AgpTestSuite] Dsl extension.
+ *
+ * @param name the Test Suite Name
+ * @param dslServices internal services
+ * @param androidResourcesIncluded DSL declaration on whether the android resources should be
+ * included.
  */
-abstract class AgpTestSuiteImpl(
+abstract class AgpTestSuiteImpl @Inject constructor(
     private val name: String,
-    val objects: ObjectFactory
+    val dslServices: DslServices,
+    val androidResourcesIncluded: Boolean
 ): AgpTestSuite {
 
-    private val jUnitEngineSpec = objects.newInstance(
+    private val jUnitEngineSpec = dslServices.newInstance(
         JUnitEngineSpecImpl::class.java,
     )
 
@@ -76,7 +83,7 @@ abstract class AgpTestSuiteImpl(
      */
     fun targetVariants(vararg targetVariants: String) = this.targetVariants.addAll(targetVariants)
 
-    private val targets = objects.domainObjectContainer(
+    private val targets = dslServices.domainObjectContainer(
         AgpTestSuiteTarget::class.java
     ) { name ->
         AgpTestSuiteTargetImpl(
@@ -87,11 +94,14 @@ abstract class AgpTestSuiteImpl(
     override fun getTargets(): NamedDomainObjectContainer<AgpTestSuiteTarget> = targets
 
     override fun assets(action: TestSuiteAssetsSpec.() -> Unit) {
-        addSource<TestSuiteAssetsSpecImpl>(action)
+        addSource<TestSuiteAssetsSpecImpl>( action)
     }
 
     override fun hostJar(action: TestSuiteHostJarSpec.() -> Unit) {
-        addSource<TestSuiteHostJarSpecImpl>(action)
+        addSource<TestSuiteHostJarSpecImpl> {
+            this.enableAndroidResources = androidResourcesIncluded
+            action(this)
+        }
     }
 
     fun hostJar(action: Action<TestSuiteHostJarSpec>) {
@@ -115,6 +125,8 @@ abstract class AgpTestSuiteImpl(
         testTaskConfigActions.add(action)
     }
 
+    override var codeCoverage = false
+
     /**
      * Internal APIs
      */
@@ -123,17 +135,19 @@ abstract class AgpTestSuiteImpl(
     /**
      * Private APIs
      */
-    private inline fun <reified T: TestSuiteSourceCreationConfig> addSource(action: T.() -> Unit) {
+    private inline fun <reified T: TestSuiteSourceCreationConfig> addSource(
+        initializationBlock: T.() -> Unit
+    ) {
         if (sources.isNotEmpty()) {
             throw RuntimeException(
                 "It is not yet possible to register multiple sources for a test suite")
         }
-        objects.newInstance(
+        dslServices.newInstance(
             T::class.java,
             name
         ).also { newSources ->
             sources.add(newSources)
-            action.invoke(newSources)
+            initializationBlock.invoke(newSources)
         }
     }
 }

@@ -17,6 +17,7 @@
 package com.android.build.gradle.integration.application;
 
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
@@ -24,16 +25,21 @@ import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.fixture.ModelContainerV2;
 import com.android.builder.model.v2.ide.GraphItem;
 import com.android.builder.model.v2.ide.ProjectType;
-import java.util.List;
+
 import org.junit.AfterClass;
 import org.junit.ClassRule;
 import org.junit.Test;
+
+import java.util.List;
 
 /** Assemble tests for tictactoe. */
 public class TictactoeTest {
     @ClassRule
     public static GradleTestProject project =
-            GradleTestProject.builder().fromTestProject("tictactoe").create();
+            GradleTestProject.builder()
+                    .fromTestProject("tictactoe")
+                    .disableBuiltInKotlin()
+                    .create();
 
     @AfterClass
     public static void cleanUp() {

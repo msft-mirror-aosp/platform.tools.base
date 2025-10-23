@@ -15,17 +15,20 @@
  */
 package com.android.build.api.variant.impl
 
+import com.android.build.gradle.internal.scope.ProjectInfo
 import com.android.build.gradle.internal.services.VariantServices
 import com.google.common.truth.Truth
 import org.gradle.api.file.Directory
+import org.gradle.api.file.DirectoryProperty
+import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Provider
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
+import org.mockito.Mockito
 import org.mockito.junit.MockitoJUnit
 import org.mockito.junit.MockitoRule
 import org.mockito.kotlin.mock
-import org.mockito.kotlin.whenever
 import org.mockito.quality.Strictness
 import kotlin.test.fail
 
@@ -40,6 +43,14 @@ class FlatSourceDirectoriesImplTest {
     private val variantServices: VariantServices = mock()
     @Test
     fun testAddingGeneratedEntryUsingStaticMethod(){
+        val projectInfo: ProjectInfo = mock()
+        Mockito.`when`(variantServices.projectInfo).thenReturn(projectInfo)
+        Mockito.`when`(variantServices.newListPropertyForInternalUse(Directory::class.java)).thenReturn(
+            Mockito.mock(ListProperty::class.java) as ListProperty<Directory>
+        )
+        Mockito.`when`(variantServices.directoryProperty()).thenReturn(
+            Mockito.mock(DirectoryProperty::class.java) as DirectoryProperty
+        )
         val testTarget = FlatSourceDirectoriesImpl(
             "_for_test",
             variantServices,

@@ -38,7 +38,10 @@ public class KotlinAppTest {
 
     @Rule
     public GradleTestProject project =
-            GradleTestProject.builder().fromTestProject("kotlinApp").create();
+            GradleTestProject.builder()
+                    .fromTestProject("kotlinApp")
+                    .disableBuiltInKotlin()
+                    .create();
 
     @After
     public void cleanUp() {

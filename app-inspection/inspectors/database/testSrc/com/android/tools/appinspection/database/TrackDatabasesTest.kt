@@ -595,6 +595,13 @@ class TrackDatabasesTest {
     assertNoQueuedEvents()
   }
 
+  @Test
+  fun test_track_databases_ignore_framework_api(): Unit = runBlocking {
+    testEnvironment.sendCommand(createTrackDatabasesCommand(ignoreFrameworkApi = true))
+
+    assertThat(testEnvironment.getFrameworkHooks()).isEmpty()
+  }
+
   private val SQLiteClosable.referenceCount: Int
     get() = getFieldValue(SQLiteClosable::class.java, "mReferenceCount", this)
 
@@ -664,3 +671,6 @@ class TrackDatabasesTest {
     assertThat(db.isOpen).isFalse()
   }
 }
+
+private fun SqliteInspectorTestEnvironment.getFrameworkHooks() =
+  getRegisteredHooks().filter { it.originClass.packageName.contains("android.database.sqlite") }

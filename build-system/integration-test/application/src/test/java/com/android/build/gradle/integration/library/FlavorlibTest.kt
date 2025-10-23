@@ -31,6 +31,7 @@ class FlavorlibTest : ModelComparator() {
     @get:Rule
     val project = GradleTestProject.builder()
         .fromTestProject("flavorlib")
+        .disableBuiltInKotlin()
         .create()
 
     @Before

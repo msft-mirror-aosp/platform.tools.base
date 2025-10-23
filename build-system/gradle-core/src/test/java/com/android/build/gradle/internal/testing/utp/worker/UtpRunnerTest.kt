@@ -16,9 +16,20 @@
 
 package com.android.build.gradle.internal.testing.utp.worker
 
+import com.android.build.gradle.internal.testing.utp.UtpDependencies
 import com.android.build.gradle.internal.testing.utp.UtpDependency
+import com.android.build.gradle.internal.testing.utp.UtpTestResultListener
+import com.android.build.gradle.internal.testing.utp.UtpTestResultListenerServerMetadata
+import com.android.build.gradle.internal.testing.utp.UtpTestResultListenerServerRunner
 import com.android.testutils.assertThrows
+import com.android.testutils.truth.PathSubject.assertThat
+import com.android.tools.utp.plugins.result.listener.gradle.proto.GradleAndroidTestResultListenerProto
 import com.google.common.truth.Truth.assertThat
+import com.google.protobuf.Any
+import com.google.testing.platform.proto.api.config.RunnerConfigProto
+import com.google.testing.platform.proto.api.core.TestCaseProto
+import com.google.testing.platform.proto.api.core.TestResultProto
+import com.google.testing.platform.proto.api.core.TestSuiteResultProto
 import org.gradle.api.GradleException
 import org.gradle.api.logging.Logger
 import org.junit.Before
@@ -26,6 +37,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
+import org.mockito.Answers
 import org.mockito.ArgumentCaptor
 import org.mockito.Captor
 import org.mockito.Mock
@@ -41,6 +53,9 @@ import java.util.concurrent.ExecutionException
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Future
 
+/**
+ * Unit test for [UtpRunner].
+ */
 @RunWith(MockitoJUnitRunner::class)
 class UtpRunnerTest {
 
@@ -58,70 +73,110 @@ class UtpRunnerTest {
     private lateinit var process: Process
     @Mock
     private lateinit var executorServiceFactory: () -> ExecutorService
-    @Mock
+    @Mock(answer = Answers.RETURNS_DEEP_STUBS)
     private lateinit var executorService: ExecutorService
+    @Mock(answer = Answers.RETURNS_DEEP_STUBS)
+    private lateinit var utpDependencies: UtpDependencies
     @Mock
-    private lateinit var future: Future<*>
+    private lateinit var utpTestResultListenerServerRunnerFactory: (UtpTestResultListener) -> UtpTestResultListenerServerRunner
+    @Mock
+    private lateinit var utpTestResultListenerServerRunner: UtpTestResultListenerServerRunner
+    @Mock
+    private lateinit var utpTestResultListenerServerMetadata: UtpTestResultListenerServerMetadata
 
     @Captor
     private lateinit var commandCaptor: ArgumentCaptor<List<String>>
     @Captor
     private lateinit var taskCaptor: ArgumentCaptor<Runnable>
+    @Captor
+    private lateinit var utpTestResultListenerCaptor: ArgumentCaptor<UtpTestResultListener>
 
     private lateinit var javaFile: File
+    private lateinit var launcherJar: File
+    private lateinit var coreJar: File
+    private lateinit var listenerServerJar: File
+    private lateinit var clientCert: File
+    private lateinit var clientKey: File
+    private lateinit var serverCert: File
+    private lateinit var xmlTestReportOutputDirectory: File
     private lateinit var loggingFile1: File
     private lateinit var loggingFile2: File
-    private lateinit var launcherJar1: File
-    private lateinit var launcherJar2: File
-    private lateinit var coreJar1: File
-    private lateinit var coreJar2: File
     private lateinit var runnerConfig1: File
     private lateinit var runnerConfig2: File
+    private lateinit var resultProtoFile1: File
+    private lateinit var resultProtoFile2: File
 
     private lateinit var utpRunner: UtpRunner
 
     @Before
     fun setUp() {
         javaFile = tempDir.newFile("my-java")
+        coreJar = tempDir.newFile("core.jar")
+        listenerServerJar = tempDir.newFile("listenerServer.jar")
+        launcherJar = tempDir.newFile("launcher.jar")
+        clientCert = tempDir.newFile("client.cert")
+        clientKey = tempDir.newFile("client.key")
+        serverCert = tempDir.newFile("server.cert")
+        xmlTestReportOutputDirectory = tempDir.newFolder("xml-reports")
         loggingFile1 = tempDir.newFile("logging1.properties")
         loggingFile2 = tempDir.newFile("logging2.properties")
-        launcherJar1 = tempDir.newFile("launcherA.jar")
-        launcherJar2 = tempDir.newFile("launcherB.jar")
-        coreJar1 = tempDir.newFile("coreA.jar")
-        coreJar2 = tempDir.newFile("coreB.jar")
         runnerConfig1 = tempDir.newFile("runner-config-1.pb")
         runnerConfig2 = tempDir.newFile("runner-config-2.pb")
+        resultProtoFile1 = tempDir.newFile("result1.pb")
+        resultProtoFile2 = tempDir.newFile("result2.pb")
+
+        // Write empty proto data to the config files
+        val emptyConfig = RunnerConfigProto.RunnerConfig.getDefaultInstance()
+        runnerConfig1.outputStream().use { emptyConfig.writeTo(it) }
+        runnerConfig2.outputStream().use { emptyConfig.writeTo(it) }
 
         whenever(executorServiceFactory()).thenReturn(executorService)
         whenever(processBuilderFactory(capture(commandCaptor))).thenReturn(processBuilder)
         whenever(processBuilder.start()).thenReturn(process)
 
+        // Mock UTP dependencies
+        whenever(utpDependencies.launcher.files).thenReturn(setOf(launcherJar))
+        whenever(utpDependencies.core.files).thenReturn(setOf(coreJar))
+        whenever(utpDependencies.testPluginResultListenerGradle.files).thenReturn(setOf(listenerServerJar))
+
+        // Mock listener server
+        whenever(utpTestResultListenerServerRunnerFactory(capture(utpTestResultListenerCaptor)))
+            .thenReturn(utpTestResultListenerServerRunner)
+        whenever(utpTestResultListenerServerRunner.metadata).thenReturn(utpTestResultListenerServerMetadata)
+        whenever(utpTestResultListenerServerMetadata.serverPort).thenReturn(12345)
+        whenever(utpTestResultListenerServerMetadata.clientCert).thenReturn(clientCert)
+        whenever(utpTestResultListenerServerMetadata.clientPrivateKey).thenReturn(clientKey)
+        whenever(utpTestResultListenerServerMetadata.serverCert).thenReturn(serverCert)
+
         utpRunner = UtpRunner(
-            javaExecFile = javaFile,
-            loggingPropertiesFileList = listOf(loggingFile1, loggingFile2),
-            utpLauncherJars = listOf(launcherJar1, launcherJar2),
-            utpCoreJars = listOf(coreJar1, coreJar2),
-            utpRunnerConfigFileList = listOf(runnerConfig1, runnerConfig2),
-            logger = logger,
-            processBuilderFactory = processBuilderFactory,
-            executorServiceFactory = executorServiceFactory
+            javaFile,
+            utpDependencies,
+            enableUtpTestReportingForAndroidStudio = false,
+            logger,
+            processBuilderFactory,
+            executorServiceFactory,
+            utpTestResultListenerServerRunnerFactory,
         )
     }
 
     @Test
-    fun execute_successfulRun_startsAllProcessesInParallel() {
-        // Arrange
+    fun execute_successfulRun_startsAllProcessesInParallelAndWritesResults() {
         whenever(process.waitFor()).thenReturn(0)
         whenever(process.inputStream).then { "stdout line".byteInputStream() }
         whenever(process.errorStream).then { "stderr line".byteInputStream() }
-        val future1 = mock<Future<*>>()
-        val future2 = mock<Future<*>>()
-        whenever(executorService.submit(any<Runnable>())).thenReturn(future1, future2)
-        whenever(future1.get()).thenReturn(Unit)
-        whenever(future2.get()).thenReturn(Unit)
 
         // Act
-        utpRunner.execute()
+        utpRunner.execute(
+            utpRunnerConfigFileList = listOf(runnerConfig1, runnerConfig2),
+            loggingPropertiesFileList = listOf(loggingFile1, loggingFile2),
+            deviceIDs = listOf("device1", "device2"),
+            deviceNames = listOf("deviceName1", "deviceName2"),
+            deviceShardNames = listOf("shardName1", "shardName2"),
+            projectPath = "myProject",
+            variantName = "myVariant",
+            xmlTestReportOutputDirectory = xmlTestReportOutputDirectory,
+            utpResultProtoOutputFileList = listOf(resultProtoFile1, resultProtoFile2)
+        )
 
         // Assert: Verify tasks were submitted
         verify(executorService, times(2)).submit(taskCaptor.capture())
@@ -129,19 +184,27 @@ class UtpRunnerTest {
         // Execute the captured tasks to simulate the threads running
         taskCaptor.allValues.forEach { it.run() }
 
-        // Assert: Verify commands
-        val cpSeparator = File.pathSeparator
         val allCommands = commandCaptor.allValues
+        // The private execute method is called with the *new* config files
+        val newConfigPath1 = File(
+            runnerConfig1.parentFile,
+            "runner-config-1_withListener.pb"
+        ).absolutePath
+        val newConfigPath2 = File(
+            runnerConfig2.parentFile,
+            "runner-config-2_withListener.pb"
+        ).absolutePath
+
         assertThat(allCommands[0]).containsExactly(
             javaFile.absolutePath,
             "-Djava.awt.headless=true",
             "-Djava.util.logging.config.file=${loggingFile1.absolutePath}",
             "-Dfile.encoding=UTF-8",
             "-cp",
-            "${launcherJar1.absolutePath}$cpSeparator${launcherJar2.absolutePath}",
+            launcherJar.absolutePath,
             UtpDependency.LAUNCHER.mainClass,
-            "${coreJar1.absolutePath}$cpSeparator${coreJar2.absolutePath}",
-            "--proto_config=${runnerConfig1.absolutePath}",
+            coreJar.absolutePath,
+            "--proto_config=$newConfigPath1",
         ).inOrder()
         assertThat(allCommands[1]).containsExactly(
             javaFile.absolutePath,
@@ -149,10 +212,10 @@ class UtpRunnerTest {
             "-Djava.util.logging.config.file=${loggingFile2.absolutePath}",
             "-Dfile.encoding=UTF-8",
             "-cp",
-            "${launcherJar1.absolutePath}$cpSeparator${launcherJar2.absolutePath}",
+            launcherJar.absolutePath,
             UtpDependency.LAUNCHER.mainClass,
-            "${coreJar1.absolutePath}$cpSeparator${coreJar2.absolutePath}",
-            "--proto_config=${runnerConfig2.absolutePath}",
+            coreJar.absolutePath,
+            "--proto_config=$newConfigPath2",
         ).inOrder()
 
         // Assert: Verify process lifecycle and logging for both tasks
@@ -161,6 +224,38 @@ class UtpRunnerTest {
         verify(logger, times(2)).info("stdout line")
         verify(logger, times(2)).info("stderr line")
         verify(executorService).shutdownNow()
+
+        // Assert: Verify listener received results and wrote proto files
+        val listener = utpTestResultListenerCaptor.value
+        val testSuiteResult = TestSuiteResultProto.TestSuiteResult.newBuilder()
+            .addTestResult(TestResultProto.TestResult.newBuilder()
+                .setTestCase(TestCaseProto.TestCase.newBuilder().setTestClass("myTest"))
+            )
+            .build()
+        val event = GradleAndroidTestResultListenerProto.TestResultEvent.newBuilder()
+            .setDeviceId("device1")
+            .setTestSuiteFinished(
+                GradleAndroidTestResultListenerProto.TestResultEvent.TestSuiteFinished.newBuilder()
+                    .setTestSuiteResult(Any.pack(testSuiteResult))
+            ).build()
+
+        listener.onTestResultEvent(event)
+
+        // Verify the correct proto file was written
+        assertThat(resultProtoFile1.length()).isGreaterThan(0)
+        assertThat(resultProtoFile2.length()).isEqualTo(0)
+        val writtenProto = resultProtoFile1.inputStream().use {
+            TestSuiteResultProto.TestSuiteResult.parseFrom(it)
+        }
+        assertThat(writtenProto).isEqualTo(testSuiteResult)
+
+        val resultsXml = xmlTestReportOutputDirectory.resolve("TEST-shardName1-myProject-myVariant.xml")
+        assertThat(resultsXml).exists()
+        assertThat(resultsXml).containsAllOf(
+            """<property name="device" value="shardName1" />""",
+            """<property name="flavor" value="myVariant" />""",
+            """<property name="project" value="myProject" />""",
+        )
     }
 
     @Test
@@ -176,7 +271,17 @@ class UtpRunnerTest {
 
         // Act & Assert
         val e = assertThrows<GradleException> {
-            utpRunner.execute()
+            utpRunner.execute(
+                utpRunnerConfigFileList = listOf(runnerConfig1, runnerConfig2),
+                loggingPropertiesFileList = listOf(loggingFile1, loggingFile2),
+                deviceIDs = listOf("device1", "device2"),
+                deviceNames = listOf("deviceName1", "deviceName2"),
+                deviceShardNames = listOf("shardName1", "shardName2"),
+                projectPath = "myProject",
+                variantName = "myVariant",
+                xmlTestReportOutputDirectory = xmlTestReportOutputDirectory,
+                utpResultProtoOutputFileList = listOf(resultProtoFile1, resultProtoFile2)
+            )
         }
         assertThat(e).hasMessageThat().isEqualTo("Test Execution failed")
 
@@ -188,13 +293,24 @@ class UtpRunnerTest {
     @Test
     fun execute_whenInterrupted_rethrows() {
         // Arrange
+        val future = mock<Future<*>>()
         val testException = InterruptedException("Test interrupt")
         whenever(executorService.submit(any<Runnable>())).thenReturn(future)
         whenever(future.get()).thenThrow(testException)
 
         // Act & Assert
         val e = assertThrows<InterruptedException> {
-            utpRunner.execute()
+            utpRunner.execute(
+                utpRunnerConfigFileList = listOf(runnerConfig1),
+                loggingPropertiesFileList = listOf(loggingFile1),
+                deviceIDs = listOf("device1"),
+                deviceNames = listOf("deviceName1"),
+                deviceShardNames = listOf("shardName1"),
+                projectPath = "myProject",
+                variantName = "myVariant",
+                xmlTestReportOutputDirectory = xmlTestReportOutputDirectory,
+                utpResultProtoOutputFileList = listOf(resultProtoFile1)
+            )
         }
         assertThat(e).isEqualTo(testException)
 

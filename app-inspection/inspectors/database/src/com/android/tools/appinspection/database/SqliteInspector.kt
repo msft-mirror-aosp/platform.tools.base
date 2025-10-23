@@ -284,7 +284,10 @@ internal class SqliteInspector(
 
   private fun handleTrackDatabases(command: TrackDatabasesCommand, callback: CommandCallback) {
     val hookRegistry = EntryExitMatchingHookRegistry(environment)
-    registerFrameworkHooks(hookRegistry)
+    val ignoreFrameworkApi = command.ignoreFrameworkApi
+    if (!ignoreFrameworkApi) {
+      registerFrameworkHooks(hookRegistry)
+    }
 
     val classes = command.additionalDriversList.mapNotNull { it.toClasses() }
     registerAndroidXHooks(
@@ -297,13 +300,15 @@ internal class SqliteInspector(
 
     // Check for database instances in memory
     val artTooling = environment.artTooling()
-    for (instance in artTooling.findInstances(SQLiteDatabase::class.java)) {
-      val database = FrameworkDatabase(instance)
-      /* the race condition here will be handled by mDatabaseRegistry */
-      if (instance.isOpen) {
-        onDatabaseOpened(database)
-      } else {
-        onDatabaseClosed(database)
+    if (!ignoreFrameworkApi) {
+      for (instance in artTooling.findInstances(SQLiteDatabase::class.java)) {
+        val database = FrameworkDatabase(instance)
+        /* the race condition here will be handled by mDatabaseRegistry */
+        if (instance.isOpen) {
+          onDatabaseOpened(database)
+        } else {
+          onDatabaseClosed(database)
+        }
       }
     }
     (classes.map { it.connectionClass } + BundledSQLiteConnection::class.java).forEach {
@@ -320,6 +325,9 @@ internal class SqliteInspector(
 
     if (command.forceOpen) {
       databaseRegistry.enableForceOpen()
+    }
+    if (command.ignoreFrameworkApi) {
+      databaseRegistry.ignoreFrameworkApi()
     }
     // Check for database instances on disk
     for (instance in artTooling.findInstances(Application::class.java)) {

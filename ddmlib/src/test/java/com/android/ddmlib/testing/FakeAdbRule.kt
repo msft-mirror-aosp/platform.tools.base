@@ -41,8 +41,7 @@ import java.util.concurrent.TimeUnit
  */
 class FakeAdbRule : ExternalResource() {
   /**
-   * An [AndroidDebugBridge] that will be initialized unless [initAdbBridgeDuringSetup] is set to false, in which
-   * case trying to access this value will throw an exception.
+   * An [AndroidDebugBridge] that will be initialized.
    */
   lateinit var bridge: AndroidDebugBridge
     private set
@@ -51,9 +50,6 @@ class FakeAdbRule : ExternalResource() {
     get() = fakeAdbServer.port
 
   private val isJdwpProxyEnabledDefault = DdmPreferences.isJdwpProxyEnabled()
-  private var initAdbBridgeDuringSetup = true
-  private var clientSupportEnabled = true
-  private var closeFakeAdbServerDuringCleanUp = true
   private lateinit var fakeAdbServer: FakeAdbServer
   private val startingDevices: MutableMap<String, CountDownLatch> = mutableMapOf()
   private var consoleFactory: (String, String) -> EmulatorConsole =
@@ -97,25 +93,6 @@ class FakeAdbRule : ExternalResource() {
   fun withEmulatorConsoleFactory(factory: (String, String) -> EmulatorConsole) = apply {
     consoleFactory = factory
   }
-
-  /**
-   * Configures whether to enable ClientSupport. Must be called before @Before tasks are run.
-   */
-  fun withClientSupport(enabled: Boolean) = apply { clientSupportEnabled = enabled }
-
-  /**
-   * Initialize the ADB bridge as part of the setup.
-   *
-   * Some tests may delay this step and call initialize the AdbBridge separately.
-   */
-  fun initAbdBridgeDuringSetup(initBridge: Boolean) = apply { initAdbBridgeDuringSetup = initBridge }
-
-  /**
-   * Closes the fake adb server as part of the cleanup.
-   *
-   * Some tests may omit this part of the cleanup to avoid closing the server twice.
-   */
-  fun closeServerDuringCleanUp(closeServer: Boolean) = apply { closeFakeAdbServerDuringCleanUp = closeServer }
 
   @JvmOverloads
   fun attachDevice(
@@ -178,21 +155,19 @@ class FakeAdbRule : ExternalResource() {
     fakeAdbServer = builder.build()
     fakeAdbServer.start()
 
-    if (initAdbBridgeDuringSetup) {
-      AndroidDebugBridge.disconnectBridge()
-      AndroidDebugBridge.terminate()
-      AndroidDebugBridge.enableFakeAdbServerMode(fakeAdbServer.port)
-      val options = AdbInitOptions.builder()
-          .setClientSupportEnabled(clientSupportEnabled)
-          .useJdwpProxyService(false)
-          .build()
-      AndroidDebugBridge.init(options)
-      bridge = AndroidDebugBridge.createBridge(10, TimeUnit.SECONDS) ?: error("Could not create ADB bridge")
-      val startTime = System.currentTimeMillis()
-      while ((!bridge.isConnected || !bridge.hasInitialDeviceList()) &&
-             System.currentTimeMillis() - startTime < TimeUnit.SECONDS.toMillis(10)) {
-        Uninterruptibles.sleepUninterruptibly(100, TimeUnit.MILLISECONDS)
-      }
+    AndroidDebugBridge.disconnectBridge()
+    AndroidDebugBridge.terminate()
+    AndroidDebugBridge.enableFakeAdbServerMode(fakeAdbServer.port)
+    val options = AdbInitOptions.builder()
+        .setClientSupportEnabled(true)
+        .useJdwpProxyService(false)
+        .build()
+    AndroidDebugBridge.init(options)
+    bridge = AndroidDebugBridge.createBridge(10, TimeUnit.SECONDS) ?: error("Could not create ADB bridge")
+    val startTime = System.currentTimeMillis()
+    while ((!bridge.isConnected || !bridge.hasInitialDeviceList()) &&
+           System.currentTimeMillis() - startTime < TimeUnit.SECONDS.toMillis(10)) {
+      Uninterruptibles.sleepUninterruptibly(100, TimeUnit.MILLISECONDS)
     }
   }
 
@@ -201,11 +176,9 @@ class FakeAdbRule : ExternalResource() {
     AndroidDebugBridge.terminate()
     AndroidDebugBridge.disableFakeAdbServerMode()
     DdmPreferences.enableJdwpProxyService(isJdwpProxyEnabledDefault)
-    if (closeFakeAdbServerDuringCleanUp) {
-      fakeAdbServer.close()
-      if (!fakeAdbServer.awaitServerTermination(30, TimeUnit.SECONDS)) {
-        error("The adbServer didn't terminate in 30 seconds")
-      }
+    fakeAdbServer.close()
+    if (!fakeAdbServer.awaitServerTermination(30, TimeUnit.SECONDS)) {
+      error("The adbServer didn't terminate in 30 seconds")
     }
     EmulatorConsole.clearConsolesForTest()
   }

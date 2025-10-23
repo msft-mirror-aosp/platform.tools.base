@@ -63,7 +63,11 @@ public class MultiDexTest {
 
     @Rule
     public GradleTestProject project =
-            GradleTestProject.builder().fromTestProject("multiDex").withHeap("2048M").create();
+            GradleTestProject.builder()
+                    .fromTestProject("multiDex")
+                    .withHeap("2048M")
+                    .disableBuiltInKotlin()
+                    .create();
 
     @Rule public TemporaryFolder temporaryFolder = new TemporaryFolder();
 

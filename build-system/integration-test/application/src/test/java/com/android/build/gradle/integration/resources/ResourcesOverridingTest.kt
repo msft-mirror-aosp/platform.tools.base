@@ -22,6 +22,7 @@ import com.android.build.gradle.integration.common.fixture.app.MultiModuleTestPr
 import com.android.build.gradle.integration.common.runner.FilterableParameterized
 import com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk
 import com.android.build.gradle.integration.common.utils.TestFileUtils
+import com.android.build.gradle.integration.common.utils.disableBuiltInKotlin
 import com.android.build.gradle.options.BooleanOption
 import org.junit.Before
 import org.junit.Rule
@@ -79,7 +80,10 @@ class ResourcesOverridingTest(private val precompileDependenciesResources: Boole
             .build()
 
     @get:Rule
-    val project = GradleTestProject.builder().fromTestApp(testApp).create()
+    val project = GradleTestProject.builder()
+        .fromTestApp(testApp)
+        .disableBuiltInKotlin()
+        .create()
 
     @Before
     fun setUp() {

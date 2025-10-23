@@ -47,7 +47,7 @@ class BuiltInKotlinAndKmpTest() {
     fun `fail when built-in Kotlin plugin is applied after kotlin-multiplatform plugin`() {
         val build = rule.build {
             androidLibrary {
-                applyPlugin(PluginType.KOTLIN_MPP)
+                applyPlugin(PluginType.KOTLIN_MPP, applyFirst = true)
                 applyPlugin(PluginType.ANDROID_BUILT_IN_KOTLIN)
             }
         }

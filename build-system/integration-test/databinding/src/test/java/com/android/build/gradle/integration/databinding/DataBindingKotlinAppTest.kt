@@ -44,6 +44,7 @@ class DataBindingKotlinAppTest(useAndroidX: Boolean) {
                         + "="
                         + useAndroidX
             )
+            .disableBuiltInKotlin()
             .create()
 
     companion object {

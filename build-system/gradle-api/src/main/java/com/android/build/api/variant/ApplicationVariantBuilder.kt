@@ -30,6 +30,7 @@ interface ApplicationVariantBuilder : VariantBuilder,
     HasHostTestsBuilder,
     HasUnitTestBuilder,
     HasTestFixturesBuilder,
+    HasTestSuitesBuilder,
     GeneratesApkBuilder,
     CanMinifyCodeBuilder,
     CanMinifyAndroidResourcesBuilder {

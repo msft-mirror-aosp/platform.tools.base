@@ -53,8 +53,7 @@ import org.jetbrains.uast.UastFacade
 /** JVM system property to enable FIR UAST or K2 UAST, as per the new compiler name */
 const val FIR_UAST_KEY = "lint.use.fir.uast"
 
-@ApiStatus.Internal
-fun useFirUast(): Boolean = System.getProperty(FIR_UAST_KEY, "false").toBoolean()
+@ApiStatus.Internal fun useFirUast(): Boolean = System.getProperty(FIR_UAST_KEY, "true").toBoolean()
 
 /**
  * This interface provides the setup and configuration needed to use VFS/PSI/UAST on the command

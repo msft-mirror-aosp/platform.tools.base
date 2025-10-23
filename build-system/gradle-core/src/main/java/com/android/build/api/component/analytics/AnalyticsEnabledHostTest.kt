@@ -50,4 +50,10 @@ open class AnalyticsEnabledHostTest @Inject constructor(
             return delegate.codeCoverageEnabled
         }
 
+    override val androidResourcesIncluded: Boolean
+        get() {
+            stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
+                VariantPropertiesMethodType.TEST_SUITE_ANDROID_RESOURCES_ENABLED_VALUE
+            return delegate.androidResourcesIncluded
+        }
 }

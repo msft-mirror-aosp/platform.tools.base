@@ -22,11 +22,11 @@ import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
 import com.android.build.gradle.integration.common.fixture.app.KotlinHelloWorldApp
 import com.android.build.gradle.integration.common.runner.FilterableParameterized
 import com.android.build.gradle.integration.common.truth.ScannerSubject
+import com.android.build.gradle.integration.common.utils.disableBuiltInKotlin
 import com.android.build.gradle.internal.errors.DeprecationReporter
 import com.android.build.gradle.options.BooleanOption
 import com.android.builder.model.SyncIssue
 import com.google.common.truth.Truth
-import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -57,6 +57,7 @@ class ObsoleteApiTest(private val provider: TestProjectProvider) {
     var project : GradleTestProject =
         GradleTestProject.builder()
             .fromTestApp(provider.provider.invoke())
+            .disableBuiltInKotlin()
             .create()
 
     @Test

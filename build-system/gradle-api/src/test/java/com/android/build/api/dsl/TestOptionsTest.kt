@@ -48,6 +48,7 @@ class TestOptionsTest {
 
     open class AgpTestSuiteImplForTest(private val name: String) : AgpTestSuite {
         override fun getName(): String = name
+        override var codeCoverage: Boolean = false
         override val targetVariants: MutableList<String>
             get() = throw RuntimeException("Unexpected call")
 

@@ -14,11 +14,22 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.internal.testsuites
+package com.android.build.api.variant
+
+import org.gradle.api.Incubating
 
 /**
- * Interface to configure [com.android.build.api.variant.TestSuite] during the [com.android.build.api.variant.AndroidComponentsExtension.beforeVariants]
- * callbacks.
- *
- * TODO : Provide example before moving to public interfaces
+ * Container of [TestSuiteBuilder]
  */
+@Incubating
+interface HasTestSuitesBuilder {
+    /**
+     * Variant's [TestSuiteBuilder] configuration to configure test suites associated with this
+     * variant.
+     *
+     * @return a [Map] which keys are unique names within the test suites
+     *
+     */
+    @get:Incubating
+    val suites: Map<String, TestSuiteBuilder>
+}

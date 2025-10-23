@@ -103,7 +103,9 @@ class D8StartupProfileDexOptimizationTest {
                 MultiModuleTestProject.builder()
                     .subproject(":app", app)
                     .build()
-            ).create()
+            )
+            .disableBuiltInKotlin()
+            .create()
 
     @Test
     fun testStartupProfile() {

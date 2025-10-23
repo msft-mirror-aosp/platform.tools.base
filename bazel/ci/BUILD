@@ -119,6 +119,7 @@ py_library(
     deps = [
         ":bazel",
         ":studio",
+        "//tools/base/bazel/ci/presubmit:impacted_targets",
     ],
 )
 

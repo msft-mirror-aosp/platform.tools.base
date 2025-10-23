@@ -55,8 +55,7 @@ fun printProto(runnerConfig: RunnerConfigProto.RunnerConfig) : String{
  */
 fun assertRunnerConfigProto(
     runnerConfig: RunnerConfigProto.RunnerConfig,
-    deviceSerial: String = "mockDeviceSerialNumber",
-    deviceId: String = "mockDeviceSerialNumber",
+    deviceSerial: String = "emulator-mockDeviceSerialNumber",
     useOrchestrator: Boolean = false,
     forceCompilation: Boolean = false,
     useTestStorageService: Boolean = false,
@@ -370,26 +369,6 @@ fun assertRunnerConfigProto(
             }
             use_single_class_loader: true
           }
-        }
-        test_result_listener {
-          label {
-            label: "ANDROID_TEST_PLUGIN_RESULT_LISTENER_GRADLE"
-          }
-          class_name: "com.android.tools.utp.plugins.result.listener.gradle.GradleAndroidTestResultListener"
-          jar {
-            path: "path-to-TestPluginResultListenerGradle.jar"
-          }
-          config {
-            type_url: "type.googleapis.com/com.android.tools.utp.plugins.result.listener.gradle.proto.GradleAndroidTestResultListenerConfig"
-            value {
-              resultListenerServerPort: 1234
-              resultListenerClientCertFilePath: "mockResultListenerClientCertPath"
-              resultListenerClientPrivateKeyFilePath: "mockResultListenerClientPrivateKeyPath"
-              trustCertCollectionFilePath: "mockTrustCertCollectionPath"
-              deviceId: "$deviceId"
-            }
-          }
-          use_single_class_loader: true
         }
         single_device_executor {
           device_execution {

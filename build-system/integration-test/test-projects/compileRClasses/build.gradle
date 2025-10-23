@@ -7,6 +7,6 @@ buildscript {
     apply from: "../commonBuildScript.gradle"
 
     dependencies {
-        classpath "com.android.experimental.built-in-kotlin:com.android.experimental.built-in-kotlin.gradle.plugin:${libs.versions.buildVersion.get()}"
+        classpath "com.android.built-in-kotlin:com.android.built-in-kotlin.gradle.plugin:${libs.versions.buildVersion.get()}"
     }
 }

@@ -19,6 +19,7 @@ package com.android.build.api.variant
 import com.android.build.api.dsl.TestTaskContext
 import org.gradle.api.Incubating
 import org.gradle.api.Named
+import org.gradle.api.provider.Property
 import org.gradle.api.tasks.testing.Test
 
 /**
@@ -73,4 +74,12 @@ interface TestSuite: Named {
      * Returns the list of [TestSuiteTarget] for this test suite in this variant.
      */
     val targets: Map<String, TestSuiteTarget>
+
+    /**
+     * Turns on or off the code coverage support.
+     *
+     * Initialized from the corresponding [TestSuiteBuilder.codeCoverage]
+     */
+    @get:Incubating
+    val codeCoverage: Property<Boolean>
 }

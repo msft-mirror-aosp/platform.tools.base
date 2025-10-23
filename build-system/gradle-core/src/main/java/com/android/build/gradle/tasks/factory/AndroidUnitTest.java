@@ -269,7 +269,7 @@ public abstract class AndroidUnitTest extends Test implements VariantTask, UsesA
             if (hostTestCreationConfig.getComponentType().isForScreenshotPreview()) {
                 includeAndroidResources = true;
             } else {
-                includeAndroidResources = testOptions.isIncludeAndroidResources();
+                includeAndroidResources = hostTestCreationConfig.getAndroidResourcesIncluded();
             }
 
             ProjectOptions configOptions = creationConfig.getServices().getProjectOptions();

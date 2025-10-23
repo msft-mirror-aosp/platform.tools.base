@@ -362,8 +362,6 @@ https://issuetracker.google.com/328749020
   * com.android.build.api.dsl.ManagedVirtualDevice.setRequire64Bit: void (boolean)
   * com.android.build.api.dsl.ManagedVirtualDevice.setSystemImageSource: void (java.lang.String)
 https://issuetracker.google.com/328749039
-  * com.android.build.api.variant.Component.getJavaCompilation: com.android.build.api.variant.JavaCompilation ()
-  * com.android.build.api.variant.JavaCompilation
   * com.android.build.api.variant.JavaCompilation.getAnnotationProcessor: com.android.build.api.variant.AnnotationProcessor ()
   * com.android.build.api.variant.JavaCompilation.getAnnotationProcessorConfiguration: org.gradle.api.artifacts.Configuration ()
 https://issuetracker.google.com/328749058
@@ -410,10 +408,6 @@ https://issuetracker.google.com/328749317
   * com.android.build.api.dsl.KmpOptimization.getMinify: boolean ()
   * com.android.build.api.dsl.KmpOptimization.getTestKeepRules: com.android.build.api.dsl.ConfigurableFiles ()
   * com.android.build.api.dsl.KmpOptimization.setMinify: void (boolean)
-  * com.android.build.api.dsl.KotlinMultiplatformAndroidCompilationBuilder.getCompilationName: java.lang.String ()
-  * com.android.build.api.dsl.KotlinMultiplatformAndroidCompilationBuilder.getDefaultSourceSetName: java.lang.String ()
-  * com.android.build.api.dsl.KotlinMultiplatformAndroidCompilationBuilder.setCompilationName: void (java.lang.String)
-  * com.android.build.api.dsl.KotlinMultiplatformAndroidCompilationBuilder.setDefaultSourceSetName: void (java.lang.String)
   * com.android.build.api.dsl.KotlinMultiplatformAndroidDeviceTest.emulatorControl: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.EmulatorControl, kotlin.Unit>)
   * com.android.build.api.dsl.KotlinMultiplatformAndroidDeviceTest.getEmulatorControl: com.android.build.api.dsl.EmulatorControl ()
   * com.android.build.api.dsl.KotlinMultiplatformAndroidDeviceTest.getMultidex: com.android.build.api.dsl.MultiDexConfig ()
@@ -488,8 +482,6 @@ https://issuetracker.google.com/331936874
   * com.android.build.api.variant.HostTestBuilder.getEnable: boolean ()
   * com.android.build.api.variant.HostTestBuilder.getType: java.lang.String ()
   * com.android.build.api.variant.HostTestBuilder.setEnable: void (boolean)
-https://issuetracker.google.com/333537222
-  * com.android.build.api.dsl.AndroidSourceDirectorySet.getDirectories: java.util.Set<java.lang.String> ()
 https://issuetracker.google.com/335848584
   * com.android.build.api.variant.DeviceTest.getCodeCoverageEnabled: boolean ()
   * com.android.build.api.variant.HostTest.getCodeCoverageEnabled: boolean ()
@@ -600,10 +592,12 @@ https://issuetracker.google.com/392162853
   * com.android.build.api.dsl.AgpTestSuite implements org.gradle.testing.base.TestSuite
   * com.android.build.api.dsl.AgpTestSuite.assets: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.TestSuiteAssetsSpec, kotlin.Unit>)
   * com.android.build.api.dsl.AgpTestSuite.configureTestTasks: void (kotlin.jvm.functions.Function2<? super org.gradle.api.tasks.testing.Test, ? super com.android.build.api.dsl.TestTaskContext, kotlin.Unit>)
+  * com.android.build.api.dsl.AgpTestSuite.getCodeCoverage: boolean ()
   * com.android.build.api.dsl.AgpTestSuite.getTargetVariants: java.util.List<java.lang.String> ()
   * com.android.build.api.dsl.AgpTestSuite.getTargets: org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.AgpTestSuiteTarget> ()
   * com.android.build.api.dsl.AgpTestSuite.getUseJunitEngine: com.android.build.api.dsl.JUnitEngineSpec ()
   * com.android.build.api.dsl.AgpTestSuite.hostJar: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.TestSuiteHostJarSpec, kotlin.Unit>)
+  * com.android.build.api.dsl.AgpTestSuite.setCodeCoverage: void (boolean)
   * com.android.build.api.dsl.AgpTestSuite.testApk: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.TestSuiteTestApkSpec, kotlin.Unit>)
   * com.android.build.api.dsl.AgpTestSuite.useJunitEngine: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.JUnitEngineSpec, kotlin.Unit>)
   * com.android.build.api.dsl.AgpTestSuiteDependencies
@@ -650,7 +644,11 @@ https://issuetracker.google.com/422422985
 https://issuetracker.google.com/438803230
   * com.android.build.api.variant.CanProduceConsumerProguardFiles
   * com.android.build.api.variant.CanProduceConsumerProguardFiles.getConsumerProguardFiles: org.gradle.api.provider.ListProperty<org.gradle.api.file.RegularFile> ()
+https://issuetracker.google.com/440427409
+  * com.android.build.api.artifact.MultipleArtifact$PRE_COMPILATION_CLASSES extends com.android.build.api.artifact.MultipleArtifact implements com.android.build.api.artifact.Artifact$Replaceable, com.android.build.api.artifact.Artifact$Appendable, com.android.build.api.artifact.Artifact$Transformable
 https://issuetracker.google.com/443174826
+  * com.android.build.api.variant.HasTestSuitesBuilder
+  * com.android.build.api.variant.HasTestSuitesBuilder.getSuites: java.util.Map<java.lang.String, com.android.build.api.variant.TestSuiteBuilder> ()
   * com.android.build.api.variant.JUnitEngineSpec
   * com.android.build.api.variant.JUnitEngineSpec.addInputProperty: void (java.lang.String, java.lang.String)
   * com.android.build.api.variant.JUnitEngineSpec.addInputProperty: void (java.lang.String, org.gradle.api.provider.Provider<java.lang.String>)
@@ -659,6 +657,7 @@ https://issuetracker.google.com/443174826
   * com.android.build.api.variant.JUnitEngineSpec.getInputs: java.util.List<com.android.build.api.dsl.AgpTestSuiteInputParameters> ()
   * com.android.build.api.variant.JUnitEngineSpecBuilder implements com.android.build.api.variant.JUnitEngineSpec
   * com.android.build.api.variant.JUnitEngineSpecBuilder.getInputs: java.util.List<com.android.build.api.dsl.AgpTestSuiteInputParameters> ()
+  * com.android.build.api.variant.TestSuite.getCodeCoverage: org.gradle.api.provider.Property<java.lang.Boolean> ()
   * com.android.build.api.variant.TestSuite.getJunitEngineSpec: com.android.build.api.variant.JUnitEngineSpec ()
   * com.android.build.api.variant.TestSuiteTarget implements org.gradle.api.Named
   * com.android.build.api.variant.TestSuiteTarget.getEnabled: boolean ()
@@ -671,3 +670,9 @@ https://issuetracker.google.com/443715703
   * com.android.build.api.variant.Component.configureJavaCompileTask: void (kotlin.jvm.functions.Function1<? super org.gradle.api.tasks.compile.JavaCompile, kotlin.Unit>)
 https://issuetracker.google.com/443976533
   * com.android.build.api.artifact.SingleArtifact$VERSION_CONTROL_INFO_FILE extends com.android.build.api.artifact.SingleArtifact
+https://issuetracker.google.com/444699160
+  * com.android.build.api.dsl.TestSuiteHostJarSpec.getEnableAndroidResources: boolean ()
+  * com.android.build.api.dsl.TestSuiteHostJarSpec.setEnableAndroidResources: void (boolean)
+  * com.android.build.api.variant.HostTest.getAndroidResourcesIncluded: boolean ()
+  * com.android.build.api.variant.HostTestBuilder.getIncludeAndroidResources: boolean ()
+  * com.android.build.api.variant.HostTestBuilder.setIncludeAndroidResources: void (boolean)

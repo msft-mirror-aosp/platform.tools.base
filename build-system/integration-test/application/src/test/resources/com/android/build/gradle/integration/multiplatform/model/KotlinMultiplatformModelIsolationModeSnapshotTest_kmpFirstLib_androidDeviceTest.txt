@@ -1245,7 +1245,7 @@
                 "org.gradle.jvm.environment": "android",
                 "org.gradle.libraryelements": "jar",
                 "org.gradle.usage": "java-api",
-                "org.jetbrains.kotlin.platform.type": "jvm"
+                "org.jetbrains.kotlin.platform.type": "androidJvm"
               },
               "capabilities": [
                 "Kotlin Multiplatform.:kmpSecondLib:unspecified"

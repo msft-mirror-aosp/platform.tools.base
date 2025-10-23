@@ -2093,10 +2093,10 @@ class InstallTestTest : DeployRunnerTestBase() {
 
         AndroidDebugBridge.init(AdbInitOptions.DEFAULT)
         val bridge = AndroidDebugBridge.createBridge()
-        while (!bridge!!.hasInitialDeviceList()) {
+        while (bridge!!.devices.isEmpty()) {
             Thread.sleep(100)
         }
-        val iDevice = bridge!!.devices[0]
+        val iDevice = bridge.devices[0]
         val logger: ILogger = TestLogger()
         val adb = AdbClient(iDevice, logger)
         val metrics = ArrayList<DeployMetric>()

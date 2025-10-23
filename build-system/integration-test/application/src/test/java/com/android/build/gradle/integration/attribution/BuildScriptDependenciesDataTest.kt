@@ -38,6 +38,7 @@ class BuildScriptDependenciesDataTest {
     var project = GradleTestProject.builder()
             .fromTestApp(HelloWorldApp.forPlugin("com.android.application"))
             .withPluginManagementBlock(true)
+            .disableBuiltInKotlin()
             .create()
 
     @Test

@@ -158,7 +158,7 @@ open class HostTestTaskManager(
             // Add data binding tasks if enabled
             createDataBindingTasksIfNecessary(hostTestCreationConfig)
         } else if (testedVariant.componentType.isApk) {
-            if (globalConfig.unitTestOptions.isIncludeAndroidResources) {
+            if (hostTestCreationConfig.androidResourcesIncluded) {
                 // Add a task to process the manifest.
                 createProcessTestManifestTask(hostTestCreationConfig)
             }

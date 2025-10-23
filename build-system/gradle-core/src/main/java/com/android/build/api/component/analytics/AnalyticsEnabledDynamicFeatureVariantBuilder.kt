@@ -21,6 +21,7 @@ import com.android.build.api.variant.DeviceTestBuilder
 import com.android.build.api.variant.DynamicFeatureVariantBuilder
 import com.android.build.api.variant.PropertyAccessNotAllowedException
 import com.android.build.api.variant.HostTestBuilder
+import com.android.build.api.variant.TestSuiteBuilder
 import com.android.tools.build.gradle.internal.profile.VariantMethodType
 import com.google.wireless.android.sdk.stats.GradleBuildVariant
 import javax.inject.Inject
@@ -111,6 +112,20 @@ open class AnalyticsEnabledDynamicFeatureVariantBuilder @Inject constructor(
             // been added to it since last call.
             return delegate.hostTests.mapValues {
                 AnalyticsEnabledHostTestBuilder(
+                    it.value,
+                    stats
+                )
+            }
+        }
+
+    override val suites: Map<String, TestSuiteBuilder>
+        get() {
+            stats.variantApiAccessBuilder.addVariantAccessBuilder().type =
+                VariantMethodType.TEST_SUITE_BUILDER_VALUE
+            // return a copy of the list every time as new items may have
+            // been added to it since last call.
+            return delegate.suites.mapValues {
+                AnalyticsEnabledTestSuiteBuilder(
                     it.value,
                     stats
                 )

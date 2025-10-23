@@ -21,6 +21,7 @@ import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType.PluginTypeWithExtension
 import com.android.build.gradle.integration.common.fixture.project.plugins.GenericCallback
 import com.android.build.gradle.integration.common.truth.ScannerSubject.Companion.assertThat
+import com.android.build.gradle.integration.common.utils.disableBuiltInKotlin
 import com.android.build.gradle.integration.manageddevice.application.FirebaseTestLabIntegrationTest.TestUtils.Companion.RequestResponseResource
 import com.android.build.gradle.integration.manageddevice.utils.simpleProject
 import com.android.build.gradle.internal.LoggerWrapper
@@ -102,6 +103,7 @@ class FirebaseTestLabIntegrationTest {
             }
             pluginCallbacks += RegisterFakeHttpHandlerCallback::class.java
         }
+        disableBuiltInKotlin()
     }
 
     private val executor: GradleTaskExecutor

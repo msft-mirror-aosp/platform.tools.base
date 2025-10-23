@@ -44,6 +44,8 @@ open class TestSuiteHostJarSpecImpl @Inject internal constructor(
         action.invoke(dependencies)
     }
 
+    override var enableAndroidResources: Boolean = false
+
     /**
      * INTERNAL APIs
      */

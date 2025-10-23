@@ -47,7 +47,9 @@ class ExpandArtProfileWildcardsTest {
                 .subproject(":lib", lib)
                 .dependency(app, lib)
                 .build()
-        ).create()
+        )
+        .disableBuiltInKotlin()
+        .create()
 
     @Test
     fun validateNoOpWithoutMinifyEnabled() {

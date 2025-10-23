@@ -46,10 +46,10 @@ class AdbLibAndroidDebugBridgeIntegrationTest {
     private val fakeAdbRule = FakeAdbServerProviderRule()
 
     private val useAdbLibAndroidDebugBridgeRule =
-        UseAdbLibAndroidDebugBridgeRule({ fakeAdbRule.adbSession })
+        UseAdbLibAndroidDebugBridgeRule { fakeAdbRule.adbSession }
 
     private val initAndroidDebugBridgeRule =
-        InitAndroidDebugBridgeRule({ fakeAdbRule.fakeAdb.port })
+        InitAndroidDebugBridgeRule { fakeAdbRule.fakeAdb.port }
 
     @get:Rule
     val ruleChain = RuleChain.outerRule(fakeAdbRule)

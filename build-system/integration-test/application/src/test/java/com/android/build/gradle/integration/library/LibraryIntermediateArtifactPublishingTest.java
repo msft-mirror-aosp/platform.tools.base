@@ -40,7 +40,10 @@ import java.io.IOException;
 public class LibraryIntermediateArtifactPublishingTest {
     @Rule
     public GradleTestProject project =
-            GradleTestProject.builder().fromTestApp(HelloWorldLibraryApp.create()).create();
+            GradleTestProject.builder()
+                    .fromTestApp(HelloWorldLibraryApp.create())
+                    .disableBuiltInKotlin()
+                    .create();
 
     @Before
     public void setUp() throws IOException {

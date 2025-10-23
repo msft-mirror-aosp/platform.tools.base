@@ -44,6 +44,8 @@ message TrackDatabasesCommand {
   bool force_open = 1;
   // Additional SQLiteDriver implementations to track
   repeated AdditionalDriver additional_drivers = 2;
+  // If true, agent will not track databases opened with the framework API SQLiteDatabase
+  bool ignore_framework_api = 3;
 }
 
 message AdditionalDriver {

@@ -27,4 +27,5 @@ interface LibraryVariantBuilder : VariantBuilder,
     HasHostTestsBuilder,
     HasUnitTestBuilder,
     HasTestFixturesBuilder,
+    HasTestSuitesBuilder,
     CanMinifyCodeBuilder

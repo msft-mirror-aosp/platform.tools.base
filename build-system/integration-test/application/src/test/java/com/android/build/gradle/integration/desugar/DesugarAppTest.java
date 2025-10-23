@@ -66,6 +66,7 @@ public class DesugarAppTest {
     public GradleTestProject project =
             GradleTestProject.builder()
                     .fromTestApp(HelloWorldApp.forPlugin("com.android.application"))
+                    .disableBuiltInKotlin()
                     .create();
 
     @Parameterized.Parameters(name = "tool={0}")

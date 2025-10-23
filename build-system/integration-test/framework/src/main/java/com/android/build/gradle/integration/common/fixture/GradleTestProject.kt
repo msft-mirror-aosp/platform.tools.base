@@ -49,7 +49,6 @@ import com.android.testutils.OsType
 import com.android.testutils.TestUtils
 import com.android.testutils.apk.Aab
 import com.android.testutils.apk.Apk
-import com.android.testutils.apk.Zip
 import com.android.testutils.truth.PathSubject.assertThat
 import com.android.utils.FileUtils
 import com.android.utils.Pair
@@ -1335,6 +1334,10 @@ allprojects { proj ->
         for (option in booleanOptions.keys) {
             executor.suppressOptionWarning(option)
         }
+
+        // TODO(b/385745419): Remove this when most tests have been migrated to built-in Kotlin
+        executor.suppressOptionWarning(BooleanOption.BUILT_IN_KOTLIN)
+
         return executor
     }
 

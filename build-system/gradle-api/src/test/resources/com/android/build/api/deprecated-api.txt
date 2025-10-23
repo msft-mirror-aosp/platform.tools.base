@@ -4,10 +4,14 @@ ATTENTION REVIEWER: If this needs to be changed, please make sure changes
 are announced on go/as-release-notes.
 -------------------------------------------------------------------------
 Deprecated from AGP 9.0.0
+  * com.android.build.api.dsl.AndroidSourceDirectorySet.setSrcDirs: java.lang.Object (java.lang.Iterable<?>)
+  * com.android.build.api.dsl.AndroidSourceDirectorySet.srcDir: java.lang.Object (java.lang.Object)
+  * com.android.build.api.dsl.AndroidSourceDirectorySet.srcDirs: java.lang.Object (java.lang.Object[])
   * com.android.build.api.dsl.BuildFeatures.getRenderScript: java.lang.Boolean ()
   * com.android.build.api.dsl.BuildFeatures.setRenderScript: void (java.lang.Boolean)
   * com.android.build.api.variant.AndroidComponentsExtension.finalizeDSl: void (org.gradle.api.Action)
   * com.android.build.api.variant.Component.transformClassesWith: void (java.lang.Class, com.android.build.api.instrumentation.InstrumentationScope, kotlin.jvm.functions.Function1)
+  * com.android.build.api.variant.HostTestBuilder.getIncludeAndroidResources: boolean ()
   * com.android.build.api.variant.VariantOutput.getEnable: org.gradle.api.provider.Property ()
 Deprecated from AGP 8.13.0
   * com.android.build.api.dsl.AndroidSourceSet.jni: void (kotlin.jvm.functions.Function1)
@@ -32,10 +36,6 @@ Deprecated from AGP 8.8.0
   * com.android.build.api.dsl.BaseFlavor.getResourceConfigurations: java.util.Set<java.lang.String> ()
   * com.android.build.api.dsl.Bundle.deviceTier: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.BundleDeviceTier, kotlin.Unit>)
   * com.android.build.api.dsl.Bundle.getDeviceTier: com.android.build.api.dsl.BundleDeviceTier ()
-  * com.android.build.api.dsl.KotlinMultiplatformAndroidCompilationBuilder.getCompilationName: java.lang.String ()
-  * com.android.build.api.dsl.KotlinMultiplatformAndroidCompilationBuilder.getDefaultSourceSetName: java.lang.String ()
-  * com.android.build.api.dsl.KotlinMultiplatformAndroidCompilationBuilder.setCompilationName: void (java.lang.String)
-  * com.android.build.api.dsl.KotlinMultiplatformAndroidCompilationBuilder.setDefaultSourceSetName: void (java.lang.String)
 Deprecated from AGP 8.5.0
   * com.android.build.api.dsl.Ndk.getCFlags: java.lang.String ()
   * com.android.build.api.dsl.Ndk.getJobs: java.lang.Integer ()

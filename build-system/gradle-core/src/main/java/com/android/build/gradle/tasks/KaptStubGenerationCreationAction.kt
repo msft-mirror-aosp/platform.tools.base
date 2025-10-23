@@ -17,9 +17,6 @@
 package com.android.build.gradle.tasks
 
 import com.android.build.gradle.internal.component.ComponentCreationConfig
-import com.android.build.gradle.internal.component.NestedComponentCreationConfig
-import com.android.build.gradle.internal.publishing.AndroidArtifacts
-import com.android.build.gradle.internal.publishing.PublishingSpecs
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.services.BuiltInKotlinServices
 import com.android.build.gradle.internal.utils.KgpVersion
@@ -70,69 +67,7 @@ class KaptStubGenerationCreationAction(
     }
 
     override fun configureTask(task: KaptGenerateStubs) {
-
-        creationConfig.sources.kotlin {
-            task.source(it.getAsFileTrees())
-        }
-        creationConfig.sources.java {
-            task.source(it.getAsFileTrees())
-        }
-
-        val taskClasspath =
-            creationConfig.services.fileCollection().from(
-                creationConfig.global.bootClasspath,
-                creationConfig.getJavaClasspath(
-                    AndroidArtifacts.ConsumedConfigType.COMPILE_CLASSPATH,
-                    AndroidArtifacts.ArtifactType.CLASSES_JAR,
-                    null
-                ),
-            )
-        task.libraries.from(taskClasspath)
-
-        // try/catch because moduleName is deprecated and may be removed in the future
-        try {
-            @Suppress("DEPRECATION_ERROR") // TODO(b/435372615): Remove this suppression
-            task.moduleName.set(creationConfig.name)
-        } catch (e: Exception) {
-            // do nothing
-        }
-        // try/catch because ownModuleName was removed in KGP 2.0.0
-        // TODO(341765853) Remove this after MINIMUM_BUILT_IN_KOTLIN_VERSION is at least "2.0.0"
-        try {
-            val ownModuleNameSetter =
-                task::class.java.methods.find { it.name == "setOwnModuleName"}
-            ownModuleNameSetter?.invoke(task, creationConfig.name)
-        } catch (e: Exception) {
-            // do nothing
-        }
-        task.sourceSetName.set(creationConfig.name)
-        task.useModuleDetection.set(true)
-        task.multiPlatformEnabled.set(false)
-        task.pluginClasspath.from(kotlinJvmFactory.getCompilerPlugins())
+        task.configureKotlinJvmCompile(creationConfig)
         task.kaptClasspath.from(creationConfig.getAnnotationProcessorJars())
-
-        // TODO(b/259523353) - fix this
-        // task.pluginOptions.addAll(creationConfig.kotlinCompilerOptions!!)
-
-        // Add friendPaths to allow access to internal properties of main variant
-        if (creationConfig is NestedComponentCreationConfig) {
-            val mainVariant = creationConfig.mainVariant
-            val internalArtifactType =
-                PublishingSpecs.getVariantPublishingSpec(mainVariant.componentType)
-                    .getSpec(
-                        AndroidArtifacts.ArtifactType.CLASSES_JAR,
-                        AndroidArtifacts.ConsumedConfigType.COMPILE_CLASSPATH.publishedTo
-                    )
-                    ?.outputType
-            internalArtifactType?.let {
-                task.friendPaths.from(
-                    creationConfig.services.fileCollection(mainVariant.artifacts.get(it))
-                )
-            }
-        }
-
-        if (kotlinServices.kgpVersion < KgpVersion.KGP_2_1_0) {
-            task.applyCompilerOptions(kotlinServices.kotlinAndroidProjectExtension.compilerOptions)
-        }
     }
 }

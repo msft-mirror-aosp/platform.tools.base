@@ -16,58 +16,10 @@
 
 package com.android.build.api.dsl
 
-import org.gradle.api.Incubating
-
 /**
  * Options to build a [KotlinMultiplatformAndroidCompilation] object.
  */
 interface KotlinMultiplatformAndroidCompilationBuilder {
-    /**
-     * The name of the compilation object. The name can be used later to access the compilation
-     * object using
-     * ```
-     * kotlin {
-     *   android {
-     *     compilations.getByName("main") {
-     *       // configure compilation
-     *     }
-     *   }
-     * }
-     * ```
-     *
-     * @see [org.jetbrains.kotlin.gradle.plugin.KotlinCompilation]
-     */
-    @get:Incubating
-    @set:Incubating
-    @Deprecated(
-        "Changing the compilation name is discouraged." +
-                "This API will be removed in AGP 9.0"
-    ) // b/368600704
-    var compilationName: String
-
-    /**
-     * The name of the sourceSet that is used in the compilation as the default sourceSet to compile.
-     * The sourceSet created will be located at `$projectDir/src/$sourceSetName`.
-     *
-     * The sourceSet name can be used later to access the sourceSet object using
-     * ```
-     * kotlin {
-     *   sourceSets.getByName("androidMain") {
-     *     // configure sourceSet
-     *   }
-     * }
-     * ```
-     *
-     * @see [org.jetbrains.kotlin.gradle.plugin.KotlinSourceSet]
-     */
-    @get:Incubating
-    @set:Incubating
-    @Deprecated(
-        "Changing the name of the source set used as a default in a compilation is discouraged." +
-                "This API will be removed in AGP 9.0"
-    ) // b/368600704
-    var defaultSourceSetName: String
-
     /**
      * The name of the sourceSet tree that would be used to infer the dependencies between
      * sourceSets. For example, setting the sourceSetTreeName to `test` means that compilation will

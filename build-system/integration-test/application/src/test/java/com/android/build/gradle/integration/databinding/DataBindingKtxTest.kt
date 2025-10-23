@@ -70,6 +70,7 @@ class DataBindingKtxTest(
         GradleTestProject
             .builder()
             .fromTestApp(app)
+            .disableBuiltInKotlin()
             .create()
 
     @Test

@@ -333,10 +333,20 @@ abstract class CommonExtensionImpl<
         return ProguardFiles.getDefaultProguardFile(name, dslServices.buildDirectory)
     }
 
+    override var enableKotlin: Boolean = true
+
     override val experimentalProperties: MutableMap<String, Any> = mutableMapOf()
 
     fun flavorDimensions(vararg dimensions: String) {
         flavorDimensions.clear()
         flavorDimensions.addAll(dimensions)
+    }
+
+    //TODO(b/421964815): remove the support for groovy space assignment(e.g `compileSdk 24`).
+    @Deprecated(
+        "To be removed after Gradle drops space assignment support. Use `compileSdk {}` instead."
+    )
+    open fun compileSdk(version: Int) {
+        compileSdk = version
     }
 }

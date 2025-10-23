@@ -19,12 +19,15 @@ package com.android.build.gradle.integration.lint;
 import static com.android.testutils.truth.PathSubject.assertThat;
 
 import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor;
+import com.android.build.gradle.integration.common.fixture.GradleBuildResult;
 import com.android.build.gradle.integration.common.fixture.GradleTaskExecutor;
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.utils.TestFileUtils;
-import java.io.File;
+
 import org.junit.Rule;
 import org.junit.Test;
+
+import java.io.File;
 
 /**
  * Test for a custom jar in a library model, used by a consuming app.
@@ -38,11 +41,11 @@ public class LintCustomRuleTest {
             GradleTestProject.builder().fromTestProject("lintCustomRules").create();
 
     @Test
-    public void checkCustomLint() throws Exception {
+    public void checkCustomLint() {
         // Run twice to catch issues with configuration caching
         executor().expectFailure().run(":app:clean", ":app:lintDebug");
-        executor().expectFailure().run(":app:clean", ":app:lintDebug");
-        project.getBuildResult().assertConfigurationCacheHit();
+        GradleBuildResult result = executor().expectFailure().run(":app:clean", ":app:lintDebug");
+        result.assertConfigurationCacheHit();
         File file = new File(project.getSubproject("app").getProjectDir(), "lint-results.txt");
         assertThat(file).exists();
         assertThat(file).contentWithUnixLineSeparatorsIsExactly(expected);
@@ -58,6 +61,18 @@ public class LintCustomRuleTest {
         assertThat(file).contentWithUnixLineSeparatorsIsExactly(expected);
     }
 
+    @Test
+    public void checkCustomLintFromRuntimeAndCompileDependency() throws Exception {
+        TestFileUtils.searchAndReplace(
+                project.getSubproject(":app").getBuildFile(),
+                "implementation project(':library')",
+                "implementation project(':library')\ncompileOnly project(':library')");
+        executor().expectFailure().run(":app:clean", ":app:lintDebug");
+        File file = new File(project.getSubproject("app").getProjectDir(), "lint-results.txt");
+        assertThat(file).exists();
+        assertThat(file).contentWithUnixLineSeparatorsIsExactly(expected);
+    }
+
     private GradleTaskExecutor executor() {
         return project.executor().withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON);
     }
@@ -67,7 +82,8 @@ public class LintCustomRuleTest {
                     + File.separator
                     + "main"
                     + File.separator
-                    + "AndroidManifest.xml:10: Error: Should not specify <activity>. [UnitTestLintCheck from LintCustomRuleTest]\n"
+                    + "AndroidManifest.xml:10: Error: Should not specify <activity>."
+                    + " [UnitTestLintCheck from LintCustomRuleTest]\n"
                     + "        <activity android:name=\".MainActivity\">\n"
                     + "        ^\n"
                     + "\n"

@@ -46,6 +46,7 @@ class KaptTest() {
                                 ":lib-compiler", AnnotationProcessorLib.createCompiler()
                         )))
                 .withDependencyChecker(false)  // kotlin plugin is resolving kapt on configuration
+                .disableBuiltInKotlin()
                 .create()
     }
 

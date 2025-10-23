@@ -181,5 +181,6 @@ public class CheckAll {
                     "BasicRenderScript",
                     "navigation",
                     "compileRClasses",
-                    "kotlinApp");
+                    "kotlinApp",
+                    "sameNamedLibs");
 }

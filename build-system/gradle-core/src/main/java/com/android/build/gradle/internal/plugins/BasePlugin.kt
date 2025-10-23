@@ -810,10 +810,6 @@ To learn more, go to https://d.android.com/r/tools/java-8-support-message.html
             variant.oldVariantApiLegacySupport?.oldVariantApiCompleted()
         }
 
-        // lock the Properties of the variant API after the old API because
-        // of the versionCode/versionName properties that are shared between the old and new APIs.
-        variantManager.lockVariantProperties()
-
         // Make sure no SourceSets were added through the DSL without being properly configured
         variantInputModel.sourceSetManager.checkForUnconfiguredSourceSets()
 

@@ -98,7 +98,7 @@ import com.android.build.gradle.internal.services.getBuildService
 import com.android.build.gradle.internal.tasks.SigningConfigUtils.Companion.createSigningOverride
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfig
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfigImpl.Companion.toExecutionEnum
-import com.android.build.gradle.internal.testsuites.HasTestSuitesBuilder
+import com.android.build.api.variant.HasTestSuitesBuilder
 import com.android.build.gradle.internal.testsuites.TestSuiteSourceCreationConfig
 import com.android.build.gradle.internal.testsuites.impl.TestSuiteBuilderImpl
 import com.android.build.gradle.internal.testsuites.impl.TestSuiteDependenciesBuilder
@@ -771,7 +771,7 @@ class VariantManager<
                         dslExtension.buildFeatures,
                         dslExtension.dataBinding,
                         projectServices,
-                        globalTaskCreationConfig.unitTestOptions.isIncludeAndroidResources,
+                        (testBuilder as HostTestBuilderImpl).includeAndroidResources,
                         ComponentTypeImpl.UNIT_TEST
                     ),
                     testComponentDslInfo as HostTestComponentDslInfo,
@@ -1178,6 +1178,10 @@ class VariantManager<
         finalizeAllComponents(
             variants.map { it.variant } + testComponents + testFixturesComponents
         )
+
+        // lock the Properties of the variant API after the old API because
+        // of the versionCode/versionName properties that are shared between the old and new APIs.
+        lockVariantProperties()
     }
 
     init {

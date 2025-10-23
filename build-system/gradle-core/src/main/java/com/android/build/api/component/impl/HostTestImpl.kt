@@ -94,6 +94,8 @@ abstract class HostTestImpl @Inject constructor(
     final override val builtInKotlinSupportMode: BuiltInKotlinSupportMode
     final override val builtInKaptSupportMode: BuiltInKaptSupportMode
 
+    override val androidResourcesIncluded: Boolean = hostTestBuilder.includeAndroidResources
+
     // ---------------------------------------------------------------------------------------------
     // INTERNAL API
     // ---------------------------------------------------------------------------------------------
@@ -205,6 +207,7 @@ abstract class HostTestImpl @Inject constructor(
                     val support = super.builtInKotlinSupportMode
                     if (support is BuiltInKotlinSupportMode.NotSupported
                         && internalServices.projectInfo.hasPlugin(KOTLIN_ANDROID_PLUGIN_ID)
+                        && dslInfo.enableKotlin
                     ) {
                         BuiltInKotlinSupportMode.Supported.ScreenshotTestAndKgpApplied
                     } else {

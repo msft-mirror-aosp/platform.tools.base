@@ -32,6 +32,7 @@ interface ApplicationVariant : GeneratesApk,
     HasHostTests,
     HasUnitTest,
     HasTestFixtures,
+    HasTestSuites,
     CanMinifyCode,
     CanMinifyAndroidResources {
 

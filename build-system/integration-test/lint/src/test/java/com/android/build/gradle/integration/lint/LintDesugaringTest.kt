@@ -26,6 +26,7 @@ class LintDesugaringTest {
     @get:Rule
     val project = builder()
         .fromTestProject("lintDesugaring")
+        .disableBuiltInKotlin()
         .create()
 
     @Test

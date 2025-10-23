@@ -29,6 +29,7 @@ class LintConfigurationOverrideTest {
     val project: GradleTestProject =
             GradleTestProject.builder()
                     .fromTestApp(KotlinHelloWorldApp.forPlugin("com.android.application"))
+                    .disableBuiltInKotlin()
                     .create()
 
     @get:Rule

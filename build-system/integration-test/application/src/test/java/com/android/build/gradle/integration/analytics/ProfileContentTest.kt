@@ -24,6 +24,7 @@ import com.android.build.gradle.integration.common.fixture.ProfileCapturer
 import com.android.build.gradle.integration.common.fixture.app.KotlinHelloWorldApp
 import com.android.Version
 import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
+import com.android.build.gradle.integration.common.utils.disableBuiltInKotlin
 import com.android.testutils.TestUtils
 import com.google.common.collect.Iterables
 import com.google.wireless.android.sdk.stats.GradleBuildProject
@@ -43,6 +44,7 @@ class ProfileContentTest {
     var project = GradleTestProject.builder()
             .fromTestApp(KotlinHelloWorldApp.forPlugin("com.android.application"))
             .enableProfileOutput()
+            .disableBuiltInKotlin()
             .create()
 
     @Test

@@ -24,6 +24,7 @@ import com.android.build.gradle.integration.common.fixture.project.builder.Andro
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
 import com.android.build.gradle.integration.common.truth.TruthHelper
 import com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
+import com.android.build.gradle.integration.common.utils.disableBuiltInKotlin
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.options.IntegerOption
@@ -51,6 +52,7 @@ class R8TaskTest {
             }
             files.add("proguard-rules.pro", "")
         }
+        disableBuiltInKotlin()
     }
 
     @Test
@@ -264,11 +266,11 @@ class R8TaskTest {
         }
 
         val result = build.executor
-            .withArgument("-Dcom.android.tools.r8.experimental.enablewhyareyounotinlining=invalid_value")
+            .withArgument("-Dcom.android.tools.r8.desugar.minimizeSyntheticNames=invalid_value")
             .expectFailure()
             .run(":app:minifyReleaseWithR8")
         TruthHelper.assertThat(result.failureMessage).contains(
-            "Expected value of com.android.tools.r8.experimental.enablewhyareyounotinlining to be a boolean, but was: invalid_value"
+            "Expected value of com.android.tools.r8.desugar.minimizeSyntheticNames to be a boolean, but was: invalid_value"
         )
     }
 }

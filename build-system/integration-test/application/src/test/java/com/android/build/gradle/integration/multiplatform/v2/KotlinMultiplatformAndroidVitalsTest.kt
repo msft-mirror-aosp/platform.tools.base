@@ -19,6 +19,7 @@ package com.android.build.gradle.integration.multiplatform.v2
 import com.android.SdkConstants.MAX_SUPPORTED_ANDROID_PLATFORM_VERSION
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
+import com.android.build.gradle.integration.common.utils.disableBuiltInKotlin
 import com.android.build.gradle.internal.plugins.KotlinMultiplatformAndroidPlugin.Companion.ANDROID_EXTENSION_ON_KOTLIN_EXTENSION_NAME
 import org.junit.Rule
 import org.junit.Test
@@ -28,6 +29,7 @@ class KotlinMultiplatformAndroidVitalsTest {
     @get:Rule
     val rule = GradleRule.from {
         androidKotlinMultiplatformLibrary(":shared") { }
+        disableBuiltInKotlin()
     }
 
     @Test

@@ -17,6 +17,7 @@
 package com.android.build.gradle.integration.lint
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
+import com.android.build.gradle.integration.common.utils.disableBuiltInKotlin
 import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.truth.PathSubject.assertThat
 import org.junit.Rule
@@ -36,6 +37,7 @@ class LintNoJavaClassesTest {
     val project: GradleTestProject =
         GradleTestProject.builder()
             .fromTestProject("lintNoJavaClasses")
+            .disableBuiltInKotlin()
             .create()
 
     @Test

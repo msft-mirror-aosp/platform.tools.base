@@ -120,6 +120,7 @@ def studio_linux(build_env: bazel.BuildEnv) -> None:
       build_env,
       test_tag_filters=test_tag_filters,
   )
+  flags.append('--bes_keywords=cinder')
 
   targets = _BASE_TARGETS
 
@@ -127,6 +128,7 @@ def studio_linux(build_env: bazel.BuildEnv) -> None:
   if build_type == studio.BuildType.POSTSUBMIT:
     impacted_targets.generate_and_upload_hash_file(build_env)
     targets += _EXTRA_TARGETS
+    flags.append('--build_metadata=cinder_pipelines=component-owners')
 
   if build_type == studio.BuildType.PRESUBMIT:
     result = presubmit.find_test_targets(
@@ -193,6 +195,7 @@ def studio_linux_k2(build_env: bazel.BuildEnv) -> None:
   flags.extend([
       '--bes_keywords=k1',
       '--jvmopt=-Didea.kotlin.plugin.use.k2=false',
+      "--jvmopt=-Dlint.use.fir.uast=false",
   ])
   result = studio.run_tests(build_env, flags, _BASE_TARGETS)
   copy_agp_supported_versions(build_env)

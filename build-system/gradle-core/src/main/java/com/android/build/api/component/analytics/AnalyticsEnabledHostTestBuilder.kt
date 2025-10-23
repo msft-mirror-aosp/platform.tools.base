@@ -43,4 +43,12 @@ open class AnalyticsEnabledHostTestBuilder(
                 VariantMethodType.HOST_TEST_ENABLE_CODE_COVERAGE_VALUE
             delegate.enableCodeCoverage = value
         }
+
+    override var includeAndroidResources: Boolean
+        get() = throw PropertyAccessNotAllowedException("isIncludeAndroidResources", "HostTestBuilder")
+        set(value) {
+            stats.variantApiAccessBuilder.addVariantAccessBuilder().type =
+                VariantMethodType.TEST_SUITE_INCLUDE_ANDROID_RESOURCES_VALUE
+            delegate.includeAndroidResources = value
+        }
 }

@@ -23,7 +23,7 @@ def lint_test(name, useK2):
             "-Dtest.suite.jar=" + name + ".jar",
             # TODO: Inject the cache directory into tests.
             "-Duser.home=/tmp",
-        ] + (["-Dlint.use.fir.uast=true"] if useK2 else []),
+        ] + ([] if useK2 else ["-Dlint.use.fir.uast=false"]),
         lint_baseline = "lint_baseline.xml",
         resources = native.glob(["src/test/resources/**"]),
         shard_count = 6,

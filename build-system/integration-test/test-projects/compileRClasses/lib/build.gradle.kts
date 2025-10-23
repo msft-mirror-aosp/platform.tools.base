@@ -2,7 +2,7 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
   id("com.android.library")
-  id("com.android.experimental.built-in-kotlin")
+  id("com.android.built-in-kotlin")
 }
 
 android {

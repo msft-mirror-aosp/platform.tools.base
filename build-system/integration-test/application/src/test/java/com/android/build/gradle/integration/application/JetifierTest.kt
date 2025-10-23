@@ -53,6 +53,7 @@ class JetifierTest(private val withKotlin: Boolean) {
     val project = GradleTestProject.builder()
         .fromTestProject("jetifier")
         .withKotlinGradlePlugin(withKotlin)
+        .disableBuiltInKotlin()
         .create()
 
     @Before

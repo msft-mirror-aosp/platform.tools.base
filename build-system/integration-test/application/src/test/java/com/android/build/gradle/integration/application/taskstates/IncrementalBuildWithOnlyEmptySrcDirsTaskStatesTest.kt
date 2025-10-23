@@ -132,6 +132,7 @@ class IncrementalBuildWithOnlyEmptySrcDirsTaskStatesTest {
     var project =
         EmptyActivityProjectBuilder()
             .addAndroidLibrary(subprojectName = "lib", addImplementationDependencyFromApp = true)
+            .disableBuiltInKotlin()
             .build()
 
     @Before

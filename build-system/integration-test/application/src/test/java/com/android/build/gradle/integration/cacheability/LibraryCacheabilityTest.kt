@@ -25,7 +25,6 @@ import com.android.build.gradle.integration.common.truth.TaskStateList.Execution
 import com.android.build.gradle.integration.common.truth.TaskStateList.ExecutionState.UP_TO_DATE
 import com.android.build.gradle.integration.common.utils.CacheabilityTestHelper
 import com.android.build.gradle.integration.common.utils.TestFileUtils
-import com.android.build.gradle.options.BooleanOption
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -116,6 +115,7 @@ class LibraryCacheabilityTest {
             .fromTestApp(HelloWorldLibraryApp())
             .withName(projectName)
             .dontOutputLogOnFailure()
+            .disableBuiltInKotlin()
             .create()
     }
 

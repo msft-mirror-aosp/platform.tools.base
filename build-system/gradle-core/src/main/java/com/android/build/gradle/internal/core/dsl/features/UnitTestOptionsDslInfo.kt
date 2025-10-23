@@ -23,7 +23,6 @@ import org.gradle.api.tasks.testing.Test
  * build type, flavors) that are needed by components that configure and run unit tests
  */
 interface UnitTestOptionsDslInfo: TestOptionsDslInfo {
-    val isIncludeAndroidResources: Boolean
     val isReturnDefaultValues: Boolean
     fun applyConfiguration(task: Test)
 }

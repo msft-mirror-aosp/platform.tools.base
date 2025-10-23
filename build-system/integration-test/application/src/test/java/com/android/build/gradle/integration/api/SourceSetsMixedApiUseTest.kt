@@ -19,6 +19,7 @@ package com.android.build.gradle.integration.api
 import com.android.build.gradle.integration.common.fixture.project.ApkSelector
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.plugins.LegacyApplicationCallback
+import com.android.build.gradle.integration.common.utils.disableBuiltInKotlin
 import com.android.build.gradle.internal.dsl.BaseAppModuleExtension
 import com.android.build.gradle.options.BooleanOption
 import org.gradle.api.DefaultTask
@@ -49,6 +50,7 @@ class SourceSetsMixedApiUseTest {
             }
             pluginCallbacks += MyCallback::class.java
         }
+        disableBuiltInKotlin()
     }
 
     class MyCallback: LegacyApplicationCallback {

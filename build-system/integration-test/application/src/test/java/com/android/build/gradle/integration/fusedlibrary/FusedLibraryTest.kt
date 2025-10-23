@@ -22,6 +22,7 @@ import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.plugins.GenericCallback
 import com.android.build.gradle.integration.common.output.JarSubject
 import com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
+import com.android.build.gradle.integration.common.utils.disableBuiltInKotlin
 import com.android.build.gradle.integration.fusedlibrary.FusedLibraryTestConstants.FUSED_LIBRARY_ARTIFACT_NAME
 import com.android.build.gradle.integration.fusedlibrary.FusedLibraryTestConstants.FUSED_LIBRARY_GROUP
 import com.android.build.gradle.integration.fusedlibrary.FusedLibraryTestConstants.FUSED_LIBRARY_REPO_NAME
@@ -150,6 +151,7 @@ class FusedLibraryTest {
             gradleProperties {
                 add(BooleanOption.FUSED_LIBRARY_SUPPORT, true)
             }
+            disableBuiltInKotlin()
         }
 
     @Test

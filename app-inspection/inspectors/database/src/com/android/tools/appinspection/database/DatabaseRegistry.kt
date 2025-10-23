@@ -55,6 +55,7 @@ internal class DatabaseRegistry(
   // True if keep-database-connection-open functionality is enabled.
   private var keepDatabasesOpen = false
   private var forceOpen = false
+  private var ignoreFrameworkApi = false
 
   private val lock = Any()
 
@@ -157,9 +158,10 @@ internal class DatabaseRegistry(
         isForceOpenInProgress = true
         try {
           val db = FrameworkDatabase(SQLiteDatabase.openDatabase(path, null, OPEN_READWRITE))
-          if (testMode) {
+          if (testMode || ignoreFrameworkApi) {
             // During tests, ART Tooling hooks are not activated so this, so we need to trigger it
             // manually.
+            // If ignoreFrameworkApi is set, we have to notify manually as well.
             notifyDatabaseOpened(db)
           }
         } finally {
@@ -213,6 +215,10 @@ internal class DatabaseRegistry(
 
   fun enableForceOpen() {
     forceOpen = true
+  }
+
+  fun ignoreFrameworkApi() {
+    ignoreFrameworkApi = true
   }
 
   @VisibleForTesting fun getDatabases(id: Int): Set<Database> = databases.getValue(id)

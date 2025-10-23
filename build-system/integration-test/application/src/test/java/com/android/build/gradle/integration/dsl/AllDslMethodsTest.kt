@@ -23,9 +23,9 @@ import com.android.build.api.dsl.BaselineProfile
 import com.android.build.api.dsl.CompileSdkSpec
 import com.android.build.api.dsl.CompileSdkVersion
 import com.android.build.api.dsl.DefaultConfig
-import com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryExtension
 import com.android.build.api.dsl.KotlinMultiplatformAndroidDeviceTest
 import com.android.build.api.dsl.KotlinMultiplatformAndroidHostTest
+import com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryExtension
 import com.android.build.api.dsl.LibraryBuildType
 import com.android.build.api.dsl.LibraryDefaultConfig
 import com.android.build.api.dsl.LibraryExtension
@@ -50,8 +50,8 @@ import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.plugins.ExtensionContainer
 import org.gradle.api.provider.ListProperty
-import org.gradle.api.provider.SetProperty
 import org.gradle.api.provider.MapProperty
+import org.gradle.api.provider.SetProperty
 import org.gradle.process.CommandLineArgumentProvider
 import org.junit.Before
 import org.junit.Rule
@@ -114,6 +114,7 @@ class AllDslMethodsTest(
             MultiModuleTestProject.builder().build()
         )
         .withKotlinGradlePlugin(true)
+        .disableBuiltInKotlin()
         .create()
 
     @Before

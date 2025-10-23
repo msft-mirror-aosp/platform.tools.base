@@ -23,6 +23,7 @@ import com.android.build.gradle.integration.common.fixture.GradleTaskExecutor
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
+import com.android.build.gradle.integration.common.utils.disableBuiltInKotlin
 import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.truth.PathSubject.assertThat
 import com.android.tools.utp.plugins.host.device.info.proto.AndroidTestDeviceInfoProto.AndroidTestDeviceInfo
@@ -328,6 +329,8 @@ abstract class UtpTestBase(val runWithBuiltInPlatform: Boolean) {
                 add(BooleanOption.USE_ANDROID_X, true)
                 add(BooleanOption.ANDROID_BUILTIN_TEST_PLATFORM, runWithBuiltInPlatform)
             }
+
+            disableBuiltInKotlin()
         }
     }
 
@@ -338,6 +341,7 @@ abstract class UtpTestBase(val runWithBuiltInPlatform: Boolean) {
         get() = rule.build.executor
             .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
             .withEnableInfoLogging(false)
+            .disableBuiltInKotlin()
             .configureGradleTaskExecutor()
 
     open fun GradleTaskExecutor.configureGradleTaskExecutor(): GradleTaskExecutor {

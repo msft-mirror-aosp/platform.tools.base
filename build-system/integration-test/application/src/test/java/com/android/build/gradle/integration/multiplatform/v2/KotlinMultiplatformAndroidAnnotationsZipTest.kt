@@ -16,7 +16,6 @@
 
 package com.android.build.gradle.integration.multiplatform.v2
 
-import com.android.SdkConstants
 import com.android.build.gradle.integration.common.fixture.GradleTestProjectBuilder
 import com.android.build.gradle.integration.common.fixture.project.AarSelector
 import com.android.build.gradle.integration.common.utils.TestFileUtils
@@ -31,6 +30,7 @@ class KotlinMultiplatformAndroidAnnotationsZipTest {
     @get:Rule
     val project = GradleTestProjectBuilder()
         .fromTestProject("kotlinMultiplatform")
+        .disableBuiltInKotlin()
         .create()
 
     @Before

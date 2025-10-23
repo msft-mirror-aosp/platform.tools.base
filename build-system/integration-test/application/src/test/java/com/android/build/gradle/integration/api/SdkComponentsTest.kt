@@ -18,6 +18,7 @@ package com.android.build.gradle.integration.api
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldAppKts
+import com.android.build.gradle.integration.common.utils.disableBuiltInKotlin
 import com.google.common.truth.Truth
 import org.junit.Rule
 import org.junit.Test
@@ -27,6 +28,7 @@ class SdkComponentsTest {
     val project =
         GradleTestProject.builder()
             .fromTestApp(HelloWorldAppKts.forPlugin("com.android.application"))
+            .disableBuiltInKotlin()
             .create()
 
     /**

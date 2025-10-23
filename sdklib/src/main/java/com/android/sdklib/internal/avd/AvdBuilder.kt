@@ -22,6 +22,7 @@ import com.android.sdklib.devices.Device
 import com.android.sdklib.devices.DeviceManager
 import com.android.sdklib.devices.Storage
 import java.nio.file.Path
+import kotlin.io.path.extension
 import kotlin.io.path.name
 
 /**
@@ -69,6 +70,13 @@ class AvdBuilder(var metadataIniPath: Path, avdFolder: Path, var device: Device)
 
   var sdCard: SdCard? = null
   var skin: Skin? = null
+  /**
+   * An image or video to be used as the background environment of an XR device. If this is a
+   * fully-constructed AVD, this should be a relative path, which is interpreted relative to
+   * [avdFolder]. If it is an AVD in the process of being created, this should be an absolute path;
+   * it will be copied to the AVD directory upon creation.
+   */
+  var background: Path? = null
 
   var showDeviceFrame = true
   var screenOrientation: ScreenOrientation = ScreenOrientation.PORTRAIT
@@ -122,6 +130,24 @@ class AvdBuilder(var metadataIniPath: Path, avdFolder: Path, var device: Device)
     properties.putAll(bootMode.properties())
     binding.write(this, properties)
     return properties
+  }
+
+  fun environment(): Map<String, String> {
+    val environment = mutableMapOf<String, String>()
+    when (background?.extension?.lowercase()) {
+      in setOf("png") -> environment[EnvironmentKey.IMAGE] = background.toString()
+      in setOf("mov", "mp4") -> environment[EnvironmentKey.VIDEO] = background.toString()
+    }
+    return environment
+  }
+
+  private fun backgroundFromConfig(environment: Map<String, String>): Path? {
+    for (key in listOf(EnvironmentKey.IMAGE, EnvironmentKey.VIDEO)) {
+      environment[key]?.let {
+        return avdFolder.relativize(avdFolder.resolve(it))
+      }
+    }
+    return null
   }
 
   /**
@@ -180,6 +206,7 @@ class AvdBuilder(var metadataIniPath: Path, avdFolder: Path, var device: Device)
 
         sdCard = sdCardFromConfig(avdInfo.properties)
         skin = skinFromConfig(avdInfo.properties)
+        background = backgroundFromConfig(avdInfo.environment)
 
         bootMode = BootMode.fromProperties(avdInfo.properties)
         binding.read(this, avdInfo.properties)

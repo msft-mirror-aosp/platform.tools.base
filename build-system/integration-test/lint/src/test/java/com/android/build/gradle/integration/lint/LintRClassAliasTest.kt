@@ -20,6 +20,7 @@ import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.MinimalSubProject
 import com.android.build.gradle.integration.common.fixture.app.MultiModuleTestProject
 import com.android.build.gradle.integration.common.utils.TestFileUtils
+import com.android.build.gradle.integration.common.utils.disableBuiltInKotlin
 import com.android.testutils.truth.PathSubject.assertThat
 import com.android.tools.build.gradle.internal.profile.BooleanOption
 import org.junit.Before
@@ -89,6 +90,7 @@ class LintRClassAliasTest {
                     .dependency(lib1, lib2)
                     .build()
             )
+            .disableBuiltInKotlin()
             .create()
 
     @Before

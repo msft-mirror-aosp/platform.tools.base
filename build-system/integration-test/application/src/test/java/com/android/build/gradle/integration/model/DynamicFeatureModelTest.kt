@@ -24,6 +24,7 @@ import com.android.build.gradle.integration.common.fixture.project.builder.Andro
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_LIB_PATH
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition.Companion.DEFAULT_COMPILE_SDK_VERSION
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
+import com.android.build.gradle.integration.common.utils.disableBuiltInKotlin
 import com.android.builder.model.v2.ide.SyncIssue
 import com.google.common.truth.Truth
 import org.junit.Rule
@@ -42,6 +43,7 @@ class HelloWorldDynamicFeatureModelTest : ModelComparator() {
                 implementation(project(DEFAULT_APP_PATH))
             }
         }
+        disableBuiltInKotlin()
     }
 
     @Test
@@ -97,6 +99,7 @@ class HelloWorldWithLibDynamicFeatureModelTest : ModelComparator() {
             }
         }
         androidLibrary { }
+        disableBuiltInKotlin()
     }
 
     @Test

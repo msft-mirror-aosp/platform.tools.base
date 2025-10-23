@@ -19,8 +19,6 @@ import com.android.build.api.variant.HostTestBuilder
 import com.android.build.api.variant.PropertyAccessNotAllowedException
 import com.android.build.gradle.internal.core.dsl.ComponentDslInfo
 import com.android.build.gradle.internal.dsl.ModulePropertyKey
-import com.android.build.gradle.internal.services.VariantBuilderServices
-import com.android.build.gradle.options.BooleanOption
 import com.android.builder.core.ComponentType
 import com.android.builder.core.ComponentTypeImpl
 
@@ -28,7 +26,8 @@ open class HostTestBuilderImpl(
     override var enable: Boolean,
     override var type: String,
     val componentType: ComponentType,
-    internal var _enableCodeCoverage: Boolean
+    internal var _enableCodeCoverage: Boolean,
+    override var includeAndroidResources: Boolean
 ) : HostTestBuilder {
 
     override var enableCodeCoverage: Boolean
@@ -40,11 +39,13 @@ open class HostTestBuilderImpl(
     companion object {
         private fun forUnitTest(
             enableCodeCoverage: Boolean,
+            includeAndroidResources: Boolean,
         ): HostTestBuilderImpl = HostTestBuilderImpl(
             enable = true,
             type = HostTestBuilder.UNIT_TEST_TYPE,
             componentType = ComponentTypeImpl.UNIT_TEST,
             _enableCodeCoverage = enableCodeCoverage,
+            includeAndroidResources = includeAndroidResources,
         )
 
         private fun forScreenshotTest(
@@ -55,6 +56,7 @@ open class HostTestBuilderImpl(
             HostTestBuilder.SCREENSHOT_TEST_TYPE,
             ComponentTypeImpl.SCREENSHOT_TEST,
             enableCodeCoverage,
+            includeAndroidResources = false,
         )
 
         /**
@@ -72,6 +74,7 @@ open class HostTestBuilderImpl(
                         HostTestBuilder.UNIT_TEST_TYPE ->
                             forUnitTest(
                                 it.codeCoverageEnabled,
+                                it.isIncludeAndroidResources,
                             )
 
                         HostTestBuilder.SCREENSHOT_TEST_TYPE ->

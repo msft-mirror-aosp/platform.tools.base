@@ -61,6 +61,7 @@ class BuiltInKaptForTestFixturesTest(private val kotlinVersion: String) {
             )
         ).withKotlinGradlePlugin(true)
             .withBuiltInKotlinSupport(kotlinVersion == TestUtils.KOTLIN_VERSION_FOR_TESTS)
+            .disableBuiltInKotlin()
             .create()
 
     @Before
