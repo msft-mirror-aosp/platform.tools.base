@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.integration.fusedlibrary
 
+import com.android.build.gradle.integration.common.fixture.DESUGAR_DEPENDENCY_VERSION
 import com.android.build.gradle.integration.common.fixture.project.AarSelector
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.JavaLibraryProjectDefinition
@@ -51,15 +52,22 @@ internal class FusedLibraryMergeArtifactsTest {
                     minSdk = 12
                     renderscriptTargetApi = 18
                     renderscriptSupportModeEnabled = true
+                    multiDexEnabled = true
                     aarMetadata {
                         minCompileSdk = 12
                         minAgpVersion = "3.0.0"
                         minCompileSdkExtension = 2
                     }
                 }
+                compileOptions {
+                    isCoreLibraryDesugaringEnabled = true
+                }
                 buildFeatures {
                     renderScript = true
                 }
+            }
+            dependencies {
+                coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:$DESUGAR_DEPENDENCY_VERSION")
             }
             files {
                 add("src/main/assets/android_lib_one_asset.txt", "androidLib1")
@@ -323,6 +331,11 @@ internal class FusedLibraryMergeArtifactsTest {
                 minCompileSdk().isEqualTo("18")
                 // Value not specified androidLib3, so default is used.
                 minCompileSdkExtension().isEqualTo("0")
+
+                // Value from androidLib1
+                coreLibraryDesugaringEnabled().isEqualTo("true")
+                // desugarJdkLib is not yet used by consumption
+                desugarJdkLibId().isEqualTo(null)
             }
         }
 

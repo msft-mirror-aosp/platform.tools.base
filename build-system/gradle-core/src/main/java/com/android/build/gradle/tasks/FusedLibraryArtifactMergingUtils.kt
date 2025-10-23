@@ -39,7 +39,11 @@ internal fun writeMergedMetadata(
         var minCompileSdk: Int = DEFAULT_MIN_COMPILE_SDK_VERSION
         var minCompileSdkExtension: Int = DEFAULT_MIN_COMPILE_SDK_EXTENSION
         var minAgpVersion: String = DEFAULT_MIN_AGP_VERSION
+        var forceCompileSdkPreview: String? = null
+        var coreLibraryDesugaringEnabled: Boolean = false
+        var desugarJdkLib: String? = null
     }
+
     for (metadataFile in parsedAarsMetadata) {
         val minCompileSdk = metadataFile.minCompileSdk?.toInt() ?: DEFAULT_MIN_COMPILE_SDK_VERSION
         val minSdkExtension =
@@ -65,6 +69,11 @@ internal fun writeMergedMetadata(
             } else {
                 mergedMetadata.minAgpVersion
             }
+
+        mergedMetadata.forceCompileSdkPreview = metadataFile.forceCompileSdkPreview ?: mergedMetadata.forceCompileSdkPreview
+
+        mergedMetadata.coreLibraryDesugaringEnabled = mergedMetadata.coreLibraryDesugaringEnabled.or(
+            metadataFile.coreLibraryDesugaringEnabled?.toBooleanStrictOrNull() ?: mergedMetadata.coreLibraryDesugaringEnabled)
     }
 
     overrideMinAgp?.let {
@@ -77,11 +86,14 @@ internal fun writeMergedMetadata(
     }
 
     writeAarMetadataFile(
-            outputFile,
-            aarFormatVersion = AarMetadataTask.AAR_FORMAT_VERSION,
-            aarMetadataVersion = AarMetadataTask.AAR_METADATA_VERSION,
-            minCompileSdk = mergedMetadata.minCompileSdk,
-            minAgpVersion = mergedMetadata.minAgpVersion,
-            minCompileSdkExtension = mergedMetadata.minCompileSdkExtension
+        outputFile,
+        AarMetadataTask.AAR_FORMAT_VERSION,
+        AarMetadataTask.AAR_METADATA_VERSION,
+        mergedMetadata.minCompileSdk,
+        mergedMetadata.minCompileSdkExtension,
+        mergedMetadata.minAgpVersion,
+        mergedMetadata.forceCompileSdkPreview,
+         mergedMetadata.coreLibraryDesugaringEnabled,
+        mergedMetadata.desugarJdkLib
     )
 }
