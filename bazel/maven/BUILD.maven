@@ -74681,24 +74681,21 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.gradle.toolchains.foojay-resolver-convention.org.gradle.toolchains.foojay-resolver-convention.gradle.plugin_0.8.0",
-    pom = "repository/org/gradle/toolchains/foojay-resolver-convention/org.gradle.toolchains.foojay-resolver-convention.gradle.plugin/0.8.0/org.gradle.toolchains.foojay-resolver-convention.gradle.plugin-0.8.0.pom",
+    name = "org.gradle.toolchains.foojay-resolver-convention.org.gradle.toolchains.foojay-resolver-convention.gradle.plugin_1.0.0",
+    pom = "repository/org/gradle/toolchains/foojay-resolver-convention/org.gradle.toolchains.foojay-resolver-convention.gradle.plugin/1.0.0/org.gradle.toolchains.foojay-resolver-convention.gradle.plugin-1.0.0.pom",
     repo_root_path = "repository",
-    repo_path = "org/gradle/toolchains/foojay-resolver-convention/org.gradle.toolchains.foojay-resolver-convention.gradle.plugin/0.8.0",
+    repo_path = "org/gradle/toolchains/foojay-resolver-convention/org.gradle.toolchains.foojay-resolver-convention.gradle.plugin/1.0.0",
     deps = [
-        "org.gradle.toolchains.foojay-resolver_0.8.0",
+        "org.gradle.toolchains.foojay-resolver_1.0.0",
     ],
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
-    name = "org.gradle.toolchains.foojay-resolver_0.8.0",
-    pom = "repository/org/gradle/toolchains/foojay-resolver/0.8.0/foojay-resolver-0.8.0.pom",
+    name = "org.gradle.toolchains.foojay-resolver_1.0.0",
+    pom = "repository/org/gradle/toolchains/foojay-resolver/1.0.0/foojay-resolver-1.0.0.pom",
     repo_root_path = "repository",
-    repo_path = "org/gradle/toolchains/foojay-resolver/0.8.0",
-    deps = [
-        "com.google.code.gson.gson_2.10.1",
-    ],
+    repo_path = "org/gradle/toolchains/foojay-resolver/1.0.0",
     visibility = ["//visibility:public"],
 )
 
