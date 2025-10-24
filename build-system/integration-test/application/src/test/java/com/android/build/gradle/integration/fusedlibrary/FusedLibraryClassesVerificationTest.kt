@@ -23,7 +23,6 @@ import com.android.build.gradle.integration.common.fixture.project.GradleBuild
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
 import com.android.build.gradle.integration.common.truth.TruthHelper
-import com.android.build.gradle.integration.common.utils.disableBuiltInKotlin
 import com.android.build.gradle.internal.dsl.ModulePropertyKey
 import com.android.build.gradle.internal.fusedlibrary.FusedLibraryInternalArtifactType
 import com.android.build.gradle.options.BooleanOption
@@ -273,7 +272,6 @@ class FusedLibraryClassesVerificationTest(private val publicationOnlyMode: Boole
                 add(BooleanOption.FUSED_LIBRARY_PUBLICATION_ONLY_MODE, publicationOnlyMode)
                 add(BooleanOption.USE_ANDROID_X, true)
             }
-            disableBuiltInKotlin()
         }
 
     @Test
@@ -578,7 +576,9 @@ class FusedLibraryClassesVerificationTest(private val publicationOnlyMode: Boole
             include = listOf("project :lib"),
             dependencies = listOf(
                 "project.:my-platform:unspecified",
-                "com.externaldep.externalaar:externalaar:1.0",
+                "com.externaldep.externalaar:externalaar:<version>",
+                "org.jetbrains.kotlin:kotlin-stdlib:<version>",
+                "org.jetbrains:annotations:<version>"
             )
         )
 
@@ -590,6 +590,8 @@ class FusedLibraryClassesVerificationTest(private val publicationOnlyMode: Boole
             listOf(
                 "project.:my-platform:unspecified scope:runtime",
                 "com.externaldep.externalaar:externalaar:1.0 scope:runtime",
+                "org.jetbrains.kotlin:kotlin-stdlib:2.2.10 scope:runtime",
+                "org.jetbrains:annotations:13.0 scope:runtime"
             )
         )
     }

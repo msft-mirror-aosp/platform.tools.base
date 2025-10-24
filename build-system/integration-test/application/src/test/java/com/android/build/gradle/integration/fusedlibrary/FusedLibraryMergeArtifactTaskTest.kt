@@ -17,6 +17,7 @@
 package com.android.build.gradle.integration.fusedlibrary
 
 import com.android.build.gradle.integration.common.fixture.DESUGAR_DEPENDENCY_VERSION
+import com.android.SdkConstants.FN_PROGUARD_TXT
 import com.android.build.gradle.integration.common.fixture.project.AarSelector
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.JavaLibraryProjectDefinition
@@ -62,6 +63,11 @@ internal class FusedLibraryMergeArtifactsTest {
                 compileOptions {
                     isCoreLibraryDesugaringEnabled = true
                 }
+                buildTypes {
+                    named("release") {
+                        it.consumerProguardFiles("proguard-rules.pro")
+                    }
+                }
                 buildFeatures {
                     renderScript = true
                 }
@@ -90,6 +96,13 @@ internal class FusedLibraryMergeArtifactsTest {
                         }
                     """.trimIndent()
                 )
+                add(
+                    "proguard-rules.pro",
+                    """
+                        |# androidLib1
+                        |-dontwarn some.clazz.that.doesnt.Exist
+                """.trimMargin()
+                )
             }
             }
         // Library dependency at depth 0 with a dependency on androidLib1.
@@ -98,11 +111,37 @@ internal class FusedLibraryMergeArtifactsTest {
                 namespace = "com.example.androidLib2"
                 defaultConfig.minSdk = 19
                 defaultConfig.aarMetadata.minCompileSdk = 18
+                buildTypes {
+                    named("release") {
+                        it.consumerProguardFiles("proguard-rules.pro")
+                    }
+                }
             }
             dependencies {
                 implementation(project(":androidLib1"))
             }
             files.add("src/main/assets/android_lib_two_asset.txt", "androidLib2")
+            files.add(
+                "src/main/java/com/example/androidlib2/UnusedClass.java",
+                // language=java
+                """
+                package com.example.androidlib2;
+
+                public class UnusedClass {
+
+                    public UnusedClass() {}
+
+                    public void unusedMethod() {}
+                }
+            """.trimIndent()
+            )
+            files.add(
+                "proguard-rules.pro",
+                """
+                        |# androidLib2
+                        |-keep class com.example.androidlib2.UnusedClass { *; }
+                """.trimMargin()
+            )
         }
         // Library dependency at depth 0 with no dependencies
         androidLibrary(":androidLib3") {
@@ -486,5 +525,25 @@ internal class FusedLibraryMergeArtifactsTest {
         }
         build.executor.expectFailure().run(":fusedLib1:assemble")
             .assertErrorContains("META-INF/MANIFEST.MF is present in multiple jars")
+    }
+
+    @Test
+    fun checkConsumerProguardRulesMerging() {
+        val build = rule.build
+        build.executor.run(":fusedLib1:assemble")
+        build.fusedLibrary(":fusedLib1").assertAar(
+            AarSelector.NO_BUILD_TYPE
+        ) {
+            contains(FN_PROGUARD_TXT)
+            textFile(FN_PROGUARD_TXT).isEqualTo(
+                """
+                    # Merged by Fused Library.
+                    # androidLib2
+                    -keep class com.example.androidlib2.UnusedClass { *; }
+                    # androidLib1
+                    -dontwarn some.clazz.that.doesnt.Exist
+                    """.trimIndent()
+            )
+        }
     }
 }

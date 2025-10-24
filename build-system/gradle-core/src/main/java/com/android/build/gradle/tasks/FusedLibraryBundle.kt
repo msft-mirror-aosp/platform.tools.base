@@ -116,6 +116,7 @@ abstract class FusedLibraryBundleAar: FusedLibraryBundle() {
                 creationConfig.artifacts.get(FusedLibraryInternalArtifactType.MERGED_RES),
 
                 creationConfig.artifacts.get(FusedLibraryInternalArtifactType.MERGED_AIDL),
+                creationConfig.artifacts.get(FusedLibraryInternalArtifactType.MERGED_CONSUMER_PROGUARD_RULES),
                 creationConfig.artifacts.get(FusedLibraryInternalArtifactType.MERGED_RENDERSCRIPT_HEADERS),
                 creationConfig.artifacts.get(FusedLibraryInternalArtifactType.MERGED_PREFAB_PACKAGE),
                 creationConfig.artifacts.get(FusedLibraryInternalArtifactType.MERGED_PREFAB_PACKAGE_CONFIGURATION),
