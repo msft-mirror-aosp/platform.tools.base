@@ -35,4 +35,9 @@ class InterningPool<T : Any> {
       null -> instance.also { instances[instance] = WeakReference(instance) }
       else -> priorInstance
     }
+
+  companion object {
+    /** Interns a [String] without retaining it if no live object does otherwise */
+    val string: (String) -> String = InterningPool<String>()::intern
+  }
 }
