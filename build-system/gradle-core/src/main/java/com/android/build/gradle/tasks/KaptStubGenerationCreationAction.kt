@@ -51,7 +51,7 @@ class KaptStubGenerationCreationAction(
                 taskName,
                 kotlinCompileTaskProvider,
                 kaptExtension,
-                creationConfig.explicitApiModeProvider
+                creationConfig.services.provider { creationConfig.getExplicitApiMode() }
             )
         }
         return kotlinJvmFactory.registerKaptGenerateStubsTask(taskName)
