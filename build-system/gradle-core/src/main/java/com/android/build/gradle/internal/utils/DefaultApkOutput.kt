@@ -26,8 +26,6 @@ import com.android.build.gradle.internal.publishing.AndroidArtifacts
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.options.BooleanOption
 import org.gradle.api.file.FileCollection
-import org.gradle.api.file.RegularFile
-import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.TaskInputs
 
 class DefaultApkOutput(variant: VariantCreationConfig, val deviceSpec: DeviceSpec) : ApkOutput {
@@ -75,7 +73,7 @@ class DefaultApkOutput(variant: VariantCreationConfig, val deviceSpec: DeviceSpe
     private fun getApkSources(variant: VariantCreationConfig, privacySandboxApks: FileCollection): ApkSources {
         val privacySandboxApkSources =getPrivacySandboxApkSources(variant, privacySandboxApks)
         return ApkSources(
-            mainApkArtifact = variant.artifacts.get(SingleArtifact.APK),
+            mainApkArtifacts = variant.artifacts.get(SingleArtifact.APK).map { listOf(it) },
             privacySandboxSdksApksFiles = privacySandboxApkSources.privacySandboxSdksApksFiles,
             additionalSupportedSdkApkSplits = privacySandboxApkSources.additionalSupportedSdkApkSplits,
             privacySandboxSdkSplitApksForLegacy = privacySandboxApkSources.privacySandboxSdkSplitApksForLegacy,

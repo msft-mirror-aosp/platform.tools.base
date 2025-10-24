@@ -111,7 +111,7 @@ public abstract class InstallVariantTask extends NonIncrementalTask {
                     var deviceApkOutput =
                             new DefaultDeviceApkOutput(
                                     new ApkSources(
-                                            getApkDirectory(),
+                                            getApkDirectory().map(Collections::singletonList),
                                             getPrivacySandboxSdksApksFiles(),
                                             getPrivacySandboxSupportedSdkAdditionalSplitApks(),
                                             getPrivacySandboxCompatApks(),
