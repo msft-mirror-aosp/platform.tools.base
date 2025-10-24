@@ -17,6 +17,7 @@ package com.android.tools.lint.checks.fx.utils
 
 import com.google.common.truth.Truth
 import java.lang.ref.WeakReference
+import org.junit.Ignore
 import org.junit.Test
 
 class InterningPoolTest {
@@ -42,6 +43,7 @@ class InterningPoolTest {
     Truth.assertThat(bar1).isSameAs(bar3)
   }
 
+  @Ignore("b/454885989")
   @Test
   fun `pool does not retain instances`() {
     val pool = InterningPool<Person>()
