@@ -24,6 +24,10 @@ then
   readonly is_post_submit=true
 fi
 
+if [[ -n "${BUILD_NUMBER}" ]]; then
+  echo "common --credential_helper=*.pkg.dev=%workspace%/build/bazel/tools/ci_credhelper.py" > ci.bazelrc
+fi
+
 build_tag_filters=-no_linux
 test_tag_filters=$test_tag,-no_linux,
 
