@@ -14,21 +14,12 @@
  * limitations under the License.
  */
 
-package com.android.builder.model.v2.models
+package com.android.build.gradle.internal.ide.v2
 
 import com.android.builder.model.v2.ide.SourceProvider
-import java.io.File
-import java.io.Serializable
+import com.android.builder.model.v2.models.TestApkTestSuiteSource
 
-/**
- * Represents the source files for a specific type of test suite.
- */
-sealed interface TestSuiteSource: Serializable {
-
-    /**
-     * name of the test suite source as defined by the user in the AgpTestSuite DSL.
-     */
-    val name: String
-
-    val type: SourceType
-}
+class TestApkTestSuiteSourceImpl(
+    override val name: String,
+    override val sourceProvider: SourceProvider
+): TestApkTestSuiteSource

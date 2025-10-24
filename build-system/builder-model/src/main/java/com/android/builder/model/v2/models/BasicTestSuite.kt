@@ -27,9 +27,19 @@ interface BasicTestSuite: AndroidModel {
     val name: String
 
     /**
-     * source folder(s) for this test suite.
+     * [SourceType.ASSETS] source folder(s) for this test suite.
      */
-    val sources: Collection<TestSuiteSource>
+    val assets: Collection<AssetsTestSuiteSource>
+
+    /**
+     * [SourceType.HOST_JAR] source folders for this test suite.
+     */
+    val hostJars: Collection<HostJarTestSuiteSource>
+
+    /**
+     * [SourceType.TEST_APK] sources folder for this test suite.
+     */
+    val testApks: Collection<TestApkTestSuiteSource>
 
     /**
      * Variant specific target(s) for this test suite.

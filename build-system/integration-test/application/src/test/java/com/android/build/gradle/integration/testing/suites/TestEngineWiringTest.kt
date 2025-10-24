@@ -173,11 +173,11 @@ class TestEngineWiringTest(
         Truth.assertThat(testSuites).hasSize(1)
         val firstTestSuite: BasicTestSuite = testSuites.single()
         Truth.assertThat(firstTestSuite.name).isEqualTo("first")
-        val firstTestSuiteSources = firstTestSuite.sources.single()
+        val firstTestSuiteSources = firstTestSuite.hostJars.single()
         Truth.assertThat(firstTestSuiteSources.type).isEqualTo(
             SourceType.HOST_JAR
         )
-        Truth.assertThat(firstTestSuiteSources.folders).containsExactly(
+        Truth.assertThat(firstTestSuiteSources.kotlin).containsExactly(
             project.subProject(modulePath).resolve("src/first").toFile()
         )
 

@@ -52,7 +52,7 @@ class TestSuitesVariantsMatchingTest {
                                 "[engine:toy-junit-engine-for-tests]"
                             )
                         }
-                        it.hostJar { }
+                        it.assets { }
                         it.targetVariants.add("redDebug")
                         it.targetVariants.add("blueDebug")
                         it.targets.apply {
@@ -123,11 +123,11 @@ class TestSuitesVariantsMatchingTest {
             "testFirstT2RedDebugTestSuite",
             "testFirstT2BlueDebugTestSuite"
         )
-        val firstTestSuiteFolders = firstTestSuite.sources.single()
+        val firstTestSuiteFolders = firstTestSuite.assets.single()
         Truth.assertThat(firstTestSuiteFolders.type).isEqualTo(
-            SourceType.HOST_JAR
+            SourceType.ASSETS
         )
-        Truth.assertThat(firstTestSuiteFolders.folders).containsExactly(
+        Truth.assertThat(firstTestSuiteFolders.directories).containsExactly(
             project.subProject(":app").resolve("src/first").toFile()
         )
 
@@ -138,6 +138,15 @@ class TestSuitesVariantsMatchingTest {
             Truth.assertThat(variantTarget.targetedVariant)
                 .isAnyOf("redDebug", "blueDebug", "redStaging")
         }
+
+        val secondTestSuiteFolders = secondTestSuite.hostJars.single()
+        Truth.assertThat(secondTestSuiteFolders.type).isEqualTo(
+            SourceType.HOST_JAR
+        )
+        Truth.assertThat(secondTestSuiteFolders.kotlin).containsExactly(
+            project.subProject(":app").resolve("src/second").toFile()
+        )
+
         Truth.assertThat(secondTestSuite
             .targetsByVariant.map { variantTarget -> variantTarget.targets.map { it.testTaskName } }.flatten()
         )
