@@ -1,0 +1,100 @@
+--- Checking for required tools ---
+All tools found.
+--- Generating test.c ---
+--- Contents of test.c: ---
+#include <stdio.h>
+
+// This data will go into the 4KB-aligned segment
+const char* my_string = "Hello, 4KB-aligned data!";
+
+// This code will go into the 16KB-aligned segment
+void my_func() {
+    if (my_string) {
+        // Just some code to ensure the .text section isn't empty
+    }
+}
+---------------------------
+--- Generating linker.ld (with the :text_seg FIX) ---
+--- Contents of linker.ld: ---
+PHDRS
+{
+  text_seg PT_LOAD ;  /* 16KB aligned segment */
+  data_seg PT_LOAD ;  /* 4KB aligned segment */
+}
+
+SECTIONS
+{
+  /*
+   * 16KB aligned segment (code)
+   * We assign it to the 'text_seg' PHDR using ':text_seg' (COLON)
+   */
+  .text : ALIGN(0x4000) {
+    *(.init)
+    *(.text*)
+    *(.fini)
+  } :text_seg
+
+  /*
+   * 4KB aligned segment (data)
+   * We assign it to the 'data_seg' PHDR using ':data_seg' (COLON)
+   */
+  .data : ALIGN(0x1000) {
+    *(.data*)
+    *(.rodata*)
+    *(.init_array)
+    *(.fini_array)
+    *(.dynamic)
+    *(.got)
+    *(.got.plt)
+  } :data_seg
+}
+----------------------------
+--- Compiling test.c (with -v for verbose output) ---
+Debian clang version 19.1.7 (3+build5)
+Target: x86_64-unknown-linux-gnu
+Thread model: posix
+InstalledDir: /usr/lib/llvm-19/bin
+Found candidate GCC installation: /usr/lib/gcc/x86_64-linux-gnu/12
+Found candidate GCC installation: /usr/lib/gcc/x86_64-linux-gnu/13
+Found candidate GCC installation: /usr/lib/gcc/x86_64-linux-gnu/14
+Selected GCC installation: /usr/lib/gcc/x86_64-linux-gnu/14
+Candidate multilib: .;@m64
+Candidate multilib: 32;@m32
+Candidate multilib: x32;@mx32
+Selected multilib: .;@m64
+ (in-process)
+ "/usr/lib/llvm-19/bin/clang" -cc1 -triple x86_64-unknown-linux-gnu -emit-obj -disable-free -clear-ast-before-backend -disable-llvm-verifier -discard-value-names -main-file-name test.c -mrelocation-model pic -pic-level 2 -fhalf-no-semantic-interposition -mframe-pointer=all -fmath-errno -ffp-contract=on -fno-rounding-math -mconstructor-aliases -funwind-tables=2 -target-cpu x86-64 -tune-cpu generic -debugger-tuning=gdb -fdebug-compilation-dir=/usr/local/google/home/jomof/projects/studio-main/tools/base/sdk-common/src/test/resources/testData/pagealign -v -fcoverage-compilation-dir=/usr/local/google/home/jomof/projects/studio-main/tools/base/sdk-common/src/test/resources/testData/pagealign -resource-dir /usr/lib/llvm-19/lib/clang/19 -internal-isystem /usr/lib/llvm-19/lib/clang/19/include -internal-isystem /usr/local/include -internal-isystem /usr/lib/gcc/x86_64-linux-gnu/14/../../../../x86_64-linux-gnu/include -internal-externc-isystem /usr/include/x86_64-linux-gnu -internal-externc-isystem /include -internal-externc-isystem /usr/include -ferror-limit 19 -fgnuc-version=4.2.1 -fskip-odr-check-in-gmf -faddrsig -D__GCC_HAVE_DWARF2_CFI_ASM=1 -o test.o -x c test.c
+clang -cc1 version 19.1.7 based upon LLVM 19.1.7 default target x86_64-pc-linux-gnu
+ignoring nonexistent directory "/usr/lib/gcc/x86_64-linux-gnu/14/../../../../x86_64-linux-gnu/include"
+ignoring nonexistent directory "/include"
+#include "..." search starts here:
+#include <...> search starts here:
+ /usr/lib/llvm-19/lib/clang/19/include
+ /usr/local/include
+ /usr/include/x86_64-linux-gnu
+ /usr/include
+End of search list.
+--- Linking libtest.so (with -v for verbose output) ---
+Debian clang version 19.1.7 (3+build5)
+Target: x86_64-unknown-linux-gnu
+Thread model: posix
+InstalledDir: /usr/lib/llvm-19/bin
+Found candidate GCC installation: /usr/lib/gcc/x86_64-linux-gnu/12
+Found candidate GCC installation: /usr/lib/gcc/x86_64-linux-gnu/13
+Found candidate GCC installation: /usr/lib/gcc/x86_64-linux-gnu/14
+Selected GCC installation: /usr/lib/gcc/x86_64-linux-gnu/14
+Candidate multilib: .;@m64
+Candidate multilib: 32;@m32
+Candidate multilib: x32;@mx32
+Selected multilib: .;@m64
+ "/usr/bin/x86_64-linux-gnu-ld" --hash-style=gnu --build-id --eh-frame-hdr -m elf_x86_64 -shared -o lib-16kb-4kb.so /lib/x86_64-linux-gnu/crti.o /usr/lib/gcc/x86_64-linux-gnu/14/crtbeginS.o -L/usr/lib/gcc/x86_64-linux-gnu/14 -L/usr/lib/gcc/x86_64-linux-gnu/14/../../../../lib64 -L/lib/x86_64-linux-gnu -L/lib/../lib64 -L/usr/lib/x86_64-linux-gnu -L/usr/lib/../lib64 -L/lib -L/usr/lib -T linker.ld test.o -lgcc --as-needed -lgcc_s --no-as-needed -lc -lgcc --as-needed -lgcc_s --no-as-needed /usr/lib/gcc/x86_64-linux-gnu/14/crtendS.o /lib/x86_64-linux-gnu/crtn.o
+--- 6. Success! libtest.so created. ---
+
+--- Verifying alignments with 'readelf -l' ---
+  LOAD           0x0000000000004000 0x0000000000000000 0x0000000000000000
+                 0x00000000000003e8 0x00000000000003e8  R E    0x4000
+  LOAD           0x0000000000005000 0x0000000000001000 0x0000000000001000
+                 0x00000000000001d0 0x00000000000001d1  RW     0x1000
+
+--- Cleaning up intermediate files ---
+--- Script finished successfully ---

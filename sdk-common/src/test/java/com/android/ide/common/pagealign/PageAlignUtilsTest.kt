@@ -31,6 +31,7 @@ import com.android.ide.common.pagealign.AlignmentProblems.ElfNot16kAlignedInZip
 import com.android.ide.common.pagealign.AlignmentProblems.ElfLoadSectionsNot16kAligned
 import com.android.ide.common.pagealign.PageAlignUtilsTest.ZipBuilder.ZipEntryOptions
 import com.android.ide.common.pagealign.PageAlignUtilsTest.ZipBuilder.ZipEntryOptions.UnalignedCompressed
+import java.io.File
 import java.util.zip.CRC32
 
 // First bytes of ndk/28.0.12433566/toolchains/llvm/prebuilt/linux-x86_64/lib/aarch64-unknown-linux-musl/libc++abi.so
@@ -103,6 +104,15 @@ class PageAlignUtilsTest {
     @Test
     fun `so file that is 16 KB aligned`() {
         assertThat(checkPageAlign(ByteArrayInputStream(SO_FILE_16K_ALIGNED))).isEqualTo(PageAlignCheckResult.IsAligned64BitElf)
+    }
+
+    @Test
+    fun `so file with 16KB and 4KB LOAD sections`() {
+        val lib = this::class.java.classLoader.getResourceAsStream("testData/pagealign/lib-16kb-4kb.so")!!
+        check(hasElfMagicNumber(lib))
+        assertThat(readElfMinimumLoadSectionAlignment(lib))
+            .named("Expect 4KB alignment")
+            .isEqualTo(0x1000)
     }
 
     @Test
