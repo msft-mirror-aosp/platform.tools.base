@@ -39,9 +39,13 @@ interface ExtensionAwareDefinition {
      */
     fun <T: Any> Any.viaExtension(name: String, theClass: KClass<T>, action: T.() -> Unit) {
         // we need to get access to the [DslRecorder] from the proxied interface
-        val invocationHandler = Proxy.getInvocationHandler(this) as DslProxy
+        val dslRecorder = if (this is ProductFlavorProxy) {
+            this.dslRecorder
+        } else {
+            (Proxy.getInvocationHandler(this) as DslProxy).dslRecorder
+        }
 
-        invocationHandler.dslRecorder.runNestedBlock(
+        dslRecorder.runNestedBlock(
             name = name,
             parameters = listOf(),
             instanceProvider = {

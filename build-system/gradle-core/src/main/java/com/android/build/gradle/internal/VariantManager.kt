@@ -125,6 +125,7 @@ import org.gradle.api.Project
 import org.gradle.api.artifacts.Dependency
 import org.gradle.api.attributes.Attribute
 import org.gradle.api.internal.GeneratedSubclass
+import org.gradle.api.plugins.ExtensionAware
 import java.io.File
 import java.util.Locale
 import java.util.stream.Collectors
@@ -1032,8 +1033,13 @@ class VariantManager<
                 get() = userVisibleVariant
 
             override fun <T> projectExtension(extensionType: Class<T>): T {
-                // we need to make DefaultConfig or CommonExtension implement ExtensionAware.
-                throw RuntimeException("No global extension DSL element implements ExtensionAware.")
+                val ext: ExtensionAware = if (projectServices.projectOptions[BooleanOption.USE_NEW_DSL]) {
+                    dslExtension
+                } else {
+                    @Suppress("DEPRECATION")
+                    oldExtension as ExtensionAware
+                }
+                return ext.extensions.getByType(extensionType)
             }
 
             override fun <T> buildTypeExtension(extensionType: Class<T>): T =

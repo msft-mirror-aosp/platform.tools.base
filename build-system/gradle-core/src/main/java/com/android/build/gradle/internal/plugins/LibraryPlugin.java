@@ -264,7 +264,7 @@ public class LibraryPlugin
                         VariantApiOperationsRegistrar<
                                         LibraryExtension, LibraryVariantBuilder, LibraryVariant>
                                 variantApiOperations,
-                @NonNull com.android.build.gradle.LibraryExtension libraryExtension) {
+                @NonNull LibraryExtension libraryExtension) {
             super(
                     dslServices,
                     sdkComponents,
@@ -310,7 +310,7 @@ public class LibraryPlugin
                                 sdkComponents,
                                 getManagedDeviceRegistry(),
                                 variantApiOperationsRegistrar,
-                                getExtension());
+                                getRegisteredExtension());
 
         return extension;
     }

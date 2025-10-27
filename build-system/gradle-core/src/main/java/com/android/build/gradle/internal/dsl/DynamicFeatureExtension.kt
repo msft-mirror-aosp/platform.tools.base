@@ -27,6 +27,7 @@ import com.android.repository.Revision
 import com.google.wireless.android.sdk.stats.GradleBuildProject
 import org.gradle.api.Action
 import org.gradle.api.NamedDomainObjectContainer
+import org.gradle.api.plugins.ExtensionContainer
 import javax.inject.Inject
 
 abstract class DynamicFeatureExtension @Inject constructor(
@@ -41,6 +42,11 @@ abstract class DynamicFeatureExtension @Inject constructor(
     bootClasspathConfig,
     buildOutputs, sourceSetManager, false, stats
 ), InternalDynamicFeatureExtension by publicExtensionImpl {
+
+
+    // Manual override to avoid the kotlin delegation
+    // from interfering with Gradle's ExtensionAware mechanism
+    abstract override fun getExtensions(): ExtensionContainer
 
     // Overrides to make the parameterized types match, due to BaseExtension being part of
     // the previous public API and not wanting to paramerterize that.

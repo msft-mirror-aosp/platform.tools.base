@@ -207,7 +207,7 @@ public class TestPlugin
                                         TestVariantBuilder,
                                         com.android.build.api.variant.TestVariant>
                                 variantApiOperations,
-                @NonNull TestExtension libraryExtension) {
+                @NonNull com.android.build.api.dsl.TestExtension libraryExtension) {
             super(
                     dslServices,
                     sdkComponents,
@@ -255,7 +255,7 @@ public class TestPlugin
                                 sdkComponents,
                                 getManagedDeviceRegistry(),
                                 variantApiOperationsRegistrar,
-                                getExtension());
+                                getRegisteredExtension());
 
         return extension;
     }

@@ -33,6 +33,7 @@ import com.google.common.truth.Truth.assertThat
 import com.google.wireless.android.sdk.stats.GradleBuildProject
 import groovy.util.Eval
 import org.gradle.api.NamedDomainObjectContainer
+import org.gradle.api.plugins.ExtensionContainer
 import org.junit.Before
 import org.junit.Test
 import org.mockito.kotlin.mock
@@ -64,14 +65,16 @@ class BaseAppModuleExtensionTest {
             .getDeclaredConstructor(DslServices::class.java, DslContainerProvider::class.java)
             .newInstance(dslServices, variantInputModel)
         statsBuilder = GradleBuildProject.newBuilder()
-        appExtension = BaseAppModuleExtension(
+        appExtension = object : BaseAppModuleExtension(
             dslServices,
             mock<BootClasspathConfig>(),
             mock<NamedDomainObjectContainer<BaseVariantOutput>>(),
             variantInputModel.sourceSetManager,
             extension,
             statsBuilder
-        )
+        ) {
+            override fun getExtensions(): ExtensionContainer = error("stub")
+        }
     }
 
     @Test

@@ -313,7 +313,7 @@ public class AppPlugin
                                 sdkComponents,
                                 getManagedDeviceRegistry(),
                                 variantApiOperationsRegistrar,
-                                getExtension());
+                                getRegisteredExtension());
 
         return extension;
     }

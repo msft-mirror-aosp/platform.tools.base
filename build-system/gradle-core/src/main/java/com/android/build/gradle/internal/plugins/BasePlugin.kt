@@ -179,6 +179,14 @@ abstract class BasePlugin<
     @Deprecated("use newExtension")
     val extension: BaseExtension by lazy { extensionData.oldExtension }
     private val newExtension: AndroidT by lazy { extensionData.newExtension }
+    val registeredExtension: AndroidT by lazy(LazyThreadSafetyMode.NONE) {
+        if(projectServices.projectOptions.get(BooleanOption.USE_NEW_DSL)) {
+            extensionData.newExtension
+        } else {
+            @Suppress("UNCHECKED_CAST")
+            extensionData.oldExtension as AndroidT
+        }
+    }
 
     private val variantApiOperations by lazy {
         VariantApiOperationsRegistrar<AndroidT, VariantBuilderT, VariantT>(

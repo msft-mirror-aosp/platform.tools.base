@@ -950,7 +950,7 @@ package com.android.build.api.dsl {
     property public abstract java.util.Set<java.lang.String> targets;
   }
 
-  public interface CommonExtension {
+  public interface CommonExtension extends org.gradle.api.plugins.ExtensionAware {
     method @Deprecated public void aaptOptions(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.AaptOptions,kotlin.Unit> action);
     method @Deprecated public void adbOptions(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.AdbOptions,kotlin.Unit> action);
     method @Deprecated public void buildToolsVersion(String buildToolsVersion);

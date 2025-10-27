@@ -18,6 +18,7 @@ package com.android.build.api.dsl
 
 import org.gradle.api.Incubating
 import org.gradle.api.NamedDomainObjectContainer
+import org.gradle.api.plugins.ExtensionAware
 import org.gradle.declarative.dsl.model.annotations.Configuring
 import org.gradle.declarative.dsl.model.annotations.Restricted
 import java.io.File
@@ -28,7 +29,7 @@ import java.io.File
  *
  * Only the Android Gradle Plugin should create instances of this interface.
  */
-interface CommonExtension {
+interface CommonExtension : ExtensionAware {
 
     /**
      * Specifies options for the Android Asset Packaging Tool (AAPT).
