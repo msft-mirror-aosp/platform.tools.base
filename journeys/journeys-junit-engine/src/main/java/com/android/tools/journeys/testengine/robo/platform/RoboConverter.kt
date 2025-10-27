@@ -112,9 +112,16 @@ object RoboConverter {
 
         val actionsElement = getRoboElements(journey)
 
+        if (actionsElement.isEmpty()) {
+            throw IllegalStateException("No actions found in the journey.")
+        }
+
         actionsElement.forEach { element ->
             if (element.tagName != "action") {
                 throw IllegalStateException("Unknown tag: ${element.tagName}")
+            }
+            if (element.textContent.isBlank()) {
+                throw IllegalStateException("Action text cannot be empty.")
             }
             val text = element.textContent.trim().replace(Regex("\\s+"), " ").toJsonStringLiteral()
             writer.addJsonAction(text)

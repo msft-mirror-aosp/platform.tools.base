@@ -243,4 +243,41 @@ class RoboConverterTest {
             )
         )
     }
+
+    @Test
+    fun `convert throws error if there are no actions`() {
+        val xml = """
+            <journey>
+                <actions>
+                </actions>
+            </journey>
+        """
+        val inputStream = ByteArrayInputStream(xml.toByteArray())
+        val exception = assertThrows(IllegalStateException::class.java) {
+            RoboConverter.convert(inputStream)
+        }
+        assertEquals(
+            "No actions found in the journey.",
+            exception.message
+        )
+    }
+
+    @Test
+    fun `convert throws error if action text is empty`() {
+        val xml = """
+            <journey>
+                <actions>
+                    <action>   </action>
+                </actions>
+            </journey>
+        """
+        val inputStream = ByteArrayInputStream(xml.toByteArray())
+        val exception = assertThrows(IllegalStateException::class.java) {
+            RoboConverter.convert(inputStream)
+        }
+        assertEquals(
+            "Action text cannot be empty.",
+            exception.message
+        )
+    }
 }
