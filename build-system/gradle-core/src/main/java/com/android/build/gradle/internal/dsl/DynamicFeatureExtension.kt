@@ -67,6 +67,9 @@ abstract class DynamicFeatureExtension @Inject constructor(
     override val libraryRequests: MutableCollection<LibraryRequest>
         get() = publicExtensionImpl.libraryRequests
 
+    override val packagingOptions: PackagingOptions
+        get() = publicExtensionImpl.packagingOptions
+
     //TODO(b/421964815): remove the support for groovy space assignment(e.g `compileSdk 24`).
     @Deprecated(
         "To be removed after Gradle drops space assignment support",

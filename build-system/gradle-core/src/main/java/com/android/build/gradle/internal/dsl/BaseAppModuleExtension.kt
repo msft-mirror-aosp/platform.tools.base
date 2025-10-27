@@ -123,6 +123,9 @@ open class BaseAppModuleExtension @Inject constructor(
     override val buildFeatures: ApplicationBuildFeatures
         get() = publicExtensionImpl.buildFeatures
 
+    override val packagingOptions: PackagingOptions
+        get() = publicExtensionImpl.packagingOptions
+
     @Configuring
     override fun defaultConfig(action: ApplicationDefaultConfig.() -> Unit) {
         action.invoke(defaultConfig)

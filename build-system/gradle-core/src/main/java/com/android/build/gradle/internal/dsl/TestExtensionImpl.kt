@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.internal.dsl
 
+import com.android.build.api.dsl.Packaging
 import com.android.build.api.dsl.TestAndroidResources
 import com.android.build.api.dsl.TestBuildFeatures
 import com.android.build.api.dsl.TestBuildType
@@ -112,5 +113,16 @@ abstract class TestExtensionImpl @Inject constructor(
 
     override fun installation(action: Action<TestInstallation>) {
         action.execute(installation)
+    }
+
+    override val packagingOptions: PackagingOptions
+        get() = packaging as PackagingOptions
+
+    override fun packagingOptions(action: Packaging.() -> Unit) {
+        action.invoke(packaging)
+    }
+
+    override fun packagingOptions(action: Action<PackagingOptions>) {
+        action.execute(packaging as PackagingOptions)
     }
 }

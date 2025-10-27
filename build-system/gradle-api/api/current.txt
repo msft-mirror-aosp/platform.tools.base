@@ -576,6 +576,8 @@ package com.android.build.api.dsl {
     method public org.gradle.api.NamedDomainObjectContainer<? extends com.android.build.api.dsl.ApplicationProductFlavor> getProductFlavors();
     method public com.android.build.api.dsl.ApplicationPublishing getPublishing();
     method public void installation(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.ApplicationInstallation,kotlin.Unit> action);
+    method public void packaging(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.Packaging,kotlin.Unit> action);
+    method @Deprecated public void packagingOptions(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.Packaging,kotlin.Unit> action);
     method public void privacySandbox(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.PrivacySandbox,kotlin.Unit> action);
     method public void productFlavors(kotlin.jvm.functions.Function1<? super org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.ApplicationProductFlavor>,kotlin.Unit> action);
     method public void publishing(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.ApplicationPublishing,kotlin.Unit> action);
@@ -589,6 +591,8 @@ package com.android.build.api.dsl {
     property public abstract com.android.build.api.dsl.DependenciesInfo dependenciesInfo;
     property public abstract java.util.Set<java.lang.String> dynamicFeatures;
     property public abstract com.android.build.api.dsl.ApplicationInstallation installation;
+    property public abstract com.android.build.api.dsl.Packaging packaging;
+    property @Deprecated public abstract com.android.build.api.dsl.Packaging packagingOptions;
     property public abstract com.android.build.api.dsl.PrivacySandbox privacySandbox;
     property public abstract org.gradle.api.NamedDomainObjectContainer<? extends com.android.build.api.dsl.ApplicationProductFlavor> productFlavors;
     property public abstract com.android.build.api.dsl.ApplicationPublishing publishing;
@@ -998,8 +1002,6 @@ package com.android.build.api.dsl {
     method @Deprecated @org.gradle.api.Incubating public void jacoco(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.JacocoOptions,kotlin.Unit> action);
     method @org.gradle.declarative.dsl.model.annotations.Configuring public void lint(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.Lint,kotlin.Unit> action);
     method @Deprecated @org.gradle.api.Incubating public void lintOptions(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.LintOptions,kotlin.Unit> action);
-    method public void packaging(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.Packaging,kotlin.Unit> action);
-    method @Deprecated public void packagingOptions(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.Packaging,kotlin.Unit> action);
     method public void setBuildToolsVersion(String);
     method public void setCompileSdk(Integer?);
     method public void setCompileSdkExtension(Integer?);
@@ -1213,6 +1215,8 @@ package com.android.build.api.dsl {
     method public com.android.build.api.dsl.PrivacySandbox getPrivacySandbox();
     method public org.gradle.api.NamedDomainObjectContainer<? extends com.android.build.api.dsl.DynamicFeatureProductFlavor> getProductFlavors();
     method public void installation(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.DynamicFeatureInstallation,kotlin.Unit> action);
+    method public void packaging(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.Packaging,kotlin.Unit> action);
+    method @Deprecated public void packagingOptions(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.Packaging,kotlin.Unit> action);
     method public void privacySandbox(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.PrivacySandbox,kotlin.Unit> action);
     method public void productFlavors(kotlin.jvm.functions.Function1<? super org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.DynamicFeatureProductFlavor>,kotlin.Unit> action);
     method public void release(org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.DynamicFeatureBuildType>, kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.DynamicFeatureBuildType,kotlin.Unit> action);
@@ -1221,6 +1225,8 @@ package com.android.build.api.dsl {
     property public abstract org.gradle.api.NamedDomainObjectContainer<? extends com.android.build.api.dsl.DynamicFeatureBuildType> buildTypes;
     property public abstract com.android.build.api.dsl.DynamicFeatureDefaultConfig defaultConfig;
     property public abstract com.android.build.api.dsl.DynamicFeatureInstallation installation;
+    property public abstract com.android.build.api.dsl.Packaging packaging;
+    property @Deprecated public abstract com.android.build.api.dsl.Packaging packagingOptions;
     property public abstract com.android.build.api.dsl.PrivacySandbox privacySandbox;
     property public abstract org.gradle.api.NamedDomainObjectContainer<? extends com.android.build.api.dsl.DynamicFeatureProductFlavor> productFlavors;
   }
@@ -1538,6 +1544,8 @@ package com.android.build.api.dsl {
     method public org.gradle.api.NamedDomainObjectContainer<? extends com.android.build.api.dsl.LibraryProductFlavor> getProductFlavors();
     method public com.android.build.api.dsl.LibraryPublishing getPublishing();
     method public void installation(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.LibraryInstallation,kotlin.Unit> action);
+    method public void packaging(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.Packaging,kotlin.Unit> action);
+    method @Deprecated public void packagingOptions(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.Packaging,kotlin.Unit> action);
     method public void privacySandbox(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.PrivacySandbox,kotlin.Unit> action);
     method public void productFlavors(kotlin.jvm.functions.Function1<? super org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.LibraryProductFlavor>,kotlin.Unit> action);
     method public void publishing(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.LibraryPublishing,kotlin.Unit> action);
@@ -1548,6 +1556,8 @@ package com.android.build.api.dsl {
     property public abstract org.gradle.api.NamedDomainObjectContainer<? extends com.android.build.api.dsl.LibraryBuildType> buildTypes;
     property public abstract com.android.build.api.dsl.LibraryDefaultConfig defaultConfig;
     property public abstract com.android.build.api.dsl.LibraryInstallation installation;
+    property public abstract com.android.build.api.dsl.Packaging packaging;
+    property @Deprecated public abstract com.android.build.api.dsl.Packaging packagingOptions;
     property @org.gradle.api.Incubating public abstract org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.Prefab> prefab;
     property public abstract com.android.build.api.dsl.PrivacySandbox privacySandbox;
     property public abstract org.gradle.api.NamedDomainObjectContainer<? extends com.android.build.api.dsl.LibraryProductFlavor> productFlavors;
@@ -2207,6 +2217,8 @@ package com.android.build.api.dsl {
     method public org.gradle.api.NamedDomainObjectContainer<? extends com.android.build.api.dsl.TestProductFlavor> getProductFlavors();
     method public String? getTargetProjectPath();
     method public void installation(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.TestInstallation,kotlin.Unit> action);
+    method public void packaging(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.Packaging,kotlin.Unit> action);
+    method @Deprecated public void packagingOptions(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.Packaging,kotlin.Unit> action);
     method public void privacySandbox(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.PrivacySandbox,kotlin.Unit> action);
     method public void productFlavors(kotlin.jvm.functions.Function1<? super org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.TestProductFlavor>,kotlin.Unit> action);
     method public void release(org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.TestBuildType>, kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.TestBuildType,kotlin.Unit> action);
@@ -2216,6 +2228,8 @@ package com.android.build.api.dsl {
     property public abstract org.gradle.api.NamedDomainObjectContainer<? extends com.android.build.api.dsl.TestBuildType> buildTypes;
     property public abstract com.android.build.api.dsl.TestDefaultConfig defaultConfig;
     property public abstract com.android.build.api.dsl.TestInstallation installation;
+    property public abstract com.android.build.api.dsl.Packaging packaging;
+    property @Deprecated public abstract com.android.build.api.dsl.Packaging packagingOptions;
     property public abstract com.android.build.api.dsl.PrivacySandbox privacySandbox;
     property public abstract org.gradle.api.NamedDomainObjectContainer<? extends com.android.build.api.dsl.TestProductFlavor> productFlavors;
     property public abstract String? targetProjectPath;

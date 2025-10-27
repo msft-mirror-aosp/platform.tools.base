@@ -22,6 +22,7 @@ import com.android.build.api.dsl.LibraryBuildType
 import com.android.build.api.dsl.LibraryDefaultConfig
 import com.android.build.api.dsl.LibraryInstallation
 import com.android.build.api.dsl.LibraryProductFlavor
+import com.android.build.api.dsl.Packaging
 import com.android.build.api.dsl.Prefab
 import com.android.build.gradle.internal.dsl.DefaultConfig as InternalDefaultConfig
 import com.android.build.gradle.internal.dsl.ProductFlavor as InternalProductFlavor
@@ -138,5 +139,16 @@ abstract class LibraryExtensionImpl @Inject constructor(
 
     override fun installation(action: Action<LibraryInstallation>) {
         action.execute(installation)
+    }
+
+    override val packagingOptions: PackagingOptions
+        get() = packaging as PackagingOptions
+
+    override fun packagingOptions(action: Packaging.() -> Unit) {
+        action.invoke(packaging)
+    }
+
+    override fun packagingOptions(action: Action<PackagingOptions>) {
+        action.execute(packaging as PackagingOptions)
     }
 }

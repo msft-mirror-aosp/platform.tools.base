@@ -22,6 +22,7 @@ import com.android.build.api.dsl.DynamicFeatureBuildType
 import com.android.build.api.dsl.DynamicFeatureDefaultConfig
 import com.android.build.api.dsl.DynamicFeatureInstallation
 import com.android.build.api.dsl.DynamicFeatureProductFlavor
+import com.android.build.api.dsl.Packaging
 import com.android.build.gradle.internal.dsl.DefaultConfig as InternalDefaultConfig
 import com.android.build.gradle.internal.dsl.ProductFlavor as InternalProductFlavor
 import com.android.build.gradle.internal.plugins.DslContainerProvider
@@ -107,5 +108,16 @@ abstract class DynamicFeatureExtensionImpl @Inject constructor(
     }
     override fun installation(action: Action<DynamicFeatureInstallation>) {
         action.execute(installation)
+    }
+
+    override val packagingOptions: PackagingOptions
+        get() = packaging as PackagingOptions
+
+    override fun packagingOptions(action: Packaging.() -> Unit) {
+        action.invoke(packaging)
+    }
+
+    override fun packagingOptions(action: Action<PackagingOptions>) {
+        action.execute(packaging as PackagingOptions)
     }
 }

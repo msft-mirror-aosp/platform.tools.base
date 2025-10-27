@@ -8,6 +8,7 @@ import com.android.build.gradle.internal.dependency.SourceSetManager
 import com.android.build.gradle.internal.dsl.BuildType
 import com.android.build.gradle.internal.dsl.DefaultConfig
 import com.android.build.gradle.internal.dsl.InternalTestExtension
+import com.android.build.gradle.internal.dsl.PackagingOptions
 import com.android.build.gradle.internal.dsl.ProductFlavor
 import com.android.build.gradle.internal.dsl.TestExtensionImpl
 import com.android.build.gradle.internal.services.DslServices
@@ -49,6 +50,8 @@ open class TestExtension @Inject constructor(
         get() = publicExtensionImpl.productFlavors as NamedDomainObjectContainer<ProductFlavor>
     override val sourceSets: NamedDomainObjectContainer<AndroidSourceSet>
         get() = publicExtensionImpl.sourceSets
+    override val packagingOptions: PackagingOptions
+        get() = publicExtensionImpl.packagingOptions
 
     private val applicationVariantList: DomainObjectSet<ApplicationVariant> =
         dslServices.domainObjectSet(ApplicationVariant::class.java)

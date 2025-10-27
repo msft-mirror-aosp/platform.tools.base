@@ -24,7 +24,9 @@ import com.android.build.api.dsl.LibraryExtension
 import com.android.build.api.dsl.LibraryInstallation
 import com.android.build.api.dsl.LibraryProductFlavor
 import com.android.build.api.dsl.LibraryPublishing
+import com.android.build.api.dsl.Packaging
 import com.android.build.api.dsl.PrivacySandbox
+import com.android.build.gradle.internal.dsl.PackagingOptions as PackagingImpl
 import org.gradle.api.Action
 import org.gradle.api.NamedDomainObjectContainer
 
@@ -38,6 +40,8 @@ interface InternalLibraryExtension: LibraryExtension, InternalTestedExtension{
     fun defaultConfig(action: Action<DefaultConfig>)
     fun buildFeatures(action: Action<LibraryBuildFeatures>)
     fun installation(action: Action<LibraryInstallation>)
+    fun packaging(action: Action<Packaging>)
+    fun packagingOptions(action: Action<PackagingImpl>)
     fun publishing(action: Action<LibraryPublishing>)
 
     fun privacySandbox(action: Action<PrivacySandbox>)
