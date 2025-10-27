@@ -66,7 +66,7 @@ class JourneysConnectedTest {
         @JvmField
         val EMULATOR = getEmulator()
 
-        const val DEVICE_NAME = "emulator-5554"
+        const val DEVICE_NAME = ""
         const val DEVICE_SERIAL = "emulator-5554"
     }
 

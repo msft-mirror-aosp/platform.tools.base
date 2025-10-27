@@ -25,7 +25,7 @@ import org.junit.platform.engine.support.hierarchical.Node
 class DeviceDescriptor(
     parentId: UniqueId,
     private val deviceId: String,
-    private val deviceName: String
+    private val deviceName: String? = null
 ) :
     AbstractTestDescriptor(
         parentId.append(SEGMENT_TYPE, deviceId),

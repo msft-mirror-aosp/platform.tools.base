@@ -43,7 +43,8 @@ class DeviceSelectorResolver : SelectorResolver {
             val deviceIds = JourneysTestEngineInput.testDeviceIds.split(",")
             val deviceNames = JourneysTestEngineInput.testDeviceDisplayNames.split(",")
 
-            val deviceSelectors = deviceIds.zip(deviceNames) { deviceId, deviceName ->
+            val deviceSelectors = deviceIds.mapIndexed { index, deviceId ->
+                val deviceName = deviceNames.getOrNull(index)
                 DeviceSelector(deviceId, deviceName)
             }.toSet()
 

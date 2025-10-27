@@ -17,4 +17,5 @@ package com.android.tools.journeys.testengine.selector
 
 import org.junit.platform.engine.DiscoverySelector
 
-data class DeviceSelector(val deviceSerialId: String, val deviceName: String) : DiscoverySelector
+data class DeviceSelector(val deviceSerialId: String, val deviceName: String? = null) :
+    DiscoverySelector

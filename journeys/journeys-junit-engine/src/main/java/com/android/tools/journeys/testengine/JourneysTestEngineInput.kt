@@ -40,12 +40,8 @@ object JourneysTestEngineInput {
             }
             journeysInputDir =
                 File(inputProperties["com.android.junit.engine.source.folders"].toString())
-            testDeviceIds =
-                inputProperties["com.android.junit.engine.serial.ids"].toString()
-                    .substringAfter(":")
-            testDeviceDisplayNames =
-                inputProperties["com.android.junit.engine.serial.ids"].toString()
-                    .substringBefore(":")
+            testDeviceIds = inputProperties["com.android.junit.engine.serial.ids"].toString()
+            testDeviceDisplayNames = ""
             resultsDir = File(inputProperties["com.android.junit.engine.results.dir"].toString())
         } else {
             journeysInputDir = getFileFromSystemProperty("journeysInputDir")
@@ -62,6 +58,7 @@ object JourneysTestEngineInput {
         val adbPath: File
         val accessTokenPath: String =
             getSystemPropertyOrEnvVar("Proxy.accessTokenPath", "GEMINI_ACCESS_TOKEN_PATH")
+
         // For internal testing only.
         // Overrides the application id provided by the project open in studio and is to allow
         // testing on any pre-installed apps by opening a dummy project in studio.
@@ -89,6 +86,7 @@ object JourneysTestEngineInput {
         // For internal testing only.
         // To allow experimenting with different robo agents.
         val agentName: String = getSystemPropertyOrEnvVar("", "JOURNEYS_AGENT_NAME")
+
         // For internal testing only.
         // To allow enabling experimental features on robo agents.
         val enableExperimentalMode: Boolean =
