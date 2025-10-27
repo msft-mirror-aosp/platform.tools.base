@@ -93,15 +93,14 @@ class PreviewScreenshotDescriptor(
                     this, ReportEntry.from("PreviewScreenshot.diffPercent", it.toString())
                 )
             }
+            // Always publish refImagePath, this is required in IDE
+            context.executionListener.reportingEntryPublished(
+                this, ReportEntry.from("PreviewScreenshot.refImagePath", refImagePath)
+            )
 
             if (File(newImagePath).exists()) {
                 context.executionListener.reportingEntryPublished(
                     this, ReportEntry.from("PreviewScreenshot.newImagePath", newImagePath)
-                )
-            }
-            if (File(refImagePath).exists()) {
-                context.executionListener.reportingEntryPublished(
-                    this, ReportEntry.from("PreviewScreenshot.refImagePath", refImagePath)
                 )
             }
             if (File(diffImagePath).exists()) {
