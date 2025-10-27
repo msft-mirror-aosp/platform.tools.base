@@ -3562,6 +3562,7 @@ com/android/tools/sdk-common
   com/android/ide/common/internal/
   com/android/ide/common/pagealign/
   com/android/ide/common/process/
+  com/android/ide/common/r8/
   com/android/ide/common/rendering/
   com/android/ide/common/repository/
   com/android/ide/common/resources/

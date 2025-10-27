@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.internal.r8
+package com.android.ide.common.r8
 
 import com.google.common.truth.Truth.assertThat
 import org.junit.Rule
@@ -104,8 +104,8 @@ internal class ConsumerRuleGlobalGuardianTest {
         ConsumerRuleGlobalGuardian.validateConsumerRulesHasNoBannedGlobals(
             consumerFile,
             isDynamicFeature = isDynamicFeature
-        ) { exceptionMessage ->
-            errors.add(exceptionMessage)
+        ) { discoveredIssue ->
+            errors.add(discoveredIssue.errorMessage)
         }
 
         content.byteInputStream().use {

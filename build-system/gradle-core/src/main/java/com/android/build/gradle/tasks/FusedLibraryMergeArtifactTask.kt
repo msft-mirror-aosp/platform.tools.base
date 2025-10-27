@@ -30,7 +30,6 @@ import com.android.build.gradle.internal.privaysandboxsdk.PrivacySandboxSdkVaria
 import com.android.build.gradle.internal.profile.ProfileAwareWorkAction
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
 import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactType
-import com.android.build.gradle.internal.r8.ConsumerRuleGlobalGuardian
 import com.android.build.gradle.internal.tasks.AarMetadataTask.Companion.AAR_METADATA_FILE_NAME
 import com.android.build.gradle.internal.tasks.BuildAnalyzer
 import com.android.build.gradle.internal.tasks.MergeNativeLibsTask
@@ -40,6 +39,7 @@ import com.android.build.gradle.internal.tasks.mergeJavaNativeLibs
 import com.android.build.gradle.internal.utils.setDisallowChanges
 import com.android.buildanalyzer.common.TaskCategory
 import com.android.builder.packaging.JarFlinger
+import com.android.ide.common.r8.ConsumerRuleGlobalGuardian
 import com.android.utils.usLocaleCapitalize
 import org.gradle.api.attributes.DocsType
 import org.gradle.api.file.ConfigurableFileCollection
