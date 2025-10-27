@@ -35,12 +35,12 @@ constructor(objectFactory: ObjectFactory, devicesBlock: ManagedDevices) :
     objectFactory
       .domainObjectContainer(ManagedDevice::class.java, ManagedDeviceFactory(objectFactory))
       .apply {
-        whenObjectAdded { device: ManagedDevice -> devicesBlock.devices.add(device) }
-        whenObjectRemoved { device: ManagedDevice -> devicesBlock.devices.remove(device) }
+        whenObjectAdded { device: ManagedDevice -> devicesBlock.allDevices.add(device) }
+        whenObjectRemoved { device: ManagedDevice -> devicesBlock.allDevices.remove(device) }
       }
 
   init {
-    devicesBlock.devices.apply {
+    devicesBlock.allDevices.apply {
       whenObjectAdded { device: Device ->
         if (device is ManagedDevice) {
           managedDevices.add(device)
