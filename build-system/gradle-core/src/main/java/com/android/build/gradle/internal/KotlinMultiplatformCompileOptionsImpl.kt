@@ -16,10 +16,8 @@
 
 package com.android.build.gradle.internal
 
-import com.android.build.api.dsl.KotlinMultiplatformAndroidCompilation
 import com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryExtension
 import org.gradle.api.JavaVersion
-import org.jetbrains.kotlin.gradle.dsl.KotlinJvmCompilerOptions
 
 /**
  * Implementation of [CompileOptions] that is based on kotlin multiplatform APIs for internal use.
@@ -58,15 +56,5 @@ internal class KotlinMultiplatformCompileOptionsImpl(
 
     override fun targetCompatibility(targetCompatibility: Any) {
         throw IllegalAccessException("Compile options for kmp variants are read only.")
-    }
-
-    fun initFromCompilation(
-        compilation: KotlinMultiplatformAndroidCompilation
-    ) {
-        @Suppress("DEPRECATION_ERROR") // TODO(b/435359310): Remove this suppression
-        (compilation.compilerOptions as org.jetbrains.kotlin.gradle.plugin.HasCompilerOptions<KotlinJvmCompilerOptions>).options.jvmTarget.orNull?.let {
-            _targetCompatibility = JavaVersion.toVersion(it.target)
-            _sourceCompatibility = JavaVersion.toVersion(it.target)
-        }
     }
 }
