@@ -193,11 +193,24 @@ class R8TaskTest {
                         }
                     """.trimIndent()
                 )
+                files.add(
+                    "src/main/java/example/MyInterfaceUser.java",
+                    //language=java
+                    """
+                        package example;
+
+                        class MyInterfaceUser {
+                            static void printContent() { MyInterface.printContent(); }
+                        }
+                    """.trimIndent()
+                )
                 files.update(
                     "proguard-rules.pro").replaceWith(
                     """
-                        -keep class example.MyInterface* { *; }
+                        -keep class example.MyInterface { static void printContent(); }
+                        -keep class example.MyInterfaceUser { static void printContent(); }
                         -dontobfuscate
+                        -dontoptimize
                     """.trimIndent()
                 )
             }
@@ -209,7 +222,9 @@ class R8TaskTest {
         app.assertApk(ApkSelector.RELEASE.fromIntermediates()) {
             classes().containsExactly(
                 "example/MyInterface",
-                "pkg/name/app/HelloWorld"
+                "example/MyInterfaceUser",
+                "pkg/name/app/HelloWorld",
+                "pkg/name/app/R\$layout"
             )
         }
 
@@ -217,8 +232,10 @@ class R8TaskTest {
         app.assertApk(ApkSelector.RELEASE.fromIntermediates()) {
             classes().containsExactly(
                 "example/MyInterface",
+                "example/MyInterface\$-CC",
+                "example/MyInterfaceUser",
                 "pkg/name/app/HelloWorld",
-                "example/MyInterface\$-CC"
+                "pkg/name/app/R\$layout"
             )
         }
     }
