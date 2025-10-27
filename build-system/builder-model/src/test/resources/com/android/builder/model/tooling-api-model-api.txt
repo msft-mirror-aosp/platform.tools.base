@@ -4,7 +4,7 @@ ATTENTION REVIEWER: If this needs to be changed, please make sure changes
 below are backwards compatible.
 -------------------------------------------------------------------------
 Sha256 of below classes:
-059e4e1eae2ddad6d6b6c6bb8253bdec3ab3076d44e461a31285652d3ec1bc3c
+db4294915f7bf02d3d343f3dd48fff457691484fab1ccd9a5ce1d9fa62f33055
 -------------------------------------------------------------------------
 com.android.builder.model.AaptOptions
 com.android.builder.model.AaptOptions$Namespacing extends java.lang.Enum
@@ -534,6 +534,7 @@ com.android.builder.model.v2.dsl.ProductFlavor.getDimension: java.lang.String ()
 com.android.builder.model.v2.dsl.ProductFlavor.getMatchingFallbacks: java.util.List<java.lang.String> ()
 com.android.builder.model.v2.dsl.ProductFlavor.getMaxSdkVersion: java.lang.Integer ()
 com.android.builder.model.v2.dsl.ProductFlavor.getMinSdkVersion: com.android.builder.model.v2.ide.ApiVersion ()
+com.android.builder.model.v2.dsl.ProductFlavor.getMissingDimensionStrategy: java.util.Map<java.lang.String, java.util.List<java.lang.String>> ()
 com.android.builder.model.v2.dsl.ProductFlavor.getRenderscriptNdkModeEnabled: java.lang.Boolean ()
 com.android.builder.model.v2.dsl.ProductFlavor.getRenderscriptSupportModeBlasEnabled: java.lang.Boolean ()
 com.android.builder.model.v2.dsl.ProductFlavor.getRenderscriptSupportModeEnabled: java.lang.Boolean ()

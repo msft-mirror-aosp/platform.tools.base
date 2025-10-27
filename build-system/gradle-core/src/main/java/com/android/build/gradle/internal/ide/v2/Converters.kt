@@ -60,6 +60,9 @@ internal fun DslDefaultConfig.convert(features: BuildFeatureValues) = ProductFla
     minSdkVersion = minSdkVersion?.convert(),
     targetSdkVersion = targetSdkVersion?.convert(),
     matchingFallbacks = emptyList(), // No matchingFallbacks for defaultConfig.
+    missingDimensionStrategy = missingDimensionStrategies.mapValues { (_, requests) ->
+        listOf(requests.requested).plus(requests.fallbacks)
+    },
     maxSdkVersion = maxSdkVersion,
     renderscriptTargetApi = renderscriptTargetApi,
     renderscriptSupportModeEnabled = renderscriptSupportModeEnabled,
@@ -96,6 +99,9 @@ internal fun DslProductFlavor.convert(features: BuildFeatureValues) = ProductFla
     minSdkVersion = minSdkVersion?.convert(),
     targetSdkVersion = targetSdkVersion?.convert(),
     matchingFallbacks = matchingFallbacks.toImmutableList(),
+    missingDimensionStrategy = missingDimensionStrategies.mapValues { (_, requests) ->
+        listOf(requests.requested).plus(requests.fallbacks)
+    },
     maxSdkVersion = maxSdkVersion,
     renderscriptTargetApi = renderscriptTargetApi,
     renderscriptSupportModeEnabled = renderscriptSupportModeEnabled,

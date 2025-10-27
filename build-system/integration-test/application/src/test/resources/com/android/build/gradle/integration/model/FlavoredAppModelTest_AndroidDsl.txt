@@ -39,6 +39,7 @@
          - generatedDensities = ["hdpi", "ldpi", "mdpi", "xhdpi", "xxhdpi", "xxxhdpi"]
          - useSupportLibrary  = false
       - matchingFallbacks                  = []
+      - missingDimensionStrategy           = []
    < defaultConfig
    > buildTypes:
       > debug:
@@ -133,6 +134,7 @@
             - generatedDensities = (null)
             - useSupportLibrary  = (null)
          - matchingFallbacks                  = []
+         - missingDimensionStrategy           = []
       < basic
       > pro:
          - name                               = "pro"
@@ -171,6 +173,7 @@
             - generatedDensities = (null)
             - useSupportLibrary  = (null)
          - matchingFallbacks                  = []
+         - missingDimensionStrategy           = []
       < pro
    < productFlavors
    > signingConfigs:

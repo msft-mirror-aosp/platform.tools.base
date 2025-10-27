@@ -1,5 +1,5 @@
 > AndroidDsl:
-   - groupId           = "multiproject"
+   - groupId           = "com.test.composite"
    - compileTarget     = DEFAULT_COMPILE_SDK_VERSION
    - buildToolsVersion = DEFAULT_BUILD_TOOLS_REVISION
    > defaultConfig:
@@ -18,12 +18,14 @@
       - isDefault                          = (null)
       - dimension                          = (null)
       - applicationId                      = (null)
-      - versionCode                        = (null)
-      - versionName                        = (null)
+      - versionCode                        = 1
+      - versionName                        = "1.0"
       - minSdkVersion:
-         - apiLevel = 14
+         - apiLevel = 15
          - codename = (null)
-      - targetSdkVersion                   = (null)
+      - targetSdkVersion:
+         - apiLevel = 36
+         - codename = (null)
       - maxSdkVersion                      = (null)
       - renderscriptTargetApi              = (null)
       - renderscriptSupportModeEnabled     = (null)
@@ -76,7 +78,9 @@
          - versionNameSuffix        = (null)
          - buildConfigFields        = (null)
          - resValues                = (null)
-         - proguardFiles            = []
+         - proguardFiles:
+            * {PROJECT}/composite1/build/intermediates/default_proguard_files/global/proguard-android-optimize.txt-{AGP_Version}{!}
+            * {PROJECT}/composite1/proguard-rules.pro{!}
          - consumerProguardFiles    = []
          - testProguardFiles        = []
          - manifestPlaceholders     = []
@@ -97,8 +101,89 @@
          - matchingFallbacks        = []
       < release
    < buildTypes
-   - flavorDimensions  = []
-   - productFlavors    = []
+   - flavorDimensions  = ["environment"]
+   > productFlavors:
+      > abc:
+         - name                               = "abc"
+         - applicationIdSuffix                = (null)
+         - versionNameSuffix                  = (null)
+         - buildConfigFields                  = (null)
+         - resValues                          = (null)
+         - proguardFiles                      = []
+         - consumerProguardFiles              = []
+         - testProguardFiles                  = []
+         - manifestPlaceholders               = []
+         - multiDexEnabled                    = (null)
+         - multiDexKeepFile                   = (null)
+         - multiDexKeepProguard               = (null)
+         - isDefault                          = false
+         - dimension                          = "environment"
+         - applicationId                      = (null)
+         - versionCode                        = (null)
+         - versionName                        = (null)
+         - minSdkVersion                      = (null)
+         - targetSdkVersion                   = (null)
+         - maxSdkVersion                      = (null)
+         - renderscriptTargetApi              = (null)
+         - renderscriptSupportModeEnabled     = (null)
+         - renderscriptSupportModeBlasEnabled = (null)
+         - renderscriptNdkModeEnabled         = (null)
+         - testApplicationId                  = (null)
+         - testInstrumentationRunner          = (null)
+         - testInstrumentationRunnerArguments = []
+         - testHandleProfiling                = (null)
+         - testFunctionalTest                 = (null)
+         - resourceConfigurations             = []
+         - signingConfig                      = (null)
+         - wearAppUnbundled                   = (null)
+         - vectorDrawables:
+            - generatedDensities = (null)
+            - useSupportLibrary  = (null)
+         - matchingFallbacks                  = []
+         - missingDimensionStrategy           = []
+      < abc
+      > prod:
+         - name                               = "prod"
+         - applicationIdSuffix                = (null)
+         - versionNameSuffix                  = (null)
+         - buildConfigFields                  = (null)
+         - resValues                          = (null)
+         - proguardFiles                      = []
+         - consumerProguardFiles              = []
+         - testProguardFiles                  = []
+         - manifestPlaceholders               = []
+         - multiDexEnabled                    = (null)
+         - multiDexKeepFile                   = (null)
+         - multiDexKeepProguard               = (null)
+         - isDefault                          = false
+         - dimension                          = "environment"
+         - applicationId                      = (null)
+         - versionCode                        = (null)
+         - versionName                        = (null)
+         - minSdkVersion                      = (null)
+         - targetSdkVersion                   = (null)
+         - maxSdkVersion                      = (null)
+         - renderscriptTargetApi              = (null)
+         - renderscriptSupportModeEnabled     = (null)
+         - renderscriptSupportModeBlasEnabled = (null)
+         - renderscriptNdkModeEnabled         = (null)
+         - testApplicationId                  = (null)
+         - testInstrumentationRunner          = (null)
+         - testInstrumentationRunnerArguments = []
+         - testHandleProfiling                = (null)
+         - testFunctionalTest                 = (null)
+         - resourceConfigurations             = []
+         - signingConfig                      = (null)
+         - wearAppUnbundled                   = (null)
+         - vectorDrawables:
+            - generatedDensities = (null)
+            - useSupportLibrary  = (null)
+         - matchingFallbacks:
+            * "abc"
+         - missingDimensionStrategy:
+            * "mode -> [free]"
+      < prod
+   < productFlavors
    > signingConfigs:
       > debug:
          - name            = "debug"
