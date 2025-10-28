@@ -77,6 +77,7 @@ import com.intellij.psi.PsiMethod
 import com.intellij.psi.PsiParameter
 import com.intellij.psi.PsiType
 import com.intellij.psi.PsiVariable
+import java.util.IdentityHashMap
 import kotlinx.collections.immutable.PersistentList
 import kotlinx.collections.immutable.PersistentSet
 import kotlinx.collections.immutable.persistentListOf
@@ -374,7 +375,12 @@ internal open class Analysis<FX : Any>(
       return giveUp(this, "Don't know what `$x` means in `${target.target.renderAbbrev()}`")
     }
 
+    val cache = IdentityHashMap<UExpression, Result<Type<FX>, R>>()
+
     fun loop(e: UExpression): Result<Type<FX>, R> {
+
+      /** Analyze local sub-expression that might be shared and reusable */
+      fun loopCached(e: UExpression) = cache.getOrPut(e) { loop(e) }
 
       fun callMethod(
         receiver: UExpression?,
@@ -388,18 +394,18 @@ internal open class Analysis<FX : Any>(
           when {
             method.isStatic() -> null
             method.isConstructor -> null
-            receiver != null -> loop(receiver) // TODO nope. See below
+            receiver != null -> loopCached(receiver) // TODO nope. See below
             else -> pure(env.receiver(ClassId.of(method.containingClass!!)) ?: implicitThis())
           }
 
         val extRecvAns: Result<Type<FX>, R>? =
           when {
             !method.isExtension() -> null
-            receiver != null -> loop(receiver) // TODO nope. See above
+            receiver != null -> loopCached(receiver) // TODO nope. See above
             else -> pure(env.innermostExtensionReceiver() ?: implicitThis())
           }
 
-        val (restTypes, restFx) = mapM(::loop, args)
+        val (restTypes, restFx) = mapM(::loopCached, args)
 
         return when {
           // virtual extension
