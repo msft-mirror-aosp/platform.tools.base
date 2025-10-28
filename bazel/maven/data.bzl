@@ -52,6 +52,7 @@ DATA = [
     "androidx.collection:collection:1.4.0",
     "androidx.collection:collection:1.5.0-alpha06",
     "androidx.collection:collection-ktx:1.4.0",  # Compose BOM 2024.04.01
+    "androidx.collection:collection-ktx:1.4.2",
     "androidx.collection:collection-ktx:1.5.0-alpha06",
     "androidx.compose.animation:animation:1.3.0",
     "androidx.compose.animation:animation:1.5.0-beta01",  # Necessary for Compose for TV.
@@ -88,6 +89,7 @@ DATA = [
     "androidx.compose.material:material:1.8.0-alpha06",
     "androidx.compose.material:material-icons-core:1.7.0",  # Compose BOM 2024.09.00
     "androidx.compose.material:material-icons-extended:1.3.0",
+    "androidx.compose.material:material-icons-extended:1.7.0",
     "androidx.compose.material:material-ripple:1.7.0",  # Compose BOM 2024.09.00
     "androidx.compose.material3.adaptive:adaptive:1.0.0",  # Compose Navigation UI template: Compose BOM 2024.09.00
     "androidx.compose.material3:material3:1.0.0",
@@ -125,6 +127,7 @@ DATA = [
     "androidx.compose.ui:ui-test-manifest:1.7.0-beta05",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
     "androidx.compose.ui:ui-test-manifest:1.8.0-alpha06",  # XR template
     "androidx.compose.ui:ui-text:1.3.3",  # Dependency of architecture-samples
+    "androidx.compose.ui:ui-text-google-fonts:1.7.0",
     "androidx.compose.ui:ui-tooling:1.2.0",  # Still needed from //tools/data-binding/compilationTests
     "androidx.compose.ui:ui-tooling:1.3.0",  # Still needed from //tools/base/build-system/integration-tests
     "androidx.compose.ui:ui-tooling:1.3.3",  # Dependency of architecture-samples
