@@ -33,10 +33,12 @@ ARTIFACTS = [
     "com.android.tools.build.jetifier:jetifier-core:1.0.0-beta10",
     "com.android.tools.build.jetifier:jetifier-processor:1.0.0-beta10",
     "com.android.tools.build:transform-api:2.0.0-deprecated-use-gradle-api",
+    "com.android.tools:common:31.13.0",  # Sherlock dependency
     "com.android.tools:desugar_jdk_libs:1.1.5",
     "com.android.tools:desugar_jdk_libs_configuration:1.1.5",
     "com.android.tools:desugar_jdk_libs_configuration_nio:2.0.2",
     "com.android.tools:desugar_jdk_libs_nio:2.0.2",
+    "com.android.tools.fakeadbserver:fakeadbserver:31.13.0",  # Sherlock dependency
     "com.android.tools:r8:8.2.47",
     "com.android.tools.smali:smali-baksmali:3.0.9",
     "com.android.tools.smali:smali-dexlib2:3.0.9",
@@ -94,8 +96,9 @@ ARTIFACTS = [
     "com.google.testing.platform:core:0.0.9-alpha03",
     "com.google.testing.platform:core-proto:0.0.9-alpha03",
     "com.google.testing.platform:launcher:0.0.9-alpha03",
-    "com.google.truth.extensions:truth-java8-extension:0.44",
-    "com.google.truth:truth:0.44",
+    "com.google.truth.extensions:truth-java8-extension:0.42",
+    "com.google.truth.extensions:truth-proto-extension:0.42",  # Sherlock dependency
+    "com.google.truth:truth:0.42",
     "com.googlecode.jarjar:jarjar:1.3",
     "com.googlecode.juniversalchardet:juniversalchardet:1.0.3",
     "com.nothome:javaxdelta:2.0.1",
