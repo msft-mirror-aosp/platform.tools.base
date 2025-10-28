@@ -57307,17 +57307,6 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "com.android.tools.utp.android-test-plugin-host-device-info-proto_32.0.0-alpha08",
-    pom = "repository/com/android/tools/utp/android-test-plugin-host-device-info-proto/32.0.0-alpha08/android-test-plugin-host-device-info-proto-32.0.0-alpha08.pom",
-    repo_root_path = "repository",
-    repo_path = "com/android/tools/utp/android-test-plugin-host-device-info-proto/32.0.0-alpha08",
-    deps = [
-        "com.google.protobuf.protobuf-java_3.25.5",
-    ],
-    visibility = ["//visibility:public"],
-)
-
-maven_artifact(
     name = "com.android.tools.utp.android-test-plugin-host-device-info_30.2.0",
     pom = "repository/com/android/tools/utp/android-test-plugin-host-device-info/30.2.0/android-test-plugin-host-device-info-30.2.0.pom",
     repo_root_path = "repository",
@@ -66930,10 +66919,10 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "com.google.firebase.testlab.testlab-gradle-plugin_0.0.1-alpha11",
-    pom = "repository/com/google/firebase/testlab/testlab-gradle-plugin/0.0.1-alpha11/testlab-gradle-plugin-0.0.1-alpha11.pom",
+    name = "com.google.firebase.testlab.testlab-gradle-plugin_0.0.1-alpha12",
+    pom = "repository/com/google/firebase/testlab/testlab-gradle-plugin/0.0.1-alpha12/testlab-gradle-plugin-0.0.1-alpha12.pom",
     repo_root_path = "repository",
-    repo_path = "com/google/firebase/testlab/testlab-gradle-plugin/0.0.1-alpha11",
+    repo_path = "com/google/firebase/testlab/testlab-gradle-plugin/0.0.1-alpha12",
     deps = [
         "org.jetbrains.kotlin.kotlin-stdlib_2.2.10",
         "com.google.code.gson.gson_2.11.0",
@@ -66941,7 +66930,7 @@ maven_artifact(
         "com.google.apis.google-api-services-toolresults_v1beta3-rev82-1.22.0",
         "com.google.apis.google-api-services-storage_v1-rev82-1.22.0",
         "com.google.testing.platform.core-proto_0.0.9-alpha03",
-        "com.android.tools.utp.android-test-plugin-host-device-info-proto_32.0.0-alpha08",
+        "com.android.tools.utp.android-test-plugin-host-device-info-proto_30.2.0",
         "com.google.protobuf.protobuf-java-util_3.25.5",
     ],
     visibility = ["//visibility:public"],
