@@ -854,6 +854,10 @@ class ScreenshotTest {
         val result = build.sstExecutor().run(":app:validateDebugScreenshotTest")
 
         assertThat(result.stdout).contains("[additionalTestArtifacts]PreviewScreenshot.newImagePath=")
+        assertThat(result.stdout).contains("[additionalTestArtifacts]PreviewScreenshot.refImagePath=")
+        assertThat(result.stdout).contains("[additionalTestArtifacts]PreviewScreenshot.previewName=")
+        assertThat(result.stdout).contains("[additionalTestArtifacts]PreviewScreenshot.methodName=")
+        assertThat(result.stdout).contains("[additionalTestArtifacts]PreviewScreenshot.diffPercent=")
     }
 
     @Test

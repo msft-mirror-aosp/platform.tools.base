@@ -35,8 +35,9 @@ import java.io.File
 import java.util.Optional
 
 class PreviewScreenshotDescriptor(
-    parentId: UniqueId, className: String, methodName: String,
+    parentId: UniqueId, className: String, private val methodName: String,
     previewName: String,
+    private val previewDisplayName: String,
     previewScreenshotResultIndex: Int,
     private val previewScreenshotResult: PreviewScreenshotResult) :
     AbstractTestDescriptor(
@@ -93,6 +94,12 @@ class PreviewScreenshotDescriptor(
                     this, ReportEntry.from("PreviewScreenshot.diffPercent", it.toString())
                 )
             }
+            context.executionListener.reportingEntryPublished(
+                this, ReportEntry.from("PreviewScreenshot.previewName", previewDisplayName)
+            )
+            context.executionListener.reportingEntryPublished(
+                this, ReportEntry.from("PreviewScreenshot.methodName", methodName)
+            )
             // Always publish refImagePath, this is required in IDE
             context.executionListener.reportingEntryPublished(
                 this, ReportEntry.from("PreviewScreenshot.refImagePath", refImagePath)
