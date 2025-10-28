@@ -44,6 +44,7 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.map
 import java.io.IOException
+import kotlinx.coroutines.flow.distinctUntilChanged
 
 /**
  * A [JdwpProcessPropertiesFlowUpdater] implementation that collects [JdwpProcessProperties]
@@ -97,6 +98,7 @@ internal class UsingAppInfoFlowUpdater(
                     }
                 }
                 .filterNotNull()
+                .distinctUntilChanged()
                 .collect { appProcessEntry ->
                     assert(appProcessEntry.pid == pid)
                     logger.verbose { "Updating Jdwp process properties: appProcessEntry=$appProcessEntry" }
@@ -184,6 +186,7 @@ internal class UsingAppInfoFlowUpdater(
             AdbUsageTracker.Event(
                 deviceInfo = deviceInfo,
                 appInfoProcessPropertiesCollector = AppInfoProcessPropertiesCollectorEvent(
+                    pid = pid,
                     eventType = eventType
                 )
             )
