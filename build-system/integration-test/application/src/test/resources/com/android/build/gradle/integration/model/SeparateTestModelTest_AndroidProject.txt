@@ -30,7 +30,7 @@
             - resGenTaskName                = "generateDebugResources"
             - generatedResourceFolders      = []
             - generatedAssetsFolders        = []
-            - abiFilters                    = []
+            - abiFilters                    = ["arm64-v8a", "armeabi-v7a", "x86", "x86_64"]
             - assembleTaskOutputListingFile = {PROJECT}/test/build/intermediates/apk_ide_redirect_file/debug/createDebugApkListingFileRedirect/redirect.txt{!}
             - testInfo:
                - animationsDisabled       = false

@@ -1240,7 +1240,7 @@ class ModelBuilder<ExtensionT : CommonExtension>(
 
             applicationId = getApplicationId(component),
 
-            abiFilters = (component as? ConsumableCreationConfig)?.nativeBuildCreationConfig?.userDefinedAbis ?: emptySet(),
+            abiFilters = (component as? ConsumableCreationConfig)?.nativeBuildCreationConfig?.supportedAbis ?: emptySet(),
             testInfo = testInfo,
             bundleInfo = getBundleInfo(component),
             codeShrinker = CodeShrinker.R8.takeIf {

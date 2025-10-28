@@ -30,7 +30,7 @@
             - resGenTaskName                = "generateDebugResources"
             - generatedResourceFolders      = []
             - generatedAssetsFolders        = []
-            - abiFilters                    = []
+            - abiFilters                    = ["arm64-v8a", "armeabi-v7a", "x86", "x86_64"]
             - assembleTaskOutputListingFile = (null)
             - testInfo                      = (null)
             - bundleInfo                    = (null)
@@ -58,7 +58,7 @@
             - resGenTaskName                = "generateDebugAndroidTestResources"
             - generatedResourceFolders      = []
             - generatedAssetsFolders        = []
-            - abiFilters                    = []
+            - abiFilters                    = ["arm64-v8a", "armeabi-v7a", "x86", "x86_64"]
             - assembleTaskOutputListingFile = {INCLUDED_BUILD(:other-build)}/lib/build/intermediates/apk_ide_redirect_file/debugAndroidTest/createDebugAndroidTestApkListingFileRedirect/redirect.txt{!}
             - testInfo:
                - animationsDisabled       = false
@@ -110,7 +110,7 @@
             - resGenTaskName                = "generateReleaseResources"
             - generatedResourceFolders      = []
             - generatedAssetsFolders        = []
-            - abiFilters                    = []
+            - abiFilters                    = ["arm64-v8a", "armeabi-v7a", "x86", "x86_64"]
             - assembleTaskOutputListingFile = (null)
             - testInfo                      = (null)
             - bundleInfo                    = (null)
