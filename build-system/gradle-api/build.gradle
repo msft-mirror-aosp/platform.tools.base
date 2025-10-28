@@ -21,6 +21,12 @@ dependencies {
     compileOnly gradleApi()
     compileOnly project(':base:builder-model') // Only present for legacy reasons.
 
+    // Allow gradle-api to exist without gradle-core
+    // for use in various partial builds modeled in the Android Studio
+    // bazel build
+    if (file('../gradle-core/build.gradle').isFile()) {
+        runtimeOnly project(':base:build-system:gradle-core')
+    }
     metalavaTestImplementation libs.com.android.tools.testutils
     metalavaTestImplementation libs.guava
     metalavaTestImplementation libs.junit
