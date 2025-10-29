@@ -65,13 +65,15 @@ class SimulatedKaptAndKspCompilationTest {
                         package com.foo.bar.app
 
                         import com.kapt.MyKaptClass
-                        import com.ksp.MyKspClass
+                        import com.ksp.MyJavaKspClass
+                        import com.ksp.MyKotlinKspClass
                         import com.kotlingen.MyKotlinClass
                         import com.javagen.MyJavaClass
 
                         class MyClass {
                             fun someFunctionUsingGeneratedAPIs() {
-                                MyKspClass.someFunctionUsingGeneratedAPIs()
+                                MyJavaKspClass.someFunctionUsingGeneratedAPIs()
+                                MyKotlinKspClass().someFunctionUsingGeneratedAPIs()
                                 MyKotlinClass().someFunctionUsingGeneratedAPIs()
                                 MyJavaClass.someFunctionUsingGeneratedAPIs()
                                 MyKaptClass.someFunctionUsingGeneratedAPIs()
@@ -86,13 +88,13 @@ class SimulatedKaptAndKspCompilationTest {
                     package com.foo.bar.app;
 
                     import com.kapt.MyKaptClass;
-                    import com.ksp.MyKspClass;
+                    import com.ksp.MyJavaKspClass;
                     import com.javagen.MyJavaClass;
 
                     class SomeUtil {
                         public void someFunctionUsingGeneratedAPIs() {
                             MyKaptClass.someFunctionUsingGeneratedAPIs();
-                            MyKspClass.someFunctionUsingGeneratedAPIs();
+                            MyJavaKspClass.someFunctionUsingGeneratedAPIs();
                             MyJavaClass.someFunctionUsingGeneratedAPIs();
                         }
                     }
@@ -184,9 +186,14 @@ class SimulatedKaptAndKspCompilationTest {
                     FakeKspTask::class.java
                 ) { task ->
                     task.packageName.set("com.ksp")
-                    task.outputDir.set(
+                    task.javaOutputDir.set(
                         project.layout.buildDirectory.dir(
-                            "build/generated/source/ksp/${variant.name}"
+                            "build/generated/source/ksp/java/${variant.name}"
+                        )
+                    )
+                    task.kotlinOutputDir.set(
+                        project.layout.buildDirectory.dir(
+                            "build/generated/source/ksp/kotlin/${variant.name}"
                         )
                     )
                     task.sourceFiles.set(
@@ -197,7 +204,10 @@ class SimulatedKaptAndKspCompilationTest {
                     )
                 }
                 (variant.sources.java!! as FlatSourceDirectoriesImpl).addGeneratedSourceDirectory(
-                    kspTaskProvider, FakeKspTask::outputDir, DirectoryEntry.Kind.KSP
+                    kspTaskProvider, FakeKspTask::javaOutputDir, DirectoryEntry.Kind.KSP
+                )
+                (variant.sources.java!! as FlatSourceDirectoriesImpl).addGeneratedSourceDirectory(
+                    kspTaskProvider, FakeKspTask::kotlinOutputDir, DirectoryEntry.Kind.KSP
                 )
 
                 // create the Linter task which will want to see ALL java and kotlin static
@@ -227,12 +237,15 @@ class SimulatedKaptAndKspCompilationTest {
             .run("assembleDebug", "lintdebugSources")
         Truth.assertThat(result.failedTasks).isEmpty()
         gradleBuild.androidApplication(":app").assertApk(ApkSelector.DEBUG) {
-            classes().containsAtLeast("com/foo/bar/app/MyClass",
-            "com/foo/bar/app/SomeUtil",
-            "com/kapt/MyKaptClass",
-            "com/ksp/MyKspClass",
-            "com/kotlingen/MyKotlinClass",
-            "com/javagen/MyJavaClass")
+            classes().containsAtLeast(
+                "com/foo/bar/app/MyClass",
+                "com/foo/bar/app/SomeUtil",
+                "com/kapt/MyKaptClass",
+                "com/ksp/MyJavaKspClass",
+                "com/ksp/MyKotlinKspClass",
+                "com/kotlingen/MyKotlinClass",
+                "com/javagen/MyJavaClass"
+            )
         }
     }
 }
@@ -255,7 +268,9 @@ abstract class FakeKspTask: DefaultTask() {
     @get:Input
     abstract val packageName: Property<String>
     @get:OutputDirectory
-    abstract val outputDir: DirectoryProperty
+    abstract val javaOutputDir: DirectoryProperty
+    @get:OutputDirectory
+    abstract val kotlinOutputDir: DirectoryProperty
     @get:InputFiles
     abstract val sourceFiles: ListProperty<Directory>
 
@@ -268,14 +283,27 @@ abstract class FakeKspTask: DefaultTask() {
         if (sourceFiles.get().size != 8) {
             throw RuntimeException("KSP was expecting 8 source folders, got ${sourceFiles.get().size}")
         }
-        val outputFolder = File(outputDir.get().asFile, packageName.get().replace('.', File.separatorChar))
-        outputFolder.mkdirs()
-        File(outputFolder, "MyKspClass.java").writeText(
+        val javaOutputFolder = File(javaOutputDir.get().asFile, packageName.get().replace('.', File.separatorChar))
+        javaOutputFolder.mkdirs()
+        File(javaOutputFolder, "MyJavaKspClass.java").writeText(
             """
                 package ${packageName.get()};
-                public class MyKspClass {
+                public class MyJavaKspClass {
                     public static void someFunctionUsingGeneratedAPIs() {
                         System.err.println("Hello world !");
+                    }
+                }
+            """.trimIndent()
+        )
+
+        val kotlinOutputFolder = File(kotlinOutputDir.get().asFile, packageName.get().replace('.', File.separatorChar))
+        kotlinOutputFolder.mkdirs()
+        File(kotlinOutputFolder, "MyKotlinKspClass.kt").writeText(
+            """
+                package ${packageName.get()};
+                class MyKotlinKspClass {
+                    fun someFunctionUsingGeneratedAPIs() {
+                        System.err.println("Hello world !")
                     }
                 }
             """.trimIndent()
@@ -338,7 +366,8 @@ abstract class KotlinSourceGeneratingTask: DefaultTask() {
  * Kotlin/Java Linter can see project/app/src/debug/java
  * Kotlin/Java Linter can see project/app/build/generated/java/generatedebugJavaSources
  * Kotlin/Java Linter can see project/app/build/build/generated/source/kapt/debug
- * Kotlin/Java Linter can see project/app/build/build/generated/source/ksp/debug
+ * Kotlin/Java Linter can see project/app/build/build/generated/source/ksp/java/debug
+ * Kotlin/Java Linter can see project/app/build/build/generated/source/ksp/kotlin/debug
  */
 abstract class KotlinSourceLinter: DefaultTask() {
 
@@ -352,7 +381,7 @@ abstract class KotlinSourceLinter: DefaultTask() {
         sourceFiles.get().forEach { directory ->
             System.err.println("Kotlin/Java Linter can see ${directory.asFile.absolutePath}")
         }
-        if (sourceFiles.get().size != 10) {
+        if (sourceFiles.get().size != 11) {
             throw RuntimeException("Linter task was expecting 10 source folders, got ${sourceFiles.get().size}")
         }
         File(outputDir.get().asFile, "lint.result").writeText(
@@ -404,7 +433,7 @@ abstract class JavaSourceGeneratingTask: DefaultTask() {
  *
  * KAPT can see project/app/src/main/java/com/foo/bar/app/SomeUtil.java
  * KAPT can see project/app/build/generated/java/generatedebugJavaSources/com/javagen/MyJavaClass.java
- * KAPT can see project/app/build/build/generated/source/ksp/debug/com/ksp/MyKspClass.java
+ * KAPT can see project/app/build/build/generated/source/ksp/java/debug/com/ksp/MyKspClass.java
  *
  */
 abstract class FakeKAPTTask: DefaultTask() {

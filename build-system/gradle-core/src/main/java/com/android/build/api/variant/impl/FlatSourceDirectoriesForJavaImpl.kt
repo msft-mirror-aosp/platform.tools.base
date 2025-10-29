@@ -42,8 +42,8 @@ class FlatSourceDirectoriesForJavaImpl(
         return directories
     }
 
-    // Storage for ksp generated java source folder
-    private val kspGenerator = variantServices.directoryProperty()
+    // Storage for ksp generated java source folders
+    private val kspGenerator = variantServices.newListPropertyForInternalUse(Directory::class.java)
     // Storage for KAPT generated java source folders
     private val kaptGenerator = variantServices.newListPropertyForInternalUse(Directory::class.java)
 
@@ -51,18 +51,13 @@ class FlatSourceDirectoriesForJavaImpl(
      * Provide ksp and kapt generators as a zipped provider.
      */
     private val internalGenerators: Provider<List<Directory>> by lazy {
-        val buildDirectory = variantServices.projectInfo.buildDirectory
         // zip requires that the two providers are not null or empty, therefore force some
         // initialization of the ksp Provider instance in case it is not set so that the merging
         // happens in all cases even when KSP processing is not active in this build/variant.
-        kaptGenerator.zip(kspGenerator.orElse(buildDirectory)) { kaptDirectories: List<Directory>, kspDirectory: Directory ->
+        kaptGenerator.zip(kspGenerator) { kaptDirectories: List<Directory>, kspDirectories: List<Directory> ->
             // check if ksp is active. If it is set to the project build directory, that means
             // that KSP is not active in this build.
-            return@zip if (kspDirectory.asFile.absolutePath == buildDirectory.get().asFile.absolutePath) {
-                kaptDirectories
-            } else {
-                kaptDirectories + kspDirectory
-            }
+            return@zip kaptDirectories + kspDirectories
         }
     }
 
@@ -86,7 +81,7 @@ class FlatSourceDirectoriesForJavaImpl(
         // depending on the kind of generators, store it in the right location.
         when(directoryEntry.kind) {
             DirectoryEntry.Kind.KSP -> {
-                kspGenerator.set((directoryEntry as TaskProviderBasedDirectoryEntryImpl).directoryProvider)
+                kspGenerator.add((directoryEntry as TaskProviderBasedDirectoryEntryImpl).directoryProvider)
             }
             DirectoryEntry.Kind.KAPT -> {
                 // because KAPT uses the old variant API which mean that the generated source
