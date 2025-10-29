@@ -161,6 +161,8 @@ class ImpactedTargetsTest(absltest.TestCase):
         downloaded,
     )
     self.assertEqual(downloaded.read_text(), 'hash-file')
+    incremental_hash_path = pathlib.Path(self.build_env.workspace_dir) / 'out/bazel-diff-hashes.json'
+    self.assertEqual(incremental_hash_path.read_text(), 'hash-file')
     mock_generate.assert_called_once_with(
         self.build_env,
         impacted_targets._LOCAL_REPOSITORIES,
