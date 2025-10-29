@@ -410,8 +410,10 @@ abstract class AndroidLintTask : NonIncrementalTask() {
         if (baselineOmitLineNumbers.get()) {
             arguments += "--baseline-omit-line-numbers"
         }
-        if (uastInputs.useK2Uast) {
-            arguments += "--XuseK2Uast"
+        arguments += if (uastInputs.useK2Uast) {
+            "--XuseK2Uast"
+        } else {
+            "--XuseK1Uast"
         }
 
         // Pass information to lint using the --client-id, --client-name, and --client-version flags
