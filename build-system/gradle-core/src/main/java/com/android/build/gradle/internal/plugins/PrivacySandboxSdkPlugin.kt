@@ -165,18 +165,10 @@ class PrivacySandboxSdkPlugin @Inject constructor(
     }
 
     override fun apply(project: Project) {
-        super.applyBaseServices(project, buildFeatures)
-        if (projectServices.projectOptions.let {
-                    !it[BooleanOption.PRIVACY_SANDBOX_SDK_PLUGIN_SUPPORT] && !it[BooleanOption.PRIVACY_SANDBOX_SDK_SUPPORT] }) {
-            throw GradleException(
-                    "Privacy Sandbox SDK Plugin support must be explicitly enabled.\n" +
-                            "To enable support, add\n" +
-                            "    ${BooleanOption.PRIVACY_SANDBOX_SDK_PLUGIN_SUPPORT.propertyName}=true\n" +
-                            "to your project's gradle.properties file."
-            )
-        }
-
-        applyPrivacySandboxConfigurations(project)
+        throw GradleException(
+            "Privacy Sandbox SDK Plugin has been phased out.\n" +
+                    "Check https://privacysandbox.com/news/update-on-plans-for-privacy-sandbox-technologies for full details"
+        )
     }
 
     private fun applyPrivacySandboxConfigurations(project: Project) {
