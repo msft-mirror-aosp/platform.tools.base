@@ -19,7 +19,6 @@ package com.android.build.gradle.internal.testing.utp.worker
 import com.android.build.gradle.internal.testing.utp.UtpDependencies
 import com.android.build.gradle.internal.testing.utp.UtpDependency
 import com.android.build.gradle.internal.testing.utp.UtpTestResultListener
-import com.android.build.gradle.internal.testing.utp.UtpTestResultListenerServerMetadata
 import com.android.build.gradle.internal.testing.utp.UtpTestResultListenerServerRunner
 import com.android.testutils.assertThrows
 import com.android.testutils.truth.PathSubject.assertThat
@@ -44,6 +43,7 @@ import org.mockito.Mock
 import org.mockito.junit.MockitoJUnitRunner
 import org.mockito.kotlin.any
 import org.mockito.kotlin.capture
+import org.mockito.kotlin.doNothing
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
@@ -77,12 +77,9 @@ class UtpRunnerTest {
     private lateinit var executorService: ExecutorService
     @Mock(answer = Answers.RETURNS_DEEP_STUBS)
     private lateinit var utpDependencies: UtpDependencies
-    @Mock
-    private lateinit var utpTestResultListenerServerRunnerFactory: (UtpTestResultListener) -> UtpTestResultListenerServerRunner
+
     @Mock
     private lateinit var utpTestResultListenerServerRunner: UtpTestResultListenerServerRunner
-    @Mock
-    private lateinit var utpTestResultListenerServerMetadata: UtpTestResultListenerServerMetadata
 
     @Captor
     private lateinit var commandCaptor: ArgumentCaptor<List<String>>
@@ -94,10 +91,6 @@ class UtpRunnerTest {
     private lateinit var javaFile: File
     private lateinit var launcherJar: File
     private lateinit var coreJar: File
-    private lateinit var listenerServerJar: File
-    private lateinit var clientCert: File
-    private lateinit var clientKey: File
-    private lateinit var serverCert: File
     private lateinit var xmlTestReportOutputDirectory: File
     private lateinit var loggingFile1: File
     private lateinit var loggingFile2: File
@@ -112,11 +105,7 @@ class UtpRunnerTest {
     fun setUp() {
         javaFile = tempDir.newFile("my-java")
         coreJar = tempDir.newFile("core.jar")
-        listenerServerJar = tempDir.newFile("listenerServer.jar")
         launcherJar = tempDir.newFile("launcher.jar")
-        clientCert = tempDir.newFile("client.cert")
-        clientKey = tempDir.newFile("client.key")
-        serverCert = tempDir.newFile("server.cert")
         xmlTestReportOutputDirectory = tempDir.newFolder("xml-reports")
         loggingFile1 = tempDir.newFile("logging1.properties")
         loggingFile2 = tempDir.newFile("logging2.properties")
@@ -137,25 +126,18 @@ class UtpRunnerTest {
         // Mock UTP dependencies
         whenever(utpDependencies.launcher.files).thenReturn(setOf(launcherJar))
         whenever(utpDependencies.core.files).thenReturn(setOf(coreJar))
-        whenever(utpDependencies.testPluginResultListenerGradle.files).thenReturn(setOf(listenerServerJar))
 
         // Mock listener server
-        whenever(utpTestResultListenerServerRunnerFactory(capture(utpTestResultListenerCaptor)))
-            .thenReturn(utpTestResultListenerServerRunner)
-        whenever(utpTestResultListenerServerRunner.metadata).thenReturn(utpTestResultListenerServerMetadata)
-        whenever(utpTestResultListenerServerMetadata.serverPort).thenReturn(12345)
-        whenever(utpTestResultListenerServerMetadata.clientCert).thenReturn(clientCert)
-        whenever(utpTestResultListenerServerMetadata.clientPrivateKey).thenReturn(clientKey)
-        whenever(utpTestResultListenerServerMetadata.serverCert).thenReturn(serverCert)
+        doNothing().whenever(utpTestResultListenerServerRunner).setListener(capture(utpTestResultListenerCaptor))
 
         utpRunner = UtpRunner(
             javaFile,
             utpDependencies,
             enableUtpTestReportingForAndroidStudio = false,
+            utpTestResultListenerServerRunner,
             logger,
             processBuilderFactory,
             executorServiceFactory,
-            utpTestResultListenerServerRunnerFactory,
         )
     }
 
@@ -185,15 +167,6 @@ class UtpRunnerTest {
         taskCaptor.allValues.forEach { it.run() }
 
         val allCommands = commandCaptor.allValues
-        // The private execute method is called with the *new* config files
-        val newConfigPath1 = File(
-            runnerConfig1.parentFile,
-            "runner-config-1_withListener.pb"
-        ).absolutePath
-        val newConfigPath2 = File(
-            runnerConfig2.parentFile,
-            "runner-config-2_withListener.pb"
-        ).absolutePath
 
         assertThat(allCommands[0]).containsExactly(
             javaFile.absolutePath,
@@ -204,7 +177,7 @@ class UtpRunnerTest {
             launcherJar.absolutePath,
             UtpDependency.LAUNCHER.mainClass,
             coreJar.absolutePath,
-            "--proto_config=$newConfigPath1",
+            "--proto_config=${runnerConfig1.absolutePath}",
         ).inOrder()
         assertThat(allCommands[1]).containsExactly(
             javaFile.absolutePath,
@@ -215,7 +188,7 @@ class UtpRunnerTest {
             launcherJar.absolutePath,
             UtpDependency.LAUNCHER.mainClass,
             coreJar.absolutePath,
-            "--proto_config=$newConfigPath2",
+            "--proto_config=${runnerConfig2.absolutePath}",
         ).inOrder()
 
         // Assert: Verify process lifecycle and logging for both tasks

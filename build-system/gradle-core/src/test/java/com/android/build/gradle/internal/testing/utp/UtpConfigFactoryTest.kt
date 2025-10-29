@@ -148,6 +148,7 @@ class UtpConfigFactoryTest {
             reinstallIncompatibleApksBeforeTest: Boolean = false,
     ): RunnerConfig {
         return createRunnerConfigProtoForLocalDevice(
+            "mockDeviceID",
             "emulator-mockDeviceSerialNumber",
             testData,
             targetApkConfigBundle,
@@ -172,6 +173,12 @@ class UtpConfigFactoryTest {
             cleanTestArtifacts,
             reinstallIncompatibleApksBeforeTest,
             shardConfig,
+            UtpTestResultListenerServerMetadata(
+                mockFile("serverCert"),
+                1234,
+                mockFile("clientCert"),
+                mockFile("clientKey"),
+            )
         )
     }
 
@@ -186,6 +193,7 @@ class UtpConfigFactoryTest {
             targetApkConfigBundle: TargetApkConfigBundle = testTargetApkConfigBundle,
     ): RunnerConfig {
         return createRunnerConfigProtoForLocalDevice(
+            "mockDeviceID",
             "emulator-mockDeviceSerialNumber",
             testData,
             targetApkConfigBundle,
@@ -210,6 +218,12 @@ class UtpConfigFactoryTest {
             uninstallApksAfterTest = false,
             reinstallIncompatibleApksBeforeTest = true,
             shardConfig,
+            UtpTestResultListenerServerMetadata(
+                mockFile("serverCert"),
+                1234,
+                mockFile("clientCert"),
+                mockFile("clientKey"),
+            ),
         )
     }
 

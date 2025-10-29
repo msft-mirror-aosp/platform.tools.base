@@ -20,13 +20,12 @@ import com.android.testutils.truth.PathSubject.assertThat
 import com.google.common.truth.Truth.assertThat
 import org.junit.Assert.assertThrows
 import org.junit.Before
-import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
 import org.mockito.kotlin.mock
-import org.mockito.kotlin.whenever
 import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 import java.io.File
 
 /**
@@ -35,8 +34,6 @@ import java.io.File
 @RunWith(JUnit4::class)
 class UtpTestResultListenerServerRunnerTest {
     private val mockServer: UtpTestResultListenerServer = mock()
-
-    private val mockTestResultListener: UtpTestResultListener = mock()
 
     @Before
     fun setUp() {
@@ -49,8 +46,8 @@ class UtpTestResultListenerServerRunnerTest {
         lateinit var privateKeyFile: File
         lateinit var trustCertCollectionFile: File
 
-        val runner = UtpTestResultListenerServerRunner(mockTestResultListener) {
-            cert, privateKey, trustCertCollection ->
+        val runner = UtpTestResultListenerServerRunner {
+                cert, privateKey, trustCertCollection, _ ->
             certChainFile = cert
             privateKeyFile = privateKey
             trustCertCollectionFile = trustCertCollection
@@ -79,10 +76,10 @@ class UtpTestResultListenerServerRunnerTest {
     @Test
     fun startServerFailed() {
         val exception = assertThrows(IllegalArgumentException::class.java) {
-            UtpTestResultListenerServerRunner(null) { _, _, _ -> null }
+            UtpTestResultListenerServerRunner { _, _, _, _ -> null }
         }
 
         assertThat(exception.message)
-                .contains("Unable to start the UTP test results listener gRPC server.")
+            .contains("Unable to start the UTP test results listener gRPC server.")
     }
 }

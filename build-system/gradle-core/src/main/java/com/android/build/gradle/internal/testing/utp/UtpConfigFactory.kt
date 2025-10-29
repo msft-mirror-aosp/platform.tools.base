@@ -84,6 +84,7 @@ private const val TEST_LOG_DIR = "testlog"
  *     when disabled.
  */
 fun createRunnerConfigProtoForLocalDevice(
+    deviceId: String,
     deviceSerialNumber: String,
     testData: StaticTestData,
     targetApkConfigBundle: TargetApkConfigBundle,
@@ -108,6 +109,7 @@ fun createRunnerConfigProtoForLocalDevice(
     uninstallApksAfterTest: Boolean,
     reinstallIncompatibleApksBeforeTest: Boolean,
     shardConfig: ShardConfig?,
+    serverMetadata: UtpTestResultListenerServerMetadata,
 ): RunnerConfigProto.RunnerConfig {
     return RunnerConfigProto.RunnerConfig.newBuilder().apply {
         val grpcInfo = findGrpcInfo(deviceSerialNumber)
@@ -140,10 +142,11 @@ fun createRunnerConfigProtoForLocalDevice(
             )
         )
         singleDeviceExecutor = createSingleDeviceExecutor(deviceSerialNumber, shardConfig)
+        addTestResultListenerPlugin(utpDependencies, serverMetadata, deviceId)
     }.build()
 }
 
-fun RunnerConfigProto.RunnerConfig.Builder.addTestResultListenerPlugin(
+private fun RunnerConfigProto.RunnerConfig.Builder.addTestResultListenerPlugin(
     utpDependencies: UtpDependencies,
     serverMetadata: UtpTestResultListenerServerMetadata,
     deviceId: String,
