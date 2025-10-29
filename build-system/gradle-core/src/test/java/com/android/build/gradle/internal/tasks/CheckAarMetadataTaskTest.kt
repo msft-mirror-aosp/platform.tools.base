@@ -513,8 +513,12 @@ class CheckAarMetadataTaskTest {
                           :app is currently compiled against android-28.
 
                           Recommended action: Use a different version of dependency 'displayName',
-                          or set compileSdkPreview to "TiramisuPrivacySandbox" in your build.gradle
-                          file if you intend to experiment with that preview SDK.
+                          or update your `compileSdk` in your build.gradle file to experiment with
+                          the "TiramisuPrivacySandbox" preview SDK. For example:
+
+                          compileSdk {
+                              version = preview("TiramisuPrivacySandbox")
+                          }
                 """.trimIndent()
             )
         }
