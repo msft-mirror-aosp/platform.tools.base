@@ -75,4 +75,15 @@ sealed class InternalMultipleArtifactType<T: FileSystemLocation>(
     // InternalArtifactType.UNIT_TEST_LINT_PARTIAL_RESULTS, but allows for multiple instances, to
     // support the case of a KMP project with multiple jvm targets.
     object UNIT_TEST_LINT_PARTIAL_RESULTS : InternalMultipleArtifactType<Directory>(DIRECTORY)
+
+    // Code coverage data collected from all variants. Similar to InternalArtifactType.VARIANT_CODE_COVERAGE_DATA,
+    // but allows for multiple instances, to support the collection of data from all variants.
+    object CODE_COVERAGE_DATA : InternalMultipleArtifactType<Directory>(DIRECTORY,
+        Category.INTERMEDIATES
+    )
+
+    // Code coverage data collected from all variants for current and dependant modules.
+    object AGGREGATED_CODE_COVERAGE_DATA : InternalMultipleArtifactType<Directory>(DIRECTORY,
+        Category.INTERMEDIATES
+    )
 }
