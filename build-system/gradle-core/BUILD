@@ -137,6 +137,10 @@ java_library(
 fileset(
     name = "TestData",
     srcs = glob(["src/test/data/**"]),
+    visibility = [
+        ":__pkg__",
+        "//tools/vendor/google/android-ndk:__pkg__",
+    ],
 )
 
 maven_repository(
