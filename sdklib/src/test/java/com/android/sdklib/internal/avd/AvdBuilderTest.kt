@@ -229,7 +229,7 @@ class AvdBuilderTest {
     avdBuilder.systemImage = android33ext4
     val backgroundFile = root.resolve("tmp").resolve("img1.png")
     backgroundFile.recordExistingFile(contents = "abcd")
-    avdBuilder.background = backgroundFile
+    avdBuilder.environment = backgroundFile
 
     val avdInfo = avdManager.createAvd(avdBuilder)
 
@@ -242,8 +242,8 @@ class AvdBuilderTest {
     val newAvdInfo = avdManager.getAvd(avdInfo.name, true)!!
     assertThat(newAvdInfo.environment).containsExactly(EnvironmentKey.IMAGE, "img1.png")
     AvdBuilder.createForExistingDevice(device, newAvdInfo).let {
-      assertThat(it.background?.nameCount).isEqualTo(1)
-      assertThat(it.background?.fileName.toString()).isEqualTo("img1.png")
+      assertThat(it.environment?.nameCount).isEqualTo(1)
+      assertThat(it.environment?.fileName.toString()).isEqualTo("img1.png")
     }
   }
 }
