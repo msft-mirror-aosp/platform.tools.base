@@ -17,16 +17,21 @@
 package com.android.utils;
 
 import static com.google.common.truth.Truth.assertThat;
+
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import com.android.SdkConstants;
-import java.io.File;
-import java.io.IOException;
+
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 
 /**
  * Test cases for {@link FileUtils}.
@@ -163,6 +168,77 @@ public class FileUtilsTest {
             java.nio.file.Files.createSymbolicLink(fooSymbolicLinkFile.toPath(), fooFile.toPath());
             assertThat(FileUtils.isSameFile(fooSymbolicLinkFile, fooFile)).isTrue();
         }
+    }
+
+    @Test
+    public void appendLine_fileDoesNotExist() throws IOException {
+        File file = new File(mTemporaryFolder.getRoot(), "file.txt");
+        String line = "new line";
+        FileUtils.appendLine(file, line);
+        assertThat(Files.readString(file.toPath(), StandardCharsets.UTF_8))
+                .isEqualTo(line + System.lineSeparator());
+    }
+
+    @Test
+    public void appendLine_emptyFileExists() throws IOException {
+        File file = mTemporaryFolder.newFile("file.txt");
+        String line = "new line";
+        FileUtils.appendLine(file, line);
+        assertThat(Files.readString(file.toPath(), StandardCharsets.UTF_8))
+                .isEqualTo(line + System.lineSeparator());
+    }
+
+    @Test
+    public void appendLine_nonEmptyFileExists_endingWithNewline() throws IOException {
+        File file = mTemporaryFolder.newFile("file.txt");
+        String existingContent = "existing line" + System.lineSeparator();
+        Files.write(file.toPath(), (existingContent).getBytes(StandardCharsets.UTF_8));
+        String line = "new line";
+        FileUtils.appendLine(file, line);
+        String expectedContent = existingContent + line + System.lineSeparator();
+        assertThat(Files.readString(file.toPath(), StandardCharsets.UTF_8))
+                .isEqualTo(expectedContent);
+    }
+
+    @Test
+    public void appendLine_nonEmptyFileExists_notEndingWithNewline() throws IOException {
+        File file = mTemporaryFolder.newFile("file.txt");
+        String contentWithoutNewline = "existing line";
+        Files.write(file.toPath(), contentWithoutNewline.getBytes(StandardCharsets.UTF_8));
+        String line = "new line";
+        FileUtils.appendLine(file, line);
+        String newline = System.lineSeparator();
+        String expectedContent = contentWithoutNewline + newline + line + newline;
+        assertThat(Files.readString(file.toPath(), StandardCharsets.UTF_8))
+                .isEqualTo(expectedContent);
+    }
+
+    @Test
+    public void appendLine_multipleAppends() throws IOException {
+        File file = mTemporaryFolder.newFile("file.txt");
+        String line1 = "line 1";
+        FileUtils.appendLine(file, line1);
+        String line2 = "line 2";
+        FileUtils.appendLine(file, line2);
+        String newline = System.lineSeparator();
+        String expectedContent = line1 + newline + line2 + newline;
+        assertThat(Files.readString(file.toPath(), StandardCharsets.UTF_8))
+                .isEqualTo(expectedContent);
+    }
+
+    @Test
+    public void appendLine_multipleAppends_noTrailingNewline() throws IOException {
+        File file = mTemporaryFolder.newFile("file.txt");
+        String line1 = "line 1";
+        Files.write(file.toPath(), line1.getBytes(StandardCharsets.UTF_8));
+        String line2 = "line 2";
+        FileUtils.appendLine(file, line2);
+        String line3 = "line 3";
+        FileUtils.appendLine(file, line3);
+        String newline = System.lineSeparator();
+        String expectedContent = line1 + newline + line2 + newline + line3 + newline;
+        assertThat(Files.readString(file.toPath(), StandardCharsets.UTF_8))
+                .isEqualTo(expectedContent);
     }
 
     private static boolean isFileSystemCaseSensitive() {
