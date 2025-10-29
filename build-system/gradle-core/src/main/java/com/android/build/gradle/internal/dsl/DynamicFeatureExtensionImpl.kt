@@ -23,12 +23,16 @@ import com.android.build.api.dsl.DynamicFeatureDefaultConfig
 import com.android.build.api.dsl.DynamicFeatureInstallation
 import com.android.build.api.dsl.DynamicFeatureProductFlavor
 import com.android.build.api.dsl.Packaging
+import com.android.build.api.dsl.TestCoverage
+import com.android.build.api.dsl.ViewBinding
+import com.android.build.gradle.internal.coverage.JacocoOptions
 import com.android.build.gradle.internal.dsl.DefaultConfig as InternalDefaultConfig
 import com.android.build.gradle.internal.dsl.ProductFlavor as InternalProductFlavor
 import com.android.build.gradle.internal.plugins.DslContainerProvider
 import com.android.build.gradle.internal.services.DslServices
 import org.gradle.api.Action
 import org.gradle.api.NamedDomainObjectContainer
+import java.util.function.Supplier
 import javax.inject.Inject
 
 abstract class DynamicFeatureExtensionImpl @Inject constructor(
@@ -92,6 +96,26 @@ abstract class DynamicFeatureExtensionImpl @Inject constructor(
         action.invoke(defaultConfig)
     }
 
+    override val aaptOptions: AaptOptions get() = androidResources as AaptOptions
+
+    override fun aaptOptions(action: com.android.build.api.dsl.AaptOptions.() -> Unit) {
+        action.invoke(aaptOptions)
+    }
+
+    override fun aaptOptions(action: Action<AaptOptions>) {
+        action.execute(aaptOptions)
+    }
+
+    override val adbOptions: AdbOptions get() = installation as AdbOptions
+
+    override fun adbOptions(action: com.android.build.api.dsl.AdbOptions.() -> Unit) {
+        action.invoke(adbOptions)
+    }
+
+    override fun adbOptions(action: Action<AdbOptions>) {
+        action.execute(adbOptions)
+    }
+
     override val androidResources: DynamicFeatureAndroidResources
         = dslServices.newDecoratedInstance(DynamicFeatureAndroidResourcesImpl::class.java, dslServices)
     override fun androidResources(action: DynamicFeatureAndroidResources.() -> Unit) {
@@ -100,6 +124,69 @@ abstract class DynamicFeatureExtensionImpl @Inject constructor(
     override fun androidResources(action: Action<DynamicFeatureAndroidResources>) {
         action.execute(androidResources)
     }
+
+    override val dataBinding: DataBindingOptions =
+        dslServices.newDecoratedInstance(
+            DataBindingOptions::class.java,
+            Supplier { buildFeatures },
+            dslServices
+        )
+
+    override fun dataBinding(action: com.android.build.api.dsl.DataBinding.() -> Unit) {
+        action.invoke(dataBinding)
+    }
+
+    override fun dataBinding(action: Action<DataBindingOptions>) {
+        action.execute(dataBinding)
+    }
+
+    override val viewBinding: ViewBindingOptionsImpl
+        get() = dslServices.newDecoratedInstance(
+            ViewBindingOptionsImpl::class.java,
+            Supplier { buildFeatures },
+            dslServices
+        )
+
+    override fun viewBinding(action: Action<ViewBindingOptionsImpl>) {
+        action.execute(viewBinding)
+    }
+
+    override fun viewBinding(action: ViewBinding.() -> Unit) {
+        action.invoke(viewBinding)
+    }
+
+    override val jacoco: JacocoOptions
+        get() = testCoverage as JacocoOptions
+
+    override fun jacoco(action: com.android.build.api.dsl.JacocoOptions.() -> Unit) {
+        action.invoke(jacoco)
+    }
+
+    override fun jacoco(action: Action<JacocoOptions>) {
+        action.execute(jacoco)
+    }
+
+    override val testCoverage: TestCoverage  = dslServices.newInstance(JacocoOptions::class.java)
+
+    override fun testCoverage(action: TestCoverage.() -> Unit) {
+        action.invoke(testCoverage)
+    }
+
+    override fun testCoverage(action: Action<TestCoverage>) {
+        action.execute(testCoverage)
+    }
+
+    override val testOptions: TestOptions =
+        dslServices.newInstance(TestOptions::class.java, dslServices)
+
+    override fun testOptions(action: com.android.build.api.dsl.TestOptions.() -> Unit) {
+        action.invoke(testOptions)
+    }
+
+    override fun testOptions(action: Action<TestOptions>) {
+        action.execute(testOptions)
+    }
+
     override val installation: DynamicFeatureInstallation
         = dslServices.newDecoratedInstance(DynamicFeatureInstallationImpl::class.java, dslServices)
 

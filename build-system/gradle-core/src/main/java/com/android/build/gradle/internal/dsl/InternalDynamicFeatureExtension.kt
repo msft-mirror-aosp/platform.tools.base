@@ -22,15 +22,27 @@ import com.android.build.api.dsl.DynamicFeatureDefaultConfig
 import com.android.build.api.dsl.DynamicFeatureExtension
 import com.android.build.api.dsl.DynamicFeatureInstallation
 import com.android.build.api.dsl.Packaging
+import com.android.build.gradle.internal.dsl.AaptOptions as AaptOptionsImpl
+import com.android.build.gradle.internal.dsl.AdbOptions as AdbOptionsImpl
+import com.android.build.gradle.internal.dsl.DataBindingOptions as DataBindingOptionsImpl
+import com.android.build.gradle.internal.coverage.JacocoOptions as JacocoOptionsImpl
 import com.android.build.gradle.internal.dsl.PackagingOptions as PackagingImpl
+import com.android.build.gradle.internal.dsl.TestOptions as TestOptionsImpl
 import com.android.build.api.dsl.PrivacySandbox
+import com.android.build.api.dsl.TestCoverage
 import org.gradle.api.Action
 import org.gradle.api.NamedDomainObjectContainer
 
 /** See [InternalCommonExtension] */
 interface InternalDynamicFeatureExtension: DynamicFeatureExtension, InternalTestedExtension {
-
+    fun aaptOptions(action: Action<AaptOptionsImpl>)
+    fun adbOptions(action: Action<AdbOptionsImpl>)
     fun androidResources(action: Action<DynamicFeatureAndroidResources>)
+    fun dataBinding(action: Action<DataBindingOptionsImpl>)
+    fun viewBinding(action: Action<ViewBindingOptionsImpl>)
+    fun jacoco(action: Action<JacocoOptionsImpl>)
+    fun testCoverage(action: Action<TestCoverage>)
+    fun testOptions(action: Action<TestOptionsImpl>)
     fun productFlavors(action: Action<NamedDomainObjectContainer<ProductFlavor>>)
     fun defaultConfig(action: Action<DefaultConfig>)
     fun buildFeatures(action: Action<DynamicFeatureBuildFeatures>)

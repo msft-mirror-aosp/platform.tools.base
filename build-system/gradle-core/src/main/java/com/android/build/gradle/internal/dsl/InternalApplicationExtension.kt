@@ -26,6 +26,12 @@ import com.android.build.api.dsl.ApplicationPublishing
 import com.android.build.api.dsl.DependenciesInfo
 import com.android.build.api.dsl.Packaging
 import com.android.build.api.dsl.PrivacySandbox
+import com.android.build.api.dsl.TestCoverage
+import com.android.build.gradle.internal.dsl.TestOptions as TestOptionsImpl
+import com.android.build.gradle.internal.coverage.JacocoOptions as JacocoOptionsImpl
+import com.android.build.gradle.internal.dsl.DataBindingOptions as DataBindingOptionsImpl
+import com.android.build.gradle.internal.dsl.AaptOptions as AaptOptionsImpl
+import com.android.build.gradle.internal.dsl.AdbOptions as AdbOptionsImpl
 import com.android.build.gradle.internal.dsl.PackagingOptions as PackagingImpl
 import org.gradle.api.Action
 import org.gradle.api.NamedDomainObjectContainer
@@ -38,9 +44,16 @@ interface InternalApplicationExtension : ApplicationExtension, InternalTestedExt
     fun setAssetPacks(assetPacks: Set<String>)
 
     // See GroovyBlockInExtensionsTest
+    fun aaptOptions(action: Action<AaptOptionsImpl>)
+    fun adbOptions(action: Action<AdbOptionsImpl>)
     fun androidResources(action: Action<ApplicationAndroidResources>)
     fun buildFeatures(action: Action<ApplicationBuildFeatures>)
     fun buildTypes(action: Action<in NamedDomainObjectContainer<BuildType>>)
+    fun dataBinding(action: Action<DataBindingOptionsImpl>)
+    fun viewBinding(action: Action<ViewBindingOptionsImpl>)
+    fun jacoco(action: Action<JacocoOptionsImpl>)
+    fun testCoverage(action: Action<TestCoverage>)
+    fun testOptions(action: Action<TestOptionsImpl>)
     fun productFlavors(action: Action<NamedDomainObjectContainer<ProductFlavor>>)
     fun defaultConfig(action: Action<DefaultConfig>)
     fun bundle(action: Action<BundleOptions>)

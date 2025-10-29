@@ -42,11 +42,18 @@ https://issuetracker.google.com/328748132
   * com.android.build.api.dsl.BundleDeviceTier.setDefaultTier: void (java.lang.String)
   * com.android.build.api.dsl.BundleDeviceTier.setEnableSplit: void (java.lang.Boolean)
 https://issuetracker.google.com/328748193
+  * com.android.build.api.dsl.ApplicationExtension.getJacoco: com.android.build.api.dsl.JacocoOptions ()
+  * com.android.build.api.dsl.ApplicationExtension.jacoco: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.JacocoOptions, kotlin.Unit>)
   * com.android.build.api.dsl.CommonExtension.getJacoco: com.android.build.api.dsl.JacocoOptions ()
-  * com.android.build.api.dsl.CommonExtension.jacoco: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.JacocoOptions, kotlin.Unit>)
+  * com.android.build.api.dsl.DynamicFeatureExtension.getJacoco: com.android.build.api.dsl.JacocoOptions ()
+  * com.android.build.api.dsl.DynamicFeatureExtension.jacoco: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.JacocoOptions, kotlin.Unit>)
   * com.android.build.api.dsl.JacocoOptions implements com.android.build.api.dsl.TestCoverage
   * com.android.build.api.dsl.JacocoOptions.getVersion: java.lang.String ()
   * com.android.build.api.dsl.JacocoOptions.setVersion: void (java.lang.String)
+  * com.android.build.api.dsl.LibraryExtension.getJacoco: com.android.build.api.dsl.JacocoOptions ()
+  * com.android.build.api.dsl.LibraryExtension.jacoco: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.JacocoOptions, kotlin.Unit>)
+  * com.android.build.api.dsl.TestExtension.getJacoco: com.android.build.api.dsl.JacocoOptions ()
+  * com.android.build.api.dsl.TestExtension.jacoco: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.JacocoOptions, kotlin.Unit>)
 https://issuetracker.google.com/328748252
   * com.android.build.api.dsl.AndroidSourceSet.getJni: com.android.build.api.dsl.AndroidSourceDirectorySet ()
 https://issuetracker.google.com/328748254

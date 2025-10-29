@@ -19,6 +19,7 @@ package com.android.build.gradle.internal.dsl
 import com.android.build.gradle.AppExtension
 import com.android.build.gradle.api.AndroidSourceSet
 import com.android.build.gradle.api.BaseVariantOutput
+import com.android.build.gradle.internal.coverage.JacocoOptions
 import com.android.build.gradle.internal.dependency.SourceSetManager
 import com.android.build.gradle.internal.services.DslServices
 import com.android.build.gradle.internal.tasks.factory.BootClasspathConfig
@@ -75,6 +76,21 @@ abstract class DynamicFeatureExtension @Inject constructor(
 
     override val packagingOptions: PackagingOptions
         get() = publicExtensionImpl.packagingOptions
+
+    override val aaptOptions: AaptOptions
+        get() = publicExtensionImpl.aaptOptions
+
+    override val adbOptions: AdbOptions
+        get() = publicExtensionImpl.adbOptions
+
+    override val dataBinding: DataBindingOptions
+        get() = publicExtensionImpl.dataBinding
+
+    override val jacoco: JacocoOptions
+        get() = publicExtensionImpl.jacoco
+
+    override val testOptions: TestOptions
+        get() = publicExtensionImpl.testOptions
 
     //TODO(b/421964815): remove the support for groovy space assignment(e.g `compileSdk 24`).
     @Deprecated(

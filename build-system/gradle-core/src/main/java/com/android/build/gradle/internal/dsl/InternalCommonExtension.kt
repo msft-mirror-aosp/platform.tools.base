@@ -27,8 +27,6 @@ import org.gradle.api.Action
 import org.gradle.api.NamedDomainObjectContainer
 import com.android.build.gradle.internal.CompileOptions as CompileOptionsImpl
 import com.android.build.gradle.internal.coverage.JacocoOptions as JacocoOptionsImpl
-import com.android.build.gradle.internal.dsl.AaptOptions as AaptOptionsImpl
-import com.android.build.gradle.internal.dsl.AdbOptions as AdbOptionsImpl
 import com.android.build.gradle.internal.dsl.DataBindingOptions as DataBindingOptionsImpl
 import com.android.build.gradle.internal.dsl.ExternalNativeBuild as ExternalNativeBuildImpl
 import com.android.build.gradle.internal.dsl.LintOptions as LintOptionsImpl
@@ -42,18 +40,10 @@ import com.android.build.gradle.internal.dsl.TestOptions as TestOptionsImpl
  * to the new implementations.
  */
 interface InternalCommonExtension: CommonExtension, Lockable {
-
-    override val aaptOptions: AaptOptionsImpl
-
-    override val adbOptions: AdbOptionsImpl
     override val compileOptions: CompileOptionsImpl
 
-    override val dataBinding: DataBindingOptionsImpl
-    override val viewBinding: ViewBindingOptionsImpl
-    override val jacoco: JacocoOptionsImpl
     override val lintOptions: LintOptionsImpl
     override val externalNativeBuild: ExternalNativeBuildImpl
-    override val testOptions: TestOptionsImpl
     override val splits: SplitsImpl
     override val signingConfigs: NamedDomainObjectContainer<SigningConfig>
 
@@ -61,20 +51,13 @@ interface InternalCommonExtension: CommonExtension, Lockable {
 
     // See GroovyExtensionsTest
     fun signingConfigs(action: Action<NamedDomainObjectContainer<SigningConfig>>)
-    fun aaptOptions(action: Action<AaptOptionsImpl>)
-    fun adbOptions(action: Action<AdbOptionsImpl>)
     fun compileOptions(action: Action<CompileOptionsImpl>)
     fun composeOptions(action: Action<ComposeOptions>)
-    fun dataBinding(action: Action<DataBindingOptionsImpl>)
-    fun viewBinding(action: Action<ViewBindingOptionsImpl>)
     fun externalNativeBuild(action: Action<ExternalNativeBuildImpl>)
-    fun jacoco(action: Action<JacocoOptionsImpl>)
     fun lint(action: Action<Lint>)
     fun lintOptions(action: Action<LintOptionsImpl>)
     fun sourceSets(action: Action<NamedDomainObjectContainer<com.android.build.gradle.api.AndroidSourceSet>>)
     fun splits(action: Action<SplitsImpl>)
-    fun testCoverage(action: Action<TestCoverage>)
-    fun testOptions(action: Action<TestOptionsImpl>)
     fun setFlavorDimensions(flavorDimensions: List<String>)
     fun compileSdk(action: Action<CompileSdkSpec>)
 }

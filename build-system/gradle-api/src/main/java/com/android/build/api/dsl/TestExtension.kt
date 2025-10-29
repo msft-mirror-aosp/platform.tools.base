@@ -16,6 +16,7 @@
 
 package com.android.build.api.dsl
 
+import org.gradle.api.Incubating
 import org.gradle.api.NamedDomainObjectContainer
 
 /**
@@ -26,6 +27,46 @@ import org.gradle.api.NamedDomainObjectContainer
  * Only the Android Gradle Plugin should create instances of interfaces in com.android.build.api.dsl.
 */
 interface TestExtension : CommonExtension {
+
+    /**
+     * Specifies options for the Android Asset Packaging Tool (AAPT).
+     *
+     * For more information about the properties you can configure in this block, see [AaptOptions].
+     */
+    @Suppress("DEPRECATION")
+    @Deprecated("Replaced by ", replaceWith = ReplaceWith("androidResources"))
+    override val aaptOptions: AaptOptions
+
+    /**
+     * Specifies options for the Android Asset Packaging Tool (AAPT).
+     *
+     * For more information about the properties you can configure in this block, see [AaptOptions].
+     */
+    @Suppress("DEPRECATION")
+    @Deprecated("Replaced by ", replaceWith = ReplaceWith("androidResources"))
+    fun aaptOptions(action: AaptOptions.() -> Unit)
+
+    /**
+     * Specifies options for the
+     * [Android Debug Bridge (ADB)](https://developer.android.com/studio/command-line/adb.html),
+     * such as APK installation options.
+     *
+     * For more information about the properties you can configure in this block, see [AdbOptions].
+     */
+    @Suppress("DEPRECATION")
+    @Deprecated("Replaced by installation", replaceWith = ReplaceWith("installation"))
+    override val adbOptions: AdbOptions
+
+    /**
+     * Specifies options for the
+     * [Android Debug Bridge (ADB)](https://developer.android.com/studio/command-line/adb.html),
+     * such as APK installation options.
+     *
+     * For more information about the properties you can configure in this block, see [AdbOptions].
+     */
+    @Suppress("DEPRECATION")
+    @Deprecated("Replaced by installation", replaceWith = ReplaceWith("installation"))
+    fun adbOptions(action: AdbOptions.() -> Unit)
 
     /**
      * Specifies options related to the processing of Android Resources.
@@ -104,6 +145,108 @@ interface TestExtension : CommonExtension {
      * ```
      */
     fun NamedDomainObjectContainer<TestBuildType>.release(action: TestBuildType.() -> Unit)
+
+    /**
+     * Specifies options for the
+     * [Data Binding Library](https://developer.android.com/topic/libraries/data-binding/index.html).
+     *
+     * For more information about the properties you can configure in this block, see [DataBinding]
+     */
+    override val dataBinding: DataBinding
+
+    /**
+     * Specifies options for the
+     * [Data Binding Library](https://developer.android.com/topic/libraries/data-binding/index.html).
+     *
+     * For more information about the properties you can configure in this block, see [DataBinding]
+     */
+    fun dataBinding(action: DataBinding.() -> Unit)
+
+    /**
+     * Specifies options for the
+     * [View Binding Library](https://developer.android.com/topic/libraries/view-binding/index.html).
+     *
+     * For more information about the properties you can configure in this block, see [ViewBinding]
+     */
+    override val viewBinding: ViewBinding
+
+    /**
+     * Specifies options for the
+     * [View Binding Library](https://developer.android.com/topic/libraries/view-binding/index.html).
+     *
+     * For more information about the properties you can configure in this block, see [ViewBinding]
+     */
+    fun viewBinding(action: ViewBinding.() -> Unit)
+
+    /**
+     * Configure the gathering of code-coverage from tests.
+     *
+     * This is replaced by [testCoverage].
+     */
+    @Suppress("DEPRECATION")
+    @get:Incubating
+    @Deprecated("Renamed to testCoverage", replaceWith = ReplaceWith("testCoverage"))
+    override val jacoco: JacocoOptions
+
+    /**
+     * Configure the gathering of code-coverage from tests.
+     *
+     * This is replaced by [testCoverage].
+     */
+    @Suppress("DEPRECATION")
+    @Incubating
+    @Deprecated("Renamed to testCoverage", replaceWith = ReplaceWith("testCoverage"))
+    fun jacoco(action: JacocoOptions.() -> Unit)
+
+    /**
+     * Configure the gathering of code-coverage from tests.
+     *
+     * To override the JaCoCo version that is used for offline instrumentation and coverage report,
+     * add the following to `build.gradle` file:
+     *
+     * ```
+     * android {
+     *     testCoverage {
+     *         jacocoVersion "<jacoco-version>"
+     *     }
+     * }
+     * ```
+     *
+     * For more information about the properties you can configure in this block, see [TestCoverage].
+     */
+    override val testCoverage: TestCoverage
+
+    /**
+     * Configure the gathering of code-coverage from tests.
+     *
+     * To override the JaCoCo version that is used for offline instrumentation and coverage report,
+     * add the following to `build.gradle` file:
+     *
+     * ```
+     * android {
+     *     testCoverage {
+     *         jacocoVersion "<jacoco-version>"
+     *     }
+     * }
+     * ```
+     *
+     * For more information about the properties you can configure in this block, see [TestCoverage].
+     */
+    fun testCoverage(action: TestCoverage.() -> Unit)
+
+    /**
+     * Specifies options for how the Android plugin should run local and instrumented tests.
+     *
+     * For more information about the properties you can configure in this block, see [TestOptions].
+     */
+    override val testOptions: TestOptions
+
+    /**
+     * Specifies options for how the Android plugin should run local and instrumented tests.
+     *
+     * For more information about the properties you can configure in this block, see [TestOptions].
+     */
+    fun testOptions(action: TestOptions.() -> Unit)
 
     /**
      * Specifies options for the

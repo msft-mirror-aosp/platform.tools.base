@@ -25,6 +25,7 @@ import com.android.build.gradle.AppExtension
 import com.android.build.gradle.api.AndroidSourceSet
 import com.android.build.gradle.api.BaseVariantOutput
 import com.android.build.gradle.internal.DependenciesExtension
+import com.android.build.gradle.internal.coverage.JacocoOptions
 import com.android.build.gradle.internal.dependency.SourceSetManager
 import com.android.build.gradle.internal.services.DslServices
 import com.android.build.gradle.internal.tasks.factory.BootClasspathConfig
@@ -122,14 +123,29 @@ abstract class BaseAppModuleExtension @Inject constructor(
     override val libraryRequests: MutableCollection<LibraryRequest>
         get() = publicExtensionImpl.libraryRequests
 
+    override val aaptOptions: AaptOptions
+        get() = publicExtensionImpl.aaptOptions
+
+    override val adbOptions: AdbOptions
+        get() = publicExtensionImpl.adbOptions
+
     override val androidResources: ApplicationAndroidResources
         get() = publicExtensionImpl.androidResources
 
     override val buildFeatures: ApplicationBuildFeatures
         get() = publicExtensionImpl.buildFeatures
 
+    override val dataBinding: DataBindingOptions
+        get() = publicExtensionImpl.dataBinding
+
     override val packagingOptions: PackagingOptions
         get() = publicExtensionImpl.packagingOptions
+
+    override val jacoco: JacocoOptions
+        get() = publicExtensionImpl.jacoco
+
+    override val testOptions: TestOptions
+        get() = publicExtensionImpl.testOptions
 
     @Configuring
     override fun defaultConfig(action: ApplicationDefaultConfig.() -> Unit) {

@@ -41,15 +41,6 @@ interface CommonExtension : ExtensionAware {
     val aaptOptions: AaptOptions
 
     /**
-     * Specifies options for the Android Asset Packaging Tool (AAPT).
-     *
-     * For more information about the properties you can configure in this block, see [AaptOptions].
-     */
-    @Suppress("DEPRECATION")
-    @Deprecated("Replaced by ", replaceWith = ReplaceWith("androidResources"))
-    fun aaptOptions(action: AaptOptions.() -> Unit)
-
-    /**
      * Specifies options related to the processing of Android Resources.
      *
      * For more information about the properties you can configure in this block, see [AndroidResources].
@@ -66,17 +57,6 @@ interface CommonExtension : ExtensionAware {
     @Suppress("DEPRECATION")
     @Deprecated("Replaced by installation", replaceWith = ReplaceWith("installation"))
     val adbOptions: AdbOptions
-
-    /**
-     * Specifies options for the
-     * [Android Debug Bridge (ADB)](https://developer.android.com/studio/command-line/adb.html),
-     * such as APK installation options.
-     *
-     * For more information about the properties you can configure in this block, see [AdbOptions].
-     */
-    @Suppress("DEPRECATION")
-    @Deprecated("Replaced by installation", replaceWith = ReplaceWith("installation"))
-    fun adbOptions(action: AdbOptions.() -> Unit)
 
     /**
      * Specifies options for the
@@ -138,27 +118,11 @@ interface CommonExtension : ExtensionAware {
 
     /**
      * Specifies options for the
-     * [Data Binding Library](https://developer.android.com/topic/libraries/data-binding/index.html).
-     *
-     * For more information about the properties you can configure in this block, see [DataBinding]
-     */
-    fun dataBinding(action: DataBinding.() -> Unit)
-
-    /**
-     * Specifies options for the
      * [View Binding Library](https://developer.android.com/topic/libraries/view-binding/index.html).
      *
      * For more information about the properties you can configure in this block, see [ViewBinding]
      */
     val viewBinding: ViewBinding
-
-    /**
-     * Specifies options for the
-     * [View Binding Library](https://developer.android.com/topic/libraries/view-binding/index.html).
-     *
-     * For more information about the properties you can configure in this block, see [ViewBinding]
-     */
-    fun viewBinding(action: ViewBinding.() -> Unit)
 
     /**
      * Configure the gathering of code-coverage from tests.
@@ -169,16 +133,6 @@ interface CommonExtension : ExtensionAware {
     @get:Incubating
     @Deprecated("Renamed to testCoverage", replaceWith = ReplaceWith("testCoverage"))
     val jacoco: JacocoOptions
-
-    /**
-     * Configure the gathering of code-coverage from tests.
-     *
-     * This is replaced by [testCoverage].
-     */
-    @Suppress("DEPRECATION")
-    @Incubating
-    @Deprecated("Renamed to testCoverage", replaceWith = ReplaceWith("testCoverage"))
-    fun jacoco(action: JacocoOptions.() -> Unit)
 
     /**
      * Configure the gathering of code-coverage from tests.
@@ -197,24 +151,6 @@ interface CommonExtension : ExtensionAware {
      * For more information about the properties you can configure in this block, see [TestCoverage].
      */
     val testCoverage: TestCoverage
-
-    /**
-     * Configure the gathering of code-coverage from tests.
-     *
-     * To override the JaCoCo version that is used for offline instrumentation and coverage report,
-     * add the following to `build.gradle` file:
-     *
-     * ```
-     * android {
-     *     testCoverage {
-     *         jacocoVersion "<jacoco-version>"
-     *     }
-     * }
-     * ```
-     *
-     * For more information about the properties you can configure in this block, see [TestCoverage].
-     */
-    fun testCoverage(action: TestCoverage.() -> Unit)
 
     /**
      * Specifies options for the lint tool.
@@ -394,13 +330,6 @@ interface CommonExtension : ExtensionAware {
      * For more information about the properties you can configure in this block, see [TestOptions].
      */
     val testOptions: TestOptions
-
-    /**
-     * Specifies options for how the Android plugin should run local and instrumented tests.
-     *
-     * For more information about the properties you can configure in this block, see [TestOptions].
-     */
-    fun testOptions(action: TestOptions.() -> Unit)
 
     /**
      * Specifies configurations for

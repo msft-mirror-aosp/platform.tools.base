@@ -24,6 +24,9 @@ import com.android.build.api.dsl.LibraryInstallation
 import com.android.build.api.dsl.LibraryProductFlavor
 import com.android.build.api.dsl.Packaging
 import com.android.build.api.dsl.Prefab
+import com.android.build.api.dsl.TestCoverage
+import com.android.build.api.dsl.ViewBinding
+import com.android.build.gradle.internal.coverage.JacocoOptions
 import com.android.build.gradle.internal.dsl.DefaultConfig as InternalDefaultConfig
 import com.android.build.gradle.internal.dsl.ProductFlavor as InternalProductFlavor
 import com.android.build.gradle.internal.plugins.DslContainerProvider
@@ -84,6 +87,26 @@ abstract class LibraryExtensionImpl @Inject constructor(
             PrefabModuleFactory(dslServices)
         )
 
+    override val aaptOptions: AaptOptions get() = androidResources as AaptOptions
+
+    override fun aaptOptions(action: com.android.build.api.dsl.AaptOptions.() -> Unit) {
+        action.invoke(aaptOptions)
+    }
+
+    override fun aaptOptions(action: Action<AaptOptions>) {
+        action.execute(aaptOptions)
+    }
+
+    override val adbOptions: AdbOptions get() = installation as AdbOptions
+
+    override fun adbOptions(action: com.android.build.api.dsl.AdbOptions.() -> Unit) {
+        action.invoke(adbOptions)
+    }
+
+    override fun adbOptions(action: Action<AdbOptions>) {
+        action.execute(adbOptions)
+    }
+
     override val androidResources: LibraryAndroidResources = dslServices.newDecoratedInstance(
         LibraryAndroidResourcesImpl::class.java,
         dslServices,
@@ -104,6 +127,68 @@ abstract class LibraryExtensionImpl @Inject constructor(
 
     override fun buildTypes(action: Action<in NamedDomainObjectContainer<BuildType>>) {
         action.execute(buildTypes as NamedDomainObjectContainer<BuildType>)
+    }
+
+    override val dataBinding: DataBindingOptions =
+        dslServices.newDecoratedInstance(
+            DataBindingOptions::class.java,
+            Supplier { buildFeatures },
+            dslServices
+        )
+
+    override fun dataBinding(action: com.android.build.api.dsl.DataBinding.() -> Unit) {
+        action.invoke(dataBinding)
+    }
+
+    override fun dataBinding(action: Action<DataBindingOptions>) {
+        action.execute(dataBinding)
+    }
+
+    override val viewBinding: ViewBindingOptionsImpl
+        get() = dslServices.newDecoratedInstance(
+            ViewBindingOptionsImpl::class.java,
+            Supplier { buildFeatures },
+            dslServices
+        )
+
+    override fun viewBinding(action: Action<ViewBindingOptionsImpl>) {
+        action.execute(viewBinding)
+    }
+
+    override fun viewBinding(action: ViewBinding.() -> Unit) {
+        action.invoke(viewBinding)
+    }
+
+    override val jacoco: JacocoOptions
+        get() = testCoverage as JacocoOptions
+
+    override fun jacoco(action: com.android.build.api.dsl.JacocoOptions.() -> Unit) {
+        action.invoke(jacoco)
+    }
+
+    override fun jacoco(action: Action<JacocoOptions>) {
+        action.execute(jacoco)
+    }
+
+    override val testCoverage: TestCoverage  = dslServices.newInstance(JacocoOptions::class.java)
+
+    override fun testCoverage(action: TestCoverage.() -> Unit) {
+        action.invoke(testCoverage)
+    }
+
+    override fun testCoverage(action: Action<TestCoverage>) {
+        action.execute(testCoverage)
+    }
+
+    override val testOptions: TestOptions =
+        dslServices.newInstance(TestOptions::class.java, dslServices)
+
+    override fun testOptions(action: com.android.build.api.dsl.TestOptions.() -> Unit) {
+        action.invoke(testOptions)
+    }
+
+    override fun testOptions(action: Action<TestOptions>) {
+        action.execute(testOptions)
     }
 
     override fun NamedDomainObjectContainer<LibraryBuildType>.debug(action: LibraryBuildType.() -> Unit) {
