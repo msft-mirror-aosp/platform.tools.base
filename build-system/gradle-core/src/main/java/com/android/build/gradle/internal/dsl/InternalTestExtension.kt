@@ -16,6 +16,8 @@
 
 package com.android.build.gradle.internal.dsl
 
+import com.android.build.api.dsl.ComposeOptions
+import com.android.build.api.dsl.Lint
 import com.android.build.api.dsl.Packaging
 import com.android.build.api.dsl.PrivacySandbox
 import com.android.build.api.dsl.TestAndroidResources
@@ -28,8 +30,11 @@ import com.android.build.api.dsl.TestProductFlavor
 import com.android.build.gradle.internal.dsl.AaptOptions as AaptOptionsImpl
 import com.android.build.gradle.internal.dsl.AdbOptions as AdbOptionsImpl
 import com.android.build.gradle.internal.dsl.DataBindingOptions as DataBindingOptionsImpl
+import com.android.build.gradle.internal.dsl.ExternalNativeBuild as ExternalNativeBuildImpl
 import com.android.build.gradle.internal.dsl.PackagingOptions as PackagingImpl
 import com.android.build.gradle.internal.dsl.TestOptions as TestOptionsImpl
+import com.android.build.gradle.internal.dsl.Splits as SplitsImpl
+import com.android.build.gradle.internal.dsl.LintOptions as LintOptionsImpl
 import com.android.build.gradle.internal.coverage.JacocoOptions as JacocoOptionsImpl
 import org.gradle.api.Action
 import org.gradle.api.NamedDomainObjectContainer
@@ -41,13 +46,20 @@ interface InternalTestExtension: TestExtension, InternalCommonExtension {
     fun androidResources(action: Action<TestAndroidResources>)
     fun buildFeatures(action: Action<TestBuildFeatures>)
     fun buildTypes(action: Action<in NamedDomainObjectContainer<BuildType>>)
+    fun composeOptions(action: Action<ComposeOptions>)
     fun dataBinding(action: Action<DataBindingOptionsImpl>)
     fun viewBinding(action: Action<ViewBindingOptionsImpl>)
     fun jacoco(action: Action<JacocoOptionsImpl>)
     fun testCoverage(action: Action<TestCoverage>)
     fun testOptions(action: Action<TestOptionsImpl>)
+    fun splits(action: Action<SplitsImpl>)
+    fun sourceSets(action: Action<NamedDomainObjectContainer<com.android.build.gradle.api.AndroidSourceSet>>)
+    fun lint(action: Action<Lint>)
+    fun lintOptions(action: Action<LintOptionsImpl>)
     fun productFlavors(action: Action<NamedDomainObjectContainer<ProductFlavor>>)
     fun defaultConfig(action: Action<DefaultConfig>)
+    fun signingConfigs(action: Action<NamedDomainObjectContainer<SigningConfig>>)
+    fun externalNativeBuild(action: Action<ExternalNativeBuildImpl>)
     fun installation(action: Action<TestInstallation>)
     fun packaging(action: Action<Packaging>)
     fun packagingOptions(action: Action<PackagingImpl>)

@@ -19,20 +19,8 @@ package com.android.build.gradle.internal.dsl
 
 import com.android.build.api.dsl.CommonExtension
 import com.android.build.api.dsl.CompileSdkSpec
-import com.android.build.api.dsl.ComposeOptions
-import com.android.build.api.dsl.Lint
-import com.android.build.api.dsl.Packaging
-import com.android.build.api.dsl.TestCoverage
 import org.gradle.api.Action
-import org.gradle.api.NamedDomainObjectContainer
 import com.android.build.gradle.internal.CompileOptions as CompileOptionsImpl
-import com.android.build.gradle.internal.coverage.JacocoOptions as JacocoOptionsImpl
-import com.android.build.gradle.internal.dsl.DataBindingOptions as DataBindingOptionsImpl
-import com.android.build.gradle.internal.dsl.ExternalNativeBuild as ExternalNativeBuildImpl
-import com.android.build.gradle.internal.dsl.LintOptions as LintOptionsImpl
-import com.android.build.gradle.internal.dsl.PackagingOptions as PackagingImpl
-import com.android.build.gradle.internal.dsl.Splits as SplitsImpl
-import com.android.build.gradle.internal.dsl.TestOptions as TestOptionsImpl
 
 /**
  * Internal extension of the DSL interface that overrides the properties to use the implementation
@@ -42,22 +30,10 @@ import com.android.build.gradle.internal.dsl.TestOptions as TestOptionsImpl
 interface InternalCommonExtension: CommonExtension, Lockable {
     override val compileOptions: CompileOptionsImpl
 
-    override val lintOptions: LintOptionsImpl
-    override val externalNativeBuild: ExternalNativeBuildImpl
-    override val splits: SplitsImpl
-    override val signingConfigs: NamedDomainObjectContainer<SigningConfig>
-
     var compileSdkVersion: String?
 
     // See GroovyExtensionsTest
-    fun signingConfigs(action: Action<NamedDomainObjectContainer<SigningConfig>>)
     fun compileOptions(action: Action<CompileOptionsImpl>)
-    fun composeOptions(action: Action<ComposeOptions>)
-    fun externalNativeBuild(action: Action<ExternalNativeBuildImpl>)
-    fun lint(action: Action<Lint>)
-    fun lintOptions(action: Action<LintOptionsImpl>)
-    fun sourceSets(action: Action<NamedDomainObjectContainer<com.android.build.gradle.api.AndroidSourceSet>>)
-    fun splits(action: Action<SplitsImpl>)
     fun setFlavorDimensions(flavorDimensions: List<String>)
     fun compileSdk(action: Action<CompileSdkSpec>)
 }

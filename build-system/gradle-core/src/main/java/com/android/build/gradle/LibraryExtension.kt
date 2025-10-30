@@ -27,14 +27,18 @@ import com.android.build.gradle.internal.dsl.AaptOptions
 import com.android.build.gradle.internal.dsl.AdbOptions
 import com.android.build.gradle.internal.dsl.BuildType
 import com.android.build.gradle.internal.dsl.DataBindingOptions
+import com.android.build.gradle.internal.dsl.LintOptions
+import com.android.build.gradle.internal.dsl.SigningConfig
 import com.android.build.gradle.internal.coverage.JacocoOptions
 import com.android.build.gradle.internal.dsl.DeclarativeBuildType
 import com.android.build.gradle.internal.dsl.DeclarativeProductFlavor
 import com.android.build.gradle.internal.dsl.DefaultConfig
+import com.android.build.gradle.internal.dsl.ExternalNativeBuild
 import com.android.build.gradle.internal.dsl.InternalLibraryExtension
 import com.android.build.gradle.internal.dsl.LibraryExtensionImpl
 import com.android.build.gradle.internal.dsl.PackagingOptions
 import com.android.build.gradle.internal.dsl.ProductFlavor
+import com.android.build.gradle.internal.dsl.Splits
 import com.android.build.gradle.internal.dsl.TestOptions
 import com.android.build.gradle.internal.services.DslServices
 import com.android.build.gradle.internal.tasks.factory.BootClasspathConfig
@@ -120,6 +124,12 @@ abstract class LibraryExtension @Inject constructor(
     override val defaultConfig: DefaultConfig
         get() = publicExtensionImpl.defaultConfig as DefaultConfig
 
+    override val signingConfigs: NamedDomainObjectContainer<SigningConfig>
+        get() = publicExtensionImpl.signingConfigs
+
+    override val externalNativeBuild: ExternalNativeBuild
+        get() = publicExtensionImpl.externalNativeBuild as ExternalNativeBuild
+
     override val productFlavors: NamedDomainObjectContainer<out ProductFlavor>
         get() = publicExtensionImpl.productFlavors as NamedDomainObjectContainer<ProductFlavor>
 
@@ -143,6 +153,12 @@ abstract class LibraryExtension @Inject constructor(
 
     override val testOptions: TestOptions
         get() = publicExtensionImpl.testOptions
+
+    override val splits: Splits
+        get() = publicExtensionImpl.splits as Splits
+
+    override val lintOptions: LintOptions
+        get() = publicExtensionImpl.lintOptions
 
     private val libraryVariantList: DomainObjectSet<LibraryVariant> =
         dslServices.domainObjectSet(LibraryVariant::class.java)

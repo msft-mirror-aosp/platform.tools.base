@@ -18,6 +18,7 @@ package com.android.build.api.dsl
 
 import org.gradle.api.Incubating
 import org.gradle.api.NamedDomainObjectContainer
+import org.gradle.declarative.dsl.model.annotations.Configuring
 
 /**
  * Extension for the Android Test Gradle Plugin.
@@ -146,6 +147,10 @@ interface TestExtension : CommonExtension {
      */
     fun NamedDomainObjectContainer<TestBuildType>.release(action: TestBuildType.() -> Unit)
 
+    override val composeOptions: ComposeOptions
+
+    fun composeOptions(action: ComposeOptions.() -> Unit)
+
     /**
      * Specifies options for the
      * [Data Binding Library](https://developer.android.com/topic/libraries/data-binding/index.html).
@@ -247,6 +252,75 @@ interface TestExtension : CommonExtension {
      * For more information about the properties you can configure in this block, see [TestOptions].
      */
     fun testOptions(action: TestOptions.() -> Unit)
+
+    /**
+     * Specifies configurations for
+     * [building multiple APKs](https://developer.android.com/studio/build/configure-apk-splits.html)
+     * or APK splits.
+     *
+     * For more information about the properties you can configure in this block, see [Splits].
+     */
+    override val splits: Splits
+
+    /**
+     * Specifies configurations for
+     * [building multiple APKs](https://developer.android.com/studio/build/configure-apk-splits.html)
+     * or APK splits.
+     *
+     * For more information about the properties you can configure in this block, see [Splits].
+     */
+    fun splits(action: Splits.() -> Unit)
+
+    /**
+     * Encapsulates source set configurations for all variants.
+     *
+     * Note that the Android plugin uses its own implementation of source sets. For more
+     * information about the properties you can configure in this block, see [AndroidSourceSet].
+     */
+    override val sourceSets: NamedDomainObjectContainer<out AndroidSourceSet>
+
+    /**
+     * Encapsulates source set configurations for all variants.
+     *
+     * Note that the Android plugin uses its own implementation of source sets. For more
+     * information about the properties you can configure in this block, see [AndroidSourceSet].
+     */
+    fun sourceSets(action: NamedDomainObjectContainer<out AndroidSourceSet>.() -> Unit)
+
+    /**
+     * Specifies options for the lint tool.
+     *
+     * For more information about the properties you can configure in this block, see [Lint].
+     */
+    override val lint: Lint
+
+    /**
+     * Specifies options for the lint tool.
+     *
+     * For more information about the properties you can configure in this block, see [Lint].
+     */
+    @Configuring
+    fun lint(action: Lint.() -> Unit)
+
+    /**
+     * Specifies options for the lint tool.
+     *
+     * For more information about the properties you can configure in this block, see [LintOptions].
+     */
+    @Suppress("DEPRECATION")
+    @get:Incubating
+    @Deprecated("Renamed to lint", replaceWith = ReplaceWith("lint"))
+    override val lintOptions: LintOptions
+
+    /**
+     * Specifies options for the lint tool.
+     *
+     * For more information about the properties you can configure in this block, see [LintOptions].
+     */
+    @Suppress("DEPRECATION")
+    @Incubating
+    @Deprecated("Renamed to lint", replaceWith = ReplaceWith("lint"))
+    fun lintOptions(action: LintOptions.() -> Unit)
 
     /**
      * Specifies options for the
@@ -360,6 +434,73 @@ interface TestExtension : CommonExtension {
      */
     fun defaultConfig(action: TestDefaultConfig.() -> Unit)
 
+    /**
+     * Encapsulates signing configurations that you can apply to [ ] and [ ] configurations.
+     *
+     *
+     * Android requires that all APKs be digitally signed with a certificate before they can be
+     * installed onto a device. When deploying a debug version of your project from Android Studio,
+     * the Android plugin automatically signs your APK with a generic debug certificate. However, to
+     * build an APK for release, you must
+     * [sign the APK](https://developer.android.com/studio/publish/app-signing.html)
+     * with a release key and keystore.
+     * You can do this by either
+     * [using the Android Studio UI](https://developer.android.com/studio/publish/app-signing.html#sign-apk)
+     * or manually
+     * [configuring your `build.gradle` file](https://developer.android.com/studio/publish/app-signing.html#gradle-sign).
+     *
+     * @see [ApkSigningConfig]
+     */
+    override val signingConfigs: NamedDomainObjectContainer<out ApkSigningConfig>
+
+    /**
+     * Encapsulates signing configurations that you can apply to
+     * [BuildType] and [ProductFlavor] configurations.
+     *
+     * For more information about the properties you can configure in this block,
+     * see [ApkSigningConfig].
+     */
+    fun signingConfigs(action: NamedDomainObjectContainer<out ApkSigningConfig>.() -> Unit)
+
+    /**
+     * Specifies options for external native build using [CMake](https://cmake.org/) or
+     * [ndk-build](https://developer.android.com/ndk/guides/ndk-build.html).
+     *
+     *
+     * When using
+     * [Android Studio 2.2 or higher](https://developer.android.com/studio/index.html) with
+     * [Android plugin 2.2.0 or higher](https://developer.android.com/studio/releases/gradle-plugin.html),
+     * you can compile C and C++ code into a native library that Gradle packages into your APK.
+     *
+     *
+     * To learn more, read
+     * [Add C and C++ Code to Your Project](https://developer.android.com/studio/projects/add-native-code.html).
+     *
+     * @see ExternalNativeBuild
+     *
+     * since 2.2.0
+     */
+    override val externalNativeBuild: ExternalNativeBuild
+
+    /**
+     * Specifies options for external native build using [CMake](https://cmake.org/) or
+     * [ndk-build](https://developer.android.com/ndk/guides/ndk-build.html).
+     *
+     *
+     * When using
+     * [Android Studio 2.2 or higher](https://developer.android.com/studio/index.html) with
+     * [Android plugin 2.2.0 or higher](https://developer.android.com/studio/releases/gradle-plugin.html),
+     * you can compile C and C++ code into a native library that Gradle packages into your APK.
+     *
+     *
+     * To learn more, read
+     * [Add C and C++ Code to Your Project](https://developer.android.com/studio/projects/add-native-code.html).
+     *
+     * @see ExternalNativeBuild
+     *
+     * since 2.2.0
+     */
+    fun externalNativeBuild(action: ExternalNativeBuild.()->Unit)
 
     /**
      * The Gradle path of the project that this test project tests.

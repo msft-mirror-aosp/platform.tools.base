@@ -162,30 +162,12 @@ interface CommonExtension : ExtensionAware {
     /**
      * Specifies options for the lint tool.
      *
-     * For more information about the properties you can configure in this block, see [Lint].
-     */
-    @Configuring
-    fun lint(action: Lint.() -> Unit)
-
-    /**
-     * Specifies options for the lint tool.
-     *
      * For more information about the properties you can configure in this block, see [LintOptions].
      */
     @Suppress("DEPRECATION")
     @get:Incubating
     @Deprecated("Renamed to lint", replaceWith = ReplaceWith("lint"))
     val lintOptions: LintOptions
-
-    /**
-     * Specifies options for the lint tool.
-     *
-     * For more information about the properties you can configure in this block, see [LintOptions].
-     */
-    @Suppress("DEPRECATION")
-    @Incubating
-    @Deprecated("Renamed to lint", replaceWith = ReplaceWith("lint"))
-    fun lintOptions(action: LintOptions.() -> Unit)
 
     /**
      * Specifies options and rules that determine which files the Android plugin packages into your
@@ -276,15 +258,6 @@ interface CommonExtension : ExtensionAware {
     val signingConfigs: NamedDomainObjectContainer<out ApkSigningConfig>
 
     /**
-     * Encapsulates signing configurations that you can apply to
-     * [BuildType] and [ProductFlavor] configurations.
-     *
-     * For more information about the properties you can configure in this block,
-     * see [ApkSigningConfig].
-     */
-    fun signingConfigs(action: NamedDomainObjectContainer<out ApkSigningConfig>.() -> Unit)
-
-    /**
      * Specifies options for external native build using [CMake](https://cmake.org/) or
      * [ndk-build](https://developer.android.com/ndk/guides/ndk-build.html).
      *
@@ -302,27 +275,7 @@ interface CommonExtension : ExtensionAware {
      *
      * since 2.2.0
      */
-
     val externalNativeBuild: ExternalNativeBuild
-    /**
-     * Specifies options for external native build using [CMake](https://cmake.org/) or
-     * [ndk-build](https://developer.android.com/ndk/guides/ndk-build.html).
-     *
-     *
-     * When using
-     * [Android Studio 2.2 or higher](https://developer.android.com/studio/index.html) with
-     * [Android plugin 2.2.0 or higher](https://developer.android.com/studio/releases/gradle-plugin.html),
-     * you can compile C and C++ code into a native library that Gradle packages into your APK.
-     *
-     *
-     * To learn more, read
-     * [Add C and C++ Code to Your Project](https://developer.android.com/studio/projects/add-native-code.html).
-     *
-     * @see ExternalNativeBuild
-     *
-     * since 2.2.0
-     */
-    fun externalNativeBuild(action: ExternalNativeBuild.()->Unit)
 
     /**
      * Specifies options for how the Android plugin should run local and instrumented tests.
@@ -340,18 +293,7 @@ interface CommonExtension : ExtensionAware {
      */
     val splits: Splits
 
-    /**
-     * Specifies configurations for
-     * [building multiple APKs](https://developer.android.com/studio/build/configure-apk-splits.html)
-     * or APK splits.
-     *
-     * For more information about the properties you can configure in this block, see [Splits].
-     */
-    fun splits(action: Splits.() -> Unit)
-
     val composeOptions: ComposeOptions
-
-    fun composeOptions(action: ComposeOptions.() -> Unit)
 
     /**
      * Encapsulates source set configurations for all variants.
@@ -360,14 +302,6 @@ interface CommonExtension : ExtensionAware {
      * information about the properties you can configure in this block, see [AndroidSourceSet].
      */
     val sourceSets: NamedDomainObjectContainer<out AndroidSourceSet>
-
-    /**
-     * Encapsulates source set configurations for all variants.
-     *
-     * Note that the Android plugin uses its own implementation of source sets. For more
-     * information about the properties you can configure in this block, see [AndroidSourceSet].
-     */
-    fun sourceSets(action: NamedDomainObjectContainer<out AndroidSourceSet>.() -> Unit)
 
     /**
      * Specifies the names of product flavor dimensions for this project.

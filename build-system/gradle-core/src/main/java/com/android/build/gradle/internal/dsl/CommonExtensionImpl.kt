@@ -17,21 +17,11 @@
 package com.android.build.gradle.internal.dsl
 
 import com.android.SdkConstants.NDK_DEFAULT_VERSION
-import com.android.build.api.dsl.AndroidResources
-import com.android.build.api.dsl.ApkSigningConfig
-import com.android.build.api.dsl.BuildFeatures
 import com.android.build.api.dsl.CompileSdkSpec
 import com.android.build.api.dsl.CompileSdkVersion
-import com.android.build.api.dsl.ComposeOptions
 import com.android.build.api.dsl.DefaultConfig
-import com.android.build.api.dsl.Installation
-import com.android.build.api.dsl.Packaging
 import com.android.build.api.dsl.SdkComponents
-import com.android.build.api.dsl.TestCoverage
-import com.android.build.api.dsl.ViewBinding
 import com.android.build.gradle.ProguardFiles
-import com.android.build.gradle.api.AndroidSourceSet
-import com.android.build.gradle.internal.coverage.JacocoOptions
 import com.android.build.gradle.internal.plugins.DslContainerProvider
 import com.android.build.gradle.internal.services.DslServices
 import com.android.build.gradle.internal.utils.validateNamespaceValue
@@ -43,7 +33,6 @@ import com.android.repository.Revision
 import org.gradle.api.Action
 import org.gradle.api.NamedDomainObjectContainer
 import java.io.File
-import java.util.function.Supplier
 
 /** Internal implementation of the 'new' DSL interface */
 abstract class CommonExtensionImpl<
@@ -54,7 +43,7 @@ abstract class CommonExtensionImpl<
             dslContainers: DslContainerProvider<DefaultConfigT, BuildTypeT, ProductFlavorT, SigningConfig>
         ) : InternalCommonExtension {
 
-    private val sourceSetManager = dslContainers.sourceSetManager
+    protected val sourceSetManager = dslContainers.sourceSetManager
 
     private var buildToolsRevision: Revision = ToolsRevisionUtils.DEFAULT_BUILD_TOOLS_REVISION
 
@@ -155,51 +144,9 @@ abstract class CommonExtensionImpl<
         compileSdkDelegate.compileSdkVersion(version)
     }
 
-    override val composeOptions: ComposeOptionsImpl =
-        dslServices.newInstance(ComposeOptionsImpl::class.java, dslServices)
-
-    override fun composeOptions(action: ComposeOptions.() -> Unit) {
-        action.invoke(composeOptions)
-    }
-
-    override fun composeOptions(action: Action<ComposeOptions>) {
-        action.execute(composeOptions)
-    }
-
-    final override val lintOptions: LintOptions by lazy(LazyThreadSafetyMode.PUBLICATION) {
-        dslServices.newInstance(LintOptions::class.java, dslServices, lint)
-    }
-
-    override fun lintOptions(action: com.android.build.api.dsl.LintOptions.() -> Unit) {
-        action.invoke(lintOptions)
-    }
-
-    override fun lintOptions(action: Action<LintOptions>) {
-        action.execute(lintOptions)
-    }
-
     override val packagingOptions: PackagingOptions
         get() = packaging as PackagingOptions
 
-
-    override fun signingConfigs(action: Action<NamedDomainObjectContainer<SigningConfig>>) {
-        action.execute(signingConfigs)
-    }
-
-    override fun signingConfigs(action: NamedDomainObjectContainer<out ApkSigningConfig>.() -> Unit) {
-        action.invoke(signingConfigs)
-    }
-
-    override val sourceSets: NamedDomainObjectContainer<AndroidSourceSet>
-        get() = sourceSetManager.sourceSetsContainer
-
-    override fun sourceSets(action: NamedDomainObjectContainer<out com.android.build.api.dsl.AndroidSourceSet>.() -> Unit) {
-        sourceSetManager.executeAction(action)
-    }
-
-    override fun sourceSets(action: Action<NamedDomainObjectContainer<AndroidSourceSet>>) {
-        action.execute(sourceSets)
-    }
 
     override var buildToolsVersion: String
         get() = buildToolsRevision.toString()

@@ -16,15 +16,18 @@
 
 package com.android.build.gradle.internal.dsl
 
+import com.android.build.api.dsl.ApkSigningConfig
 import com.android.build.api.dsl.ApplicationAndroidResources
 import com.android.build.api.dsl.ApplicationBuildFeatures
 import com.android.build.api.dsl.ApplicationBuildType
 import com.android.build.api.dsl.ApplicationDefaultConfig
 import com.android.build.api.dsl.ApplicationInstallation
 import com.android.build.api.dsl.ApplicationProductFlavor
+import com.android.build.api.dsl.ComposeOptions
 import com.android.build.api.dsl.Packaging
 import com.android.build.api.dsl.TestCoverage
 import com.android.build.api.dsl.ViewBinding
+import com.android.build.gradle.api.AndroidSourceSet
 import com.android.build.gradle.internal.coverage.JacocoOptions
 import com.android.build.gradle.internal.dsl.decorator.ApplicationInstallationImpl
 import com.android.build.gradle.internal.dsl.DefaultConfig as InternalDefaultConfig
@@ -84,6 +87,17 @@ abstract class ApplicationExtensionImpl @Inject constructor(
         getByName("release", action)
     }
 
+    override val composeOptions: ComposeOptionsImpl =
+        dslServices.newInstance(ComposeOptionsImpl::class.java, dslServices)
+
+    override fun composeOptions(action: ComposeOptions.() -> Unit) {
+        action.invoke(composeOptions)
+    }
+
+    override fun composeOptions(action: Action<ComposeOptions>) {
+        action.execute(composeOptions)
+    }
+
     override fun productFlavors(action: Action<NamedDomainObjectContainer<InternalProductFlavor>>) {
         action.execute(productFlavors as NamedDomainObjectContainer<InternalProductFlavor>)
     }
@@ -98,6 +112,14 @@ abstract class ApplicationExtensionImpl @Inject constructor(
 
     override fun defaultConfig(action: ApplicationDefaultConfig.() -> Unit) {
         action.invoke(defaultConfig)
+    }
+
+    override fun signingConfigs(action: Action<NamedDomainObjectContainer<SigningConfig>>) {
+        action.execute(signingConfigs)
+    }
+
+    override fun signingConfigs(action: NamedDomainObjectContainer<out ApkSigningConfig>.() -> Unit) {
+        action.invoke(signingConfigs)
     }
 
     override val aaptOptions: AaptOptions get() = androidResources as AaptOptions
@@ -191,6 +213,29 @@ abstract class ApplicationExtensionImpl @Inject constructor(
 
     override fun testOptions(action: Action<TestOptions>) {
         action.execute(testOptions)
+    }
+
+    override val sourceSets: NamedDomainObjectContainer<AndroidSourceSet>
+        get() = sourceSetManager.sourceSetsContainer
+
+    override fun sourceSets(action: NamedDomainObjectContainer<out com.android.build.api.dsl.AndroidSourceSet>.() -> Unit) {
+        sourceSetManager.executeAction(action)
+    }
+
+    override fun sourceSets(action: Action<NamedDomainObjectContainer<AndroidSourceSet>>) {
+        action.execute(sourceSets)
+    }
+
+    final override val lintOptions: LintOptions by lazy(LazyThreadSafetyMode.PUBLICATION) {
+        dslServices.newInstance(LintOptions::class.java, dslServices, lint)
+    }
+
+    override fun lintOptions(action: com.android.build.api.dsl.LintOptions.() -> Unit) {
+        action.invoke(lintOptions)
+    }
+
+    override fun lintOptions(action: Action<LintOptions>) {
+        action.execute(lintOptions)
     }
 
     override val installation: ApplicationInstallation =

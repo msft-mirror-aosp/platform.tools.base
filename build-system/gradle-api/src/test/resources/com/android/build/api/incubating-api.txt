@@ -270,8 +270,13 @@ https://issuetracker.google.com/328748935
   * com.android.build.api.dsl.ConsumerKeepRules.setIgnoreFromAllExternalDependencies: void (boolean)
   * com.android.build.api.dsl.ConsumerKeepRules.setPublish: void (boolean)
 https://issuetracker.google.com/328748959
+  * com.android.build.api.dsl.ApplicationExtension.getLintOptions: com.android.build.api.dsl.LintOptions ()
+  * com.android.build.api.dsl.ApplicationExtension.lintOptions: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.LintOptions, kotlin.Unit>)
   * com.android.build.api.dsl.CommonExtension.getLintOptions: com.android.build.api.dsl.LintOptions ()
-  * com.android.build.api.dsl.CommonExtension.lintOptions: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.LintOptions, kotlin.Unit>)
+  * com.android.build.api.dsl.DynamicFeatureExtension.getLintOptions: com.android.build.api.dsl.LintOptions ()
+  * com.android.build.api.dsl.DynamicFeatureExtension.lintOptions: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.LintOptions, kotlin.Unit>)
+  * com.android.build.api.dsl.LibraryExtension.getLintOptions: com.android.build.api.dsl.LintOptions ()
+  * com.android.build.api.dsl.LibraryExtension.lintOptions: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.LintOptions, kotlin.Unit>)
   * com.android.build.api.dsl.LintOptions
   * com.android.build.api.dsl.LintOptions.baseline: void (java.io.File)
   * com.android.build.api.dsl.LintOptions.baseline: void (java.lang.String)
@@ -346,6 +351,8 @@ https://issuetracker.google.com/328748959
   * com.android.build.api.dsl.LintOptions.textOutput: void (java.lang.String)
   * com.android.build.api.dsl.LintOptions.warning: void (java.lang.String)
   * com.android.build.api.dsl.LintOptions.warning: void (java.lang.String[])
+  * com.android.build.api.dsl.TestExtension.getLintOptions: com.android.build.api.dsl.LintOptions ()
+  * com.android.build.api.dsl.TestExtension.lintOptions: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.LintOptions, kotlin.Unit>)
 https://issuetracker.google.com/328748998
   * com.android.build.api.dsl.LibraryExtension.getAidlPackagedList: java.util.Collection<java.lang.String> ()
 https://issuetracker.google.com/328749001

@@ -60,8 +60,16 @@ abstract class DynamicFeatureExtension @Inject constructor(
 
     override val defaultConfig: DefaultConfig
         get() = publicExtensionImpl.defaultConfig as DefaultConfig
+
+    override val signingConfigs: NamedDomainObjectContainer<SigningConfig>
+        get() = publicExtensionImpl.signingConfigs
+
+    override val externalNativeBuild: ExternalNativeBuild
+        get() = publicExtensionImpl.externalNativeBuild as ExternalNativeBuild
+
     override val productFlavors: NamedDomainObjectContainer<ProductFlavor>
         get() = publicExtensionImpl.productFlavors as NamedDomainObjectContainer<ProductFlavor>
+
     override val sourceSets: NamedDomainObjectContainer<AndroidSourceSet>
         get() = publicExtensionImpl.sourceSets
 
@@ -91,6 +99,12 @@ abstract class DynamicFeatureExtension @Inject constructor(
 
     override val testOptions: TestOptions
         get() = publicExtensionImpl.testOptions
+
+    override val splits: Splits
+        get() = publicExtensionImpl.splits as Splits
+
+    override val lintOptions: LintOptions
+        get() = publicExtensionImpl.lintOptions
 
     //TODO(b/421964815): remove the support for groovy space assignment(e.g `compileSdk 24`).
     @Deprecated(

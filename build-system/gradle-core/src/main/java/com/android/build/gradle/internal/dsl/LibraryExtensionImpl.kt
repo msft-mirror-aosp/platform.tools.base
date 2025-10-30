@@ -16,6 +16,8 @@
 
 package com.android.build.gradle.internal.dsl
 
+import com.android.build.api.dsl.ApkSigningConfig
+import com.android.build.api.dsl.ComposeOptions
 import com.android.build.api.dsl.LibraryAndroidResources
 import com.android.build.api.dsl.LibraryBuildFeatures
 import com.android.build.api.dsl.LibraryBuildType
@@ -26,6 +28,7 @@ import com.android.build.api.dsl.Packaging
 import com.android.build.api.dsl.Prefab
 import com.android.build.api.dsl.TestCoverage
 import com.android.build.api.dsl.ViewBinding
+import com.android.build.gradle.api.AndroidSourceSet
 import com.android.build.gradle.internal.coverage.JacocoOptions
 import com.android.build.gradle.internal.dsl.DefaultConfig as InternalDefaultConfig
 import com.android.build.gradle.internal.dsl.ProductFlavor as InternalProductFlavor
@@ -129,6 +132,17 @@ abstract class LibraryExtensionImpl @Inject constructor(
         action.execute(buildTypes as NamedDomainObjectContainer<BuildType>)
     }
 
+    override val composeOptions: ComposeOptionsImpl =
+        dslServices.newInstance(ComposeOptionsImpl::class.java, dslServices)
+
+    override fun composeOptions(action: ComposeOptions.() -> Unit) {
+        action.invoke(composeOptions)
+    }
+
+    override fun composeOptions(action: Action<ComposeOptions>) {
+        action.execute(composeOptions)
+    }
+
     override val dataBinding: DataBindingOptions =
         dslServices.newDecoratedInstance(
             DataBindingOptions::class.java,
@@ -191,6 +205,29 @@ abstract class LibraryExtensionImpl @Inject constructor(
         action.execute(testOptions)
     }
 
+    override val sourceSets: NamedDomainObjectContainer<AndroidSourceSet>
+        get() = sourceSetManager.sourceSetsContainer
+
+    override fun sourceSets(action: NamedDomainObjectContainer<out com.android.build.api.dsl.AndroidSourceSet>.() -> Unit) {
+        sourceSetManager.executeAction(action)
+    }
+
+    override fun sourceSets(action: Action<NamedDomainObjectContainer<AndroidSourceSet>>) {
+        action.execute(sourceSets)
+    }
+
+    final override val lintOptions: LintOptions by lazy(LazyThreadSafetyMode.PUBLICATION) {
+        dslServices.newInstance(LintOptions::class.java, dslServices, lint)
+    }
+
+    override fun lintOptions(action: com.android.build.api.dsl.LintOptions.() -> Unit) {
+        action.invoke(lintOptions)
+    }
+
+    override fun lintOptions(action: Action<LintOptions>) {
+        action.execute(lintOptions)
+    }
+
     override fun NamedDomainObjectContainer<LibraryBuildType>.debug(action: LibraryBuildType.() -> Unit) {
         getByName("debug", action)
     }
@@ -213,6 +250,14 @@ abstract class LibraryExtensionImpl @Inject constructor(
 
     override fun defaultConfig(action: LibraryDefaultConfig.() -> Unit) {
         action.invoke(defaultConfig)
+    }
+
+    override fun signingConfigs(action: Action<NamedDomainObjectContainer<SigningConfig>>) {
+        action.execute(signingConfigs)
+    }
+
+    override fun signingConfigs(action: NamedDomainObjectContainer<out ApkSigningConfig>.() -> Unit) {
+        action.invoke(signingConfigs)
     }
 
     override val installation: LibraryInstallation

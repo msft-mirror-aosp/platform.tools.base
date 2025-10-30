@@ -104,6 +104,12 @@ abstract class BaseAppModuleExtension @Inject constructor(
     override val defaultConfig: DefaultConfig
         get() = publicExtensionImpl.defaultConfig as DefaultConfig
 
+    override val signingConfigs: NamedDomainObjectContainer<SigningConfig>
+        get() = publicExtensionImpl.signingConfigs
+
+    override val externalNativeBuild: ExternalNativeBuild
+        get() = publicExtensionImpl.externalNativeBuild as ExternalNativeBuild
+
     override val productFlavors: NamedDomainObjectContainer<out ProductFlavor>
         get() = publicExtensionImpl.productFlavors as NamedDomainObjectContainer<ProductFlavor>
 
@@ -146,6 +152,12 @@ abstract class BaseAppModuleExtension @Inject constructor(
 
     override val testOptions: TestOptions
         get() = publicExtensionImpl.testOptions
+
+    override val splits: Splits
+        get() = publicExtensionImpl.splits as Splits
+
+    override val lintOptions: LintOptions
+        get() = publicExtensionImpl.lintOptions
 
     @Configuring
     override fun defaultConfig(action: ApplicationDefaultConfig.() -> Unit) {
