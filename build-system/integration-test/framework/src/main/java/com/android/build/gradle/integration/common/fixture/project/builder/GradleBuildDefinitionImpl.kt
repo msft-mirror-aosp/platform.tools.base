@@ -36,7 +36,6 @@ import com.android.build.gradle.integration.common.fixture.project.FusedLibraryD
 import com.android.build.gradle.integration.common.fixture.project.FusedLibraryDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.GenericProjectDefinition
 import com.android.build.gradle.integration.common.fixture.project.GenericProjectDefinitionImpl
-import com.android.build.gradle.integration.common.fixture.project.JavaLibraryProject
 import com.android.build.gradle.integration.common.fixture.project.JavaLibraryProjectDefinition
 import com.android.build.gradle.integration.common.fixture.project.JavaLibraryProjectDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.KotlinMultiplatformDefinition
@@ -55,6 +54,11 @@ import kotlin.io.path.writeText
 internal class GradleBuildDefinitionImpl(
     override val name: String,
     internal val rootFolderName: String,
+    /**
+     * Whether creation of new sub-project can include project content.
+     * This is disabled if the build definition is attached to an existing on-disk test project.
+     */
+    private val enableDefaultContentCreation: Boolean,
 ): GradleBuildDefinition {
 
     internal val settings = GradleSettingsDefinitionImpl()
@@ -83,7 +87,7 @@ internal class GradleBuildDefinitionImpl(
     ): GradleBuildDefinition {
         val build = includedBuilds.computeIfAbsent(name) {
             // for included builds, name and rootFolderName is always the same.
-            GradleBuildDefinitionImpl(it, it)
+            GradleBuildDefinitionImpl(it, it, enableDefaultContentCreation)
         }
         action(build)
 
@@ -121,6 +125,8 @@ internal class GradleBuildDefinitionImpl(
         if (path == ":") throw RuntimeException("root project cannot be an android project")
         if (!path.startsWith(":")) throw RuntimeException("Project paths must start with ':' (value: $path)")
 
+        val createMinimumProject = createMinimumProject && enableDefaultContentCreation
+
         val project = subProjects.computeIfAbsent(path) {
             AndroidApplicationDefinitionImpl(it, createMinimumProject).also {
                 if (createMinimumProject) {
@@ -140,18 +146,22 @@ internal class GradleBuildDefinitionImpl(
     override fun androidJavaApplication(
         path: String,
         action: AndroidProjectDefinition<ApplicationExtension>.() -> Unit
-    ): AndroidProjectDefinition<ApplicationExtension> = androidApplication(
-        path,
-        createMinimumProject = true,
-        action
-    ).also {
-        HelloWorldAndroid.setupJava(it.files)
+    ): AndroidProjectDefinition<ApplicationExtension> {
+        if (!enableDefaultContentCreation) throw RuntimeException("Cannot call androidJavaApplication with a testProject")
+        return androidApplication(
+            path,
+            createMinimumProject = true,
+            action
+        ).also {
+            HelloWorldAndroid.setupJava(it.files)
+        }
     }
 
     override fun androidKotlinApplication(
         path: String,
         action: AndroidProjectDefinition<ApplicationExtension>.() -> Unit
     ): AndroidProjectDefinition<ApplicationExtension> {
+        if (!enableDefaultContentCreation) throw RuntimeException("Cannot call androidKotlinApplication with a testProject")
         // kotlin plugin must be applied first (or you cannot access the kotlin {} block,
         // so order is important here.
         val app = androidApplication(path, createMinimumProject = true) {
@@ -173,6 +183,8 @@ internal class GradleBuildDefinitionImpl(
         if (path == ":") throw RuntimeException("root project cannot be an android project")
         if (!path.startsWith(":")) throw RuntimeException("Project paths must start with ':' (value: $path)")
 
+        val createMinimumProject = createMinimumProject && enableDefaultContentCreation
+
         val project = subProjects.computeIfAbsent(path) {
             AndroidLibraryDefinitionImpl(it, createMinimumProject)
         }
@@ -192,6 +204,8 @@ internal class GradleBuildDefinitionImpl(
     ): AndroidProjectDefinition<DynamicFeatureExtension> {
         if (path == ":") throw RuntimeException("root project cannot be an android project")
         if (!path.startsWith(":")) throw RuntimeException("Project paths must start with ':' (value: $path)")
+
+        val createMinimumProject = createMinimumProject && enableDefaultContentCreation
 
         val project = subProjects.computeIfAbsent(path) {
             AndroidDynamicFeatureDefinitionImpl(it, createMinimumProject).also {
@@ -217,6 +231,8 @@ internal class GradleBuildDefinitionImpl(
         if (path == ":") throw RuntimeException("root project cannot be an android project")
         if (!path.startsWith(":")) throw RuntimeException("Project paths must start with ':' (value: $path)")
 
+        val createMinimumProject = createMinimumProject && enableDefaultContentCreation
+
         val project = subProjects.computeIfAbsent(path) {
             AndroidTestDefinitionImpl(it, createMinimumProject).also {
                 if (createMinimumProject) {
@@ -241,6 +257,8 @@ internal class GradleBuildDefinitionImpl(
         if (path == ":") throw RuntimeException("root project cannot be a privacy sandbox sdk")
         if (!path.startsWith(":")) throw RuntimeException("Project paths must start with ':' (value: $path)")
 
+        val createMinimumProject = createMinimumProject && enableDefaultContentCreation
+
         val project = subProjects.computeIfAbsent(path) {
             PrivacySandboxSdkDefinitionImpl(it, createMinimumProject)
         }
@@ -260,6 +278,8 @@ internal class GradleBuildDefinitionImpl(
     ): AndroidProjectDefinition<LibraryExtension> {
         if (path == ":") throw RuntimeException("root project cannot be a privacy sandbox library")
         if (!path.startsWith(":")) throw RuntimeException("Project paths must start with ':' (value: $path)")
+
+        val createMinimumProject = createMinimumProject && enableDefaultContentCreation
 
         val project = subProjects.computeIfAbsent(path) {
             AndroidXPrivacySandboxLibraryDefinitionImpl(it, createMinimumProject)
@@ -319,6 +339,8 @@ internal class GradleBuildDefinitionImpl(
         if (path == ":") throw RuntimeException("root project cannot be an asset pack bundle")
         if (!path.startsWith(":")) throw RuntimeException("Project paths must start with ':' (value: $path)")
 
+        val createMinimumProject = createMinimumProject && enableDefaultContentCreation
+
         val project = subProjects.computeIfAbsent(path) {
             AssetPackBundleDefinitionImpl(it, createMinimumProject)
         }
@@ -338,6 +360,8 @@ internal class GradleBuildDefinitionImpl(
     ): FusedLibraryDefinition {
         if (path == ":") throw RuntimeException("root project cannot be a fused library")
         if (!path.startsWith(":")) throw RuntimeException("Project paths must start with ':' (value: $path)")
+
+        val createMinimumProject = createMinimumProject && enableDefaultContentCreation
 
         val project = subProjects.computeIfAbsent(path) {
             FusedLibraryDefinitionImpl(it, createMinimumProject)
@@ -376,7 +400,7 @@ internal class GradleBuildDefinitionImpl(
     ): KotlinMultiplatformDefinition = kotlinMultiplatformLibrary(
         path,
         plugins = listOf(),
-        createMinimumAndroidProject = false,
+        createMinimumProject = false,
         action
     )
 
@@ -384,28 +408,34 @@ internal class GradleBuildDefinitionImpl(
         path: String,
         createMinimumProject: Boolean,
         action: KotlinMultiplatformDefinition.() -> Unit
-    ): KotlinMultiplatformDefinition = kotlinMultiplatformLibrary(
-        path,
-        plugins = listOf(PluginType.ANDROID_KMP_LIBRARY),
-        createMinimumAndroidProject = createMinimumProject,
-        action
-    )
+    ): KotlinMultiplatformDefinition {
+        if (!enableDefaultContentCreation) throw RuntimeException("Cannot call androidKotlinMultiplatformLibrary with a testProject")
+
+        return kotlinMultiplatformLibrary(
+            path,
+            plugins = listOf(PluginType.ANDROID_KMP_LIBRARY),
+            createMinimumProject,
+            action
+        )
+    }
 
     private fun kotlinMultiplatformLibrary(
         path: String,
         plugins: List<PluginType>,
-        createMinimumAndroidProject: Boolean,
+        createMinimumProject: Boolean,
         action: KotlinMultiplatformDefinition.() -> Unit
     ): KotlinMultiplatformDefinition {
         if (path == ":") throw RuntimeException("root project cannot be an Android Kotlin multiplatform library")
         if (!path.startsWith(":")) throw RuntimeException("Project paths must start with ':' (value: $path)")
+
+        val createMinimumProject = createMinimumProject && enableDefaultContentCreation
 
         val project = subProjects.computeIfAbsent(path) {
             KotlinMultiplatformDefinitionImpl(it).also { project ->
                 for (plugin in plugins) {
                     project.applyPlugin(plugin)
                 }
-                if (createMinimumAndroidProject) {
+                if (createMinimumProject) {
                     project.android {
                         namespace = "pkg.name${path.replace(':', '.').replace('-', '_')}"
                         compileSdk = GradleBuildDefinition.DEFAULT_COMPILE_SDK_VERSION

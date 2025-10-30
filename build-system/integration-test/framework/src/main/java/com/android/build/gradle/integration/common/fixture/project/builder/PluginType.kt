@@ -85,6 +85,7 @@ sealed class PluginType(
     object ANDROID_AI_PACK: AgpPlugin("com.android.ai-pack")
     object ANDROID_ASSET_PACK_BUNDLE: AgpPlugin("com.android.asset-pack-bundle")
     object ANDROID_KMP_LIBRARY: AgpPlugin("com.android.kotlin.multiplatform.library")
+    @Deprecated("Unnecessary with AGP 9.0 default behavior (built-in kotlin enabled)")
     object ANDROID_BUILT_IN_KOTLIN: AgpPlugin(ANDROID_BUILT_IN_KOTLIN_PLUGIN_ID)
     object LINT: PluginTypeWithExtension<Lint>(
         id = "com.android.lint",
