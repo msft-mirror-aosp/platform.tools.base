@@ -48,9 +48,7 @@ com.android.build.gradle.integration.application.ArchivesBaseNameTest
 com.android.build.gradle.integration.application.ArtifactApiTest
 com.android.build.gradle.integration.application.BasePluginCallbackTest
 com.android.build.gradle.integration.application.BasicKotlinDslTest
-com.android.build.gradle.integration.application.BasicModelV2Test
 com.android.build.gradle.integration.application.BasicMultiFlavorTest
-com.android.build.gradle.integration.application.BasicTest
 com.android.build.gradle.integration.application.BootClasspathTest
 com.android.build.gradle.integration.application.BuildConfigBytecodeCompilationTest
 com.android.build.gradle.integration.application.BuildConfigTest
@@ -169,7 +167,6 @@ com.android.build.gradle.integration.application.PostprocessingTest
 com.android.build.gradle.integration.application.PrivateResourceTest
 com.android.build.gradle.integration.application.ProfileableTest
 com.android.build.gradle.integration.application.ProjectNoJavaSourcesTest
-com.android.build.gradle.integration.application.ProjectRepoSetupTest
 com.android.build.gradle.integration.application.PseudoLocalizationTest
 com.android.build.gradle.integration.application.RegisterExternalAptJavaOutputTest
 com.android.build.gradle.integration.application.RenamedApkTest
@@ -184,7 +181,6 @@ com.android.build.gradle.integration.application.RulesExtractionDynamicAppTest
 com.android.build.gradle.integration.application.SigningTest
 com.android.build.gradle.integration.application.SimpleCompositeBuildTest
 com.android.build.gradle.integration.application.SourceSetFilteringTest
-com.android.build.gradle.integration.application.SpecialCharactersBasicTest
 com.android.build.gradle.integration.application.StaticAgpVersionTest
 com.android.build.gradle.integration.application.StripDebugSymbolsTaskTest
 com.android.build.gradle.integration.application.SwitchMultidexTest
@@ -193,7 +189,6 @@ com.android.build.gradle.integration.application.taskstates.IncrementalBuildWith
 com.android.build.gradle.integration.application.taskstates.NoOpIncrementalBuildMinifyTest
 com.android.build.gradle.integration.application.taskstates.NoOpIncrementalBuildTaskStatesTest
 com.android.build.gradle.integration.application.taskstates.UtpTestTaskStatesTest
-com.android.build.gradle.integration.application.TestOptionsTest
 com.android.build.gradle.integration.application.TictactoeTest
 com.android.build.gradle.integration.application.UnitTestWithJniLibs
 com.android.build.gradle.integration.application.VariantApiArtifactAccessTest
@@ -243,7 +238,6 @@ com.android.build.gradle.integration.configurationcache.ConfigurationCacheTERMEn
 com.android.build.gradle.integration.configurationcache.GradlePropertiesTest
 com.android.build.gradle.integration.connected.application.AndroidTestResourcesConnectedTest
 com.android.build.gradle.integration.connected.application.AnnotationProcessorConnectedTest
-com.android.build.gradle.integration.connected.application.BasicConnectedTest
 com.android.build.gradle.integration.connected.application.ComposeHelloWorldConnectedTest
 com.android.build.gradle.integration.connected.application.CoreLibraryDesugarConnectedTest
 com.android.build.gradle.integration.connected.application.CoreLibraryDesugarConversionConnectedTest
@@ -251,7 +245,6 @@ com.android.build.gradle.integration.connected.application.D8DesugaringConnected
 com.android.build.gradle.integration.connected.application.DependenciesConnectedTest
 com.android.build.gradle.integration.connected.application.FlavoredConnectedTest
 com.android.build.gradle.integration.connected.application.FlavorsConnectedTest
-com.android.build.gradle.integration.connected.application.InstallProfilesPerDeviceApiConnectedTest
 com.android.build.gradle.integration.connected.application.JacocoConnectedTest
 com.android.build.gradle.integration.connected.application.KotlinAppConnectedTest
 com.android.build.gradle.integration.connected.application.MigratedConnectedTest
@@ -365,7 +358,6 @@ com.android.build.gradle.integration.dependencies.test.TestWithSameDepAsApp
 com.android.build.gradle.integration.dependencies.test.TestWithSameDepAsAppWithClassifier
 com.android.build.gradle.integration.dependencies.test.TestWithSameDepAsAppWithProguard
 com.android.build.gradle.integration.dependencies.VariantDependencyTest
-com.android.build.gradle.integration.deployment.MappingFileAccessTest
 com.android.build.gradle.integration.desugar.D8DesugarMethodsTest
 com.android.build.gradle.integration.desugar.DesugarAarTogetherWithD8Test
 com.android.build.gradle.integration.desugar.DesugarAppAndroidTestTest

@@ -1,5 +1,5 @@
 > AndroidDsl:
-   - groupId           = ""
+   - groupId           = "project"
    - compileTarget     = DEFAULT_COMPILE_SDK_VERSION
    - buildToolsVersion = DEFAULT_BUILD_TOOLS_REVISION
    > defaultConfig:
@@ -93,7 +93,7 @@
          - multiDexKeepProguard     = (null)
          - isDefault                = false
          - isDebuggable             = true
-         - isTestCoverageEnabled    = true
+         - isTestCoverageEnabled    = false
          - isPseudoLocalesEnabled   = false
          - isJniDebuggable          = false
          - isRenderscriptDebuggable = false
@@ -171,13 +171,13 @@
       - checkGeneratedSources     = true
       - explainIssues             = true
       - showAll                   = true
-      - lintConfig                = {PROJECT}/default-lint.xml{!}
+      - lintConfig                = {PROJECT}/app/default-lint.xml{!}
       - textReport                = true
-      - textOutput                = stdout{!}
+      - textOutput                = (null)
       - htmlReport                = true
-      - htmlOutput                = {PROJECT}/lint-report.html{!}
+      - htmlOutput                = {PROJECT}/app/lint-report.html{!}
       - xmlReport                 = true
-      - xmlOutput                 = {PROJECT}/lint-report.xml{!}
+      - xmlOutput                 = {PROJECT}/app/lint-report.xml{!}
       - sarifReport               = false
       - sarifOutput               = (null)
       - checkReleaseBuilds        = true

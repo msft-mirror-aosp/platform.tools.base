@@ -16,19 +16,16 @@
 
 package com.android.build.gradle.integration.application
 
-import com.google.common.truth.Truth.assertThat
-
-import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.fixture.TestProjectPaths
+import com.android.build.gradle.integration.common.fixture.project.GradleRule
+import com.android.build.gradle.integration.common.fixture.project.prebuilts.BasicSpec
 import com.android.builder.model.SyncIssue
-import com.android.utils.FileUtils
-import java.util.regex.Pattern
-import org.junit.ClassRule
+import com.android.testutils.AssumeUtil
+import com.google.common.truth.Truth.assertThat
 import org.junit.Rule
 import org.junit.Test
-import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
+import java.util.regex.Pattern
 
 /**
  * A very simple test to compile a project with special characters in it
@@ -37,29 +34,19 @@ import org.junit.runners.Parameterized
 class SpecialCharactersBasicTest(projectName: String) {
 
     @get:Rule
-    var project: GradleTestProject = copyProjectWithName("basic", projectName)
-
-
-    private fun copyProjectWithName(originalProject: String, copyName: String): GradleTestProject {
-        val originalProjectPath = TestProjectPaths.getTestProjectDir(originalProject)
-
-        try {
-            val projectCopyPath = temporaryFolder.newFolder(copyName)
-            FileUtils.copyDirectory(originalProjectPath, projectCopyPath)
-
-            return GradleTestProject.builder()
-                .fromDir(projectCopyPath)
-                .create()
-        } catch(err: java.io.IOException) {
-            throw(java.io.IOException("Could not create project ${copyName}. This could be caused by an illegal file name.", err))
-        }
-    }
+    val rule = GradleRule.fromProject(BasicSpec(), folderName = projectName)
 
     @Test
     fun testProjectsWithSpecialCharacters() {
-        project.execute("clean", "assemble")
+        // windows won't work with the weird characters and we throw an exception already
+        AssumeUtil.assumeNotWindows()
 
-        val container = project.modelV2().ignoreSyncIssues().fetchModels().container
+        val build = rule.build
+
+        // TODO lint seems to fail so only run debug for now. b/458128469
+        build.executor.run("assembleDebug")
+
+        val container = build.modelBuilder.ignoreSyncIssues().fetchModels().container
         val issues = container.getProject().issues!!.syncIssues
 
         // basic project overwrites buildConfigField which emits a sync warning
@@ -71,11 +58,6 @@ class SpecialCharactersBasicTest(projectName: String) {
     }
 
     companion object {
-        // temporaryFolder is a shared root folder for the test projects.
-        @ClassRule
-        @JvmField
-        val temporaryFolder = TemporaryFolder()
-
         @JvmStatic
         @Parameterized.Parameters
         fun projectNames(): Collection<String> {

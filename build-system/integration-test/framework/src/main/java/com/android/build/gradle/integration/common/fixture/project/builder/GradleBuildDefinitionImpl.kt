@@ -502,7 +502,11 @@ internal class GradleBuildDefinitionImpl(
         val allPlugins = if (useOldPluginStyleForSeparateClassloaders) mapOf() else computeAllPluginMap()
 
         // only give the repositories to the project if they need it.
-        val repoForProjects = if (useOldPluginStyleForSeparateClassloaders) globalDefinitionState.repositories else listOf()
+        val locallyDefinedRepo = subProjects.values.any { it.repositoriesBuilder.isUsed }
+        val projectRepositories = if (useOldPluginStyleForSeparateClassloaders || locallyDefinedRepo)
+            globalDefinitionState.repositories
+        else
+            listOf()
 
         writeSetting(location)
 
@@ -512,7 +516,7 @@ internal class GradleBuildDefinitionImpl(
             allPlugins,
             customPluginMap,
             useOldPluginStyleForSeparateClassloaders,
-            repoForProjects,
+            projectRepositories,
             buildFileType.getNewWriter())
 
         subProjects.values.forEach {
@@ -521,7 +525,7 @@ internal class GradleBuildDefinitionImpl(
                 allPlugins,
                 customPluginMap,
                 useOldPluginStyleForSeparateClassloaders,
-                repoForProjects,
+                projectRepositories,
                 buildFileType.getNewWriter()
             )
         }
@@ -549,7 +553,7 @@ internal class GradleBuildDefinitionImpl(
             useOldPluginStyle = useOldPluginStyleForSeparateClassloaders,
             repositories = globalDefinitionState.repositories,
             includedBuilds = includedBuilds.values,
-            subProjectPaths = subProjects.values.map { it.path },
+            subProjectPaths = subProjects.values,
             buildWriter = buildFileType.getNewWriter(),
         )
     }

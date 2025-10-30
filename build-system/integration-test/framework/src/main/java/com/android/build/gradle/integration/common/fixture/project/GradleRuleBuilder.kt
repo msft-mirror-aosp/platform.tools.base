@@ -19,6 +19,7 @@ package com.android.build.gradle.integration.common.fixture.project
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleDefinitionDsl
+import com.android.build.gradle.integration.common.fixture.project.builder.LocalTestProjectSpec
 import com.android.build.gradle.integration.common.fixture.project.builder.MavenRepository
 import com.android.build.gradle.integration.common.fixture.project.builder.MavenRepositoryImpl
 import com.android.build.gradle.integration.common.fixture.project.options.DefaultRuleOptionBuilder
@@ -58,14 +59,14 @@ internal class GradleRuleBuilderImpl internal constructor(): GradleRuleBuilder {
     override fun from(
         folderName: String,
         logicalName: String?,
-        action: GradleBuildDefinition.() -> Unit
+        configAction: GradleBuildDefinition.() -> Unit
     ): GradleRule {
         val builder = GradleBuildDefinitionImpl(
             name = logicalName ?: folderName,
             rootFolderName = folderName,
             enableDefaultContentCreation = true
         )
-        action(builder)
+        configAction(builder)
 
         return create(builder)
     }
@@ -74,16 +75,33 @@ internal class GradleRuleBuilderImpl internal constructor(): GradleRuleBuilder {
         testProjectName: String,
         folderName: String,
         logicalName: String?,
-        action: GradleBuildDefinition.() -> Unit
+        configAction: GradleBuildDefinition.() -> Unit
     ): GradleRule {
         val builder = GradleBuildDefinitionImpl(
             name = logicalName ?: folderName,
             rootFolderName = folderName,
             enableDefaultContentCreation = false,
         )
-        action(builder)
+        configAction(builder)
 
         return create(builder, testProjectName)
+    }
+
+    override fun fromProject(
+        testProjectSpec: LocalTestProjectSpec,
+        folderName: String,
+        logicalName: String?,
+        configAction: (GradleBuildDefinition.() -> Unit)?
+    ): GradleRule {
+        val builder = GradleBuildDefinitionImpl(
+            name = logicalName ?: folderName,
+            rootFolderName = folderName,
+            enableDefaultContentCreation = false,
+        )
+        testProjectSpec.configAction(builder)
+        configAction?.invoke(builder)
+
+        return create(builder, testProjectSpec.projectName)
     }
 
     override fun withGradleLocation(action: GradleLocationBuilder.() -> Unit): GradleRuleBuilder {

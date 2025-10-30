@@ -15,17 +15,15 @@
  */
 package com.android.build.gradle.integration.connected.application
 
-import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.fixture.GradleTestProject.Companion.builder
-import com.android.build.gradle.integration.common.utils.TestFileUtils
+import com.android.build.gradle.integration.common.fixture.project.GradleBuild
+import com.android.build.gradle.integration.common.fixture.project.GradleRule
+import com.android.build.gradle.integration.common.fixture.project.prebuilts.BasicSpec
 import com.android.build.gradle.integration.connected.utils.getEmulator
 import com.android.build.gradle.options.BooleanOption
-import org.junit.Before
 import org.junit.ClassRule
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.ExternalResource
-import java.io.IOException
 
 class BasicConnectedTest {
     companion object {
@@ -35,33 +33,44 @@ class BasicConnectedTest {
     }
 
     @get:Rule
-    val project: GradleTestProject = builder().fromTestProject("basic").create()
+    val rule = GradleRule.fromProject(BasicSpec()) {
+        androidApplication(":app") {
+            android {
+                installation {
+                    // fail fast (30s) if no response
+                    timeOutInMs = 30000
+                }
+            }
+        }
+    }
 
-    @Before
-    @Throws(IOException::class)
-    fun setUp() {
-        // fail fast if no response
-        project.addAdbTimeout()
+    fun GradleBuild.uninstall() {
         // run the uninstall tasks in order to (1) make sure nothing is installed at the beginning
         // of each test and (2) check the adb connection before taking the time to build anything.
-        project.execute("uninstallAll")
+        this.executor.run("uninstallAll")
     }
 
     @Test
     @Throws(Exception::class)
     fun install() {
-        TestFileUtils.appendToFile(
-            project.gradlePropertiesFile,
-            BooleanOption.PRIVACY_SANDBOX_SDK_SUPPORT.propertyName + "=false"
-        )
-        project.execute("installDebug", "uninstallAll")
+        val build = rule.build {
+            gradleProperties {
+                add(BooleanOption.PRIVACY_SANDBOX_SDK_SUPPORT, false)
+            }
+        }
+
+        build.uninstall()
+
+        build.executor.run("installDebug", "uninstallAll")
         // b/37498215 - Try again.  Behavior may be different when tasks are up-to-date.
-        project.execute("installDebug", "uninstallAll")
+        build.executor.run("installDebug", "uninstallAll")
     }
 
     @Test
     @Throws(Exception::class)
     fun connectedCheck() {
-        project.executor().run("connectedCheck")
+        val build = rule.build
+        build.uninstall()
+        build.executor.run("connectedCheck")
     }
 }

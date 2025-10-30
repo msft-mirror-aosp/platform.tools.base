@@ -81,7 +81,7 @@ interface DslRecorder {
      */
     fun <T> runNestedBlock(
         name: String,
-        parameters: List<Any>,
+        parameters: List<Any?>,
         instanceProvider: (DslRecorder) -> T,
         action: T.() -> Unit,
     )
@@ -155,7 +155,7 @@ internal class DefaultDslRecorder(): DslRecorder {
     data class NestedBlockData(
         override val name: String,
         val dslRecorder: DslRecorder,
-        val args: List<Any>
+        val args: List<Any?>
     ): NamedPayload
 
     private val eventList = mutableListOf<Event>()
@@ -198,7 +198,7 @@ internal class DefaultDslRecorder(): DslRecorder {
 
     override fun <T> runNestedBlock(
         name: String,
-        parameters: List<Any>,
+        parameters: List<Any?>,
         instanceProvider: (DslRecorder) -> T,
         action: T.() -> Unit,
     ) {

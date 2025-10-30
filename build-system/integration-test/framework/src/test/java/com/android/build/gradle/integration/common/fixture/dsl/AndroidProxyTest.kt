@@ -284,6 +284,29 @@ class AndroidProxyTest {
         """.trimIndent())
     }
 
+    @Test
+    fun publishing_singleVariant() {
+        val content = generateKtsContent {
+            publishing {
+                singleVariant("foo") {
+                    publishApk()
+                }
+            }
+        }
+
+        Truth.assertThat(content).isEqualTo("""
+            android {
+              publishing {
+                singleVariant("foo") {
+                  publishApk()
+                }
+              }
+            }
+
+        """.trimIndent())
+    }
+
+
     private fun generateKtsContent(action: ApplicationExtension.() -> Unit): String {
         val dslRecorder = DefaultDslRecorder()
         dslRecorder.runNestedBlock("android", listOf(), ApplicationExtension::class.java, action)

@@ -37,7 +37,7 @@ private val basicSetupAction: GradleBuildDefinition.() -> Unit = {
 
 class JavaResPackagingConflictTest {
     @get:Rule
-    val rule = GradleRule.from(action = basicSetupAction)
+    val rule = GradleRule.from(configAction = basicSetupAction)
 
     @Test
     fun testConflictBetweenLibraries() {

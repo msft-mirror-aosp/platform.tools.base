@@ -16,10 +16,8 @@
 package com.android.build.gradle.integration.application
 
 import com.android.build.gradle.integration.common.category.SmokeTests
-import com.android.build.gradle.integration.common.fixture.GradleBuildResult
-import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.fixture.GradleTestProject.Companion.builder
-import com.android.build.gradle.integration.common.utils.TestFileUtils
+import com.android.build.gradle.integration.common.fixture.project.GradleRule
+import com.android.build.gradle.integration.common.fixture.project.prebuilts.BasicSpec
 import com.google.common.truth.Truth
 import org.junit.Rule
 import org.junit.Test
@@ -32,24 +30,28 @@ import org.junit.experimental.categories.Category
 class BasicTest {
 
     @get:Rule
-    val project: GradleTestProject = builder()
-        .fromTestProject("basic")
-        .create()
+    val rule = GradleRule.fromProject(BasicSpec())
 
     @Test
     fun weDontFailOnLicenceDotTxtWhenPackagingDependencies() {
-        project.execute("assembleAndroidTest")
+        rule.build.executor.run("assembleAndroidTest")
     }
 
     @Test
-    @Throws(Exception::class)
     fun testRenderscriptDidNotRun() {
         // First enable renderscript, then execute renderscript task and check if it was skipped
-        TestFileUtils.appendToFile(
-            project.buildFile, "android.buildFeatures.renderScript = true"
-        )
-        val result: GradleBuildResult = project.execute("compileDebugRenderscript")
-        Truth.assertThat(result.getTask(":compileDebugRenderscript").executionState.toString())
+        val build = rule.build {
+            androidApplication(":app") {
+                android {
+                    buildFeatures {
+                        renderScript = true
+                    }
+                }
+            }
+        }
+
+        val result = build.executor.run("compileDebugRenderscript")
+        Truth.assertThat(result.getTask(":app:compileDebugRenderscript").executionState.toString())
             .isEqualTo("SKIPPED")
     }
 }

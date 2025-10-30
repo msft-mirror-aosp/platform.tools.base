@@ -18,6 +18,7 @@ package com.android.build.gradle.integration.common.fixture.project
 
 import com.android.build.gradle.integration.common.fixture.project.GradleRule.Companion.configure
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition
+import com.android.build.gradle.integration.common.fixture.project.builder.LocalTestProjectSpec
 
 /**
  * Entry point for creating a GradleRule.
@@ -33,12 +34,12 @@ interface GradleRuleEntryPoint {
      *
      * @param folderName the name of the folder containing the build.
      * @param logicalName The logical name of the build in gradle. This impact the groupId information of the subprojects. if null, same as folder name
-     * @param action the action to configure the build
+     * @param configAction the action to configure the build
      */
     fun from(
         folderName: String = GradleBuildDefinition.DEFAULT_BUILD_NAME,
         logicalName: String? = null,
-        action: GradleBuildDefinition.() -> Unit
+        configAction: GradleBuildDefinition.() -> Unit
     ): GradleRule
 
     /**
@@ -50,12 +51,19 @@ interface GradleRuleEntryPoint {
      * @param testProjectName the name of the on-disk test project.
      * @param folderName the name of the folder containing the build.
      * @param logicalName The logical name of the build in gradle. This impact the groupId information of the subprojects. if null, same as folder name
-     * @param action the action to configure the build
+     * @param configAction the action to configure the build
      */
     fun fromProject(
         testProjectName: String,
         folderName: String = GradleBuildDefinition.DEFAULT_BUILD_NAME,
         logicalName: String? = null,
-        action: GradleBuildDefinition.() -> Unit
+        configAction: GradleBuildDefinition.() -> Unit
+    ): GradleRule
+
+    fun fromProject(
+        testProjectSpec: LocalTestProjectSpec,
+        folderName: String = GradleBuildDefinition.DEFAULT_BUILD_NAME,
+        logicalName: String? = null,
+        configAction: (GradleBuildDefinition.() -> Unit)? = null
     ): GradleRule
 }
