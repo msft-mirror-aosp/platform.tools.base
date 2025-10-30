@@ -4531,6 +4531,31 @@ com/android/tools/utp/android-test-plugin-result-listener-gradle-proto
   gradle_android_test_result_listener.proto
   gradle_android_test_result_listener_config.proto
 
+com/android/tools/utp/gradle-work-action
+  META-INF/
+  META-INF/MANIFEST.MF
+  META-INF/gradle-work-action.kotlin_module
+  META-INF/services/
+  META-INF/services/com.android.tools.utp.gradle.api.UtpAction
+  NOTICE
+  com/
+  com/android/
+  com/android/tools/
+  com/android/tools/utp/
+  com/android/tools/utp/gradle/
+
+com/android/tools/utp/gradle-work-action-api
+  META-INF/
+  META-INF/MANIFEST.MF
+  META-INF/gradle-work-action-api.kotlin_module
+  NOTICE
+  com/
+  com/android/
+  com/android/tools/
+  com/android/tools/utp/
+  com/android/tools/utp/gradle/
+  com/android/tools/utp/gradle/api/
+
 com/android/tools/utp/utp-common
   META-INF/
   META-INF/MANIFEST.MF

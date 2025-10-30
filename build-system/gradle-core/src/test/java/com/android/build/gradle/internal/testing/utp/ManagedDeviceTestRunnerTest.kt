@@ -21,13 +21,14 @@ import com.android.build.gradle.internal.AvdComponentsBuildService
 import com.android.build.gradle.internal.SdkComponentsBuildService
 import com.android.build.gradle.internal.dsl.ManagedVirtualDevice
 import com.android.build.gradle.internal.testing.StaticTestData
-import com.android.build.gradle.internal.testing.utp.worker.EmulatorControlConfig
-import com.android.build.gradle.internal.testing.utp.worker.RunUtpWorkParameters
-import com.android.build.gradle.internal.testing.utp.worker.ShardConfig
 import com.android.build.gradle.internal.utils.setDisallowChanges
 import com.android.mockito.kotlin.whenever
 import com.android.testutils.SystemPropertyOverrides
 import com.android.testutils.truth.PathSubject.assertThat
+import com.android.tools.utp.gradle.api.EmulatorControlConfig
+import com.android.tools.utp.gradle.api.RunUtpWorkParameters.UtpRunConfig
+import com.android.tools.utp.gradle.api.ShardConfig
+import com.android.tools.utp.gradle.api.UtpDependencies
 import com.android.utils.Environment
 import com.google.common.truth.Truth.assertThat
 import com.google.testing.platform.proto.api.core.TestSuiteResultProto.TestSuiteResult
@@ -85,7 +86,7 @@ class ManagedDeviceTestRunnerTest {
     private val extractedSdkApks = listOf(listOf(Path("test1"), Path("test2")))
     private val sdkApkSet = setOf(File("test"))
 
-    private val runnerConfigsCaptor = argumentCaptor<List<RunUtpWorkParameters.UtpRunConfig>>()
+    private val runnerConfigsCaptor = argumentCaptor<List<UtpRunConfig>>()
 
     @Before
     fun setupMocks() {
@@ -94,9 +95,13 @@ class ManagedDeviceTestRunnerTest {
         jvmExecutable = temporaryFolderRule.newFile()
 
         whenever(mockObjectFactory.newInstance(
-            eq(RunUtpWorkParameters.UtpRunConfig::class.java))
+            eq(UtpRunConfig::class.java))
         ).thenReturn(mock(defaultAnswer = RETURNS_DEEP_STUBS))
 
+        whenever(mockTestData.applicationId).thenReturn("applicationId")
+        whenever(mockTestData.instrumentationRunner).thenReturn("instrumentationRunner")
+        whenever(mockTestData.instrumentationTargetPackageId).thenReturn("instrumentationTargetPackageId")
+        whenever(mockTestData.testApk).thenReturn(mockAppApk)
         whenever(mockTestData.minSdkVersion).thenReturn(AndroidVersionImpl(28))
         whenever(mockTestData.testedApkFinder).thenReturn { listOf(mockAppApk) }
         whenever(mockTestData.privacySandboxInstallBundlesFinder).thenReturn { extractedSdkApks }
@@ -239,9 +244,7 @@ class ManagedDeviceTestRunnerTest {
 
         assertThat(runnerConfigsCaptor.allValues).hasSize(1)
         assertThat(runnerConfigsCaptor.firstValue).hasSize(2)
-        verify(runnerConfigsCaptor.firstValue[0].shardConfig).setDisallowChanges(eq(
-            ShardConfig(2, 0)
-        ))
+        verify(runnerConfigsCaptor.firstValue[0].shardConfig).setDisallowChanges(eq(ShardConfig(2, 0)))
         verify(runnerConfigsCaptor.firstValue[1].shardConfig).setDisallowChanges(eq(ShardConfig(2, 1)))
 
         assertThat(result).isTrue()

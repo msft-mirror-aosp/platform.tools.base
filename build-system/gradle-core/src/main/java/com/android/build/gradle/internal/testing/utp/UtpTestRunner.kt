@@ -19,11 +19,12 @@ package com.android.build.gradle.internal.testing.utp
 import com.android.build.gradle.internal.SdkComponentsBuildService
 import com.android.build.gradle.internal.testing.BaseTestRunner
 import com.android.build.gradle.internal.testing.StaticTestData
-import com.android.build.gradle.internal.testing.utp.worker.EmulatorControlConfig
-import com.android.build.gradle.internal.testing.utp.worker.TargetApkConfigBundle
 import com.android.builder.testing.api.DeviceConnector
 import com.android.ide.common.process.ProcessExecutor
 import com.android.ide.common.workers.ExecutorServiceAdapter
+import com.android.tools.utp.gradle.api.EmulatorControlConfig
+import com.android.tools.utp.gradle.api.TargetApkConfigBundle
+import com.android.tools.utp.gradle.api.UtpDependencies
 import com.android.utils.ILogger
 import com.google.common.collect.ImmutableList
 import org.gradle.api.model.ObjectFactory

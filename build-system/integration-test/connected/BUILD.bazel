@@ -67,6 +67,7 @@ TEST_DATA = [
 #keep sorted
 MAVEN_REPO_ZIPS = [
     "//tools/base/build-system:android_gradle_plugin",
+    "//tools/base/utp:utp_maven_repo_for_integration_tests",
 ]
 
 #keep sorted
@@ -76,7 +77,6 @@ TEST_MAVEN_REPOS = [
     "//tools/base/build-system/integration-test:androidx_test_latest",
     "//tools/base/build-system/integration-test:kotlin_gradle_plugin_prebuilts",
     "//tools/base/build-system/integration-test:support_library_latest",
-    "//tools/base/build-system/integration-test:utp_plugins",
     "//tools/base/build-system/integration-test/connected:prebuilts",
 ]
 

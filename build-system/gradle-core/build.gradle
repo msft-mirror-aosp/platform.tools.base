@@ -158,6 +158,7 @@ dependencies {
     implementation libs.com.android.tools.utp.androidTestPluginHostLogcatProto
     implementation libs.com.android.tools.utp.androidTestPluginHostApkInstallerProto
     implementation libs.com.android.tools.utp.androidTestPluginResultListenerGradleProto
+    implementation project(':base:utp:gradle-work-action-api')
 
     implementation gradleApi()
     implementation libs.kotlin_stdlib

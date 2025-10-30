@@ -25,11 +25,12 @@ import com.android.build.gradle.internal.computeAbiFromArchitecture
 import com.android.build.gradle.internal.computeAvdName
 import com.android.build.gradle.internal.dsl.ManagedVirtualDevice
 import com.android.build.gradle.internal.testing.StaticTestData
-import com.android.build.gradle.internal.testing.utp.worker.EmulatorControlConfig
-import com.android.build.gradle.internal.testing.utp.worker.ShardConfig
-import com.android.build.gradle.internal.testing.utp.worker.TargetApkConfigBundle
 import com.android.builder.testing.api.DeviceException
 import com.android.builder.testing.api.TestException
+import com.android.tools.utp.gradle.api.EmulatorControlConfig
+import com.android.tools.utp.gradle.api.ShardConfig
+import com.android.tools.utp.gradle.api.TargetApkConfigBundle
+import com.android.tools.utp.gradle.api.UtpDependencies
 import com.android.utils.ILogger
 import com.google.common.base.Preconditions
 import org.gradle.api.logging.Logger

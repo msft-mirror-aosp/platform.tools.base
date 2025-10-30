@@ -17,9 +17,9 @@
 package com.android.build.gradle.internal.testing.utp.emulatorcontrol
 
 import com.android.build.gradle.internal.dsl.EmulatorControl
-import com.android.build.gradle.internal.testing.utp.worker.EmulatorControlConfig
 import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.options.ProjectOptions
+import com.android.tools.utp.gradle.api.EmulatorControlConfig
 
 fun createEmulatorControlConfig(
     projectOptions: ProjectOptions, emulatorControl: EmulatorControl

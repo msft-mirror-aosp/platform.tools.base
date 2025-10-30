@@ -492,6 +492,7 @@ ANDROID_GRADLE_PLUGIN_SOURCE_FILES = [
     "//tools/base/kotlin-multiplatform-models/proto:agp_gradle_build_files",
     "//tools/base/mlkit-common:agp_gradle_build_files",
     "//tools/base/profgen/profgen:agp_gradle_build_files",
+    "//tools/base/utp/gradle-work-action-api:agp_gradle_build_files",
     "//tools/buildSrc:agp_gradle_build_files",
     "//tools/buildSrc/base:agp_gradle_build_files",
 ]

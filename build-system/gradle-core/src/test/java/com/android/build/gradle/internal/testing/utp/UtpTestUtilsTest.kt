@@ -18,7 +18,8 @@ package com.android.build.gradle.internal.testing.utp
 
 import com.android.build.gradle.internal.SdkComponentsBuildService
 import com.android.build.gradle.internal.testing.utp.worker.RunUtpWorkAction
-import com.android.build.gradle.internal.testing.utp.worker.RunUtpWorkParameters
+import com.android.tools.utp.gradle.api.RunUtpWorkParameters
+import com.android.tools.utp.gradle.api.UtpDependencies
 import com.android.utils.ILogger
 import com.google.common.truth.Truth.assertThat
 import com.google.protobuf.TextFormat
@@ -58,7 +59,8 @@ class UtpTestUtilsTest {
     @Before
     fun setupMocks() {
         jvmExecutable = temporaryFolderRule.newFile()
-        whenever(mockWorkerExecutor.noIsolation()).thenReturn(mockWorkQueue)
+        whenever(mockWorkerExecutor.classLoaderIsolation(any()))
+            .thenReturn(mockWorkQueue)
     }
 
     private fun runUtp(

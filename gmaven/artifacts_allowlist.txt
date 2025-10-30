@@ -88,6 +88,8 @@
   com/android/tools/utp:android-test-plugin-host-logcat-proto
   com/android/tools/utp:android-test-plugin-result-listener-gradle
   com/android/tools/utp:android-test-plugin-result-listener-gradle-proto
+  com/android/tools/utp:gradle-work-action
+  com/android/tools/utp:gradle-work-action-api
   com/android/tools/utp:utp-common
   com/android/tools:annotations
   com/android/tools:common

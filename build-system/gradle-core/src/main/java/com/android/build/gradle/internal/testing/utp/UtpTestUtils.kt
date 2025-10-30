@@ -16,21 +16,27 @@
 
 package com.android.build.gradle.internal.testing.utp
 
+import com.android.Version.ANDROID_TOOLS_BASE_VERSION
+import com.android.build.api.instrumentation.StaticTestData
 import com.android.build.gradle.internal.SdkComponentsBuildService
-import com.android.build.gradle.internal.testing.StaticTestData
-import com.android.build.gradle.internal.testing.utp.worker.EmulatorControlConfig
 import com.android.build.gradle.internal.testing.utp.worker.RunUtpWorkAction
-import com.android.build.gradle.internal.testing.utp.worker.RunUtpWorkParameters
-import com.android.build.gradle.internal.testing.utp.worker.ShardConfig
-import com.android.build.gradle.internal.testing.utp.worker.TargetApkConfigBundle
 import com.android.build.gradle.internal.utils.fromDisallowChanges
 import com.android.build.gradle.internal.utils.setDisallowChanges
 import com.android.builder.testing.api.DeviceConnector
 import com.android.sdklib.BuildToolInfo
+import com.android.tools.utp.gradle.api.EmulatorControlConfig
+import com.android.tools.utp.gradle.api.RunUtpWorkParameters
+import com.android.tools.utp.gradle.api.ShardConfig
+import com.android.tools.utp.gradle.api.TargetApkConfigBundle
+import com.android.tools.utp.gradle.api.TestData
+import com.android.tools.utp.gradle.api.UtpDependencies
+import com.android.tools.utp.gradle.api.UtpDependency
 import com.android.utils.ILogger
 import com.google.testing.platform.proto.api.core.ErrorDetailProto
 import com.google.testing.platform.proto.api.core.TestStatusProto.TestStatus
 import com.google.testing.platform.proto.api.core.TestSuiteResultProto
+import org.gradle.api.artifacts.ConfigurationContainer
+import org.gradle.api.artifacts.dsl.DependencyHandler
 import org.gradle.api.model.ObjectFactory
 import org.gradle.workers.WorkerExecutor
 import java.io.File
@@ -134,7 +140,9 @@ private fun runUtpTestSuiteAndWait(
     xmlTestReportOutputDirectory: File,
     versionedSdkLoader: SdkComponentsBuildService.VersionedSdkLoader,
 ): List<File> {
-    val workQueue = workerExecutor.noIsolation()
+    val workQueue = workerExecutor.classLoaderIsolation { spec ->
+        spec.classpath.fromDisallowChanges(utpDependencies.gradleWorkAction)
+    }
 
     workQueue.submit(RunUtpWorkAction::class.java) { params ->
         params.jvm.set(jvmExecutable)
@@ -230,7 +238,7 @@ fun createUtpRunConfig(
     utpRunConfig.utpResultProtoOutputFile.fileValue(
         File(outputDir, TEST_RESULT_PB_FILE_NAME)).disallowChanges()
     utpRunConfig.deviceSerialNumber.setDisallowChanges(deviceSerialNumber)
-    utpRunConfig.testData.setDisallowChanges(testData)
+    utpRunConfig.testData.setDisallowChanges(testData.toWorkActionTestData())
     utpRunConfig.targetApkConfigBundle.setDisallowChanges(targetApkConfigBundle)
     utpRunConfig.additionalInstallOptions.setDisallowChanges(additionalInstallOptions)
     utpRunConfig.helperApks.fromDisallowChanges(helperApks)
@@ -252,4 +260,47 @@ fun createUtpRunConfig(
     utpRunConfig.loggingLevel.setDisallowChanges(loggingLevel)
 
     return utpRunConfig
+}
+
+private fun StaticTestData.toWorkActionTestData(): TestData {
+    return TestData(
+        instrumentationTargetPackageId = this.instrumentationTargetPackageId,
+        testedApplicationId = this.testedApplicationId,
+        applicationId = this.applicationId,
+        instrumentationRunner = this.instrumentationRunner,
+        testApk = this.testApk,
+        instrumentationRunnerArguments = this.instrumentationRunnerArguments,
+        isTestCoverageEnabled = this.isTestCoverageEnabled,
+        animationsDisabled = this.animationsDisabled,
+    )
+}
+
+/**
+ * Looks for UTP configurations in a project, creates and add it to the project if missing.
+ */
+fun maybeCreateUtpConfigurations(configurations: ConfigurationContainer, dependencies: DependencyHandler) {
+    UtpDependency.entries.forEach { utpDependency ->
+        if (!configurations.names.contains(utpDependency.configurationName)) {
+            configurations.register(utpDependency.configurationName) {
+                it.isVisible = false
+                it.isTransitive = true
+                it.isCanBeConsumed = false
+                it.description = "A configuration to resolve the Unified Test Platform dependencies."
+            }
+            dependencies.add(
+                utpDependency.configurationName,
+                utpDependency.mavenCoordinate(ANDROID_TOOLS_BASE_VERSION))
+        }
+    }
+}
+
+/**
+ * Resolves the UTP dependencies and populates this [UtpDependencies] object from the
+ * given [ConfigurationContainer].
+ */
+fun UtpDependencies.resolveDependencies(configurationsContainer: ConfigurationContainer) {
+    UtpDependency.entries.forEach { utpDependency ->
+        utpDependency.mapperFunc(this)
+            .from(configurationsContainer.getByName(utpDependency.configurationName))
+    }
 }
