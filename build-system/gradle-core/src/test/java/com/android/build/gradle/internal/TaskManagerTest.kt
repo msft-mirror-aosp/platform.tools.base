@@ -4,13 +4,9 @@ import com.android.build.api.artifact.ScopedArtifact
 import com.android.build.api.artifact.impl.ArtifactsImpl
 import com.android.build.api.artifact.impl.InternalScopedArtifacts
 import com.android.build.api.variant.ScopedArtifacts
-import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfig
 import com.google.common.truth.Truth
-import io.grpc.Internal
 import org.gradle.api.Project
-import org.gradle.api.Task
-import org.gradle.api.tasks.TaskProvider
 import org.gradle.testfixtures.ProjectBuilder
 import org.junit.Rule
 import org.junit.Test

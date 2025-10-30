@@ -20,14 +20,15 @@ import com.android.testutils.TestInputsGenerator
 import com.android.testutils.truth.PathSubject
 import com.android.testutils.truth.ZipFileSubject.assertThat
 import com.android.utils.FileUtils
+import com.google.common.io.ByteStreams
 import com.google.common.truth.Truth.assertThat
-import org.bouncycastle.util.io.Streams
 import org.gradle.testfixtures.ProjectBuilder
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import java.io.BufferedOutputStream
+import java.io.EOFException
 import java.io.File
 import java.io.FileOutputStream
 import java.nio.charset.Charset
@@ -173,7 +174,9 @@ class PerModuleBundleTaskTest {
         val outputZip = ZipFile(zipFile)
         outputZip.getInputStream(outputZip.getEntry("dex/classes.dex")).use {
             val bytes = ByteArray(128)
-            Streams.readFully(it, bytes)
+            try {
+                ByteStreams.readFully(it, bytes)
+            } catch (_: EOFException) {}
             assertThat(bytes.toString(Charset.defaultCharset())).startsWith("Dex classes.dex")
         }
     }

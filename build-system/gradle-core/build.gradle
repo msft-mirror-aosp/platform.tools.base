@@ -150,14 +150,6 @@ dependencies {
     implementation libs.com.android.databinding.baseLibrary
     implementation project(':base:builder-test-api')
     implementation libs.com.android.tools.layoutlib.layoutlibApi
-    implementation libs.com.android.tools.utp.androidDeviceProviderDdmlibProto
-    implementation libs.com.android.tools.utp.androidDeviceProviderProfileProto
-    implementation libs.com.android.tools.utp.androidTestPluginHostAdditionalTestOutputProto
-    implementation libs.com.android.tools.utp.androidTestPluginHostCoverageProto
-    implementation libs.com.android.tools.utp.androidTestPluginHostEmulatorControlProto
-    implementation libs.com.android.tools.utp.androidTestPluginHostLogcatProto
-    implementation libs.com.android.tools.utp.androidTestPluginHostApkInstallerProto
-    implementation libs.com.android.tools.utp.androidTestPluginResultListenerGradleProto
     implementation project(':base:utp:gradle-work-action-api')
 
     implementation gradleApi()
@@ -168,7 +160,6 @@ dependencies {
     implementation libs.asm_analysis
     implementation libs.asm_commons
     implementation libs.asm_util
-    implementation libs.bouncycastle_pkix
     implementation libs.jaxb_runtime
     implementation libs.jopt
     implementation libs.bundle_tool
@@ -186,11 +177,6 @@ dependencies {
     implementation libs.protobuf
     implementation libs.protobuf_util
     implementation libs.gson
-    implementation libs.grpc_core
-    implementation libs.grpc_netty
-    implementation libs.grpc_protobuf
-    implementation libs.grpc_stub
-    implementation libs.grpc_inprocess
     implementation libs.tink
     implementation libs.unified_test_platform
     implementation libs.tensorflow_lite_metadata

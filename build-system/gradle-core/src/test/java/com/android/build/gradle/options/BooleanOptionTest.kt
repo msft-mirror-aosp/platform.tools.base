@@ -20,6 +20,7 @@ import com.google.common.truth.Truth.assertWithMessage
 import org.junit.Test
 
 /** Tests for [BooleanOption]. */
+@OptIn(ExperimentalStdlibApi::class)  // For Enum.entries
 class BooleanOptionTest {
 
     @Test

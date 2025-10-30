@@ -21,6 +21,7 @@ import com.android.ide.common.repository.AgpVersion
 import org.junit.Test
 
 /** Tests the validity of the Android Gradle plugin versions associated with the [Option]s. */
+@OptIn(ExperimentalStdlibApi::class)  // For Enum.entries
 class OptionVersionTest {
 
     companion object {
