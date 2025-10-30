@@ -13,50 +13,43 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.android.build.gradle.integration.application
 
-package com.android.build.gradle.integration.application;
-
-import static com.google.common.truth.Truth.assertThat;
-
-import com.android.build.gradle.integration.common.category.SmokeTests;
-import com.android.build.gradle.integration.common.fixture.GradleBuildResult;
-import com.android.build.gradle.integration.common.fixture.GradleTestProject;
-import com.android.build.gradle.integration.common.utils.TestFileUtils;
-
-import org.junit.AfterClass;
-import org.junit.ClassRule;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
+import com.android.build.gradle.integration.common.category.SmokeTests
+import com.android.build.gradle.integration.common.fixture.GradleBuildResult
+import com.android.build.gradle.integration.common.fixture.GradleTestProject
+import com.android.build.gradle.integration.common.fixture.GradleTestProject.Companion.builder
+import com.android.build.gradle.integration.common.utils.TestFileUtils
+import com.google.common.truth.Truth
+import org.junit.Rule
+import org.junit.Test
+import org.junit.experimental.categories.Category
 
 /**
  * Assemble tests for basic.
  */
-@Category(SmokeTests.class)
-public class BasicTest {
+@Category(SmokeTests::class)
+class BasicTest {
 
-    @ClassRule
-    public static GradleTestProject project =
-            GradleTestProject.builder()
-                    .fromTestProject("basic")
-                    .create();
+    @get:Rule
+    val project: GradleTestProject = builder()
+        .fromTestProject("basic")
+        .create()
 
-    @AfterClass
-    public static void cleanUp() {
-        project = null;
+    @Test
+    fun weDontFailOnLicenceDotTxtWhenPackagingDependencies() {
+        project.execute("assembleAndroidTest")
     }
 
     @Test
-    public void weDontFailOnLicenceDotTxtWhenPackagingDependencies() {
-        project.execute("assembleAndroidTest");
-    }
-
-    @Test
-    public void testRenderscriptDidNotRun() throws Exception {
+    @Throws(Exception::class)
+    fun testRenderscriptDidNotRun() {
         // First enable renderscript, then execute renderscript task and check if it was skipped
         TestFileUtils.appendToFile(
-                project.getBuildFile(), "android.buildFeatures.renderScript = true");
-        GradleBuildResult result = project.execute("compileDebugRenderscript");
-        assertThat(result.getTask(":compileDebugRenderscript").executionState.toString())
-                .isEqualTo("SKIPPED");
+            project.buildFile, "android.buildFeatures.renderScript = true"
+        )
+        val result: GradleBuildResult = project.execute("compileDebugRenderscript")
+        Truth.assertThat(result.getTask(":compileDebugRenderscript").executionState.toString())
+            .isEqualTo("SKIPPED")
     }
 }

@@ -13,49 +13,55 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.android.build.gradle.integration.connected.application
 
-package com.android.build.gradle.integration.connected.application;
+import com.android.build.gradle.integration.common.fixture.GradleTestProject
+import com.android.build.gradle.integration.common.fixture.GradleTestProject.Companion.builder
+import com.android.build.gradle.integration.common.utils.TestFileUtils
+import com.android.build.gradle.integration.connected.utils.getEmulator
+import com.android.build.gradle.options.BooleanOption
+import org.junit.Before
+import org.junit.ClassRule
+import org.junit.Rule
+import org.junit.Test
+import org.junit.rules.ExternalResource
+import java.io.IOException
 
-import com.android.build.gradle.integration.common.fixture.GradleTestProject;
-import com.android.build.gradle.integration.common.utils.TestFileUtils;
-import com.android.build.gradle.integration.connected.utils.EmulatorUtils;
-import com.android.build.gradle.options.BooleanOption;
-import java.io.IOException;
-import org.junit.Before;
-import org.junit.ClassRule;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExternalResource;
+class BasicConnectedTest {
+    companion object {
+        @JvmField
+        @ClassRule
+        val emulator: ExternalResource = getEmulator()
+    }
 
-public class BasicConnectedTest {
-
-    @ClassRule public static final ExternalResource emulator = EmulatorUtils.getEmulator();
-
-    @Rule
-    public GradleTestProject project =
-            GradleTestProject.builder().fromTestProject("basic").create();
+    @get:Rule
+    val project: GradleTestProject = builder().fromTestProject("basic").create()
 
     @Before
-    public void setUp() throws IOException {
+    @Throws(IOException::class)
+    fun setUp() {
         // fail fast if no response
-        project.addAdbTimeout();
+        project.addAdbTimeout()
         // run the uninstall tasks in order to (1) make sure nothing is installed at the beginning
         // of each test and (2) check the adb connection before taking the time to build anything.
-        project.execute("uninstallAll");
+        project.execute("uninstallAll")
     }
 
     @Test
-    public void install() throws Exception {
+    @Throws(Exception::class)
+    fun install() {
         TestFileUtils.appendToFile(
-                project.getGradlePropertiesFile(),
-                BooleanOption.PRIVACY_SANDBOX_SDK_SUPPORT.getPropertyName() + "=false");
-        project.execute("installDebug", "uninstallAll");
+            project.gradlePropertiesFile,
+            BooleanOption.PRIVACY_SANDBOX_SDK_SUPPORT.propertyName + "=false"
+        )
+        project.execute("installDebug", "uninstallAll")
         // b/37498215 - Try again.  Behavior may be different when tasks are up-to-date.
-        project.execute("installDebug", "uninstallAll");
+        project.execute("installDebug", "uninstallAll")
     }
 
     @Test
-    public void connectedCheck() throws Exception {
-        project.executor().run("connectedCheck");
+    @Throws(Exception::class)
+    fun connectedCheck() {
+        project.executor().run("connectedCheck")
     }
 }
