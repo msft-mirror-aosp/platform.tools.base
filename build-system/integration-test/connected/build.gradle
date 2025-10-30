@@ -1,6 +1,15 @@
 apply plugin: 'com.android.tools.java'
 apply plugin: 'com.android.tools.kotlin'
 
+sourceSets {
+    test {
+        java {
+            // JourneysConnectedTest.kt is compilable by bazel only.
+            exclude 'com/android/build/gradle/integration/connected/application/JourneysConnectedTest.kt'
+        }
+    }
+}
+
 repositories {
     maven { url = uri(rootProject.cloneArtifacts.repository) }
 }

@@ -55,7 +55,7 @@ interface TestSuiteCreationConfig: TestSuite {
     /**
      * Returns the sources for this test suite.
      */
-    val sources: Collection<TestSuiteSourceContainer>
+    override val sources: Collection<TestSuiteSourceContainer>
 
     /**
      * Artifacts specific to this Test suite.

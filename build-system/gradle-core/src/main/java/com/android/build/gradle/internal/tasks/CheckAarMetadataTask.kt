@@ -432,8 +432,12 @@ abstract class CheckAarMetadataWorkAction: WorkAction<CheckAarMetadataWorkParame
                             ${parameters.projectPath.get()} is currently compiled against $compileSdkVersion.
 
                             Recommended action: Use a different version of dependency '$displayName',
-                            or set compileSdkPreview to "$forceCompileSdkPreview" in your build.gradle
-                            file if you intend to experiment with that preview SDK.
+                            or update your `compileSdk` in your build.gradle file to experiment with
+                            the "$forceCompileSdkPreview" preview SDK. For example:
+
+                            compileSdk {
+                                version = preview("$forceCompileSdkPreview")
+                            }
                         """.trimIndent()
                     )
                 }

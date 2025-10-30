@@ -62,7 +62,8 @@ internal object KotlinIdeImportConfigurator {
         androidExtension: KotlinMultiplatformAndroidLibraryExtensionImpl,
         service: IdeMultiplatformImport,
         sourceSetToCreationConfigMap: Lazy<Map<KotlinSourceSet, KmpComponentCreationConfig>>,
-        extraSourceSetsToIncludeInResolution: Lazy<Set<KotlinSourceSet>>
+        extraSourceSetsToIncludeInResolution: Lazy<Set<KotlinSourceSet>>,
+        disableRuntimeClasspath: Boolean
     ) {
         registerDependencyResolvers(
             project,
@@ -70,7 +71,8 @@ internal object KotlinIdeImportConfigurator {
             androidExtension,
             service,
             sourceSetToCreationConfigMap,
-            extraSourceSetsToIncludeInResolution
+            extraSourceSetsToIncludeInResolution,
+            disableRuntimeClasspath
         )
 
         registerExtrasSerializers(
@@ -84,7 +86,8 @@ internal object KotlinIdeImportConfigurator {
         androidExtension: KotlinMultiplatformAndroidLibraryExtensionImpl,
         service: IdeMultiplatformImport,
         sourceSetToCreationConfigMap: Lazy<Map<KotlinSourceSet, KmpComponentCreationConfig>>,
-        extraSourceSetsToIncludeInResolution: Lazy<Set<KotlinSourceSet>>
+        extraSourceSetsToIncludeInResolution: Lazy<Set<KotlinSourceSet>>,
+        disableRuntimeClasspath: Boolean
     ) {
         val libraryResolver = LibraryResolver(
             project = project,
@@ -138,11 +141,58 @@ internal object KotlinIdeImportConfigurator {
             priority = resolutionPriority
         )
 
+        if (disableRuntimeClasspath.not()) {
+            service.registerDependencyResolver(
+                resolver = IdeBinaryDependencyResolver(
+                    binaryType = "KOTLIN_RUNTIME",
+                    artifactResolutionStrategy = IdeBinaryDependencyResolver.ArtifactResolutionStrategy.ResolvableConfiguration(
+                        configurationSelector = { sourceSet ->
+                            sourceSetToCreationConfigMap.value[sourceSet]?.variantDependencies?.runtimeClasspath
+                        },
+                        setupArtifactViewAttributes = {
+                            attribute(
+                                AndroidArtifacts.ARTIFACT_TYPE,
+                                AndroidArtifacts.ArtifactType.CLASSES_JAR.type
+                            )
+                        },
+                        componentFilter = {
+                            it !is ProjectComponentIdentifier
+                        }
+                    )
+                ),
+                constraint = androidSourceSetFilter,
+                phase = resolutionPhase,
+                priority = resolutionPriority
+            )
+
+            service.registerDependencyResolver(
+                resolver = ProjectDependencyResolver(
+                    libraryResolver = libraryResolver,
+                    sourceSetToCreationConfigMap = sourceSetToCreationConfigMap,
+                    configType = AndroidArtifacts.ConsumedConfigType.RUNTIME_CLASSPATH
+                ),
+                constraint = androidSourceSetFilter,
+                phase = resolutionPhase,
+                priority = resolutionPriority
+            )
+            service.registerAdditionalArtifactResolver(
+                resolver = AndroidLibraryDependencyResolver(
+                    libraryResolver = libraryResolver,
+                    sourceSetToCreationConfigMap = sourceSetToCreationConfigMap,
+                    configType = AndroidArtifacts.ConsumedConfigType.RUNTIME_CLASSPATH
+                ),
+                constraint = androidSourceSetFilter,
+                phase = IdeMultiplatformImport.AdditionalArtifactResolutionPhase.PreAdditionalArtifactResolution,
+                priority = resolutionPriority
+            )
+        }
+
         // Register a resolver to resolve dependencies on modules.
         service.registerDependencyResolver(
             resolver = ProjectDependencyResolver(
                 libraryResolver = libraryResolver,
-                sourceSetToCreationConfigMap = sourceSetToCreationConfigMap
+                sourceSetToCreationConfigMap = sourceSetToCreationConfigMap,
+                configType = AndroidArtifacts.ConsumedConfigType.COMPILE_CLASSPATH
             ),
             constraint = androidSourceSetFilter,
             phase = resolutionPhase,
@@ -155,7 +205,8 @@ internal object KotlinIdeImportConfigurator {
         service.registerAdditionalArtifactResolver(
             resolver = AndroidLibraryDependencyResolver(
                 libraryResolver = libraryResolver,
-                sourceSetToCreationConfigMap = sourceSetToCreationConfigMap
+                sourceSetToCreationConfigMap = sourceSetToCreationConfigMap,
+                configType = AndroidArtifacts.ConsumedConfigType.COMPILE_CLASSPATH
             ),
             constraint = androidSourceSetFilter,
             phase = IdeMultiplatformImport.AdditionalArtifactResolutionPhase.PreAdditionalArtifactResolution,
@@ -171,7 +222,7 @@ internal object KotlinIdeImportConfigurator {
                 project = project,
                 mainVariant = lazy(LazyThreadSafetyMode.NONE) {
                     sourceSetToCreationConfigMap.value.values.filterIsInstance<KmpVariantImpl>().first()
-               },
+                },
                 androidTarget = androidTarget,
                 androidExtension = androidExtension
             ),

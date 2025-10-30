@@ -25,6 +25,7 @@ import com.android.build.gradle.internal.ide.dependencies.ResolvedArtifact
 import com.android.build.gradle.internal.ide.dependencies.VariantKey
 import com.android.build.gradle.internal.ide.dependencies.toKey
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
+import com.android.builder.model.v2.ide.Library
 import org.gradle.api.Project
 import org.gradle.api.artifacts.component.ComponentIdentifier
 import org.gradle.api.artifacts.result.ResolvedVariantResult
@@ -36,24 +37,24 @@ class LibraryResolver(
     private val libraryService: LibraryService,
     private val sourceSetToCreationConfigMap: Lazy<Map<KotlinSourceSet, KmpComponentCreationConfig>>,
 ) {
-    private val inputsMap = mutableMapOf<KotlinSourceSet, ArtifactCollectionsInputs>()
-    private val artifactsMap = mutableMapOf<KotlinSourceSet, Map<VariantKey, ResolvedArtifact>>()
-    private val javaDocArtifactsMap = mutableMapOf<KotlinSourceSet, Map<ComponentIdentifier, File>>()
-    private val sourceArtifactsMap = mutableMapOf<KotlinSourceSet, Map<ComponentIdentifier, List<File>>>()
+    private val inputsMap = mutableMapOf<SourceSetConfigurationSpec, ArtifactCollectionsInputs>()
+    private val artifactsMap = mutableMapOf<SourceSetConfigurationSpec, Map<VariantKey, ResolvedArtifact>>()
+    private val javaDocArtifactsMap = mutableMapOf<SourceSetConfigurationSpec, Map<ComponentIdentifier, File>>()
+    private val sourceArtifactsMap = mutableMapOf<SourceSetConfigurationSpec, Map<ComponentIdentifier, List<File>>>()
 
     fun registerSourceSetArtifacts(
-        sourceSet: KotlinSourceSet
+        sourceSet: KotlinSourceSet,
+        configType: AndroidArtifacts.ConsumedConfigType
     ) {
-        if (inputsMap.containsKey(sourceSet)) {
+        val sourceSetConfigurationSpec = SourceSetConfigurationSpec(sourceSet, configType)
+        if (inputsMap.containsKey(sourceSetConfigurationSpec)) {
             return
         }
 
         val component = sourceSetToCreationConfigMap.value[sourceSet]
             ?: throw IllegalArgumentException("Unable to find a component attached to sourceSet ${sourceSet.name}")
 
-        val configType = AndroidArtifacts.ConsumedConfigType.COMPILE_CLASSPATH
-
-        val inputs = inputsMap.getOrPut(sourceSet) {
+        val inputs = inputsMap.getOrPut(sourceSetConfigurationSpec) {
             ArtifactCollectionsInputsImpl(
                 variantDependencies = component.variantDependencies,
                 projectPath = project.path,
@@ -62,39 +63,48 @@ class LibraryResolver(
             )
         }
 
-        artifactsMap.computeIfAbsent(sourceSet) {
+        artifactsMap.getOrPut(sourceSetConfigurationSpec) {
             inputs.getAllArtifacts(configType).associateBy {
                 it.variant.toKey()
             }
         }
 
-        javaDocArtifactsMap.computeIfAbsent(sourceSet) {
+        javaDocArtifactsMap.getOrPut(sourceSetConfigurationSpec) {
             component.variantDependencies
                 .getAdditionalArtifacts(configType, AdditionalArtifactType.JAVADOC)
                 .associate { it.variant.owner to it.file }
         }
-        sourceArtifactsMap.computeIfAbsent(sourceSet) {
+        sourceArtifactsMap.getOrPut(sourceSetConfigurationSpec) {
             component.variantDependencies
                 .getAdditionalArtifacts(configType, AdditionalArtifactType.SOURCE)
                 .groupBy({ it.variant.owner} ) { it.file }
         }
     }
 
-    private fun getInputs(sourceSet: KotlinSourceSet) = inputsMap[sourceSet]!!
-    private fun getArtifacts(sourceSet: KotlinSourceSet) = artifactsMap[sourceSet]!!
-    private fun getJavaDoc(sourceSet: KotlinSourceSet) = javaDocArtifactsMap[sourceSet]!!
-    private fun getSources(sourceSet: KotlinSourceSet) = sourceArtifactsMap[sourceSet]!!
+    private fun getInputs(sourceSetConfigurationSpec: SourceSetConfigurationSpec) = inputsMap[sourceSetConfigurationSpec]!!
+    private fun getArtifacts(sourceSetConfigurationSpec: SourceSetConfigurationSpec) = artifactsMap[sourceSetConfigurationSpec]!!
+    private fun getJavaDoc(sourceSetConfigurationSpec: SourceSetConfigurationSpec) = javaDocArtifactsMap[sourceSetConfigurationSpec]!!
+    private fun getSources(sourceSetConfigurationSpec: SourceSetConfigurationSpec) = sourceArtifactsMap[sourceSetConfigurationSpec]!!
 
     fun getLibrary(
         variant: ResolvedVariantResult,
-        sourceSet: KotlinSourceSet
-    ) = com.android.build.gradle.internal.ide.dependencies.getLibrary(
-        getInputs(sourceSet).projectPath,
-        libraryService = libraryService,
-        variant = variant,
-        variantDependencies = emptyList(),
-        artifactMap = getArtifacts(sourceSet),
-        javadocArtifacts = getJavaDoc(sourceSet),
-        sourceArtifacts = getSources(sourceSet),
-    )
+        sourceSet: KotlinSourceSet,
+        configType: AndroidArtifacts.ConsumedConfigType
+    ): Library? {
+        val sourceSetConfigurationSpec = SourceSetConfigurationSpec(sourceSet, configType)
+        return com.android.build.gradle.internal.ide.dependencies.getLibrary(
+            getInputs(sourceSetConfigurationSpec).projectPath,
+            libraryService = libraryService,
+            variant = variant,
+            variantDependencies = emptyList(),
+            artifactMap = getArtifacts(sourceSetConfigurationSpec),
+            javadocArtifacts = getJavaDoc(sourceSetConfigurationSpec),
+            sourceArtifacts = getSources(sourceSetConfigurationSpec),
+        )
+    }
 }
+
+private data class SourceSetConfigurationSpec(
+    val sourceSet: KotlinSourceSet,
+    val configType: AndroidArtifacts.ConsumedConfigType
+)

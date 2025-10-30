@@ -21,7 +21,8 @@ import com.android.build.api.dsl.DynamicFeatureBuildFeatures
 import com.android.build.api.dsl.DynamicFeatureDefaultConfig
 import com.android.build.api.dsl.DynamicFeatureExtension
 import com.android.build.api.dsl.DynamicFeatureInstallation
-import com.android.build.api.dsl.DynamicFeatureProductFlavor
+import com.android.build.api.dsl.Packaging
+import com.android.build.gradle.internal.dsl.PackagingOptions as PackagingImpl
 import com.android.build.api.dsl.PrivacySandbox
 import org.gradle.api.Action
 import org.gradle.api.NamedDomainObjectContainer
@@ -35,6 +36,8 @@ interface InternalDynamicFeatureExtension: DynamicFeatureExtension, InternalTest
     fun buildFeatures(action: Action<DynamicFeatureBuildFeatures>)
     fun buildTypes(action: Action<in NamedDomainObjectContainer<BuildType>>)
     fun installation(action: Action<DynamicFeatureInstallation>)
+    fun packaging(action: Action<Packaging>)
+    fun packagingOptions(action: Action<PackagingImpl>)
 
     fun privacySandbox(action: Action<PrivacySandbox>)
 }

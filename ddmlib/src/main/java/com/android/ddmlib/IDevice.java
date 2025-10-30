@@ -106,7 +106,7 @@ public interface IDevice extends IShellEnabledDevice, IUserDataMap {
         EMBEDDED("embedded"),
         TV("tv"),
         AUTOMOTIVE("automotive"),
-        XR_GLASSES("xr glasses");
+        AI_GLASSES("ai glasses");
 
         private final String mCharacteristic;
 

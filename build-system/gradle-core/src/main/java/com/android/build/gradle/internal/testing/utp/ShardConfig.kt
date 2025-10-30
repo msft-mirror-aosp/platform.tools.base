@@ -16,10 +16,12 @@
 
 package com.android.build.gradle.internal.testing.utp
 
+import java.io.Serializable
+
 /**
  * Class for keeping track of all sharding information to invoke a single shard.
  *
  * @param totalCount The total number of shards in this test invocation.
  * @param index The index of the this shard, should be in the range 0 to ([totalCount] - 1)
  */
-data class ShardConfig(val totalCount: Int, val index: Int)
+data class ShardConfig(val totalCount: Int, val index: Int) : Serializable

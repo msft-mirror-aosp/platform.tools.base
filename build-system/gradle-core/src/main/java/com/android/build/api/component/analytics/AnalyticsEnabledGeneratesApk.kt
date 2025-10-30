@@ -20,10 +20,10 @@ import com.android.build.api.variant.AndroidResources
 import com.android.build.api.variant.AndroidVersion
 import com.android.build.api.variant.ApkOutput
 import com.android.build.api.variant.ApkOutputProviders
-import com.android.build.api.variant.GeneratesApk
 import com.android.build.api.variant.ApkPackaging
 import com.android.build.api.variant.DeviceSpec
 import com.android.build.api.variant.Dexing
+import com.android.build.api.variant.GeneratesApk
 import com.android.build.api.variant.Renderscript
 import com.android.tools.build.gradle.internal.profile.VariantPropertiesMethodType
 import com.google.wireless.android.sdk.stats.GradleBuildVariant

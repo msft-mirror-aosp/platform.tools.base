@@ -25,6 +25,7 @@ import com.android.build.gradle.internal.component.DeviceTestCreationConfig
 import com.android.build.gradle.internal.component.KmpComponentCreationConfig
 import com.android.build.gradle.internal.component.KmpCreationConfig
 import com.android.build.gradle.internal.component.HostTestCreationConfig
+import com.android.build.gradle.internal.ide.Utils.getGeneratedAssetsFolders
 import com.android.build.gradle.internal.ide.proto.convert
 import com.android.build.gradle.internal.ide.proto.setIfNotNull
 import com.android.build.gradle.internal.ide.v2.ModelBuilder.Companion.getAgpFlags
@@ -208,6 +209,9 @@ object KotlinModelBuildingConfigurator {
                 maxSdk,
                 MainVariantInfo.Builder::setMaxSdkVersion
             )
+            .addAllGeneratedAssetFolders(
+                getGeneratedAssetsFolders(this).map { it.convert() }
+            )
             .addAllProguardFiles(
                 optimizationCreationConfig.proguardFiles.get().map { it.asFile.convert() }
             )
@@ -248,6 +252,9 @@ object KotlinModelBuildingConfigurator {
             .putAllTestInstrumentationRunnerArguments(testInstrumentationRunnerArguments)
             .setAssembleTaskOutputListingFile(
                 artifacts.get(InternalArtifactType.APK_IDE_REDIRECT_FILE).get().asFile.convert()
+            )
+            .addAllGeneratedAssetFolders(
+                getGeneratedAssetsFolders(this).map { it.convert() }
             )
             .build()
 }

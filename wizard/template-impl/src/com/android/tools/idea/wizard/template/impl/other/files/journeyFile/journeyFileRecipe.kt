@@ -15,7 +15,6 @@
  */
 package com.android.tools.idea.wizard.template.impl.other.files.journeyFile
 
-import com.android.tools.idea.flags.StudioFlags
 import com.android.tools.idea.wizard.template.ModuleTemplateData
 import com.android.tools.idea.wizard.template.RecipeExecutor
 import com.android.tools.idea.wizard.template.impl.other.files.journeyFile.res.journeyXml
@@ -28,11 +27,7 @@ fun RecipeExecutor.journeyFileRecipe(
   testSuiteName: String,
   targetVariant: String?,
 ) {
-  if (
-    StudioFlags.AGP_TEST_SUITES_ENABLED.get() && StudioFlags.JOURNEYS_WITH_GEMINI_TEST_SUITE.get()
-  ) {
-    addJourneysTestSuite(testSuiteName, targetVariant)
-  }
+  addJourneysTestSuite(testSuiteName, targetVariant)
 
   addJourneyFile(moduleData, testSuiteName, name, description, fileName)
 }

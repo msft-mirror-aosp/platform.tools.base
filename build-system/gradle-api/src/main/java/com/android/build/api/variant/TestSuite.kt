@@ -31,6 +31,16 @@ import org.gradle.api.tasks.testing.Test
 interface TestSuite: Named {
 
     /**
+     * Returns the list of sources associated with this test suite. Sources are added through the
+     * DSL using one of the following methods :
+     *  - [com.android.build.api.dsl.AgpTestSuite.assets]
+     *  - [com.android.build.api.dsl.AgpTestSuite.hostJar]
+     *  - [com.android.build.api.dsl.AgpTestSuite.testApk]
+     */
+    @get:Incubating
+    val sources: Collection<TestSuiteSource>
+
+    /**
      * Configure the test tasks for this test target.
      *
      * There can be one to many instances of [org.gradle.api.tasks.testing.Test] tasks for a particular test suite target. For

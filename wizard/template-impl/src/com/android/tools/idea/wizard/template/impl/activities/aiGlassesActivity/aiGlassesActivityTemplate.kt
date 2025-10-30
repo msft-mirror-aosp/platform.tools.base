@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.android.tools.idea.wizard.template.impl.activities.xrGlassesActivity
+package com.android.tools.idea.wizard.template.impl.activities.aiGlassesActivity
 
 import com.android.tools.idea.wizard.template.Category
 import com.android.tools.idea.wizard.template.Constraint.CLASS
@@ -32,10 +32,10 @@ import com.android.tools.idea.wizard.template.stringParameter
 import com.android.tools.idea.wizard.template.template
 import java.io.File
 
-val xrGlassesActivityTemplate
+val aiGlassesActivityTemplate
   get() = template {
     name = "Basic Glasses Activity"
-    description = "Creates a new basic XR glasses activity"
+    description = "Creates a new basic AI glasses activity"
     minApi = 30
     constraints =
       listOf(
@@ -62,9 +62,9 @@ val xrGlassesActivityTemplate
 
     widgets(TextFieldWidget(activityClass), PackageNameWidget(packageName))
 
-    thumb { File("xr-glasses-activity").resolve("template_xr_glasses_activity.png") }
+    thumb { File("ai-glasses-activity").resolve("template_ai_glasses_activity.png") }
 
     recipe = { data: TemplateData ->
-      xrGlassesActivityRecipe(data as ModuleTemplateData, activityClass.value, packageName.value)
+      aiGlassesActivityRecipe(data as ModuleTemplateData, activityClass.value, packageName.value)
     }
   }

@@ -43,7 +43,8 @@ import org.jetbrains.kotlin.gradle.plugin.ide.IdeAdditionalArtifactResolver
 @OptIn(ExternalKotlinTargetApi::class)
 internal class AndroidLibraryDependencyResolver(
     libraryResolver: LibraryResolver,
-    sourceSetToCreationConfigMap: Lazy<Map<KotlinSourceSet, KmpComponentCreationConfig>>
+    sourceSetToCreationConfigMap: Lazy<Map<KotlinSourceSet, KmpComponentCreationConfig>>,
+    val configType: AndroidArtifacts.ConsumedConfigType
 ): IdeAdditionalArtifactResolver, BaseIdeDependencyResolver(
     libraryResolver,
     sourceSetToCreationConfigMap
@@ -52,18 +53,20 @@ internal class AndroidLibraryDependencyResolver(
     override fun resolve(sourceSet: KotlinSourceSet, dependencies: Set<IdeaKotlinDependency>) {
         val component = sourceSetToCreationConfigMap.value[sourceSet] ?: return
 
-        libraryResolver.registerSourceSetArtifacts(sourceSet)
+        libraryResolver.registerSourceSetArtifacts(sourceSet, configType)
 
         val artifacts =
             getArtifactsForComponent(
                 component,
-                AndroidArtifacts.ArtifactType.CLASSES_JAR
+                AndroidArtifacts.ArtifactType.CLASSES_JAR,
+                configType
             ) { it !is ProjectComponentIdentifier && it !is OpaqueComponentArtifactIdentifier }
 
         val localFileArtifacts =
             getArtifactsForComponent(
                 component,
-                AndroidArtifacts.ArtifactType.AAR_OR_JAR
+                AndroidArtifacts.ArtifactType.AAR_OR_JAR,
+                configType
             ) { it is OpaqueComponentArtifactIdentifier }.artifacts
 
         val libraryDependencies = dependencies.filterIsInstance<IdeaKotlinResolvedBinaryDependency>()
@@ -78,9 +81,11 @@ internal class AndroidLibraryDependencyResolver(
             } else {
                 return@mapNotNull null
             }
+
             val library = libraryResolver.getLibrary(
                 artifact.variant,
-                sourceSet
+                sourceSet,
+                configType
             )
             if (library?.type == LibraryType.ANDROID_LIBRARY) {
                 coordinates to library
@@ -100,7 +105,8 @@ internal class AndroidLibraryDependencyResolver(
                 }?.let { artifact ->
                     libraryResolver.getLibrary(
                         artifact.variant,
-                        sourceSet
+                        sourceSet,
+                        configType
                     )?.takeIf { it.type == LibraryType.ANDROID_LIBRARY }
                 } ?: return@forEach
 

@@ -16,7 +16,6 @@
 
 package com.android.tools.idea.wizard.template.impl.other.files.journeyFile
 
-import com.android.tools.idea.flags.StudioFlags
 import com.android.tools.idea.wizard.template.Category
 import com.android.tools.idea.wizard.template.Constraint.JOURNEY
 import com.android.tools.idea.wizard.template.Constraint.NONEMPTY
@@ -47,9 +46,6 @@ val journeyFileTemplate
     formFactor = FormFactor.Mobile
     screens = listOf(WizardUiContext.MenuEntry)
     constraints = listOf(TemplateConstraint.TestSuite)
-
-    val showTestSuiteOptions =
-      StudioFlags.AGP_TEST_SUITES_ENABLED.get() && StudioFlags.JOURNEYS_WITH_GEMINI_TEST_SUITE.get()
 
     val testSuiteName = stringParameter {
       name = "Test Suite Name"
@@ -87,13 +83,11 @@ val journeyFileTemplate
 
     widgets(
       *listOfNotNull(
-          if (showTestSuiteOptions)
-            LabelWidget(
-              "Journeys requires the module to be configured with a Journeys Test Suite. Test Suite support in the Android Gradle Plugin (AGP) is in preview, and could change in the future. This could impact your ability to upgrade to later AGP versions.",
-              AllIcons.General.Warning,
-            )
-          else null,
-          if (showTestSuiteOptions) TestSuiteWidget(testSuiteName) else null,
+          LabelWidget(
+            "Journeys requires the module to be configured with a Journeys Test Suite. Test Suite support in the Android Gradle Plugin (AGP) is in preview, and could change in the future. This could impact your ability to upgrade to later AGP versions.",
+            AllIcons.General.Warning,
+          ),
+          TestSuiteWidget(testSuiteName),
           TextFieldWidget(journeyName),
           TextFieldWidget(journeyDescription),
           TextFieldWidget(journeyFileName),

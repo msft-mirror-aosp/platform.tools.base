@@ -22,7 +22,6 @@ import com.android.build.api.variant.BuildConfigField
 import com.android.build.api.variant.Component
 import com.android.build.api.variant.ExternalNativeBuild
 import com.android.build.api.variant.ExternalNdkBuildImpl
-import com.android.build.api.variant.GeneratesApk
 import com.android.build.api.variant.HasUnitTest
 import com.android.build.api.variant.Packaging
 import com.android.build.api.variant.ResValue

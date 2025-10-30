@@ -18,6 +18,7 @@ package com.android.build.api.dsl
 
 import org.gradle.api.Incubating
 import org.gradle.api.NamedDomainObjectContainer
+import org.gradle.api.plugins.ExtensionAware
 import org.gradle.declarative.dsl.model.annotations.Configuring
 import org.gradle.declarative.dsl.model.annotations.Restricted
 import java.io.File
@@ -28,7 +29,7 @@ import java.io.File
  *
  * Only the Android Gradle Plugin should create instances of this interface.
  */
-interface CommonExtension {
+interface CommonExtension : ExtensionAware {
 
     /**
      * Specifies options for the Android Asset Packaging Tool (AAPT).
@@ -265,24 +266,7 @@ interface CommonExtension {
      *
      * For more information about the properties you can configure in this block, see [Packaging].
      */
-    @Deprecated("Renamed to packaging", replaceWith = ReplaceWith("packaging"))
-    fun packagingOptions(action: Packaging.() -> Unit)
-
-    /**
-     * Specifies options and rules that determine which files the Android plugin packages into your
-     * APK.
-     *
-     * For more information about the properties you can configure in this block, see [Packaging].
-     */
     val packaging: Packaging
-
-    /**
-     * Specifies options and rules that determine which files the Android plugin packages into your
-     * APK.
-     *
-     * For more information about the properties you can configure in this block, see [Packaging].
-     */
-    fun packaging(action: Packaging.() -> Unit)
 
     /**
      * Encapsulates all product flavors configurations for this project.

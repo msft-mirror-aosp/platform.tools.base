@@ -20,6 +20,7 @@ import com.android.build.gradle.internal.SdkComponentsBuildService
 import com.android.build.gradle.internal.testing.BaseTestRunner
 import com.android.build.gradle.internal.testing.StaticTestData
 import com.android.build.gradle.internal.testing.utp.emulatorcontrol.EmulatorControlConfig
+import com.android.build.gradle.internal.testing.utp.worker.createUtpRunConfig
 import com.android.builder.testing.api.DeviceConnector
 import com.android.ide.common.process.ProcessExecutor
 import com.android.ide.common.workers.ExecutorServiceAdapter
@@ -49,14 +50,6 @@ class UtpTestRunner @JvmOverloads constructor(
         private val installApkTimeout: Int?,
         private val targetIsSplitApk: Boolean,
         private val uninstallApksAfterTest: Boolean,
-        private val runUtpTestSuiteAndWaitFunc: (
-            List<UtpRunnerConfig>, String, String, File, ILogger
-        ) -> List<UtpTestRunResult> = { runnerConfigs, projectName, variantName, resultsDir, logger ->
-            runUtpTestSuiteAndWait(
-                runnerConfigs, workerExecutor, objectFactory, utpJvmExecutable,
-                projectName, variantName, resultsDir, logger, utpDependencies,
-                utpLoggingLevel)
-        },
 )
     : BaseTestRunner(processExecutor, executor) {
 
@@ -95,17 +88,17 @@ class UtpTestRunner @JvmOverloads constructor(
                 } else {
                     null
                 }
-                val runnerConfig = createRunnerConfigProtoForLocalDevice(
-                    deviceConnector.serialNumber,
+                createUtpRunConfig(
+                    objectFactory,
+                    deviceId = deviceConnector.serialNumber,
+                    deviceName = deviceConnector.name,
+                    deviceSerialNumber = deviceConnector.serialNumber,
                     testData,
                     TargetApkConfigBundle(apks, targetIsSplitApk || apks.size > 1),
                     installOptions,
                     helperApks,
                     uninstallIncompatibleApks,
-                    utpDependencies,
-                    versionedSdkLoader,
                     utpOutputDir,
-                    createUtpTempDirectory("utpRunTemp"),
                     emulatorControlConfig,
                     File(coverageDir, deviceConnector.name),
                     useOrchestrator,
@@ -116,21 +109,21 @@ class UtpTestRunner @JvmOverloads constructor(
                     privacySandboxSdkInstallBundle.extractedApkMap[deviceConnector] ?: emptyList(),
                     uninstallApksAfterTest,
                     reinstallIncompatibleApksBeforeTest = false,
-                )
-                UtpRunnerConfig(
-                    deviceConnector.name,
-                    deviceConnector.serialNumber,
-                    utpOutputDir,
-                    runnerConfig,
+                    shardConfig = null,
+                    utpLoggingLevel,
                 )
             }.toList()
 
-        val testSuiteResults = runUtpTestSuiteAndWaitFunc(
+        val testSuiteResults = runUtpTestSuiteAndWait(
             runnerConfigs,
+            workerExecutor,
+            utpJvmExecutable,
             projectName,
             variantName,
             resultsDir,
-            logger
+            logger,
+            utpDependencies,
+            versionedSdkLoader,
         )
 
         testSuiteResults.forEach { result ->

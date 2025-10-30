@@ -56,7 +56,7 @@ class AnalyticsEnabledTestSuiteTest {
         Truth.assertThat(
             stats.variantApiAccess.variantPropertiesAccessList.first().type
         ).isEqualTo(VariantPropertiesMethodType.JUNIT_ENGINE_SPEC_VALUE)
-        verify(delegate, times(1))
+        verify(delegate)
             .junitEngineSpec
     }
 
@@ -67,7 +67,7 @@ class AnalyticsEnabledTestSuiteTest {
         Truth.assertThat(
             stats.variantApiAccess.variantPropertiesAccessList.first().type
         ).isEqualTo(VariantPropertiesMethodType.TEST_SUITE_TARGETS_VALUE)
-        verify(delegate, times(1))
+        verify(delegate)
             .targets
     }
 
@@ -78,6 +78,16 @@ class AnalyticsEnabledTestSuiteTest {
         Truth.assertThat(
             stats.variantApiAccess.variantPropertiesAccessList.first().type
         ).isEqualTo(VariantPropertiesMethodType.TEST_SUITE_CODE_COVERAGE_VALUE)
-        verify(delegate, times(1)).codeCoverage
+        verify(delegate).codeCoverage
+    }
+
+    @Test
+    fun source() {
+        proxy.sources
+
+        Truth.assertThat(
+            stats.variantApiAccess.variantPropertiesAccessList.first().type
+        ).isEqualTo(VariantPropertiesMethodType.TEST_SUITE_SOURCES_VALUE)
+        verify(delegate).sources
     }
 }

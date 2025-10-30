@@ -345,8 +345,29 @@ public class VariantDependenciesBuilder {
         runtimeAttributes.attribute(
                 CATEGORY_ATTRIBUTE, factory.named(Category.class, Category.LIBRARY));
 
+        final String lintChecksClasspathName = variantName + "LintChecksClasspath";
+        Configuration lintChecksClasspath =
+                project.getConfigurations().maybeCreate(lintChecksClasspathName);
+        lintChecksClasspath.setVisible(false);
+        lintChecksClasspath.setDescription(
+                "Resolved configuration for lint check compilation for variant: " + variantName);
+        lintChecksClasspath.extendsFrom(compileClasspath, runtimeClasspath);
+        lintChecksClasspath.setCanBeConsumed(false);
+        lintChecksClasspath
+                .getResolutionStrategy()
+                .sortArtifacts(ResolutionStrategy.SortOrder.CONSUMER_FIRST);
+        final AttributeContainer lintChecksClasspathAttributes =
+                lintChecksClasspath.getAttributes();
+        applyVariantAttributes(lintChecksClasspathAttributes, buildType, consumptionFlavorMap);
+        lintChecksClasspathAttributes.attribute(Usage.USAGE_ATTRIBUTE, runtimeUsage);
+        lintChecksClasspathAttributes.attribute(TARGET_JVM_ENVIRONMENT_ATTRIBUTE, jvmEnvironment);
+        lintChecksClasspathAttributes.attribute(AgpVersionAttr.ATTRIBUTE, agpVersion);
+        lintChecksClasspathAttributes.attribute(
+                CATEGORY_ATTRIBUTE, factory.named(Category.class, Category.LIBRARY));
+
         if (shouldConfigureKotlinPlatformAttribute(projectOptions, componentType)) {
-            configureKotlinPlatformAttribute(List.of(compileClasspath, runtimeClasspath), project);
+            configureKotlinPlatformAttribute(
+                    List.of(compileClasspath, runtimeClasspath, lintChecksClasspath), project);
         }
 
         configureSourceTypeAttribute(project);
@@ -694,6 +715,7 @@ public class VariantDependenciesBuilder {
                 dslInfo.getComponentType(),
                 compileClasspath,
                 runtimeClasspath,
+                lintChecksClasspath,
                 runtimeClasspaths,
                 implementationConfigurations,
                 elements,

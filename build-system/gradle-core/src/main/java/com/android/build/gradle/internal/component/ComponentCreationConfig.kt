@@ -94,13 +94,6 @@ interface ComponentCreationConfig : ComponentIdentity {
      */
     fun attachRegisteredActionsToJavaCompileTask(taskProvider: TaskProvider<out JavaCompile>)
 
-    val explicitApiModeProvider: Provider<ExplicitApiMode>
-        get() = if (componentType.isForTesting) {
-            services.provider { ExplicitApiMode.Disabled }
-        } else {
-            services.provider { services.builtInKotlinServices.kotlinAndroidProjectExtension.explicitApi }
-        }
-
     // ---------------------------------------------------------------------------------------------
     // OPTIONAL FEATURES
     // ---------------------------------------------------------------------------------------------

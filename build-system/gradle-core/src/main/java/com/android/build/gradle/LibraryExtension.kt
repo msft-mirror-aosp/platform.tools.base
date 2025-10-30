@@ -29,6 +29,7 @@ import com.android.build.gradle.internal.dsl.DeclarativeProductFlavor
 import com.android.build.gradle.internal.dsl.DefaultConfig
 import com.android.build.gradle.internal.dsl.InternalLibraryExtension
 import com.android.build.gradle.internal.dsl.LibraryExtensionImpl
+import com.android.build.gradle.internal.dsl.PackagingOptions
 import com.android.build.gradle.internal.dsl.ProductFlavor
 import com.android.build.gradle.internal.services.DslServices
 import com.android.build.gradle.internal.tasks.factory.BootClasspathConfig
@@ -39,11 +40,12 @@ import com.google.wireless.android.sdk.stats.GradleBuildProject
 import org.gradle.api.DomainObjectSet
 import org.gradle.api.NamedDomainObjectContainer
 import org.gradle.api.internal.DefaultDomainObjectSet
+import org.gradle.api.plugins.ExtensionContainer
 import org.gradle.declarative.dsl.model.annotations.Configuring
 import java.util.Collections
 import javax.inject.Inject
 
-open class LibraryExtensionInternal(
+abstract open class LibraryExtensionInternal(
     dslServices: DslServices,
     bootClasspathConfig: BootClasspathConfig,
     buildOutputs: NamedDomainObjectContainer<BaseVariantOutput>,
@@ -83,7 +85,7 @@ open class LibraryExtensionInternal(
  * href="https://developer.android.com/studio/projects/android-library.html">create an Android
  * library</a>.
  */
-open class LibraryExtension @Inject constructor(
+abstract class LibraryExtension @Inject constructor(
     dslServices: DslServices,
     bootClasspathConfig: BootClasspathConfig,
     buildOutputs: NamedDomainObjectContainer<BaseVariantOutput>,
@@ -100,6 +102,11 @@ open class LibraryExtension @Inject constructor(
 ),
    InternalLibraryExtension by publicExtensionImpl {
 
+
+    // Manual override to avoid the kotlin delegation
+    // from interfering with Gradle's ExtensionAware mechanism
+    abstract override fun getExtensions(): ExtensionContainer
+
     // Overrides to make the parameterized types match, due to BaseExtension being part of
     // the previous public API and not wanting to paramerterize that.
     override val buildTypes: NamedDomainObjectContainer<out BuildType>
@@ -113,6 +120,9 @@ open class LibraryExtension @Inject constructor(
 
     override val sourceSets: NamedDomainObjectContainer<AndroidSourceSet>
         get() = publicExtensionImpl.sourceSets
+
+    override val packagingOptions: PackagingOptions
+        get() = publicExtensionImpl.packagingOptions
 
     private val libraryVariantList: DomainObjectSet<LibraryVariant> =
         dslServices.domainObjectSet(LibraryVariant::class.java)

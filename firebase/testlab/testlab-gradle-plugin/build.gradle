@@ -48,8 +48,8 @@ dependencies {
     implementation libs.google_testing_client
     implementation libs.google_toolresults_client
     implementation libs.google_storage_client
-    implementation libs.unified_test_platform
-    implementation libs.com.android.tools.utp.androidTestPluginHostDeviceInfoProto
+    implementation "com.google.testing.platform:core-proto:0.0.9-alpha03"
+    implementation "com.android.tools.utp:android-test-plugin-host-device-info-proto:30.2.0"
     implementation libs.protobuf_util
     testImplementation project(':base:gradle-api')
     testImplementation project(':base:builder-test-api')

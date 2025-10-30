@@ -282,7 +282,13 @@ class KotlinMultiplatformAndroidPluginTest(private val publishLibs: Boolean) {
                     "KmpAndroidFirstLibJavaClass",
                     // other
                     "KmpAndroidActivity",
-                    "test/R$"
+                    "test/R$",
+                    "test/R\$drawable",
+                    "test/R\$string",
+                    "test/R\$style",
+                    "R\$drawable",
+                    "R\$string",
+                    "R"
                 )
                 containsAtLeast(
                     // classes from commonMain are packaged

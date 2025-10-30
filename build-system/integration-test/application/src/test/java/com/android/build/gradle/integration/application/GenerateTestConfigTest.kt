@@ -242,9 +242,6 @@ class GenerateTestConfigTest {
                     <meta-data
                         android:name="meta_data_from_unit_test_manifest"
                         android:value="value" />
-
-                    <uses-library android:name="android.test.runner" />
-
                     <meta-data
                         android:name="meta_data_from_debug_manifest"
                         android:value="value" />

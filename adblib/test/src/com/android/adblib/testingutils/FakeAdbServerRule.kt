@@ -56,20 +56,30 @@ open class FakeAdbServerRule(
         release: String,
         sdk: AndroidApiLevel,
         hostConnectionType: DeviceState.HostConnectionType,
+        cpuAbi: String = "x86_64",
+        properties: Map<String, String> = emptyMap(),
+        isRoot: Boolean = false,
         maxSpeedMbps: Long = DEFAULT_SPEED,
         negotiatedSpeedMbps: Long = DEFAULT_SPEED,
     ): DeviceState {
-        // TODO: wait for device to also show up in `AndroidDebugBridge.bridge.devices`
         return adbServer.connectDevice(
-            deviceId,
-            manufacturer,
-            deviceModel,
-            release,
-            sdk,
-            hostConnectionType,
+            deviceId = deviceId,
+            manufacturer = manufacturer,
+            deviceModel = deviceModel,
+            release = release,
+            sdk = sdk,
+            hostConnectionType = hostConnectionType,
+            isRoot = isRoot,
+            cpuAbi = cpuAbi,
+            properties = properties,
             maxSpeedMbps = maxSpeedMbps,
             negotiatedSpeedMbps = negotiatedSpeedMbps,
         ).get(FAKE_ADB_SERVER_EXECUTOR_TIMEOUT_MS, TimeUnit.MILLISECONDS)
             ?: throw IllegalArgumentException()
+    }
+
+    fun disconnectDevice(deviceId: String) {
+        adbServer.disconnectDevice(deviceId)
+            .get(FAKE_ADB_SERVER_EXECUTOR_TIMEOUT_MS, TimeUnit.MILLISECONDS)
     }
 }

@@ -58,8 +58,6 @@ open class ManagedDevices @Inject constructor(dslServices: DslServices) :
             }
         }
 
-    override val devices: ExtensiblePolymorphicDomainObjectContainer<Device> = allDevices
-
     override val groups: NamedDomainObjectContainer<DeviceGroup> =
         dslServices.domainObjectContainer(DeviceGroup::class.java, DeviceGroupFactory(dslServices))
 }

@@ -13,6 +13,8 @@ kotlin {
         targetSdk { version = release(libs.versions.latestCompileSdk.get().toInt()) }
     }
 
+    androidResources.enable = true
+
     withDeviceTestBuilder {}.configure {
         targetSdk { version = release(libs.versions.latestCompileSdk.get().toInt()) }
     }
@@ -91,5 +93,28 @@ androidComponents {
         if (variant.name.isEmpty()) {
             throw IllegalArgumentException("must have variant name")
         }
+
+        val generateAssetTask =
+            project.tasks.register<GenerateAssetTask>("generate${variant.name}Assets")
+
+        generateAssetTask.configure {
+            outputDir.set(project.layout.buildDirectory.dir("generated/${variant.name}/assets"))
+        }
+
+        variant.sources.assets?.addGeneratedSourceDirectory(
+            generateAssetTask, GenerateAssetTask::outputDir
+        )
+    }
+}
+
+abstract class GenerateAssetTask : DefaultTask() {
+    @get:OutputDirectory
+    abstract val outputDir: DirectoryProperty
+
+    @TaskAction
+    fun taskAction() {
+        val d = outputDir.get().file("asset.txt").asFile
+        d.parentFile.mkdirs()
+        d.writeText("foo")
     }
 }

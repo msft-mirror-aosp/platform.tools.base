@@ -188,6 +188,39 @@ class ResourceDirectoryParserTest {
     }
 
     @Test
+    fun checkLayoutXmlTrailingContentEmitsWarning() {
+        val directory = temporaryFolder.newFolder()
+
+        val layoutWithTrailingContent = """<?xml version="1.0" encoding="utf-8"?>
+            <FrameLayout>content</FrameLayout> trailing content
+        """.trimIndent()
+
+        val layoutWithCRLF = """<?xml version="1.0" encoding="utf-8"?>
+            <FrameLayout>content</FrameLayout>
+            """.trimIndent() + "\r\n"
+
+        val layoutWithNewLine = """<?xml version="1.0" encoding="utf-8"?>
+            <FrameLayout>content</FrameLayout>""".trimIndent() + "\n"
+
+        make(layoutWithTrailingContent.toByteArray(), directory, "layout/layout_with_trailing_content.xml")
+        make(layoutWithCRLF.toByteArray(), directory, "layout/trailing_crlf_layout.xml")
+        make(layoutWithNewLine.toByteArray(), directory, "layout/trailing_crlf_layout.xml")
+        val platformTable = SymbolTable.builder().tablePackage("android").build()
+        val logger = MockLog()
+        parseResourceSourceSetDirectory(
+            directory, IdProvider.sequential(), platformTable, logger = logger
+        )
+
+        // Only layout/layoutWithTrailingContent.xml should trigger a warning.
+        assertThat(logger.messages).hasSize(1)
+        assertThat(logger.messages.single()).contains(
+            "${File.separator}layout${File.separator}layout_with_trailing_content.xml contains trailing content. Trailing is stripped during XML parsing. \n"  +
+                    "Trailing content was: ' trailing content'"
+        )
+    }
+
+
+    @Test
     fun parseAarZipEntrySmokeTest() {
         val values = """
             <resources>

@@ -46,7 +46,7 @@ maven_repository(
     name = "maven_dependencies",
     # keep sorted
     artifacts = [
-        "//tools/base/utp/android-test-plugin-host-device-info-proto",
+        "@maven//:com.android.tools.utp.android-test-plugin-host-device-info-proto_30.2.0",
         "@maven//:com.google.api-client.google-api-client_1.22.0",
         "@maven//:com.google.apis.google-api-services-storage_v1-rev82-1.22.0",
         "@maven//:com.google.apis.google-api-services-testing_v1-rev82-1.22.0",
@@ -55,7 +55,7 @@ maven_repository(
         "@maven//:com.google.http-client.google-http-client_1.43.3",
         "@maven//:com.google.oauth-client.google-oauth-client_1.22.0",
         "@maven//:com.google.protobuf.protobuf-java-util",
-        "@maven//:com.google.testing.platform.android-device-provider-local",
+        "@maven//:com.google.testing.platform.core-proto_0.0.9-alpha03",
         "@maven//:org.junit.junit-bom_5.10.2",
     ],
     visibility = [

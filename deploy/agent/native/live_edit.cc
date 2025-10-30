@@ -195,13 +195,15 @@ proto::AgentLiveEditResponse LiveEdit(jvmtiEnv* jvmti, JNIEnv* jni,
       return resp;
     }
 
-    // When the recompose API is stable, we will only call the new API
-    // and never call whole program recompose.
+    // Restarting the activity rebuilds the Compose tree to ensure that a Live
+    // Edit generated lambda is at the root of all group trees. This prevents
+    // crashes when the root lambda is a different type in the APK than the
+    // LE output.
     if (hasNewlyPrimedClass) {
         resp.set_recompose_type(proto::AgentLiveEditResponse::INIT_RESET);
-        jobject state = recompose.SaveStateAndDispose(reloader);
-        recompose.LoadStateAndCompose(reloader, state);
-        InfoEvent("Recomposed after priming (likely automatic mode)");
+        live_edit_stubs.CallStaticVoidMethod("restartActivity", "()V");
+        resp.set_status(proto::AgentLiveEditResponse::OK);
+        InfoEvent("Restarted activity after priming (likely automatic mode)");
     } else {  // No newlyPrimedClasses
       auto invalidate_mode = req.invalidate_mode();
 

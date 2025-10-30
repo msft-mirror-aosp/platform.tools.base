@@ -31,14 +31,6 @@ interface ManagedDevices {
     val allDevices: ExtensiblePolymorphicDomainObjectContainer<Device>
 
     /**
-     * List of test devices for this project for use with the Unified Test Platform
-     *
-     * This is replaced with [allDevices]
-     */
-    @Deprecated("devices is deprecated in managedDevices, use allDevices instead")
-    val devices: ExtensiblePolymorphicDomainObjectContainer<Device>
-
-    /**
      * Convenience container for specifying managed devices of type [ManagedVirtualDevice].
      *
      * This list is managed in sync with [allDevices]. [ManagedVirtualDevice] definitions added or

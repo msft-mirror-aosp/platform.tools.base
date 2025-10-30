@@ -20,8 +20,8 @@ import com.android.build.api.artifact.MultipleArtifact
 import com.android.build.gradle.internal.component.ComponentCreationConfig
 import com.android.build.gradle.internal.component.NestedComponentCreationConfig
 import com.android.build.gradle.internal.profile.PROPERTY_VARIANT_NAME_KEY
-import com.android.build.gradle.internal.publishing.AndroidArtifacts.ConsumedConfigType.COMPILE_CLASSPATH
 import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactType.CLASSES_JAR
+import com.android.build.gradle.internal.publishing.AndroidArtifacts.ConsumedConfigType.COMPILE_CLASSPATH
 import com.android.build.gradle.internal.publishing.PublishingSpecs
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.scope.InternalArtifactType.BUILT_IN_KAPT_CLASSES_DIR
@@ -33,6 +33,7 @@ import com.android.build.gradle.internal.utils.KgpVersion
 import org.gradle.api.JavaVersion
 import org.gradle.api.Task
 import org.gradle.api.tasks.TaskProvider
+import org.jetbrains.kotlin.gradle.dsl.ExplicitApiMode
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
 
@@ -51,7 +52,7 @@ class KotlinCompileCreationAction(
             return kotlinJvmFactory.registerKotlinJvmCompileTask(
                 taskName,
                 kotlinAndroidProjectExtension.compilerOptions,
-                creationConfig.explicitApiModeProvider
+                creationConfig.services.provider { creationConfig.getExplicitApiMode() }
             )
         }
         return kotlinJvmFactory.registerKotlinJvmCompileTask(taskName, creationConfig.name)
@@ -134,6 +135,14 @@ abstract class KotlinTaskCreationAction<TASK : Task>(
             configureTask(it)
         }
         return taskProvider
+    }
+}
+
+internal fun ComponentCreationConfig.getExplicitApiMode(): ExplicitApiMode? {
+    return if (componentType.isForTesting) {
+         ExplicitApiMode.Disabled
+    } else {
+        services.builtInKotlinServices.kotlinAndroidProjectExtension.explicitApi
     }
 }
 

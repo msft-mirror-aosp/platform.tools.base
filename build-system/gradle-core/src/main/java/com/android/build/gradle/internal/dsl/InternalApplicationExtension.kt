@@ -24,7 +24,9 @@ import com.android.build.api.dsl.ApplicationInstallation
 import com.android.build.api.dsl.ApplicationProductFlavor
 import com.android.build.api.dsl.ApplicationPublishing
 import com.android.build.api.dsl.DependenciesInfo
+import com.android.build.api.dsl.Packaging
 import com.android.build.api.dsl.PrivacySandbox
+import com.android.build.gradle.internal.dsl.PackagingOptions as PackagingImpl
 import org.gradle.api.Action
 import org.gradle.api.NamedDomainObjectContainer
 
@@ -44,6 +46,8 @@ interface InternalApplicationExtension : ApplicationExtension, InternalTestedExt
     fun bundle(action: Action<BundleOptions>)
     fun dependenciesInfo(action: Action<DependenciesInfo>)
     fun installation(action: Action<ApplicationInstallation>)
+    fun packaging(action: Action<Packaging>)
+    fun packagingOptions(action: Action<PackagingImpl>)
     fun publishing(action: Action<ApplicationPublishing>)
     fun privacySandbox(action: Action<PrivacySandbox>)
 }

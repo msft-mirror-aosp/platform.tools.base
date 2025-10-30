@@ -23,7 +23,7 @@ import java.io.Serializable
 /**
  * Represents the source files for a specific type of test suite.
  */
-interface TestSuiteSource: Serializable {
+sealed interface TestSuiteSource: Serializable {
 
     /**
      * name of the test suite source as defined by the user in the AgpTestSuite DSL.
@@ -31,16 +31,4 @@ interface TestSuiteSource: Serializable {
     val name: String
 
     val type: SourceType
-
-    /**
-     * Returns a collection of [File] when the test suite source is either
-     * [SourceType.HOST_JAR] or [SourceType.ASSETS], it will be null otherwise.
-     */
-    val folders: Collection<File>?
-
-    /**
-     * Returns the [SourceProvider] when dealing with an Android source-set
-     * when source type is [SourceType.TEST_APK], it will be null otherwise.
-     */
-    val sourceProvider: SourceProvider?
 }

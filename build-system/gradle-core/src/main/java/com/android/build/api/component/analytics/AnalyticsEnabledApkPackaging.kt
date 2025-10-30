@@ -17,9 +17,8 @@
 package com.android.build.api.component.analytics
 
 import com.android.build.api.variant.ApkPackaging
-import com.android.build.api.variant.JniLibsApkPackaging
 import com.android.build.api.variant.DexPackagingOptions
-import com.android.build.api.variant.JniLibsPackaging
+import com.android.build.api.variant.JniLibsApkPackaging
 import com.android.tools.build.gradle.internal.profile.VariantPropertiesMethodType
 import com.google.wireless.android.sdk.stats.GradleBuildVariant
 import javax.inject.Inject

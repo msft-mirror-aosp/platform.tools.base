@@ -45,9 +45,7 @@ internal class UnitTestManifestGeneratorTest {
 
         <uses-sdk android:minSdkVersion="21" android:targetSdkVersion="21" />
 
-        <application android:debuggable="true" >
-            <uses-library android:name="android.test.runner" />
-        </application>
+        <application android:debuggable="true" />
 
         <instrumentation android:name="unitTestRunner"
                          android:targetPackage="com.foo.bar"

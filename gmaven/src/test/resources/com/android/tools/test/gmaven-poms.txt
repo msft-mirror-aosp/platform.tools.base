@@ -600,6 +600,7 @@ com.android.tools.build:gradle-api
     com.android.tools.build:builder-test-api (runtime)
     com.google.guava:guava (runtime)
     org.jetbrains.kotlin:kotlin-stdlib (runtime)
+    com.android.tools.build:gradle (runtime)
 
 com.android.tools.build:gradle-common-api
   pomName=com.android.tools.build.gradle-common-api

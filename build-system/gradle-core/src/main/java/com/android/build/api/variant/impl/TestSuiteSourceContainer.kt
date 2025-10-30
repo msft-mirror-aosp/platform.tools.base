@@ -16,8 +16,16 @@
 
 package com.android.build.api.variant.impl
 
+import com.android.build.api.artifact.impl.ArtifactsImpl
+import com.android.build.api.dsl.AgpTestSuiteDependencies
+import com.android.build.api.variant.TestSuiteSource
+import com.android.build.api.variant.TestSuiteSourceType
+import com.android.build.gradle.internal.HostJarTestSuiteTaskManager
 import com.android.build.gradle.internal.api.TestSuiteSourceSet
 import com.android.build.gradle.internal.dependency.TestSuiteSourceClasspath
+import com.android.build.gradle.internal.services.TaskCreationServices
+import com.android.build.gradle.internal.tasks.factory.TaskFactoryImpl
+import org.gradle.api.Project
 
 /**
  * Each test suite source type will be processed in isolation, most likely using a
@@ -29,8 +37,34 @@ import com.android.build.gradle.internal.dependency.TestSuiteSourceClasspath
  * (like compileClasspath) for a particular test suite.
  */
 class TestSuiteSourceContainer(
-    internal val name: String,
+    project: Project,
+    private val testSuiteName: String,
+    private val name: String,
     internal val source: TestSuiteSourceSet,
-    internal val dependencies: TestSuiteSourceClasspath,
-) {
+    override val dependencies: AgpTestSuiteDependencies,
+    internal val suiteSourceClasspath: TestSuiteSourceClasspath,
+): TestSuiteSource {
+
+    override fun getName(): String = name
+
+    override val type: TestSuiteSourceType
+        get() = source.type
+
+    val artifacts = ArtifactsImpl(project, "$testSuiteName${name.capitalizeFirstChar()}")
+
+    fun createTasks(taskCreationServices: TaskCreationServices) {
+        when (source.type) {
+            TestSuiteSourceType.ASSETS -> {
+                // nothing to do for assets based source folder so far.
+            }
+            TestSuiteSourceType.HOST_JAR -> {
+                HostJarTestSuiteTaskManager().createTasks(this, taskFactory, taskCreationServices)
+            }
+            TestSuiteSourceType.TEST_APK -> {
+                throw RuntimeException("TEST_APK sources are not supported yet !")
+            }
+        }
+    }
+
+    private val taskFactory = TaskFactoryImpl(project.tasks)
 }

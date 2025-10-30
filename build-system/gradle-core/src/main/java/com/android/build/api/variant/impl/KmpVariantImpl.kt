@@ -43,7 +43,6 @@ import com.android.build.api.variant.ResValue
 import com.android.build.api.variant.TestFixtures
 import com.android.build.api.variant.TestedComponentPackaging
 import com.android.build.gradle.internal.DependencyConfigurator
-import com.android.build.gradle.internal.KotlinMultiplatformCompileOptionsImpl
 import com.android.build.gradle.internal.component.HostTestCreationConfig
 import com.android.build.gradle.internal.component.KmpCreationConfig
 import com.android.build.gradle.internal.component.TestSuiteCreationConfig
@@ -234,9 +233,6 @@ open class KmpVariantImpl @Inject constructor(
 
     override fun syncAndroidAndKmpClasspathAndSources() {
         super.syncAndroidAndKmpClasspathAndSources()
-
-        (global.compileOptions as KotlinMultiplatformCompileOptionsImpl)
-            .initFromCompilation(androidKotlinCompilation)
     }
 
     @Deprecated("Will be removed in v9.0, use the instrumentation block.")

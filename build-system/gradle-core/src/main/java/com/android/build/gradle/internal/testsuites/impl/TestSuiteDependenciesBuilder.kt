@@ -25,7 +25,6 @@ import com.android.build.gradle.internal.component.VariantCreationConfig
 import com.android.build.gradle.internal.core.dsl.MultiVariantComponentDslInfo
 import com.android.build.gradle.internal.dependency.TestSuiteSourceClasspath
 import com.android.build.gradle.internal.dependency.VariantAwareDependenciesBuilder
-import com.android.build.gradle.internal.publishing.AndroidArtifacts
 import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactType
 import com.android.build.gradle.options.ProjectOptions
 import com.android.builder.errors.IssueReporter
@@ -52,7 +51,8 @@ class TestSuiteDependenciesBuilder internal constructor(
     private val projectOptions: ProjectOptions,
     issueReporter: IssueReporter,
     private val testSuiteBuilder: TestSuiteBuilderImpl,
-    private val testSuiteDependencies: AgpTestSuiteDependencies?,
+    private val dslDeclaredDependencies: AgpTestSuiteDependencies?,
+    private val variantSpecificDependencies: AgpTestSuiteDependencies?,
     private val testedVariant: VariantCreationConfig,
     private val flavorSelection: Map<Attribute<ProductFlavorAttr>, ProductFlavorAttr>,
     dslInfo: MultiVariantComponentDslInfo,
@@ -68,6 +68,17 @@ class TestSuiteDependenciesBuilder internal constructor(
         )
     private val testSuiteName = testSuiteBuilder.name
     private val enginesDependencies = testSuiteBuilder.junitEngineSpec.enginesDependencies
+
+    /**
+     * Gather all declared dependencies into a [Collection] of [DependencyCollector] by running
+     * a block on all defined [AgpTestSuiteDependencies]. That's the [dslDeclaredDependencies] that
+     * are declared in the DSL and the [variantSpecificDependencies] that are potentially added
+     * through the Variant API.
+     */
+    private fun gatherCollectors(action: (AgpTestSuiteDependencies) -> Collection<DependencyCollector>) =
+        dslDeclaredDependencies?.let { action(it) } ?: listOf<DependencyCollector>().plus(
+            variantSpecificDependencies?.let { action(it) } ?: listOf()
+        )
 
     /**
      * Creates the configuration associated with a test suite.
@@ -87,12 +98,12 @@ class TestSuiteDependenciesBuilder internal constructor(
             "Resolved configuration for compilation for test suite: $testSuiteName in $testedVariantName"
         populateClasspath(
             compileClasspath,
-            testSuiteDependencies?.let {
+            gatherCollectors {
                 listOf(
                     it.compileOnly,
                     it.implementation
                 )
-            } ?: listOf()
+            }
         )
         compileClasspath.extendsFrom(
             testedVariant.variantDependencies.compileClasspath
@@ -106,13 +117,13 @@ class TestSuiteDependenciesBuilder internal constructor(
             "Resolved configuration for runtime for test suite: $testSuiteName in $testedVariantName"
         populateClasspath(
             runtimeClasspath,
-            testSuiteDependencies?.let {
+            gatherCollectors {
                 listOf(
                     it.implementation,
                     it.runtimeOnly,
                     enginesDependencies
                 )
-            } ?: listOf(enginesDependencies)
+            }
         )
         runtimeClasspath.extendsFrom(
             testedVariant.variantDependencies.runtimeClasspath
@@ -131,7 +142,7 @@ class TestSuiteDependenciesBuilder internal constructor(
         )
     }
 
-    private fun populateClasspath(classpath: Configuration, from: List<DependencyCollector>) {
+    private fun populateClasspath(classpath: Configuration, from: Collection<DependencyCollector>) {
         for (collector in from) {
             classpath.dependencies.addAllLater(collector.dependencies)
             classpath.dependencyConstraints.addAllLater(collector.dependencyConstraints)

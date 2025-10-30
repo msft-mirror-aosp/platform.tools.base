@@ -416,6 +416,7 @@ public class AvdManagerCliTest {
         mCli.run(new String[] {"list", "devices", "-c"});
         assertEquals(
                 ImmutableList.of(
+                        "P ai_glasses_device\n",
                         "P automotive_1024p_landscape\n",
                         "P automotive_1080p_landscape\n",
                         "P automotive_1408p_landscape_with_google_apis\n",
@@ -524,11 +525,11 @@ public class AvdManagerCliTest {
                         .join(mLogger.getMessages())
                         .contains(
                                 "P ---------\n"
-                                        + "P id: 75 or \"4in WVGA (Nexus S)\"\n"
+                                        + "P id: 76 or \"4in WVGA (Nexus S)\"\n"
                                         + "P     Name: 4\" WVGA (Nexus S)\n"
                                         + "P     OEM : Generic\n"
                                         + "P ---------\n"
-                                        + "P id: 76 or \"4.65in 720p (Galaxy Nexus)\"\n"
+                                        + "P id: 77 or \"4.65in 720p (Galaxy Nexus)\"\n"
                                         + "P     Name: 4.65\" 720p (Galaxy Nexus)\n"
                                         + "P     OEM : Generic\n"
                                         + "P ---------"));

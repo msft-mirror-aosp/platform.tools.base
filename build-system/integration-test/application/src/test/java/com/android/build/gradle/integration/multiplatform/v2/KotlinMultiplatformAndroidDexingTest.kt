@@ -158,8 +158,15 @@ class KotlinMultiplatformAndroidDexingTest {
                 "KmpAndroidFirstLibClass",
                 "KmpAndroidFirstLibJavaClass",
                 "KmpCommonFirstLibClass",
-                "test/KmpAndroidFirstLibActivityTest$",
-                "test/R$"
+                "test/KmpAndroidFirstLibActivityTest",
+                "test/KmpAndroidFirstLibActivityTest$\$ExternalSyntheticLambda0",
+                "test/R$",
+                "test/R\$drawable",
+                "test/R\$string",
+                "test/R\$style",
+                "R\$drawable",
+                "R\$string",
+                "R"
             )
         }
     }

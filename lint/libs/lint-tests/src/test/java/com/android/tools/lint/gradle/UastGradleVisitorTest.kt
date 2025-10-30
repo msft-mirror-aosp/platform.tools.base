@@ -223,6 +223,21 @@ class UastGradleVisitorTest {
     )
   }
 
+  @Test
+  fun testNamedArg() {
+    check(
+      """
+      dependencies {
+          implementation(group = "com.example", name = "example", version = "latest")
+      }
+      """,
+      """
+      checkMethodCall(statement="dependencies", unnamedArguments="{ implementation(group = "com.example", name = "example", version = "latest") }")
+      checkMethodCall(statement="implementation", parent="dependencies", namedArguments="group="com.example", name="example", version="latest"")
+      """,
+    )
+  }
+
   // Test infrastructure only below
 
   private fun check(@Language("kotlin-script") gradleSource: String, expected: String) {

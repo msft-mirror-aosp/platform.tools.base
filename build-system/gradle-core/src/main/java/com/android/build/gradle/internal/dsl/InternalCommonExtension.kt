@@ -52,7 +52,6 @@ interface InternalCommonExtension: CommonExtension, Lockable {
     override val viewBinding: ViewBindingOptionsImpl
     override val jacoco: JacocoOptionsImpl
     override val lintOptions: LintOptionsImpl
-    override val packagingOptions: PackagingImpl
     override val externalNativeBuild: ExternalNativeBuildImpl
     override val testOptions: TestOptionsImpl
     override val splits: SplitsImpl
@@ -72,8 +71,6 @@ interface InternalCommonExtension: CommonExtension, Lockable {
     fun jacoco(action: Action<JacocoOptionsImpl>)
     fun lint(action: Action<Lint>)
     fun lintOptions(action: Action<LintOptionsImpl>)
-    fun packaging(action: Action<Packaging>)
-    fun packagingOptions(action: Action<PackagingImpl>)
     fun sourceSets(action: Action<NamedDomainObjectContainer<com.android.build.gradle.api.AndroidSourceSet>>)
     fun splits(action: Action<SplitsImpl>)
     fun testCoverage(action: Action<TestCoverage>)

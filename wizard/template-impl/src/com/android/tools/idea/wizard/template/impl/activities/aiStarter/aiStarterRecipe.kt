@@ -17,6 +17,7 @@ package com.android.tools.idea.wizard.template.impl.activities.aiStarter
 
 import com.android.tools.idea.wizard.template.ModuleTemplateData
 import com.android.tools.idea.wizard.template.RecipeExecutor
+import com.android.tools.idea.wizard.template.common.AGP_VERSION_WITH_BUILT_IN_KOTLIN
 import com.android.tools.idea.wizard.template.impl.activities.aiStarter.src.app_package.mainActivityKt
 import com.android.tools.idea.wizard.template.impl.activities.common.addAllKotlinDependencies
 import com.android.tools.idea.wizard.template.impl.activities.common.addComposeDependencies
@@ -154,10 +155,10 @@ fun RecipeExecutor.aiStarterRecipe(
   )
   mergeXml(
     """
-          <manifest xmlns:android ="http://schemas.android.com/apk/res/android">
-            <uses-permission android:name="android.permission.INTERNET" />
-          </manifest>
-      """
+        <manifest xmlns:android ="http://schemas.android.com/apk/res/android">
+          <uses-permission android:name="android.permission.INTERNET" />
+        </manifest>
+    """
       .trimIndent(),
     moduleData.manifestDir.resolve("AndroidManifest.xml"),
   )
@@ -173,6 +174,16 @@ fun RecipeExecutor.aiStarterRecipe(
 
   setJavaKotlinCompileOptions(true)
   setBuildFeature("compose", true)
-
+  if (moduleData.projectTemplateData.agpVersion >= AGP_VERSION_WITH_BUILT_IN_KOTLIN) {
+    append(
+      """
+      |# Use the old DSL until the Hilt Gradle Plugin is updated to support AGP 9:
+      |# https://github.com/google/dagger/issues/4944
+      |android.newDsl=false
+      |"""
+        .trimMargin(),
+      moduleData.projectTemplateData.rootDir.resolve("gradle.properties"),
+    )
+  }
   open(srcOut.resolve("${activityClass}.kt"))
 }

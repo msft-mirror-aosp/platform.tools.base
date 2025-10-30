@@ -18,8 +18,8 @@ package com.android.build.api.component.analytics
 
 import com.android.build.api.variant.AndroidTestBuilder
 import com.android.build.api.variant.DeviceTestBuilder
-import com.android.build.api.variant.LibraryVariantBuilder
 import com.android.build.api.variant.HostTestBuilder
+import com.android.build.api.variant.LibraryVariantBuilder
 import com.android.build.api.variant.TestSuiteBuilder
 import com.android.tools.build.gradle.internal.profile.VariantMethodType
 import com.google.wireless.android.sdk.stats.GradleBuildVariant
@@ -29,43 +29,47 @@ import javax.inject.Inject
  * Shim object for [LibraryVariantBuilder] that records all mutating accesses to the analytics.
  */
 open class AnalyticsEnabledLibraryVariantBuilder @Inject constructor(
-        final override val delegate: LibraryVariantBuilder,
-        stats: GradleBuildVariant.Builder
+    final override val delegate: LibraryVariantBuilder,
+    stats: GradleBuildVariant.Builder
 ) : AnalyticsEnabledVariantBuilder(delegate, stats),
     LibraryVariantBuilder {
 
     override var androidTestEnabled: Boolean
         get() = delegate.androidTest.enable
         set(value) {
-            stats.variantApiAccessBuilder.addVariantAccessBuilder().type = VariantMethodType.ANDROID_TEST_ENABLED_VALUE
+            stats.variantApiAccessBuilder.addVariantAccessBuilder().type =
+                VariantMethodType.ANDROID_TEST_ENABLED_VALUE
             delegate.androidTest.enable = value
         }
 
     override var enableAndroidTest: Boolean
         get() = delegate.androidTest.enable
         set(value) {
-            stats.variantApiAccessBuilder.addVariantAccessBuilder().type = VariantMethodType.ANDROID_TEST_ENABLED_VALUE
+            stats.variantApiAccessBuilder.addVariantAccessBuilder().type =
+                VariantMethodType.ANDROID_TEST_ENABLED_VALUE
             delegate.androidTest.enable = value
         }
 
     override var enableTestFixtures: Boolean
         get() = delegate.enableTestFixtures
         set(value) {
-            stats.variantApiAccessBuilder.addVariantAccessBuilder().type = VariantMethodType.TEST_FIXTURES_ENABLED_VALUE
+            stats.variantApiAccessBuilder.addVariantAccessBuilder().type =
+                VariantMethodType.TEST_FIXTURES_ENABLED_VALUE
             delegate.enableTestFixtures = value
         }
 
     override var isMinifyEnabled: Boolean
         get() = delegate.isMinifyEnabled
         set(value) {
-            stats.variantApiAccessBuilder.addVariantAccessBuilder().type = VariantMethodType.CODE_MINIFICATION_VALUE_VALUE
+            stats.variantApiAccessBuilder.addVariantAccessBuilder().type =
+                VariantMethodType.CODE_MINIFICATION_VALUE_VALUE
             delegate.isMinifyEnabled = value
         }
 
     private val _androidTest =
         AnalyticsEnabledAndroidTestBuilder(
-                delegate.androidTest,
-                stats
+            delegate.androidTest,
+            stats
         )
 
     override val androidTest: AndroidTestBuilder

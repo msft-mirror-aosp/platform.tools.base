@@ -79,6 +79,7 @@ const val DEFAULT_INCREMENTAL_COMPILATION = true
  *
  * @see [JavaCompile.configurePropertiesForAnnotationProcessing]
  */
+@SuppressWarnings("EagerGradleConfiguration")
 fun JavaCompile.configureProperties(creationConfig: ComponentCreationConfig) {
     val compileOptions = creationConfig.global.compileOptions
 
@@ -115,8 +116,17 @@ fun JavaCompile.configureProperties(creationConfig: ComponentCreationConfig) {
         )
     }
 
-    this.sourceCompatibility = compileOptions.sourceCompatibility.toString()
-    this.targetCompatibility = compileOptions.targetCompatibility.toString()
+    if (creationConfig is KmpComponentCreationConfig) {
+        creationConfig.androidKotlinCompilation.compileTaskProvider.get()
+            .compilerOptions.jvmTarget.orNull?.target?.let { jvmTarget ->
+                this.targetCompatibility = jvmTarget
+                this.sourceCompatibility = jvmTarget
+            }
+    } else {
+        this.sourceCompatibility = compileOptions.sourceCompatibility.toString()
+        this.targetCompatibility = compileOptions.targetCompatibility.toString()
+    }
+
     this.options.encoding = compileOptions.encoding
 
     checkReleaseOption(creationConfig.services.issueReporter)

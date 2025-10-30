@@ -16,8 +16,8 @@
 
 package com.android.build.api.component.analytics
 
-import com.android.build.api.variant.TestedComponentPackaging
 import com.android.build.api.variant.JniLibsTestedComponentPackaging
+import com.android.build.api.variant.TestedComponentPackaging
 import com.android.tools.build.gradle.internal.profile.VariantPropertiesMethodType
 import com.google.wireless.android.sdk.stats.GradleBuildVariant
 import javax.inject.Inject

@@ -18,6 +18,7 @@ package com.android.tools.idea.wizard.template.impl
 
 import com.android.tools.idea.wizard.template.Template
 import com.android.tools.idea.wizard.template.WizardTemplateProvider
+import com.android.tools.idea.wizard.template.impl.activities.aiGlassesActivity.aiGlassesActivityTemplate
 import com.android.tools.idea.wizard.template.impl.activities.aiStarter.aiStarterTemplate
 import com.android.tools.idea.wizard.template.impl.activities.androidTVActivity.androidTVActivityTemplate
 import com.android.tools.idea.wizard.template.impl.activities.archStarterActivity.archStarterActivityTemplate
@@ -45,7 +46,6 @@ import com.android.tools.idea.wizard.template.impl.activities.settingsActivity.s
 import com.android.tools.idea.wizard.template.impl.activities.tabbedActivity.tabbedActivityTemplate
 import com.android.tools.idea.wizard.template.impl.activities.viewModelActivity.viewModelActivityTemplate
 import com.android.tools.idea.wizard.template.impl.activities.xrActivity.xrActivityTemplate
-import com.android.tools.idea.wizard.template.impl.activities.xrGlassesActivity.xrGlassesActivityTemplate
 import com.android.tools.idea.wizard.template.impl.fragments.blankFragment.blankFragmentTemplate
 import com.android.tools.idea.wizard.template.impl.fragments.fullscreenFragment.fullscreenFragmentTemplate
 import com.android.tools.idea.wizard.template.impl.fragments.googleAdMobAdsFragment.googleAdMobAdsFragmentTemplate
@@ -83,7 +83,7 @@ class WizardTemplateProviderImpl : WizardTemplateProvider() {
       archStarterActivityTemplate,
       aiStarterTemplate,
       xrActivityTemplate,
-      xrGlassesActivityTemplate,
+      aiGlassesActivityTemplate,
       androidTVActivityTemplate,
       basicActivityTemplate,
       composeWearActivityWithTileAndComplicationTemplate,

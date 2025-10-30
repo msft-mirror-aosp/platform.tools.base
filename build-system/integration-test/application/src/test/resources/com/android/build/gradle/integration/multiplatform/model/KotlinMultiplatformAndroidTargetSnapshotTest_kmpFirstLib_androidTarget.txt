@@ -47,7 +47,8 @@
             },
             "assembleTaskOutputListingFile": {
               "absolutePath": "{INCLUDED_BUILD(:kotlinMultiplatform)}/kmpFirstLib/build/intermediates/apk_ide_redirect_file/androidDeviceTest/createAndroidDeviceTestApkListingFileRedirect/redirect.txt"
-            }
+            },
+            "generatedAssetFolders": []
           },
           "defaultSourceSetName": "androidDeviceTest",
           "assembleTaskName": "assembleAndroidDeviceTest",
@@ -141,7 +142,12 @@
               }
             ],
             "consumerProguardFiles": [],
-            "minificationEnabled": false
+            "minificationEnabled": false,
+            "generatedAssetFolders": [
+              {
+                "absolutePath": "{INCLUDED_BUILD(:kotlinMultiplatform)}/kmpFirstLib/build/generated/androidMain/assets"
+              }
+            ]
           },
           "defaultSourceSetName": "androidMain",
           "assembleTaskName": "assembleAndroidMain",
@@ -205,7 +211,7 @@
           },
           {
             "flag": "BUILD_FEATURE_ANDROID_RESOURCES",
-            "value": false
+            "value": true
           },
           {
             "flag": "EXCLUDE_LIBRARY_COMPONENTS_FROM_CONSTRAINTS",

@@ -124,6 +124,27 @@ interface DynamicFeatureExtension: CommonExtension, ApkExtension, TestedExtensio
      */
     fun installation(action: DynamicFeatureInstallation.() -> Unit)
 
+    override val packaging: Packaging
+
+    /**
+     * Specifies options and rules that determine which files the Android plugin packages into your
+     * APK.
+     *
+     * For more information about the properties you can configure in this block, see [Packaging].
+     */
+    fun packaging(action: Packaging.() -> Unit)
+
+    @Deprecated("Renamed to packaging", replaceWith = ReplaceWith("packaging"))
+    override val packagingOptions: Packaging
+
+    /**
+     * Specifies options and rules that determine which files the Android plugin packages into your
+     * APK.
+     *
+     * For more information about the properties you can configure in this block, see [Packaging].
+     */
+    @Deprecated("Renamed to packaging", replaceWith = ReplaceWith("packaging"))
+    fun packagingOptions(action: Packaging.() -> Unit)
 
     /**
      * Encapsulates all product flavors configurations for this project.

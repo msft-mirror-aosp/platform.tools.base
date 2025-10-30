@@ -24,7 +24,6 @@ import com.google.wireless.android.sdk.stats.GradleBuildVariant
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.MapProperty
 import org.gradle.api.provider.Property
-import org.gradle.api.provider.Provider
 import javax.inject.Inject
 
 open class AnalyticsEnabledTestFixtures @Inject constructor(

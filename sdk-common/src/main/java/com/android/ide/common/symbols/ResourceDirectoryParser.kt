@@ -229,19 +229,19 @@ fun parseResourceFile(
             // search of lazy constructions like `@+id/name` that also declare resources.
             try {
                 // Trim any characters at the end of the XML document prior to parsing, otherwise
-                // parsing will fail.
+                // parsing will fail (with exception of spaces, new lines, carriage returns).
                 val resFileContent = maybeResourceFile.readText(Charsets.UTF_8)
-                val resXml = resFileContent.substringBeforeLast('>') + ">\n"
-                val domTree = if (resXml.length == resFileContent.length) {
-                    documentBuilder.parse(maybeResourceFile)
-                } else {
-                    logger.warning(
-                        "${maybeResourceFile.absolutePath} contains trailing content. " +
-                                "Trailing is stripped during XML parsing. \n" +
-                                "Trailing content was: '${resFileContent.substringAfterLast('>')}'"
-                    )
-                    documentBuilder.parse(resXml.byteInputStream())
-                }
+                val resXml = resFileContent.substringBeforeLast('>') + ">"
+                val domTree = if (resXml.length == resFileContent.trimEnd().length) {
+                        documentBuilder.parse(maybeResourceFile)
+                    } else {
+                        logger.warning(
+                            "${maybeResourceFile.absolutePath} contains trailing content. " +
+                                    "Trailing is stripped during XML parsing. \n" +
+                                    "Trailing content was: '${resFileContent.substringAfterLast('>')}'"
+                        )
+                        documentBuilder.parse(resXml.byteInputStream())
+                    }
                 val extraSymbols =
                         parseResourceForInlineResources(domTree, idProvider, validation)
                 extraSymbols.symbols.values().forEach { s -> addIfNotExisting(builder, s) }

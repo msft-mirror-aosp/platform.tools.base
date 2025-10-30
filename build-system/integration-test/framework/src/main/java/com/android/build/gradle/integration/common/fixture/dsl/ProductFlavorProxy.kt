@@ -34,7 +34,7 @@ import java.io.File
  */
 @Suppress("UNCHECKED_CAST", "OVERRIDE_DEPRECATION")
 open class ProductFlavorProxy(
-    protected val dslRecorder: DslRecorder
+    internal val dslRecorder: DslRecorder
 ): ProductFlavor {
 
     override var dimension: String?

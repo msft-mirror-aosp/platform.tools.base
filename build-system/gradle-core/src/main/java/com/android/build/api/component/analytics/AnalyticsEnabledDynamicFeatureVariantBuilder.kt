@@ -19,8 +19,8 @@ package com.android.build.api.component.analytics
 import com.android.build.api.variant.AndroidTestBuilder
 import com.android.build.api.variant.DeviceTestBuilder
 import com.android.build.api.variant.DynamicFeatureVariantBuilder
-import com.android.build.api.variant.PropertyAccessNotAllowedException
 import com.android.build.api.variant.HostTestBuilder
+import com.android.build.api.variant.PropertyAccessNotAllowedException
 import com.android.build.api.variant.TestSuiteBuilder
 import com.android.tools.build.gradle.internal.profile.VariantMethodType
 import com.google.wireless.android.sdk.stats.GradleBuildVariant

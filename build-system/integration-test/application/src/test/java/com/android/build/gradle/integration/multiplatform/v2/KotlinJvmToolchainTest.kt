@@ -16,15 +16,19 @@
 
 package com.android.build.gradle.integration.multiplatform.v2
 
+import com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryTarget
 import com.android.build.api.variant.KotlinMultiplatformAndroidComponentsExtension
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition.Companion.DEFAULT_COMPILE_SDK_VERSION
 import com.android.build.gradle.integration.common.fixture.project.plugins.AndroidKotlinMultiplatformLibraryComponentCallback
 import com.android.build.gradle.integration.common.fixture.project.plugins.GenericCallback
+import com.android.build.gradle.integration.common.fixture.project.plugins.KotlinMultiplatformCallback
 import com.android.build.gradle.integration.common.truth.ScannerSubject
 import org.gradle.api.Project
+import org.gradle.api.plugins.ExtensionAware
 import org.gradle.api.tasks.compile.JavaCompile
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.junit.Rule
 import org.junit.Test
@@ -96,6 +100,21 @@ class KotlinJvmToolchainTest {
     }
 
     @Test
+    fun testCompilationLevelJvmTargetOverrideTargetLevelJvmTarget() {
+        val build = rule.build {
+            androidKotlinMultiplatformLibrary(":library") {
+                android {
+                    compilerOptions.jvmTarget.set(JvmTarget.JVM_17)
+                }
+                pluginCallbacks += SetCompilationCompilerOptionsCallback::class.java
+            }
+        }
+        val result = build.executor.run("clean", ":library:assemble")
+        ScannerSubject.assertThat(result.stdout).contains("kotlinc jvm-target=11")
+        ScannerSubject.assertThat(result.stdout).contains("javac jvm-target=11")
+    }
+
+    @Test
     fun testSettingJavaCompileTargetUsingVariantApi() {
         val build = rule.build {
             androidKotlinMultiplatformLibrary(":library") {
@@ -143,6 +162,25 @@ class KotlinJvmToolchainTest {
             extension.onVariants { variant ->
                 variant.configureJavaCompileTask { task ->
                     task.targetCompatibility = "17"
+                }
+            }
+        }
+    }
+
+    class SetCompilationCompilerOptionsCallback : KotlinMultiplatformCallback {
+        override fun handleExtension(
+            project: Project,
+            extension: KotlinMultiplatformExtension
+        ) {
+            extension.apply {
+                (this as ExtensionAware).extensions.findByType(
+                    KotlinMultiplatformAndroidLibraryTarget::class.java
+                )!!.apply {
+                    compilations.all {
+                        it.compileTaskProvider.configure {
+                            compilerOptions.jvmTarget.set(JvmTarget.JVM_11)
+                        }
+                    }
                 }
             }
         }

@@ -4,6 +4,7 @@ import json
 import logging
 import os
 import pathlib
+import shutil
 import subprocess
 import tempfile
 from typing import List, Sequence, Set
@@ -19,6 +20,7 @@ _FILE_NAME = 'bazel-diff-hashes/v8/{bid}-{target}.json'
 _LOCAL_REPOSITORIES = [
     'maven',
 ]
+_INCREMENTAL_BAZEL_DIFF_HASH = 'out/bazel-diff-hashes.json'
 
 # Projects that are opted out of selective presubmit.
 #
@@ -38,6 +40,7 @@ class ImpactedTargetsNotFoundError(Exception):
 @dataclasses.dataclass(frozen=True)
 class ImpactedTarget:
   """Represents a target from bazel-diff get-impacted-targets."""
+
   label: str
   target_distance: int
   package_distance: int
@@ -46,6 +49,7 @@ class ImpactedTarget:
 @dataclasses.dataclass(frozen=True)
 class ImpactedTargetsInfo:
   """Represents all impacted targets related information."""
+
   all_targets: List[ImpactedTarget]
   # baseline_targets is the set of all targets for a CI target, and
   # has gone through target and tag filtering.
@@ -60,14 +64,21 @@ class ImpactedTargetsInfo:
   def get_bazel_flags(self) -> List[str]:
     filtered_targets = self.get_filtered_targets()
     labels = [t.label for t in filtered_targets]
-    target_distances = collections.Counter(t.target_distance for t in filtered_targets)
-    pkg_distances = collections.Counter(t.package_distance for t in filtered_targets)
+    target_distances = collections.Counter(
+        t.target_distance for t in filtered_targets
+    )
+    pkg_distances = collections.Counter(
+        t.package_distance for t in filtered_targets
+    )
     return [
         f'--build_metadata=selective_presubmit_impacted_target_count={len(labels)}',
-        f'--build_metadata=selective_presubmit_target_distance=' + ','.join(
-            f'({distance}:{count})' for distance, count in target_distances.items()
+        f'--build_metadata=selective_presubmit_target_distance='
+        + ','.join(
+            f'({distance}:{count})'
+            for distance, count in target_distances.items()
         ),
-        f'--build_metadata=selective_presubmit_package_distance=' + ','.join(
+        f'--build_metadata=selective_presubmit_package_distance='
+        + ','.join(
             f'({distance}:{count})' for distance, count in pkg_distances.items()
         ),
     ]
@@ -122,7 +133,9 @@ def get_impacted_targets_info(
   return impacted_targets_info
 
 
-def write_modified_files(gerrit_info: gerrit.GerritInfo, modified_files_path: pathlib.Path) -> None:
+def write_modified_files(
+    gerrit_info: gerrit.GerritInfo, modified_files_path: pathlib.Path
+) -> None:
   """Writes the modified files to the given path."""
   modified_files = 0
   with open(modified_files_path, 'w') as f:
@@ -142,7 +155,7 @@ def write_modified_files(gerrit_info: gerrit.GerritInfo, modified_files_path: pa
 
 
 def generate_and_upload_hash_file(build_env: bazel.BuildEnv) -> None:
-  """Generates and uploads the hash file for the current build to GCS."""
+  """Generates and uploads the hash file and copies to incremental out/."""
   object_name = _FILE_NAME.format(
       bid=build_env.build_number,
       target=build_env.build_target_name,
@@ -161,6 +174,11 @@ def generate_and_upload_hash_file(build_env: bazel.BuildEnv) -> None:
       logging.warning('generate-hashes timed out after %f seconds.', e.timeout)
       return
   gce.upload_to_gcs(hash_file_path, _BUCKET, object_name)
+  incremental_hash_file_path = (
+      pathlib.Path(build_env.workspace_dir) / _INCREMENTAL_BAZEL_DIFF_HASH
+  )
+  incremental_hash_file_path.parent.mkdir(parents=True, exist_ok=True)
+  shutil.copy2(hash_file_path, incremental_hash_file_path)
   logging.info('Uploaded hash file to GCS with object name: %s', object_name)
 
 
@@ -179,6 +197,46 @@ def _generate_hash_file(
       modified_files_path=modified_files_path,
   )
   return hash_file_path
+
+
+def get_base_hash_file(build_env: bazel.BuildEnv) -> str:
+  """Returns the base hash file for the current build."""
+  if os.environ.get('INCREMENTAL_BUILD') == 'true':
+    base_hashes_path = (
+        pathlib.Path(build_env.workspace_dir) / _INCREMENTAL_BAZEL_DIFF_HASH
+    )
+    if base_hashes_path.exists():
+      logging.info('Found base hash file in incremental out/')
+      return str(base_hashes_path)
+    else:
+      raise ImpactedTargetsNotFoundError(
+          'base hash file not found in incremental out/'
+      )
+
+  reference_bid = gce.get_reference_build_id(
+      build_env.build_number,
+      build_env.build_target_name,
+  )
+  logging.info('Found reference build ID: %s', reference_bid)
+  if not reference_bid:
+    raise ImpactedTargetsNotFoundError(
+        f'Reference build ID not found for build {build_env.build_number}'
+    )
+  object_name = _FILE_NAME.format(
+      bid=reference_bid,
+      target=build_env.build_target_name,
+  )
+  base_hashes = pathlib.Path(build_env.dist_dir) / 'base-hashes.json'
+  exists = gce.download_from_gcs(
+      _BUCKET,
+      object_name,
+      str(base_hashes),
+  )
+  if not exists:
+    raise ImpactedTargetsNotFoundError(
+        f'Base hash file {object_name} not found'
+    )
+  return str(base_hashes)
 
 
 def _find_impacted_targets(
@@ -200,40 +258,19 @@ def _find_impacted_targets(
     temp_path = pathlib.Path(temp_dir)
     dep_edges = temp_path / 'dep-edges.json'
     try:
-      current_hashes = _generate_hash_file(build_env, dep_edges, modified_files_path)
+      current_hashes = _generate_hash_file(
+          build_env, dep_edges, modified_files_path
+      )
     except subprocess.TimeoutExpired as e:
       raise ImpactedTargetsNotFoundError(
           f'generate-hashes timed out after {e.timeout} seconds'
       )
 
-    reference_bid = gce.get_reference_build_id(
-        build_env.build_number,
-        build_env.build_target_name,
-    )
-    logging.info('Found reference build ID: %s', reference_bid)
-    if not reference_bid:
-      raise ImpactedTargetsNotFoundError(
-          f'Reference build ID not found for build {build_env.build_number}'
-      )
-    object_name = _FILE_NAME.format(
-        bid=reference_bid,
-        target=build_env.build_target_name,
-    )
-    base_hashes = temp_path / 'base-hashes.json'
-    exists = gce.download_from_gcs(
-        _BUCKET,
-        object_name,
-        str(base_hashes),
-    )
-    if not exists:
-      raise ImpactedTargetsNotFoundError(f'Base hash file {object_name} not found')
-    logging.info('Base hash file %s found', object_name)
-
     impacted_targets = pathlib.Path(build_env.dist_dir) / 'impacted-targets.txt'
     try:
       bazel_diff.get_impacted_targets(
           build_env,
-          base_hashes,
+          get_base_hash_file(build_env),
           current_hashes,
           dep_edges,
           impacted_targets,
@@ -243,7 +280,8 @@ def _find_impacted_targets(
     data = json.loads(impacted_targets.read_text())
     return [
         ImpactedTarget(
-            label=target['label'], target_distance=target['targetDistance'],
+            label=target['label'],
+            target_distance=target['targetDistance'],
             package_distance=target['packageDistance'],
         )
         for target in data

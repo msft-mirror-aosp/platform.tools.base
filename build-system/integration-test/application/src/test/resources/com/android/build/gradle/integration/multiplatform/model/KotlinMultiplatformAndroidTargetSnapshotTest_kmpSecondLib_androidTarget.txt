@@ -43,7 +43,8 @@
               }
             ],
             "consumerProguardFiles": [],
-            "minificationEnabled": false
+            "minificationEnabled": false,
+            "generatedAssetFolders": []
           },
           "defaultSourceSetName": "androidMain",
           "assembleTaskName": "assembleAndroidMain",

@@ -62,8 +62,10 @@ import com.android.build.gradle.internal.dependency.ModelArtifactCompatibilityRu
 import com.android.build.gradle.internal.dependency.SingleVariantBuildTypeRule
 import com.android.build.gradle.internal.dependency.SingleVariantProductFlavorRule
 import com.android.build.gradle.internal.dependency.VariantDependencies
-import com.android.build.gradle.internal.dsl.KotlinMultiplatformAndroidLibraryExtensionImpl
 import com.android.build.gradle.internal.dsl.DependencySelectionImpl
+import com.android.build.gradle.internal.dsl.KotlinMultiplatformAndroidLibraryExtensionImpl
+import com.android.build.gradle.internal.dsl.CompileSdkVersionImpl
+import com.android.build.gradle.internal.dsl.MinSdkVersionImpl
 import com.android.build.gradle.internal.dsl.ModulePropertyKey
 import com.android.build.gradle.internal.dsl.SdkComponentsImpl
 import com.android.build.gradle.internal.getManagedDeviceAvdFolder
@@ -71,6 +73,7 @@ import com.android.build.gradle.internal.ide.dependencies.LibraryDependencyCache
 import com.android.build.gradle.internal.ide.dependencies.MavenCoordinatesCacheBuildService
 import com.android.build.gradle.internal.ide.v2.GlobalSyncService
 import com.android.build.gradle.internal.lint.LintFixBuildService
+import com.android.build.gradle.internal.lint.maybeCreateLintChecksClasspath
 import com.android.build.gradle.internal.manifest.LazyManifestParser
 import com.android.build.gradle.internal.multiplatform.KotlinMultiplatformAndroidHandler
 import com.android.build.gradle.internal.multiplatform.KotlinMultiplatformAndroidHandlerImpl
@@ -95,7 +98,6 @@ import com.android.build.gradle.internal.services.VariantServices
 import com.android.build.gradle.internal.services.VariantServicesImpl
 import com.android.build.gradle.internal.services.VersionedSdkLoaderService
 import com.android.build.gradle.internal.services.getBuildService
-import com.android.build.gradle.internal.tasks.FixStackFramesDelegate
 import com.android.build.gradle.internal.tasks.KmpTaskManager
 import com.android.build.gradle.internal.tasks.SigningConfigUtils.Companion.createSigningOverride
 import com.android.build.gradle.internal.tasks.factory.BootClasspathConfig
@@ -104,7 +106,6 @@ import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfig
 import com.android.build.gradle.internal.tasks.factory.KmpGlobalTaskCreationConfigImpl
 import com.android.build.gradle.internal.testing.ManagedDeviceRegistry
 import com.android.build.gradle.internal.utils.KOTLIN_MPP_PLUGIN_ID
-import com.android.build.gradle.internal.utils.validatePreviewTargetValue
 import com.android.build.gradle.internal.variant.VariantPathHelper
 import com.android.build.gradle.options.BooleanOption
 import com.android.builder.core.ComponentTypeImpl
@@ -120,11 +121,11 @@ import org.gradle.api.configuration.BuildFeatures
 import org.gradle.api.provider.Provider
 import org.gradle.build.event.BuildEventsListenerRegistry
 import org.jetbrains.kotlin.gradle.ExternalKotlinTargetApi
-import javax.inject.Inject
 import org.jetbrains.kotlin.gradle.plugin.mpp.external.publishSources
 import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
 import org.jetbrains.kotlin.gradle.testing.internal.KotlinTestsRegistry
 import java.io.File
+import javax.inject.Inject
 
 class KotlinMultiplatformAndroidPlugin @Inject constructor(
     listenerRegistry: BuildEventsListenerRegistry,
@@ -303,24 +304,32 @@ class KotlinMultiplatformAndroidPlugin @Inject constructor(
     private fun KotlinMultiplatformAndroidLibraryExtension.initExtensionFromSettings(
         settings: SettingsExtension
     ) {
-        settings.compileSdk?.let { compileSdk ->
-            this.compileSdk = compileSdk
-
-            settings.compileSdkExtension?.let { compileSdkExtension ->
-                this.compileSdkExtension = compileSdkExtension
+        settings.compileSdk compileSdkSettings@{
+            this@initExtensionFromSettings.compileSdk {
+                val settingsCompileSdkVersion = this@compileSdkSettings.version
+                settingsCompileSdkVersion?.let {
+                    this.version = CompileSdkVersionImpl(
+                        apiLevel = it.apiLevel,
+                        minorApiLevel = it.minorApiLevel,
+                        sdkExtension = it.sdkExtension,
+                        codeName = it.codeName,
+                        addonName = it.addonName,
+                        vendorName = it.vendorName
+                    )
+                }
             }
         }
 
-        settings.compileSdkPreview?.let { compileSdkPreview ->
-            this.compileSdkPreview = compileSdkPreview
-        }
-
-        settings.minSdk?.let { minSdk ->
-            this.minSdk = minSdk
-        }
-
-        settings.minSdkPreview?.let { minSdkPreview ->
-            this.minSdkPreview = minSdkPreview
+        settings.minSdk minSdkSettings@ {
+            this@initExtensionFromSettings.minSdk {
+                val settingsMinSdkVersion = this@minSdkSettings.version
+                settingsMinSdkVersion?.let {
+                    this.version = MinSdkVersionImpl(
+                        apiLevel = it.apiLevel,
+                        codeName = it.codeName
+                    )
+                }
+            }
         }
 
         settings.buildToolsVersion.let { buildToolsVersion ->
@@ -487,6 +496,12 @@ class KotlinMultiplatformAndroidPlugin @Inject constructor(
             ),
             runtimeClasspath = project.configurations.getByName(
                 androidKotlinCompilation.runtimeDependencyConfigurationName!!
+            ),
+            lintChecksClasspath = maybeCreateLintChecksClasspath(
+                project,
+                dslInfo.componentIdentity.name,
+                project.configurations.getByName(androidKotlinCompilation.apiConfigurationName),
+                project.configurations.getByName(androidKotlinCompilation.runtimeDependencyConfigurationName!!)
             ),
             apiElements = (androidTarget as KotlinMultiplatformAndroidLibraryTargetImpl)
                 .apiElementsConfiguration.forMainVariantConfiguration(dslInfo),

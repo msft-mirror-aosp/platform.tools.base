@@ -33,10 +33,11 @@ import com.android.repository.Revision
 import com.google.wireless.android.sdk.stats.GradleBuildProject
 import org.gradle.api.Action
 import org.gradle.api.NamedDomainObjectContainer
+import org.gradle.api.plugins.ExtensionContainer
 import org.gradle.declarative.dsl.model.annotations.Configuring
 import javax.inject.Inject
 
-open class BaseAppModuleExtensionInternal(
+abstract class BaseAppModuleExtensionInternal(
     dslServices: DslServices,
     bootClasspathConfig: BootClasspathConfig,
     buildOutputs: NamedDomainObjectContainer<BaseVariantOutput>,
@@ -70,7 +71,7 @@ open class BaseAppModuleExtensionInternal(
 }
 
 /** The `android` extension for base feature module (application plugin).  */
-open class BaseAppModuleExtension @Inject constructor(
+abstract class BaseAppModuleExtension @Inject constructor(
     dslServices: DslServices,
     bootClasspathConfig: BootClasspathConfig,
     buildOutputs: NamedDomainObjectContainer<BaseVariantOutput>,
@@ -85,6 +86,10 @@ open class BaseAppModuleExtension @Inject constructor(
     true,
     stats
 ), InternalApplicationExtension by publicExtensionImpl {
+
+    // Manual override to avoid the kotlin delegation
+    // from interfering with Gradle's ExtensionAware mechanism
+    abstract override fun getExtensions(): ExtensionContainer
 
     // Overrides to make the parameterized types match, due to BaseExtension being part of
     // the previous public API and not wanting to paramerterize that.
@@ -122,6 +127,9 @@ open class BaseAppModuleExtension @Inject constructor(
 
     override val buildFeatures: ApplicationBuildFeatures
         get() = publicExtensionImpl.buildFeatures
+
+    override val packagingOptions: PackagingOptions
+        get() = publicExtensionImpl.packagingOptions
 
     @Configuring
     override fun defaultConfig(action: ApplicationDefaultConfig.() -> Unit) {

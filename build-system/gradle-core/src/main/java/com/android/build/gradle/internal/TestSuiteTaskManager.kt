@@ -33,6 +33,10 @@ class TestSuiteTaskManager(
         get() = setOf()
 
     fun createTasks(creationConfig: TestSuiteCreationConfig) {
+        // first create all tasks related to processing the source folders.
+        creationConfig.sources.forEach { testSuiteSourceContainer ->
+            testSuiteSourceContainer.createTasks(creationConfig.services)
+        }
         creationConfig.targets
             .filter { it.value.enabled }
             .forEach { mapEntry ->

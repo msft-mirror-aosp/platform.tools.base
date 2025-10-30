@@ -27,6 +27,10 @@ echo "Command Log Location: %COMMANDLOGLOC%"
 set TARGETS=
 for /f %%i in (%SCRIPTDIR%targets.win) do set TARGETS=!TARGETS! %%i
 
+if defined BUILD_NUMBER (
+  echo common --credential_helper=*.pkg.dev=%%workspace%%/build/bazel/tools/ci_credhelper.cmd > ci.bazelrc
+)
+
 @rem Run Bazel
 CALL %SCRIPTDIR%bazel.cmd ^
  --max_idle_secs=60 ^

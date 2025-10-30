@@ -134,7 +134,7 @@ class DeviceTest {
     val xr = checkNotNull(devMgr.getDevice("xr_headset_device", "Google"))
     assertThat(Device.isXr(xr)).isTrue()
     assertThat(Device.isXrHeadset(xr)).isTrue()
-    assertThat(Device.isXrGlasses(xr)).isFalse()
+    assertThat(Device.isAiGlasses(xr)).isFalse()
     assertThat(Device.isPhone(xr)).isFalse()
   }
 }

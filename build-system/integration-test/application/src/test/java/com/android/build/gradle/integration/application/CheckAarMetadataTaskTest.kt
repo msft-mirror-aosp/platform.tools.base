@@ -466,8 +466,12 @@ class CheckAarMetadataTaskTest {
                               :app is currently compiled against $compileSdkHash.
 
                               Recommended action: Use a different version of dependency 'library.aar',
-                              or set compileSdkPreview to "UpsideDownCakePrivacySandbox" in your build.gradle
-                              file if you intend to experiment with that preview SDK.
+                              or update your `compileSdk` in your build.gradle file to experiment with
+                              the "UpsideDownCakePrivacySandbox" preview SDK. For example:
+
+                              compileSdk {
+                                  version = preview("UpsideDownCakePrivacySandbox")
+                              }
                     """.trimIndent()
                 )
         }

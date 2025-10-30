@@ -13,12 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.android.tools.idea.wizard.template.impl.activities.xrGlassesActivity.res.values
 
-fun stringsXml() = """
-<resources>
-    <string name="app_name">Basic Glasses Activity</string>
-    <string name="welcome_android_xr_glasses">Hello Android XR.</string>
-    <string name="click_me">Click Me!</string>
-</resources>
-"""
+package com.android.builder.model.v2.models
+
+import java.io.File
+
+interface AssetsTestSuiteSource: TestSuiteSource {
+
+    override val type: SourceType
+        get() = SourceType.ASSETS
+
+    val directories: Collection<File>
+}

@@ -67,4 +67,8 @@ public class Activity {
     }
 
     public void performCreate(Bundle savedInstance, PersistableBundle persistentState) {}
+
+    public void recreate() {
+        System.out.println("Activity recreated");
+    }
 }

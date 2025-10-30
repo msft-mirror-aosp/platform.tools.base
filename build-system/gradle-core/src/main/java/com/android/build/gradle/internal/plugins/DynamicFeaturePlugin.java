@@ -226,7 +226,8 @@ public class DynamicFeaturePlugin
                                         DynamicFeatureVariantBuilder,
                                         DynamicFeatureVariant>
                                 variantApiOperations,
-                @NonNull DynamicFeatureExtension dynamicFeatureExtension) {
+                @NonNull
+                        com.android.build.api.dsl.DynamicFeatureExtension dynamicFeatureExtension) {
             super(
                     dslServices,
                     sdkComponents,
@@ -273,7 +274,7 @@ public class DynamicFeaturePlugin
                                 sdkComponents,
                                 getManagedDeviceRegistry(),
                                 variantApiOperationsRegistrar,
-                                getExtension());
+                                getRegisteredExtension());
 
         return extension;
     }

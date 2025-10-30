@@ -71,6 +71,11 @@ build --explicit_java_test_deps
 # real one. This flag keeps the old behavior of not having a home directory.
 test --sandbox_fake_username
 
+# The --sandbox_fake_username option changes the user to "nobody".
+# This causes tests that rely on HOME (e.g., those using adb) to fail.
+# Explicitly set HOME="$TEST_TMPDIR" to ensure these tests can run.
+test --test_env=HOME="$TEST_TMPDIR"
+
 test:ignored --jvmopt=-Dignored.tests.only=true
 
 # Attach aspects for validation of targets
@@ -95,10 +100,10 @@ build --define=grpc_no_ares=true
 build --test_env=SHELL
 
 # Bazel will find the matching java toolchain registered in WORKSPACE.
-build --java_language_version=17
+build --java_language_version=21
 build --java_runtime_version=jbr-next
-build --tool_java_language_version=17
-build --tool_java_runtime_version=jdk17
+build --tool_java_language_version=21
+build --tool_java_runtime_version=jbr-next
 
 build --stripopt=--strip-unneeded
 

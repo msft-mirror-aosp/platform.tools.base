@@ -794,6 +794,7 @@ DATA = [
     "com.google.errorprone:error_prone_type_annotations:2.33.0",
     "com.google.firebase:firebase-common:12.0.1",
     "com.google.firebase:firebase-crashlytics-gradle:2.5.1",
+    "com.google.firebase.testlab:testlab-gradle-plugin:0.0.1-alpha12",
     "com.google.flogger:flogger:0.8",
     "com.google.guava:guava:20.0",
     "com.google.guava:guava:28.2-jre",
@@ -931,7 +932,7 @@ DATA = [
     "org.eclipse.lsp4j:org.eclipse.lsp4j:0.21.1",
     "org.eclipse.lsp4j:org.eclipse.lsp4j.debug:0.21.1",
     "org.gradle:gradle-core:4.2.1",
-    "org.gradle.toolchains.foojay-resolver-convention:org.gradle.toolchains.foojay-resolver-convention.gradle.plugin:pom:0.8.0",
+    "org.gradle.toolchains.foojay-resolver-convention:org.gradle.toolchains.foojay-resolver-convention.gradle.plugin:pom:1.0.0",
     "org.hamcrest:hamcrest-core:2.2",
     "org.jacoco:org.jacoco.agent:0.7.4.201502262128",  # Keep old Jacoco version for testing.
     "org.jacoco:org.jacoco.agent:0.8.11",

@@ -402,7 +402,8 @@ open class DefaultUastParser(
 
   /**
    * Returns a [Location] for the given node range (from the starting offset of the first node to
-   * the ending offset of the second node).
+   * the ending offset of the second node). The result will be inaccurate if the source location is
+   * missing in either [from] or [to].
    *
    * @param context information about the file being parsed
    * @param from the AST node to get a starting location from
@@ -419,12 +420,40 @@ open class DefaultUastParser(
     toDelta: Int,
   ): Location {
     val contents = context.getContents()
-    val fromRange = from.textRange
-    val start = max(0, fromRange.startOffset + fromDelta)
-    val end = min(contents?.length ?: Integer.MAX_VALUE, to.textRange.endOffset + toDelta)
+
+    // b/452422771: `PsiElement.textRange` can be `null`
+    val fromRange: TextRange? = from.textRange
+    val toRange: TextRange? = to.textRange
+
+    if (fromRange == null || toRange == null) {
+      val sources =
+        when {
+          fromRange == null && toRange == null -> "both sources"
+          fromRange == null -> "starting source"
+          else -> "end source"
+        }
+      context.client.log(
+        Severity.WARNING,
+        NullPointerException("Text range missing from $sources"),
+        "Text range missing from $sources",
+      )
+    }
+
+    val start = max(0, fromRange?.startOffset?.plus(fromDelta) ?: toRange?.endOffset ?: 0)
+    val end =
+      min(
+        contents?.length ?: Integer.MAX_VALUE,
+        toRange?.endOffset?.plus(toDelta) ?: fromRange?.endOffset ?: Integer.MAX_VALUE,
+      )
     if (end <= start) {
       // Some AST nodes don't have proper bounds, such as empty parameter lists
-      return Location.create(context.file, contents, start, fromRange.endOffset).setSource(from)
+      return Location.create(
+          context.file,
+          contents,
+          start,
+          fromRange?.endOffset ?: contents?.length ?: start,
+        )
+        .setSource(from)
     }
     return Location.create(context.file, contents, start, end).setSource(from)
   }

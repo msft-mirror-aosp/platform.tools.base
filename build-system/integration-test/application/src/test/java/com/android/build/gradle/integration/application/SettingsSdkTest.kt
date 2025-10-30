@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.integration.application
 
+import com.android.build.api.variant.KotlinMultiplatformAndroidComponentsExtension
 import com.android.build.api.variant.LibraryAndroidComponentsExtension
 import com.android.build.gradle.integration.common.fixture.project.GradleBuild
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
@@ -23,6 +24,7 @@ import com.android.build.gradle.integration.common.fixture.project.builder.Andro
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_LIB_PATH
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition.Companion.DEFAULT_COMPILE_SDK_VERSION
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
+import com.android.build.gradle.integration.common.fixture.project.plugins.AndroidKotlinMultiplatformLibraryComponentCallback
 import com.android.build.gradle.integration.common.fixture.project.plugins.LibraryComponentCallback
 import com.google.common.truth.Truth.assertThat
 import org.gradle.api.Project
@@ -43,6 +45,11 @@ class SettingsSdkTest {
         androidApplication(createMinimumProject = false) {
             android.namespace = "com.example.app"
             files.setupMinimumManifest()
+        }
+        androidKotlinMultiplatformLibrary(":library", createMinimumProject = false) {
+            android {
+                namespace = "com.mylibrary.foo"
+            }
         }
     }
 
@@ -67,6 +74,9 @@ class SettingsSdkTest {
             androidLibrary {
                 pluginCallbacks += LibSharedCheck::class.java
                 pluginCallbacks += LibMinorVersionCheck::class.java
+            }
+            androidKotlinMultiplatformLibrary(":library") {
+                pluginCallbacks += KmpLibVersionCheck::class.java
             }
         }
         build.executor.run(":help")
@@ -169,6 +179,27 @@ class SettingsSdkTest {
             androidComponents.finalizeDsl { extension ->
                 check(extension.compileSdkMinor == COMPILE_SDK_MINOR_VERSION) {
                     "compileSdkMinor should be ${COMPILE_SDK_MINOR_VERSION}"
+                }
+            }
+        }
+    }
+
+    class KmpLibVersionCheck : AndroidKotlinMultiplatformLibraryComponentCallback {
+        override fun handleExtension(
+            project: Project,
+            extension: KotlinMultiplatformAndroidComponentsExtension
+        ) {
+            extension.finalizeDsl { extension ->
+                check(extension.compileSdk == COMPILE_SDK_VERSION) {
+                    "compileSdk should be $COMPILE_SDK_VERSION"
+                }
+                check(extension.minSdk == MIN_SDK_VERSION) {
+                    "compileSdkExtension should be $MIN_SDK_VERSION"
+                }
+                extension.compileSdk {
+                    check(version?.minorApiLevel == COMPILE_SDK_MINOR_VERSION) {
+                        "compileSdkMinor should be ${COMPILE_SDK_MINOR_VERSION}"
+                    }
                 }
             }
         }

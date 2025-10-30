@@ -73,6 +73,7 @@ import org.gradle.api.tasks.Sync;
 import org.gradle.api.tasks.TaskProvider;
 import org.gradle.api.tasks.bundling.Zip;
 import org.gradle.api.tasks.compile.JavaCompile;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
 import java.util.Arrays;
@@ -201,11 +202,23 @@ public abstract class BaseVariantImpl implements BaseVariant, InternalBaseVarian
     public List<ConfigurableFileTree> getSourceFolders(@NonNull SourceKind folderType) {
         if (folderType == SourceKind.JAVA) {
             if (component.getSources().getJava() != null) {
-                return component
-                        .getSources()
-                        .getJava()
-                        .getAsFileTreesForOldVariantAPI$gradle_core()
-                        .get();
+                List<@NotNull ConfigurableFileTree> javaSources =
+                        component
+                                .getSources()
+                                .getJava()
+                                .getAsFileTreesForOldVariantAPI$gradle_core()
+                                .get();
+
+                if (component.getSources().getKotlin() != null) {
+                    javaSources.addAll(
+                            component
+                                    .getSources()
+                                    .getKotlin()
+                                    .getAsFileTreesForOldVariantAPI$gradle_core()
+                                    .get());
+                }
+
+                return javaSources;
             }
         } else {
             services.getIssueReporter()

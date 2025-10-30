@@ -22,12 +22,13 @@ import com.android.build.gradle.internal.SdkComponentsBuildService
 import com.android.build.gradle.internal.dsl.ManagedVirtualDevice
 import com.android.build.gradle.internal.testing.StaticTestData
 import com.android.build.gradle.internal.testing.utp.emulatorcontrol.EmulatorControlConfig
+import com.android.build.gradle.internal.testing.utp.worker.RunUtpWorkParameters
+import com.android.build.gradle.internal.utils.setDisallowChanges
 import com.android.mockito.kotlin.whenever
 import com.android.testutils.SystemPropertyOverrides
 import com.android.testutils.truth.PathSubject.assertThat
 import com.android.utils.Environment
 import com.google.common.truth.Truth.assertThat
-import com.google.testing.platform.proto.api.config.RunnerConfigProto.RunnerConfig
 import com.google.testing.platform.proto.api.core.TestSuiteResultProto.TestSuiteResult
 import org.gradle.api.file.Directory
 import org.gradle.api.logging.Logger
@@ -38,11 +39,13 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
-import org.mockito.Answers
+import org.mockito.Answers.RETURNS_DEEP_STUBS
 import org.mockito.Mockito.mockStatic
 import org.mockito.kotlin.any
-import org.mockito.kotlin.anyOrNull
+import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
+import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import java.io.File
 import java.util.logging.Level
@@ -56,9 +59,9 @@ class ManagedDeviceTestRunnerTest {
     @get:Rule var temporaryFolderRule = TemporaryFolder()
 
     private val mockWorkerExecutor: WorkerExecutor = mock()
-    private val mockObjectFactory: ObjectFactory = mock()
+    private val mockObjectFactory: ObjectFactory = mock(defaultAnswer = RETURNS_DEEP_STUBS)
     private val mockVersionedSdkLoader: SdkComponentsBuildService.VersionedSdkLoader = mock()
-    private val mockAvdComponents: AvdComponentsBuildService = mock(defaultAnswer = Answers.RETURNS_DEEP_STUBS)
+    private val mockAvdComponents: AvdComponentsBuildService = mock(defaultAnswer = RETURNS_DEEP_STUBS)
     private val mockTestData: StaticTestData = mock()
     private val mockAppApk: File = mock()
     private val mockHelperApk: File = mock()
@@ -66,8 +69,8 @@ class ManagedDeviceTestRunnerTest {
     private val mockEmulatorControlConfig: EmulatorControlConfig = mock()
     private val mockCoverageOutputDir: File = mock()
     private val mockAdditionalTestOutputDir: File = mock()
-    private val mockDslDevice: ManagedVirtualDevice = mock(defaultAnswer = Answers.RETURNS_DEEP_STUBS)
-    private val mockUtpDependencies: UtpDependencies = mock(defaultAnswer = Answers.RETURNS_DEEP_STUBS)
+    private val mockDslDevice: ManagedVirtualDevice = mock(defaultAnswer = RETURNS_DEEP_STUBS)
+    private val mockUtpDependencies: UtpDependencies = mock(defaultAnswer = RETURNS_DEEP_STUBS)
     private val emulatorProvider: Provider<Directory> = mock()
     private val emulatorDirectory: Directory = mock()
     private val avdProvider: Provider<Directory> = mock()
@@ -77,16 +80,20 @@ class ManagedDeviceTestRunnerTest {
     private lateinit var outputDirectory: File
     private lateinit var jvmExecutable: File
 
-    private lateinit var capturedRunnerConfigs: List<UtpRunnerConfig>
-    private var utpInvocationCount: Int = 0
     private val extractedSdkApks = listOf(listOf(Path("test1"), Path("test2")))
     private val sdkApkSet = setOf(File("test"))
+
+    private val runnerConfigsCaptor = argumentCaptor<List<RunUtpWorkParameters.UtpRunConfig>>()
 
     @Before
     fun setupMocks() {
         Environment.initialize()
 
         jvmExecutable = temporaryFolderRule.newFile()
+
+        whenever(mockObjectFactory.newInstance(
+            eq(RunUtpWorkParameters.UtpRunConfig::class.java))
+        ).thenReturn(mock(defaultAnswer = RETURNS_DEEP_STUBS))
 
         whenever(mockTestData.minSdkVersion).thenReturn(AndroidVersionImpl(28))
         whenever(mockTestData.testedApkFinder).thenReturn { listOf(mockAppApk) }
@@ -142,9 +149,8 @@ class ManagedDeviceTestRunnerTest {
     }
 
     private fun runUtp(
-        result: Boolean,
+        results: List<UtpTestRunResult>,
         numShards: Int? = null,
-        hasEmulatorTimeoutException: List<Boolean> = List(numShards ?: 1) { false },
     ): Boolean {
         return runInLinuxEnvironment {
             val runner = ManagedDeviceTestRunner(
@@ -162,27 +168,14 @@ class ManagedDeviceTestRunnerTest {
                 false,
                 Level.WARNING,
                 false,
-                { runnerConfigs, _, _, resultsDir, _ ->
-                    utpInvocationCount++
-                    capturedRunnerConfigs = runnerConfigs
-                    TestSuiteResult.getDefaultInstance()
-                        .writeTo(File(resultsDir, TEST_RESULT_PB_FILE_NAME).outputStream())
-                    runnerConfigs.map {
-                        UtpTestRunResult(
-                            result,
-                            createTestSuiteResult(
-                                hasEmulatorTimeoutException[it.shardConfig?.index ?: 0]
-                            )
-                        )
-                    }
-                },
             )
 
             outputDirectory = temporaryFolderRule.newFolder("results")
 
-            mockStatic(::createRunnerConfigProtoForLocalDevice.javaMethod!!.declaringClass).use { mockedStatic ->
-                mockedStatic.whenever<RunnerConfig> {
-                    createRunnerConfigProtoForLocalDevice(
+            mockStatic(::runUtpTestSuiteAndWait.javaMethod!!.declaringClass).use { mockedStatic ->
+                mockedStatic.whenever<List<UtpTestRunResult>> {
+                    runUtpTestSuiteAndWait(
+                        runnerConfigsCaptor.capture(),
                         any(),
                         any(),
                         any(),
@@ -190,22 +183,9 @@ class ManagedDeviceTestRunnerTest {
                         any(),
                         any(),
                         any(),
-                        any(),
-                        any(),
-                        any(),
-                        any(),
-                        any(),
-                        any(),
-                        any(),
-                        anyOrNull(),
-                        anyOrNull(),
-                        anyOrNull(),
-                        any(),
-                        any(),
-                        any(),
-                        anyOrNull(),
+                        any()
                     )
-                }.thenReturn(RunnerConfig.getDefaultInstance())
+                }.thenReturn(results)
 
                 runner.runTests(
                     mockDslDevice,
@@ -225,51 +205,38 @@ class ManagedDeviceTestRunnerTest {
         }
     }
 
-    private fun createTestSuiteResult(
-        hasEmulatorTimeoutException: Boolean = false
-    ): TestSuiteResult {
-        return TestSuiteResult.newBuilder().apply {
-            if (hasEmulatorTimeoutException) {
-                platformErrorBuilder.apply {
-                    addErrorsBuilder().apply {
-                        causeBuilder.apply {
-                            summaryBuilder.apply {
-                                stackTrace = "EmulatorTimeoutException"
-                            }
-                        }
-                    }
-                }
-            }
-        }.build()
-    }
-
     @Test
     fun runUtpAndPassed() {
-        val result = runUtp(result = true)
+        val result = runUtp(results = listOf(UtpTestRunResult(testPassed = true, TestSuiteResult.getDefaultInstance())))
 
-        assertThat(utpInvocationCount).isEqualTo(1)
-        assertThat(capturedRunnerConfigs).hasSize(1)
-
+        assertThat(runnerConfigsCaptor.allValues).hasSize(1)
+        assertThat(runnerConfigsCaptor.firstValue).hasSize(1)
         assertThat(result).isTrue()
-        assertThat(File(outputDirectory, TEST_RESULT_PB_FILE_NAME)).exists()
     }
 
     @Test
     fun runUtpAndFailed() {
-        val result = runUtp(result = false)
+        val result = runUtp(results = listOf(UtpTestRunResult(testPassed = false, TestSuiteResult.getDefaultInstance())))
 
-        assertThat(utpInvocationCount).isEqualTo(1)
-        assertThat(capturedRunnerConfigs).hasSize(1)
+        assertThat(runnerConfigsCaptor.allValues).hasSize(1)
+        assertThat(runnerConfigsCaptor.firstValue).hasSize(1)
         assertThat(result).isFalse()
     }
 
     @Test
     fun runUtpWithShardsAndPassed() {
-        val result = runUtp(result = true, numShards = 2)
+        val result = runUtp(
+            results = listOf(
+                UtpTestRunResult(testPassed = true, TestSuiteResult.getDefaultInstance()),
+                UtpTestRunResult(testPassed = true, TestSuiteResult.getDefaultInstance()),
+            ),
+            numShards = 2,
+        )
 
-        assertThat(capturedRunnerConfigs).hasSize(2)
-        assertThat(capturedRunnerConfigs[0].shardConfig).isEqualTo(ShardConfig(2, 0))
-        assertThat(capturedRunnerConfigs[1].shardConfig).isEqualTo(ShardConfig(2, 1))
+        assertThat(runnerConfigsCaptor.allValues).hasSize(1)
+        assertThat(runnerConfigsCaptor.firstValue).hasSize(2)
+        verify(runnerConfigsCaptor.firstValue[0].shardConfig).setDisallowChanges(eq(ShardConfig(2, 0)))
+        verify(runnerConfigsCaptor.firstValue[1].shardConfig).setDisallowChanges(eq(ShardConfig(2, 1)))
 
         assertThat(result).isTrue()
         assertThat(File(outputDirectory, TEST_RESULT_PB_FILE_NAME)).exists()

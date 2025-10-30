@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.android.tools.idea.wizard.template.impl.activities.xrGlassesActivity.src.app_package
+package com.android.tools.idea.wizard.template.impl.activities.aiGlassesActivity.src.app_package
 
 import com.android.tools.idea.wizard.template.escapeKotlinIdentifier
 
@@ -60,7 +60,7 @@ fun MyAppContent() {
             modifier = Modifier.align(Alignment.Center)
         ) {
             Text(
-                stringResource(R.string.welcome_android_xr_glasses),
+                stringResource(R.string.welcome_android_ai_glasses),
                 style = GlimmerTheme.typography.titleLarge
             )
             Button(onClick = { /* Handle Click */ }) {
@@ -70,7 +70,7 @@ fun MyAppContent() {
     }
 }
 
-@Preview(device = "id:xr_glasses_device")
+@Preview(device = "id:ai_glasses_device")
 @Composable
 fun DefaultPreview() {
     GlimmerTheme {

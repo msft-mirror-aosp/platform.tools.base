@@ -257,7 +257,7 @@ class KotlinMultiplatformAndroidVariantApiTest {
         project.getSubproject("kmpFirstLib").assertApk(
             ApkSelector.NO_BUILD_TYPE.forTestSuite("androidTest")
         ) {
-            assets().containsExactly("static.txt")
+            assets().containsExactly("static.txt", "asset.txt")
         }
     }
 }

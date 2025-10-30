@@ -77,6 +77,9 @@ class KmpModelComparator(
             } else if (normalizedString.endsWith("transformed/local-api.jar")) {
                 // kotlin gradle plugin uses relative path to represent local file coordinates
                 "{GRADLE_CACHE}/{CHECKSUM}/transformed/local-api.jar"
+            } else if (normalizedString.endsWith("transformed/local-runtime.jar")) {
+                // kotlin gradle plugin uses relative path to represent local file coordinates
+                "{GRADLE_CACHE}/{CHECKSUM}/transformed/local-runtime.jar"
             } else {
                 normalizedString
             }

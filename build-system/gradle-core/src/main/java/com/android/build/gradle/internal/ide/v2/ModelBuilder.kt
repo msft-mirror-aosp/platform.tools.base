@@ -26,6 +26,7 @@ import com.android.build.api.dsl.CommonExtension
 import com.android.build.api.dsl.TestExtension
 import com.android.build.api.variant.ScopedArtifacts.Scope.ALL
 import com.android.build.api.variant.ScopedArtifacts.Scope.PROJECT
+import com.android.build.api.variant.TestSuiteSourceType
 import com.android.build.api.variant.impl.BuiltArtifactsImpl
 import com.android.build.api.variant.impl.HasDeviceTestsCreationConfig
 import com.android.build.api.variant.impl.HasHostTestsCreationConfig
@@ -92,6 +93,8 @@ import com.android.build.gradle.tasks.BuildPrivacySandboxSdkApks
 import com.android.builder.core.ComponentTypeImpl
 import com.android.builder.errors.IssueReporter
 import com.android.builder.model.SyncIssue
+import com.android.builder.model.v2.dsl.BuildType
+import com.android.builder.model.v2.dsl.ProductFlavor
 import com.android.builder.model.v2.ide.AndroidArtifact
 import com.android.builder.model.v2.ide.AndroidGradlePluginProjectFlags.BooleanFlag
 import com.android.builder.model.v2.ide.ArtifactDependencies
@@ -110,10 +113,14 @@ import com.android.builder.model.v2.ide.TestSuiteArtifact
 import com.android.builder.model.v2.ide.TestedTargetVariant
 import com.android.builder.model.v2.models.AndroidDsl
 import com.android.builder.model.v2.models.AndroidProject
+import com.android.builder.model.v2.models.AssetsTestSuiteSource
 import com.android.builder.model.v2.models.BasicAndroidProject
+import com.android.builder.model.v2.models.HostJarTestSuiteSource
 import com.android.builder.model.v2.models.ModelBuilderParameter
 import com.android.builder.model.v2.models.ProjectGraph
 import com.android.builder.model.v2.models.ProjectSyncIssues
+import com.android.builder.model.v2.models.SourceType
+import com.android.builder.model.v2.models.TestApkTestSuiteSource
 import com.android.builder.model.v2.models.TestSuiteDependencies
 import com.android.builder.model.v2.models.TestSuiteDependenciesAdjacencyList
 import com.android.builder.model.v2.models.VariantDependencies
@@ -128,6 +135,7 @@ import org.gradle.api.Project
 import org.gradle.api.artifacts.component.ProjectComponentSelector
 import org.gradle.internal.resolve.ModuleVersionResolveException
 import org.gradle.tooling.provider.model.ParameterizedToolingModelBuilder
+import org.jetbrains.kotlin.gradle.internal.builtins.StandardNames.FqNames.mutableList
 import java.io.File
 import java.io.FileInputStream
 import java.io.IOException
@@ -370,40 +378,54 @@ class ModelBuilder<ExtensionT : CommonExtension>(
         // gather test suites
         val testSuites: List<BasicTestSuiteImpl> = testSuiteBuilders
             .map { testSuiteBuilder ->
-            BasicTestSuiteImpl(
-                name = testSuiteBuilder.suite.name,
-                sources = testSuiteBuilder.suite.sources.map { sourceContainer: TestSuiteSourceContainer ->
-                    when (val sourceSet = sourceContainer.source) {
-                        is TestSuiteSourceSet.Assets ->
-                            TestSuiteSourceImpl.assets(
-                                sourceContainer.name,
-                                sourceSet.get().all.get().map { it.asFile }
-                            )
+                val assetsSources = mutableListOf<AssetsTestSuiteSource>()
+                val hostJarSources = mutableListOf<HostJarTestSuiteSource>()
+                val testApkSources = mutableListOf<TestApkTestSuiteSource>()
 
-                        is TestSuiteSourceSet.HostJar ->
-                            TestSuiteSourceImpl.hostJar(
-                                sourceContainer.name,
-                                sourceSet.get().all.get().map { it.asFile }
-                            )
-
-                        is TestSuiteSourceSet.TestApk ->
-                            throw RuntimeException("Not Implemented")
-                    }
-                },
-                targetsByVariant = testSuiteBuilder.variantsTargets.map { testSuiteVariantBuilder ->
-                    TestSuiteVariantTargetImpl(
-                        testSuiteVariantBuilder.targetedVariant,
-                        testSuiteVariantBuilder.targets.map { mapEntry ->
-                            val variantSpecificTarget = mapEntry.value
-                            TestSuiteTargetImpl(
-                                variantSpecificTarget.name,
-                                variantSpecificTarget.testTaskName,
-                                variantSpecificTarget.targetDevices
+                testSuiteBuilder.suite.sources.forEach { suiteSourceContainer ->
+                    when(val sourceSet = suiteSourceContainer.source) {
+                        is TestSuiteSourceSet.Assets -> {
+                            assetsSources.add(
+                                AssetsTestSuiteSourceImpl(
+                                    name = suiteSourceContainer.name,
+                                    directories = sourceSet.get().all.get().map { it.asFile }
+                                )
                             )
                         }
-                    )
+                        is TestSuiteSourceSet.HostJar -> {
+                            hostJarSources.add(
+                                HostJarTestSuiteSourceImpl(
+                                    name = suiteSourceContainer.name,
+                                    java = sourceSet.get().all.get().map { it.asFile },
+                                    kotlin = sourceSet.get().all.get().map { it.asFile }
+                                )
+                            )
+                        }
+                        is TestSuiteSourceSet.TestApk -> {
+                            throw RuntimeException("Not Supported ")
+                        }
+                    }
                 }
-            )
+
+                BasicTestSuiteImpl(
+                    name = testSuiteBuilder.suite.name,
+                    assets = assetsSources.toList(),
+                    hostJars = hostJarSources.toList(),
+                    testApks = testApkSources.toList(),
+                    targetsByVariant = testSuiteBuilder.variantsTargets.map { testSuiteVariantBuilder ->
+                        TestSuiteVariantTargetImpl(
+                            testSuiteVariantBuilder.targetedVariant,
+                            testSuiteVariantBuilder.targets.map { mapEntry ->
+                                val variantSpecificTarget = mapEntry.value
+                                TestSuiteTargetImpl(
+                                    variantSpecificTarget.name,
+                                    variantSpecificTarget.testTaskName,
+                                    variantSpecificTarget.targetDevices
+                                )
+                            }
+                        )
+                    }
+                )
         }
 
         // gather variants
@@ -720,13 +742,13 @@ class ModelBuilder<ExtensionT : CommonExtension>(
         val defaultConfig = variantInputs.defaultConfigData.defaultConfig.convert(buildFeatures)
 
         // gather all the build types
-        val buildTypes = mutableListOf<com.android.builder.model.v2.dsl.BuildType>()
+        val buildTypes = mutableListOf<BuildType>()
         for (buildType in variantInputs.buildTypes.values) {
             buildTypes.add(buildType.buildType.convert(buildFeatures))
         }
 
         // gather product flavors
-        val productFlavors = mutableListOf<com.android.builder.model.v2.dsl.ProductFlavor>()
+        val productFlavors = mutableListOf<ProductFlavor>()
         for (flavor in variantInputs.productFlavors.values) {
             productFlavors.add(flavor.productFlavor.convert(buildFeatures))
         }
@@ -1347,6 +1369,14 @@ class ModelBuilder<ExtensionT : CommonExtension>(
         additionalArtifactsInModel: Boolean,
     ) = getGraphBuilder(dontBuildRuntimeClasspath, additionalArtifactsInModel, component, libraryService).build()
 
+    private fun createTestSuiteType(variantApiType: TestSuiteSourceType): SourceType {
+        return when(variantApiType) {
+            TestSuiteSourceType.ASSETS -> SourceType.ASSETS
+            TestSuiteSourceType.HOST_JAR -> SourceType.HOST_JAR
+            TestSuiteSourceType.TEST_APK -> SourceType.TEST_APK
+        }
+    }
+
     private fun createDependencies(
         testSuite: TestSuiteCreationConfig,
         libraryServices: LibraryService,
@@ -1354,7 +1384,7 @@ class ModelBuilder<ExtensionT : CommonExtension>(
         testSuite.sources.map { testSuiteSourceContainer ->
                     TestSuiteSourceDependenciesImpl(
                         testSuiteSourceContainer.name,
-                        testSuiteSourceContainer.source.type,
+                        createTestSuiteType(testSuiteSourceContainer.source.type),
                         getGraphBuilder(testSuiteSourceContainer, libraryServices).build()
                     )
                 }
@@ -1384,7 +1414,7 @@ class ModelBuilder<ExtensionT : CommonExtension>(
             testSuite.sources.map { testSuiteSourceContainer ->
                 TestSuiteSourceDependenciesAdjacencyListImpl(
                     testSuiteSourceContainer.name,
-                    testSuiteSourceContainer.source.type,
+                    createTestSuiteType(testSuiteSourceContainer.source.type),
                     getGraphBuilder(
                         testSuiteSourceContainer,
                         libraryService,
@@ -1417,7 +1447,7 @@ class ModelBuilder<ExtensionT : CommonExtension>(
         artifactsProvider = { configType, root -> getArtifactsForModelBuilder(testSuiteSourceContainer, configType) },
         projectPath = project.path,
 
-        resolutionResultProvider = testSuiteSourceContainer.dependencies,
+        resolutionResultProvider = testSuiteSourceContainer.suiteSourceClasspath,
         libraryService = libraryService,
         graphEdgeCache = graphEdgeCache,
         addAdditionalArtifactsInModel = false,

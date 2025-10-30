@@ -4,7 +4,7 @@ ATTENTION REVIEWER: If this needs to be changed, please make sure changes
 below are backwards compatible.
 -------------------------------------------------------------------------
 Sha256 of below classes:
-d029f4d267103f610e718a1f26ef9b952e814b387e78ce55f58e9a361c4981f0
+6e8e83e9d0213b2b686d3e0b6e2a8fadba66739d81d7ce706b4d968a0ef588ee
 -------------------------------------------------------------------------
 com.android.builder.model.AaptOptions
 com.android.builder.model.AaptOptions$Namespacing extends java.lang.Enum
@@ -868,6 +868,12 @@ com.android.builder.model.v2.models.AndroidProject.getTestFixturesNamespace: jav
 com.android.builder.model.v2.models.AndroidProject.getTestSuites: java.util.Collection<com.android.builder.model.v2.ide.TestSuite> ()
 com.android.builder.model.v2.models.AndroidProject.getVariants: java.util.Collection<com.android.builder.model.v2.ide.Variant> ()
 com.android.builder.model.v2.models.AndroidProject.getViewBindingOptions: com.android.builder.model.v2.ide.ViewBindingOptions ()
+com.android.builder.model.v2.models.AssetsTestSuiteSource implements com.android.builder.model.v2.models.TestSuiteSource
+com.android.builder.model.v2.models.AssetsTestSuiteSource$DefaultImpls
+com.android.builder.model.v2.models.AssetsTestSuiteSource$DefaultImpls.getType: com.android.builder.model.v2.models.SourceType (com.android.builder.model.v2.models.AssetsTestSuiteSource)
+com.android.builder.model.v2.models.AssetsTestSuiteSource.access$getType$jd: com.android.builder.model.v2.models.SourceType (com.android.builder.model.v2.models.AssetsTestSuiteSource)
+com.android.builder.model.v2.models.AssetsTestSuiteSource.getDirectories: java.util.Collection<java.io.File> ()
+com.android.builder.model.v2.models.AssetsTestSuiteSource.getType: com.android.builder.model.v2.models.SourceType ()
 com.android.builder.model.v2.models.BaseTestSuiteSourceIdentity
 com.android.builder.model.v2.models.BaseTestSuiteSourceIdentity.getName: java.lang.String ()
 com.android.builder.model.v2.models.BaseTestSuiteSourceIdentity.getType: com.android.builder.model.v2.models.SourceType ()
@@ -884,9 +890,18 @@ com.android.builder.model.v2.models.BasicAndroidProject.getProjectType: com.andr
 com.android.builder.model.v2.models.BasicAndroidProject.getTestSuites: java.util.Collection<com.android.builder.model.v2.models.BasicTestSuite> ()
 com.android.builder.model.v2.models.BasicAndroidProject.getVariants: java.util.Collection<com.android.builder.model.v2.ide.BasicVariant> ()
 com.android.builder.model.v2.models.BasicTestSuite implements com.android.builder.model.v2.AndroidModel
+com.android.builder.model.v2.models.BasicTestSuite.getAssets: java.util.Collection<com.android.builder.model.v2.models.AssetsTestSuiteSource> ()
+com.android.builder.model.v2.models.BasicTestSuite.getHostJars: java.util.Collection<com.android.builder.model.v2.models.HostJarTestSuiteSource> ()
 com.android.builder.model.v2.models.BasicTestSuite.getName: java.lang.String ()
-com.android.builder.model.v2.models.BasicTestSuite.getSources: java.util.Collection<com.android.builder.model.v2.models.TestSuiteSource> ()
 com.android.builder.model.v2.models.BasicTestSuite.getTargetsByVariant: java.util.Collection<com.android.builder.model.v2.ide.TestSuiteVariantTarget> ()
+com.android.builder.model.v2.models.BasicTestSuite.getTestApks: java.util.Collection<com.android.builder.model.v2.models.TestApkTestSuiteSource> ()
+com.android.builder.model.v2.models.HostJarTestSuiteSource implements com.android.builder.model.v2.models.TestSuiteSource
+com.android.builder.model.v2.models.HostJarTestSuiteSource$DefaultImpls
+com.android.builder.model.v2.models.HostJarTestSuiteSource$DefaultImpls.getType: com.android.builder.model.v2.models.SourceType (com.android.builder.model.v2.models.HostJarTestSuiteSource)
+com.android.builder.model.v2.models.HostJarTestSuiteSource.access$getType$jd: com.android.builder.model.v2.models.SourceType (com.android.builder.model.v2.models.HostJarTestSuiteSource)
+com.android.builder.model.v2.models.HostJarTestSuiteSource.getJava: java.util.Collection<java.io.File> ()
+com.android.builder.model.v2.models.HostJarTestSuiteSource.getKotlin: java.util.Collection<java.io.File> ()
+com.android.builder.model.v2.models.HostJarTestSuiteSource.getType: com.android.builder.model.v2.models.SourceType ()
 com.android.builder.model.v2.models.ModelBuilderParameter
 com.android.builder.model.v2.models.ModelBuilderParameter.getAdditionalArtifactsInModel: boolean ()
 com.android.builder.model.v2.models.ModelBuilderParameter.getDontBuildAndroidTestRuntimeClasspath: boolean ()
@@ -914,14 +929,18 @@ com.android.builder.model.v2.models.SourceType extends java.lang.Enum
 com.android.builder.model.v2.models.SourceType.getEntries: kotlin.enums.EnumEntries<com.android.builder.model.v2.models.SourceType> ()
 com.android.builder.model.v2.models.SourceType.valueOf: com.android.builder.model.v2.models.SourceType (java.lang.String)
 com.android.builder.model.v2.models.SourceType.values: com.android.builder.model.v2.models.SourceType[] ()
+com.android.builder.model.v2.models.TestApkTestSuiteSource implements com.android.builder.model.v2.models.TestSuiteSource
+com.android.builder.model.v2.models.TestApkTestSuiteSource$DefaultImpls
+com.android.builder.model.v2.models.TestApkTestSuiteSource$DefaultImpls.getType: com.android.builder.model.v2.models.SourceType (com.android.builder.model.v2.models.TestApkTestSuiteSource)
+com.android.builder.model.v2.models.TestApkTestSuiteSource.access$getType$jd: com.android.builder.model.v2.models.SourceType (com.android.builder.model.v2.models.TestApkTestSuiteSource)
+com.android.builder.model.v2.models.TestApkTestSuiteSource.getSourceProvider: com.android.builder.model.v2.ide.SourceProvider ()
+com.android.builder.model.v2.models.TestApkTestSuiteSource.getType: com.android.builder.model.v2.models.SourceType ()
 com.android.builder.model.v2.models.TestSuiteDependencies
 com.android.builder.model.v2.models.TestSuiteDependencies.getSourcesDependencies: java.util.Collection<com.android.builder.model.v2.models.TestSuiteSourceDependencies> ()
 com.android.builder.model.v2.models.TestSuiteDependenciesAdjacencyList
 com.android.builder.model.v2.models.TestSuiteDependenciesAdjacencyList.getSourcesDependencies: java.util.Collection<com.android.builder.model.v2.models.TestSuiteSourceDependenciesAdjacencyList> ()
 com.android.builder.model.v2.models.TestSuiteSource implements java.io.Serializable
-com.android.builder.model.v2.models.TestSuiteSource.getFolders: java.util.Collection<java.io.File> ()
 com.android.builder.model.v2.models.TestSuiteSource.getName: java.lang.String ()
-com.android.builder.model.v2.models.TestSuiteSource.getSourceProvider: com.android.builder.model.v2.ide.SourceProvider ()
 com.android.builder.model.v2.models.TestSuiteSource.getType: com.android.builder.model.v2.models.SourceType ()
 com.android.builder.model.v2.models.TestSuiteSourceDependencies implements com.android.builder.model.v2.models.BaseTestSuiteSourceIdentity
 com.android.builder.model.v2.models.TestSuiteSourceDependencies.getArtifactDependencies: com.android.builder.model.v2.ide.ArtifactDependencies ()

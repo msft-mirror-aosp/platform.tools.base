@@ -17,7 +17,6 @@
 package com.android.build.gradle.internal.testing.utp
 
 import com.android.build.api.instrumentation.StaticTestData
-import com.android.build.gradle.internal.SdkComponentsBuildService
 import com.android.build.gradle.internal.testing.utp.UtpDependency.ANDROID_DEVICE_PROVIDER_DDMLIB
 import com.android.build.gradle.internal.testing.utp.UtpDependency.ANDROID_DRIVER_INSTRUMENTATION
 import com.android.build.gradle.internal.testing.utp.UtpDependency.ANDROID_TEST_ADDITIONAL_TEST_OUTPUT_PLUGIN
@@ -33,7 +32,6 @@ import com.android.build.gradle.internal.testing.utp.emulatorcontrol.EmulatorGrp
 import com.android.build.gradle.internal.testing.utp.emulatorcontrol.INVALID_JWT_CONFIG
 import com.android.build.gradle.internal.testing.utp.emulatorcontrol.createTokenConfig
 import com.android.build.gradle.internal.testing.utp.emulatorcontrol.findGrpcInfo
-import com.android.sdklib.BuildToolInfo
 import com.android.tools.utp.plugins.deviceprovider.ddmlib.proto.AndroidDeviceProviderDdmlibConfigProto.DdmlibAndroidDeviceProviderConfig
 import com.android.tools.utp.plugins.host.additionaltestoutput.proto.AndroidAdditionalTestOutputConfigProto.AndroidAdditionalTestOutputConfig
 import com.android.tools.utp.plugins.host.apkinstaller.proto.AndroidApkInstallerConfigProto.AndroidApkInstallerConfig
@@ -93,7 +91,10 @@ fun createRunnerConfigProtoForLocalDevice(
     helperApks: Iterable<File>,
     uninstallIncompatibleApks: Boolean,
     utpDependencies: UtpDependencies,
-    versionedSdkLoader: SdkComponentsBuildService.VersionedSdkLoader,
+    androidSdkPath: String,
+    adbExecutablePath: String,
+    aaptExecutablePath: String,
+    dexdumpExecutablePath: String,
     outputDir: File,
     tmpDir: File,
     emulatorControlConfig: EmulatorControlConfig,
@@ -106,7 +107,7 @@ fun createRunnerConfigProtoForLocalDevice(
     extractedSdkApks: List<List<Path>>,
     uninstallApksAfterTest: Boolean,
     reinstallIncompatibleApksBeforeTest: Boolean,
-    shardConfig: ShardConfig? = null,
+    shardConfig: ShardConfig?,
 ): RunnerConfigProto.RunnerConfig {
     return RunnerConfigProto.RunnerConfig.newBuilder().apply {
         val grpcInfo = findGrpcInfo(deviceSerialNumber)
@@ -119,7 +120,10 @@ fun createRunnerConfigProtoForLocalDevice(
                 helperApks,
                 testData,
                 utpDependencies,
-                versionedSdkLoader,
+                androidSdkPath,
+                adbExecutablePath,
+                aaptExecutablePath,
+                dexdumpExecutablePath,
                 outputDir,
                 tmpDir,
                 emulatorControlConfig,
@@ -197,7 +201,10 @@ private fun createTestFixture(
     helperApks: Iterable<File>,
     testData: StaticTestData,
     utpDependencies: UtpDependencies,
-    versionedSdkLoader: SdkComponentsBuildService.VersionedSdkLoader,
+    androidSdkPath: String,
+    adbExecutablePath: String,
+    aaptExecutablePath: String,
+    dexdumpExecutablePath: String,
     outputDir: File,
     tmpDir: File,
     emulatorControlConfig: EmulatorControlConfig,
@@ -213,14 +220,17 @@ private fun createTestFixture(
     reinstallIncompatibleApksBeforeTest: Boolean,
 ): FixtureProto.TestFixture {
     return FixtureProto.TestFixture.newBuilder().apply {
-        var additionalTestParams: MutableMap<String, String> = mutableMapOf()
+        val additionalTestParams: MutableMap<String, String> = mutableMapOf()
         testFixtureIdBuilder.apply {
             id = UTP_TEST_FIXTURE_ID
         }
         environment = createEnvironment(
             outputDir,
             tmpDir,
-            versionedSdkLoader
+            androidSdkPath,
+            adbExecutablePath,
+            aaptExecutablePath,
+            dexdumpExecutablePath,
         )
 
         if (emulatorControlConfig.enabled) {
@@ -245,7 +255,6 @@ private fun createTestFixture(
                             emulatorControlConfig.secondsValid,
                             emulatorControlConfig.allowedEndpoints,
                             utpDependencies,
-                            emulatorControlConfig
                         )
                     )
                 } else {
@@ -265,7 +274,6 @@ private fun createTestFixture(
                         emulatorControlConfig.secondsValid,
                         emulatorControlConfig.allowedEndpoints,
                         utpDependencies,
-                        emulatorControlConfig
                     )
                 )
             }
@@ -276,7 +284,8 @@ private fun createTestFixture(
             utpDependencies,
             useOrchestrator,
             additionalTestOutputOnDeviceDir,
-            shardConfig, additionalTestParams
+            shardConfig,
+            additionalTestParams,
         )
 
         addHostPlugin(
@@ -328,7 +337,6 @@ private fun createEmulatorControlPlugin(
     validTimeInSeconds: Int,
     allowed: Set<String>,
     utpDependencies: UtpDependencies,
-    emulatorControlConfig: EmulatorControlConfig
 ): ExtensionProto.Extension {
     return ANDROID_TEST_PLUGIN_HOST_EMULATOR_CONTROL.toExtensionProto(
         utpDependencies, EmulatorControlPlugin::newBuilder
@@ -357,7 +365,10 @@ private fun createAndroidTestPlugin(
 private fun createEnvironment(
     outputDir: File,
     tmpDir: File,
-    versionedSdkLoader: SdkComponentsBuildService.VersionedSdkLoader
+    androidSdkPath: String,
+    adbExecutablePath: String,
+    aaptExecutablePath: String,
+    dexdumpExecutablePath: String,
 ): EnvironmentProto.Environment {
     return EnvironmentProto.Environment.newBuilder().apply {
         outputDirBuilder.apply {
@@ -369,19 +380,16 @@ private fun createEnvironment(
         androidEnvironmentBuilder.apply {
             androidSdkBuilder.apply {
                 sdkPathBuilder.apply {
-                    path = versionedSdkLoader.sdkDirectoryProvider.get().asFile.absolutePath
+                    path = androidSdkPath
                 }
                 adbPathBuilder.apply {
-                    path =
-                        versionedSdkLoader.adbExecutableProvider.get().asFile.absolutePath
+                    path = adbExecutablePath
                 }
                 aaptPathBuilder.apply {
-                    path = versionedSdkLoader.buildToolInfoProvider.get()
-                        .getPath(BuildToolInfo.PathId.AAPT)
+                    path = aaptExecutablePath
                 }
                 dexdumpPathBuilder.apply {
-                    path = versionedSdkLoader.buildToolInfoProvider.get()
-                        .getPath(BuildToolInfo.PathId.DEXDUMP)
+                    path = dexdumpExecutablePath
                 }
                 testLogDirBuilder.apply {
                     path = TEST_LOG_DIR // Must be relative path to outputDir

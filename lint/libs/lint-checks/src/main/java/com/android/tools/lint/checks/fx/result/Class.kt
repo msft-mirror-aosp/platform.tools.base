@@ -19,6 +19,7 @@ import com.android.tools.lint.checks.fx.utils.Encoder
 import com.android.tools.lint.checks.fx.utils.Encoder.Companion.adapt
 import com.android.tools.lint.checks.fx.utils.Encoder.Companion.case
 import com.android.tools.lint.checks.fx.utils.Encoder.Companion.zeroOrMore
+import com.android.tools.lint.checks.fx.utils.InterningPool
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiClassType
 import com.intellij.psi.PsiDocumentManager
@@ -41,7 +42,13 @@ sealed interface ClassId {
   val fqn: String?
     get() = null
 
-  private data class Named(override val fqn: String) : ClassId {
+  private class Named(fqn: String) : ClassId {
+    override val fqn = fqnPool.intern(fqn)
+
+    override fun equals(other: Any?) = other is Named && fqn === other.fqn
+
+    override fun hashCode() = System.identityHashCode(fqn)
+
     override fun toString(): String {
       val untilBracket =
         when (val i = fqn.indexOf('<')) {
@@ -55,6 +62,8 @@ sealed interface ClassId {
     }
 
     companion object {
+      private val fqnPool = InterningPool<String>()
+
       fun of(name: String): Named {
         val bracketStart = name.indexOf('<')
         return Named(if (bracketStart == -1) name else name.substring(0, bracketStart))

@@ -15,6 +15,7 @@
  */
 package com.android.tools.lint.checks.fx.result
 
+import com.android.tools.lint.checks.fx.utils.InterningPool
 import com.android.tools.lint.checks.fx.utils.Lattice
 import com.android.tools.lint.checks.fx.utils.UnboundedSet
 import com.android.tools.lint.checks.fx.utils.map
@@ -106,7 +107,13 @@ sealed interface Type<out FX> {
       override fun toString() = "\uD835\uDEC2"
     }
 
-    data class Param(val name: String) : Sym<Nothing> {
+    class Param(name: String) : Sym<Nothing> {
+      val name = name.intern()
+
+      override fun equals(other: Any?) = other is Param && name === other.name
+
+      override fun hashCode() = System.identityHashCode(name)
+
       init {
         require(!name.isReceiverName()) { "Should be `This`" }
       }
@@ -120,13 +127,33 @@ sealed interface Type<out FX> {
       override fun toString() = "this"
     }
 
-    data class Invoke<out FX>(
-      val receiver: Sym<FX>,
-      val method: MethodId,
-      val args: List<Type<FX>>,
-    ) : Sym<FX> {
+    class Invoke<out FX>(receiver: Sym<FX>, method: MethodId, args: List<Type<FX>>) : Sym<FX> {
+      val receiver: Sym<FX> = receiverPool.intern(receiver) as Sym<FX>
+      val method: MethodId = methodPool.intern(method) as MethodId
+      val args: List<Type<FX>> = argListPool.intern(args) as List<Type<FX>>
+
+      override fun equals(other: Any?) =
+        other is Invoke<*> &&
+          receiver === other.receiver &&
+          method === other.method &&
+          args === other.args
+
+      override fun hashCode() =
+        31 * (31 * System.identityHashCode(receiver) + System.identityHashCode(method)) +
+          System.identityHashCode(args)
+
+      fun copy(
+        receiver: Sym<@UnsafeVariance FX> = this.receiver,
+        args: List<Type<@UnsafeVariance FX>> = this.args,
+      ): Invoke<FX> = Invoke(receiver, method, args)
 
       override fun toString() = "$receiver.$method(${args.joinToString()})"
+
+      companion object {
+        private val receiverPool = InterningPool<Sym<*>>()
+        private val methodPool = InterningPool<MethodId>()
+        private val argListPool = InterningPool<List<Type<*>>>()
+      }
     }
 
     data class Fix<out FX>

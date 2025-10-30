@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.options
 
+import com.android.build.gradle.internal.errors.DeprecationReporter.DeprecationTarget.VERSION_10_0
 import com.android.build.gradle.options.Version.VERSION_7_0
 import com.android.build.gradle.options.Version.VERSION_8_0
 import com.android.build.gradle.options.Version.VERSION_BEFORE_4_0
@@ -49,7 +50,7 @@ enum class OptionalBooleanOption(
      *
      * If not set, lint will use K2 UAST when the kotlin language version is >= 2.0.
      */
-    LINT_USE_K2_UAST("android.lint.useK2Uast", FeatureStage.Experimental),
+    LINT_USE_K2_UAST("android.lint.useK2Uast", ApiStage.Deprecated(VERSION_10_0)),
 
     /* ----------------
     * SOFTLY ENFORCED FEATURES

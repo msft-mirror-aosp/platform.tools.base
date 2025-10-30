@@ -16,46 +16,26 @@
 
 package com.android.build.gradle.internal.testing.utp
 
+import com.android.build.gradle.internal.SdkComponentsBuildService
 import com.android.build.gradle.internal.testing.utp.worker.RunUtpWorkAction
 import com.android.build.gradle.internal.testing.utp.worker.RunUtpWorkParameters
 import com.android.build.gradle.internal.utils.setDisallowChanges
 import com.android.builder.testing.api.DeviceConnector
 import com.android.prefs.AndroidLocationsSingleton
+import com.android.sdklib.BuildToolInfo
 import com.android.utils.ILogger
-import com.google.common.io.Files
-import com.google.testing.platform.proto.api.config.RunnerConfigProto
 import com.google.testing.platform.proto.api.core.ErrorDetailProto
 import com.google.testing.platform.proto.api.core.TestStatusProto.TestStatus
 import com.google.testing.platform.proto.api.core.TestSuiteResultProto
-import org.gradle.api.model.ObjectFactory
 import org.gradle.workers.WorkerExecutor
 import java.io.File
-import java.io.FileOutputStream
+import java.io.Serializable
 import java.nio.file.Path
-import java.util.logging.Level
 
 const val TEST_RESULT_PB_FILE_NAME = "test-result.pb"
 
 private const val UNKNOWN_PLATFORM_ERROR_MESSAGE =
     "Unknown platform error occurred when running the UTP test suite. Please check logs for details."
-
-/**
- * Encapsulates necessary information to run tests using Unified Test Platform.
- *
- * @property jvm the JAVA environment to run UTP on.
- * @property deviceName a displayable device name
- * @property deviceId an identifier for a device
- * @property utpOutputDir a path to the directory to store results from UTP
- * @property runnerConfig a function that constructs and returns UTP runner config proto
- * @property shardConfig an information about test sharding, or null if sharding is not enabled
- */
-data class UtpRunnerConfig(
-    val deviceName: String,
-    val deviceId: String,
-    val utpOutputDir: File,
-    val runnerConfig: RunnerConfigProto.RunnerConfig,
-    val shardConfig: ShardConfig? = null,
-)
 
 /**
  * @property sdkApkSet the privacy sandbox SDK APK
@@ -70,17 +50,9 @@ data class PrivacySandboxSdkInstallBundle(
  * Encapsulates installation configuration for app APKs
  */
 data class TargetApkConfigBundle (
-    val appApks: Iterable<File>,
+    val appApks: List<File>,
     val isSplitApk: Boolean
-)
-
-fun UtpRunnerConfig.shardName(): String {
-    return if (shardConfig == null) {
-        deviceName
-    } else {
-        "${deviceName}_${shardConfig.index}"
-    }
-}
+) : Serializable
 
 /**
  * Encapsulates result of a UTP test run.
@@ -95,31 +67,28 @@ data class UtpTestRunResult(
 )
 
 /**
- * Runs the given runner configs using Unified Test Platform. Test results are reported
- * though [utpTestResultListener] streamingly.
+ * Runs the given runner configs using Unified Test Platform.
  */
 fun runUtpTestSuiteAndWait(
-    runnerConfigs: List<UtpRunnerConfig>,
+    runnerConfigs: List<RunUtpWorkParameters.UtpRunConfig>,
     workerExecutor: WorkerExecutor,
-    objectFactory: ObjectFactory,
     jvmExecutable: File,
     projectPath: String,
     variantName: String,
     resultsDir: File,
     logger: ILogger,
     utpDependencies: UtpDependencies,
-    utpLoggingLevel: Level,
+    versionedSdkLoader: SdkComponentsBuildService.VersionedSdkLoader,
 ): List<UtpTestRunResult> {
     val utpTestResultProtoFiles = runUtpTestSuiteAndWait(
         workerExecutor,
-        objectFactory,
         runnerConfigs,
         utpDependencies,
-        utpLoggingLevel,
         jvmExecutable,
         projectPath,
         variantName,
         resultsDir,
+        versionedSdkLoader,
     )
 
     return utpTestResultProtoFiles.map { protoFile ->
@@ -160,66 +129,36 @@ private fun TestStatus.isPassedOrSkipped(): Boolean {
  */
 private fun runUtpTestSuiteAndWait(
     workerExecutor: WorkerExecutor,
-    objectFactory: ObjectFactory,
-    configs: List<UtpRunnerConfig>,
+    configs: List<RunUtpWorkParameters.UtpRunConfig>,
     utpDependencies: UtpDependencies,
-    utpLoggingLevel: Level,
     jvmExecutable: File,
     projectPath: String,
     variantName: String,
     xmlTestReportOutputDirectory: File,
+    versionedSdkLoader: SdkComponentsBuildService.VersionedSdkLoader,
 ): List<File> {
-    val utpRunConfigs = configs.map { config ->
-        val runnerConfigProtoFile = createUtpTempFile("runnerConfig", ".pb").also { file ->
-            FileOutputStream(file).use { writer ->
-                config.runnerConfig.writeTo(writer)
-            }
-        }
-
-        val utpRunConfig = objectFactory.newInstance(RunUtpWorkParameters.UtpRunConfig::class.java)
-
-        utpRunConfig.runnerConfigFile.set(runnerConfigProtoFile)
-        utpRunConfig.runnerConfigFile.disallowChanges()
-
-        val loggingPropertiesFile = createUtpTempFile("logging", "properties").also { file ->
-            Files.asCharSink(file, Charsets.UTF_8).write("""
-                .level=INFO
-                .handlers=java.util.logging.ConsoleHandler,java.util.logging.FileHandler
-                java.util.logging.ConsoleHandler.level=${utpLoggingLevel.name}
-                java.util.logging.SimpleFormatter.format=%4${'$'}s: %5${'$'}s%n
-                java.util.logging.FileHandler.level=INFO
-                java.util.logging.FileHandler.pattern=${config.utpOutputDir.invariantSeparatorsPath}/utp.%u.log
-                java.util.logging.FileHandler.formatter=java.util.logging.SimpleFormatter
-            """.trimIndent())
-        }
-        utpRunConfig.loggingPropertiesFile.set(loggingPropertiesFile)
-        utpRunConfig.loggingPropertiesFile.disallowChanges()
-
-        utpRunConfig.deviceId.setDisallowChanges(config.deviceId)
-        utpRunConfig.deviceName.setDisallowChanges(config.deviceName)
-        utpRunConfig.deviceShardName.setDisallowChanges(config.shardName())
-
-        utpRunConfig.utpResultProtoOutputFile.set(
-            File(config.utpOutputDir, TEST_RESULT_PB_FILE_NAME))
-        utpRunConfig.utpResultProtoOutputFile.disallowChanges()
-
-        utpRunConfig
-    }
-
     val workQueue = workerExecutor.noIsolation()
 
     workQueue.submit(RunUtpWorkAction::class.java) { params ->
         params.jvm.set(jvmExecutable)
-        params.utpRunConfigs.setDisallowChanges(utpRunConfigs)
+        params.utpRunConfigs.setDisallowChanges(configs)
         params.utpDependencies.setDisallowChanges(utpDependencies)
         params.projectPath.setDisallowChanges(projectPath)
         params.variantName.setDisallowChanges(variantName)
         params.xmlTestReportOutputDirectory.fileValue(xmlTestReportOutputDirectory).disallowChanges()
+        params.androidSdkDirectory.setDisallowChanges(versionedSdkLoader.sdkDirectoryProvider)
+        params.adbExecutable.setDisallowChanges(versionedSdkLoader.adbExecutableProvider)
+        params.aaptExecutable.fileValue(
+            File(versionedSdkLoader.buildToolInfoProvider.get()
+                .getPath(BuildToolInfo.PathId.AAPT))).disallowChanges()
+        params.dexdumpExecutable.fileValue(
+            File(versionedSdkLoader.buildToolInfoProvider.get()
+                .getPath(BuildToolInfo.PathId.DEXDUMP)))
     }
 
     workQueue.await()
 
-    return configs.map { File(it.utpOutputDir, TEST_RESULT_PB_FILE_NAME) }
+    return configs.map { it.utpResultProtoOutputFile.asFile.get() }
 }
 
 /**

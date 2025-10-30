@@ -101,6 +101,7 @@ import com.android.build.gradle.internal.variant.VariantFactory
 import com.android.build.gradle.internal.variant.VariantInputModel
 import com.android.build.gradle.internal.variant.VariantModel
 import com.android.build.gradle.internal.variant.VariantModelImpl
+import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.options.SyncOptions
 import com.android.builder.errors.IssueReporter.Type
 import com.android.builder.model.v2.ide.ProjectType
@@ -178,6 +179,14 @@ abstract class BasePlugin<
     @Deprecated("use newExtension")
     val extension: BaseExtension by lazy { extensionData.oldExtension }
     private val newExtension: AndroidT by lazy { extensionData.newExtension }
+    val registeredExtension: AndroidT by lazy(LazyThreadSafetyMode.NONE) {
+        if(projectServices.projectOptions.get(BooleanOption.USE_NEW_DSL)) {
+            extensionData.newExtension
+        } else {
+            @Suppress("UNCHECKED_CAST")
+            extensionData.oldExtension as AndroidT
+        }
+    }
 
     private val variantApiOperations by lazy {
         VariantApiOperationsRegistrar<AndroidT, VariantBuilderT, VariantT>(
@@ -504,9 +513,11 @@ abstract class BasePlugin<
             )
 
 
-        // register under the new interface for kotlin, groovy will find both the old and new
-        // interfaces through the implementation class.
-        project.extensions.add("buildOutputs", buildOutputs)
+        if (!projectServices.projectOptions[BooleanOption.USE_NEW_DSL]) {
+            // register under the new interface for kotlin, groovy will find both the old and new
+            // interfaces through the implementation class.
+            project.extensions.add("buildOutputs", buildOutputs)
+        }
         registerModels(
             project,
             registry,

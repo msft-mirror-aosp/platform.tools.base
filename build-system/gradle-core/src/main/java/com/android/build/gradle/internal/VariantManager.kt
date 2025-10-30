@@ -19,6 +19,7 @@ import com.android.build.api.artifact.impl.ArtifactsImpl
 import com.android.build.api.attributes.ProductFlavorAttr
 import com.android.build.api.component.impl.DeviceTestImpl
 import com.android.build.api.component.impl.TestFixturesImpl
+import com.android.build.api.dsl.AgpTestSuiteDependencies
 import com.android.build.api.dsl.ApplicationExtension
 import com.android.build.api.dsl.CommonExtension
 import com.android.build.api.dsl.Lint
@@ -121,8 +122,10 @@ import com.google.common.collect.Maps
 import com.google.wireless.android.sdk.stats.ApiVersion
 import com.google.wireless.android.sdk.stats.GradleBuildVariant
 import org.gradle.api.Project
+import org.gradle.api.artifacts.Dependency
 import org.gradle.api.attributes.Attribute
 import org.gradle.api.internal.GeneratedSubclass
+import org.gradle.api.plugins.ExtensionAware
 import java.io.File
 import java.util.Locale
 import java.util.stream.Collectors
@@ -974,15 +977,24 @@ class VariantManager<
                     testSuiteBuilder as TestSuiteBuilderImpl
                     val testSuiteSources = testSuiteBuilder.getSources().map {
                         testSuiteSource: TestSuiteSourceCreationConfig ->
+                            // create the variant specific dependency that will be additive to the
+                            // DSL One.
+                            val variantSpecificDependencies = project.objects
+                                .newInstance(AgpTestSuiteDependencies::class.java)
+
                             TestSuiteSourceContainer(
+                                project,
+                                testSuiteBuilder.name,
                                 testSuiteSource.name,
                                 testSuiteSource.createTestSuiteSourceSet(variantServices),
+                                variantSpecificDependencies,
                                 TestSuiteDependenciesBuilder(
                                     project,
                                     dslServices.projectOptions,
                                     projectServices.issueReporter,
                                     testSuiteBuilder,
                                     testSuiteSource.dependencies,
+                                    variantSpecificDependencies,
                                     variantInfo.variant,
                                     getFlavorSelection(variantInfo.variantDslInfo),
                                     variantInfo.variantDslInfo as MultiVariantComponentDslInfo,
@@ -1021,8 +1033,13 @@ class VariantManager<
                 get() = userVisibleVariant
 
             override fun <T> projectExtension(extensionType: Class<T>): T {
-                // we need to make DefaultConfig or CommonExtension implement ExtensionAware.
-                throw RuntimeException("No global extension DSL element implements ExtensionAware.")
+                val ext: ExtensionAware = if (projectServices.projectOptions[BooleanOption.USE_NEW_DSL]) {
+                    dslExtension
+                } else {
+                    @Suppress("DEPRECATION")
+                    oldExtension as ExtensionAware
+                }
+                return ext.extensions.getByType(extensionType)
             }
 
             override fun <T> buildTypeExtension(extensionType: Class<T>): T =
