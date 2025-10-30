@@ -16,13 +16,13 @@
 
 package com.android.sdklib.devices;
 
+import com.android.ProgressManagerAdapter;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.utils.ILogger;
 
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.Table;
-import com.google.common.io.Closeables;
 
 import java.io.InputStream;
 import java.util.function.Predicate;
@@ -56,18 +56,16 @@ public class VendorDevices {
                 return false;
             }
 
-            mVendorDevices = HashBasedTable.create();
-
-            boolean hasChanged = false;
+            Table<String, String, Device> vendorDevices = HashBasedTable.create();
             for (String deviceFile : DEVICE_FILES) {
-                InputStream stream = VendorDevices.class.getResourceAsStream(deviceFile + ".xml");
-                try {
+                try (InputStream stream =
+                        VendorDevices.class.getResourceAsStream(deviceFile + ".xml")) {
                     DeviceParser.parse(stream)
                             .cellSet()
                             .forEach(
                                     (cell) -> {
                                         if (isSupportedDevice.test(cell.getValue())) {
-                                            mVendorDevices.put(
+                                            vendorDevices.put(
                                                     cell.getRowKey(),
                                                     cell.getColumnKey(),
                                                     cell.getValue());
@@ -75,15 +73,16 @@ public class VendorDevices {
                                             mLog.warning("Unsupported device %s", cell.getRowKey());
                                         }
                                     });
-                    hasChanged = true;
                 } catch (Exception e) {
+                    ProgressManagerAdapter.throwIfCancellation(e);
                     mLog.error(e, "Could not load " + deviceFile + " devices");
-                } finally {
-                    Closeables.closeQuietly(stream);
+                    mVendorDevices = HashBasedTable.create();
+                    return false;
                 }
             }
 
-            return hasChanged;
+            mVendorDevices = vendorDevices;
+            return true;
         }
     }
 

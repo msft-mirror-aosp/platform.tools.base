@@ -74,27 +74,36 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactoryConfigurationError;
 
-/**
- * Manager class for interacting with {@link Device}s within the SDK
- */
+/** Manager class for interacting with {@link Device}s within the SDK */
 public class DeviceManager {
-    private static final String  DEVICE_PROFILES_PROP = "DeviceProfiles";
+
+    private static final String DEVICE_PROFILES_PROP = "DeviceProfiles";
+
     private static final Pattern PATH_PROPERTY_PATTERN =
-        Pattern.compile('^' + PkgProps.EXTRA_PATH + '=' + DEVICE_PROFILES_PROP + '$');
+            Pattern.compile('^' + PkgProps.EXTRA_PATH + '=' + DEVICE_PROFILES_PROP + '$');
     @Nullable private final Path mAndroidFolder;
+
     private final ILogger mLog;
+
     private final VendorDevices mVendorDevices;
 
     private final Predicate<Device> mIsSupportedDevice;
 
     // These are keyed by (device ID, manufacturer)
     private Table<String, String, Device> mSdkVendorDevices;
+
     private Table<String, String, Device> mSysImgDevices;
+
     private Table<String, String, Device> mUserDevices;
+
     private final DefaultDevices mDefaultDevices;
+
     private final Object mLock = new Object();
+
     private final List<DevicesChangedListener> sListeners = new ArrayList<>();
+
     private final Path mOsSdkPath;
+
     private final AndroidSdkHandler mSdkHandler;
 
     public enum DeviceCategory {
@@ -102,8 +111,10 @@ public class DeviceManager {
         DEFAULT,
         /** getDevices() flag to list user devices saved in the .android home folder. */
         USER,
-        /** getDevices() flag to list vendor devices -- the bundled nexus.xml devices
-         *  as well as all those coming from extra packages. */
+        /**
+         * getDevices() flag to list vendor devices -- the bundled nexus.xml devices as well as all
+         * those coming from extra packages.
+         */
         VENDOR,
         /** getDevices() flag to list devices from system-images/platform-N/tag/abi/devices.xml */
         SYSTEM_IMAGES,
@@ -113,17 +124,13 @@ public class DeviceManager {
     public static final EnumSet<DeviceCategory> ALL_DEVICES = EnumSet.allOf(DeviceCategory.class);
 
     public enum DeviceStatus {
-        /**
-         * The device exists unchanged from the given configuration
-         */
+        /** The device exists unchanged from the given configuration */
         EXISTS,
         /**
          * A device exists with the given name and manufacturer, but has a different configuration
          */
         CHANGED,
-        /**
-         * There is no device with the given name and manufacturer
-         */
+        /** There is no device with the given name and manufacturer */
         MISSING
     }
 
@@ -150,8 +157,7 @@ public class DeviceManager {
     }
 
     public static DeviceManager createInstance(
-            @NonNull AndroidSdkHandler sdkHandler,
-            @NonNull ILogger log) {
+            @NonNull AndroidSdkHandler sdkHandler, @NonNull ILogger log) {
         return new DeviceManager(sdkHandler, log, (device) -> true);
     }
 
@@ -183,9 +189,8 @@ public class DeviceManager {
      * lists.
      */
     public interface DevicesChangedListener {
-        /**
-         * Called after one of the {@link Device} lists has been updated.
-         */
+
+        /** Called after one of the {@link Device} lists has been updated. */
         void onDevicesChanged();
     }
 
@@ -317,35 +322,37 @@ public class DeviceManager {
                 return false;
             }
 
-            mSdkVendorDevices = HashBasedTable.create();
-
-            if (mOsSdkPath != null) {
-                // Load devices from vendor extras
-                Path extrasFolder = mOsSdkPath.resolve(SdkConstants.FD_EXTRAS);
-                List<Path> deviceDirs = getExtraDirs(extrasFolder);
-                for (Path deviceDir : deviceDirs) {
-                    Path deviceXml = deviceDir.resolve(SdkConstants.FN_DEVICES_XML);
-                    if (Files.isRegularFile(deviceXml)) {
-                        loadDevices(deviceXml)
-                                .cellSet()
-                                .forEach(
-                                        (cell) -> {
-                                            if (mIsSupportedDevice.test(cell.getValue())) {
-                                                mSdkVendorDevices.put(
-                                                        cell.getRowKey(),
-                                                        cell.getColumnKey(),
-                                                        cell.getValue());
-                                            } else {
-                                                mLog.warning(
-                                                        "Unsupported device %s", cell.getRowKey());
-                                            }
-                                        });
-                    }
-                }
-                return true;
+            if (mOsSdkPath == null) {
+                mSdkVendorDevices = HashBasedTable.create();
+                return false;
             }
+
+            Table<String, String, Device> sdkVendorDevices = HashBasedTable.create();
+            // Load devices from vendor extras
+            Path extrasFolder = mOsSdkPath.resolve(SdkConstants.FD_EXTRAS);
+            List<Path> deviceDirs = getExtraDirs(extrasFolder);
+            for (Path deviceDir : deviceDirs) {
+                Path deviceXml = deviceDir.resolve(SdkConstants.FN_DEVICES_XML);
+                if (Files.isRegularFile(deviceXml)) {
+                    loadDevices(deviceXml)
+                            .cellSet()
+                            .forEach(
+                                    (cell) -> {
+                                        if (mIsSupportedDevice.test(cell.getValue())) {
+                                            sdkVendorDevices.put(
+                                                    cell.getRowKey(),
+                                                    cell.getColumnKey(),
+                                                    cell.getValue());
+                                        } else {
+                                            mLog.warning("Unsupported device %s", cell.getRowKey());
+                                        }
+                                    });
+                }
+            }
+
+            mSdkVendorDevices = sdkVendorDevices;
+            return true;
         }
-        return false;
     }
 
     /**
@@ -359,11 +366,14 @@ public class DeviceManager {
             if (mSysImgDevices != null) {
                 return false;
             }
-            mSysImgDevices = HashBasedTable.create();
 
             if (mOsSdkPath == null) {
+                mSysImgDevices = HashBasedTable.create();
                 return false;
             }
+
+            Table<String, String, Device> sysImgDevices = HashBasedTable.create();
+
             // Load device definitions from the system image directories.
             // Load in increasing order of Android version. This way, if there is a conflict,
             // we'll retain the definitions from the higher API level. The file in the higher
@@ -391,11 +401,12 @@ public class DeviceManager {
                                             builder.setDeprecated(true);
                                             device = builder.build();
                                         }
-                                        mSysImgDevices.put(
+                                        sysImgDevices.put(
                                                 device.getId(), device.getManufacturer(), device);
                                     }
                                 }
                             });
+            mSysImgDevices = sysImgDevices;
             return true;
         }
     }
@@ -428,7 +439,7 @@ public class DeviceManager {
             }
             // User devices should be saved out to
             // $HOME/.android/devices.xml
-            mUserDevices = HashBasedTable.create();
+            Table<String, String, Device> userDevices = HashBasedTable.create();
             Path userDevicesFile = null;
             try {
                 try {
@@ -439,7 +450,7 @@ public class DeviceManager {
                                 .forEach(
                                         (cell) -> {
                                             if (mIsSupportedDevice.test(cell.getValue())) {
-                                                mUserDevices.put(
+                                                userDevices.put(
                                                         cell.getRowKey(),
                                                         cell.getColumnKey(),
                                                         cell.getValue());
@@ -448,6 +459,8 @@ public class DeviceManager {
                                                         "Unsupported device %s", cell.getRowKey());
                                             }
                                         });
+
+                        mUserDevices = userDevices;
                         return true;
                     }
                 } catch (SAXException e) {
@@ -475,6 +488,7 @@ public class DeviceManager {
                         userDevicesFile == null ? "(null)" : userDevicesFile.toAbsolutePath());
             }
         }
+        mUserDevices = HashBasedTable.create();
         return false;
     }
 
@@ -521,9 +535,7 @@ public class DeviceManager {
         }
     }
 
-    /**
-     * Saves out the user devices to {@link SdkConstants#FN_DEVICES_XML} in the Android folder.
-     */
+    /** Saves out the user devices to {@link SdkConstants#FN_DEVICES_XML} in the Android folder. */
     public void saveUserDevices() {
         if (mUserDevices == null) {
             return;
@@ -570,50 +582,63 @@ public class DeviceManager {
     public static Map<String, String> getHardwareProperties(@NonNull State s) {
         Hardware hw = s.getHardware();
         Map<String, String> props = new HashMap<>();
-        props.put(HardwareProperties.HW_MAINKEYS,
+        props.put(
+                HardwareProperties.HW_MAINKEYS,
                 getBooleanVal(hw.getButtonType().equals(ButtonType.HARD)));
-        props.put(HardwareProperties.HW_TRACKBALL,
+        props.put(
+                HardwareProperties.HW_TRACKBALL,
                 getBooleanVal(hw.getNav().equals(Navigation.TRACKBALL)));
-        props.put(HardwareProperties.HW_DPAD,
-                getBooleanVal(hw.getNav().equals(Navigation.DPAD)));
+        props.put(HardwareProperties.HW_DPAD, getBooleanVal(hw.getNav().equals(Navigation.DPAD)));
 
         Set<Sensor> sensors = hw.getSensors();
         props.put(HardwareProperties.HW_GPS, getBooleanVal(sensors.contains(Sensor.GPS)));
-        props.put(HardwareProperties.HW_BATTERY,
+        props.put(
+                HardwareProperties.HW_BATTERY,
                 getBooleanVal(hw.getChargeType().equals(PowerType.BATTERY)));
-        props.put(HardwareProperties.HW_ACCELEROMETER,
+        props.put(
+                HardwareProperties.HW_ACCELEROMETER,
                 getBooleanVal(sensors.contains(Sensor.ACCELEROMETER)));
-        props.put(HardwareProperties.HW_ORIENTATION_SENSOR,
+        props.put(
+                HardwareProperties.HW_ORIENTATION_SENSOR,
                 getBooleanVal(sensors.contains(Sensor.GYROSCOPE)));
-        props.put(HardwareProperties.HW_GYROSCOPE,
-                getBooleanVal(sensors.contains(Sensor.GYROSCOPE)));
-        props.put(HardwareProperties.HW_MAGNETIC_FIELD_SENSOR,
+        props.put(
+                HardwareProperties.HW_GYROSCOPE, getBooleanVal(sensors.contains(Sensor.GYROSCOPE)));
+        props.put(
+                HardwareProperties.HW_MAGNETIC_FIELD_SENSOR,
                 getBooleanVal(sensors.contains(Sensor.COMPASS)));
-        props.put(HardwareProperties.HW_PRESSURE_SENSOR,
+        props.put(
+                HardwareProperties.HW_PRESSURE_SENSOR,
                 getBooleanVal(sensors.contains(Sensor.BAROMETER)));
-        props.put(HardwareProperties.HW_LIGHT_SENSOR,
+        props.put(
+                HardwareProperties.HW_LIGHT_SENSOR,
                 getBooleanVal(sensors.contains(Sensor.LIGHT_SENSOR)));
 
         props.put(HardwareProperties.HW_AUDIO_INPUT, getBooleanVal(hw.hasMic()));
         props.put(HardwareProperties.HW_SDCARD, getBooleanVal(hw.hasSdCard()));
-        props.put(HardwareProperties.HW_LCD_DENSITY,
+        props.put(
+                HardwareProperties.HW_LCD_DENSITY,
                 Integer.toString(hw.getScreen().getPixelDensity().getDpiValue()));
-        props.put(HardwareProperties.HW_LCD_WIDTH,
-                Integer.toString(hw.getScreen().getXDimension()));
-        props.put(HardwareProperties.HW_LCD_HEIGHT,
-                Integer.toString(hw.getScreen().getYDimension()));
-        props.put(HardwareProperties.HW_PROXIMITY_SENSOR,
+        props.put(
+                HardwareProperties.HW_LCD_WIDTH, Integer.toString(hw.getScreen().getXDimension()));
+        props.put(
+                HardwareProperties.HW_LCD_HEIGHT, Integer.toString(hw.getScreen().getYDimension()));
+        props.put(
+                HardwareProperties.HW_PROXIMITY_SENSOR,
                 getBooleanVal(sensors.contains(Sensor.PROXIMITY_SENSOR)));
         if (hw.getScreen().isFoldable()) {
             props.put(HardwareProperties.HW_KEYBOARD_LID, getBooleanVal(true));
-            props.put(HardwareProperties.HW_LCD_FOLDED_X_OFFSET,
-                      Integer.toString(hw.getScreen().getFoldedXOffset()));
-            props.put(HardwareProperties.HW_LCD_FOLDED_Y_OFFSET,
-                      Integer.toString(hw.getScreen().getFoldedYOffset()));
-            props.put(HardwareProperties.HW_LCD_FOLDED_HEIGHT,
-                      Integer.toString(hw.getScreen().getFoldedHeight()));
-            props.put(HardwareProperties.HW_LCD_FOLDED_WIDTH,
-                      Integer.toString(hw.getScreen().getFoldedWidth()));
+            props.put(
+                    HardwareProperties.HW_LCD_FOLDED_X_OFFSET,
+                    Integer.toString(hw.getScreen().getFoldedXOffset()));
+            props.put(
+                    HardwareProperties.HW_LCD_FOLDED_Y_OFFSET,
+                    Integer.toString(hw.getScreen().getFoldedYOffset()));
+            props.put(
+                    HardwareProperties.HW_LCD_FOLDED_HEIGHT,
+                    Integer.toString(hw.getScreen().getFoldedHeight()));
+            props.put(
+                    HardwareProperties.HW_LCD_FOLDED_WIDTH,
+                    Integer.toString(hw.getScreen().getFoldedWidth()));
             if (hw.getScreen().getFoldedWidth2() != 0 && hw.getScreen().getFoldedHeight2() != 0) {
                 props.put(
                         HardwareProperties.HW_LCD_FOLDED_X_OFFSET_2,
@@ -655,7 +680,8 @@ public class DeviceManager {
             props.put(ConfigKey.HINGE_DEFAULTS, Integer.toString(hinge.getDefaults()));
             props.put(ConfigKey.HINGE_AREAS, hinge.getAreas());
             hinge.getFoldAtPosture()
-                    .ifPresent(fold -> props.put(ConfigKey.FOLD_AT_POSTURE, Integer.toString(fold)));
+                    .ifPresent(
+                            fold -> props.put(ConfigKey.FOLD_AT_POSTURE, Integer.toString(fold)));
             props.put(ConfigKey.POSTURE_LISTS, hinge.getPostureList());
             props.put(
                     ConfigKey.HINGE_ANGLES_POSTURE_DEFINITIONS,
@@ -665,11 +691,10 @@ public class DeviceManager {
     }
 
     /**
-     * Returns the hardware properties defined in
-     * {@link AvdManager#HARDWARE_INI} as a {@link Map}.
+     * Returns the hardware properties defined in {@link AvdManager#HARDWARE_INI} as a {@link Map}.
      *
-     * This is intended to be dumped in the config.ini and already contains
-     * the device name, manufacturer and device hash.
+     * <p>This is intended to be dumped in the config.ini and already contains the device name,
+     * manufacturer and device hash.
      *
      * @param d The {@link Device} from which to derive the hardware properties.
      * @return A {@link Map} of hardware properties.
@@ -680,7 +705,8 @@ public class DeviceManager {
         for (State s : d.getAllStates()) {
             final Storage ramSize = s.getHardware().getRam();
             if (ramSize.getSize() > 0) {
-                props.put(ConfigKey.RAM_SIZE, Long.toString(ramSize.getSizeAsUnit(Storage.Unit.MiB)));
+                props.put(
+                        ConfigKey.RAM_SIZE, Long.toString(ramSize.getSizeAsUnit(Storage.Unit.MiB)));
             }
             if (s.getKeyState().equals(KeyboardState.HIDDEN)) {
                 props.put("hw.keyboard.lid", getBooleanVal(true));
@@ -752,11 +778,10 @@ public class DeviceManager {
     }
 
     /**
-     * Checks whether the the hardware props have changed.
-     * If the hash is the same, returns null for success.
-     * If the hash is not the same or there's not enough information to indicate it's
-     * the same (e.g. if in the future we change the digest method), simply return the
-     * new hash, indicating it would be best to update it.
+     * Checks whether the hardware props have changed. If the hash is the same, returns null for
+     * success. If the hash is not the same or there's not enough information to indicate it's the
+     * same (e.g. if in the future we change the digest method), simply return the new hash,
+     * indicating it would be best to update it.
      *
      * @param d The device.
      * @param hashV2 The previous saved AvdManager.DEVICE_HASH_V2 property.
@@ -779,15 +804,12 @@ public class DeviceManager {
         return newHash;
     }
 
-
     /**
-     * Takes a boolean and returns the appropriate value for
-     * {@link HardwareProperties}
+     * Takes a boolean and returns the appropriate value for {@link HardwareProperties}
      *
-     * @param bool The boolean value to turn into the appropriate
-     *            {@link HardwareProperties} value.
-     * @return {@code HardwareProperties#BOOLEAN_YES} if true,
-     *         {@code HardwareProperties#BOOLEAN_NO} otherwise.
+     * @param bool The boolean value to turn into the appropriate {@link HardwareProperties} value.
+     * @return {@code HardwareProperties#BOOLEAN_YES} if true, {@code HardwareProperties#BOOLEAN_NO}
+     *     otherwise.
      */
     private static String getBooleanVal(boolean bool) {
         if (bool) {
