@@ -249,7 +249,20 @@ project.android {
             project,
             """
                 project.android {
+                    compileSdk = null
                     compileSdk = 33
+                    compileSdk 33
+                    compileSdkVersion = null
+                    compileSdkVersion = "android-33"
+                    compileSdkVersion "android-33"
+                    compileSdkVersion = 33
+                    compileSdkVersion 33
+                    compileSdkExtension = null
+                    compileSdkExtension = 0
+                    compileSdkExtension 0
+                    compileSdkPreview = null
+                    compileSdkPreview = 'S'
+                    compileSdkPreview 'S'
                     compileSdk { version = release(33) }
                     compileSdk { version = release(33) {} }
                     compileSdk { version = preview('S') }

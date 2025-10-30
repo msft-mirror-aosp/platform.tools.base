@@ -342,4 +342,10 @@ abstract class CommonExtensionImpl<
     open fun compileSdk(version: Int) {
         compileSdk = version
     }
+
+    /** For groovy only (so `compileSdkVersion=2` works) */
+    @Deprecated("Switch to the new CompileSdkSpec DSL.")
+    open fun setCompileSdkVersion(apiLevel: Int?) {
+        compileSdk = apiLevel
+    }
 }
