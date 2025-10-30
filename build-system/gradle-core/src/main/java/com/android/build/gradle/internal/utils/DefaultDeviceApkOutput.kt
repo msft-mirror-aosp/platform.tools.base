@@ -21,6 +21,7 @@ import com.android.build.api.variant.DeviceSpec
 import com.android.build.api.variant.impl.BuiltArtifactsImpl
 import com.android.build.api.variant.impl.BuiltArtifactsLoaderImpl
 import com.android.build.gradle.internal.LoggerWrapper
+import com.android.build.gradle.internal.core.Abi
 import com.android.build.gradle.internal.test.BuiltArtifactsSplitOutputMatcher.computeBestOutput
 import com.android.builder.internal.InstallUtils
 import com.android.sdklib.AndroidVersion
@@ -111,7 +112,14 @@ class DefaultDeviceApkOutput(
             val builtArtifactsLoader = BuiltArtifactsLoaderImpl()
             val builtArtifacts: BuiltArtifactsImpl? = builtArtifactsLoader.load(mainApkDirectory)
             if (builtArtifacts != null) {
-                return computeBestOutput(deviceSpec.abis, builtArtifacts, supportedAbis ?: setOf())
+                val abis = deviceSpec.abis.run {
+                    if(isNullOrEmpty()){
+                        // set to default if empty
+                        Abi.getDefaultSupportedAbis()
+                    } else this
+                }
+
+                return computeBestOutput(abis, builtArtifacts, supportedAbis ?: setOf())
             }
             return listOf()
         }
