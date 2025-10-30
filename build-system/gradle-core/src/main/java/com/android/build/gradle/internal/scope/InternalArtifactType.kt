@@ -221,6 +221,8 @@ InternalArtifactType<T : FileSystemLocation>(
     object UNIT_TEST_CONFIG_DIRECTORY: InternalArtifactType<Directory>(DIRECTORY), Replaceable
     // Processed res after an AAPT2 optimize operation
     object OPTIMIZED_PROCESSED_RES: InternalArtifactType<Directory>(DIRECTORY), Replaceable, ContainsMany
+    // File created by AAPT containing containing the list of resources and directives to each resource.
+    object RESOURCES_CONFIG_MAP_FILE: InternalArtifactType<RegularFile>(FILE, Category.REPORTS), Replaceable
     // package resources for aar publishing.
     object PACKAGED_RES: InternalArtifactType<Directory>(DIRECTORY), Replaceable
     // package resources for aar publishing.
