@@ -333,24 +333,17 @@ class PrivacySandboxSdkPlugin @Inject constructor(
                 variantScope.artifacts,
                 PrivacySandboxSdkInternalArtifactType.ASAR,
                 listOf<TaskCreationAction<out BaseTask>>(
-                        AppMetadataTask.PrivacySandboxSdkCreationAction(variantScope),
-                        SignAsbTask.CreationActionPrivacySandboxSdk(variantScope),
-                        FusedLibraryMergeClasses.PrivacySandboxSdkCreationAction(variantScope),
                         GeneratePrivacySandboxAsar.CreationAction(variantScope),
-                        MergeJavaResourcesGlobalTask.PrivacySandboxSdkCreationAction(variantScope),
                         PrivacySandboxValidateConfigurationTask.CreationAction(variantScope),
                         PrivacySandboxSdkGenerateJarStubsTask.CreationAction(variantScope),
                         PrivacySandboxSdkMergeResourcesTask.CreationAction(variantScope),
                         PrivacySandboxSdkManifestGeneratorTask.CreationAction(variantScope),
                         PrivacySandboxSdkManifestMergerTask.CreationAction(variantScope),
                         PrivacySandboxSdkLinkAndroidResourcesTask.CreationAction(variantScope),
-                        R8Task.PrivacySandboxSdkCreationAction(variantScope, false),
                         PrivacySandboxSdkGenerateRClassTask.CreationAction(variantScope),
                         GeneratePrivacySandboxProguardRulesTask.CreationAction(variantScope),
-                        PerModuleBundleTask.PrivacySandboxSdkCreationAction(variantScope),
                         PackagePrivacySandboxSdkBundle.CreationAction(variantScope),
-                        ValidateSigningTask.PrivacySandboxSdkCreationAction(variantScope),
-                ) + FusedLibraryMergeArtifactTask.getCreationActions(variantScope)
+                )
         )
         if (lintEnabled) {
             createLintTasks(project)

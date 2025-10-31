@@ -96,26 +96,6 @@ abstract class AppMetadataTask : NonIncrementalTask() {
         }
     }
 
-    class PrivacySandboxSdkCreationAction(
-        private val creationConfig: PrivacySandboxSdkVariantScope
-    ) : AndroidVariantTaskCreationAction<AppMetadataTask>() {
-        override val type = AppMetadataTask::class.java
-        override val name = "writeAppMetadata"
-
-        override fun handleProvider(taskProvider: TaskProvider<AppMetadataTask>) {
-            super.handleProvider(taskProvider)
-            creationConfig.artifacts
-                .setInitialProvider(taskProvider, AppMetadataTask::outputFile)
-                .withName(APP_METADATA_FILE_NAME)
-                .on(PrivacySandboxSdkInternalArtifactType.APP_METADATA)
-        }
-
-        override fun configure(task: AppMetadataTask) {
-            super.configure(task)
-            task.configureTaskInputs(creationConfig.services.projectOptions)
-        }
-    }
-
     // CreationAction for use in AssetPackBundlePlugin
     class CreationForAssetPackBundleAction(
         private val artifacts: ArtifactsImpl,

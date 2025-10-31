@@ -155,11 +155,6 @@ abstract class PerModuleBundleTask: NonIncrementalTask() {
     @get:Input
     abstract val fileName: Property<String>
 
-    @get:Optional
-    @get:InputFile
-    @get:PathSensitive(PathSensitivity.NAME_ONLY)
-    abstract val privacySandboxSdkRuntimeConfigFile: RegularFileProperty
-
     @get:InputFiles
     @get:PathSensitive(PathSensitivity.NAME_ONLY)
     @get:Optional
@@ -219,20 +214,6 @@ abstract class PerModuleBundleTask: NonIncrementalTask() {
                 nativeLibsFiles.files,
                 { entryPath -> entryPath }, // don't relocate
                 fileFilter = abiFilter)
-
-            if (privacySandboxSdkRuntimeConfigFile.isPresent) {
-                val runtimeConfigFile = privacySandboxSdkRuntimeConfigFile.get().asFile
-                val runtimeConfigBytes = runtimeConfigFile.readBytes()
-                val privacySandboxRuntimeConfig =
-                        RuntimeEnabledSdkConfigProto.RuntimeEnabledSdkConfig
-                                .parseFrom(runtimeConfigBytes)
-                if (privacySandboxRuntimeConfig.runtimeEnabledSdkList.isNotEmpty()) {
-                    jarCreator.addFile(
-                            "runtime_enabled_sdk_config.pb",
-                            runtimeConfigFile.toPath()
-                    )
-                }
-            }
         }
     }
 
@@ -323,54 +304,6 @@ abstract class PerModuleBundleTask: NonIncrementalTask() {
                 Please disable building multiple APKs when building an Android app bundle. See https://issuetracker.google.com/402800800 for more details.
                 """.trimIndent()
             )
-        }
-    }
-
-    class PrivacySandboxSdkCreationAction(
-        private val creationConfig: PrivacySandboxSdkVariantScope
-    ): AndroidVariantTaskCreationAction<PerModuleBundleTask>() {
-
-        override val name: String = "buildModuleForBundle"
-        override val type: Class<PerModuleBundleTask> = PerModuleBundleTask::class.java
-
-        override fun handleProvider(taskProvider: TaskProvider<PerModuleBundleTask>) {
-            super.handleProvider(taskProvider)
-            creationConfig.artifacts.setInitialProvider(
-                taskProvider,
-                PerModuleBundleTask::outputFile
-            ).withName("base.zip").on(PrivacySandboxSdkInternalArtifactType.MODULE_BUNDLE)
-        }
-
-        override fun configure(task: PerModuleBundleTask) {
-            super.configure(task)
-
-            task.baseModule.setDisallowChanges(true)
-            task.dexDirectories.fromDisallowChanges(
-                creationConfig.artifacts.get(
-                    PrivacySandboxSdkInternalArtifactType.DEX
-                )
-            )
-            task.javaResJar.setDisallowChanges(
-                creationConfig.artifacts.get(FusedLibraryInternalArtifactType.MERGED_JAVA_RES)
-            )
-            task.linkedResourcesFile.setDisallowChanges(
-                creationConfig.artifacts.get(
-                    PrivacySandboxSdkInternalArtifactType.LINKED_MERGE_RES_FOR_ASB
-                )
-            )
-            task.assetsFilesDirectory.setDisallowChanges(
-                creationConfig.artifacts.get(FusedLibraryInternalArtifactType.MERGED_ASSETS)
-            )
-
-            // Not applicable
-            task.featureDexDirectories.fromDisallowChanges()
-            task.featureJavaResFiles.fromDisallowChanges()
-            task.runResourceShrinking.setDisallowChanges(false)
-            task.shrunkResourcesDirectory.disallowChanges()
-            task.featureShrunkResourcesFiles.disallowChanges()
-            task.featureLinkedResourcesFile.disallowChanges()
-            task.nativeLibsFiles.fromDisallowChanges()
-            task.abiFilters.setDisallowChanges(emptySet())
         }
     }
 
@@ -510,16 +443,6 @@ abstract class PerModuleBundleTask: NonIncrementalTask() {
                     task.versionControlInfoMetadata
                 )
             }
-
-            if (creationConfig.privacySandboxCreationConfig != null && creationConfig.componentType.isBaseModule) {
-                artifacts.setTaskInputToFinalProduct(
-                        InternalArtifactType.PRIVACY_SANDBOX_SDK_RUNTIME_CONFIG_FILE,
-                        task.privacySandboxSdkRuntimeConfigFile
-                )
-            } else {
-                task.privacySandboxSdkRuntimeConfigFile.disallowChanges()
-            }
-
         }
     }
 }

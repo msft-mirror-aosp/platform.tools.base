@@ -243,11 +243,6 @@ abstract class VariantTaskManager<VariantBuilderT : VariantBuilder, VariantT : V
             variants,
             project
         )
-
-        // Global tasks required for privacy sandbox sdk consumption
-        if (variants.any { it.variant.privacySandboxCreationConfig != null }) {
-            taskFactory.register(ValidateSigningTask.PrivacySandboxSdkCreationAction(globalConfig))
-        }
     }
 
     private fun createReportTasks() {

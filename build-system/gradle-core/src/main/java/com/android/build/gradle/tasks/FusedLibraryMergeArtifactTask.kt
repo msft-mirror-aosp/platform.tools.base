@@ -22,11 +22,9 @@ import com.android.SdkConstants.FD_JNI
 import com.android.SdkConstants.FN_NAVIGATION_JSON
 import com.android.SdkConstants.FN_PROGUARD_TXT
 import com.android.build.api.artifact.Artifact
-import com.android.build.api.artifact.ArtifactKind
 import com.android.build.gradle.internal.fusedlibrary.FusedLibraryConstants
 import com.android.build.gradle.internal.fusedlibrary.FusedLibraryGlobalScope
 import com.android.build.gradle.internal.fusedlibrary.FusedLibraryInternalArtifactType.*
-import com.android.build.gradle.internal.privaysandboxsdk.PrivacySandboxSdkVariantScope
 import com.android.build.gradle.internal.profile.ProfileAwareWorkAction
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
 import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactType
@@ -279,49 +277,6 @@ abstract class FusedLibraryMergeArtifactTask : NonIncrementalGlobalTask() {
 
     }
 
-    class CreateActionPrivacySandboxSdk(val creationConfig: PrivacySandboxSdkVariantScope,
-            private val androidArtifactType: ArtifactType,
-            private val internalArtifactType: Artifact.Single<*>) :
-            GlobalTaskCreationAction<FusedLibraryMergeArtifactTask>() {
-
-        override val name: String
-            get() = "mergingArtifact${androidArtifactType.name.usLocaleCapitalize()}"
-        override val type: Class<FusedLibraryMergeArtifactTask>
-            get() = FusedLibraryMergeArtifactTask::class.java
-
-        override fun handleProvider(taskProvider: TaskProvider<FusedLibraryMergeArtifactTask>) {
-            super.handleProvider(taskProvider)
-
-            when (internalArtifactType.kind) {
-                ArtifactKind.DIRECTORY ->
-                    creationConfig.artifacts.setInitialProvider(
-                            taskProvider,
-                            FusedLibraryMergeArtifactTask::outputDir
-                    ).withName(androidArtifactType.name.lowercase())
-                            .on(internalArtifactType as Artifact.Single<Directory>)
-                ArtifactKind.FILE ->
-                    creationConfig.artifacts.setInitialProvider(
-                            taskProvider,
-                            FusedLibraryMergeArtifactTask::outputFile
-                    ).withName(androidArtifactType.name.lowercase())
-                            .on(internalArtifactType as Artifact.Single<RegularFile>)
-            }
-        }
-
-        override fun configure(task: FusedLibraryMergeArtifactTask) {
-            super.configure(task)
-
-            task.artifactFiles.setFrom(
-                    creationConfig.dependencies.getArtifactFileCollection(
-                        AndroidArtifacts.ConsumedConfigType.RUNTIME_CLASSPATH,
-                        androidArtifactType
-                    )
-            )
-            task.artifactType.setDisallowChanges(androidArtifactType)
-        }
-
-    }
-
     abstract class AarMetadataInputs {
 
         @get:Input
@@ -355,10 +310,6 @@ abstract class FusedLibraryMergeArtifactTask : NonIncrementalGlobalTask() {
         fun getCreationActions(creationConfig: FusedLibraryGlobalScope) :
                 List<CreateActionFusedLibrary> {
             return mergeArtifactMap.map { CreateActionFusedLibrary(creationConfig, it.first, it.second) }
-        }
-        fun getCreationActions(creationConfig: PrivacySandboxSdkVariantScope) :
-                List<CreateActionPrivacySandboxSdk> {
-            return mergeArtifactMap.map { CreateActionPrivacySandboxSdk(creationConfig, it.first, it.second.artifactType) }
         }
     }
 }
