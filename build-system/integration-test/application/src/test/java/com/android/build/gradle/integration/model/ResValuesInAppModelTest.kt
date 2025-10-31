@@ -17,7 +17,6 @@
 package com.android.build.gradle.integration.model
 
 import com.android.build.gradle.integration.common.fixture.model.ReferenceModelComparator
-import com.android.build.gradle.integration.common.fixture.testprojects.prebuilts.privacysandbox.buildFeature
 import com.android.builder.model.v2.ide.SyncIssue
 import org.junit.Test
 

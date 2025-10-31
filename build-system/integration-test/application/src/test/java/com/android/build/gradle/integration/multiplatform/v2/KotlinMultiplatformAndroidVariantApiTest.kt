@@ -171,22 +171,13 @@ class KotlinMultiplatformAndroidVariantApiTest {
             // language=kotlin
             """
                 abstract class FetchApkTask : DefaultTask() {
-                    @get:Internal
-                    abstract val privacySandboxEnabledApkOutput: Property<ApkOutput>
 
                     @get:Internal
-                    abstract val privacySandboxDisabledApkOutput: Property<ApkOutput>
+                    abstract val apkOutput: Property<ApkOutput>
 
                     @TaskAction
                     fun execute() {
-                        var apkInstall = privacySandboxEnabledApkOutput.get().apkInstallGroups
-                        if (apkInstall.size != 1 || apkInstall[0].apks.size != 1) {
-                            throw GradleException("Unexpected number of apks")
-                        }
-                        assert(apkInstall[0].apks.first().asFile.name.contains("kmpFirstLib-androidTest.apk"))
-                        assert(apkInstall[0].description.contains("Testing Apk"))
-
-                        apkInstall = privacySandboxDisabledApkOutput.get().apkInstallGroups
+                        val apkInstall = apkOutput.get().apkInstallGroups
                         if (apkInstall.size != 1 || apkInstall[0].apks.size != 1) {
                             throw GradleException("Unexpected number of apks")
                         }
@@ -198,19 +189,9 @@ class KotlinMultiplatformAndroidVariantApiTest {
                 androidComponents {
                     onVariants { variant ->
                         variant.androidTest?.let {
-                            it.outputProviders.provideApkOutputToTask(
-                                taskProvider,
-                                FetchApkTask::privacySandboxEnabledApkOutput,
-                                DeviceSpec.Builder()
-                                    .setName("testDevice")
-                                    .setApiLevel(34)
-                                    .setCodeName("")
-                                    .setAbis(listOf())
-                                    .setSupportsPrivacySandbox(true)
-                                    .build())
                         it.outputProviders.provideApkOutputToTask(
                             taskProvider,
-                            FetchApkTask::privacySandboxDisabledApkOutput,
+                            FetchApkTask::apkOutput,
                             DeviceSpec.Builder()
                                 .setName("testDevice")
                                 .setApiLevel(34)
