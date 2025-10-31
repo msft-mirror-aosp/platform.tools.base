@@ -43,7 +43,6 @@ import com.android.build.gradle.internal.tasks.factory.dependsOn
 import com.android.build.gradle.internal.tasks.featuresplit.FeatureSetMetadataWriterTask
 import com.android.build.gradle.internal.variant.ComponentInfo
 import com.android.build.gradle.options.BooleanOption
-import com.android.build.gradle.tasks.BuildPrivacySandboxSdkApks
 import com.android.build.gradle.tasks.ExtractSupportedLocalesTask
 import com.android.build.gradle.tasks.GenerateLocaleConfigTask
 import org.gradle.api.Action
@@ -242,23 +241,6 @@ class ApplicationTaskManager(
                 }
             }
             taskFactory.register(FinalizeBundleTask.CreationAction(variant))
-            if (variant.privacySandboxCreationConfig != null) {
-                taskFactory.register(
-                        GeneratePrivacySandboxSdkRuntimeConfigFile.CreationAction(variant))
-                taskFactory.register(
-                        GenerateRuntimeEnabledSdkTableTask.CreationAction(variant))
-                variant
-                    .artifacts
-                    .forScope(ScopedArtifacts.Scope.PROJECT)
-                    .setInitialContent(
-                        ScopedArtifact.CLASSES,
-                        variant.artifacts,
-                        InternalArtifactType.PRIVACY_SANDBOX_SDK_R_PACKAGE_JAR
-                    )
-                taskFactory.register(GenerateAdditionalApkSplitForDeploymentViaApk.CreationAction(variant))
-                taskFactory.register(ExtractPrivacySandboxCompatApks.CreationAction(variant))
-            }
-
             taskFactory.register(BundleIdeModelProducerTask.CreationAction(variant))
             taskFactory.register(
                 ListingFileRedirectTask.CreationAction(
@@ -306,9 +288,6 @@ class ApplicationTaskManager(
     }
 
     override fun createInstallTask(creationConfig: ApkCreationConfig) {
-        if (creationConfig.privacySandboxCreationConfig != null && !creationConfig.componentType.isForTesting) {
-            taskFactory.register(BuildPrivacySandboxSdkApks.CreationAction(creationConfig as ApplicationCreationConfig))
-        }
         if (!globalConfig.hasDynamicFeatures ||
             creationConfig is DeviceTestCreationConfig
         ) {

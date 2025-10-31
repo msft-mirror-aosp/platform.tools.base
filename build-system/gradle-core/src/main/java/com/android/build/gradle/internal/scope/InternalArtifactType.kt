@@ -21,7 +21,6 @@ import com.android.build.api.artifact.Artifact
 import com.android.build.api.artifact.ArtifactKind
 import com.android.build.api.artifact.SingleArtifact
 import com.android.build.gradle.internal.api.BaselineProfiles
-import com.android.build.gradle.internal.tasks.GenerateRuntimeEnabledSdkTableTask
 import org.gradle.api.file.Directory
 import org.gradle.api.file.FileSystemLocation
 import org.gradle.api.file.RegularFile
@@ -651,9 +650,7 @@ InternalArtifactType<T : FileSystemLocation>(
     // It should also contain a file which writes out mappings from API level to ".dm" file
     object DEX_METADATA_DIRECTORY: InternalArtifactType<Directory>(DIRECTORY)
 
-    object RUNTIME_ENABLED_SDK_TABLE : InternalArtifactType<RegularFile>(
-            FILE,
-            fileName = GenerateRuntimeEnabledSdkTableTask.RUNTIME_ENABLED_SDK_TABLE_FILE_NAME)
+    object RUNTIME_ENABLED_SDK_TABLE : InternalArtifactType<RegularFile>(FILE)
 
     object USES_SDK_LIBRARY_SPLIT_FOR_LOCAL_DEPLOYMENT : InternalArtifactType<Directory>(DIRECTORY), Replaceable
 

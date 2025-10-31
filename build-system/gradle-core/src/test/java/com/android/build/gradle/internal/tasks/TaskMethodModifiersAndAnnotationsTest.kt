@@ -206,8 +206,7 @@ class TaskMethodModifiersAndAnnotationsTest {
                 "com.android.build.gradle.internal.tasks.factory.AndroidVariantTaskCreationAction",
                 "com.android.build.gradle.internal.tasks.factory.TaskConfigurationActionsTest\$createTaskAction\$creationAction$1",
                 "com.android.build.gradle.tasks.ExternalNativeBuildTaskKt\$createWorkingCxxBuildTask$1",
-                "com.android.build.gradle.tasks.JavaCompileCreationAction",
-                "com.android.build.gradle.tasks.PrivacySandboxSdkMergeDexTask\$CreationAction",
+                "com.android.build.gradle.tasks.JavaCompileCreationAction"
             )
     }
 
@@ -423,7 +422,6 @@ class TaskMethodModifiersAndAnnotationsTest {
             "com.android.build.gradle.tasks.ExternalNativeCleanTask.getSdkComponents",
             "com.android.build.gradle.tasks.MergeResources.getAapt2ThreadPoolBuildService",
             "com.android.build.gradle.tasks.PrefabPackageTask.getSdkComponents",
-            "com.android.build.gradle.tasks.PrivacySandboxSdkMergeResourcesTask.getAnalytics",
             "com.android.build.gradle.tasks.RenderscriptCompile.getSdkBuildService",
             "com.android.build.gradle.tasks.ShaderCompile.getSdkBuildService",
             "com.android.build.gradle.tasks.TestSuiteTestTask.getAvdService",

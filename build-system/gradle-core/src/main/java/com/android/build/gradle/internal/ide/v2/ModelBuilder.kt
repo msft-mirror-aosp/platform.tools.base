@@ -81,8 +81,6 @@ import com.android.build.gradle.internal.scope.MutableTaskContainer
 import com.android.build.gradle.internal.services.getBuildService
 import com.android.build.gradle.internal.tasks.AnchorTaskNames
 import com.android.build.gradle.internal.tasks.DeviceProviderInstrumentTestTask
-import com.android.build.gradle.internal.tasks.ExtractPrivacySandboxCompatApks
-import com.android.build.gradle.internal.tasks.GenerateAdditionalApkSplitForDeploymentViaApk
 import com.android.build.gradle.internal.tasks.getPublishedCustomLintChecks
 import com.android.build.gradle.internal.utils.getDesugarLibConfigFile
 import com.android.build.gradle.internal.utils.getDesugaredMethods
@@ -90,7 +88,6 @@ import com.android.build.gradle.internal.utils.toImmutableSet
 import com.android.build.gradle.internal.variant.VariantModel
 import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.options.ProjectOptions
-import com.android.build.gradle.tasks.BuildPrivacySandboxSdkApks
 import com.android.builder.core.ComponentTypeImpl
 import com.android.builder.errors.IssueReporter
 import com.android.builder.model.SyncIssue
@@ -106,7 +103,6 @@ import com.android.builder.model.v2.ide.BundleInfo
 import com.android.builder.model.v2.ide.BytecodeTransformation
 import com.android.builder.model.v2.ide.CodeShrinker
 import com.android.builder.model.v2.ide.JavaArtifact
-import com.android.builder.model.v2.ide.PrivacySandboxSdkInfo
 import com.android.builder.model.v2.ide.SourceProvider
 import com.android.builder.model.v2.ide.SourceSetContainer
 import com.android.builder.model.v2.ide.TestInfo
@@ -1135,34 +1131,6 @@ class ModelBuilder<ExtensionT : CommonExtension>(
         )
     }
 
-    private fun createPrivacySandboxSdkInfo(component: ComponentCreationConfig): PrivacySandboxSdkInfo? {
-        if (component.privacySandboxCreationConfig == null) {
-            return null
-        }
-        if (component !is ApplicationCreationConfig) {
-            return null
-        }
-        val extractedApksFromPrivacySandboxIdeModel =
-                component.artifacts.get(InternalArtifactType.EXTRACTED_APKS_FROM_PRIVACY_SANDBOX_SDKs_IDE_MODEL).orNull?.asFile
-                        ?: return null
-        val legacyExtractedApksForPrivacySandboxIdeModel =
-                component.artifacts.get(InternalArtifactType.APK_FROM_SDKS_IDE_MODEL).orNull?.asFile
-                        ?: return null
-        val additionalApkSplitFile =
-                component.artifacts.get(InternalArtifactType.USES_SDK_LIBRARY_SPLIT_FOR_LOCAL_DEPLOYMENT).orNull?.file(
-                        BuiltArtifactsImpl.METADATA_FILE_NAME)?.asFile
-                        ?: return null
-
-        return PrivacySandboxSdkInfoImpl(
-                task = BuildPrivacySandboxSdkApks.CreationAction.getTaskName(component),
-                outputListingFile = extractedApksFromPrivacySandboxIdeModel,
-                additionalApkSplitTask =  GenerateAdditionalApkSplitForDeploymentViaApk.CreationAction.computeTaskName(component),
-                additionalApkSplitFile = additionalApkSplitFile,
-                taskLegacy = ExtractPrivacySandboxCompatApks.CreationAction.getTaskName(component),
-                outputListingLegacyFile = legacyExtractedApksForPrivacySandboxIdeModel
-        )
-    }
-
     private fun createAndroidArtifact(component: ComponentCreationConfig): AndroidArtifactImpl {
         val taskContainer: MutableTaskContainer = component.taskContainer
 
@@ -1261,7 +1229,7 @@ class ModelBuilder<ExtensionT : CommonExtension>(
                 component.artifacts.get(InternalArtifactType.APK_IDE_REDIRECT_FILE).get().asFile
             else
                 null,
-            privacySandboxSdkInfo = createPrivacySandboxSdkInfo(component),
+            privacySandboxSdkInfo = null,
             desugaredMethodsFiles = getDesugaredMethods(
                 component.services,
                 coreLibDesugaring,

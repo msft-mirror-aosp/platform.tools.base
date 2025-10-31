@@ -37,7 +37,6 @@ import com.android.build.gradle.internal.privaysandboxsdk.PrivacySandboxSdkInter
 import com.android.build.gradle.internal.privaysandboxsdk.PrivacySandboxSdkVariantScope
 import com.android.build.gradle.internal.privaysandboxsdk.PrivacySandboxSdkVariantScopeImpl
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
-import com.android.build.gradle.internal.res.PrivacySandboxSdkLinkAndroidResourcesTask
 import com.android.build.gradle.internal.services.Aapt2DaemonBuildService
 import com.android.build.gradle.internal.services.Aapt2ThreadPoolBuildService
 import com.android.build.gradle.internal.services.DslServices
@@ -45,33 +44,17 @@ import com.android.build.gradle.internal.services.R8D8ThreadPoolBuildService
 import com.android.build.gradle.internal.services.R8MaxParallelTasksBuildService
 import com.android.build.gradle.internal.services.SymbolTableBuildService
 import com.android.build.gradle.internal.services.VersionedSdkLoaderService
-import com.android.build.gradle.internal.tasks.AppMetadataTask
 import com.android.build.gradle.internal.tasks.BaseTask
-import com.android.build.gradle.internal.tasks.GeneratePrivacySandboxProguardRulesTask
-import com.android.build.gradle.internal.tasks.MergeJavaResourceTask
-import com.android.build.gradle.internal.tasks.MergeJavaResourcesGlobalTask
-import com.android.build.gradle.internal.tasks.PerModuleBundleTask
-import com.android.build.gradle.internal.tasks.R8Task
-import com.android.build.gradle.internal.tasks.SignAsbTask
-import com.android.build.gradle.internal.tasks.ValidateSigningTask
 import com.android.build.gradle.internal.tasks.factory.BootClasspathConfigImpl
 import com.android.build.gradle.internal.tasks.factory.TaskCreationAction
 import com.android.build.gradle.internal.tasks.factory.TaskFactoryImpl
 import com.android.build.gradle.internal.utils.createTargetSdkVersion
 import com.android.build.gradle.options.BooleanOption
-import com.android.build.gradle.tasks.FusedLibraryMergeArtifactTask
-import com.android.build.gradle.tasks.FusedLibraryMergeClasses
-import com.android.build.gradle.tasks.GeneratePrivacySandboxAsar
-import com.android.build.gradle.tasks.PackagePrivacySandboxSdkBundle
-import com.android.build.gradle.tasks.PrivacySandboxSdkGenerateJarStubsTask
-import com.android.build.gradle.tasks.PrivacySandboxSdkGenerateRClassTask
-import com.android.build.gradle.tasks.PrivacySandboxSdkManifestGeneratorTask
-import com.android.build.gradle.tasks.PrivacySandboxSdkManifestMergerTask
-import com.android.build.gradle.tasks.PrivacySandboxSdkMergeResourcesTask
-import com.android.build.gradle.tasks.PrivacySandboxValidateConfigurationTask
 import com.android.builder.errors.IssueReporter
 import com.android.repository.Revision
 import com.google.wireless.android.sdk.stats.GradleBuildProject
+import java.util.Locale
+import javax.inject.Inject
 import org.gradle.api.GradleException
 import org.gradle.api.Plugin
 import org.gradle.api.Project
@@ -84,8 +67,6 @@ import org.gradle.api.configuration.BuildFeatures
 import org.gradle.api.plugins.JvmEcosystemPlugin
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.build.event.BuildEventsListenerRegistry
-import java.util.Locale
-import javax.inject.Inject
 
 class PrivacySandboxSdkPlugin @Inject constructor(
         val softwareComponentFactory: SoftwareComponentFactory,
@@ -333,16 +314,6 @@ class PrivacySandboxSdkPlugin @Inject constructor(
                 variantScope.artifacts,
                 PrivacySandboxSdkInternalArtifactType.ASAR,
                 listOf<TaskCreationAction<out BaseTask>>(
-                        GeneratePrivacySandboxAsar.CreationAction(variantScope),
-                        PrivacySandboxValidateConfigurationTask.CreationAction(variantScope),
-                        PrivacySandboxSdkGenerateJarStubsTask.CreationAction(variantScope),
-                        PrivacySandboxSdkMergeResourcesTask.CreationAction(variantScope),
-                        PrivacySandboxSdkManifestGeneratorTask.CreationAction(variantScope),
-                        PrivacySandboxSdkManifestMergerTask.CreationAction(variantScope),
-                        PrivacySandboxSdkLinkAndroidResourcesTask.CreationAction(variantScope),
-                        PrivacySandboxSdkGenerateRClassTask.CreationAction(variantScope),
-                        GeneratePrivacySandboxProguardRulesTask.CreationAction(variantScope),
-                        PackagePrivacySandboxSdkBundle.CreationAction(variantScope),
                 )
         )
         if (lintEnabled) {
