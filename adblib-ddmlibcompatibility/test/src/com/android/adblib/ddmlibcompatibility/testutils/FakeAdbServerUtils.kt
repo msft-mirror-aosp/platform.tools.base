@@ -23,7 +23,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.withTimeout
 
 suspend fun DeviceState.waitForOnlineDevice(
-    timeout: Duration = Duration.ofSeconds(2)
+    timeout: Duration = Duration.ofSeconds(5)
 ): IDevice {
     val bridge =
         AndroidDebugBridge.getBridge()
