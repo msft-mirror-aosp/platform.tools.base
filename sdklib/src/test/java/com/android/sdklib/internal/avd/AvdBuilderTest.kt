@@ -236,6 +236,7 @@ class AvdBuilderTest {
     assertThat(avdBuilder.avdFolder.resolve(AvdManager.ENVIRONMENT_INI).exists()).isTrue()
     assertThat(avdInfo.environment).containsExactly(EnvironmentKey.IMAGE, "img1.png")
     assertThat(avdInfo.dataFolderPath.resolve("img1.png").exists()).isTrue()
+    assertThat(avdInfo.properties[ConfigKey.LCD_TRANSPARENT]).isEqualTo("yes")
 
     // Verify that we can read the background back from disk
     avdManager.reloadAvds()

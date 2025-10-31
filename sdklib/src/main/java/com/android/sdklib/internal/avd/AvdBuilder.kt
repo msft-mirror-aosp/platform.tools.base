@@ -128,6 +128,9 @@ class AvdBuilder(var metadataIniPath: Path, avdFolder: Path, var device: Device)
     properties[ConfigKey.GPU_EMULATION] = if (gpuMode == GpuMode.OFF) "no" else "yes"
     properties[ConfigKey.AVD_ID] = avdName
     properties.putAll(bootMode.properties())
+    if (environment != null) {
+      properties[ConfigKey.LCD_TRANSPARENT] = "yes"
+    }
     binding.write(this, properties)
     return properties
   }
