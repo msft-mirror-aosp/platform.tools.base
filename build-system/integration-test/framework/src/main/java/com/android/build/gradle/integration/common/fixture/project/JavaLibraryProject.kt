@@ -16,15 +16,13 @@
 
 package com.android.build.gradle.integration.common.fixture.project
 
-import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification
-import com.android.build.gradle.integration.common.fixture.dsl.DslProxy
 import com.android.build.gradle.integration.common.fixture.project.builder.BuildWriter
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleDefinitionDsl
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectFiles
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
-import org.gradle.api.NamedDomainObjectContainer
+import com.android.build.gradle.integration.common.fixture.project.reversible.FileChangeController
 import java.nio.file.Path
 
 @GradleDefinitionDsl
@@ -62,17 +60,17 @@ internal class JavaLibraryProjectImpl(
 ) : GradleProjectImpl<JavaLibraryProjectDefinition>(location, projectDefinition),
     JavaLibraryProject {
 
-    override fun getReversibleInstance(projectModification: TemporaryProjectModification)
+    override fun getReversibleInstance(fileChangeController: FileChangeController)
     : GradleProject<JavaLibraryProjectDefinition> {
-        return ReversibleJavaLibraryProject(this, projectModification.delegate(this))
+        return ReversibleJavaLibraryProject(this, fileChangeController)
     }
 }
 
 internal open class ReversibleJavaLibraryProject(
     parentProject: JavaLibraryProject,
-    projectModification: TemporaryProjectModification,
+    fileChangeController: FileChangeController,
 ) : ReversibleGradleProject<JavaLibraryProject,
         JavaLibraryProjectDefinition>(
     parentProject,
-    projectModification
+    fileChangeController
 ), JavaLibraryProject

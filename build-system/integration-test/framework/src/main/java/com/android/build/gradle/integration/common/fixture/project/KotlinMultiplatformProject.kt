@@ -17,7 +17,6 @@
 package com.android.build.gradle.integration.common.fixture.project
 
 import com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryTarget
-import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification
 import com.android.build.gradle.integration.common.fixture.dsl.DefaultDslRecorder
 import com.android.build.gradle.integration.common.fixture.dsl.DslProxy
 import com.android.build.gradle.integration.common.fixture.project.builder.BuildWriter
@@ -26,6 +25,7 @@ import com.android.build.gradle.integration.common.fixture.project.builder.Gradl
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectFiles
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
 import com.android.build.gradle.integration.common.fixture.project.builder.kotlin.KotlinMultiplatformExtension
+import com.android.build.gradle.integration.common.fixture.project.reversible.FileChangeController
 import java.nio.file.Path
 
 /*
@@ -131,8 +131,8 @@ internal class KotlinMultiplatformProjectImpl(
     projectDefinition,
 ), KotlinMultiplatformProject, GeneratesAar by GeneratesAarDelegate(projectDefinition.path, location) {
 
-    override fun getReversibleInstance(projectModification: TemporaryProjectModification): KotlinMultiplatformProject =
-        ReversibleKotlinMultiplatformProject(this, projectModification)
+    override fun getReversibleInstance(fileChangeController: FileChangeController): KotlinMultiplatformProject =
+        ReversibleKotlinMultiplatformProject(this, fileChangeController)
 }
 
 /**
@@ -140,8 +140,8 @@ internal class KotlinMultiplatformProjectImpl(
  */
 internal class ReversibleKotlinMultiplatformProject(
     parentProject: KotlinMultiplatformProject,
-    projectModification: TemporaryProjectModification
+    fileChangeController: FileChangeController
 ) : ReversibleGradleProject<KotlinMultiplatformProject, KotlinMultiplatformDefinition>(
     parentProject,
-    projectModification
+    fileChangeController
 ), KotlinMultiplatformProject, GeneratesAar by GeneratesAarFromParentDelegate(parentProject)

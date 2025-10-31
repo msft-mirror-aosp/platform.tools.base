@@ -16,10 +16,9 @@
 
 package com.android.build.gradle.integration.common.fixture.project
 
-import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectFiles
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectDefinition
-import java.nio.file.Path
+import com.android.build.gradle.integration.common.fixture.project.reversible.FileChangeController
 
 /**
  * a version of [AndroidProject] that can reverses the changes made during a test.
@@ -28,29 +27,18 @@ import java.nio.file.Path
  */
 internal open class ReversibleAndroidProject<ProjectT: AndroidProject<ProjectDefinitionT>, ProjectDefinitionT : GradleProjectDefinition>(
     parentProject: ProjectT,
-    projectModification: TemporaryProjectModification,
+    fileChangeController: FileChangeController,
 ) : BaseReversibleAndroidProjectImpl<ProjectT, ProjectDefinitionT>(
     parentProject,
-    projectModification,
+    fileChangeController,
 ), AndroidProject<ProjectDefinitionT> {
 
     override val namespace: String
         get() = parentProject.namespace
 
     @Suppress("UNCHECKED_CAST")
-    final override val files: AndroidProjectFiles =
-        ReversibleAndroidProjectFiles(
-            parentProject.namespace, projectModification,
-            (parentProject as GradleProjectImpl<ProjectDefinitionT>).location)
+    final override val files: AndroidProjectFiles = fileChangeController.newAndroidProjectFiles(
+        parentProject.files,
+        (parentProject as GradleProjectImpl<ProjectDefinitionT>).location
+    )
 }
-
-internal class ReversibleAndroidProjectFiles(
-    override val namespace: String,
-    projectModification: TemporaryProjectModification,
-    location: Path,
-): ReversibleProjectFiles(projectModification, location), AndroidProjectFiles {
-    override val namespaceAsPath: String
-        get() = namespaceAsPath.replace('.', '/')
-}
-
-

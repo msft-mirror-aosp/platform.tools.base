@@ -16,31 +16,22 @@
 
 package com.android.build.gradle.integration.common.fixture.project
 
-import com.android.SdkConstants
 import com.android.build.api.artifact.Artifact
-import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification
-import com.android.build.gradle.integration.common.fixture.project.builder.FileUpdateBuilder
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectFiles
-import com.android.build.gradle.integration.common.fixture.project.builder.searchAndReplace
-import java.io.File
+import com.android.build.gradle.integration.common.fixture.project.reversible.FileChangeController
 import java.nio.file.Path
-import kotlin.io.path.extension
-import kotlin.io.path.isRegularFile
-import kotlin.io.path.readBytes
-import kotlin.io.path.readText
 
 /**
  * Base Class for all reversible projects
  */
-abstract class ReversibleGradleProject<ProjectT : GradleProject<ProjectDefinitionT>, ProjectDefinitionT : GradleProjectDefinition>(
+internal abstract class ReversibleGradleProject<ProjectT : GradleProject<ProjectDefinitionT>, ProjectDefinitionT : GradleProjectDefinition>(
     protected val parentProject: ProjectT,
-    projectModification: TemporaryProjectModification
-) : GradleProject<ProjectDefinitionT>, TemporaryProjectModification.FileProvider  {
+    fileChangeController: FileChangeController,
+) : GradleProject<ProjectDefinitionT>  {
 
     @Suppress("UNCHECKED_CAST")
-    override val files: GradleProjectFiles = ReversibleProjectFiles(
-        projectModification,
+    override val files: GradleProjectFiles = fileChangeController.newGradleProjectFiles(
         (parentProject as GradleProjectImpl<ProjectDefinitionT>).location
     )
 
@@ -54,118 +45,4 @@ abstract class ReversibleGradleProject<ProjectT : GradleProject<ProjectDefinitio
     override fun reconfigure(action: ProjectDefinitionT.() -> Unit) {
         throw RuntimeException("Cannot reconfigure inside withReversibleModifications")
     }
-
-    override fun file(path: String): File? {
-        return (parentProject as GradleProjectImpl<*>).file(path)
-    }
 }
-
-
-internal open class ReversibleProjectFiles(
-    private val projectModification: TemporaryProjectModification,
-    private val location: Path,
-): GradleProjectFiles {
-    override fun add(relativePath: String, content: String) {
-        projectModification.addFile(relativePath, content)
-    }
-
-    override fun add(relativePath: String, content: ByteArray) {
-        projectModification.addFile(relativePath, content)
-    }
-
-    override fun update(relativePath: String): FileUpdateBuilder =
-        FileUpdater(projectModification, relativePath, location.resolve(relativePath), location)
-
-    override fun remove(relativePath: String) {
-        projectModification.removeFile(relativePath)
-    }
-
-    private class FileUpdater(
-        private val projectModification: TemporaryProjectModification,
-        private val relativePath: String,
-        private val file: Path,
-        private val location: Path
-    ): FileUpdateBuilder {
-
-        override val exists: Boolean
-            get() = file.isRegularFile()
-
-        override fun replaceWith(newContent: String) {
-            projectModification.modifyFile(relativePath) {
-                newContent
-            }
-        }
-
-        override fun replaceWith(newContent: ByteArray) {
-            projectModification.modifyFileWithBytes(relativePath) {
-                newContent
-            }
-        }
-
-        override fun searchAndReplace(
-            search: String,
-            replace: String,
-            lenient: Boolean,
-        ): FileUpdateBuilder {
-            return searchAndReplace(search.toRegex(RegexOption.LITERAL), replace, lenient)
-        }
-
-        override fun searchAndReplace(
-            search: Regex,
-            replace: String,
-            lenient: Boolean
-        ): FileUpdateBuilder {
-            if (!file.isRegularFile()) throw RuntimeException("File $file not found. Cannot update")
-
-            projectModification.modifyFile(relativePath) {
-                it.searchAndReplace(
-                    file.toString(),
-                    search,
-                    replace,
-                    lenient
-                )
-            }
-
-            return this
-        }
-
-        override fun append(newContent: String) {
-            if (file.isRegularFile()) {
-                val content = file.readText()
-                projectModification.modifyFile(relativePath) {
-                    content + newContent
-                }
-            } else {
-                projectModification.addFile(relativePath, newContent)
-            }
-        }
-
-        override fun appendMethod(method: String): FileUpdateBuilder {
-            if (file.extension != SdkConstants.EXT_JAVA || file.extension != SdkConstants.EXT_KT) {
-                throw RuntimeException(
-                    "Cannot append method to $file. " +
-                            "Filename must end with '{${SdkConstants.DOT_JAVA}}' or '${SdkConstants.DOT_KT}'."
-                )
-            }
-            return searchAndReplace(Regex("\n}\\s*$"), "\n    $method\n\n}")
-        }
-
-        override fun transform(action: (String) -> String): FileUpdateBuilder {
-            if (!file.isRegularFile()) throw RuntimeException("File $file not found. Cannot update")
-
-            projectModification.modifyFile(relativePath, action)
-
-            return this
-        }
-
-        override fun moveTo(relativePath: String): FileUpdater {
-            projectModification.addFile(
-                relativePath,
-                location.resolve(this.relativePath).readBytes()
-            )
-            projectModification.removeFile(this.relativePath)
-            return this
-        }
-    }
-}
-
