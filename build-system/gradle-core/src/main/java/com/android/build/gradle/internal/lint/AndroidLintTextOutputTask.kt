@@ -160,25 +160,6 @@ abstract class AndroidLintTextOutputTask : NonIncrementalTask() {
         override val fatalOnly = false
     }
 
-    class PrivacySandboxSdkLintTextOutputTaskCreationAction(
-        private val variantScope: PrivacySandboxSdkVariantScope) :
-        PrivacySandboxSdkVariantTaskCreationAction<AndroidLintTextOutputTask>() {
-        override val name: String = "lint"
-        override val type: Class<AndroidLintTextOutputTask>
-            get() = AndroidLintTextOutputTask::class.java
-
-        override fun configure(task: AndroidLintTextOutputTask) {
-            super.configure(task)
-            task.group = JavaBasePlugin.VERIFICATION_GROUP
-            task.description = "Print text output from the corresponding lint report task"
-            task.android.setDisallowChanges(true)
-            task.initializeCommonInputs(
-                variantScope.artifacts, variantScope.lintOptions, false
-            )
-            task.outputs.upToDateWhen { false }
-        }
-    }
-
     class LintVitalCreationAction(variant: ComponentCreationConfig) :
         VariantCreationAction(variant) {
         override val name: String = computeTaskName("lintVital")
@@ -190,25 +171,6 @@ abstract class AndroidLintTextOutputTask : NonIncrementalTask() {
                 taskProvider,
                 AndroidLintTextOutputTask::lintVitalOutput
             ).on(InternalArtifactType.LINT_VITAL_OUTPUT)
-        }
-    }
-
-    class PrivacySandboxSdkLintVitalCreationAction(
-        private val variantScope: PrivacySandboxSdkVariantScope) :
-        PrivacySandboxSdkVariantTaskCreationAction<AndroidLintTextOutputTask>() {
-        override val name: String = "lintVital"
-        override val type: Class<AndroidLintTextOutputTask>
-            get() = AndroidLintTextOutputTask::class.java
-
-        override fun configure(task: AndroidLintTextOutputTask) {
-            super.configure(task)
-            task.group = JavaBasePlugin.VERIFICATION_GROUP
-            task.description = "Print text output from the corresponding lint report task"
-            task.android.setDisallowChanges(true)
-            task.initializeCommonInputs(
-                variantScope.artifacts, variantScope.lintOptions, true
-            )
-            task.outputs.upToDateWhen { false }
         }
     }
 

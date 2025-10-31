@@ -112,8 +112,7 @@ class PrivacySandboxSdkPlugin @Inject constructor(
                                 returnDefaultValuesForMockableJar = { false },
                                 forUnitTest = false
                         )
-                    },
-                BasePlugin.createCustomLintChecksConfig(project).takeIf { lintEnabled })
+                    })
         }
     }
 
@@ -122,10 +121,6 @@ class PrivacySandboxSdkPlugin @Inject constructor(
         withProject("extension") { project ->
             instantiateExtension(project)
         }
-    }
-
-    private val lintEnabled: Boolean by lazy {
-        projectServices.projectOptions[BooleanOption.PRIVACY_SANDBOX_SDK_ENABLE_LINT]
     }
 
     override fun configureProject(project: Project) {
@@ -309,79 +304,7 @@ class PrivacySandboxSdkPlugin @Inject constructor(
                 configureTransforms(project)
             }
         )
-        createTasks(
-                project,
-                variantScope.artifacts,
-                PrivacySandboxSdkInternalArtifactType.ASAR,
-                listOf<TaskCreationAction<out BaseTask>>(
-                )
-        )
-        if (lintEnabled) {
-            createLintTasks(project)
-        }
     }
-
-    private fun createLintTasks(project: Project) {
-        runConfigurationValidation()
-        // Map of task path to the providers for tasks that that task subsumes,
-        // and therefore should be disabled if both are in the task graph.
-        // e.g. Running `lintRelease` should cause `lintVitalRelease` to be skipped,
-        val variantLintTaskToLintVitalTask = mutableMapOf<String, TaskProvider<out Task>>()
-
-        val needsCopyReportTask = needsCopyReportTask(variantScope.lintOptions)
-        val taskFactory = TaskFactoryImpl(project.tasks)
-        val variantLintTextOutputTask = taskFactory.register(AndroidLintTextOutputTask.PrivacySandboxSdkLintTextOutputTaskCreationAction(variantScope))
-        taskFactory.register(LintModelWriterTask.PrivacySandboxCreationAction(variantScope,
-            fatalOnly = false,
-            projectServices.projectOptions))
-
-        val updateLintBaselineTask =
-            taskFactory.register(AndroidLintTask.PrivacySandboxSdkUpdateBaselineCreationAction(variantScope))
-        val variantLintTask =
-            taskFactory.register(AndroidLintTask.PrivacySandboxSdkReportingCreationAction(variantScope))
-                .also { it.configure { task -> task.mustRunAfter(updateLintBaselineTask) } }
-
-        if (needsCopyReportTask) {
-            val copyLintReportTask =
-                taskFactory.register(AndroidLintCopyReportTask.PrivacySandboxCreationAction(variantScope))
-            variantLintTextOutputTask.configure {
-                it.finalizedBy(copyLintReportTask)
-            }
-        }
-        taskFactory.register(AndroidLintAnalysisTask.PrivacySandboxCreationAction(variantScope, projectServices.projectOptions))
-        taskFactory.register(AndroidLintAnalysisTask.PrivacySandboxLintVitalCreationAction(variantScope, projectServices.projectOptions))
-
-        val lintVitalTask =
-            taskFactory.register(AndroidLintTask.PrivacySandboxLintVitalCreationAction(variantScope))
-                .also { it.configure { task -> task.mustRunAfter(updateLintBaselineTask) } }
-        val lintVitalTextOutputTask =
-            taskFactory.register(
-                AndroidLintTextOutputTask.PrivacySandboxSdkLintVitalCreationAction(variantScope)
-            )
-        taskFactory.configure("assemble") { it.dependsOn(lintVitalTextOutputTask) }
-        fun getTaskPath(taskName: String) = TaskManager.getTaskPath(project, taskName)
-        // If lint is being run, we do not need to run lint vital.
-        variantLintTaskToLintVitalTask[getTaskPath(variantLintTask.name)] = lintVitalTask
-        variantLintTextOutputTask.let {
-            variantLintTaskToLintVitalTask[getTaskPath(it.name)] = lintVitalTextOutputTask
-        }
-        taskFactory.register(AndroidLintTask.PrivacySandboxSdkFixCreationAction(variantScope))
-            .also { it.configure { task -> task.mustRunAfter(updateLintBaselineTask) } }
-        val lintTaskPath = getTaskPath("lint")
-        project.gradle.taskGraph.whenReady {
-            variantLintTaskToLintVitalTask.forEach { (taskPath, taskToDisable) ->
-                if (it.hasTask(taskPath)) {
-                    taskToDisable.configure { it.enabled = false }
-                }
-            }
-            if (it.hasTask(lintTaskPath)) {
-                variantLintTaskToLintVitalTask.forEach { (_, lintVitalTask) ->
-                    lintVitalTask.configure { it.enabled = false }
-                }
-            }
-        }
-    }
-
     private fun configureTransforms(project: Project) {
         configureTransformsForFusedLibrary(
             project,
@@ -404,22 +327,6 @@ class PrivacySandboxSdkPlugin @Inject constructor(
                 ),
                 variantScope.experimentalProperties.apply { disallowChanges() }.get()
             )
-    }
-
-    private fun runConfigurationValidation() {
-        val lintTargetSdkVersion = variantScope.lintOptions.run { createTargetSdkVersion(targetSdk, targetSdkPreview) }
-        if (lintTargetSdkVersion != null) {
-            val variantTargetSdkVersion = variantScope.targetSdkVersion
-            if (lintTargetSdkVersion.apiLevel < variantTargetSdkVersion.apiLevel) {
-                variantScope.services.issueReporter.reportError(IssueReporter.Type.GENERIC, String.format(
-                    Locale.US,
-                    """
-                        lint.targetSdk (${lintTargetSdkVersion.apiLevel}) for Privacy Sandbox Sdk is smaller than android.targetSdk (${variantTargetSdkVersion.apiLevel}).
-                        Please change the values such that lint.targetSdk is greater than or equal to android.targetSdk.
-                    """.trimIndent()
-                ))
-            }
-        }
     }
 
     override fun getAnalyticsPluginType(): GradleBuildProject.PluginType =
