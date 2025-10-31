@@ -54,14 +54,6 @@ public class BasicConnectedTest {
         project.execute("installDebug", "uninstallAll");
     }
 
-    @Test // Regression test for b/304312888
-    public void installWithPrivacySandboxEnabled() throws IOException {
-        TestFileUtils.appendToFile(
-                project.getGradlePropertiesFile(),
-                BooleanOption.PRIVACY_SANDBOX_SDK_SUPPORT.getPropertyName() + "=true");
-        project.execute("installDebug", "uninstallAll");
-    }
-
     @Test
     public void connectedCheck() throws Exception {
         project.executor().run("connectedCheck");

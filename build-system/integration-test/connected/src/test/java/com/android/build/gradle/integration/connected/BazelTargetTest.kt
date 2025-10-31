@@ -42,12 +42,6 @@ class BazelTargetTest {
                 "databinding_prebuilts",
                 "prebuilts"
             ),
-            ignoreTestSourceFiles = listOf(
-                "PrivacySandboxSdkTestHelper",
-                "PrivacySandboxSdkAppConnectedTest",
-                "PrivacySandboxSdkDynamicFeatureConnectedTest",
-                "PrivacySandboxSdkTestModuleConnectedTest"
-            )
         )
     }
 }
