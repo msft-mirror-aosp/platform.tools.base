@@ -34,6 +34,7 @@ import java.util.Base64
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 
 /**
  * Runs UTP test suites in external Java processes.
@@ -172,6 +173,7 @@ class UtpRunner(
             }
         } finally {
             executorService.shutdownNow()
+            executorService.awaitTermination(1, TimeUnit.SECONDS)
         }
     }
 

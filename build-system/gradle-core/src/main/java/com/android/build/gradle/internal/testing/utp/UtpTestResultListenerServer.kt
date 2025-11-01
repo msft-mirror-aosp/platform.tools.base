@@ -36,6 +36,9 @@ import org.gradle.api.logging.Logging
 import java.io.Closeable
 import java.io.File
 import java.io.IOException
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 
 /**
  * A GRPC server to receive test progress and results in realtime from UTP.
@@ -44,9 +47,11 @@ import java.io.IOException
  * @param listener a listener to receive test result events
  */
 class UtpTestResultListenerServer private constructor(
-        val port: Int,
-        listener: UtpTestResultListener?,
-        serverFactory: (Int) -> ServerBuilder<*>) : Closeable {
+    val port: Int,
+    listener: UtpTestResultListener?,
+    serverFactory: (Int) -> ServerBuilder<*>,
+    val executorService: ExecutorService,
+) : Closeable {
     companion object {
         private val logger = Logging.getLogger(UtpTestResultListenerServer::class.java)
 
@@ -60,20 +65,21 @@ class UtpTestResultListenerServer private constructor(
          * port number by 1 until it reaches to the [maxRetryAttempt].
          */
         fun startServer(
-                certChainFile: File,
-                privateKeyFile: File,
-                trustCertCollectionFile: File,
-                listener: UtpTestResultListener?,
-                defaultPort: Int = DEFAULT_GRPC_SERVER_PORT,
-                maxRetryAttempt: Int = DEFAULT_MAX_RETRY_ATTEMPT,
-                serverFactory: (Int) -> ServerBuilder<*> = { port ->
-                    createServerBuilder(certChainFile, privateKeyFile, trustCertCollectionFile, port)
-                }
+            certChainFile: File,
+            privateKeyFile: File,
+            trustCertCollectionFile: File,
+            listener: UtpTestResultListener?,
+            defaultPort: Int = DEFAULT_GRPC_SERVER_PORT,
+            maxRetryAttempt: Int = DEFAULT_MAX_RETRY_ATTEMPT,
+            executorService: ExecutorService = Executors.newCachedThreadPool(),
+            serverFactory: (Int) -> ServerBuilder<*> = { port ->
+                createServerBuilder(certChainFile, privateKeyFile, trustCertCollectionFile, port)
+            }
         ): UtpTestResultListenerServer? {
             for (attempt in 0 until maxRetryAttempt) {
                 val port = defaultPort + attempt
                 try {
-                    return UtpTestResultListenerServer(port, listener, serverFactory)
+                    return UtpTestResultListenerServer(port, listener, serverFactory, executorService)
                 } catch (exception: IOException) {
                     logger.info("Failed to bind and start the gRPC server." +
                             " Retrying with a different port number.")
@@ -84,10 +90,10 @@ class UtpTestResultListenerServer private constructor(
         }
 
         private fun createServerBuilder(
-                certChainFile: File,
-                privateKeyFile: File,
-                trustCertCollectionFile: File,
-                port: Int): ServerBuilder<*> {
+            certChainFile: File,
+            privateKeyFile: File,
+            trustCertCollectionFile: File,
+            port: Int): ServerBuilder<*> {
             val sslContext = SslContextBuilder.forServer(certChainFile, privateKeyFile).apply {
                 trustManager(trustCertCollectionFile)
                 clientAuth(ClientAuth.REQUIRE)
@@ -100,12 +106,16 @@ class UtpTestResultListenerServer private constructor(
 
     @VisibleForTesting
     val server: Server = serverFactory(port)
-            .addService(GradleAndroidTestResultListenerService(listener))
-            .build()
-            .start()
+        .addService(GradleAndroidTestResultListenerService(listener))
+        .executor(executorService)
+        .build()
+        .start()
 
     override fun close() {
-        server.shutdownNow().awaitTermination()
+        server.shutdownNow()
+        server.awaitTermination(1, TimeUnit.SECONDS)
+        executorService.shutdownNow()
+        executorService.awaitTermination(1, TimeUnit.SECONDS)
     }
 }
 
@@ -115,7 +125,7 @@ private class GradleAndroidTestResultListenerService(val listener: UtpTestResult
         private val logger = Logging.getLogger(GradleAndroidTestResultListenerService::class.java)
     }
     override fun recordTestResultEvent(
-            responseObserver: StreamObserver<RecordTestResultEventResponse>): StreamObserver<TestResultEvent> {
+        responseObserver: StreamObserver<RecordTestResultEventResponse>): StreamObserver<TestResultEvent> {
         return object: StreamObserver<TestResultEvent> {
             /**
              * A device ID that this stream observer receives test results from.

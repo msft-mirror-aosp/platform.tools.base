@@ -21,6 +21,7 @@ import com.android.tools.utp.plugins.result.listener.gradle.proto.GradleAndroidT
 import com.android.tools.utp.plugins.result.listener.gradle.proto.GradleAndroidTestResultListenerProto.TestResultEvent.TestSuiteStarted
 import com.android.tools.utp.plugins.result.listener.gradle.proto.GradleAndroidTestResultListenerServiceGrpc
 import com.google.common.truth.Truth.assertThat
+import com.google.common.util.concurrent.MoreExecutors
 import com.google.protobuf.Any
 import com.google.testing.platform.proto.api.core.TestStatusProto
 import com.google.testing.platform.proto.api.core.TestSuiteResultProto.TestSuiteResult
@@ -56,15 +57,16 @@ class UtpTestResultListenerServerTest {
         var capturedPort: Int? = null
 
         val server = UtpTestResultListenerServer.startServer(
-                mockTrustCertCollection,
-                mockResultListenerClientPrivateKey,
-                mockTrustCertCollection,
-                mockTestResultListener,
-                defaultPort = 1234,
-                maxRetryAttempt = 1
+            mockTrustCertCollection,
+            mockResultListenerClientPrivateKey,
+            mockTrustCertCollection,
+            mockTestResultListener,
+            defaultPort = 1234,
+            maxRetryAttempt = 1,
+            executorService = MoreExecutors.newDirectExecutorService(),
         ) { port ->
             capturedPort = port
-            InProcessServerBuilder.forName(serverName).directExecutor()
+            InProcessServerBuilder.forName(serverName)
         }
 
         requireNotNull(server)
@@ -73,17 +75,23 @@ class UtpTestResultListenerServerTest {
         assertThat(capturedPort).isEqualTo(1234)
 
         server.close()
+
+        assertThat(server.server.isTerminated).isTrue()
+        assertThat(server.server.isShutdown).isTrue()
+        assertThat(server.executorService.isTerminated).isTrue()
+        assertThat(server.executorService.isShutdown).isTrue()
     }
 
     @Test
     fun availablePortNotFound() {
         val server = UtpTestResultListenerServer.startServer(
-                mockTrustCertCollection,
-                mockResultListenerClientPrivateKey,
-                mockTrustCertCollection,
-                mockTestResultListener,
-                defaultPort = 1234,
-                maxRetryAttempt = 1
+            mockTrustCertCollection,
+            mockResultListenerClientPrivateKey,
+            mockTrustCertCollection,
+            mockTestResultListener,
+            defaultPort = 1234,
+            maxRetryAttempt = 1,
+            executorService = MoreExecutors.newDirectExecutorService(),
         ) { port ->
             throw IOException("port: ${port} is not available")
         }
@@ -98,18 +106,19 @@ class UtpTestResultListenerServerTest {
         var capturedPort: Int? = null
 
         val server = UtpTestResultListenerServer.startServer(
-                mockTrustCertCollection,
-                mockResultListenerClientPrivateKey,
-                mockTrustCertCollection,
-                mockTestResultListener,
-                defaultPort = 1234,
-                maxRetryAttempt = 2
+            mockTrustCertCollection,
+            mockResultListenerClientPrivateKey,
+            mockTrustCertCollection,
+            mockTestResultListener,
+            defaultPort = 1234,
+            maxRetryAttempt = 2,
+            executorService = MoreExecutors.newDirectExecutorService(),
         ) { port ->
             if (port == 1234) {
                 throw IOException("port: ${port} is not available")
             }
             capturedPort = port
-            InProcessServerBuilder.forName(serverName).directExecutor()
+            InProcessServerBuilder.forName(serverName)
         }
 
         requireNotNull(server)
@@ -125,47 +134,48 @@ class UtpTestResultListenerServerTest {
         val serverName = InProcessServerBuilder.generateName()
 
         val server = UtpTestResultListenerServer.startServer(
-                mockTrustCertCollection,
-                mockResultListenerClientPrivateKey,
-                mockTrustCertCollection,
-                mockTestResultListener,
-                defaultPort = 1234,
-                maxRetryAttempt = 1
+            mockTrustCertCollection,
+            mockResultListenerClientPrivateKey,
+            mockTrustCertCollection,
+            mockTestResultListener,
+            defaultPort = 1234,
+            maxRetryAttempt = 1,
+            executorService = MoreExecutors.newDirectExecutorService(),
         ) {
-            InProcessServerBuilder.forName(serverName).directExecutor()
+            InProcessServerBuilder.forName(serverName)
         }
 
         requireNotNull(server)
         grpcCleanup.register(server.server)
 
         val stub = GradleAndroidTestResultListenerServiceGrpc.newStub(
-                grpcCleanup.register(
-                        InProcessChannelBuilder
-                                .forName(serverName)
-                                .directExecutor()
-                                .build()))
+            grpcCleanup.register(
+                InProcessChannelBuilder
+                    .forName(serverName)
+                    .directExecutor()
+                    .build()))
 
         lateinit var response: RecordTestResultEventResponse
         var completed = false
         val requestObserver = stub.recordTestResultEvent(
-                object: StreamObserver<RecordTestResultEventResponse>{
-                    override fun onNext(res: RecordTestResultEventResponse) {
-                        response = res
-                    }
+            object: StreamObserver<RecordTestResultEventResponse>{
+                override fun onNext(res: RecordTestResultEventResponse) {
+                    response = res
+                }
 
-                    override fun onError(error: Throwable) {}
+                override fun onError(error: Throwable) {}
 
-                    override fun onCompleted() {
-                        completed = true
-                    }
-                })
+                override fun onCompleted() {
+                    completed = true
+                }
+            })
 
         requestObserver.onNext(
-                TestResultEvent.newBuilder().apply {
-                    testSuiteStarted = TestSuiteStarted.newBuilder().apply {
-                        deviceId = "testDeviceId"
-                    }.build()
+            TestResultEvent.newBuilder().apply {
+                testSuiteStarted = TestSuiteStarted.newBuilder().apply {
+                    deviceId = "testDeviceId"
                 }.build()
+            }.build()
         )
         requestObserver.onCompleted()
 
@@ -174,11 +184,11 @@ class UtpTestResultListenerServerTest {
 
         inOrder(mockTestResultListener).apply {
             verify(mockTestResultListener).onTestResultEvent(
-                    eq(TestResultEvent.newBuilder().apply {
-                        testSuiteStarted = TestSuiteStarted.newBuilder().apply {
-                            deviceId = "testDeviceId"
-                        }.build()
-                    }.build()))
+                eq(TestResultEvent.newBuilder().apply {
+                    testSuiteStarted = TestSuiteStarted.newBuilder().apply {
+                        deviceId = "testDeviceId"
+                    }.build()
+                }.build()))
         }
 
         server.close()
@@ -193,9 +203,10 @@ class UtpTestResultListenerServerTest {
             mockTrustCertCollection,
             mockTestResultListener,
             defaultPort = 1234,
-            maxRetryAttempt = 1
+            maxRetryAttempt = 1,
+            executorService = MoreExecutors.newDirectExecutorService(),
         ) {
-            InProcessServerBuilder.forName(serverName).directExecutor()
+            InProcessServerBuilder.forName(serverName)
         }
         requireNotNull(server)
         grpcCleanup.register(server.server)
