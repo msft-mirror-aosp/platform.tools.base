@@ -25,6 +25,8 @@ import com.google.testing.platform.proto.api.core.TestStatusProto
 import com.google.testing.platform.proto.api.core.TestSuiteResultProto.TestSuiteResult
 import io.grpc.Server
 import io.grpc.ServerBuilder
+import io.grpc.Status
+import io.grpc.StatusRuntimeException
 import io.grpc.netty.GrpcSslContexts
 import io.grpc.netty.NettyServerBuilder
 import io.grpc.stub.StreamObserver
@@ -127,6 +129,23 @@ private class GradleAndroidTestResultListenerService(val listener: UtpTestResult
             }
 
             override fun onError(error: Throwable) {
+                if (error is StatusRuntimeException) {
+                    // A CANCELLED status typically occurs if the user aborts the Gradle build.
+                    // We handle this case explicitly to avoid logging a confusing generic error.
+                    // Instead, we report the test suite itself as CANCELLED.
+                    if (error.status.code == Status.CANCELLED.code) {
+                        listener?.onTestResultEvent(TestResultEvent.newBuilder().apply {
+                            deviceId = targetDeviceId
+                            testSuiteFinishedBuilder.apply {
+                                testSuiteResult = Any.pack(TestSuiteResult.newBuilder().apply {
+                                    testStatus = TestStatusProto.TestStatus.CANCELLED
+                                }.build())
+                            }
+                        }.build())
+                        return
+                    }
+                }
+
                 logger.error("Could not receive test results from the test executor.", error)
 
                 val grpcErrorEvent = TestResultEvent.newBuilder().apply {
