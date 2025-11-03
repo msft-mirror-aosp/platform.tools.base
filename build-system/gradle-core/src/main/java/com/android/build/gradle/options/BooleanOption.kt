@@ -588,8 +588,8 @@ enum class BooleanOption(
      */
     DISALLOW_USES_SDK_IN_MANIFEST(
         "android.usesSdkInManifest.disallowed",
-        false,
-        FeatureStage.SoftlyEnforced(VERSION_9_0)
+        true,
+        FeatureStage.SoftlyEnforced(VERSION_10_0)
     ),
 
     DEFAULT_TARGET_SDK_TO_COMPILE_SDK_IF_UNSET(
