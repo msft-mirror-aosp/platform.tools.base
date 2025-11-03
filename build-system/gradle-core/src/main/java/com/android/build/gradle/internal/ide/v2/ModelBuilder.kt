@@ -18,6 +18,7 @@ package com.android.build.gradle.internal.ide.v2
 
 import com.android.SdkConstants
 import com.android.Version
+import com.android.build.api.artifact.MultipleArtifact
 import com.android.build.api.artifact.ScopedArtifact
 import com.android.build.api.artifact.SingleArtifact
 import com.android.build.api.component.impl.DeviceTestImpl
@@ -135,7 +136,6 @@ import org.gradle.api.Project
 import org.gradle.api.artifacts.component.ProjectComponentSelector
 import org.gradle.internal.resolve.ModuleVersionResolveException
 import org.gradle.tooling.provider.model.ParameterizedToolingModelBuilder
-import org.jetbrains.kotlin.gradle.internal.builtins.StandardNames.FqNames.mutableList
 import java.io.File
 import java.io.FileInputStream
 import java.io.IOException
@@ -1627,6 +1627,15 @@ class ModelBuilder<ExtensionT : CommonExtension>(
         if (kaptClasses != null) {
             classesFolders.add(kaptClasses.get().asFile)
             generatedClassPaths["kaptGeneratedClasses"] = kaptClasses.get().asFile
+        }
+
+        val preCompilationClasses =
+            component.artifacts.getAll(MultipleArtifact.PRE_COMPILATION_CLASSES)
+                .get()
+                .map { it.asFile }
+        classesFolders.addAll(preCompilationClasses)
+        preCompilationClasses.forEachIndexed { index, preCompilationClasses ->
+            generatedClassPaths["preCompilationClasses_$index"] = preCompilationClasses
         }
 
         return generatedClassPaths
