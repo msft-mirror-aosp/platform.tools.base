@@ -562,6 +562,7 @@ package com.android.build.api.dsl {
     method public void buildFeatures(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.ApplicationBuildFeatures,kotlin.Unit> action);
     method public void buildTypes(kotlin.jvm.functions.Function1<? super org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.ApplicationBuildType>,kotlin.Unit> action);
     method @org.gradle.declarative.dsl.model.annotations.Configuring public void bundle(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.Bundle,kotlin.Unit> action);
+    method @org.gradle.declarative.dsl.model.annotations.Configuring public void compileOptions(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.CompileOptions,kotlin.Unit> action);
     method public void composeOptions(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.ComposeOptions,kotlin.Unit> action);
     method public void dataBinding(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.DataBinding,kotlin.Unit> action);
     method public void debug(org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.ApplicationBuildType>, kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.ApplicationBuildType,kotlin.Unit> action);
@@ -603,6 +604,7 @@ package com.android.build.api.dsl {
     property public abstract com.android.build.api.dsl.ApplicationBuildFeatures buildFeatures;
     property public abstract org.gradle.api.NamedDomainObjectContainer<? extends com.android.build.api.dsl.ApplicationBuildType> buildTypes;
     property public abstract com.android.build.api.dsl.Bundle bundle;
+    property public abstract com.android.build.api.dsl.CompileOptions compileOptions;
     property public abstract com.android.build.api.dsl.ComposeOptions composeOptions;
     property public abstract com.android.build.api.dsl.DataBinding dataBinding;
     property public abstract com.android.build.api.dsl.ApplicationDefaultConfig defaultConfig;
@@ -980,7 +982,6 @@ package com.android.build.api.dsl {
 
   public interface CommonExtension extends org.gradle.api.plugins.ExtensionAware {
     method @Deprecated public void buildToolsVersion(String buildToolsVersion);
-    method @org.gradle.declarative.dsl.model.annotations.Configuring public void compileOptions(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.CompileOptions,kotlin.Unit> action);
     method public void compileSdk(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.CompileSdkSpec,kotlin.Unit> action);
     method public void compileSdkAddon(String vendor, String name, int version);
     method @Deprecated public void compileSdkVersion(int apiLevel);
@@ -1212,6 +1213,7 @@ package com.android.build.api.dsl {
     method public void androidResources(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.DynamicFeatureAndroidResources,kotlin.Unit> action);
     method public void buildFeatures(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.DynamicFeatureBuildFeatures,kotlin.Unit> action);
     method public void buildTypes(kotlin.jvm.functions.Function1<? super org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.DynamicFeatureBuildType>,kotlin.Unit> action);
+    method @org.gradle.declarative.dsl.model.annotations.Configuring public void compileOptions(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.CompileOptions,kotlin.Unit> action);
     method public void composeOptions(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.ComposeOptions,kotlin.Unit> action);
     method public void dataBinding(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.DataBinding,kotlin.Unit> action);
     method public void debug(org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.DynamicFeatureBuildType>, kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.DynamicFeatureBuildType,kotlin.Unit> action);
@@ -1244,6 +1246,7 @@ package com.android.build.api.dsl {
     property public abstract com.android.build.api.dsl.DynamicFeatureAndroidResources androidResources;
     property public abstract com.android.build.api.dsl.DynamicFeatureBuildFeatures buildFeatures;
     property public abstract org.gradle.api.NamedDomainObjectContainer<? extends com.android.build.api.dsl.DynamicFeatureBuildType> buildTypes;
+    property public abstract com.android.build.api.dsl.CompileOptions compileOptions;
     property public abstract com.android.build.api.dsl.ComposeOptions composeOptions;
     property public abstract com.android.build.api.dsl.DataBinding dataBinding;
     property public abstract com.android.build.api.dsl.DynamicFeatureDefaultConfig defaultConfig;
@@ -1562,6 +1565,7 @@ package com.android.build.api.dsl {
     method public void androidResources(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.LibraryAndroidResources,kotlin.Unit> action);
     method public void buildFeatures(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.LibraryBuildFeatures,kotlin.Unit> action);
     method public void buildTypes(kotlin.jvm.functions.Function1<? super org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.LibraryBuildType>,kotlin.Unit> action);
+    method @org.gradle.declarative.dsl.model.annotations.Configuring public void compileOptions(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.CompileOptions,kotlin.Unit> action);
     method public void composeOptions(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.ComposeOptions,kotlin.Unit> action);
     method public void dataBinding(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.DataBinding,kotlin.Unit> action);
     method public void debug(org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.LibraryBuildType>, kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.LibraryBuildType,kotlin.Unit> action);
@@ -1599,6 +1603,7 @@ package com.android.build.api.dsl {
     property public abstract com.android.build.api.dsl.LibraryAndroidResources androidResources;
     property public abstract com.android.build.api.dsl.LibraryBuildFeatures buildFeatures;
     property public abstract org.gradle.api.NamedDomainObjectContainer<? extends com.android.build.api.dsl.LibraryBuildType> buildTypes;
+    property public abstract com.android.build.api.dsl.CompileOptions compileOptions;
     property public abstract com.android.build.api.dsl.ComposeOptions composeOptions;
     property public abstract com.android.build.api.dsl.DataBinding dataBinding;
     property public abstract com.android.build.api.dsl.LibraryDefaultConfig defaultConfig;
@@ -2258,6 +2263,7 @@ package com.android.build.api.dsl {
     method public void androidResources(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.TestAndroidResources,kotlin.Unit> action);
     method public void buildFeatures(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.TestBuildFeatures,kotlin.Unit> action);
     method public void buildTypes(kotlin.jvm.functions.Function1<? super org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.TestBuildType>,kotlin.Unit> action);
+    method @org.gradle.declarative.dsl.model.annotations.Configuring public void compileOptions(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.CompileOptions,kotlin.Unit> action);
     method public void composeOptions(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.ComposeOptions,kotlin.Unit> action);
     method public void dataBinding(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.DataBinding,kotlin.Unit> action);
     method public void debug(org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.TestBuildType>, kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.TestBuildType,kotlin.Unit> action);
@@ -2292,6 +2298,7 @@ package com.android.build.api.dsl {
     property public abstract com.android.build.api.dsl.TestAndroidResources androidResources;
     property public abstract com.android.build.api.dsl.TestBuildFeatures buildFeatures;
     property public abstract org.gradle.api.NamedDomainObjectContainer<? extends com.android.build.api.dsl.TestBuildType> buildTypes;
+    property public abstract com.android.build.api.dsl.CompileOptions compileOptions;
     property public abstract com.android.build.api.dsl.ComposeOptions composeOptions;
     property public abstract com.android.build.api.dsl.DataBinding dataBinding;
     property public abstract com.android.build.api.dsl.TestDefaultConfig defaultConfig;

@@ -21,6 +21,7 @@ import com.android.build.gradle.api.AndroidSourceSet
 import com.android.build.gradle.api.BaseVariant
 import com.android.build.gradle.api.BaseVariantOutput
 import com.android.build.gradle.api.LibraryVariant
+import com.android.build.gradle.internal.CompileOptions
 import com.android.build.gradle.internal.DependenciesExtension
 import com.android.build.gradle.internal.dependency.SourceSetManager
 import com.android.build.gradle.internal.dsl.AaptOptions
@@ -159,6 +160,9 @@ abstract class LibraryExtension @Inject constructor(
 
     override val lintOptions: LintOptions
         get() = publicExtensionImpl.lintOptions
+
+    override val compileOptions: CompileOptions
+        get() = publicExtensionImpl.compileOptions as CompileOptions
 
     private val libraryVariantList: DomainObjectSet<LibraryVariant> =
         dslServices.domainObjectSet(LibraryVariant::class.java)

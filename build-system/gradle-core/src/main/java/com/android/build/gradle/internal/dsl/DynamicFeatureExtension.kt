@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.internal.dsl
 
+import com.android.build.gradle.internal.CompileOptions
 import com.android.build.gradle.AppExtension
 import com.android.build.gradle.api.AndroidSourceSet
 import com.android.build.gradle.api.BaseVariantOutput
@@ -105,6 +106,9 @@ abstract class DynamicFeatureExtension @Inject constructor(
 
     override val lintOptions: LintOptions
         get() = publicExtensionImpl.lintOptions
+
+    override val compileOptions: CompileOptions
+        get() = publicExtensionImpl.compileOptions as CompileOptions
 
     //TODO(b/421964815): remove the support for groovy space assignment(e.g `compileSdk 24`).
     @Deprecated(

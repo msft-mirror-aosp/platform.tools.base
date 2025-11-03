@@ -24,6 +24,7 @@ import com.android.build.api.dsl.ComposeOptions
 import com.android.build.gradle.AppExtension
 import com.android.build.gradle.api.AndroidSourceSet
 import com.android.build.gradle.api.BaseVariantOutput
+import com.android.build.gradle.internal.CompileOptions
 import com.android.build.gradle.internal.DependenciesExtension
 import com.android.build.gradle.internal.coverage.JacocoOptions
 import com.android.build.gradle.internal.dependency.SourceSetManager
@@ -158,6 +159,9 @@ abstract class BaseAppModuleExtension @Inject constructor(
 
     override val lintOptions: LintOptions
         get() = publicExtensionImpl.lintOptions
+
+    override val compileOptions: CompileOptions
+        get() = publicExtensionImpl.compileOptions as CompileOptions
 
     @Configuring
     override fun defaultConfig(action: ApplicationDefaultConfig.() -> Unit) {

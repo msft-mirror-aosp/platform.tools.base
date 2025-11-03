@@ -29,6 +29,7 @@ import com.android.build.api.dsl.Lint
 import com.android.build.api.dsl.Packaging
 import com.android.build.api.dsl.PrivacySandbox
 import com.android.build.api.dsl.TestCoverage
+import com.android.build.gradle.internal.CompileOptions as CompileOptionsImpl
 import com.android.build.gradle.internal.dsl.LintOptions as LintOptionsImpl
 import com.android.build.gradle.internal.dsl.TestOptions as TestOptionsImpl
 import com.android.build.gradle.internal.dsl.Splits as SplitsImpl
@@ -54,6 +55,7 @@ interface InternalApplicationExtension : ApplicationExtension, InternalTestedExt
     fun androidResources(action: Action<ApplicationAndroidResources>)
     fun buildFeatures(action: Action<ApplicationBuildFeatures>)
     fun buildTypes(action: Action<in NamedDomainObjectContainer<BuildType>>)
+    fun compileOptions(action: Action<CompileOptionsImpl>)
     fun composeOptions(action: Action<ComposeOptions>)
     fun dataBinding(action: Action<DataBindingOptionsImpl>)
     fun viewBinding(action: Action<ViewBindingOptionsImpl>)

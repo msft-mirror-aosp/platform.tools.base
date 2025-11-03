@@ -26,6 +26,7 @@ import com.android.build.api.dsl.Lint
 import com.android.build.api.dsl.Packaging
 import com.android.build.api.dsl.PrivacySandbox
 import com.android.build.api.dsl.TestCoverage
+import com.android.build.gradle.internal.CompileOptions as CompileOptionsImpl
 import com.android.build.gradle.internal.dsl.AaptOptions as AaptOptionsImpl
 import com.android.build.gradle.internal.dsl.AdbOptions as AdbOptionsImpl
 import com.android.build.gradle.internal.dsl.DataBindingOptions as DataBindingOptionsImpl
@@ -46,6 +47,7 @@ interface InternalLibraryExtension: LibraryExtension, InternalTestedExtension{
     fun adbOptions(action: Action<AdbOptionsImpl>)
     fun androidResources(action: Action<LibraryAndroidResources>)
     fun buildTypes(action: Action<in NamedDomainObjectContainer<BuildType>>)
+    fun compileOptions(action: Action<CompileOptionsImpl>)
     fun composeOptions(action: Action<ComposeOptions>)
     fun dataBinding(action: Action<DataBindingOptionsImpl>)
     fun viewBinding(action: Action<ViewBindingOptionsImpl>)

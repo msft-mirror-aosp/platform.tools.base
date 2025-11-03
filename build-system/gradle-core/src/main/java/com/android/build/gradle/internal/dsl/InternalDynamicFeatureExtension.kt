@@ -34,6 +34,7 @@ import com.android.build.gradle.internal.dsl.TestOptions as TestOptionsImpl
 import com.android.build.gradle.internal.dsl.Splits as SplitsImpl
 import com.android.build.api.dsl.PrivacySandbox
 import com.android.build.api.dsl.TestCoverage
+import com.android.build.gradle.internal.CompileOptions as CompileOptionsImpl
 import org.gradle.api.Action
 import org.gradle.api.NamedDomainObjectContainer
 
@@ -42,6 +43,7 @@ interface InternalDynamicFeatureExtension: DynamicFeatureExtension, InternalTest
     fun aaptOptions(action: Action<AaptOptionsImpl>)
     fun adbOptions(action: Action<AdbOptionsImpl>)
     fun androidResources(action: Action<DynamicFeatureAndroidResources>)
+    fun compileOptions(action: Action<CompileOptionsImpl>)
     fun composeOptions(action: Action<ComposeOptions>)
     fun dataBinding(action: Action<DataBindingOptionsImpl>)
     fun viewBinding(action: Action<ViewBindingOptionsImpl>)

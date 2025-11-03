@@ -28,12 +28,10 @@ import com.android.build.gradle.internal.CompileOptions as CompileOptionsImpl
  * to the new implementations.
  */
 interface InternalCommonExtension: CommonExtension, Lockable {
-    override val compileOptions: CompileOptionsImpl
 
     var compileSdkVersion: String?
 
     // See GroovyExtensionsTest
-    fun compileOptions(action: Action<CompileOptionsImpl>)
     fun setFlavorDimensions(flavorDimensions: List<String>)
     fun compileSdk(action: Action<CompileSdkSpec>)
 }

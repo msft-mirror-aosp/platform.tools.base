@@ -27,6 +27,7 @@ import com.android.build.api.dsl.TestDefaultConfig
 import com.android.build.api.dsl.TestExtension
 import com.android.build.api.dsl.TestInstallation
 import com.android.build.api.dsl.TestProductFlavor
+import com.android.build.gradle.internal.CompileOptions as CompileOptionsImpl
 import com.android.build.gradle.internal.dsl.AaptOptions as AaptOptionsImpl
 import com.android.build.gradle.internal.dsl.AdbOptions as AdbOptionsImpl
 import com.android.build.gradle.internal.dsl.DataBindingOptions as DataBindingOptionsImpl
@@ -46,6 +47,7 @@ interface InternalTestExtension: TestExtension, InternalCommonExtension {
     fun androidResources(action: Action<TestAndroidResources>)
     fun buildFeatures(action: Action<TestBuildFeatures>)
     fun buildTypes(action: Action<in NamedDomainObjectContainer<BuildType>>)
+    fun compileOptions(action: Action<CompileOptionsImpl>)
     fun composeOptions(action: Action<ComposeOptions>)
     fun dataBinding(action: Action<DataBindingOptionsImpl>)
     fun viewBinding(action: Action<ViewBindingOptionsImpl>)
