@@ -369,8 +369,14 @@ open class GradleTestProject @JvmOverloads constructor(
                 throw Throwables.propagate(t)
             }
         }
-    }
 
+        internal val allowedTests by lazy {
+            val contentUrl = GradleTestProject::class.java.getResource("/allow-listed-test-classes.txt")
+                ?: throw RuntimeException("unable to find allow-listed-test-classes.txt")
+
+            contentUrl.readText().lines()
+        }
+    }
 
     private val ndkSymlinkPath: File? by lazy {
         relativeNdkSymlinkPath?.let { location.testLocation.buildDir.resolve(it).canonicalFile }
@@ -506,6 +512,8 @@ open class GradleTestProject @JvmOverloads constructor(
         base: Statement,
         description: Description
     ): Statement {
+        validateWithAllowList(description.testClass)
+
         return if (rootProject != this) {
             rootProject.apply(base, description)
         } else object : Statement() {
@@ -574,6 +582,25 @@ open class GradleTestProject @JvmOverloads constructor(
                     }
                 }
             }
+        }
+    }
+
+    private fun validateWithAllowList(testClass: Class<*>) {
+        if (!allowedTests.contains(testClass.name)) {
+            throw RuntimeException(
+                """
+                    GradleTestProject is deprecated, you must use the GradleRule test fixture instead.
+
+                    If that fixture does not work for your test, you should file a bug to fix it
+                    first and then use GradleRule.
+
+                     You should only use GradleTestProject as a last resort if fixing GradleRule
+                     is too complex or would take too long. In that case, file another bug to
+                     convert the test once the fixture is fixed.
+                     To enable using GradleTestProject, add the test class '${testClass.name}' to
+                     tools/base/build-system/integration-test/framework/src/main/resources/allow-listed-test-classes.txt
+                """.trimIndent()
+            )
         }
     }
 

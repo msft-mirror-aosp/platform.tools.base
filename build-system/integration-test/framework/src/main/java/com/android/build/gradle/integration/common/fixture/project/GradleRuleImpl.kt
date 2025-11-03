@@ -373,7 +373,9 @@ internal class GradleRuleImpl internal constructor(
     override fun apply(
         base: Statement,
         description: Description
-    ): Statement? {
+    ): Statement {
+        validateWithAllowList(description.testClass)
+
         return object: Statement() {
             override fun evaluate() {
                 // We should not support class level application of this rule as it does not make
@@ -422,6 +424,20 @@ internal class GradleRuleImpl internal constructor(
                     }
                 }
             }
+        }
+    }
+
+    private fun validateWithAllowList(testClass: Class<*>) {
+        // make sure the allow list for test classes using the old fixture
+        // does not contain a converted test.
+        if (GradleTestProject.allowedTests.contains(testClass.name)) {
+            throw RuntimeException(
+                """
+                    Test class ${testClass.name} was found in the allow list for the old test fixture.
+                    Remove it from:
+                    tools/base/build-system/integration-test/framework/src/main/resources/allow-listed-test-classes.txt
+                """.trimIndent()
+            )
         }
     }
 
