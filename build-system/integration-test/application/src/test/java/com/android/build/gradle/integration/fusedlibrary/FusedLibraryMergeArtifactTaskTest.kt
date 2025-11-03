@@ -23,8 +23,10 @@ import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.JavaLibraryProjectDefinition
 import com.android.build.gradle.integration.common.fixture.project.plugins.GenericCallback
 import com.android.build.gradle.options.BooleanOption
+import com.google.common.truth.Truth.assertThat
 import org.gradle.api.Project
 import org.gradle.api.tasks.bundling.Jar
+import org.gradle.internal.impldep.com.amazonaws.util.Throwables
 import org.junit.Rule
 import org.junit.Test
 
@@ -43,6 +45,9 @@ internal class FusedLibraryMergeArtifactsTest {
                     "aarMetadataVersion" to "1.0"
                 ),
             )
+            aar(
+                "com.remoteaar", "contains-global-proguard-rule"
+            ).withProguardRules("-ignorewarnings")
         }
         .from {
         // Library dependency at depth 1 with no dependencies.
@@ -543,6 +548,23 @@ internal class FusedLibraryMergeArtifactsTest {
                     # androidLib1
                     -dontwarn some.clazz.that.doesnt.Exist
                     """.trimIndent()
+            )
+        }
+    }
+
+    @Test
+    fun checkConsumerProguardRulesValidationFailure() {
+        val build = rule.build {
+            fusedLibrary(":fusedLib1") {
+                dependencies {
+                    include("com.remoteaar:contains-global-proguard-rule:1.0")
+                }
+            }
+        }
+        build.executor.expectFailure().run("fusedLib1:assemble").apply {
+            assertTask(":fusedLib1:mergingArtifactUNFILTERED_PROGUARD_RULES").failed()
+            assertFailureMessage().contains(
+                "Global keep option -ignorewarnings was specified as a consumerProguardFile"
             )
         }
     }

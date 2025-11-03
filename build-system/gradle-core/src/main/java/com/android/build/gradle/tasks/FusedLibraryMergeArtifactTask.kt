@@ -169,12 +169,17 @@ abstract class FusedLibraryMergeArtifactTask : NonIncrementalGlobalTask() {
                             .flatMap(File::walkBottomUp)
                             .asSequence()
                             .filter(File::isFile)
-                            .filterNot { it.readBytes().none() }
+                            .filterNot { it.length() == 0L }
                             .onEach {
                                 if (it.name != FN_PROGUARD_TXT) {
                                     error("Expected a file named '$FN_PROGUARD_TXT' but found file entry named '${it.name}'.")
                                 }
-                            }
+                                ConsumerRuleGlobalGuardian.validateConsumerRulesHasNoBannedGlobals(
+                                    it,
+                                    false,
+                                    { error(it.errorMessage) }
+                                )
+                            }.toList()
                         if (consumerProguardFiles.none()) {
                             return
                         }
@@ -187,11 +192,6 @@ abstract class FusedLibraryMergeArtifactTask : NonIncrementalGlobalTask() {
                             }
                             outputFile.writeText(toString())
                         }
-                        ConsumerRuleGlobalGuardian.validateConsumerRulesHasNoBannedGlobals(
-                            outputFile,
-                            false,
-                            ::error
-                        )
                     }
                     else -> {
                         val supportedArtifacts = mergeArtifactMap.map { it.first }
