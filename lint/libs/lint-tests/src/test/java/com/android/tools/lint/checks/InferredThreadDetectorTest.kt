@@ -20,6 +20,7 @@ import com.android.tools.lint.checks.infrastructure.LintDetectorTest
 import com.android.tools.lint.checks.infrastructure.TestLintTask
 import com.android.tools.lint.checks.infrastructure.TestMode
 import com.android.tools.lint.useFirUast
+import com.google.common.truth.Truth
 
 @Suppress("LintDocExample")
 class InferredThreadDetectorTest : AbstractCheckTest() {
@@ -1135,6 +1136,62 @@ class InferredThreadDetectorTest : AbstractCheckTest() {
       )
       .run()
       .expectClean()
+  }
+
+  // Test reduced from third_party/.../kotlin-result/../result/Zip.kt
+  fun testNestedLambda() {
+    val start = System.currentTimeMillis()
+    lint()
+      .files(
+        kotlin(
+            """
+          sealed class Res<out V>
+          class Ok<out V>(val value: V) : Res<V>()
+          object Err : Res<Nothing>()
+
+          fun <T1, T2, T3, T4, T5, V> zip(
+            result1: () -> Res<T1>,
+            result2: () -> Res<T2>,
+            result3: () -> Res<T3>,
+            result4: () -> Res<T4>,
+            result5: () -> Res<T5>,
+            transform: (T1, T2, T3, T4, T5) -> V
+          ): Res<V> =
+            result1().bind { v1 ->
+              result2().bind { v2 ->
+                result3().bind { v3 ->
+                  result4().bind { v4 ->
+                    result5().map { v5 ->
+                      transform(v1, v2, v3, v4, v5)
+                    }
+                  }
+                }
+              }
+            }
+
+          private infix fun <V, U> Res<V>.map(transform: (V) -> U): Res<U> =
+            when (this) {
+              is Ok -> Ok(transform(value))
+              is Err -> this
+            }
+
+          private infix fun <V, U> Res<V>.bind(transform: (V) -> Res<U>): Res<U> =
+            when (this) {
+              is Ok -> transform(value)
+              is Err -> this
+            }
+
+          """
+              .trimIndent()
+          )
+          .indented()
+      )
+      .run()
+      .expectClean()
+    val end = System.currentTimeMillis()
+    // Before the fix, this test took ~115s on an M3 Pro. After the fix, it takes <2s (including
+    // project initialization time). We give it 10x leeway.
+    Truth.assertThat(end - start).isLessThan(20_000)
   }
 
   fun testInterpreter_bigStep() {

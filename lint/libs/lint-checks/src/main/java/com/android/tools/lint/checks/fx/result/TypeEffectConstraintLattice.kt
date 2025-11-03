@@ -434,6 +434,11 @@ fun <FX> Lattice<Type<FX>>.widen(t: Type<FX>): Type<FX> =
           }
           is Type.Union -> Type.Union(t.cases.map(::generalize))
           is Type.Application -> t.copy(args = t.args.map(::generalize))
+          is Type.Sym.Invoke ->
+            t.copy(
+              receiver = generalize(t.receiver) as? Type.Sym ?: t.receiver,
+              args = t.args.map(::generalize),
+            )
           else -> t
         }
       val summarizedBody = generalize(t.body.value)
