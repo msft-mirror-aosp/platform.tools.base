@@ -33,59 +33,54 @@ import org.junit.Test
 class ApkInstallGroupsTest {
 
     @get:Rule
-    val rule: GradleRule by lazy {
-        GradleRule.configure().from {
-            androidApplication {
-                android {
-                    namespace = "com.example.android.kotlin"
-                    defaultConfig {
-                        minSdk = 21
-                        versionCode = 1
-                        versionName = "1.0"
-                        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-                    }
-                    dynamicFeatures.add(":feature")
+    val rule: GradleRule = GradleRule.configure().from {
+        androidApplication {
+            android {
+                namespace = "com.example.android.kotlin"
+                defaultConfig {
+                    minSdk = 21
+                    versionCode = 1
+                    versionName = "1.0"
+                    testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
                 }
-                kotlin {
-                    jvmToolchain(17)
-                }
+                dynamicFeatures.add(":feature")
             }
-
-            androidTest {
-                android {
-                    namespace = "com.example.android.kotlin.testonly"
-                    defaultConfig {
-                        minSdk = 21
-                        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-                    }
-                    targetProjectPath = ":feature"
-                }
-                kotlin {
-                    jvmToolchain(17)
-                }
-                pluginCallbacks += MyTestCallback::class.java
-            }
-
-            androidFeature {
-                android {
-                    namespace = "com.example.android.kotlin.feature"
-                    defaultConfig {
-                        minSdk = 21
-                        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-                    }
-                    dependencies {
-                        implementation(project(":app"))
-                    }
-                }
-                kotlin {
-                    jvmToolchain(17)
-                }
-            }
-
-            gradleProperties {
-                add(BooleanOption.USE_ANDROID_X, true)
+            kotlin {
+                jvmToolchain(17)
             }
         }
+
+        androidTest {
+            android {
+                namespace = "com.example.android.kotlin.testonly"
+                defaultConfig {
+                    minSdk = 21
+                    testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+                }
+                targetProjectPath = ":feature"
+            }
+            kotlin {
+                jvmToolchain(17)
+            }
+            pluginCallbacks += MyTestCallback::class.java
+        }
+
+        androidFeature {
+            android {
+                namespace = "com.example.android.kotlin.feature"
+                defaultConfig {
+                    minSdk = 21
+                    testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+                }
+                dependencies {
+                    implementation(project(":app"))
+                }
+            }
+            kotlin {
+                jvmToolchain(17)
+            }
+        }
+
     }
 
     @Test
