@@ -21,7 +21,6 @@ import com.android.tools.idea.wizard.template.impl.activities.aiGlassesActivity.
 import com.android.tools.idea.wizard.template.impl.activities.aiGlassesActivity.src.app_package.mainActivityKt
 import com.android.tools.idea.wizard.template.impl.activities.common.addAllKotlinDependencies
 import com.android.tools.idea.wizard.template.impl.activities.common.addComposeDependencies
-import com.android.tools.idea.wizard.template.impl.activities.common.generateManifest
 import com.android.tools.idea.wizard.template.impl.activities.composeActivityMaterial3.res.values.themesXml
 
 fun RecipeExecutor.aiGlassesActivityRecipe(
@@ -29,7 +28,7 @@ fun RecipeExecutor.aiGlassesActivityRecipe(
   activityClass: String,
   packageName: String,
 ) {
-  val (_, srcOut, resOut, _, _, _, _, rootDir) = moduleData
+  val (_, srcOut, resOut, manifestOut, _, _, _, rootDir) = moduleData
   addAllKotlinDependencies(moduleData)
 
   addDependency(mavenCoordinate = "androidx.activity:activity-compose:+")
@@ -40,17 +39,12 @@ fun RecipeExecutor.aiGlassesActivityRecipe(
   addDependency(mavenCoordinate = "androidx.compose.runtime:runtime")
 
   addDependency(mavenCoordinate = "androidx.xr.glimmer:glimmer:1.0.0-SNAPSHOT")
+  addDependency(mavenCoordinate = "androidx.xr.projected:projected:1.0.0-SNAPSHOT")
 
-  generateManifest(
-    moduleData = moduleData,
-    activityClass = activityClass,
-    activityThemeName = moduleData.themesData.main.name,
-    packageName = packageName,
-    isLauncher = true,
-    hasNoActionBar = false,
-    generateActivityTitle = false,
+  mergeXml(
+    aiGlassesActivityManifestXml(activityClass = activityClass, packageName = packageName),
+    manifestOut.resolve("AndroidManifest.xml"),
   )
-
   mergeXml(
     themesXml(themeName = moduleData.themesData.main.name),
     resOut.resolve("values/themes.xml"),
