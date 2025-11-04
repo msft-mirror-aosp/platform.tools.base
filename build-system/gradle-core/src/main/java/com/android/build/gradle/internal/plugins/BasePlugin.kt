@@ -94,6 +94,7 @@ import com.android.build.gradle.internal.tasks.factory.TaskManagerConfigImpl
 import com.android.build.gradle.internal.testing.ManagedDeviceRegistry
 import com.android.build.gradle.internal.utils.getKotlinAndroidPluginVersion
 import com.android.build.gradle.internal.utils.maybeAddKotlinStdlibDependency
+import com.android.build.gradle.internal.utils.maybeAddKotlinTestDependencies
 import com.android.build.gradle.internal.utils.syncAgpAndKgpSources
 import com.android.build.gradle.internal.utils.toImmutableMap
 import com.android.build.gradle.internal.variant.ComponentInfo
@@ -827,6 +828,7 @@ To learn more, go to https://d.android.com/r/tools/java-8-support-message.html
         syncAgpAndKgpSources(project, projectServices, extension.sourceSets, useBuiltInKotlinSupport)
         if (useBuiltInKotlinSupport) {
             maybeAddKotlinStdlibDependency(project, projectServices, extension.sourceSets)
+            maybeAddKotlinTestDependencies(project, extension.sourceSets)
         }
 
         // configure compose related tasks.
