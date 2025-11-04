@@ -116,7 +116,7 @@ object RoboConverter {
             throw IllegalStateException("No actions found in the journey.")
         }
 
-        actionsElement.forEach { element ->
+        val actions = actionsElement.map { element ->
             if (element.tagName != "action") {
                 throw IllegalStateException("Unknown tag: ${element.tagName}")
             }
@@ -124,19 +124,12 @@ object RoboConverter {
                 throw IllegalStateException("Action text cannot be empty.")
             }
             val text = element.textContent.trim().replace(Regex("\\s+"), " ").toJsonStringLiteral()
-            writer.addJsonAction(text)
+            actionEntry(text)
         }
+        writer.write(actions.joinToString(separator = ","))
 
         writer.write(jsonFooter)
     }
-
-    /**
-     * Appends a JSON action entry to the Writer.
-     *
-     * @param textContent The text content of the action.
-     */
-    private fun Writer.addJsonAction(textContent: String) =
-        write(actionEntry(textContent))
 
     /** Converts a NodeList to a standard Kotlin List<Node>. */
     private fun NodeList.toList(): List<Node> = (0 until length).map { item(it) }
@@ -210,7 +203,7 @@ object RoboConverter {
             } else {
                 appendLine()
             }
-            append("},")
+            append("}")
         }
     }
 }

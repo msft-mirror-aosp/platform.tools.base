@@ -86,7 +86,7 @@ class RoboConverterTest {
               "aiAgentInstructions": {
                 "goal": "Action with \"special\" chars like >, &, <"
               }
-            },  ]
+            }  ]
             }]
         """.trimIndent()
         val actualJson = RoboConverter.convert(inputStream)
