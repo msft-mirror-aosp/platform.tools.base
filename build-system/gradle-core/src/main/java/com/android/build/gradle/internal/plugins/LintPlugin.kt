@@ -18,6 +18,7 @@ package com.android.build.gradle.internal.plugins
 import com.android.Version.ANDROID_GRADLE_PLUGIN_VERSION
 import com.android.build.api.artifact.impl.ArtifactsImpl
 import com.android.build.api.dsl.Lint
+import com.android.build.api.dsl.SettingsExtension
 import com.android.build.api.extension.impl.DslLifecycleComponentsOperationsRegistrar
 import com.android.build.gradle.LintLifecycleExtensionImpl
 import com.android.build.gradle.internal.SdkComponentsBuildService
@@ -118,7 +119,17 @@ abstract class LintPlugin : Plugin<Project> {
     dslServices = DslServicesImpl(projectServices, project.providers.provider { null }, null)
 
     val dslOperationsRegistrar = createExtension(project, dslServices)
+    // Check if settings plugin is applied and initialize extensions from settings
+    initExtensionFromSettings(project, lintOptions!!)
     withJavaPlugin(project) { registerTasks(project, dslOperationsRegistrar) }
+  }
+
+  private fun initExtensionFromSettings(project: Project, lintOptions: Lint) {
+    val properties = project.extensions.extraProperties
+    if (properties.has("_android_settings")) {
+      val settings = properties.get("_android_settings") as? SettingsExtension
+      settings?.lint?.let { settingsLint -> lintOptions.applySettings(settingsLint) }
+    }
   }
 
   private fun registerTasks(project: Project, dslOperationsRegistrar: DslLifecycleComponentsOperationsRegistrar<Lint>) {

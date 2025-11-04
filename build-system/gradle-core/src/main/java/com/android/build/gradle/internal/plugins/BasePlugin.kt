@@ -771,5 +771,10 @@ To learn more, go to https://d.android.com/r/tools/java-8-support-message.html
     settings.ndkPath?.let { ndkPath -> this.ndkPath = ndkPath }
 
     settings.buildToolsVersion.let { buildToolsVersion -> this.buildToolsVersion = buildToolsVersion }
+
+    settings.lint lintSettings@{
+      val commonExtension = this@doInitExtensionFromSettings
+      commonExtension.lint.applySettings(this)
+    }
   }
 }
