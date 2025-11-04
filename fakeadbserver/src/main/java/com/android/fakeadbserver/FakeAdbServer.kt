@@ -94,6 +94,13 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runInterruptible
 
+/**
+ * Timeout for fake adb server APIs that go through the server's internal
+ * sequential executor. In most cases, API calls take only a few milliseconds,
+ * but the time can dramatically increase under stress testing.
+ */
+val FAKE_ADB_SERVER_EXECUTOR_TIMEOUT_MS = TimeUnit.MINUTES.toMillis(2)
+
 /** See `FakeAdbServerTest#testInteractiveServer()` for example usage.  */
 class FakeAdbServer private constructor(var features: Set<String> = DEFAULT_FEATURES) :
     AutoCloseable {
