@@ -351,9 +351,8 @@ abstract class ProcessTestManifest : ManifestProcessorTask() {
                         ManifestMerger2.Invoker.Feature.DISABLE_MINSDKLIBRARY_CHECK,
 
                         ManifestMerger2.Invoker.Feature.REMOVE_TOOLS_DECLARATIONS,
-                        ManifestMerger2.Invoker.Feature.USES_SDK_IN_MANIFEST_LENIENT_HANDLING.takeUnless {
-                            disallowSdkVersionsInUsesSdkInManifest.get()
-                        }
+                        // TODO: b/457683746, remove <uses-sdk> or version related attributes from it.
+                        ManifestMerger2.Invoker.Feature.USES_SDK_IN_MANIFEST_LENIENT_HANDLING
                     ).toTypedArray()
                 )
                 .setOverride(ManifestSystemProperty.Document.PACKAGE, testApplicationId)
