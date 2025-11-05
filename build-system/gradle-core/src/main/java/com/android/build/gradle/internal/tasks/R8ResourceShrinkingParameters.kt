@@ -80,6 +80,10 @@ abstract class R8ResourceShrinkingParameters {
     @get:Optional // Set iff enabled == true
     abstract val optimizedShrinking: Property<Boolean>
 
+    @get:Input
+    @get:Optional // Set iff enabled == true
+    abstract val nonFinalResIds: Property<Boolean>
+
     @get:OutputFile
     @get:Optional // Set iff enabled == true && a log file is provided
     abstract val logFile: RegularFileProperty
@@ -108,6 +112,7 @@ abstract class R8ResourceShrinkingParameters {
                 ),
                 featureLinkedResourcesInputFiles = featureLinkedResourcesInputFiles.files.toList(),
                 optimizedShrinking = optimizedShrinking.get(),
+                nonFinalResIds = nonFinalResIds.get(),
                 logFile = logFile.asFile.orNull,
                 shrunkResourcesOutputFiles = inputArtifacts.map { File(getOutputBuiltArtifact(it).outputFile) },
                 featureShrunkResourcesOutputDir = featureShrunkResourcesOutputDir.asFile.orNull
@@ -154,7 +159,6 @@ fun ApplicationCreationConfig.runResourceShrinking(): Boolean {
 fun ApplicationCreationConfig.runOptimizedShrinking(): Boolean {
     return runResourceShrinking()
             && services.projectOptions[BooleanOption.R8_OPTIMIZED_RESOURCE_SHRINKING]
-            && services.projectOptions[BooleanOption.USE_NON_FINAL_RES_IDS]
 }
 
 fun R8ResourceShrinkingParameters.initialize(
@@ -184,6 +188,8 @@ fun R8ResourceShrinkingParameters.initialize(
         )
     }
     optimizedShrinking.setDisallowChanges(creationConfig.runOptimizedShrinking())
+    nonFinalResIds.setDisallowChanges(creationConfig.services.projectOptions.getProvider(
+        BooleanOption.USE_NON_FINAL_RES_IDS))
     logFile.setDisallowChanges(
         mappingFile.flatMap {
             creationConfig.services.fileProvider(

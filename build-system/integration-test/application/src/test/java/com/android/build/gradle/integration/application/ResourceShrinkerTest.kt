@@ -61,6 +61,7 @@ class ResourceShrinkerTest(
             arrayOf(false, false),
             arrayOf(true, false),
             // r8OptimizedShrinking only takes effect when nonFinalResIds = true
+            // See ResourceShrinkerErrorTest
             arrayOf(true, true),
         )
     }

@@ -745,6 +745,18 @@ abstract class R8Task @Inject constructor(
         ) {
             val logger = LoggerWrapper.getLogger(R8Task::class.java)
 
+            resourceShrinkingConfig?.let {
+                if (!resourceShrinkingConfig.nonFinalResIds && resourceShrinkingConfig.optimizedShrinking) {
+                    throw IllegalStateException(
+                        "Optimized resource shrinking requires non-final IDs.\n" +
+                            "Suggestion: opt back in to non-final resource IDs by setting " +
+                                "android.nonFinalResIds=true in gradle.properties.\n" +
+                            "Alternative: temporarily opt out of optimized resource shrinking " +
+                                "until you're ready to migrate by setting " +
+                                "android.r8.optimizedResourceShrinking=false")
+                }
+            }
+
             FileUtils.deleteIfExists(outputResources)
             if (toolConfig.r8OutputType == R8OutputType.CLASSES) {
                 FileUtils.deleteIfExists(output)
