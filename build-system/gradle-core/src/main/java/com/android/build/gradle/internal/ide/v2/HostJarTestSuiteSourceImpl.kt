@@ -22,5 +22,6 @@ import java.io.File
 class HostJarTestSuiteSourceImpl(
     override val name: String,
     override val java: Collection<File>,
-    override val kotlin: Collection<File>
+    override val kotlin: Collection<File>,
+    override val resources: Collection<File>
 ): HostJarTestSuiteSource

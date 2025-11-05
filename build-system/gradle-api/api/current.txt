@@ -2553,6 +2553,7 @@ package com.android.build.api.testsuites {
     method public String getValue();
     property public final String name;
     property public final String value;
+    field public static final String BINARY_FOLDERS = "com.android.junit.engine.binary.folders";
     field public static final String COVERAGE_DIR = "com.android.junit.engine.coverage.dir";
     field public static final com.android.build.api.testsuites.TestEngineInputProperty.Companion Companion;
     field public static final String LOGGING_FILE = "com.android.junit.engine.logging.file";
@@ -2564,6 +2565,7 @@ package com.android.build.api.testsuites {
   }
 
   public static final class TestEngineInputProperty.Companion {
+    property public static final String BINARY_FOLDERS;
     property public static final String COVERAGE_DIR;
     property public static final String LOGGING_FILE;
     property public static final String RESULTS_DIR;

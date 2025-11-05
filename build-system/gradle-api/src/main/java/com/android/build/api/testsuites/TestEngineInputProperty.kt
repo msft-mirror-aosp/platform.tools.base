@@ -29,6 +29,11 @@ data class TestEngineInputProperty(val name: String, val value: String) {
         const val SOURCE_FOLDERS = "com.android.junit.engine.source.folders"
 
         /**
+         * List of binary folders to find tests in, separated by [java.io.File.separator]
+         */
+        const val BINARY_FOLDERS = "com.android.junit.engine.binary.folders"
+
+        /**
          * Path to a file location to use as the logging output.
          */
         const val LOGGING_FILE = "com.android.junit.engine.logging.file"

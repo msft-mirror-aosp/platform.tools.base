@@ -144,7 +144,7 @@ class TestSuitesVariantsMatchingTest {
             SourceType.HOST_JAR
         )
         Truth.assertThat(secondTestSuiteFolders.kotlin).containsExactly(
-            project.subProject(":app").resolve("src/second").toFile()
+            project.subProject(":app").resolve("src/second/kotlin").toFile()
         )
 
         Truth.assertThat(secondTestSuite

@@ -984,7 +984,7 @@ class VariantManager<
 
                             TestSuiteSourceContainer(
                                 project,
-                                testSuiteBuilder.name,
+                                variantBuilder.name,
                                 testSuiteSource.name,
                                 testSuiteSource.createTestSuiteSourceSet(variantServices),
                                 variantSpecificDependencies,

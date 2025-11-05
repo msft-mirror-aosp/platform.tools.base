@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.tasks
 
+import com.android.build.api.artifact.MultipleArtifact
 import com.android.build.api.artifact.SingleArtifact
 import com.android.build.api.dsl.AgpTestSuiteInputParameters
 import com.android.build.api.testsuites.TestEngineInputProperty
@@ -30,6 +31,7 @@ import com.android.build.gradle.internal.component.TestSuiteTargetCreationConfig
 import com.android.build.gradle.internal.computeAvdName
 import com.android.build.gradle.internal.dsl.ManagedVirtualDevice
 import com.android.build.gradle.internal.initialize
+import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.services.getBuildService
 import com.android.build.gradle.internal.tasks.BuildAnalyzer
 import com.android.build.gradle.internal.tasks.DeviceProviderInstrumentTestTask.DeviceProviderFactory
@@ -81,8 +83,14 @@ abstract class TestSuiteTestTask: Test(), GlobalTask {
     abstract val engineInputProperties: MapProperty<String, String>
 
     @get:InputFiles
+    @get:Optional
     @get:PathSensitive(PathSensitivity.RELATIVE)
     abstract val sourceFolders: ListProperty<Directory>
+
+    @get:InputFiles
+    @get:Optional
+    @get:PathSensitive(PathSensitivity.RELATIVE)
+    abstract val binaryFolders: ListProperty<Directory>
 
     @get:OutputFile
     abstract val engineInputPropertiesFiles: RegularFileProperty
@@ -209,11 +217,6 @@ abstract class TestSuiteTestTask: Test(), GlobalTask {
     ) {
         val standardInputs = mutableListOf(
             TestEngineInputProperty(
-                TestEngineInputProperty.SOURCE_FOLDERS,
-                sourceFolders.get()
-                    .joinToString(separator = File.separator) { it.asFile.absolutePath }
-            ),
-            TestEngineInputProperty(
                 TestEngineInputProperty.LOGGING_FILE,
                 providerToPath(logFile)
             ),
@@ -234,6 +237,26 @@ abstract class TestSuiteTestTask: Test(), GlobalTask {
                 buildTools.adbExecutable().get().asFile.absolutePath
             ),
         )
+
+        if (sourceFolders.isPresent) {
+            standardInputs.add(
+                TestEngineInputProperty(
+                TestEngineInputProperty.SOURCE_FOLDERS,
+                sourceFolders.get()
+                    .joinToString(separator = File.separator) { it.asFile.absolutePath }
+                )
+            )
+        }
+
+        if (binaryFolders.isPresent) {
+            standardInputs.add(
+                TestEngineInputProperty(
+                    TestEngineInputProperty.BINARY_FOLDERS,
+                    binaryFolders.get()
+                        .joinToString(separator = File.separator) { it.asFile.absolutePath }
+                )
+            )
+        }
 
         if (onlineDeviceSerials != null) {
             standardInputs.add(
@@ -375,8 +398,14 @@ abstract class TestSuiteTestTask: Test(), GlobalTask {
                         task.sourceFolders.addAll(sourceSet.get().all)
                         task.failOnNoDiscoveredTests.set(false)
                     }
-                    is TestSuiteSourceSet.HostJar ->
-                        task.sourceFolders.addAll(sourceSet.get().all)
+                    is TestSuiteSourceSet.HostJar -> {
+                        task.binaryFolders.add(
+                            creationConfig.artifacts.get(InternalArtifactType.BUILT_IN_KOTLINC),
+                        )
+                        task.binaryFolders.add(
+                            creationConfig.artifacts.get(InternalArtifactType.JAVAC),
+                        )
+                    }
                     is TestSuiteSourceSet.TestApk ->
                         throw RuntimeException("Not implemented")
                 }

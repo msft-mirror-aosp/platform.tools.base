@@ -26,6 +26,8 @@ import com.android.build.gradle.internal.dependency.TestSuiteSourceClasspath
 import com.android.build.gradle.internal.services.TaskCreationServices
 import com.android.build.gradle.internal.tasks.factory.TaskFactoryImpl
 import org.gradle.api.Project
+import org.gradle.api.Task
+import org.gradle.api.tasks.TaskProvider
 
 /**
  * Each test suite source type will be processed in isolation, most likely using a
@@ -38,29 +40,45 @@ import org.gradle.api.Project
  */
 class TestSuiteSourceContainer(
     project: Project,
+    private val targetVariantName: String,
     private val testSuiteName: String,
-    private val name: String,
     internal val source: TestSuiteSourceSet,
     override val dependencies: AgpTestSuiteDependencies,
     internal val suiteSourceClasspath: TestSuiteSourceClasspath,
 ): TestSuiteSource {
 
-    override fun getName(): String = name
+    override fun getName(): String = testSuiteName
+
+    /**
+     * Returns a unique name for this source container within the test suite.
+     */
+    val identifier = "$testSuiteName${targetVariantName.capitalizeFirstChar()}"
 
     override val type: TestSuiteSourceType
         get() = source.type
 
-    val artifacts = ArtifactsImpl(project, "$testSuiteName${name.capitalizeFirstChar()}")
+    val artifacts = ArtifactsImpl(project, identifier)
 
-    fun createTasks(taskCreationServices: TaskCreationServices) {
-        when (source.type) {
-            TestSuiteSourceType.ASSETS -> {
+    /**
+     * Creates all the test source processing tasks and return the [TaskProvider] that can be used
+     * as a dependent of the [com.android.build.gradle.tasks.TestSuiteTestTask] for successful
+     * execution.
+     *
+     * @return the top level or lifecycle task for this [source] to be processed entirely.
+     */
+    fun createTasks(taskCreationServices: TaskCreationServices): TaskProvider<out Task>? {
+        return when (source) {
+            is TestSuiteSourceSet.Assets -> {
                 // nothing to do for assets based source folder so far.
+                null
             }
-            TestSuiteSourceType.HOST_JAR -> {
-                HostJarTestSuiteTaskManager().createTasks(this, taskFactory, taskCreationServices)
+            is TestSuiteSourceSet.HostJar -> {
+                HostJarTestSuiteTaskManager().createTasks(
+                    this,
+                    source,
+                    taskFactory, taskCreationServices)
             }
-            TestSuiteSourceType.TEST_APK -> {
+            is TestSuiteSourceSet.TestApk -> {
                 throw RuntimeException("TEST_APK sources are not supported yet !")
             }
         }

@@ -54,7 +54,8 @@ abstract class ProcessJavaResTask @Inject constructor(
     class CreationAction(
         creationConfig: ProcessJavaResCreationConfig
     ) : VariantTaskCreationAction<ProcessJavaResTask, ProcessJavaResCreationConfig>(
-        creationConfig
+        creationConfig,
+        dependsOnPreBuildTask = false
     ) {
 
         override val name: String

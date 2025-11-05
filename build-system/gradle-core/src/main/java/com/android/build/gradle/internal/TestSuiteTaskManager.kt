@@ -34,7 +34,7 @@ class TestSuiteTaskManager(
 
     fun createTasks(creationConfig: TestSuiteCreationConfig) {
         // first create all tasks related to processing the source folders.
-        creationConfig.sources.forEach { testSuiteSourceContainer ->
+        val allSourcesProcessingTasks = creationConfig.sources.mapNotNull { testSuiteSourceContainer ->
             testSuiteSourceContainer.createTasks(creationConfig.services)
         }
         creationConfig.targets
@@ -61,6 +61,11 @@ class TestSuiteTaskManager(
                     }
                 }
                 creationConfig.runTestTaskConfigurationActions(context, testSuiteTestTask)
+
+                // add sources processing dependencies
+                allSourcesProcessingTasks.forEach { sourceProcessingTask ->
+                    testSuiteTestTask.dependsOn(sourceProcessingTask)
+                }
 
                 // Adds GMD Setup task dependency.
                 target.targetDevices.forEach { targetDeviceName ->

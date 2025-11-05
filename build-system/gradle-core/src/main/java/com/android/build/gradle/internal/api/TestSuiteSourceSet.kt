@@ -18,6 +18,7 @@ package com.android.build.gradle.internal.api
 
 import com.android.build.api.variant.SourceDirectories
 import com.android.build.api.variant.TestSuiteSourceType
+import com.android.build.api.variant.impl.FlatSourceDirectoriesImpl
 import org.gradle.api.Incubating
 
 /**
@@ -44,7 +45,11 @@ sealed interface TestSuiteSourceSet{
     @Incubating
     interface HostJar: TestSuiteSourceSet {
         @Incubating
-        fun get(): SourceDirectories.Flat
+        fun java(): FlatSourceDirectoriesImpl?
+
+        @Incubating
+        fun kotlin(): FlatSourceDirectoriesImpl?
+        fun resources(): FlatSourceDirectoriesImpl
 
         override val type: TestSuiteSourceType
             get() = TestSuiteSourceType.HOST_JAR

@@ -16,13 +16,63 @@
 
 package com.android.build.gradle.internal.api
 
+import com.android.build.api.variant.impl.FileBasedDirectoryEntryImpl
+import com.android.build.api.variant.impl.FlatSourceDirectoriesImpl
 import com.android.build.gradle.internal.services.VariantServices
+import java.io.File
 
 internal class HostJarTestSuiteSourceSet(
     sourceSetName: String,
     private val variantServices: VariantServices,
-): AssetsOrHostJarTestSuiteSourceSet(
-    sourceSetName,
-    variantServices
-), TestSuiteSourceSet.HostJar {
+): TestSuiteSourceSet.HostJar {
+
+    private val javaSourcesFolder = FlatSourceDirectoriesImpl(
+        sourceSetName,
+        variantServices,
+        null,
+    ).also {
+        it.addSource(FileBasedDirectoryEntryImpl(
+            name = sourceSetName,
+            directory = File(variantServices.projectInfo.projectDirectory.asFile, "src/$sourceSetName/java"),
+            filter = null,
+            isUserAdded = false,
+            shouldBeAddedToIdeModel = true
+        ))
+    }
+
+    private val kotlinSourcesFolder = FlatSourceDirectoriesImpl(
+        sourceSetName,
+        variantServices,
+        null,
+    ).also {
+        it.addSource(FileBasedDirectoryEntryImpl(
+            name = sourceSetName,
+            directory = File(variantServices.projectInfo.projectDirectory.asFile, "src/$sourceSetName/kotlin"),
+            filter = null,
+            isUserAdded = false,
+            shouldBeAddedToIdeModel = true
+        ))
+    }
+
+
+    private val resourcesSourcesFolder = FlatSourceDirectoriesImpl(
+        sourceSetName,
+        variantServices,
+        null,
+    ).also {
+        it.addSource(FileBasedDirectoryEntryImpl(
+            name = sourceSetName,
+            directory = File(variantServices.projectInfo.projectDirectory.asFile, "src/$sourceSetName/resources"),
+            filter = null,
+            isUserAdded = false,
+            shouldBeAddedToIdeModel = true
+        ))
+    }
+
+
+    override fun java(): FlatSourceDirectoriesImpl = javaSourcesFolder
+
+    override fun kotlin(): FlatSourceDirectoriesImpl = kotlinSourcesFolder
+
+    override fun resources(): FlatSourceDirectoriesImpl = resourcesSourcesFolder
 }
