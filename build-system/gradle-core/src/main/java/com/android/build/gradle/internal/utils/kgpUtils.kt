@@ -374,32 +374,40 @@ internal fun maybeAddKotlinStdlibDependency(
 ) {
     val kotlinServices = projectServices.builtInKotlinServices
     val kotlinVersion = kotlinServices.kotlinAndroidProjectExtension.coreLibrariesVersion
-    val sourceSetsConfigurations = androidSourceSets.getConfigurations(project)
 
     // This is similar to https://github.com/JetBrains/kotlin/blob/1cfbb801b77eaf00a7806631d29415dfd40f2fcd/libraries/tools/kotlin-gradle-plugin/src/common/kotlin/org/jetbrains/kotlin/gradle/internal/KotlinDependenciesManagement.kt#L60-L82
     fun handleKotlinStdlibWithoutVersion() {
-        sourceSetsConfigurations.forEach { configuration ->
-            configuration.dependencies.forEach { dependency ->
-                if (dependency is ExternalDependency
-                    && dependency.group == KOTLIN_GROUP
-                    && dependency.name in KOTLIN_STDLIB_MODULES
-                    && dependency.version == null
-                ) {
-                    configuration.dependencyConstraints.add(
-                        project.dependencies.constraints.create(dependency.module.toString()) { constraint ->
-                            constraint.version { it.require(kotlinVersion) }
-                        }
-                    )
+        project.configurations.configureEach { configuration ->
+            configuration.withDependencies { dependencySet ->
+                dependencySet.forEach { dependency ->
+                    if (dependency is ExternalDependency
+                        && dependency.group == KOTLIN_GROUP
+                        && dependency.name in KOTLIN_STDLIB_MODULES
+                        && dependency.version.isNullOrEmpty()
+                    ) {
+                        configuration.dependencyConstraints.add(
+                            project.dependencies.constraints.create(dependency.module.toString()) { constraint ->
+                                constraint.version { it.require(kotlinVersion) }
+                            }
+                        )
+                    }
                 }
             }
         }
     }
 
-    fun hasKotlinStdlib(): Boolean {
-        return sourceSetsConfigurations.any { configuration ->
-            configuration.dependencies.any {
-                it is ExternalDependency && it.group == KOTLIN_GROUP && it.name in KOTLIN_STDLIB_MODULES
-            }
+    fun Configuration.hasKotlinStdlib(): Boolean {
+        return allDependencies.any {
+            it is ExternalDependency
+                    && it.group == KOTLIN_GROUP
+                    && it.name in KOTLIN_STDLIB_MODULES
+        }
+    }
+
+    fun hasKotlinStdlibDependency(): Boolean {
+        return androidSourceSets.any {
+            project.configurations.getByName(it.apiConfigurationName).hasKotlinStdlib()
+            project.configurations.getByName(it.implementationConfigurationName).hasKotlinStdlib()
         }
     }
 
@@ -407,12 +415,16 @@ internal fun maybeAddKotlinStdlibDependency(
         project.providers.gradleProperty("kotlin.stdlib.default.dependency")
             .orNull?.lowercase(Locale.US)?.toBooleanStrictOrNull()
 
+    fun Configuration.addKotlinStdlib() {
+        dependencies.add(project.dependencies.create("$KOTLIN_GROUP:$KOTLIN_STDLIB:$kotlinVersion"))
+    }
+
     // If the user adds kotlin-stdlib without a version, then set a version (b/443037365)
     handleKotlinStdlibWithoutVersion()
 
     // If the user has added kotlin-stdlib or if they set `kotlin.stdlib.default.dependency=false`,
     // then do not add kotlin-stdlib automatically
-    if (hasKotlinStdlib() || kotlinStdlibDefaultDependencyProperty() == false) {
+    if (hasKotlinStdlibDependency() || kotlinStdlibDefaultDependencyProperty() == false) {
         return
     }
 
@@ -420,58 +432,7 @@ internal fun maybeAddKotlinStdlibDependency(
     // This is similar to https://github.com/JetBrains/kotlin/blob/fd1d3d967df9eab306bdc9707229bd22a2d5d1c2/libraries/tools/kotlin-gradle-plugin/src/common/kotlin/org/jetbrains/kotlin/gradle/internal/stdlibDependencyManagement.kt#L105-L111
     val mainSourceSet = androidSourceSets.getByName(SourceSet.MAIN_SOURCE_SET_NAME)
     val apiConfiguration = project.configurations.getByName(mainSourceSet.apiConfigurationName)
-    apiConfiguration.dependencies.add(
-        project.dependencies.create("$KOTLIN_GROUP:$KOTLIN_STDLIB:$kotlinVersion")
-    )
-}
-
-/**
- * Adds dependencies associated with `kotlin-test` if not yet added by the user.
- *
- * This is to match the `kotlin-android` plugin's behavior
- * (see https://github.com/JetBrains/kotlin/blob/409a85f55290a5ccca34372760b0c9336e74e546/libraries/tools/kotlin-gradle-plugin/src/common/kotlin/org/jetbrains/kotlin/gradle/internal/kotlinTestDependencyManagement.kt#L120).
- *
- * Note: When KGP provides an API to do this (https://youtrack.jetbrains.com/issue/KT-81121), we can
- * remove this method.
- */
-internal fun maybeAddKotlinTestDependencies(
-    project: Project,
-    androidSourceSets: NamedDomainObjectContainer<out AndroidSourceSet>,
-) {
-    fun Configuration.findDependency(group: String, name: String): ExternalDependency? {
-        return dependencies.find {
-            it is ExternalDependency && it.group == group && it.name == name
-        } as ExternalDependency?
-    }
-
-    // If the user adds kotlin-test, then also add kotlin-test-junit
-    androidSourceSets.getConfigurations(project).forEach {
-        val kotlinTestDependency = it.findDependency(group = KOTLIN_GROUP, name = KOTLIN_TEST)
-        if (kotlinTestDependency != null
-            && it.findDependency(group = KOTLIN_GROUP, name = KOTLIN_TEST_JUNIT) == null
-        ) {
-            it.dependencies.add(
-                project.dependencies.create("$KOTLIN_GROUP:$KOTLIN_TEST_JUNIT:${kotlinTestDependency.version}")
-            )
-        }
-    }
-}
-
-/** Returns all [Configuration]s associated with Android source sets. */
-private fun NamedDomainObjectContainer<out AndroidSourceSet>.getConfigurations(project: Project): List<Configuration> {
-    return flatMap {
-        listOf(
-            it.apiConfigurationName,
-            it.implementationConfigurationName,
-            it.compileOnlyConfigurationName,
-            it.compileOnlyApiConfigurationName,
-            it.runtimeOnlyConfigurationName,
-            it.annotationProcessorConfigurationName,
-            it.kaptConfigurationName
-        )
-    }.mapNotNull {
-        project.configurations.findByName(it)
-    }
+    apiConfiguration.addKotlinStdlib()
 }
 
 /**
@@ -494,6 +455,4 @@ fun findKaptOrKspConfigurationsForVariant(
 private const val KOTLIN_GROUP = "org.jetbrains.kotlin"
 private const val KOTLIN_STDLIB = "kotlin-stdlib"
 private val KOTLIN_STDLIB_MODULES =
-    setOf("kotlin-stdlib", "kotlin-stdlib-common", "kotlin-stdlib-jdk7", "kotlin-stdlib-jdk8")
-private const val KOTLIN_TEST = "kotlin-test"
-private const val KOTLIN_TEST_JUNIT = "kotlin-test-junit"
+    setOf("kotlin-stdlib", "kotlin-stdlib-jdk7", "kotlin-stdlib-jdk8")
