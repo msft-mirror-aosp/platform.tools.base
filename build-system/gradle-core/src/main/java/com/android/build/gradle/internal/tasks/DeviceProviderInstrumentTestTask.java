@@ -810,7 +810,9 @@ public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTas
                     creationConfig.getTaskContainer().getProviderTestTaskList().add(taskProvider);
                 }
             }
-            UtpDependencyUtilsKt.maybeCreateUtpConfigurations(creationConfig);
+            UtpDependencyUtilsKt.maybeCreateUtpConfigurations(
+                    creationConfig.getServices().getConfigurations(),
+                    creationConfig.getServices().getDependencies());
         }
 
         @Override

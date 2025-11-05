@@ -383,7 +383,9 @@ abstract class ManagedDeviceInstrumentationTestTask: NonIncrementalTask(), Andro
                     .on(InternalArtifactType.MANAGED_DEVICE_ANDROID_TEST_ADDITIONAL_OUTPUT)
             }
 
-            maybeCreateUtpConfigurations(creationConfig)
+            maybeCreateUtpConfigurations(
+                creationConfig.services.configurations,
+                creationConfig.services.dependencies)
         }
 
         override fun configure(task: ManagedDeviceInstrumentationTestTask) {
