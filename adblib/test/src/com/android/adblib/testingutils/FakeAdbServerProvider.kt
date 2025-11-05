@@ -189,8 +189,8 @@ class FakeAdbServerProvider : FakeDeviceCreator, AutoCloseable {
         server?.awaitServerTermination()
     }
 
-    override fun disconnectDevice(deviceSerial: String) {
-        server?.disconnectDevice(deviceSerial)
+    override fun disconnectDevice(deviceId: String) {
+        server?.disconnectDevice(deviceId)
     }
 
     class TestingChannelProvider(host: AdbSessionHost, portSupplier: suspend () -> Int) :

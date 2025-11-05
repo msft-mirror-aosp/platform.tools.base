@@ -20,6 +20,20 @@ import com.android.sdklib.AndroidApiLevel
 
 interface FakeDeviceCreator {
 
+    /**
+     * Connect a device to the FakeAdb server.
+     *
+     * @param deviceId           the unique device ID of the device, e.g. a device serial for a USB-connected device
+     * @param manufacturer       the manufacturer name of the device
+     * @param deviceModel        the model name of the device
+     * @param release            an arbitrary string that will be used as the Android version
+     * @param sdk                the SDK version of the device
+     * @param hostConnectionType the simulated connection type to the device
+     * @param maxSpeedMbps       the device's maximum supported speed (hardware limit)
+     * @param negotiatedSpeedMbps the active link speed (connection limit)
+     * @return a [DeviceState] which can be used to change the state of the device, e.g.
+     * make it go online.
+     */
     fun connectDevice(
         deviceId: String,
         manufacturer: String,
@@ -31,5 +45,11 @@ interface FakeDeviceCreator {
         negotiatedSpeedMbps: Long = ListDevicesCommandHandler.DEFAULT_SPEED,
     ): DeviceState
 
-    fun disconnectDevice(deviceSerial: String)
+    /**
+     * Removes a device from the FakeAdb server.
+     *
+     * @param deviceId the unique device ID of the device, e.g. a device serial for
+     * a USB connected device.
+     */
+    fun disconnectDevice(deviceId: String)
 }

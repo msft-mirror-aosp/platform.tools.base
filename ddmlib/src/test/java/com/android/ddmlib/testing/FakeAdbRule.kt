@@ -21,9 +21,7 @@ import com.android.ddmlib.AndroidDebugBridge
 import com.android.ddmlib.DdmPreferences
 import com.android.ddmlib.EmulatorConsole
 import com.android.fakeadbserver.DeviceState
-import com.android.fakeadbserver.FAKE_ADB_SERVER_EXECUTOR_TIMEOUT_MS
 import com.android.fakeadbserver.FakeAdbServer
-import com.android.fakeadbserver.FakeDeviceCreator
 import com.android.fakeadbserver.devicecommandhandlers.DeviceCommandHandler
 import com.android.fakeadbserver.hostcommandhandlers.HostCommandHandler
 import com.android.fakeadbserver.hostcommandhandlers.ListDevicesCommandHandler.Companion.DEFAULT_SPEED
@@ -41,7 +39,7 @@ import org.junit.rules.ExternalResource
 /**
  * Rule that sets up and tears down a FakeAdbServer, and provides some convenience methods for interacting with it.
  */
-class FakeAdbRule : ExternalResource(), FakeDeviceCreator {
+class FakeAdbRule : ExternalResource() {
   /**
    * An [AndroidDebugBridge] that will be initialized.
    */
@@ -133,29 +131,7 @@ class FakeAdbRule : ExternalResource(), FakeDeviceCreator {
     return device
   }
 
-  override fun connectDevice(
-    deviceId: String,
-    manufacturer: String,
-    deviceModel: String,
-    release: String,
-    sdk: AndroidApiLevel,
-    hostConnectionType: DeviceState.HostConnectionType,
-    maxSpeedMbps: Long,
-    negotiatedSpeedMbps: Long
-  ): DeviceState {
-      return fakeAdbServer.connectDevice(
-          deviceId,
-          manufacturer,
-          deviceModel,
-          release,
-          sdk,
-          hostConnectionType,
-          maxSpeedMbps = maxSpeedMbps,
-          negotiatedSpeedMbps = negotiatedSpeedMbps,
-      ).get(FAKE_ADB_SERVER_EXECUTOR_TIMEOUT_MS, TimeUnit.MILLISECONDS) ?: throw IllegalArgumentException()
-  }
-
-  override fun disconnectDevice(deviceId: String) {
+  fun disconnectDevice(deviceId: String) {
     fakeAdbServer.disconnectDevice(deviceId).get()
   }
 

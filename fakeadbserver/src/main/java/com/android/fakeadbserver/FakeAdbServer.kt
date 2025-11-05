@@ -258,14 +258,14 @@ class FakeAdbServer private constructor(var features: Set<String> = DEFAULT_FEAT
     /**
      * Connects a device to the ADB server. Must be called on the EDT/main thread.
      *
-     * @param deviceId           is the unique device ID of the device
-     * @param manufacturer       is the manufacturer name of the device
-     * @param deviceModel        is the model name of the device
-     * @param release            is the Android OS version of the device
-     * @param sdk                is the SDK version of the device
-     * @param cpuAbi             is the ABI of the device CPU
-     * @param properties         is the device properties
-     * @param hostConnectionType is the simulated connection type to the device @return the future
+     * @param deviceId           the unique device ID of the device, e.g. a device serial for a USB-connected device
+     * @param manufacturer       the manufacturer name of the device
+     * @param deviceModel        the model name of the device
+     * @param release            an arbitrary string that will be used as the Android version
+     * @param sdk                the SDK version of the device
+     * @param cpuAbi             the ABI of the device CPU
+     * @param properties         the device properties
+     * @param hostConnectionType the simulated connection type to the device
      * @return a future to allow synchronization of the side effects of the call
      */
     fun connectDevice(
@@ -440,7 +440,7 @@ class FakeAdbServer private constructor(var features: Set<String> = DEFAULT_FEAT
     /**
      * Removes a device from the ADB server. Must be called on the EDT/main thread.
      *
-     * @param deviceId is the unique device ID of the device
+     * @param deviceId the unique device ID of the device, e.g. a device serial for a USB-connected device
      * @return a future to allow synchronization of the side effects of the call
      */
     fun disconnectDevice(deviceId: String): Future<*> {
