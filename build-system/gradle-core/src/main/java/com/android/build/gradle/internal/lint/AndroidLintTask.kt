@@ -30,9 +30,6 @@ import com.android.build.gradle.internal.SdkComponentsBuildService
 import com.android.build.gradle.internal.component.ComponentCreationConfig
 import com.android.build.gradle.internal.component.KmpCreationConfig
 import com.android.build.gradle.internal.component.VariantCreationConfig
-import com.android.build.gradle.internal.lint.AndroidLintTask.SingleVariantCreationAction.Companion.registerLintReportArtifacts
-import com.android.build.gradle.internal.lint.AndroidLintTask.VariantCreationAction.Companion.registerLintIntermediateArtifacts
-import com.android.build.gradle.internal.privaysandboxsdk.PrivacySandboxSdkVariantScope
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
 import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactScope
 import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactType
@@ -51,7 +48,6 @@ import com.android.build.gradle.internal.services.getBuildService
 import com.android.build.gradle.internal.services.getLintParallelBuildService
 import com.android.build.gradle.internal.tasks.BuildAnalyzer
 import com.android.build.gradle.internal.tasks.NonIncrementalTask
-import com.android.build.gradle.internal.tasks.factory.PrivacySandboxSdkVariantTaskCreationAction
 import com.android.build.gradle.internal.tasks.factory.VariantTaskCreationAction
 import com.android.build.gradle.internal.utils.fromDisallowChanges
 import com.android.build.gradle.internal.utils.setDisallowChanges
@@ -1051,23 +1047,6 @@ abstract class AndroidLintTask : NonIncrementalTask() {
                 creationConfig.variantDependencies.getArtifactFileCollection(
                     AndroidArtifacts.ConsumedConfigType.COMPILE_CLASSPATH,
                     artifactScope,
-                    artifactType
-                )
-            )
-        }
-        private fun ConfigurableFileCollection.addRuntimeAndCompileArtifacts(
-            variantScope: PrivacySandboxSdkVariantScope,
-            artifactType: ArtifactType
-        ) {
-            from(
-                variantScope.dependencies.getArtifactFileCollection(
-                    AndroidArtifacts.ConsumedConfigType.RUNTIME_CLASSPATH,
-                    artifactType
-                )
-            )
-            from(
-                variantScope.dependencies.getArtifactFileCollection(
-                    AndroidArtifacts.ConsumedConfigType.COMPILE_CLASSPATH,
                     artifactType
                 )
             )
