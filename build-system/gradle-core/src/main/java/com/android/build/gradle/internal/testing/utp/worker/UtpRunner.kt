@@ -16,8 +16,6 @@
 
 package com.android.build.gradle.internal.testing.utp.worker
 
-import com.android.build.gradle.internal.LoggerWrapper
-import com.android.build.gradle.internal.testing.CustomTestRunListener
 import com.android.build.gradle.internal.testing.utp.DdmlibTestResultAdapter
 import com.android.build.gradle.internal.testing.utp.UtpDependencies
 import com.android.build.gradle.internal.testing.utp.UtpDependency
