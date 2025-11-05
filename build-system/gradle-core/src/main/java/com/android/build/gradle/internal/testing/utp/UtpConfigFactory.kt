@@ -27,11 +27,13 @@ import com.android.build.gradle.internal.testing.utp.UtpDependency.ANDROID_TEST_
 import com.android.build.gradle.internal.testing.utp.UtpDependency.ANDROID_TEST_PLUGIN_APK_INSTALLER
 import com.android.build.gradle.internal.testing.utp.UtpDependency.ANDROID_TEST_PLUGIN_HOST_EMULATOR_CONTROL
 import com.android.build.gradle.internal.testing.utp.UtpDependency.ANDROID_TEST_PLUGIN_RESULT_LISTENER_GRADLE
-import com.android.build.gradle.internal.testing.utp.emulatorcontrol.EmulatorControlConfig
 import com.android.build.gradle.internal.testing.utp.emulatorcontrol.EmulatorGrpcInfo
 import com.android.build.gradle.internal.testing.utp.emulatorcontrol.INVALID_JWT_CONFIG
 import com.android.build.gradle.internal.testing.utp.emulatorcontrol.createTokenConfig
 import com.android.build.gradle.internal.testing.utp.emulatorcontrol.findGrpcInfo
+import com.android.build.gradle.internal.testing.utp.worker.EmulatorControlConfig
+import com.android.build.gradle.internal.testing.utp.worker.ShardConfig
+import com.android.build.gradle.internal.testing.utp.worker.TargetApkConfigBundle
 import com.android.tools.utp.plugins.deviceprovider.ddmlib.proto.AndroidDeviceProviderDdmlibConfigProto.DdmlibAndroidDeviceProviderConfig
 import com.android.tools.utp.plugins.host.additionaltestoutput.proto.AndroidAdditionalTestOutputConfigProto.AndroidAdditionalTestOutputConfig
 import com.android.tools.utp.plugins.host.apkinstaller.proto.AndroidApkInstallerConfigProto.AndroidApkInstallerConfig

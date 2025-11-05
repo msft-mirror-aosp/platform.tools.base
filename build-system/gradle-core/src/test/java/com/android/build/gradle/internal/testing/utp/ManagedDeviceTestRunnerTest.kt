@@ -21,8 +21,9 @@ import com.android.build.gradle.internal.AvdComponentsBuildService
 import com.android.build.gradle.internal.SdkComponentsBuildService
 import com.android.build.gradle.internal.dsl.ManagedVirtualDevice
 import com.android.build.gradle.internal.testing.StaticTestData
-import com.android.build.gradle.internal.testing.utp.emulatorcontrol.EmulatorControlConfig
+import com.android.build.gradle.internal.testing.utp.worker.EmulatorControlConfig
 import com.android.build.gradle.internal.testing.utp.worker.RunUtpWorkParameters
+import com.android.build.gradle.internal.testing.utp.worker.ShardConfig
 import com.android.build.gradle.internal.utils.setDisallowChanges
 import com.android.mockito.kotlin.whenever
 import com.android.testutils.SystemPropertyOverrides
@@ -39,6 +40,7 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
+import org.mockito.Answers
 import org.mockito.Answers.RETURNS_DEEP_STUBS
 import org.mockito.Mockito.mockStatic
 import org.mockito.kotlin.any
@@ -172,7 +174,9 @@ class ManagedDeviceTestRunnerTest {
 
             outputDirectory = temporaryFolderRule.newFolder("results")
 
-            mockStatic(::runUtpTestSuiteAndWait.javaMethod!!.declaringClass).use { mockedStatic ->
+            mockStatic(
+                ::runUtpTestSuiteAndWait.javaMethod!!.declaringClass,
+                Answers.CALLS_REAL_METHODS).use { mockedStatic ->
                 mockedStatic.whenever<List<UtpTestRunResult>> {
                     runUtpTestSuiteAndWait(
                         runnerConfigsCaptor.capture(),
@@ -235,7 +239,9 @@ class ManagedDeviceTestRunnerTest {
 
         assertThat(runnerConfigsCaptor.allValues).hasSize(1)
         assertThat(runnerConfigsCaptor.firstValue).hasSize(2)
-        verify(runnerConfigsCaptor.firstValue[0].shardConfig).setDisallowChanges(eq(ShardConfig(2, 0)))
+        verify(runnerConfigsCaptor.firstValue[0].shardConfig).setDisallowChanges(eq(
+            ShardConfig(2, 0)
+        ))
         verify(runnerConfigsCaptor.firstValue[1].shardConfig).setDisallowChanges(eq(ShardConfig(2, 1)))
 
         assertThat(result).isTrue()

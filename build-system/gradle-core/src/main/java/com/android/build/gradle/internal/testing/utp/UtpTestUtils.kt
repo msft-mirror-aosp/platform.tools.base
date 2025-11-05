@@ -17,20 +17,25 @@
 package com.android.build.gradle.internal.testing.utp
 
 import com.android.build.gradle.internal.SdkComponentsBuildService
+import com.android.build.gradle.internal.testing.StaticTestData
+import com.android.build.gradle.internal.testing.utp.worker.EmulatorControlConfig
 import com.android.build.gradle.internal.testing.utp.worker.RunUtpWorkAction
 import com.android.build.gradle.internal.testing.utp.worker.RunUtpWorkParameters
+import com.android.build.gradle.internal.testing.utp.worker.ShardConfig
+import com.android.build.gradle.internal.testing.utp.worker.TargetApkConfigBundle
+import com.android.build.gradle.internal.utils.fromDisallowChanges
 import com.android.build.gradle.internal.utils.setDisallowChanges
 import com.android.builder.testing.api.DeviceConnector
-import com.android.prefs.AndroidLocationsSingleton
 import com.android.sdklib.BuildToolInfo
 import com.android.utils.ILogger
 import com.google.testing.platform.proto.api.core.ErrorDetailProto
 import com.google.testing.platform.proto.api.core.TestStatusProto.TestStatus
 import com.google.testing.platform.proto.api.core.TestSuiteResultProto
+import org.gradle.api.model.ObjectFactory
 import org.gradle.workers.WorkerExecutor
 import java.io.File
-import java.io.Serializable
 import java.nio.file.Path
+import java.util.logging.Level
 
 const val TEST_RESULT_PB_FILE_NAME = "test-result.pb"
 
@@ -45,14 +50,6 @@ data class PrivacySandboxSdkInstallBundle(
     val sdkApkSet: Set<File>,
     val extractedApkMap: Map<DeviceConnector, List<List<Path>>>
 )
-
-/**
- * Encapsulates installation configuration for app APKs
- */
-data class TargetApkConfigBundle (
-    val appApks: List<File>,
-    val isSplitApk: Boolean
-) : Serializable
 
 /**
  * Encapsulates result of a UTP test run.
@@ -192,4 +189,67 @@ private fun getPlatformErrorMessage(
         errorMessageBuilder.append(error.summary.stackTrace)
     }
     return errorMessageBuilder
+}
+
+/**
+ * Factory function to create and configure a [RunUtpWorkParameters.UtpRunConfig] instance.
+ */
+fun createUtpRunConfig(
+    objectFactory: ObjectFactory,
+    deviceId: String,
+    deviceName: String,
+    deviceSerialNumber: String,
+    testData: StaticTestData,
+    targetApkConfigBundle: TargetApkConfigBundle,
+    additionalInstallOptions: Iterable<String>,
+    helperApks: Iterable<File>,
+    uninstallIncompatibleApks: Boolean,
+    outputDir: File,
+    emulatorControlConfig: EmulatorControlConfig,
+    coverageOutputDir: File,
+    useOrchestrator: Boolean,
+    forceCompilation: Boolean,
+    additionalTestOutputDir: File?,
+    additionalTestOutputOnDeviceDir: String?,
+    installApkTimeout: Int?,
+    extractedSdkApks: List<List<Path>>,
+    uninstallApksAfterTest: Boolean,
+    reinstallIncompatibleApksBeforeTest: Boolean,
+    shardConfig: ShardConfig?,
+    loggingLevel: Level,
+): RunUtpWorkParameters.UtpRunConfig {
+    val utpRunConfig = objectFactory.newInstance(RunUtpWorkParameters.UtpRunConfig::class.java)
+
+    utpRunConfig.deviceId.setDisallowChanges(deviceId)
+    utpRunConfig.deviceName.setDisallowChanges(deviceName)
+    utpRunConfig.deviceShardName.setDisallowChanges(if (shardConfig == null) {
+        deviceName
+    } else {
+        "${deviceName}_${shardConfig.index}"
+    })
+    utpRunConfig.utpResultProtoOutputFile.fileValue(
+        File(outputDir, TEST_RESULT_PB_FILE_NAME)).disallowChanges()
+    utpRunConfig.deviceSerialNumber.setDisallowChanges(deviceSerialNumber)
+    utpRunConfig.testData.setDisallowChanges(testData)
+    utpRunConfig.targetApkConfigBundle.setDisallowChanges(targetApkConfigBundle)
+    utpRunConfig.additionalInstallOptions.setDisallowChanges(additionalInstallOptions)
+    utpRunConfig.helperApks.fromDisallowChanges(helperApks)
+    utpRunConfig.uninstallIncompatibleApks.setDisallowChanges(uninstallIncompatibleApks)
+    utpRunConfig.outputDir.fileValue(outputDir).disallowChanges()
+    utpRunConfig.emulatorControlConfig.setDisallowChanges(emulatorControlConfig)
+    utpRunConfig.coverageOutputDir.fileValue(coverageOutputDir).disallowChanges()
+    utpRunConfig.useOrchestrator.setDisallowChanges(useOrchestrator)
+    utpRunConfig.forceCompilation.setDisallowChanges(forceCompilation)
+    utpRunConfig.additionalTestOutputDir.fileValue(additionalTestOutputDir).disallowChanges()
+    utpRunConfig.additionalTestOutputOnDeviceDir.setDisallowChanges(additionalTestOutputOnDeviceDir)
+    utpRunConfig.installApkTimeout.setDisallowChanges(installApkTimeout)
+    utpRunConfig.extractedSdkApks.setDisallowChanges(extractedSdkApks.map {
+        objectFactory.fileCollection().convention(it).apply { disallowChanges() }
+    })
+    utpRunConfig.uninstallApksAfterTest.setDisallowChanges(uninstallApksAfterTest)
+    utpRunConfig.reinstallIncompatibleApksBeforeTest.setDisallowChanges(reinstallIncompatibleApksBeforeTest)
+    utpRunConfig.shardConfig.setDisallowChanges(shardConfig)
+    utpRunConfig.loggingLevel.setDisallowChanges(loggingLevel)
+
+    return utpRunConfig
 }
