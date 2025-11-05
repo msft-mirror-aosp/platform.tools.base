@@ -30,6 +30,7 @@ import com.android.build.api.dsl.Device
 import com.android.build.api.dsl.DeviceGroup
 import com.android.build.api.instrumentation.FramesComputationMode
 import com.android.build.api.variant.ScopedArtifacts
+import com.android.build.api.variant.impl.FlatSourceDirectoriesImpl
 import com.android.build.api.variant.impl.TaskProviderBasedDirectoryEntryImpl
 import com.android.build.gradle.api.AndroidSourceSet
 import com.android.builder.errors.IssueReporter
@@ -40,7 +41,9 @@ import com.android.build.gradle.internal.component.ConsumableCreationConfig
 import com.android.build.gradle.internal.component.DeviceTestCreationConfig
 import com.android.build.gradle.internal.component.HostTestCreationConfig
 import com.android.build.gradle.internal.component.InstrumentedTestCreationConfig
+import com.android.build.gradle.internal.tasks.creationconfig.ProcessJavaResCreationConfig
 import com.android.build.gradle.internal.component.KmpComponentCreationConfig
+import com.android.build.gradle.internal.component.TaskCreationConfig
 import com.android.build.gradle.internal.component.TestComponentCreationConfig
 import com.android.build.gradle.internal.component.TestCreationConfig
 import com.android.build.gradle.internal.component.VariantCreationConfig
@@ -146,7 +149,6 @@ import com.android.build.gradle.internal.utils.KgpVersion.Companion.MINIMUM_BUIL
 import com.android.build.gradle.internal.utils.getKotlinAndroidPluginVersion
 import com.android.build.gradle.internal.utils.isKotlinKaptPluginApplied
 import com.android.build.gradle.internal.utils.isKspPluginApplied
-import com.android.build.gradle.internal.utils.maybeAddKotlinStdlibDependency
 import com.android.build.gradle.internal.variant.ApkVariantData
 import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.tasks.AidlCompile
@@ -199,6 +201,7 @@ import org.gradle.api.plugins.BasePlugin
 import org.gradle.api.plugins.JavaBasePlugin
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.Internal
+import org.gradle.api.tasks.Sync
 import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.api.tasks.compile.JavaCompile
@@ -795,7 +798,26 @@ abstract class TaskManager(
     protected fun createProcessJavaResTask(creationConfig: ComponentCreationConfig) {
         // Copy the source folders java resources into the temporary location, mainly to
         // maintain the PluginDsl COPY semantics.
-        taskFactory.register(ProcessJavaResTask.CreationAction(creationConfig))
+        val taskConfig = object: ProcessJavaResCreationConfig, TaskCreationConfig by creationConfig {
+            override val extraClasses: Collection<FileCollection>
+                get() = listOfNotNull(
+                    creationConfig.oldVariantApiLegacySupport?.variantData?.allPreJavacGeneratedBytecode,
+                    creationConfig.oldVariantApiLegacySupport?.variantData?.allPostJavacGeneratedBytecode
+                )
+            override val useBuiltInKotlinSupport: Boolean
+                get() = creationConfig.useBuiltInKotlinSupport
+            override val packageJacocoRuntime: Boolean
+                get() = (creationConfig as? ApkCreationConfig)?.packageJacocoRuntime == true
+            override val annotationProcessorConfiguration: Configuration?
+                get() = creationConfig.variantDependencies.annotationProcessorConfiguration
+            override val sources: FlatSourceDirectoriesImpl?
+                get() = creationConfig.sources.resources
+
+            override fun setJavaResTask(task: TaskProvider<out Sync>) {
+                creationConfig.taskContainer.processJavaResourcesTask = task
+            }
+        }
+        taskFactory.register(ProcessJavaResTask.CreationAction(taskConfig))
     }
 
     /**

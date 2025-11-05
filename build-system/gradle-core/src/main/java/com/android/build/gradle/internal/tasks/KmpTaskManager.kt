@@ -24,13 +24,17 @@ import com.android.build.api.artifact.impl.InternalScopedArtifacts
 import com.android.build.api.component.impl.KmpAndroidTestImpl
 import com.android.build.api.component.impl.KmpHostTestImpl
 import com.android.build.api.variant.ScopedArtifacts
+import com.android.build.api.variant.impl.FlatSourceDirectoriesImpl
 import com.android.build.gradle.internal.AndroidTestTaskManager
 import com.android.build.gradle.internal.TaskManager
 import com.android.build.gradle.internal.UnitTestTaskManager
+import com.android.build.gradle.internal.component.ApkCreationConfig
 import com.android.build.gradle.internal.component.ApplicationCreationConfig
 import com.android.build.gradle.internal.component.ComponentCreationConfig
+import com.android.build.gradle.internal.tasks.creationconfig.ProcessJavaResCreationConfig
 import com.android.build.gradle.internal.component.KmpComponentCreationConfig
 import com.android.build.gradle.internal.component.KmpCreationConfig
+import com.android.build.gradle.internal.component.TaskCreationConfig
 import com.android.build.gradle.internal.lint.LintTaskManager
 import com.android.build.gradle.internal.plugins.LINT_PLUGIN_ID
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
@@ -58,7 +62,10 @@ import com.android.build.gradle.tasks.ZipMergingTask
 import com.android.builder.core.ComponentTypeImpl
 import org.gradle.api.Project
 import org.gradle.api.Task
+import org.gradle.api.artifacts.Configuration
+import org.gradle.api.file.FileCollection
 import org.gradle.api.file.RegularFile
+import org.gradle.api.tasks.Sync
 import org.gradle.api.tasks.TaskProvider
 import org.jetbrains.kotlin.gradle.tasks.AbstractKotlinCompile
 
@@ -180,7 +187,27 @@ class KmpTaskManager(
             )
         )
 
-        project.tasks.registerTask(ProcessJavaResTask.KotlinMultiplatformCreationAction(variant))
+        val taskConfig = object: ProcessJavaResCreationConfig, TaskCreationConfig by variant {
+            override val extraClasses: Collection<FileCollection>
+                get() = listOf(variant
+                    .artifacts
+                    .forScope(ScopedArtifacts.Scope.PROJECT)
+                    .getFinalArtifacts(ScopedArtifact.CLASSES)
+                )
+            override val useBuiltInKotlinSupport: Boolean
+                get() = variant.useBuiltInKotlinSupport
+            override val packageJacocoRuntime: Boolean
+                get() = (variant as? ApkCreationConfig)?.packageJacocoRuntime == true
+            override val annotationProcessorConfiguration: Configuration?
+                get() = variant.variantDependencies.annotationProcessorConfiguration
+            override val sources: FlatSourceDirectoriesImpl?
+                get() = variant.sources.resources
+
+            override fun setJavaResTask(task: TaskProvider<out Sync>) {
+                variant.taskContainer.processJavaResourcesTask = task
+            }
+        }
+        project.tasks.registerTask(ProcessJavaResTask.CreationAction(taskConfig))
         project.tasks.registerTask(
             MergeJavaResourceTask.CreationAction(
                 javaResMergingScopes,

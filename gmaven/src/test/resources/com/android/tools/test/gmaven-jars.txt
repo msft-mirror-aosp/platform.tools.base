@@ -588,6 +588,7 @@ com/android/tools/build/gradle
   com/android/build/gradle/internal/services/
   com/android/build/gradle/internal/signing/
   com/android/build/gradle/internal/tasks/
+  com/android/build/gradle/internal/tasks/creationconfig/
   com/android/build/gradle/internal/tasks/databinding/
   com/android/build/gradle/internal/tasks/device_targeting_config_schema.xsd
   com/android/build/gradle/internal/tasks/factory/

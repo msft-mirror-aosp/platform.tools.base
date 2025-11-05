@@ -24,16 +24,15 @@ import com.android.build.api.variant.ScopedArtifacts
 import com.android.build.gradle.internal.TaskManager
 import com.android.build.gradle.internal.component.ApkCreationConfig
 import com.android.build.gradle.internal.component.ComponentCreationConfig
+import com.android.build.gradle.internal.tasks.creationconfig.ProcessJavaResCreationConfig
 import com.android.build.gradle.internal.dependency.PluginDependencies
 import com.android.build.gradle.internal.fusedlibrary.FusedLibraryGlobalScope
 import com.android.build.gradle.internal.fusedlibrary.FusedLibraryInternalArtifactType
 import com.android.build.gradle.internal.packaging.defaultExcludes
-import com.android.build.gradle.internal.privaysandboxsdk.PrivacySandboxSdkVariantScope
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.scope.InternalArtifactType.JAVA_RES
 import com.android.build.gradle.internal.tasks.MergeJavaResWorkAction.SourcedInput
-import com.android.build.gradle.internal.tasks.factory.AndroidVariantTaskCreationAction
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationAction
 import com.android.build.gradle.internal.tasks.factory.VariantTaskCreationAction
 import com.android.build.gradle.internal.utils.fromDisallowChanges
@@ -488,8 +487,7 @@ private fun configureHasIncludedBuilds(
     task.hasIncludedBuilds.setDisallowChanges(gradle.includedBuilds.isNotEmpty())
 }
 
-/** Returns true if anything's been added to the annotation processor configuration. */
-fun projectHasAnnotationProcessors(creationConfig: ComponentCreationConfig): Boolean {
-    val config = creationConfig.variantDependencies.annotationProcessorConfiguration
+fun projectHasAnnotationProcessors(creationConfig: ProcessJavaResCreationConfig): Boolean {
+    val config = creationConfig.annotationProcessorConfiguration
     return config != null && config.incoming.dependencies.isNotEmpty()
 }

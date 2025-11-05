@@ -16,7 +16,6 @@
 
 package com.android.build.gradle.internal.component
 
-import com.android.build.api.artifact.impl.ArtifactsImpl
 import com.android.build.api.component.impl.LifecycleTasksImpl
 import com.android.build.api.variant.AndroidVersion
 import com.android.build.api.variant.ComponentIdentity
@@ -35,10 +34,8 @@ import com.android.build.gradle.internal.dependency.VariantDependencies
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
 import com.android.build.gradle.internal.scope.BuildFeatureValues
 import com.android.build.gradle.internal.scope.InternalArtifactType
-import com.android.build.gradle.internal.scope.MutableTaskContainer
 import com.android.build.gradle.internal.services.BuiltInKaptSupportMode
 import com.android.build.gradle.internal.services.BuiltInKotlinSupportMode
-import com.android.build.gradle.internal.services.TaskCreationServices
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfig
 import com.android.build.gradle.internal.variant.VariantPathHelper
 import com.android.builder.core.ComponentType
@@ -47,7 +44,6 @@ import org.gradle.api.file.FileCollection
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.api.tasks.compile.JavaCompile
-import org.jetbrains.kotlin.gradle.dsl.ExplicitApiMode
 import java.io.File
 import java.util.function.Predicate
 
@@ -58,7 +54,7 @@ import java.util.function.Predicate
  * supertype and make some tasks receive a generic type that does not fit the actual
  * implementation hierarchy (see for instance ApkCreationConfig)
  */
-interface ComponentCreationConfig : ComponentIdentity {
+interface ComponentCreationConfig : ComponentIdentity, TaskCreationConfig {
     // ---------------------------------------------------------------------------------------------
     // BASIC INFO
     // ---------------------------------------------------------------------------------------------
@@ -67,8 +63,6 @@ interface ComponentCreationConfig : ComponentIdentity {
     val componentType: ComponentType
     val description: String
     val productFlavorList: List<ProductFlavor>
-    fun computeTaskNameInternal(prefix: String, suffix: String): String
-    fun computeTaskNameInternal(prefix: String): String
 
     // ---------------------------------------------------------------------------------------------
     // NEEDED BY ALL COMPONENTS
@@ -120,11 +114,8 @@ interface ComponentCreationConfig : ComponentIdentity {
     // ---------------------------------------------------------------------------------------------
     val buildFeatures: BuildFeatureValues
     val variantDependencies: VariantDependencies
-    val artifacts: ArtifactsImpl
     val sources: InternalSources
-    val taskContainer: MutableTaskContainer
     val paths: VariantPathHelper
-    val services: TaskCreationServices
     val lifecycleTasks: LifecycleTasksImpl
 
     /**
