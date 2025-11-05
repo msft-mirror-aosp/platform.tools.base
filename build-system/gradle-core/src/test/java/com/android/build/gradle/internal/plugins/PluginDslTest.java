@@ -233,15 +233,9 @@ public class PluginDslTest {
                 .named("test variant list")
                 .containsExactly("stagingAndroidTest", "stagingUnitTest");
 
-        List<VariantCreationConfig> variants =
-                plugin.getVariantManager().getMainComponents().stream()
-                        .map(ComponentInfo::getVariant)
-                        .collect(Collectors.toList());
-        List<TestComponentCreationConfig> testVariants =
-                plugin.getVariantManager().getTestComponents();
-        checker.checkTestedVariant("staging", "stagingAndroidTest");
-        checker.checkNonTestedVariant("debug");
-        checker.checkNonTestedVariant("release");
+        checker.checkTestedVariant("staging", "stagingAndroidTest", null, null);
+        checker.checkNonTestedVariant("debug", null);
+        checker.checkNonTestedVariant("release", null);
     }
 
     @Test
@@ -283,11 +277,11 @@ public class PluginDslTest {
         Set<TestComponentCreationConfig> testVariants = checker.getTestComponents();
         assertThat(testVariants).named("test variant list").hasSize(4);
 
-        checker.checkTestedVariant("flavor1Debug", "flavor1DebugAndroidTest");
-        checker.checkTestedVariant("flavor2Debug", "flavor2DebugAndroidTest");
+        checker.checkTestedVariant("flavor1Debug", "flavor1DebugAndroidTest", null, null);
+        checker.checkTestedVariant("flavor2Debug", "flavor2DebugAndroidTest", null, null);
 
-        checker.checkNonTestedVariant("flavor1Release");
-        checker.checkNonTestedVariant("flavor2Release");
+        checker.checkNonTestedVariant("flavor1Release", null);
+        checker.checkNonTestedVariant("flavor2Release", null);
     }
 
     @Test
@@ -341,19 +335,19 @@ public class PluginDslTest {
         Set<TestComponentCreationConfig> testVariants = checker.getTestComponents();
         Truth.assertThat(testVariants).named("test variant list").hasSize(12);
 
-        checker.checkTestedVariant("f1FaDebug", "f1FaDebugAndroidTest");
-        checker.checkTestedVariant("f1FbDebug", "f1FbDebugAndroidTest");
-        checker.checkTestedVariant("f1FcDebug", "f1FcDebugAndroidTest");
-        checker.checkTestedVariant("f2FaDebug", "f2FaDebugAndroidTest");
-        checker.checkTestedVariant("f2FbDebug", "f2FbDebugAndroidTest");
-        checker.checkTestedVariant("f2FcDebug", "f2FcDebugAndroidTest");
+        checker.checkTestedVariant("f1FaDebug", "f1FaDebugAndroidTest", null, null);
+        checker.checkTestedVariant("f1FbDebug", "f1FbDebugAndroidTest", null, null);
+        checker.checkTestedVariant("f1FcDebug", "f1FcDebugAndroidTest", null, null);
+        checker.checkTestedVariant("f2FaDebug", "f2FaDebugAndroidTest", null, null);
+        checker.checkTestedVariant("f2FbDebug", "f2FbDebugAndroidTest", null, null);
+        checker.checkTestedVariant("f2FcDebug", "f2FcDebugAndroidTest", null, null);
 
-        checker.checkNonTestedVariant("f1FaRelease");
-        checker.checkNonTestedVariant("f1FbRelease");
-        checker.checkNonTestedVariant("f1FcRelease");
-        checker.checkNonTestedVariant("f2FaRelease");
-        checker.checkNonTestedVariant("f2FbRelease");
-        checker.checkNonTestedVariant("f2FcRelease");
+        checker.checkNonTestedVariant("f1FaRelease", null);
+        checker.checkNonTestedVariant("f1FbRelease", null);
+        checker.checkNonTestedVariant("f1FcRelease", null);
+        checker.checkNonTestedVariant("f2FaRelease", null);
+        checker.checkNonTestedVariant("f2FbRelease", null);
+        checker.checkNonTestedVariant("f2FcRelease", null);
     }
 
     @Test

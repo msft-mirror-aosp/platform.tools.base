@@ -16,6 +16,7 @@
 package com.android.build.gradle.internal.plugins
 
 import com.android.build.api.dsl.LibraryExtension
+import com.android.build.gradle.internal.fixture.LibraryVariantCreationConfigChecker
 import com.android.build.gradle.internal.fixture.TestConstants
 import com.android.build.gradle.internal.fixture.TestProjects
 import com.android.build.gradle.internal.utils.importOfflineMavenRepo
@@ -53,6 +54,59 @@ class LibraryPluginDslTest {
             aidl = true
         }
         plugin = project.plugins.getPlugin(LibraryPlugin::class.java)
+    }
+
+    @Test
+    fun testBasic() {
+        plugin.createAndroidTasks(project)
+        val checker = LibraryVariantCreationConfigChecker(plugin)
+        val variants = checker.mainVariants
+        Truth.assertThat(variants).hasSize(2)
+
+        val testVariants = checker.testComponents
+        Truth.assertThat(testVariants).hasSize(2)
+
+        checker.checkTestedVariant(
+            "debug", "debugAndroidTest")
+        checker.checkNonTestedVariant("release")
+    }
+
+    @Test
+    fun testNewBuildType() {
+        android.buildTypes.create("custom")
+        plugin.createAndroidTasks(project)
+        val checker = LibraryVariantCreationConfigChecker(plugin)
+
+        val variants = checker.mainVariants
+
+        Truth.assertThat(variants).hasSize(3)
+
+        val testVariants = checker.testComponents
+        Truth.assertThat(testVariants).hasSize(2)
+
+        checker.checkTestedVariant(
+            "debug", "debugAndroidTest")
+        checker.checkNonTestedVariant("release")
+        checker.checkNonTestedVariant("custom")
+    }
+
+    @Test
+    fun testNewBuildType_testBuildType() {
+        android.buildTypes.create("custom")
+        android.testBuildType = "custom"
+        plugin.createAndroidTasks(project)
+        val checker = LibraryVariantCreationConfigChecker(plugin)
+
+        val variants = checker.mainVariants
+        Truth.assertThat(variants).hasSize(3)
+
+        val testVariants = checker.testComponents
+        Truth.assertThat(testVariants).hasSize(2)
+
+        checker.checkTestedVariant(
+            "custom", "customAndroidTest")
+        checker.checkNonTestedVariant("release")
+        checker.checkNonTestedVariant("debug")
     }
 
     /**

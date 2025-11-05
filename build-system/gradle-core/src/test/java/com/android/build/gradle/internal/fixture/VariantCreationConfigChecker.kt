@@ -16,88 +16,185 @@
 
 package com.android.build.gradle.internal.fixture
 
-import com.android.build.gradle.internal.plugins.AppPlugin
+import com.android.build.gradle.internal.component.ApkCreationConfig
 import com.android.build.gradle.internal.component.TestComponentCreationConfig
+import com.android.build.gradle.internal.component.TestCreationConfig
 import com.android.build.gradle.internal.component.VariantCreationConfig
+import com.android.build.gradle.internal.plugins.AppPlugin
+import com.android.build.gradle.internal.plugins.BasePlugin
+import com.android.build.gradle.internal.plugins.LibraryPlugin
 import com.google.common.truth.Truth.assertThat
 
 interface VariantCreationConfigChecker {
 
-    val testComponents: Set<TestComponentCreationConfig>
     val mainVariants: Set<VariantCreationConfig>
+    val testComponents: Set<TestComponentCreationConfig>
     fun checkTestedVariant(
         variantName: String,
         testedVariantName: String,
+        withMainVariant: ((VariantCreationConfig) -> Unit)? = null,
+        withTestedVariant: ((VariantCreationConfig) -> Unit)? = null
     )
 
-    fun checkNonTestedVariant(variantName: String)
+    fun checkNonTestedVariant(variantName: String,
+        withMainVariant: ((VariantCreationConfig) -> Unit)? = null
+    )
 }
 
-class AppVariantCreationConfigChecker(val plugin: AppPlugin) : VariantCreationConfigChecker {
-
-    override val testComponents: Set<TestComponentCreationConfig>
-        get() = plugin.variantManager.testComponents.toSet()
+class CommonVariantCreationConfigChecker(val plugin: BasePlugin<*, *, *, *, *, *>) :
+    VariantCreationConfigChecker {
 
     override val mainVariants: Set<VariantCreationConfig>
         get() = plugin.variantManager.mainComponents.map { it.variant }.toSet()
 
+    override val testComponents: Set<TestComponentCreationConfig>
+        get() = plugin.variantManager.testComponents.toSet()
+
     override fun checkTestedVariant(
         variantName: String,
         testedVariantName: String,
+        withMainVariant: ((VariantCreationConfig) -> Unit)?,
+        withTestedVariant: ((VariantCreationConfig) -> Unit)?
     ) {
-        val requestedVariant = getVariant(mainVariants, variantName)
-        val testComponent = getTestedVariant(requestedVariant)
+        variant(variantName) { requestedVariant ->
+            checkTasks(requestedVariant)
+            withMainVariant?.invoke(requestedVariant)
 
-        assertThat(testComponent).isNotNull()
-        assertThat(testComponent?.name).isEqualTo(testedVariantName)
-        testComponent?.onTestedVariant {
-            checkTasks(it)
+            testedComponent(requestedVariant) { testComponent ->
+                assertThat(testComponent).isNotNull()
+                assertThat(testComponent?.name).isEqualTo(testedVariantName)
+                testComponent?.onTestedVariant {
+                    checkTasks(it)
+                    withTestedVariant?.invoke(it)
+                }
+            }
         }
     }
 
     override fun checkNonTestedVariant(
         variantName: String,
+        withMainVariant: ((VariantCreationConfig) -> Unit)?
     ) {
-        val requestedVariant = getVariant(mainVariants, variantName)
-        checkTasks(requestedVariant)
+        variant(variantName) { requestedVariant ->
+            checkTasks(requestedVariant)
+            withMainVariant?.invoke(requestedVariant)
 
-        val testComponent = getTestedVariant(requestedVariant)
-        assertThat(testComponent).isNull()
-    }
-
-    private fun getVariant(
-        variants: Collection<VariantCreationConfig>,
-        variantName: String,
-    ): VariantCreationConfig {
-        val requestedVariant = variants.find { it.name == variantName }
-            ?: error("$variantName does not exist in the collection of variants provided.")
-        return requestedVariant
-    }
-
-    private fun getTestedVariant(
-        variant: VariantCreationConfig
-    ): TestComponentCreationConfig? {
-        return testComponents.find {
-            it.onTestedVariant {
-                it.name == variant.name
+            testedComponent(requestedVariant) {
+                assertThat(it).isNull()
             }
         }
     }
 
     private fun checkTasks(variant: VariantCreationConfig) {
-        assertThat(variant.taskContainer.mergeResourcesTask).isNotNull()
-        assertThat(variant.taskContainer.aidlCompileTask).isNotNull()
-        assertThat(variant.taskContainer.mergeAssetsTask).isNotNull()
-        assertThat(variant.taskContainer.javacTask).isNotNull()
-        assertThat(variant.taskContainer.processAndroidResTask).isNotNull()
-        assertThat(variant.taskContainer.assembleTask).isNotNull()
-        assertThat(variant.taskContainer.uninstallTask).isNotNull()
-        assertThat(variant.taskContainer.processAndroidResTask).isNotNull()
-        assertThat(variant.taskContainer.processManifestTask).isNotNull()
-        if (variant is TestComponentCreationConfig) {
-            assertThat(variant.taskContainer.connectedTestTask).isNotNull()
-            variant.onTestedVariant {
-                assertThat(it).isNotNull()
+        with (variant.taskContainer) {
+            assertThat(aidlCompileTask).isNotNull()
+            assertThat(mergeResourcesTask).isNotNull()
+            assertThat(javacTask).isNotNull()
+            assertThat(processJavaResourcesTask).isNotNull()
+            if (variant !is TestComponentCreationConfig) {
+                assertThat(assembleTask).isNotNull()
+            }
+        }
+    }
+
+    private fun variant(
+        variantName: String,
+        withVariant: (VariantCreationConfig) -> Unit
+    ) {
+        val requestedVariant = mainVariants.find { it.name == variantName }
+        assertThat(requestedVariant).isNotNull()
+        withVariant(requestedVariant ?: error("Variant $variantName not found."))
+    }
+
+    private fun testedComponent(
+        variant: VariantCreationConfig,
+        withTestedComponent: (TestComponentCreationConfig?) -> Unit,
+    ) {
+        val maybeTestComponent = testComponents.find {
+            it.onTestedVariant {
+                it.name == variant.name
+            }
+        }
+        withTestedComponent(maybeTestComponent)
+    }
+}
+
+class AppVariantCreationConfigChecker private constructor(val checker: CommonVariantCreationConfigChecker) :
+    VariantCreationConfigChecker by checker {
+
+    constructor(plugin: AppPlugin) : this(CommonVariantCreationConfigChecker(plugin))
+
+    override fun checkTestedVariant(
+        variantName: String,
+        testedVariantName: String,
+        withMainVariant: ((VariantCreationConfig) -> Unit)?,
+        withTestedVariant: ((VariantCreationConfig) -> Unit)?,
+    ) {
+        return checker.checkTestedVariant(
+            variantName, testedVariantName,
+            {
+                checkTasks(it)
+                withMainVariant?.invoke(it)
+            },
+            {
+                checkTasks(it)
+                withTestedVariant?.invoke(it)
+            }
+        )
+    }
+
+    override fun checkNonTestedVariant(
+        variantName: String,
+        withMainVariant: ((VariantCreationConfig) -> Unit)?
+    ) {
+        return checker.checkNonTestedVariant(variantName) {
+            checkTasks(it)
+            withMainVariant?.invoke(it)
+        }
+    }
+
+    private fun checkTasks(variant: VariantCreationConfig) {
+        with(variant.taskContainer) {
+            assertThat(uninstallTask).isNotNull()
+            assertThat(packageAndroidTask).isNotNull()
+            assertThat(mergeAssetsTask).isNotNull()
+            assertThat(packageAndroidTask).isNotNull()
+            if (variant is TestComponentCreationConfig) {
+                assertThat(connectedTestTask).isNotNull()
+                variant.onTestedVariant {
+                    assertThat(it).isNotNull()
+                }
+            }
+        }
+    }
+}
+
+class LibraryVariantCreationConfigChecker private constructor(val checker: CommonVariantCreationConfigChecker) :
+    VariantCreationConfigChecker by checker {
+
+    constructor(plugin: LibraryPlugin) : this(CommonVariantCreationConfigChecker(plugin))
+
+    override fun checkNonTestedVariant(
+        variantName: String,
+        withMainVariant: ((VariantCreationConfig) -> Unit)?
+    ) {
+        return checker.checkNonTestedVariant(variantName) {
+            checkTasks(it)
+            withMainVariant?.invoke(it)
+        }
+    }
+
+    private fun checkTasks(variant: VariantCreationConfig) {
+        with(variant.taskContainer) {
+            assertThat(checkManifestTask).isNotNull()
+            if (variant is TestCreationConfig) {
+                if (variant is ApkCreationConfig &&
+                    variant.signingConfig?.isSigningReady() == true) {
+                    assertThat(installTask).isNotNull()
+                } else {
+                    assertThat(installTask).isNull()
+                }
+                assertThat(variant.instrumentationCreationConfig).isNotNull()
             }
         }
     }
