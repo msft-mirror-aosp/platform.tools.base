@@ -153,7 +153,7 @@
             <d:keyboard-state>keyshidden</d:keyboard-state>
             <d:nav-state>nonav</d:nav-state>
         </d:state>
-        <d:tag-id>android-ai-glasses</d:tag-id>
+        <d:tag-id>ai-glasses</d:tag-id>
     </d:device>
 
     <d:device>
