@@ -162,39 +162,6 @@ private fun runUtpTestSuiteAndWait(
 }
 
 /**
- * Creates an empty temporary file for UTP in Android Preference directory.
- */
-fun createUtpTempFile(fileNamePrefix: String, fileNameSuffix: String): File {
-    val utpPrefRootDir = getUtpPreferenceRootDir()
-    return File.createTempFile(fileNamePrefix, fileNameSuffix, utpPrefRootDir).apply {
-        deleteOnExit()
-    }
-}
-
-/**
- * Creates an empty temporary directory for UTP in Android Preference directory.
- */
-fun createUtpTempDirectory(dirNamePrefix: String): File {
-    val utpPrefRootDir = getUtpPreferenceRootDir()
-    return java.nio.file.Files.createTempDirectory(
-        utpPrefRootDir.toPath(), dirNamePrefix).toFile().apply {
-        deleteOnExit()
-    }
-}
-
-/**
- * Returns the UTP preference root directory. Typically it is "~/.android/utp". If the preference
- * directory dosen't exist, it creates and returns it.
- */
-fun getUtpPreferenceRootDir(): File {
-    val utpPrefRootDir = File(AndroidLocationsSingleton.prefsLocation.toFile(), "utp")
-    if (!utpPrefRootDir.exists()) {
-        utpPrefRootDir.mkdirs()
-    }
-    return utpPrefRootDir
-}
-
-/**
  * Finds the root cause of the Platform Error and returns the error message.
  */
 fun getPlatformErrorMessage(resultsProto: TestSuiteResultProto.TestSuiteResult?): String {

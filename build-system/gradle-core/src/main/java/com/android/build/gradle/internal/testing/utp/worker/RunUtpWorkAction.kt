@@ -18,8 +18,6 @@ package com.android.build.gradle.internal.testing.utp.worker
 
 import com.android.build.gradle.internal.testing.utp.UtpTestResultListenerServerRunner
 import com.android.build.gradle.internal.testing.utp.createRunnerConfigProtoForLocalDevice
-import com.android.build.gradle.internal.testing.utp.createUtpTempDirectory
-import com.android.build.gradle.internal.testing.utp.createUtpTempFile
 import com.google.common.io.Files
 import org.gradle.api.provider.ProviderFactory
 import org.gradle.workers.WorkAction

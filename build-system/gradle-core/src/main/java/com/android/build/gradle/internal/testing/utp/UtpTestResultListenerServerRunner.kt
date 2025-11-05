@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.internal.testing.utp
 
+import com.android.build.gradle.internal.testing.utp.worker.createUtpTempFile
 import com.android.tools.utp.plugins.result.listener.gradle.proto.GradleAndroidTestResultListenerProto.TestResultEvent
 import com.android.utils.FileUtils
 import org.gradle.api.logging.Logging
