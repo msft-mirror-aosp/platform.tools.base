@@ -60,7 +60,7 @@ import com.android.build.gradle.internal.testing.androidtest.AndroidTestUtilsKt;
 import com.android.build.gradle.internal.testing.utp.UtpDependencies;
 import com.android.build.gradle.internal.testing.utp.UtpDependencyUtilsKt;
 import com.android.build.gradle.internal.testing.utp.UtpTestRunner;
-import com.android.build.gradle.internal.testing.utp.emulatorcontrol.EmulatorControlConfig;
+import com.android.build.gradle.internal.testing.utp.worker.EmulatorControlConfig;
 import com.android.build.gradle.options.BooleanOption;
 import com.android.build.gradle.options.IntegerOption;
 import com.android.build.gradle.options.ProjectOptions;
@@ -810,7 +810,9 @@ public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTas
                     creationConfig.getTaskContainer().getProviderTestTaskList().add(taskProvider);
                 }
             }
-            UtpDependencyUtilsKt.maybeCreateUtpConfigurations(creationConfig);
+            UtpDependencyUtilsKt.maybeCreateUtpConfigurations(
+                    creationConfig.getServices().getConfigurations(),
+                    creationConfig.getServices().getDependencies());
         }
 
         @Override

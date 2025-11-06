@@ -32,7 +32,10 @@
       {
         "name": "commonMain",
         "dependsOn": [],
-        "moduleDependency": [],
+        "moduleDependency": [
+          "org.jetbrains.kotlin:kotlin-stdlib",
+          "Kotlin Multiplatform:kmpLibraryPlugin"
+        ],
         "binaryLayout": "klib"
       }
     ]

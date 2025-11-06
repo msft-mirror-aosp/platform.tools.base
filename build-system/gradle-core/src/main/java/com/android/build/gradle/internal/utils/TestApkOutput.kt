@@ -41,7 +41,6 @@ class TestApkOutput(variant: TestVariantCreationConfig, val deviceSpec: DeviceSp
             apkSources, variant.nativeBuildCreationConfig?.supportedAbis, variant.minSdk.toSharedAndroidVersion(),
             variant.baseName, variant.services.projectInfo.path)
         testingApk = variant.artifacts.get(SingleArtifact.APK)
-
     }
 
     override val apkInstallGroups: List<ApkInstallGroup>
@@ -66,7 +65,7 @@ class TestApkOutput(variant: TestVariantCreationConfig, val deviceSpec: DeviceSp
                     .ANDROID_PRIVACY_SANDBOX_EXTRACTED_SDK_APKS)
 
         return ApkSources(
-            mainApkArtifact = variant.testedApks,
+            mainApkArtifacts = variant.allTestedApks,
             privacySandboxSdksApksFiles =  privacySandboxSdksApksFiles,
             additionalSupportedSdkApkSplits = variant.usesSdkLibrarySplitForLocalDeployment,
             privacySandboxSdkSplitApksForLegacy = variant.privacySandboxCompatApks)

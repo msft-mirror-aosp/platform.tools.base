@@ -22,7 +22,6 @@ import com.android.build.gradle.internal.LoggerWrapper
 import com.android.build.gradle.internal.component.VariantCreationConfig
 import com.android.build.gradle.internal.profile.ProfileAwareWorkAction
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
-import com.android.build.gradle.internal.r8.ConsumerRuleGlobalGuardian
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.tasks.factory.VariantTaskCreationAction
 import com.android.build.gradle.internal.tasks.factory.features.OptimizationTaskCreationAction
@@ -33,6 +32,7 @@ import com.android.build.gradle.internal.utils.setDisallowChanges
 import com.android.build.gradle.options.BooleanOption
 import com.android.buildanalyzer.common.TaskCategory
 import com.android.builder.errors.EvalIssueException
+import com.android.ide.common.r8.ConsumerRuleGlobalGuardian
 import com.android.utils.FileUtils
 import org.gradle.api.artifacts.ArtifactCollection
 import org.gradle.api.file.ConfigurableFileCollection
@@ -222,9 +222,10 @@ abstract class ExportConsumerProguardFilesTask : NonIncrementalTask() {
                 if (disallowGlobalOptions) {
                     ConsumerRuleGlobalGuardian.validateConsumerRulesHasNoBannedGlobals(
                         it,
-                        isDynamicFeature,
-                        exceptionHandler
-                    )
+                        isDynamicFeature
+                    ) {
+                        exceptionHandler.accept(it.errorMessage)
+                    }
                 }
             }
         }

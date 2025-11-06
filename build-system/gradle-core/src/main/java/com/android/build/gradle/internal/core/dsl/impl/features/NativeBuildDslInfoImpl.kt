@@ -19,6 +19,7 @@ package com.android.build.gradle.internal.core.dsl.impl.features
 import com.android.build.api.dsl.BuildType
 import com.android.build.api.dsl.CommonExtension
 import com.android.build.api.dsl.ProductFlavor
+import com.android.build.gradle.internal.core.Abi
 import com.android.build.gradle.internal.core.MergedExternalNativeBuildOptions
 import com.android.build.gradle.internal.core.MergedNdkConfig
 import com.android.build.gradle.internal.core.NativeBuiltType
@@ -86,6 +87,11 @@ class NativeBuildDslInfoImpl(
             return null
         }
 
-    override val supportedAbis: Set<String>
+    override val userDefinedAbis: Set<String>
         get() = if (componentType.isDynamicFeature) setOf() else ndkConfig.abiFilters
+
+    override val supportedAbis: Set<String>
+        get() = if (componentType.isDynamicFeature) setOf() else {
+            ndkConfig.abiFilters.takeIf { it.isNotEmpty() } ?: Abi.getDefaultSupportedAbis().toSet()
+        }
 }

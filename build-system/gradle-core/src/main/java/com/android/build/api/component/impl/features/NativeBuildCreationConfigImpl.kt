@@ -41,6 +41,8 @@ class NativeBuildCreationConfigImpl(
         get() = dslInfo.isJniDebuggable
     override val supportedAbis: Set<String>
         get() = dslInfo.supportedAbis
+    override val userDefinedAbis: Set<String>
+        get() = dslInfo.userDefinedAbis
     override val externalNativeExperimentalProperties: Map<String, Any>
         get() = dslInfo.externalNativeExperimentalProperties
 

@@ -19,7 +19,6 @@ package com.android.build.gradle.internal.tasks
 import com.android.build.gradle.internal.dependency.GenericTransformParameters
 import com.android.build.gradle.internal.privaysandboxsdk.extractPrivacySandboxPermissions
 import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactType
-import com.android.build.gradle.tasks.PrivacySandboxSdkGenerateJarStubsTask
 import org.gradle.api.artifacts.transform.CacheableTransform
 import org.gradle.api.artifacts.transform.InputArtifact
 import org.gradle.api.artifacts.transform.TransformAction
@@ -56,15 +55,7 @@ abstract class AsarTransform : TransformAction<AsarTransform.Parameters> {
                         Files.copy(protoBytes, outputFile)
                     }
                 }
-                ArtifactType.ANDROID_PRIVACY_SANDBOX_SDK_INTERFACE_DESCRIPTOR -> {
-                    val sdkInterfaceDescriptor = outputs.file(
-                            PrivacySandboxSdkGenerateJarStubsTask.privacySandboxSdkStubJarFilename)
-                    val entry =
-                            it.getEntry(PrivacySandboxSdkGenerateJarStubsTask.privacySandboxSdkStubJarFilename)
-                    it.getInputStream(entry).use { jar ->
-                        sdkInterfaceDescriptor.writeBytes(jar.readAllBytes())
-                    }
-                }
+                ArtifactType.ANDROID_PRIVACY_SANDBOX_SDK_INTERFACE_DESCRIPTOR -> {}
                 // The ASAR contributes to the main manifest potentially permissions,
                 // which are marked with tools:requiredByPrivacySandboxSdk="true"
                 // Bundle tool will then remove those for base APKs that support privacy sandbox

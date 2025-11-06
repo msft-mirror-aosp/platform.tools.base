@@ -24,32 +24,69 @@ class VersionRangeTest {
     fun testParseAll() {
         assertThat(VersionRange.parse("+").toString()).isEqualTo("+")
         assertThat(VersionRange.parse("+").toIdentifier()).isEqualTo("+")
-        assertThat(VersionRange.parse("[,]").toString()).isEqualTo("+")
-        assertThat(VersionRange.parse("[,]").toIdentifier()).isEqualTo("+")
-        assertThat(VersionRange.parse("(,]").toString()).isEqualTo("+")
-        assertThat(VersionRange.parse("(,]").toIdentifier()).isEqualTo("+")
-        assertThat(VersionRange.parse("],]").toString()).isEqualTo("+")
-        assertThat(VersionRange.parse("],]").toIdentifier()).isEqualTo("+")
-        assertThat(VersionRange.parse("[,)").toString()).isEqualTo("+")
-        assertThat(VersionRange.parse("[,)").toIdentifier()).isEqualTo("+")
-        assertThat(VersionRange.parse("(,)").toString()).isEqualTo("+")
-        assertThat(VersionRange.parse("(,)").toIdentifier()).isEqualTo("+")
-        assertThat(VersionRange.parse("],)").toString()).isEqualTo("+")
-        assertThat(VersionRange.parse("],)").toIdentifier()).isEqualTo("+")
-        assertThat(VersionRange.parse("[,[").toString()).isEqualTo("+")
-        assertThat(VersionRange.parse("[,[").toIdentifier()).isEqualTo("+")
-        assertThat(VersionRange.parse("(,[").toString()).isEqualTo("+")
-        assertThat(VersionRange.parse("(,[").toIdentifier()).isEqualTo("+")
-        assertThat(VersionRange.parse("],[").toString()).isEqualTo("+")
-        assertThat(VersionRange.parse("],[").toIdentifier()).isEqualTo("+")
+        assertThat(VersionRange.parse("[,]").toString()).isEqualTo("[,]")
+        assertThat(VersionRange.parse("[,]").toIdentifier()).isEqualTo("[,]")
+        assertThat(VersionRange.parse("(,]").toString()).isEqualTo("(,]")
+        assertThat(VersionRange.parse("(,]").toIdentifier()).isEqualTo("(,]")
+        assertThat(VersionRange.parse("],]").toString()).isEqualTo("],]")
+        assertThat(VersionRange.parse("],]").toIdentifier()).isEqualTo("],]")
+        assertThat(VersionRange.parse("[,)").toString()).isEqualTo("[,)")
+        assertThat(VersionRange.parse("[,)").toIdentifier()).isEqualTo("[,)")
+        assertThat(VersionRange.parse("(,)").toString()).isEqualTo("(,)")
+        assertThat(VersionRange.parse("(,)").toIdentifier()).isEqualTo("(,)")
+        assertThat(VersionRange.parse("],)").toString()).isEqualTo("],)")
+        assertThat(VersionRange.parse("],)").toIdentifier()).isEqualTo("],)")
+        assertThat(VersionRange.parse("[,[").toString()).isEqualTo("[,[")
+        assertThat(VersionRange.parse("[,[").toIdentifier()).isEqualTo("[,[")
+        assertThat(VersionRange.parse("(,[").toString()).isEqualTo("(,[")
+        assertThat(VersionRange.parse("(,[").toIdentifier()).isEqualTo("(,[")
+        assertThat(VersionRange.parse("],[").toString()).isEqualTo("],[")
+        assertThat(VersionRange.parse("],[").toIdentifier()).isEqualTo("],[")
+    }
+
+    @Test
+    fun testConstructAll() {
+        assertThat(VersionRange(Range.all()).toIdentifier()).isEqualTo("+")
+        assertThat(VersionRange(Range.all()).toString()).isEqualTo("+")
+    }
+
+    @Test
+    fun testAllEquivalent() {
+        assertThat(VersionRange.parse("[,]").encloses(VersionRange.parse("+"))).isTrue()
+        assertThat(VersionRange.parse("+").encloses(VersionRange.parse("[,]"))).isTrue()
+        assertThat(VersionRange.parse("[,]")).isEqualTo(VersionRange.parse("+"))
+        assertThat(VersionRange.parse("(,]").encloses(VersionRange.parse("+"))).isTrue()
+        assertThat(VersionRange.parse("+").encloses(VersionRange.parse("(,]"))).isTrue()
+        assertThat(VersionRange.parse("(,]")).isEqualTo(VersionRange.parse("+"))
+        assertThat(VersionRange.parse("],]").encloses(VersionRange.parse("+"))).isTrue()
+        assertThat(VersionRange.parse("+").encloses(VersionRange.parse("],]"))).isTrue()
+        assertThat(VersionRange.parse("],]")).isEqualTo(VersionRange.parse("+"))
+        assertThat(VersionRange.parse("[,)").encloses(VersionRange.parse("+"))).isTrue()
+        assertThat(VersionRange.parse("+").encloses(VersionRange.parse("[,)"))).isTrue()
+        assertThat(VersionRange.parse("[,)")).isEqualTo(VersionRange.parse("+"))
+        assertThat(VersionRange.parse("(,)").encloses(VersionRange.parse("+"))).isTrue()
+        assertThat(VersionRange.parse("+").encloses(VersionRange.parse("(,)"))).isTrue()
+        assertThat(VersionRange.parse("(,)")).isEqualTo(VersionRange.parse("+"))
+        assertThat(VersionRange.parse("],)").encloses(VersionRange.parse("+"))).isTrue()
+        assertThat(VersionRange.parse("+").encloses(VersionRange.parse("],)"))).isTrue()
+        assertThat(VersionRange.parse("],)")).isEqualTo(VersionRange.parse("+"))
+        assertThat(VersionRange.parse("[,[").encloses(VersionRange.parse("+"))).isTrue()
+        assertThat(VersionRange.parse("+").encloses(VersionRange.parse("[,["))).isTrue()
+        assertThat(VersionRange.parse("[,[")).isEqualTo(VersionRange.parse("+"))
+        assertThat(VersionRange.parse("(,[").encloses(VersionRange.parse("+"))).isTrue()
+        assertThat(VersionRange.parse("+").encloses(VersionRange.parse("(,["))).isTrue()
+        assertThat(VersionRange.parse("(,[")).isEqualTo(VersionRange.parse("+"))
+        assertThat(VersionRange.parse("],[").encloses(VersionRange.parse("+"))).isTrue()
+        assertThat(VersionRange.parse("+").encloses(VersionRange.parse("],["))).isTrue()
+        assertThat(VersionRange.parse("],[")).isEqualTo(VersionRange.parse("+"))
     }
 
     @Test
     fun testParsePrefixRange() {
         assertThat(VersionRange.parse("1.+").toString()).isEqualTo("1.+")
         assertThat(VersionRange.parse("1.+").toIdentifier()).isEqualTo("1.+")
-        assertThat(VersionRange.parse("1.2.+").toString()).isEqualTo("1.2.+")
-        assertThat(VersionRange.parse("1.2.+").toIdentifier()).isEqualTo("1.2.+")
+        assertThat(VersionRange.parse("1-2-+").toString()).isEqualTo("1-2-+")
+        assertThat(VersionRange.parse("1-2-+").toIdentifier()).isEqualTo("1-2-+")
         assertThat(VersionRange.parse("1.rc.0.sp.dev.+").toString()).isEqualTo("1.rc.0.sp.dev.+")
         assertThat(VersionRange.parse("1.rc.0.sp.dev.+").toIdentifier()).isEqualTo("1.rc.0.sp.dev.+")
         assertThat(VersionRange.parse(".+").toString()).isEqualTo(".+")
@@ -57,42 +94,107 @@ class VersionRangeTest {
     }
 
     @Test
-    fun testParsePrefixRangeWithoutFinalSeparator() {
-        assertThat(VersionRange.parse("1+").toString()).isEqualTo("1.+")
-        assertThat(VersionRange.parse("1+").toIdentifier()).isEqualTo("1.+")
+    fun testParsePrefixRangePreservesIdentifier() {
+        assertThat(VersionRange.parse("1+").toString()).isEqualTo("1+")
+        assertThat(VersionRange.parse("1+").toIdentifier()).isEqualTo("1+")
+        assertThat(VersionRange.parse("1++").toString()).isEqualTo("1++")
+        assertThat(VersionRange.parse("1++").toIdentifier()).isEqualTo("1++")
+        assertThat(VersionRange.parse("1-+").toString()).isEqualTo("1-+")
+        assertThat(VersionRange.parse("1-+").toIdentifier()).isEqualTo("1-+")
+        assertThat(VersionRange.parse("1_+").toString()).isEqualTo("1_+")
+        assertThat(VersionRange.parse("1_+").toIdentifier()).isEqualTo("1_+")
+    }
+
+    @Test
+    fun testConstructPrefixRange() {
+        VersionRange(Range.closedOpen(Version.prefixInfimum("1.2"), Version.prefixInfimum("1.3"))).let { range ->
+            assertThat(range.toIdentifier()).isEqualTo("1.2.+")
+            assertThat(range.toString()).isEqualTo("1.2.+")
+        }
+        VersionRange(Range.closedOpen(Version.prefixInfimum("1-2"), Version.prefixInfimum("1-3"))).let { range ->
+            assertThat(range.toIdentifier()).isEqualTo("1-2.+")
+            assertThat(range.toString()).isEqualTo("1-2.+")
+        }
+    }
+
+    @Test
+    fun testParsePrefixRangeSameRangeSemantics() {
+        assertThat(VersionRange.parse("1+").encloses(VersionRange.parse("1.+"))).isTrue()
+        assertThat(VersionRange.parse("1.+").encloses(VersionRange.parse("1+"))).isTrue()
+        assertThat(VersionRange.parse("1.+")).isEqualTo(VersionRange.parse("1+"))
+        assertThat(VersionRange.parse("1++").encloses(VersionRange.parse("1.+"))).isTrue()
+        assertThat(VersionRange.parse("1.+").encloses(VersionRange.parse("1++"))).isTrue()
+        assertThat(VersionRange.parse("1.+")).isEqualTo(VersionRange.parse("1++"))
+        assertThat(VersionRange.parse("1-+").encloses(VersionRange.parse("1.+"))).isTrue()
+        assertThat(VersionRange.parse("1.+").encloses(VersionRange.parse("1-+"))).isTrue()
+        assertThat(VersionRange.parse("1.+")).isEqualTo(VersionRange.parse("1-+"))
+        assertThat(VersionRange.parse("1_+").encloses(VersionRange.parse("1.+"))).isTrue()
+        assertThat(VersionRange.parse("1.+").encloses(VersionRange.parse("1_+"))).isTrue()
+        assertThat(VersionRange.parse("1.+")).isEqualTo(VersionRange.parse("1_+"))
     }
 
     @Test
     fun testParseMavenRange() {
-        fun Char.canonicalOpen() = if (this == '[') '[' else '('
-        fun Char.canonicalClose() = if (this == ']') ']' else ')'
         for (open in listOf('[', ']', '(')) {
             for (close in listOf(']', '[', ')')) {
                 assertThat(VersionRange.parse("${open}1.0,${close}").toString())
-                    .isEqualTo("${open.canonicalOpen()}1.0,)")
+                    .isEqualTo("${open}1.0,${close}")
                 assertThat(VersionRange.parse("${open}1.0,${close}").toIdentifier())
-                    .isEqualTo("${open.canonicalOpen()}1.0,)")
+                    .isEqualTo("${open}1.0,${close}")
                 assertThat(VersionRange.parse("${open},2.0${close}").toString())
-                    .isEqualTo("(,2.0${close.canonicalClose()}")
+                    .isEqualTo("${open},2.0$close")
                 assertThat(VersionRange.parse("${open},2.0${close}").toIdentifier())
-                    .isEqualTo("(,2.0${close.canonicalClose()}")
+                    .isEqualTo("${open},2.0$close")
                 assertThat(VersionRange.parse("${open}1.0,2.0${close}").toString())
-                    .isEqualTo("${open.canonicalOpen()}1.0,2.0${close.canonicalClose()}")
+                    .isEqualTo("${open}1.0,2.0$close")
                 assertThat(VersionRange.parse("${open}1.0,2.0${close}").toIdentifier())
-                    .isEqualTo("${open.canonicalOpen()}1.0,2.0${close.canonicalClose()}")
+                    .isEqualTo("${open}1.0,2.0$close")
                 // test also the edge case where the top is the next prefix (1.0 -> 1.1)
                 assertThat(VersionRange.parse("${open}1.0,1.1${close}").toString())
-                    .isEqualTo("${open.canonicalOpen()}1.0,1.1${close.canonicalClose()}")
+                    .isEqualTo("${open}1.0,1.1$close")
                 assertThat(VersionRange.parse("${open}1.0,1.1${close}").toIdentifier())
-                    .isEqualTo("${open.canonicalOpen()}1.0,1.1${close.canonicalClose()}")
+                    .isEqualTo("${open}1.0,1.1$close")
                 // test an edge case with acceptable metacharacters
                 assertThat(VersionRange.parse("${open}[]()+,1[]()${close}").toString())
-                    .isEqualTo("${open.canonicalOpen()}[]()+,1[]()${close.canonicalClose()}")
+                    .isEqualTo("$open[]()+,1[]()$close")
                 assertThat(VersionRange.parse("${open}[]()+,1[]()${close}").toIdentifier())
-                    .isEqualTo("${open.canonicalOpen()}[]()+,1[]()${close.canonicalClose()}")
+                    .isEqualTo("$open[]()+,1[]()$close")
             }
         }
     }
+
+    @Test
+    fun testConstructMavenRange() {
+        VersionRange(Range.closed(Version.parse("1.2"), Version.parse("1.3"))).let { range ->
+            assertThat(range.toIdentifier()).isEqualTo("[1.2,1.3]")
+            assertThat(range.toString()).isEqualTo("[1.2,1.3]")
+            assertThat(range.encloses(VersionRange.parse("[1.2,1.3]"))).isTrue()
+            assertThat(VersionRange.parse("[1.2,1.3]").encloses(range)).isTrue()
+            assertThat(range).isEqualTo(VersionRange.parse("[1.2,1.3]"))
+        }
+        VersionRange(Range.closed(Version.parse("1-2"), Version.parse("1-3"))).let { range ->
+            assertThat(range.toIdentifier()).isEqualTo("[1-2,1-3]")
+            assertThat(range.toString()).isEqualTo("[1-2,1-3]")
+            assertThat(range.encloses(VersionRange.parse("[1.2,1.3]"))).isTrue()
+            assertThat(VersionRange.parse("[1.2,1.3]").encloses(range)).isTrue()
+            assertThat(range).isEqualTo(VersionRange.parse("[1.2,1.3]"))
+        }
+        VersionRange(Range.closedOpen(Version.parse("1.2"), Version.prefixInfimum("1.3"))).let { range ->
+            assertThat(range.toIdentifier()).isEqualTo("[1.2,1.3)")
+            assertThat(range.toString()).isEqualTo("[1.2,1.3)")
+            assertThat(range.encloses(VersionRange.parse("[1.2,1.3)"))).isTrue()
+            assertThat(VersionRange.parse("[1.2,1.3)").encloses(range)).isTrue()
+            assertThat(range).isEqualTo(VersionRange.parse("[1.2,1.3)"))
+        }
+        VersionRange(Range.open(Version.parse("1.2"), Version.prefixInfimum("1.3"))).let { range ->
+            assertThat(range.toIdentifier()).isEqualTo("(1.2,1.3)")
+            assertThat(range.toString()).isEqualTo("(1.2,1.3)")
+            assertThat(range.encloses(VersionRange.parse("(1.2,1.3)"))).isTrue()
+            assertThat(VersionRange.parse("(1.2,1.3)").encloses(range)).isTrue()
+            assertThat(range).isEqualTo(VersionRange.parse("(1.2,1.3)"))
+        }
+    }
+
 
     @Test
     fun testParseSingletonRange() {
@@ -120,18 +222,42 @@ class VersionRangeTest {
     }
 
     @Test
+    fun testConstructSingletonRange() {
+        VersionRange(Range.singleton(Version.parse("1.0"))).let { range ->
+            assertThat(range.toIdentifier()).isEqualTo("1.0")
+            assertThat(range.toString()).isEqualTo("1.0")
+            assertThat(range.contains(Version.parse("1.0"))).isTrue()
+        }
+        VersionRange(Range.singleton(Version.parse("1-0"))).let { range ->
+            assertThat(range.toIdentifier()).isEqualTo("1-0")
+            assertThat(range.toString()).isEqualTo("1-0")
+            assertThat(range.contains(Version.parse("1.0"))).isTrue()
+            assertThat(range).isEqualTo(VersionRange.parse("1.0"))
+        }
+    }
+
+    @Test
     fun testParseInvalidMavenRange() {
         assertThat(VersionRange.parse("[2.0,1.0]").isEmpty()).isTrue()
-        assertThat(VersionRange.parse("[2.0,1.0]").toIdentifier()).isEqualTo("[2.0,2.0)")
-        assertThat(VersionRange.parse("[2.0,1.0]").toString()).isEqualTo("[2.0,2.0)")
+        assertThat(VersionRange.parse("[2.0,1.0]").toIdentifier()).isEqualTo("[2.0,1.0]")
+        assertThat(VersionRange.parse("[2.0,1.0]").toString()).isEqualTo("[2.0,1.0]")
         // 1.0+ is [1, 0, ""] which is less than 1.0
         assertThat(VersionRange.parse("[1.0,1.0+]").isEmpty()).isTrue()
-        assertThat(VersionRange.parse("[1.0,1.0+]").toIdentifier()).isEqualTo("[1.0,1.0)")
-        assertThat(VersionRange.parse("[1.0,1.0+]").toString()).isEqualTo("[1.0,1.0)")
+        assertThat(VersionRange.parse("[1.0,1.0+]").toIdentifier()).isEqualTo("[1.0,1.0+]")
+        assertThat(VersionRange.parse("[1.0,1.0+]").toString()).isEqualTo("[1.0,1.0+]")
         // Test that the canonical form round-trips
         assertThat(VersionRange.parse("[1.0,1.0)").isEmpty()).isTrue()
         assertThat(VersionRange.parse("[1.0,1.0)").toIdentifier()).isEqualTo("[1.0,1.0)")
         assertThat(VersionRange.parse("[1.0,1.0)").toString()).isEqualTo("[1.0,1.0)")
+    }
+
+    @Test
+    fun testConstructEmptyMavenRange() {
+        VersionRange(Range.closedOpen(Version.parse("1-0"), Version.parse("1-0"))).let { range ->
+            assertThat(range.isEmpty()).isTrue()
+            assertThat(range.toIdentifier()).isEqualTo("[1-0,1-0)")
+            assertThat(range.toString()).isEqualTo("[1-0,1-0)")
+        }
     }
 
     @Test

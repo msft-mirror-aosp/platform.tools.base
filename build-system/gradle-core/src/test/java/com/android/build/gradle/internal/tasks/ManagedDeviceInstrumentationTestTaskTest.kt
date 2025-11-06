@@ -30,7 +30,7 @@ import com.android.build.gradle.internal.profile.AnalyticsService
 import com.android.build.gradle.internal.test.AbstractTestDataImpl
 import com.android.build.gradle.internal.testing.utp.ManagedDeviceTestRunner
 import com.android.build.gradle.internal.testing.utp.UtpDependencies
-import com.android.build.gradle.internal.testing.utp.emulatorcontrol.EmulatorControlConfig
+import com.android.build.gradle.internal.testing.utp.worker.EmulatorControlConfig
 import com.android.build.gradle.options.BooleanOption
 import com.android.builder.model.TestOptions
 import com.android.repository.Revision

@@ -33,6 +33,7 @@ import org.junit.platform.engine.support.hierarchical.Node
 import org.objectweb.asm.Type
 import java.security.MessageDigest
 import java.util.Optional
+import org.junit.platform.engine.reporting.ReportEntry
 import java.util.SortedMap
 
 class PreviewAnnotationDescriptor(
@@ -131,26 +132,36 @@ class PreviewAnnotationDescriptor(
         }
 
         context.renderer.render(previewScreenshot, context.previewImageOutputDir.absolutePath).forEachIndexed { idx, result ->
-            val previewName = StringBuilder()
-            previewScreenshot.previewParams["name"]?.let { previewName.append("_$it") }
+            val previewNameBuilder = StringBuilder()
+            val nameParam = previewScreenshot.previewParams["name"]
+            nameParam?.let { previewNameBuilder.append("_$it") }
+
+            val otherParamsBuilder = StringBuilder()
             if (displayNameIncludesParams) {
                 previewScreenshot.previewParams.filterKeys { it != "name" }.let {
                     if (it.isNotEmpty()) {
-                        previewName.append("_$it")
+                        otherParamsBuilder.append("_$it")
                     }
                 }
             }
             if (previewScreenshot is ComposeScreenshot) {
                 if (previewScreenshot.methodParams.isNotEmpty()) {
-                    previewName.append("_${previewScreenshot.methodParams}_$idx")
+                    otherParamsBuilder.append("_${previewScreenshot.methodParams}_$idx")
                 }
             }
 
-            val childNode = PreviewScreenshotDescriptor(uniqueId, className, methodName, previewName.toString(), idx, result)
+            if (otherParamsBuilder.isNotEmpty()) {
+                previewNameBuilder.append(otherParamsBuilder)
+            }
+
+            val previewDisplayName = nameParam?.toString()
+                ?: otherParamsBuilder.toString().removePrefix("_").takeIf { it.isNotEmpty() }
+                ?: methodName
+
+            val childNode = PreviewScreenshotDescriptor(uniqueId, className, methodName, previewNameBuilder.toString(), previewDisplayName, idx, result)
             addChild(childNode)
             dynamicTestExecutor.execute(childNode)
         }
-
         return context
     }
 

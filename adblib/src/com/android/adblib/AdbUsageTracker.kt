@@ -97,6 +97,7 @@ interface AdbUsageTracker {
     }
 
     data class AppInfoProcessPropertiesCollectorEvent(
+        val pid: Int,
         val eventType: AppInfoProcessPropertiesCollectorEventType,
     )
 

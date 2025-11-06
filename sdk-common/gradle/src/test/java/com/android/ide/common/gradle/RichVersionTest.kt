@@ -31,8 +31,8 @@ class RichVersionTest {
             assertThat(version.require).isEqualTo(VersionRange.parse("+"))
             assertThat(version.prefer).isNull()
             assertThat(version.exclude).isEmpty()
-            assertThat(version.toIdentifier()).isEqualTo("+")
-            assertThat(version.toString()).isEqualTo("+")
+            assertThat(version.toIdentifier()).isEqualTo(string)
+            assertThat(version.toString()).isEqualTo(string)
         }
     }
 
@@ -44,8 +44,8 @@ class RichVersionTest {
             assertThat(version.require).isNull()
             assertThat(version.prefer).isNull()
             assertThat(version.exclude).isEmpty()
-            assertThat(version.toIdentifier()).isEqualTo("+!!")
-            assertThat(version.toString()).isEqualTo("+!!")
+            assertThat(version.toIdentifier()).isEqualTo("${string}!!")
+            assertThat(version.toString()).isEqualTo("${string}!!")
         }
     }
 
@@ -91,6 +91,28 @@ class RichVersionTest {
         assertThat(version.exclude).isEmpty()
         assertThat(version.toIdentifier()).isEqualTo("1.0.+!!")
         assertThat(version.toString()).isEqualTo("1.0.+!!")
+    }
+
+    @Test
+    fun testParsePrefixVersionWithDifferentSeparator() {
+        val version = RichVersion.parse("1.0-+")
+        assertThat(version.strictly).isNull()
+        assertThat(version.require).isEqualTo(VersionRange.parse("1.0.+"))
+        assertThat(version.prefer).isNull()
+        assertThat(version.exclude).isEmpty()
+        assertThat(version.toIdentifier()).isEqualTo("1.0-+")
+        assertThat(version.toString()).isEqualTo("1.0-+")
+    }
+
+    @Test
+    fun testParseStrictPrefixVersionWithDifferentSeparator() {
+        val version = RichVersion.parse("1.0-+!!")
+        assertThat(version.strictly).isEqualTo(VersionRange.parse("1.0.+"))
+        assertThat(version.require).isNull()
+        assertThat(version.prefer).isNull()
+        assertThat(version.exclude).isEmpty()
+        assertThat(version.toIdentifier()).isEqualTo("1.0-+!!")
+        assertThat(version.toString()).isEqualTo("1.0-+!!")
     }
 
     @Test

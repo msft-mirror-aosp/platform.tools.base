@@ -333,14 +333,6 @@ abstract class MergeJavaResourcesGlobalTask : MergeJavaResourcesInputsOutputs, N
             creationConfig.dependencies,
             creationConfig.projectLayout
         )
-
-    class PrivacySandboxSdkCreationAction(
-        val creationConfig: PrivacySandboxSdkVariantScope
-    ) : CommonCreationAction(
-        creationConfig.artifacts,
-        creationConfig.dependencies,
-        creationConfig.layout
-    )
 }
 
 private fun runTaskAction(

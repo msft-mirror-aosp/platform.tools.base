@@ -32,12 +32,19 @@ interface NativeBuildDslInfo {
     val externalNativeBuildOptions: CoreExternalNativeBuildOptions
 
     /**
-     * Returns the ABI filters associated with the artifact, or empty set if there are no filters.
+     * Returns the ABI filters associated with the artifact.
+     * Default set is full set of possible ABIs. So if user does not specify filter explicitly
+     * "x86", "x86_64", "armeabi-v7a", "arm64-v8a" will be added.
      *
      * If the list contains values, then the artifact only contains these ABIs and excludes
      * others.
      */
     val supportedAbis: Set<String>
+
+    /**
+     * Returns the ABI filters associated with the artifact, or empty set if there are no filters.
+     */
+    val userDefinedAbis: Set<String>
 
     val isJniDebuggable: Boolean
 

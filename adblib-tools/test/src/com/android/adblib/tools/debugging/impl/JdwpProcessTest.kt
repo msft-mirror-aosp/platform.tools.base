@@ -168,9 +168,11 @@ class JdwpProcessTest : AdbLibToolsTestBase() {
     @Test
     fun processTrackingUsingAppInfoLogsUsageStats() = runBlockingWithTimeout {
         // Prepare
+        val pid1 = 757
         val (_, device, process) = createJdwpProcess(
             // Note: 36 is required for `app_info` support
-            deviceApi = 36
+            deviceApi = 36,
+            pid = pid1
         )
 
         // Act
@@ -189,6 +191,21 @@ class JdwpProcessTest : AdbLibToolsTestBase() {
         assertEquals(2, loggedEventTypes.size)
         assertTrue(loggedEventTypes.contains(AppInfoProcessPropertiesCollectorEventType.TRACK_APP_VALUE_COLLECTED))
         assertTrue(loggedEventTypes.contains(AppInfoProcessPropertiesCollectorEventType.VM_INFO_VALUE_COLLECTED))
+
+        // Test that adding another process is not going to log events for the unaffected process
+        // Prepare / Act
+        loggedEvents.clear()
+        val pid2 = 257
+        device.createFakeAdbProcess(pid = pid2)
+        val process2 = JdwpProcessImpl(device, pid2)
+        yieldUntil { process2.properties.areAllPropertiesInitialized() }
+        // Delay a little to ensure AndroidStudio stats events get logged
+        delay(10)
+        // Assert: that we log events only for a newly started process
+        assertTrue(loggedEvents.isNotEmpty())
+        val pids = loggedEvents.mapNotNull { it.appInfoProcessPropertiesCollector?.pid }.toSet()
+        assertEquals(1, pids.size)
+        assertEquals(pid2, pids.first())
     }
 
     @Test

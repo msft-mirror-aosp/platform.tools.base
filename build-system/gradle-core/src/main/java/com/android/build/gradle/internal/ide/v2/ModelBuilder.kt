@@ -18,6 +18,7 @@ package com.android.build.gradle.internal.ide.v2
 
 import com.android.SdkConstants
 import com.android.Version
+import com.android.build.api.artifact.MultipleArtifact
 import com.android.build.api.artifact.ScopedArtifact
 import com.android.build.api.artifact.SingleArtifact
 import com.android.build.api.component.impl.DeviceTestImpl
@@ -80,8 +81,6 @@ import com.android.build.gradle.internal.scope.MutableTaskContainer
 import com.android.build.gradle.internal.services.getBuildService
 import com.android.build.gradle.internal.tasks.AnchorTaskNames
 import com.android.build.gradle.internal.tasks.DeviceProviderInstrumentTestTask
-import com.android.build.gradle.internal.tasks.ExtractPrivacySandboxCompatApks
-import com.android.build.gradle.internal.tasks.GenerateAdditionalApkSplitForDeploymentViaApk
 import com.android.build.gradle.internal.tasks.getPublishedCustomLintChecks
 import com.android.build.gradle.internal.utils.getDesugarLibConfigFile
 import com.android.build.gradle.internal.utils.getDesugaredMethods
@@ -89,7 +88,6 @@ import com.android.build.gradle.internal.utils.toImmutableSet
 import com.android.build.gradle.internal.variant.VariantModel
 import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.options.ProjectOptions
-import com.android.build.gradle.tasks.BuildPrivacySandboxSdkApks
 import com.android.builder.core.ComponentTypeImpl
 import com.android.builder.errors.IssueReporter
 import com.android.builder.model.SyncIssue
@@ -105,7 +103,6 @@ import com.android.builder.model.v2.ide.BundleInfo
 import com.android.builder.model.v2.ide.BytecodeTransformation
 import com.android.builder.model.v2.ide.CodeShrinker
 import com.android.builder.model.v2.ide.JavaArtifact
-import com.android.builder.model.v2.ide.PrivacySandboxSdkInfo
 import com.android.builder.model.v2.ide.SourceProvider
 import com.android.builder.model.v2.ide.SourceSetContainer
 import com.android.builder.model.v2.ide.TestInfo
@@ -135,7 +132,6 @@ import org.gradle.api.Project
 import org.gradle.api.artifacts.component.ProjectComponentSelector
 import org.gradle.internal.resolve.ModuleVersionResolveException
 import org.gradle.tooling.provider.model.ParameterizedToolingModelBuilder
-import org.jetbrains.kotlin.gradle.internal.builtins.StandardNames.FqNames.mutableList
 import java.io.File
 import java.io.FileInputStream
 import java.io.IOException
@@ -283,7 +279,7 @@ class ModelBuilder<ExtensionT : CommonExtension>(
          * method not called by current versions of Studio, the MINIMUM_MODEL_CONSUMER version must
          * be increased to exclude all older versions of Studio that called that method.
          */
-        val modelProducer = VersionImpl(19, 0, humanReadable = "Android Gradle Plugin 9.0")
+        val modelProducer = VersionImpl(20, 0, humanReadable = "Android Gradle Plugin 9.0")
         /**
          * The minimum required model consumer version, to allow AGP to control support for older
          * versions of Android Studio.
@@ -1135,34 +1131,6 @@ class ModelBuilder<ExtensionT : CommonExtension>(
         )
     }
 
-    private fun createPrivacySandboxSdkInfo(component: ComponentCreationConfig): PrivacySandboxSdkInfo? {
-        if (component.privacySandboxCreationConfig == null) {
-            return null
-        }
-        if (component !is ApplicationCreationConfig) {
-            return null
-        }
-        val extractedApksFromPrivacySandboxIdeModel =
-                component.artifacts.get(InternalArtifactType.EXTRACTED_APKS_FROM_PRIVACY_SANDBOX_SDKs_IDE_MODEL).orNull?.asFile
-                        ?: return null
-        val legacyExtractedApksForPrivacySandboxIdeModel =
-                component.artifacts.get(InternalArtifactType.APK_FROM_SDKS_IDE_MODEL).orNull?.asFile
-                        ?: return null
-        val additionalApkSplitFile =
-                component.artifacts.get(InternalArtifactType.USES_SDK_LIBRARY_SPLIT_FOR_LOCAL_DEPLOYMENT).orNull?.file(
-                        BuiltArtifactsImpl.METADATA_FILE_NAME)?.asFile
-                        ?: return null
-
-        return PrivacySandboxSdkInfoImpl(
-                task = BuildPrivacySandboxSdkApks.CreationAction.getTaskName(component),
-                outputListingFile = extractedApksFromPrivacySandboxIdeModel,
-                additionalApkSplitTask =  GenerateAdditionalApkSplitForDeploymentViaApk.CreationAction.computeTaskName(component),
-                additionalApkSplitFile = additionalApkSplitFile,
-                taskLegacy = ExtractPrivacySandboxCompatApks.CreationAction.getTaskName(component),
-                outputListingLegacyFile = legacyExtractedApksForPrivacySandboxIdeModel
-        )
-    }
-
     private fun createAndroidArtifact(component: ComponentCreationConfig): AndroidArtifactImpl {
         val taskContainer: MutableTaskContainer = component.taskContainer
 
@@ -1261,7 +1229,7 @@ class ModelBuilder<ExtensionT : CommonExtension>(
                 component.artifacts.get(InternalArtifactType.APK_IDE_REDIRECT_FILE).get().asFile
             else
                 null,
-            privacySandboxSdkInfo = createPrivacySandboxSdkInfo(component),
+            privacySandboxSdkInfo = null,
             desugaredMethodsFiles = getDesugaredMethods(
                 component.services,
                 coreLibDesugaring,
@@ -1627,6 +1595,15 @@ class ModelBuilder<ExtensionT : CommonExtension>(
         if (kaptClasses != null) {
             classesFolders.add(kaptClasses.get().asFile)
             generatedClassPaths["kaptGeneratedClasses"] = kaptClasses.get().asFile
+        }
+
+        val preCompilationClasses =
+            component.artifacts.getAll(MultipleArtifact.PRE_COMPILATION_CLASSES)
+                .get()
+                .map { it.asFile }
+        classesFolders.addAll(preCompilationClasses)
+        preCompilationClasses.forEachIndexed { index, preCompilationClasses ->
+            generatedClassPaths["preCompilationClasses_$index"] = preCompilationClasses
         }
 
         return generatedClassPaths

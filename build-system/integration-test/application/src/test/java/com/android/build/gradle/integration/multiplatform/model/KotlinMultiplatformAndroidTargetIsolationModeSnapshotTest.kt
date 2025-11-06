@@ -21,9 +21,11 @@ import com.android.build.gradle.integration.common.fixture.GradleTestProjectBuil
 import com.android.build.gradle.integration.common.fixture.model.BaseModelComparator
 import com.android.build.gradle.options.BooleanOption
 import com.android.utils.FileUtils
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 
+@Ignore("https://youtrack.jetbrains.com/issue/KT-82090")
 class KotlinMultiplatformAndroidTargetIsolationModeSnapshotTest: BaseModelComparator {
 
     @get:Rule

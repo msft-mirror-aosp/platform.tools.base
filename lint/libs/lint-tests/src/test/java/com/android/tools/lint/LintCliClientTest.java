@@ -16,14 +16,19 @@
 
 package com.android.tools.lint;
 
-import static java.io.File.separator;
+import static com.google.common.truth.Truth.assertThat;
+
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import static java.io.File.separator;
+
 import com.android.annotations.NonNull;
+import com.android.sdklib.AndroidVersion;
+import com.android.sdklib.IAndroidTarget;
 import com.android.tools.lint.checks.AbstractCheckTest;
 import com.android.tools.lint.checks.HardcodedValuesDetector;
 import com.android.tools.lint.checks.SdCardDetector;
@@ -31,13 +36,18 @@ import com.android.tools.lint.checks.infrastructure.ProjectDescription;
 import com.android.tools.lint.checks.infrastructure.TestFile;
 import com.android.tools.lint.checks.infrastructure.TestLintTask;
 import com.android.tools.lint.client.api.LintClient;
+import com.android.tools.lint.client.api.LintClient.CompileSdkResult;
 import com.android.tools.lint.detector.api.Detector;
+import com.android.tools.lint.detector.api.Project;
+
 import com.intellij.codeInsight.CustomExceptionHandler;
+
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.Arrays;
+import java.util.List;
 
 public class LintCliClientTest extends AbstractCheckTest {
     public void testUnknownId() {
@@ -57,17 +67,20 @@ public class LintCliClientTest extends AbstractCheckTest {
                 .allowSystemErrors(true)
                 .run()
                 .expect(
-                        ""
-                                + "build.gradle:6: Warning: Unknown issue id \"UnknownLintId\" [UnknownIssueId]\n"
-                                + "        disable 'HardcodedText', 'UnknownLintId'\n"
-                                + "                                  ~~~~~~~~~~~~~\n"
-                                + "build.gradle:7: Warning: Unknown issue id \"HardcodedTxt\". Did you mean 'HardcodedText' (Hardcoded text) ? [UnknownIssueId]\n"
-                                + "        enable 'HardcodedTxt', 'sdcardpath'\n"
-                                + "                ~~~~~~~~~~~~\n"
-                                + "build.gradle:7: Warning: Unknown issue id \"sdcardpath\". Did you mean 'SdCardPath' (Hardcoded reference to /sdcard) ? [UnknownIssueId]\n"
-                                + "        enable 'HardcodedTxt', 'sdcardpath'\n"
-                                + "                                ~~~~~~~~~~\n"
-                                + "0 errors, 3 warnings");
+                        "build.gradle:6: Warning: Unknown issue id \"UnknownLintId\""
+                            + " [UnknownIssueId]\n"
+                            + "        disable 'HardcodedText', 'UnknownLintId'\n"
+                            + "                                  ~~~~~~~~~~~~~\n"
+                            + "build.gradle:7: Warning: Unknown issue id \"HardcodedTxt\". Did you"
+                            + " mean 'HardcodedText' (Hardcoded text) ? [UnknownIssueId]\n"
+                            + "        enable 'HardcodedTxt', 'sdcardpath'\n"
+                            + "                ~~~~~~~~~~~~\n"
+                            + "build.gradle:7: Warning: Unknown issue id \"sdcardpath\". Did you"
+                            + " mean 'SdCardPath' (Hardcoded reference to /sdcard) ?"
+                            + " [UnknownIssueId]\n"
+                            + "        enable 'HardcodedTxt', 'sdcardpath'\n"
+                            + "                                ~~~~~~~~~~\n"
+                            + "0 errors, 3 warnings");
     }
 
     public void testUnknownIdSuppressed() {
@@ -174,6 +187,56 @@ public class LintCliClientTest extends AbstractCheckTest {
         when(url.getPath()).thenReturn("file:/foo/bar.jar!/com/example/data.text");
         client.openConnection(url, 100);
         verify(url, times(3)).openConnection();
+    }
+
+    private IAndroidTarget createMockTarget(int version) {
+        IAndroidTarget target = mock(IAndroidTarget.class);
+        when(target.getVersion()).thenReturn(new AndroidVersion(version, null));
+        return target;
+    }
+
+    private Project createMockProject(
+            boolean isAndroid, boolean explicitlySpecifiedBuildTarget, IAndroidTarget buildTarget) {
+        Project project = mock(Project.class);
+        when(project.isAndroidProject()).thenReturn(isAndroid);
+        when(project.getBuildTarget()).thenReturn(buildTarget);
+        when(project.getCompileSdkResult())
+                .thenReturn(new CompileSdkResult(explicitlySpecifiedBuildTarget, buildTarget));
+        return project;
+    }
+
+    public void testPickBuildTarget() {
+        IAndroidTarget target28 = createMockTarget(28);
+        IAndroidTarget target30 = createMockTarget(30);
+        IAndroidTarget target31 = createMockTarget(31);
+
+        LintCliClient client = new LintCliClient(LintClient.CLIENT_UNIT_TESTS);
+
+        Project project1WithTargetSet = createMockProject(true, true, target28);
+        Project project2WithTargetSet = createMockProject(true, true, target30);
+        Project projectWithNoTargetSet = createMockProject(true, false, target31);
+        Project nonAndroidProject = createMockProject(false, true, target31);
+
+        List<Project> projects =
+                Arrays.asList(
+                        project1WithTargetSet,
+                        project2WithTargetSet,
+                        projectWithNoTargetSet,
+                        nonAndroidProject);
+        IAndroidTarget pickedTarget = client.pickBuildTarget(projects);
+
+        assertThat(pickedTarget).isEqualTo(target30);
+    }
+
+    public void testPickBuildTargetDefault() {
+        IAndroidTarget target31 = createMockTarget(31);
+
+        LintCliClient client = new LintCliClient(LintClient.CLIENT_UNIT_TESTS);
+
+        Project projectWithNoBuildTargetExplicitlySet = createMockProject(true, false, target31);
+        List<Project> projects = Arrays.asList(projectWithNoBuildTargetExplicitlySet);
+        IAndroidTarget pickedTarget = client.pickBuildTarget(projects);
+        assertThat(pickedTarget).isEqualTo(target31);
     }
 
     @Override

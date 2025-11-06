@@ -317,6 +317,7 @@ private fun ModelSnapshotter<ProductFlavor>.snapshotProductFlavor() {
         list("generatedDensities", VectorDrawablesOptions::generatedDensities)
         item("useSupportLibrary", VectorDrawablesOptions::useSupportLibrary)
     }
+    valueList("matchingFallbacks", ProductFlavor::matchingFallbacks)
 }
 
 private fun ModelSnapshotter<BuildType>.snapshotBuildType() {
@@ -331,6 +332,7 @@ private fun ModelSnapshotter<BuildType>.snapshotBuildType() {
     item("isZipAlignEnabled", BuildType::isZipAlignEnabled)
     item("isEmbedMicroApp", BuildType::isEmbedMicroApp)
     item("signingConfig", BuildType::signingConfig)
+    valueList("matchingFallbacks", BuildType::matchingFallbacks)
 }
 
 private fun ModelSnapshotter<out BaseConfig>.snapshotBaseConfig() {

@@ -16,13 +16,13 @@
 
 package com.android.build.gradle.integration.common.fixture.project
 
-import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification
 import com.android.build.gradle.integration.common.fixture.project.builder.BuildWriter
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleDefinitionDsl
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectFiles
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
+import com.android.build.gradle.integration.common.fixture.project.reversible.FileChangeController
 import java.nio.file.Path
 import kotlin.io.path.writeBytes
 
@@ -119,8 +119,8 @@ internal class GenericProjectImpl(
     projectDefinition,
 ), GenericProject {
 
-    override fun getReversibleInstance(projectModification: TemporaryProjectModification): GenericProject =
-        ReversibleGenericProject(this, projectModification.delegate(this))
+    override fun getReversibleInstance(fileChangeController: FileChangeController): GenericProject =
+        ReversibleGenericProject(this, fileChangeController)
 }
 
 /**
@@ -133,8 +133,8 @@ internal class GenericProjectImpl(
  */
 internal open class ReversibleGenericProject(
     parentProject: GenericProject,
-    projectModification: TemporaryProjectModification,
+    fileChangeController: FileChangeController,
 ): ReversibleGradleProject<GenericProject, GenericProjectDefinition>(
     parentProject,
-    projectModification
+    fileChangeController
 ), GenericProject

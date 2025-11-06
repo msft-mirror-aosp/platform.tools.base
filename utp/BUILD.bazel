@@ -2,8 +2,14 @@ load("//tools/base/bazel:gradle.bzl", "gradle_build")
 load("//tools/base/bazel:maven.bzl", "maven_repository")
 load("//tools/base/build-system:hybrid_build.bzl", "GRADLE_PROPERTIES")
 
+filegroup(
+    name = "agp_gradle_build_files",
+    srcs = ["build.gradle"],
+)
+
 # keep sorted
 UTP_SOURCE_FILES = [
+    ":agp_gradle_build_files",
     "//tools:agp_gradle_build_files",
     "//tools/base/common:agp_gradle_build_files",
     "//tools/base/utp/android-device-provider-ddmlib:agp_gradle_build_files",
@@ -60,7 +66,7 @@ gradle_build(
         ":utp_dependencies",
         "//tools/base:agp_dependencies",
     ],
-    tasks = [":zipPlugin"],
+    tasks = [":base:utp:zipUtp"],
     visibility = [
         "//tools/base/build-system/integration-test:__subpackages__",
         "//tools/base/gmaven:__pkg__",

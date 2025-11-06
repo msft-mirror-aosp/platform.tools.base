@@ -115,6 +115,9 @@ message Event {
     LEAKCANARY_LOGCAT_STATUS = 802;
     LEAKCANARY_HOST_ANALYSIS_TRIGGER = 803;
 
+    // group_id: session id
+    LIVE_VIEW_STATUS = 901;
+
     // Demo echo event = 1000
     ECHO = 1000;
 
@@ -361,6 +364,8 @@ message SessionMetaData {
   ProfilerTaskType task_type = 8;
   // Flag indicating whether the task starting point is the process start.
   bool is_startup_task = 9;
+  // Exposure level of the process profiled in the session
+  Process.ExposureLevel exposure_level = 10;
 }
 
 message Stream {
@@ -445,6 +450,8 @@ message SessionData {
     ProfilerTaskType task_type = 11;
     // Flag indicating whether the task starting point is the process start.
     bool is_startup_task = 12;
+    // Exposure level of the process profiled in the session
+    Process.ExposureLevel exposure_level = 13;
   }
 
   oneof union {

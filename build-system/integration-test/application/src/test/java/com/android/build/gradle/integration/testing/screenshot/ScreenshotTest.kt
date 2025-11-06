@@ -17,6 +17,7 @@
 package com.android.build.gradle.integration.testing.screenshot
 
 import com.android.build.api.dsl.CommonExtension
+import com.android.build.api.dsl.TestExtension
 import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
 import com.android.build.gradle.integration.common.fixture.GradleBuildResult
 import com.android.build.gradle.integration.common.fixture.GradleTaskExecutor
@@ -219,9 +220,7 @@ class ScreenshotTest {
             buildFeatures.apply {
                 compose = true
             }
-            composeOptions {
-                kotlinCompilerExtensionVersion = TestUtils.COMPOSE_COMPILER_FOR_TESTS
-            }
+            composeOptions.kotlinCompilerExtensionVersion = TestUtils.COMPOSE_COMPILER_FOR_TESTS
             experimentalProperties["android.experimental.enableScreenshotTest"] = true
         }
         dependencies {
@@ -854,6 +853,10 @@ class ScreenshotTest {
         val result = build.sstExecutor().run(":app:validateDebugScreenshotTest")
 
         assertThat(result.stdout).contains("[additionalTestArtifacts]PreviewScreenshot.newImagePath=")
+        assertThat(result.stdout).contains("[additionalTestArtifacts]PreviewScreenshot.refImagePath=")
+        assertThat(result.stdout).contains("[additionalTestArtifacts]PreviewScreenshot.previewName=")
+        assertThat(result.stdout).contains("[additionalTestArtifacts]PreviewScreenshot.methodName=")
+        assertThat(result.stdout).contains("[additionalTestArtifacts]PreviewScreenshot.diffPercent=")
     }
 
     @Test

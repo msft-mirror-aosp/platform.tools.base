@@ -111,16 +111,6 @@ abstract class AndroidLintCopyReportTask : UnsafeOutputsTask("The lintOptions DS
         }
     }
 
-    class PrivacySandboxCreationAction(private val variantScope: PrivacySandboxSdkVariantScope)
-        : PrivacySandboxSdkVariantTaskCreationAction<AndroidLintCopyReportTask>() {
-        override val name: String = "copyLintReports"
-        override val type: Class<AndroidLintCopyReportTask> get() = AndroidLintCopyReportTask::class.java
-        override fun configure(task: AndroidLintCopyReportTask) {
-            super.configure(task)
-            task.registerInputs(variantScope.artifacts, variantScope.lintOptions)
-        }
-    }
-
     internal fun registerInputs(artifacts: ArtifactsImpl, lintOptions: Lint) {
         val textOutput = lintOptions.textOutput
         if (lintOptions.textReport && textOutput != null && textOutput.path != "stdout" && textOutput.path != "stderr") {

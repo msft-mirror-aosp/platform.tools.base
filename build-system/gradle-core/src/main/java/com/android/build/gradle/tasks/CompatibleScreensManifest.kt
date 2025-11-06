@@ -16,13 +16,9 @@
 
 package com.android.build.gradle.tasks
 
-import com.android.SdkConstants
-import com.android.build.api.variant.FilterConfiguration
 import com.android.build.api.variant.impl.BuiltArtifactsImpl
 import com.android.build.api.variant.impl.VariantOutputImpl
-import com.android.build.api.variant.impl.dirName
 import com.android.build.api.variant.impl.getApiString
-import com.android.build.api.variant.impl.getFilter
 import com.android.build.gradle.internal.component.ApplicationCreationConfig
 import com.android.build.gradle.internal.scope.InternalArtifactType.COMPATIBLE_SCREEN_MANIFEST
 import com.android.build.gradle.internal.tasks.BuildAnalyzer
@@ -30,10 +26,6 @@ import com.android.build.gradle.internal.tasks.NonIncrementalTask
 import com.android.build.gradle.internal.tasks.factory.VariantTaskCreationAction
 import com.android.build.gradle.internal.utils.setDisallowChanges
 import com.android.buildanalyzer.common.TaskCategory
-import com.android.resources.Density
-import com.android.utils.FileUtils
-import com.google.common.base.Charsets
-import com.google.common.io.Files
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
@@ -43,10 +35,7 @@ import org.gradle.api.tasks.Nested
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.TaskProvider
-import org.gradle.tooling.BuildException
 import org.gradle.work.DisableCachingByDefault
-import java.io.File
-import java.io.IOException
 
 /**
  * Task to generate a manifest snippet that just contains a compatible-screens node with the given
@@ -82,64 +71,8 @@ abstract class CompatibleScreensManifest : NonIncrementalTask() {
             artifactType = COMPATIBLE_SCREEN_MANIFEST,
             applicationId = applicationId.get(),
             variantName = variantName,
-            elements = variantOutputs.get().mapNotNull {
-                generate(it)?.let { generatedManifest ->
-                    it.toBuiltArtifact(generatedManifest)
-                }
-            }
+            elements = emptyList()
         ).save(outputFolder.get())
-    }
-
-    private fun generate(variantOutput: VariantOutputImpl): File? {
-        val densityFilter = variantOutput.variantOutputConfiguration.getFilter(
-            FilterConfiguration.FilterType.DENSITY) ?: return null
-
-        val content = StringBuilder()
-        content.append("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n")
-            .append("<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\">\n")
-            .append("\n")
-        if (minSdkVersion.isPresent) {
-            content.append("    <uses-sdk android:minSdkVersion=\"")
-                .append(minSdkVersion.get())
-                .append("\"/>\n")
-        }
-        content.append("    <compatible-screens>\n")
-
-        // convert unsupported values to numbers.
-        val density = convert(densityFilter.identifier, Density.XXHIGH, Density.XXXHIGH)
-
-        for (size in screenSizes.get()) {
-            content.append("        <screen android:screenSize=\"")
-                .append(size)
-                .append("\" " + "android:screenDensity=\"")
-                .append(density).append("\" />\n")
-        }
-
-        content.append(
-                "    </compatible-screens>\n" + "</manifest>"
-        )
-
-        val splitFolder = File(outputFolder.get().asFile,
-            variantOutput.variantOutputConfiguration.dirName())
-        FileUtils.mkdirs(splitFolder)
-        val manifestFile = File(splitFolder, SdkConstants.ANDROID_MANIFEST_XML)
-
-        try {
-            Files.asCharSink(manifestFile, Charsets.UTF_8).write(content.toString())
-        } catch (e: IOException) {
-            throw BuildException(e.message, e)
-        }
-
-        return manifestFile
-    }
-
-    private fun convert(density: String, vararg densitiesToConvert: Density): String {
-        for (densityToConvert in densitiesToConvert) {
-            if (densityToConvert.resourceValue == density) {
-                return densityToConvert.dpiValue.toString()
-            }
-        }
-        return density
     }
 
     class CreationAction(

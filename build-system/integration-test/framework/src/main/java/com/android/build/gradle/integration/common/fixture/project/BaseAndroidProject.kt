@@ -17,10 +17,9 @@
 package com.android.build.gradle.integration.common.fixture.project
 
 import com.android.SdkConstants
-import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectDefinition
+import com.android.build.gradle.integration.common.fixture.project.reversible.FileChangeController
 import java.nio.file.Path
-import kotlin.io.path.name
 
 /**
  * a subproject part of a [GradleBuild], specifically for projects with Android plugins.
@@ -54,12 +53,15 @@ internal abstract class BaseAndroidProjectImpl<ProjectDefinitionT : GradleProjec
         get() = location.resolve("build/${SdkConstants.FD_OUTPUTS}")
 }
 
-internal abstract class BaseReversibleAndroidProjectImpl<ProjectT : BaseAndroidProject<ProjectDefinitionT>, ProjectDefinitionT : GradleProjectDefinition>(
+internal abstract class BaseReversibleAndroidProjectImpl<
+    ProjectT : BaseAndroidProject<ProjectDefinitionT>,
+    ProjectDefinitionT : GradleProjectDefinition
+>(
     parentProject: ProjectT,
-    projectModification: TemporaryProjectModification
+    fileChangeController: FileChangeController
 ) : ReversibleGradleProject<ProjectT, ProjectDefinitionT>(
     parentProject,
-    projectModification,
+    fileChangeController,
 ), BaseAndroidProject<ProjectDefinitionT> {
 
     override val intermediatesDir: Path

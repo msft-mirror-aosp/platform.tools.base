@@ -21,8 +21,10 @@ import com.android.build.gradle.internal.fixtures.FakeConfigurableFileCollection
 import com.android.build.gradle.internal.test.ApkBundlesFinder
 import com.android.build.gradle.internal.test.ApksFinder
 import com.android.build.gradle.internal.testing.StaticTestData
-import com.android.build.gradle.internal.testing.utp.emulatorcontrol.EmulatorControlConfig
 import com.android.build.gradle.internal.testing.utp.emulatorcontrol.computeRegistrationDirectoryContainer
+import com.android.build.gradle.internal.testing.utp.worker.EmulatorControlConfig
+import com.android.build.gradle.internal.testing.utp.worker.ShardConfig
+import com.android.build.gradle.internal.testing.utp.worker.TargetApkConfigBundle
 import com.android.builder.testing.api.DeviceConfigProvider
 import com.google.common.truth.Truth.assertThat
 import com.google.protobuf.TextFormat.escapeDoubleQuotesAndBackslashes
@@ -148,6 +150,7 @@ class UtpConfigFactoryTest {
             reinstallIncompatibleApksBeforeTest: Boolean = false,
     ): RunnerConfig {
         return createRunnerConfigProtoForLocalDevice(
+            "mockDeviceID",
             "emulator-mockDeviceSerialNumber",
             testData,
             targetApkConfigBundle,
@@ -172,6 +175,12 @@ class UtpConfigFactoryTest {
             cleanTestArtifacts,
             reinstallIncompatibleApksBeforeTest,
             shardConfig,
+            UtpTestResultListenerServerMetadata(
+                mockFile("serverCert"),
+                1234,
+                mockFile("clientCert"),
+                mockFile("clientKey"),
+            )
         )
     }
 
@@ -186,6 +195,7 @@ class UtpConfigFactoryTest {
             targetApkConfigBundle: TargetApkConfigBundle = testTargetApkConfigBundle,
     ): RunnerConfig {
         return createRunnerConfigProtoForLocalDevice(
+            "mockDeviceID",
             "emulator-mockDeviceSerialNumber",
             testData,
             targetApkConfigBundle,
@@ -210,6 +220,12 @@ class UtpConfigFactoryTest {
             uninstallApksAfterTest = false,
             reinstallIncompatibleApksBeforeTest = true,
             shardConfig,
+            UtpTestResultListenerServerMetadata(
+                mockFile("serverCert"),
+                1234,
+                mockFile("clientCert"),
+                mockFile("clientKey"),
+            ),
         )
     }
 

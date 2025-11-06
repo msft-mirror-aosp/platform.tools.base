@@ -162,7 +162,7 @@
             "version": "1.0"
           },
           "artifact": {
-            "absolutePath": "{GRADLE_CACHE}/{MODULES_2}/{LIBRARY_COORDINATES}/{CHECKSUM}/kmpSecondLib.aar"
+            "absolutePath": "{GRADLE_CACHE}/{MODULES_2}/com.example/kmpSecondLib-android/1.0/{CHECKSUM}/kmpSecondLib.aar"
           },
           "androidLibraryData": {
             "manifest": {
@@ -513,7 +513,7 @@
             "version": "1.0"
           },
           "artifact": {
-            "absolutePath": "{GRADLE_CACHE}/{MODULES_2}/{LIBRARY_COORDINATES}/{CHECKSUM}/kmpSecondLib.aar"
+            "absolutePath": "{GRADLE_CACHE}/{MODULES_2}/com.example/kmpSecondLib-android/1.0/{CHECKSUM}/kmpSecondLib.aar"
           },
           "androidLibraryData": {
             "manifest": {
@@ -651,7 +651,7 @@
             "version": "1.0"
           },
           "artifact": {
-            "absolutePath": "{GRADLE}/caches/modules-2/files-2.1/com.example/kmpLibraryPlugin-android/1.0/c7b9fe98c4aeffe5d326676fbdc578222f832b9c/kmpLibraryPlugin-release.aar"
+            "absolutePath": "{GRADLE_CACHE}/{MODULES_2}/com.example/kmpLibraryPlugin-android/1.0/{CHECKSUM}/kmpLibraryPlugin-release.aar"
           },
           "androidLibraryData": {
             "manifest": {

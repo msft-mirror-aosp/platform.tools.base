@@ -17,11 +17,11 @@
 package com.android.build.gradle.integration.common.fixture.project
 
 import com.android.build.api.dsl.ApplicationExtension
-import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification
 import com.android.build.gradle.integration.common.fixture.dsl.DslProxy
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
+import com.android.build.gradle.integration.common.fixture.project.reversible.FileChangeController
 import com.android.build.gradle.integration.common.utils.getApkLocations
 import com.android.build.gradle.integration.common.utils.getVariantByName
 import java.io.File
@@ -103,8 +103,8 @@ internal class AndroidApplicationImpl(
             ?: throw RuntimeException("Failed to get apk folder for $projectPath module")
     }
 
-    override fun getReversibleInstance(projectModification: TemporaryProjectModification): AndroidApplicationProject =
-        ReversibleAndroidApplicationProject(this, projectModification)
+    override fun getReversibleInstance(fileChangeController: FileChangeController): AndroidApplicationProject =
+        ReversibleAndroidApplicationProject(this, fileChangeController)
 }
 
 /**
@@ -112,10 +112,10 @@ internal class AndroidApplicationImpl(
  */
 internal class ReversibleAndroidApplicationProject(
     parentProject: AndroidApplicationProject,
-    projectModification: TemporaryProjectModification
+    fileChangeController: FileChangeController
 ) : ReversibleAndroidProject<AndroidApplicationProject, AndroidProjectDefinition<ApplicationExtension>>(
     parentProject,
-    projectModification
+    fileChangeController
 ), AndroidApplicationProject,
     GeneratesApk by GeneratesApkFromParentDelegate(parentProject),
     GeneratesAab by GeneratesAabFromParentDelegate(parentProject) {

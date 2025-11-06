@@ -69,6 +69,7 @@ import java.util.concurrent.TimeoutException
 import java.util.regex.Matcher
 import java.util.regex.Pattern
 import java.util.stream.Collectors.toList
+import kotlin.io.path.deleteIfExists
 
 /**
  * Android Virtual Device Manager to manage AVDs.
@@ -371,6 +372,8 @@ private constructor(
     removePrevious: Boolean = false,
     editExisting: Boolean = false,
   ): AvdInfo {
+    validateEnvironment(environment)
+
     val hardwareConfig = hardwareConfig?.toMutableMap() ?: mutableMapOf()
     var avdFolder = avdFolder
     var editExisting = editExisting
@@ -480,14 +483,16 @@ private constructor(
       }
 
       val updatedEnvironment: Map<String, String>
+      val environmentIniPath: Path = avdFolder.resolve(ENVIRONMENT_INI)
       if (environment != null && environment.isNotEmpty()) {
-        val environmentIniPath: Path = avdFolder.resolve(ENVIRONMENT_INI)
         updatedEnvironment = environment.toMutableMap()
-        copyBackground(updatedEnvironment, EnvironmentKey.IMAGE, avdFolder)
-        copyBackground(updatedEnvironment, EnvironmentKey.VIDEO, avdFolder)
+        // The environment will contain either image or video, not both.
+        copyEnvironment(updatedEnvironment, EnvironmentKey.IMAGE, avdFolder)
+        copyEnvironment(updatedEnvironment, EnvironmentKey.VIDEO, avdFolder)
         writeIniFile(environmentIniPath, updatedEnvironment, false)
       } else {
         updatedEnvironment = mutableMapOf()
+        environmentIniPath.deleteIfExists()
       }
 
       val oldAvdInfo = getAvd(avdName, false /*validAvdOnly*/)
@@ -548,6 +553,14 @@ private constructor(
     }
   }
 
+  private fun validateEnvironment(environment: Map<String, String>?) {
+    environment ?: return
+    val keys = listOf(EnvironmentKey.IMAGE, EnvironmentKey.VIDEO)
+    require(keys.count(environment::containsKey) <= 1) {
+      "Expected at most one of ${keys.joinToString()}"
+    }
+  }
+
   /**
    * Copies a background file (image or video) to the AVD directory. Updates the environment to use
    * the path relative to the AVD directory.
@@ -558,7 +571,7 @@ private constructor(
    * @throws AvdManagerException if the copy fails
    */
   @Throws(AvdManagerException::class)
-  private fun copyBackground(
+  private fun copyEnvironment(
     environment: MutableMap<String, String>,
     key: String,
     avdFolder: Path,

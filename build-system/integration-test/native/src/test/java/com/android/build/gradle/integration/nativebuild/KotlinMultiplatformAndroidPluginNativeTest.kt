@@ -254,6 +254,8 @@ class KotlinMultiplatformAndroidPluginNativeTest {
     }
 
     private fun executor(): GradleTaskExecutor {
-        return project.executor().withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
+        return project.executor()
+            .withFailOnWarning(false) // b/455891987
+            .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
     }
 }

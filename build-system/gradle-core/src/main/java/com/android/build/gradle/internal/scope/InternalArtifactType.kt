@@ -21,7 +21,6 @@ import com.android.build.api.artifact.Artifact
 import com.android.build.api.artifact.ArtifactKind
 import com.android.build.api.artifact.SingleArtifact
 import com.android.build.gradle.internal.api.BaselineProfiles
-import com.android.build.gradle.internal.tasks.GenerateRuntimeEnabledSdkTableTask
 import org.gradle.api.file.Directory
 import org.gradle.api.file.FileSystemLocation
 import org.gradle.api.file.RegularFile
@@ -221,6 +220,8 @@ InternalArtifactType<T : FileSystemLocation>(
     object UNIT_TEST_CONFIG_DIRECTORY: InternalArtifactType<Directory>(DIRECTORY), Replaceable
     // Processed res after an AAPT2 optimize operation
     object OPTIMIZED_PROCESSED_RES: InternalArtifactType<Directory>(DIRECTORY), Replaceable, ContainsMany
+    // File created by AAPT containing containing the list of resources and directives to each resource.
+    object RESOURCES_CONFIG_MAP_FILE: InternalArtifactType<RegularFile>(FILE, Category.REPORTS), Replaceable
     // package resources for aar publishing.
     object PACKAGED_RES: InternalArtifactType<Directory>(DIRECTORY), Replaceable
     // package resources for aar publishing.
@@ -649,9 +650,7 @@ InternalArtifactType<T : FileSystemLocation>(
     // It should also contain a file which writes out mappings from API level to ".dm" file
     object DEX_METADATA_DIRECTORY: InternalArtifactType<Directory>(DIRECTORY)
 
-    object RUNTIME_ENABLED_SDK_TABLE : InternalArtifactType<RegularFile>(
-            FILE,
-            fileName = GenerateRuntimeEnabledSdkTableTask.RUNTIME_ENABLED_SDK_TABLE_FILE_NAME)
+    object RUNTIME_ENABLED_SDK_TABLE : InternalArtifactType<RegularFile>(FILE)
 
     object USES_SDK_LIBRARY_SPLIT_FOR_LOCAL_DEPLOYMENT : InternalArtifactType<Directory>(DIRECTORY), Replaceable
 

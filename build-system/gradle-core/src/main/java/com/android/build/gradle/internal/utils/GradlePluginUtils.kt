@@ -119,5 +119,4 @@ val MUTUALLY_EXCLUSIVE_ANDROID_GRADLE_PLUGINS = mapOf(
     TestPlugin::class.java to "com.android.test",
     KotlinMultiplatformAndroidPlugin::class.java to "com.android.kotlin.multiplatform.library",
     FusedLibraryPlugin::class.java to "com.android.fused-library",
-    PrivacySandboxSdkPlugin::class.java to "com.android.privacy-sandbox-sdk",
 )

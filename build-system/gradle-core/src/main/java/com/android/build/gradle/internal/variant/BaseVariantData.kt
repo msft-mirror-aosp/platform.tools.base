@@ -43,7 +43,6 @@ abstract class BaseVariantData(
     val allPostJavacGeneratedBytecode: ConfigurableFileCollection = services.fileCollection()
     private var rawAndroidResources: FileCollection? = null
 
-    private lateinit var densityFilters: Set<String>
     private lateinit var abiFilters: Set<String>
 
     /**
@@ -112,7 +111,6 @@ abstract class BaseVariantData(
      * @param splits the splits configuration from the build.gradle.
      */
     fun calculateFilters(splits: Splits) {
-        densityFilters = getFilters(DiscoverableFilterType.DENSITY, splits)
         abiFilters = getFilters(DiscoverableFilterType.ABI, splits)
     }
 
@@ -125,13 +123,13 @@ abstract class BaseVariantData(
      * to invoking this method.
      */
     fun getFilters(filterType: VariantOutput.FilterType): Set<String> {
-        check(::densityFilters.isInitialized && ::abiFilters.isInitialized) {
+        check(::abiFilters.isInitialized) {
             "calculateFilters method not called"
         }
 
         return when (filterType) {
-            VariantOutput.FilterType.DENSITY -> densityFilters
             VariantOutput.FilterType.ABI -> abiFilters
+            else -> emptySet()
         }
     }
 
@@ -139,11 +137,6 @@ abstract class BaseVariantData(
      * Defines the discoverability attributes of filters.
      */
     private enum class DiscoverableFilterType {
-        DENSITY {
-            override fun getConfiguredFilters(splits: Splits): Collection<String> {
-                return splits.densityFilters
-            }
-        },
         ABI {
             override fun getConfiguredFilters(splits: Splits): Collection<String> {
                 return splits.abiFilters

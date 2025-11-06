@@ -53,12 +53,14 @@ class OptimizeResourcesTest(private val enableResourceObfuscation: Boolean) {
 
         val testFolder = temporaryFolder.newFolder()
         val optimizedApk = File(testFolder, "optimized.apk")
+        val resourceConfig = File(testFolder, "resources.cfg")
 
         val flags = listOf(
             aaptOptimizeCommand,
             sourceApk.path,
             AAPT2OptimizeFlags.ENABLE_SPARSE_ENCODING.flag,
             AAPT2OptimizeFlags.SHORTEN_RESOURCE_PATHS.flag,
+            "${AAPT2OptimizeFlags.RESOURCE_PATH_SHORTENING_MAP.flag}=${resourceConfig.absolutePath}",
             AAPT2OptimizeFlags.COLLAPSE_RESOURCE_NAMES.flag,
             "-o",
             optimizedApk.path
@@ -78,5 +80,18 @@ class OptimizeResourcesTest(private val enableResourceObfuscation: Boolean) {
         assertThat(previousApkSize).isNotEqualTo(0)
         assertThat(optimizedApkSize).isAtMost(previousApkSize)
         assertThat(optimizedApkSize).isNotEqualTo(0)
+
+        assertThat(resourceConfig.readText()).contains(
+            """
+                res/anim-v21/design_bottom_sheet_slide_in.xml -> res/-Q.xml
+                res/anim-v21/design_bottom_sheet_slide_out.xml -> res/20.xml
+                res/anim/abc_fade_in.xml -> res/y4.xml
+                res/anim/abc_fade_out.xml -> res/Bd.xml
+                res/anim/abc_grow_fade_in_from_bottom.xml -> res/aM1.xml
+                res/anim/abc_popup_enter.xml -> res/k_.xml
+                res/anim/abc_popup_exit.xml -> res/UX.xml
+                res/anim/abc_shrink_fade_out_from_bottom.xml -> res/5T.xml
+            """.trimIndent()
+        )
     }
 }

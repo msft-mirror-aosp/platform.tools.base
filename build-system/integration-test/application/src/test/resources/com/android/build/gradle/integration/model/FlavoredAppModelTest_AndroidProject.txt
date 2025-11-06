@@ -30,7 +30,7 @@
             - resGenTaskName                = "generateProDebugResources"
             - generatedResourceFolders      = []
             - generatedAssetsFolders        = []
-            - abiFilters                    = []
+            - abiFilters                    = ["arm64-v8a", "armeabi-v7a", "x86", "x86_64"]
             - assembleTaskOutputListingFile = {PROJECT}/app/build/intermediates/apk_ide_redirect_file/proDebug/createProDebugApkListingFileRedirect/redirect.txt{!}
             - testInfo                      = (null)
             - bundleInfo:
@@ -62,7 +62,7 @@
             - resGenTaskName                = "generateProDebugAndroidTestResources"
             - generatedResourceFolders      = []
             - generatedAssetsFolders        = []
-            - abiFilters                    = []
+            - abiFilters                    = ["arm64-v8a", "armeabi-v7a", "x86", "x86_64"]
             - assembleTaskOutputListingFile = {PROJECT}/app/build/intermediates/apk_ide_redirect_file/proDebugAndroidTest/createProDebugAndroidTestApkListingFileRedirect/redirect.txt{!}
             - testInfo:
                - animationsDisabled       = false

@@ -107,7 +107,7 @@ class ResourcesOverridingTest(private val precompileDependenciesResources: Boole
         TestFileUtils.appendToFile(
             project.getSubproject("localLib").buildFile,
             """
-                dependencies { implementation name: 'publishedLib-release', ext:'aar' }
+                dependencies { implementation(project.dependencyFactory.create(null, "publishedLib-release", null, null, "aar")) }
             """.trimIndent()
         )
 
@@ -148,7 +148,7 @@ class ResourcesOverridingTest(private val precompileDependenciesResources: Boole
             """
                 dependencies {
                     implementation project(':localLib')
-                    implementation name: 'publishedLib-release', ext:'aar'
+                    implementation(project.dependencyFactory.create(null, "publishedLib-release", null, null, "aar"))
                 }
             """.trimIndent()
         )
@@ -182,7 +182,7 @@ class ResourcesOverridingTest(private val precompileDependenciesResources: Boole
             project.getSubproject("app").buildFile,
             """
                 dependencies {
-                    implementation name: 'publishedLib-release', ext:'aar'
+                    implementation(project.dependencyFactory.create(null, "publishedLib-release", null, null, "aar"))
                     implementation project(':localLib')
                 }
             """.trimIndent()

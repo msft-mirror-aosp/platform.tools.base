@@ -45,7 +45,9 @@ class KotlinMultiplatformSigningTest {
             """.trimIndent()
         )
 
-        project.executor().run(":kmpSecondLib:assembleAndroidTest", ":kmpSecondLib:signingConfigWriterAndroidDeviceTest")
+        project.executor()
+            .withFailOnWarning(false) // b/455891987
+            .run(":kmpSecondLib:assembleAndroidTest", ":kmpSecondLib:signingConfigWriterAndroidDeviceTest")
         project.getSubproject("kmpSecondLib").assertApk(
             ApkSelector.NO_BUILD_TYPE.forTestSuite("androidTest")
         ) {
@@ -92,7 +94,9 @@ class KotlinMultiplatformSigningTest {
                 }
             """.trimIndent()
         )
-        project.executor().run(":kmpSecondLib:assembleAndroidTest", ":kmpSecondLib:signingConfigWriterAndroidDeviceTest")
+        project.executor()
+            .withFailOnWarning(false) // b/455891987
+            .run(":kmpSecondLib:assembleAndroidTest", ":kmpSecondLib:signingConfigWriterAndroidDeviceTest")
 
         project.getSubproject("kmpSecondLib").assertApk(
             ApkSelector.NO_BUILD_TYPE.forTestSuite("androidTest")

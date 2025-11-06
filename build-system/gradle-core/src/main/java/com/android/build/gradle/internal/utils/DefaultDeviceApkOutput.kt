@@ -21,6 +21,7 @@ import com.android.build.api.variant.DeviceSpec
 import com.android.build.api.variant.impl.BuiltArtifactsImpl
 import com.android.build.api.variant.impl.BuiltArtifactsLoaderImpl
 import com.android.build.gradle.internal.LoggerWrapper
+import com.android.build.gradle.internal.core.Abi
 import com.android.build.gradle.internal.test.BuiltArtifactsSplitOutputMatcher.computeBestOutput
 import com.android.builder.internal.InstallUtils
 import com.android.sdklib.AndroidVersion
@@ -49,7 +50,7 @@ class DefaultDeviceApkOutput(
         if (InstallUtils.checkDeviceApiLevel(deviceSpec.name, deviceSpec.apiLevel, deviceSpec.codeName,
                 minSdkVersion, iLogger, projectPath, variantName)
         ) {
-            val mainApks = getMainApks(apkSources.mainApkArtifact.get(), supportedAbis, deviceSpec)
+            val mainApks = apkSources.mainApkArtifacts.get().flatMap { getMainApks(it, supportedAbis, deviceSpec) }
             if (mainApks.isNotEmpty()) {
                 apkFiles.addAll(mainApks)
             }
@@ -67,13 +68,15 @@ class DefaultDeviceApkOutput(
                 apkSources.privacySandboxSdkSplitApksForLegacy?.let { apkFiles.addAll(getFiles(it)) }
             }
 
-            addDexMetadataFiles(
-                apkSources.dexMetadataDirectory,
-                apkSources.mainApkArtifact.get(),
-                deviceSpec.apiLevel,
-                apkFiles,
-                iLogger
-            )
+            apkSources.mainApkArtifacts.get().forEach {
+                addDexMetadataFiles(
+                    apkSources.dexMetadataDirectory,
+                    it,
+                    deviceSpec.apiLevel,
+                    apkFiles,
+                    iLogger
+                )
+            }
         }
         apkInstallGroups.add(DefaultApkInstallGroup(apkFiles.map { RegularFile { it } }, "Main Apk Group" ))
         return apkInstallGroups
@@ -92,7 +95,7 @@ class DefaultDeviceApkOutput(
 
     companion object {
         fun getApkInputs(apkSources: ApkSources, deviceSpec: DeviceSpec): Set<Any> {
-            val taskInputs = mutableSetOf<Any>(apkSources.mainApkArtifact)
+            val taskInputs = mutableSetOf<Any>(apkSources.mainApkArtifacts)
             apkSources.dexMetadataDirectory?.let { taskInputs.add(it) }
 
             if (deviceSpec.supportsPrivacySandbox) {
@@ -109,7 +112,14 @@ class DefaultDeviceApkOutput(
             val builtArtifactsLoader = BuiltArtifactsLoaderImpl()
             val builtArtifacts: BuiltArtifactsImpl? = builtArtifactsLoader.load(mainApkDirectory)
             if (builtArtifacts != null) {
-                return computeBestOutput(deviceSpec.abis, builtArtifacts, supportedAbis ?: setOf())
+                val abis = deviceSpec.abis.run {
+                    if(isNullOrEmpty()){
+                        // set to default if empty
+                        Abi.getDefaultSupportedAbis()
+                    } else this
+                }
+
+                return computeBestOutput(abis, builtArtifacts, supportedAbis ?: setOf())
             }
             return listOf()
         }
@@ -117,7 +127,7 @@ class DefaultDeviceApkOutput(
 }
 
 data class ApkSources(
-    val mainApkArtifact: Provider<Directory>,
+    val mainApkArtifacts: Provider<List<Directory>>,
     val privacySandboxSdksApksFiles: FileCollection,
     val additionalSupportedSdkApkSplits: Provider<Directory>?,
     val privacySandboxSdkSplitApksForLegacy: Provider<Directory>?,

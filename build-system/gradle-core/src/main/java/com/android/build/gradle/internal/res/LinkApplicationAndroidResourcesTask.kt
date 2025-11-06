@@ -907,11 +907,6 @@ abstract class LinkApplicationAndroidResourcesTask: ProcessAndroidResources() {
                 mainDexListProguardOutputFile = parameters.mainDexListProguardOutputFile.orNull?.asFile
             }
 
-            val densityFilterData = variantOutput.variantOutputConfiguration
-                .getFilter(FilterConfiguration.FilterType.DENSITY)
-
-            val preferredDensity = densityFilterData?.identifier
-
             parameters.localeFilters.get().forEach {
                 if (!validLocale(it)) {
                     throw RuntimeException("The locale in localeFilters \"$it\" is invalid.")
@@ -946,7 +941,7 @@ abstract class LinkApplicationAndroidResourcesTask: ProcessAndroidResources() {
                         .setMainDexListProguardOutputFile(mainDexListProguardOutputFile)
                         .setComponentType(parameters.componentType.get())
                         .setResourceConfigs(parameters.resourceConfigs.get())
-                        .setPreferredDensity(preferredDensity)
+                        .setPreferredDensity(null)
                         .setPackageId(parameters.packageId.orNull)
                         .setAllowReservedPackageId(
                             parameters.packageId.isPresent && parameters.packageId.get() < FeatureSetMetadata.BASE_ID

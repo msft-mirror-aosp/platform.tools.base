@@ -77,11 +77,9 @@ internal class VariantPathHelperTest {
                 dslServices
         )
         doReturn("x86,armeabi-v7a").whenever(projectOptions).get(StringOption.IDE_BUILD_TARGET_ABI)
-        doReturn("hdpi").whenever(projectOptions).get(StringOption.IDE_BUILD_TARGET_DENSITY)
         Truth.assertThat(variantPathHelper.targetFilterConfigurations)
                 .containsExactly(
-                        FilterConfigurationImpl(FilterConfiguration.FilterType.ABI, "x86,armeabi-v7a"),
-                        FilterConfigurationImpl(FilterConfiguration.FilterType.DENSITY, "hdpi"))
+                        FilterConfigurationImpl(FilterConfiguration.FilterType.ABI, "x86,armeabi-v7a"))
     }
 
     @Test

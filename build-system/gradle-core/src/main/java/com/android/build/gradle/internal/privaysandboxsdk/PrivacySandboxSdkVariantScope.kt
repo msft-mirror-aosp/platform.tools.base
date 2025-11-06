@@ -49,11 +49,5 @@ interface PrivacySandboxSdkVariantScope {
     val optimization: PrivacySandboxSdkOptimizationImpl
     val experimentalProperties: MapProperty<String, Any>
     val aarOrJarTypeToConsume: AarOrJarTypeToConsume
-    val lintOptions: Lint
-    val customLintConfiguration: Configuration?
     val name: String
-
-    val lintUseK2UastManualSetting: Provider<Boolean> get() {
-        return VariantCreationConfig.getLintUseK2UastManualSetting(experimentalProperties, services)
-    }
 }

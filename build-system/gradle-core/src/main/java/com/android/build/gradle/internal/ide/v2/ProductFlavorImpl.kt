@@ -32,6 +32,7 @@ data class ProductFlavorImpl(
     override val versionName: String?,
     override val minSdkVersion: ApiVersion?,
     override val targetSdkVersion: ApiVersion?,
+    override val matchingFallbacks: List<String>,
     override val maxSdkVersion: Int?,
     override val renderscriptTargetApi: Int?,
     override val renderscriptSupportModeEnabled: Boolean?,

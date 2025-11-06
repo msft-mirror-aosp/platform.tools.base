@@ -25,12 +25,17 @@ import com.android.build.api.dsl.ApplicationBuildType;
 import com.android.build.api.dsl.ApplicationExtension;
 import com.android.build.api.variant.ApplicationVariantBuilder;
 import com.android.build.api.variant.Component;
+import com.android.build.api.variant.ComponentIdentity;
 import com.android.build.api.variant.impl.VariantImpl;
 import com.android.build.gradle.internal.component.ApplicationCreationConfig;
+import com.android.build.gradle.internal.component.TestComponentCreationConfig;
 import com.android.build.gradle.internal.component.VariantCreationConfig;
 import com.android.build.gradle.internal.errors.SyncIssueReporterImpl;
+import com.android.build.gradle.internal.fixture.AppVariantCreationConfigChecker;
 import com.android.build.gradle.internal.fixture.TestConstants;
 import com.android.build.gradle.internal.fixture.TestProjects;
+import com.android.build.gradle.internal.fixture.VariantCheckers;
+import com.android.build.gradle.internal.fixture.VariantCreationConfigChecker;
 import com.android.build.gradle.internal.services.BuildServicesKt;
 import com.android.build.gradle.internal.variant.ComponentInfo;
 import com.android.build.gradle.options.BooleanOption;
@@ -38,8 +43,10 @@ import com.android.builder.core.ToolsRevisionUtils;
 import com.android.builder.model.SyncIssue;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
+import com.google.common.truth.Truth;
 
 import groovy.util.Eval;
 
@@ -56,6 +63,7 @@ import org.junit.rules.TemporaryFolder;
 import java.io.File;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -189,6 +197,182 @@ public class PluginDslTest {
         expected.put("f3Custom", ImmutableList.of("file3.1", "file4.1"));
 
         checkProguardFiles(expected);
+    }
+
+    @Test
+    public void testBuildTypes() {
+        Eval.me(
+                "project",
+                project,
+                "\n"
+                        + "project.android {\n"
+                        + "    testBuildType 'staging'\n"
+                        + "\n"
+                        + "    buildTypes {\n"
+                        + "        staging {\n"
+                        + "            signingConfig = signingConfigs.debug\n"
+                        + "        }\n"
+                        + "    }\n"
+                        + "}\n");
+
+        plugin.createAndroidTasks(project);
+        LinkedHashMap<String, Integer> map = new LinkedHashMap<>(3);
+        map.put("appVariants", 3);
+        map.put("unitTest", 1);
+        map.put("androidTests", 1);
+        VariantCreationConfigChecker checker = new AppVariantCreationConfigChecker(plugin);
+
+        assertThat(VariantCheckers.countVariants(map))
+                .isEqualTo(
+                        plugin.getVariantManager().getMainComponents().size()
+                                + plugin.getVariantManager().getTestComponents().size());
+
+        assertThat(
+                        checker.getTestComponents().stream()
+                                .map(ComponentIdentity::getName)
+                                .collect(Collectors.toList()))
+                .named("test variant list")
+                .containsExactly("stagingAndroidTest", "stagingUnitTest");
+
+        List<VariantCreationConfig> variants =
+                plugin.getVariantManager().getMainComponents().stream()
+                        .map(ComponentInfo::getVariant)
+                        .collect(Collectors.toList());
+        List<TestComponentCreationConfig> testVariants =
+                plugin.getVariantManager().getTestComponents();
+        checker.checkTestedVariant("staging", "stagingAndroidTest");
+        checker.checkNonTestedVariant("debug");
+        checker.checkNonTestedVariant("release");
+    }
+
+    @Test
+    public void testFlavors() {
+        Eval.me(
+                "project",
+                project,
+                "\n"
+                        + "project.android {\n"
+                        + "    flavorDimensions 'foo'\n"
+                        + "    productFlavors {\n"
+                        + "        flavor1 {\n"
+                        + "\n"
+                        + "        }\n"
+                        + "        flavor2 {\n"
+                        + "\n"
+                        + "        }\n"
+                        + "    }\n"
+                        + "}\n");
+
+        plugin.createAndroidTasks(project);
+        LinkedHashMap<String, Integer> map = new LinkedHashMap<>(3);
+        map.put("appVariants", 4);
+        map.put("unitTest", 2);
+        map.put("androidTests", 2);
+        VariantCreationConfigChecker checker = new AppVariantCreationConfigChecker(plugin);
+
+        assertThat(VariantCheckers.countVariants(map))
+                .isEqualTo(
+                        plugin.getVariantManager().getMainComponents().size()
+                                + plugin.getVariantManager().getTestComponents().size());
+
+        // we can now call this since the variants/tasks have been created
+
+        // does not include tests
+        Set<VariantCreationConfig> variants = checker.getMainVariants();
+        assertThat(variants).named("variant list").hasSize(4);
+
+        Set<TestComponentCreationConfig> testVariants = checker.getTestComponents();
+        assertThat(testVariants).named("test variant list").hasSize(4);
+
+        checker.checkTestedVariant("flavor1Debug", "flavor1DebugAndroidTest");
+        checker.checkTestedVariant("flavor2Debug", "flavor2DebugAndroidTest");
+
+        checker.checkNonTestedVariant("flavor1Release");
+        checker.checkNonTestedVariant("flavor2Release");
+    }
+
+    @Test
+    public void testMultiFlavors() {
+        Eval.me(
+                "project",
+                project,
+                "\n"
+                    + "project.android {\n"
+                    + "    flavorDimensions   'dimension1', 'dimension2'\n"
+                    + "\n"
+                    + "    productFlavors {\n"
+                    + "        f1 {\n"
+                    + "            dimension   'dimension1'\n"
+                    + "            javaCompileOptions.annotationProcessorOptions.className 'f1'\n"
+                    + "        }\n"
+                    + "        f2 {\n"
+                    + "            dimension   'dimension1'\n"
+                    + "            javaCompileOptions.annotationProcessorOptions.className 'f2'\n"
+                    + "        }\n"
+                    + "\n"
+                    + "        fa {\n"
+                    + "            dimension   'dimension2'\n"
+                    + "            javaCompileOptions.annotationProcessorOptions.className 'fa'\n"
+                    + "        }\n"
+                    + "        fb {\n"
+                    + "            dimension   'dimension2'\n"
+                    + "            javaCompileOptions.annotationProcessorOptions.className 'fb'\n"
+                    + "        }\n"
+                    + "        fc {\n"
+                    + "            dimension   'dimension2'\n"
+                    + "            javaCompileOptions.annotationProcessorOptions.className 'fc'\n"
+                    + "        }\n"
+                    + "    }\n"
+                    + "}\n");
+
+        plugin.createAndroidTasks(project);
+        VariantCreationConfigChecker checker = new AppVariantCreationConfigChecker(plugin);
+
+        ImmutableMap<String, Integer> map =
+                ImmutableMap.of("appVariants", 12, "unitTests", 6, "androidTests", 6);
+        assertThat(VariantCheckers.countVariants(map))
+                .isEqualTo(checker.getMainVariants().size() + checker.getTestComponents().size());
+
+        // we can now call this since the variants/tasks have been created
+
+        // does not include tests
+        Set<VariantCreationConfig> variants = checker.getMainVariants();
+        Truth.assertThat(variants).named("variant list").hasSize(12);
+
+        Set<TestComponentCreationConfig> testVariants = checker.getTestComponents();
+        Truth.assertThat(testVariants).named("test variant list").hasSize(12);
+
+        checker.checkTestedVariant("f1FaDebug", "f1FaDebugAndroidTest");
+        checker.checkTestedVariant("f1FbDebug", "f1FbDebugAndroidTest");
+        checker.checkTestedVariant("f1FcDebug", "f1FcDebugAndroidTest");
+        checker.checkTestedVariant("f2FaDebug", "f2FaDebugAndroidTest");
+        checker.checkTestedVariant("f2FbDebug", "f2FbDebugAndroidTest");
+        checker.checkTestedVariant("f2FcDebug", "f2FcDebugAndroidTest");
+
+        checker.checkNonTestedVariant("f1FaRelease");
+        checker.checkNonTestedVariant("f1FbRelease");
+        checker.checkNonTestedVariant("f1FcRelease");
+        checker.checkNonTestedVariant("f2FaRelease");
+        checker.checkNonTestedVariant("f2FbRelease");
+        checker.checkNonTestedVariant("f2FcRelease");
+    }
+
+    @Test
+    public void testAdbExe() throws Exception {
+        VariantCreationConfigChecker checker = new AppVariantCreationConfigChecker(plugin);
+
+        for (VariantCreationConfig variant : checker.getMainVariants()) {
+            assertThat(variant.getGlobal().getVersionedSdkLoader().get().getAdbExecutableProvider())
+                    .isNotNull();
+            assertThat(
+                            variant.getGlobal()
+                                    .getVersionedSdkLoader()
+                                    .get()
+                                    .getAdbHelper()
+                                    .get()
+                                    .getAdbExecutable())
+                    .isNotNull();
+        }
     }
 
     @Ignore("b/268114435")

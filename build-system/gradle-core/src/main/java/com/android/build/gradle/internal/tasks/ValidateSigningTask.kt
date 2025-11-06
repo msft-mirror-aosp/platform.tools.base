@@ -214,44 +214,4 @@ abstract class ValidateSigningTask : NonIncrementalTask() {
             task.outputs.upToDateWhen { !task.forceRerun() }
         }
     }
-
-
-    class PrivacySandboxSdkCreationAction(
-            private val artifacts: ArtifactsImpl,
-            private val services: BaseServices
-    ) : AndroidVariantTaskCreationAction<ValidateSigningTask>() {
-
-        constructor(config: GlobalTaskCreationConfig) : this(config.globalArtifacts, config.services)
-        constructor(scope: PrivacySandboxSdkVariantScope): this(scope.artifacts, scope.services)
-
-        override val name: String
-            get() = "validatePrivacySandboxSdkSigning"
-        override val type: Class<ValidateSigningTask>
-            get() = ValidateSigningTask::class.java
-
-        override fun handleProvider(
-                taskProvider: TaskProvider<ValidateSigningTask>
-        ) {
-            super.handleProvider(taskProvider)
-
-            artifacts.setInitialProvider(
-                    taskProvider,
-                    ValidateSigningTask::dummyOutputDirectory
-            ).on(InternalArtifactType.VALIDATE_SIGNING_CONFIG)
-        }
-
-        override fun configure(
-                task: ValidateSigningTask
-        ) {
-            super.configure(task)
-
-            val signingConfigDataProvider: Provider<SigningConfigData> = getBuildService(
-                    services.buildServiceRegistry,
-                    AndroidLocationsBuildService::class.java
-            ).map { it.getDefaultDebugKeystoreSigningConfig() }
-            task.signingConfigData.set(signingConfigDataProvider)
-            task.defaultDebugKeystoreLocation.set(signingConfigDataProvider.map { it.storeFile!! })
-            task.outputs.upToDateWhen { !task.forceRerun() }
-        }
-    }
 }

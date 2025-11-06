@@ -33,6 +33,8 @@ class KotlinMultiplatformResourceParsingTest {
 
     @Test
     fun testResourceParsingWithoutDeviceTestEnabled() {
-        rule.build.executor.run(":shared:assemble")
+        rule.build.executor
+            .withFailOnWarning(false) // b/455891987
+            .run(":shared:assemble")
     }
 }

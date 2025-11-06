@@ -14,18 +14,13 @@
  * limitations under the License.
  */
 
-@file:Suppress("DEPRECATION_ERROR") // TODO(b/435372615): Remove this suppression
-
 package com.android.build.api.variant.impl
 
 import com.android.build.api.dsl.KotlinMultiplatformAndroidCompilation
 import com.android.build.gradle.internal.plugins.KotlinMultiplatformAndroidPlugin.Companion.getNamePrefixedWithAndroidTarget
-import org.gradle.api.Action
 import org.gradle.api.tasks.TaskProvider
 import org.jetbrains.kotlin.gradle.ExternalKotlinTargetApi
-import org.jetbrains.kotlin.gradle.dsl.KotlinCommonOptions
 import org.jetbrains.kotlin.gradle.dsl.KotlinJvmCompilerOptions
-import org.jetbrains.kotlin.gradle.plugin.HasCompilerOptions
 import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSetTree
 import org.jetbrains.kotlin.gradle.plugin.mpp.external.DecoratedExternalKotlinCompilation
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask
@@ -38,33 +33,6 @@ open class KotlinMultiplatformAndroidCompilationImpl(
     @Suppress("UNCHECKED_CAST")
     override val compileTaskProvider: TaskProvider<out KotlinCompilationTask<KotlinJvmCompilerOptions>>
         get() = super.compileTaskProvider as TaskProvider<KotlinCompilationTask<KotlinJvmCompilerOptions>>
-
-    // This is a workaround for non-removable parametrization for compiler options, it should be
-    // safe to cast as the type will always be KotlinJvmCompilerOptions
-    @Suppress("UNCHECKED_CAST")
-    @Deprecated("To configure compilation compiler options use 'compileTaskProvider':\ncompilation.compileTaskProvider.configure{\n    compilerOptions {}\n}")
-    override val compilerOptions
-        get() = super.compilerOptions as HasCompilerOptions<KotlinJvmCompilerOptions>
-
-    @Deprecated("Use compilerOptions instead of kotlinOptions to configure compilations")
-    override val kotlinOptions: KotlinCommonOptions
-        get() = super.kotlinOptions
-
-    @Deprecated(
-        "Use compilerOptions instead of kotlinOptions to configure compilations",
-        ReplaceWith("compilerOptions.configure { }")
-    )
-    override fun kotlinOptions(configure: KotlinCommonOptions.() -> Unit) {
-        super.kotlinOptions(configure)
-    }
-
-    @Deprecated(
-        "Use compilerOptions instead of kotlinOptions to configure compilations",
-        ReplaceWith("compilerOptions.configure { }")
-    )
-    override fun kotlinOptions(configure: Action<KotlinCommonOptions>) {
-        super.kotlinOptions(configure)
-    }
 
     override val componentName: String
         get() = this.compilationName.getNamePrefixedWithAndroidTarget()

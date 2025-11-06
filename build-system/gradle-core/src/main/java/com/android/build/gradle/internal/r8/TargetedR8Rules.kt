@@ -17,6 +17,8 @@
 package com.android.build.gradle.internal.r8
 
 import com.android.build.gradle.internal.dependency.ShrinkerVersion
+import com.android.build.gradle.internal.r8.LegacyProguardRules.Companion.PROGUARD_TXT_FOR_AAR
+import com.android.ide.common.r8.ConsumerRuleGlobalGuardian
 import java.io.File
 import java.util.zip.ZipInputStream
 

@@ -20,12 +20,11 @@ import com.android.SdkConstants.DOT_JAVA
 import com.android.SdkConstants.DOT_KT
 import com.android.SdkConstants.FD_JNI
 import com.android.SdkConstants.FN_NAVIGATION_JSON
+import com.android.SdkConstants.FN_PROGUARD_TXT
 import com.android.build.api.artifact.Artifact
-import com.android.build.api.artifact.ArtifactKind
 import com.android.build.gradle.internal.fusedlibrary.FusedLibraryConstants
 import com.android.build.gradle.internal.fusedlibrary.FusedLibraryGlobalScope
 import com.android.build.gradle.internal.fusedlibrary.FusedLibraryInternalArtifactType.*
-import com.android.build.gradle.internal.privaysandboxsdk.PrivacySandboxSdkVariantScope
 import com.android.build.gradle.internal.profile.ProfileAwareWorkAction
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
 import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactType
@@ -38,6 +37,7 @@ import com.android.build.gradle.internal.tasks.mergeJavaNativeLibs
 import com.android.build.gradle.internal.utils.setDisallowChanges
 import com.android.buildanalyzer.common.TaskCategory
 import com.android.builder.packaging.JarFlinger
+import com.android.ide.common.r8.ConsumerRuleGlobalGuardian
 import com.android.utils.usLocaleCapitalize
 import org.gradle.api.attributes.DocsType
 import org.gradle.api.file.ConfigurableFileCollection
@@ -57,6 +57,7 @@ import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskProvider
+import java.io.File
 import java.io.File.*
 
 /**
@@ -163,6 +164,35 @@ abstract class FusedLibraryMergeArtifactTask : NonIncrementalGlobalTask() {
                             }
                         }
                     }
+                    ArtifactType.UNFILTERED_PROGUARD_RULES -> {
+                        val consumerProguardFiles = inputFiles
+                            .flatMap(File::walkBottomUp)
+                            .asSequence()
+                            .filter(File::isFile)
+                            .filterNot { it.length() == 0L }
+                            .onEach {
+                                if (it.name != FN_PROGUARD_TXT) {
+                                    error("Expected a file named '$FN_PROGUARD_TXT' but found file entry named '${it.name}'.")
+                                }
+                                ConsumerRuleGlobalGuardian.validateConsumerRulesHasNoBannedGlobals(
+                                    it,
+                                    false,
+                                    { error(it.errorMessage) }
+                                )
+                            }.toList()
+                        if (consumerProguardFiles.none()) {
+                            return
+                        }
+                        val outputFile = output.get().asFile
+                        buildString {
+                            append("# Merged by Fused Library.\n")
+                            consumerProguardFiles.forEach {
+                                append(it.readText())
+                                append('\n')
+                            }
+                            outputFile.writeText(toString())
+                        }
+                    }
                     else -> {
                         val supportedArtifacts = mergeArtifactMap.map { it.first }
                         if (currentArtifactType !in supportedArtifacts) {
@@ -247,49 +277,6 @@ abstract class FusedLibraryMergeArtifactTask : NonIncrementalGlobalTask() {
 
     }
 
-    class CreateActionPrivacySandboxSdk(val creationConfig: PrivacySandboxSdkVariantScope,
-            private val androidArtifactType: ArtifactType,
-            private val internalArtifactType: Artifact.Single<*>) :
-            GlobalTaskCreationAction<FusedLibraryMergeArtifactTask>() {
-
-        override val name: String
-            get() = "mergingArtifact${androidArtifactType.name.usLocaleCapitalize()}"
-        override val type: Class<FusedLibraryMergeArtifactTask>
-            get() = FusedLibraryMergeArtifactTask::class.java
-
-        override fun handleProvider(taskProvider: TaskProvider<FusedLibraryMergeArtifactTask>) {
-            super.handleProvider(taskProvider)
-
-            when (internalArtifactType.kind) {
-                ArtifactKind.DIRECTORY ->
-                    creationConfig.artifacts.setInitialProvider(
-                            taskProvider,
-                            FusedLibraryMergeArtifactTask::outputDir
-                    ).withName(androidArtifactType.name.lowercase())
-                            .on(internalArtifactType as Artifact.Single<Directory>)
-                ArtifactKind.FILE ->
-                    creationConfig.artifacts.setInitialProvider(
-                            taskProvider,
-                            FusedLibraryMergeArtifactTask::outputFile
-                    ).withName(androidArtifactType.name.lowercase())
-                            .on(internalArtifactType as Artifact.Single<RegularFile>)
-            }
-        }
-
-        override fun configure(task: FusedLibraryMergeArtifactTask) {
-            super.configure(task)
-
-            task.artifactFiles.setFrom(
-                    creationConfig.dependencies.getArtifactFileCollection(
-                        AndroidArtifacts.ConsumedConfigType.RUNTIME_CLASSPATH,
-                        androidArtifactType
-                    )
-            )
-            task.artifactType.setDisallowChanges(androidArtifactType)
-        }
-
-    }
-
     abstract class AarMetadataInputs {
 
         @get:Input
@@ -318,14 +305,11 @@ abstract class FusedLibraryMergeArtifactTask : NonIncrementalGlobalTask() {
                         ArtifactType.NAVIGATION_JSON to FusedArtifact.File(MERGED_NAVIGATION_JSON, FN_NAVIGATION_JSON),
                         ArtifactType.SOURCES_JAR to FusedArtifact.File(MERGED_SOURCES_JAR, "${DocsType.SOURCES}.jar"),
                         ArtifactType.AAR_METADATA to FusedArtifact.File(MERGED_AAR_METADATA, AAR_METADATA_FILE_NAME),
+                        ArtifactType.UNFILTERED_PROGUARD_RULES to FusedArtifact.File(MERGED_CONSUMER_PROGUARD_RULES, FN_PROGUARD_TXT)
                 )
         fun getCreationActions(creationConfig: FusedLibraryGlobalScope) :
                 List<CreateActionFusedLibrary> {
             return mergeArtifactMap.map { CreateActionFusedLibrary(creationConfig, it.first, it.second) }
-        }
-        fun getCreationActions(creationConfig: PrivacySandboxSdkVariantScope) :
-                List<CreateActionPrivacySandboxSdk> {
-            return mergeArtifactMap.map { CreateActionPrivacySandboxSdk(creationConfig, it.first, it.second.artifactType) }
         }
     }
 }

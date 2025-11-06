@@ -140,6 +140,10 @@ open class TestVariantImpl @Inject constructor(
         getTestedModuleDirectoryArtifact(AndroidArtifacts.ArtifactType.APK)
     }
 
+    override val allTestedApks: Provider<List<Directory>> by lazy {
+        getTestedModuleAllDirectoryArtifacts(AndroidArtifacts.ArtifactType.APK)
+    }
+
     override val privacySandboxCompatApks: Provider<Directory>? by lazy {
         if (!privacySandboxEnabled) {
             return@lazy null
@@ -157,16 +161,23 @@ open class TestVariantImpl @Inject constructor(
     }
 
     private fun getTestedModuleDirectoryArtifact(
-        artifactType: AndroidArtifacts.ArtifactType): Provider<Directory> {
+        artifactType: AndroidArtifacts.ArtifactType): Provider<Directory> =
+        getTestedModuleAllDirectoryArtifacts(artifactType).map { it.firstOrNull() }
+
+
+    private fun getTestedModuleAllDirectoryArtifacts(
+        artifactType: AndroidArtifacts.ArtifactType): Provider<List<Directory>> {
         val projectDirectory = services.projectInfo.projectDirectory
         return variantDependencies.getArtifactFileCollection(
             AndroidArtifacts.ConsumedConfigType.PROVIDED_CLASSPATH,
             AndroidArtifacts.ArtifactScope.ALL,
             artifactType
-        ).elements.map {
-            projectDirectory.dir(
-                it.single().asFile.absolutePath
-            )
+        ).elements.map { elements ->
+            elements.map { element ->
+                projectDirectory.dir(
+                    element.asFile.absolutePath
+                )
+            }
         }
     }
 

@@ -244,6 +244,7 @@ enum class BooleanOption(
     /* ---------------------
      * EXPERIMENTAL FEATURES
      */
+    KMP_USE_JVM_PLATFORM_TYPE("android.kmp.use.jvm.platform.type", false, FeatureStage.Experimental),
     DISABLE_KMP_RUNTIME_CLASSPATH("android.kmp.disable.runtime.classpath", false, FeatureStage.Experimental),
     ENABLE_PROFILE_JSON("android.enableProfileJson", false, FeatureStage.Experimental),
     DISALLOW_DEPENDENCY_RESOLUTION_AT_CONFIGURATION("android.dependencyResolutionAtConfigurationTime.disallow", false, FeatureStage.Experimental),
@@ -588,8 +589,8 @@ enum class BooleanOption(
      */
     DISALLOW_USES_SDK_IN_MANIFEST(
         "android.usesSdkInManifest.disallowed",
-        false,
-        FeatureStage.SoftlyEnforced(VERSION_9_0)
+        true,
+        FeatureStage.SoftlyEnforced(VERSION_10_0)
     ),
 
     DEFAULT_TARGET_SDK_TO_COMPILE_SDK_IF_UNSET(

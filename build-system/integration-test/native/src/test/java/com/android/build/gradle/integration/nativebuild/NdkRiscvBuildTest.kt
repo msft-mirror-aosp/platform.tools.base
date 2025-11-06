@@ -50,6 +50,9 @@ class NdkRiscvBuildTest {
                     buildToolsVersion '${GradleTestProject.DEFAULT_BUILD_TOOL_VERSION}'
                     defaultConfig {
                         minSdk = 21
+                        ndk {
+                            abiFilters 'x86', 'riscv64'
+                        }
                     }
                     externalNativeBuild {
                         cmake {

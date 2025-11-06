@@ -63,7 +63,9 @@ class KotlinMultiplatformAndroidVitalsTest {
                 }
             }
         }
-        val result = build.executor.run(":shared:assembleAndroidMain")
+        val result = build.executor
+            .withFailOnWarning(false) // b/455891987
+            .run(":shared:assembleAndroidMain")
         result.assertOutputContains(
             "compileSdkVersion=android-36"
         )
@@ -75,7 +77,9 @@ class KotlinMultiplatformAndroidVitalsTest {
      */
     @Test
     fun kotlinMultiplatformPluginIsAppliedFirst() {
-        rule.build.executor.run(":shared:androidPrebuild")
+        rule.build.executor
+            .withFailOnWarning(false) // b/455891987
+            .run(":shared:androidPrebuild")
     }
 
     @Test

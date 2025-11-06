@@ -20,6 +20,7 @@ import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition.Companion.DEFAULT_COMPILE_SDK_VERSION
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 
@@ -47,11 +48,18 @@ class KotlinMultiplatformKspTest {
             }
         }
 
+    @Ignore("b/456678483")
     @Test
     fun testRunningKsp() {
         val build = rule.build
-        build.executor.run(":shared:kspAndroidMain")
-        build.executor.run(":shared:kspAndroidDeviceTest")
-        build.executor.run(":shared:kspAndroidHostTest")
+        build.executor
+            .withFailOnWarning(false) // b/455891987
+            .run(":shared:kspAndroidMain")
+        build.executor
+            .withFailOnWarning(false) // b/455891987
+            .run(":shared:kspAndroidDeviceTest")
+        build.executor
+            .withFailOnWarning(false) // b/455891987
+            .run(":shared:kspAndroidHostTest")
     }
 }

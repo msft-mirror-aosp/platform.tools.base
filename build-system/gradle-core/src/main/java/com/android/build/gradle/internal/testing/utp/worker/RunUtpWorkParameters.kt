@@ -17,11 +17,8 @@
 package com.android.build.gradle.internal.testing.utp.worker
 
 import com.android.build.gradle.internal.testing.StaticTestData
-import com.android.build.gradle.internal.testing.utp.ShardConfig
 import com.android.build.gradle.internal.testing.utp.TEST_RESULT_PB_FILE_NAME
-import com.android.build.gradle.internal.testing.utp.TargetApkConfigBundle
 import com.android.build.gradle.internal.testing.utp.UtpDependencies
-import com.android.build.gradle.internal.testing.utp.emulatorcontrol.EmulatorControlConfig
 import com.android.build.gradle.internal.utils.fromDisallowChanges
 import com.android.build.gradle.internal.utils.setDisallowChanges
 import org.gradle.api.file.ConfigurableFileCollection
@@ -33,6 +30,7 @@ import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
 import org.gradle.workers.WorkParameters
 import java.io.File
+import java.io.Serializable
 import java.nio.file.Path
 import java.util.logging.Level
 
@@ -116,64 +114,26 @@ interface RunUtpWorkParameters : WorkParameters {
 }
 
 /**
- * Factory function to create and configure a [RunUtpWorkParameters.UtpRunConfig] instance.
+ * Encapsulates installation configuration for app APKs
  */
-fun createUtpRunConfig(
-    objectFactory: ObjectFactory,
-    deviceId: String,
-    deviceName: String,
-    deviceSerialNumber: String,
-    testData: StaticTestData,
-    targetApkConfigBundle: TargetApkConfigBundle,
-    additionalInstallOptions: Iterable<String>,
-    helperApks: Iterable<File>,
-    uninstallIncompatibleApks: Boolean,
-    outputDir: File,
-    emulatorControlConfig: EmulatorControlConfig,
-    coverageOutputDir: File,
-    useOrchestrator: Boolean,
-    forceCompilation: Boolean,
-    additionalTestOutputDir: File?,
-    additionalTestOutputOnDeviceDir: String?,
-    installApkTimeout: Int?,
-    extractedSdkApks: List<List<Path>>,
-    uninstallApksAfterTest: Boolean,
-    reinstallIncompatibleApksBeforeTest: Boolean,
-    shardConfig: ShardConfig?,
-    loggingLevel: Level,
-): RunUtpWorkParameters.UtpRunConfig {
-    val utpRunConfig = objectFactory.newInstance(RunUtpWorkParameters.UtpRunConfig::class.java)
+data class TargetApkConfigBundle (
+    val appApks: List<File>,
+    val isSplitApk: Boolean
+) : Serializable
 
-    utpRunConfig.deviceId.setDisallowChanges(deviceId)
-    utpRunConfig.deviceName.setDisallowChanges(deviceName)
-    utpRunConfig.deviceShardName.setDisallowChanges(if (shardConfig == null) {
-        deviceName
-    } else {
-        "${deviceName}_${shardConfig.index}"
-    })
-    utpRunConfig.utpResultProtoOutputFile.fileValue(
-        File(outputDir, TEST_RESULT_PB_FILE_NAME)).disallowChanges()
-    utpRunConfig.deviceSerialNumber.setDisallowChanges(deviceSerialNumber)
-    utpRunConfig.testData.setDisallowChanges(testData)
-    utpRunConfig.targetApkConfigBundle.setDisallowChanges(targetApkConfigBundle)
-    utpRunConfig.additionalInstallOptions.setDisallowChanges(additionalInstallOptions)
-    utpRunConfig.helperApks.fromDisallowChanges(helperApks)
-    utpRunConfig.uninstallIncompatibleApks.setDisallowChanges(uninstallIncompatibleApks)
-    utpRunConfig.outputDir.fileValue(outputDir).disallowChanges()
-    utpRunConfig.emulatorControlConfig.setDisallowChanges(emulatorControlConfig)
-    utpRunConfig.coverageOutputDir.fileValue(coverageOutputDir).disallowChanges()
-    utpRunConfig.useOrchestrator.setDisallowChanges(useOrchestrator)
-    utpRunConfig.forceCompilation.setDisallowChanges(forceCompilation)
-    utpRunConfig.additionalTestOutputDir.fileValue(additionalTestOutputDir).disallowChanges()
-    utpRunConfig.additionalTestOutputOnDeviceDir.setDisallowChanges(additionalTestOutputOnDeviceDir)
-    utpRunConfig.installApkTimeout.setDisallowChanges(installApkTimeout)
-    utpRunConfig.extractedSdkApks.setDisallowChanges(extractedSdkApks.map {
-        objectFactory.fileCollection().convention(it).apply { disallowChanges() }
-    })
-    utpRunConfig.uninstallApksAfterTest.setDisallowChanges(uninstallApksAfterTest)
-    utpRunConfig.reinstallIncompatibleApksBeforeTest.setDisallowChanges(reinstallIncompatibleApksBeforeTest)
-    utpRunConfig.shardConfig.setDisallowChanges(shardConfig)
-    utpRunConfig.loggingLevel.setDisallowChanges(loggingLevel)
+/**
+ * Information needed to access the emulator from within the tests.
+ */
+data class EmulatorControlConfig(
+    val enabled: Boolean,
+    val allowedEndpoints: Set<String>,
+    val secondsValid: Int,
+) : Serializable
 
-    return utpRunConfig
-}
+/**
+ * Class for keeping track of all sharding information to invoke a single shard.
+ *
+ * @param totalCount The total number of shards in this test invocation.
+ * @param index The index of the this shard, should be in the range 0 to ([totalCount] - 1)
+ */
+data class ShardConfig(val totalCount: Int, val index: Int) : Serializable

@@ -17,13 +17,12 @@
 package com.android.build.gradle.integration.common.fixture.project
 
 import com.android.build.api.artifact.Artifact
-import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification
 import com.android.build.gradle.integration.common.fixture.project.builder.DirectGradleProjectFiles
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectFiles
+import com.android.build.gradle.integration.common.fixture.project.reversible.FileChangeController
 import com.android.testutils.MavenRepoGenerator
-import java.io.File
 import java.nio.file.Path
 import java.util.Locale
 
@@ -73,7 +72,7 @@ interface GradleProject<out ProjectDefinitionT : GradleProjectDefinition> {
 internal abstract class GradleProjectImpl<ProjectDefinitionT : GradleProjectDefinition>(
     internal val location: Path,
     protected val projectDefinition: ProjectDefinitionT,
-) : GradleProject<ProjectDefinitionT>, TemporaryProjectModification.FileProvider {
+) : GradleProject<ProjectDefinitionT> {
 
     override fun resolve(path: String): Path {
         // let's not allow access to the build file via this API.
@@ -99,11 +98,6 @@ internal abstract class GradleProjectImpl<ProjectDefinitionT : GradleProjectDefi
 
     override val buildDir: Path
         get() = location.resolve("build")
-
-    // internal implementation of TemporaryProjectModification.FileProvider
-    override fun file(path: String): File? {
-        return location.resolve(path).toFile()
-    }
 
     override fun reconfigure(action: ProjectDefinitionT.() -> Unit) {
         // gather previous data
@@ -150,6 +144,6 @@ internal abstract class GradleProjectImpl<ProjectDefinitionT : GradleProjectDefi
         }
     }
 
-    abstract fun getReversibleInstance(projectModification: TemporaryProjectModification): GradleProject<ProjectDefinitionT>
+    abstract fun getReversibleInstance(fileChangeController: FileChangeController): GradleProject<ProjectDefinitionT>
 }
 

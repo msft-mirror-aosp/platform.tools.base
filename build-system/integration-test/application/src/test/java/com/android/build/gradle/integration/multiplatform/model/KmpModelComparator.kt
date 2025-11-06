@@ -69,10 +69,14 @@ class KmpModelComparator(
 
             // the normalizer doesn't cover the modules-2 files, since the path contains the library
             // itself, we just override it here.
-            if (normalizedString.startsWith(
-                    "{GRADLE}/caches/modules-2/files-2.1/com.example/kmpSecondLib-android/1.0/"
-                )) {
-                "{GRADLE_CACHE}/{MODULES_2}/{LIBRARY_COORDINATES}/{CHECKSUM}/" +
+            if (normalizedString.startsWith("{GRADLE}/caches/modules-2/files-2.1/com.example/kmpSecondLib-android/1.0/")
+                || normalizedString.startsWith("{GRADLE}/caches/modules-2/files-2.1/com.example/kmpLibraryPlugin-android/1.0/")
+            ) {
+                "{GRADLE_CACHE}/{MODULES_2}/" +
+                        normalizedString.substringAfter("{GRADLE}/caches/modules-2/files-2.1/")
+                            .substringBeforeLast("/")
+                            .substringBeforeLast("/") +
+                        "/{CHECKSUM}/" +
                         normalizedString.substringAfterLast("/")
             } else if (normalizedString.endsWith("transformed/local-api.jar")) {
                 // kotlin gradle plugin uses relative path to represent local file coordinates
@@ -139,7 +143,9 @@ class KmpModelComparator(
         // Generate project structure metadata json file for all subproject
         // They are needed in order to resolve project dependencies
         val executor = project.executor().withConfigurationCaching(configCacheMode)
-        executor.run("generateProjectStructureMetadata")
+        executor
+            .withFailOnWarning(false) // b/455891987
+            .run("generateProjectStructureMetadata")
 
         projects.forEach { projectPath ->
             fetchModels(projectPath, executor).forEach { (reportName, content) ->

@@ -67,6 +67,11 @@ interface AarBuilder {
     fun withManifest(content: String): AarBuilder
 
     /**
+     * Configures the content of the proguard.txt file.
+     */
+    fun withProguardRules(content: String): AarBuilder
+
+    /**
      * Adds android resources to the AAR.
      *
      * The key is the path of the file, under the `res` folder.
@@ -153,6 +158,7 @@ internal class AarBuilderImpl(
     private var apiJar: ByteArray? = null
     private var lintJar: ByteArray? = null
     private var manifest: String? = null
+    private var proguard: String? = null
     private val resources = mutableMapOf<String, ByteArray>()
     private val extraFiles = mutableMapOf<String, ByteArray>()
     private var fixtures: LibraryData? = null
@@ -185,6 +191,7 @@ internal class AarBuilderImpl(
                 apiJar,
                 lintJar,
                 manifest ?: """<manifest package="$groupId"></manifest>""",
+                proguard,
                 extraFiles
             ),
             dependencies
@@ -235,6 +242,11 @@ internal class AarBuilderImpl(
 
     override fun withManifest(content: String): AarBuilder {
         manifest = content
+        return this
+    }
+
+    override fun withProguardRules(content: String): AarBuilder {
+        proguard = content
         return this
     }
 

@@ -53,53 +53,6 @@ class FullSplitsHandlingTest {
 
     @Test
     @Throws(Exception::class)
-    fun checkDensityOnlySplits() {
-        Files.asCharSink(sProject.buildFile, Charsets.UTF_8, FileWriteMode.APPEND).write(
-            "android {\n"
-                    + "    splits {\n"
-                    + "        density {\n"
-                    + "            enable = true\n"
-                    + "            reset()\n"
-                    + "            include \"ldpi\", \"hdpi\"\n"
-                    + "        }\n"
-                    + "    }\n"
-                    + "    testOptions {\n" +
-                    "        unitTests.includeAndroidResources = true\n" +
-                    "    }"
-                    + "}")
-
-       runAndCheckBuild()
-    }
-
-    @Test
-    @Throws(Exception::class)
-    fun checkCombinedSplits() {
-        Files.asCharSink(sProject.buildFile, Charsets.UTF_8, FileWriteMode.APPEND).write(
-            "android {\n"
-                    + "    splits {\n"
-                    + "        abi {\n"
-                    + "            enable = true\n"
-                    + "            reset()\n"
-                    + "            include 'x86', 'armeabi-v7a'\n"
-                    + "            universalApk = false\n"
-                    + "        }\n"
-                    + "        density {\n"
-                    + "            enable = true\n"
-                    + "            reset()\n"
-                    + "            include \"ldpi\", \"hdpi\"\n"
-                    + "        }\n"
-                    + "    }\n"
-                    + "    testOptions {\n" +
-                    "        unitTests.includeAndroidResources = true\n" +
-                    "    }"
-                    + "}"
-        )
-
-        runAndCheckBuild()
-    }
-
-    @Test
-    @Throws(Exception::class)
     fun checkNoSplits() {
         Files.asCharSink(sProject.buildFile, Charsets.UTF_8, FileWriteMode.APPEND).write(
             "android {\n"

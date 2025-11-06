@@ -209,16 +209,11 @@ class ApplicationVariantFactory(
         globalConfig: GlobalTaskCreationConfig,
     ) {
         variant.calculateFilters(globalConfig.splits)
-        val densities = variant.getFilters(VariantOutput.FilterType.DENSITY)
         val abis = variant.getFilters(VariantOutput.FilterType.ABI)
         val nativeBuildCreationConfig = appVariant.nativeBuildCreationConfig!!
         checkSplitsConflicts(nativeBuildCreationConfig, abis, globalConfig)
-        if (densities.isNotEmpty()) {
-            variant.compatibleScreens = globalConfig.splits.density
-                .compatibleScreens
-        }
         val variantOutputs =
-            populateMultiApkOutputs(abis, densities, globalConfig)
+            populateMultiApkOutputs(abis, globalConfig)
         variantOutputs.forEach { appVariant.addVariantOutput(it) }
         restrictEnabledOutputs(
             nativeBuildCreationConfig,
@@ -229,11 +224,10 @@ class ApplicationVariantFactory(
 
     private fun populateMultiApkOutputs(
         abis: Set<String>,
-        densities: Set<String>,
         globalConfig: GlobalTaskCreationConfig
     ): List<VariantOutputConfigurationImpl> {
 
-        if (densities.isEmpty() && abis.isEmpty()) {
+        if (abis.isEmpty()) {
             // If both are empty, we will have only the main Apk.
             return listOf(VariantOutputConfigurationImpl())
         }
@@ -268,38 +262,7 @@ class ApplicationVariantFactory(
                 }
             )
         }
-        // create its outputs
-        for (density in densities) {
-            if (abis.isNotEmpty()) {
-                for (abi in abis) {
-                    variantOutputs.add(
-                        VariantOutputConfigurationImpl(
-                            filters = listOf(
-                                FilterConfigurationImpl(
-                                    filterType = FilterConfiguration.FilterType.ABI,
-                                    identifier = abi
-                                ),
-                                FilterConfigurationImpl(
-                                    filterType = FilterConfiguration.FilterType.DENSITY,
-                                    identifier = density
-                                )
-                            )
-                        )
-                    )
-                }
-            } else {
-                variantOutputs.add(
-                    VariantOutputConfigurationImpl(
-                        filters = listOf(
-                            FilterConfigurationImpl(
-                                filterType = FilterConfiguration.FilterType.DENSITY,
-                                identifier = density
-                            )
-                        )
-                    )
-                )
-            }
-        }
+
         return variantOutputs
     }
 
@@ -337,13 +300,19 @@ class ApplicationVariantFactory(
         variantOutputs: VariantOutputList,
         globalConfig: GlobalTaskCreationConfig
     ) {
-        val supportedAbis: Set<String> = component.supportedAbis
+        // TODO
         val projectOptions = dslServices.projectOptions
         val buildTargetAbi =
             (if (projectOptions[BooleanOption.BUILD_ONLY_TARGET_ABI]
                 || globalConfig.splits.abi.isEnable
             ) projectOptions[StringOption.IDE_BUILD_TARGET_ABI] else null)
                 ?: return
+        val supportedAbis: Set<String> =
+            component.userDefinedAbis.takeIf { it.isNotEmpty() } ?: if (Strings.nullToEmpty(
+                    buildTargetAbi
+                ).isEmpty()
+            ) component.supportedAbis else setOf()
+
         val genericBuiltArtifacts = variantOutputs
             .map { variantOutput ->
                 GenericBuiltArtifact(

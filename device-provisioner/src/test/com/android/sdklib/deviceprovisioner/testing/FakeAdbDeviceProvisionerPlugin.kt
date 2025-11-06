@@ -17,8 +17,8 @@ package com.android.sdklib.deviceprovisioner.testing
 
 import com.android.adblib.ConnectedDevice
 import com.android.adblib.serialNumber
-import com.android.adblib.testingutils.FakeAdbServerProvider
 import com.android.adblib.utils.createChildScope
+import com.android.fakeadbserver.FakeDeviceCreator
 import com.android.sdklib.AndroidApiLevel
 import com.android.sdklib.AndroidVersion
 import com.android.sdklib.deviceprovisioner.ActivationAction
@@ -34,7 +34,6 @@ import com.android.sdklib.deviceprovisioner.DeviceTemplate
 import com.android.sdklib.deviceprovisioner.EmptyIcon
 import com.android.sdklib.deviceprovisioner.TestDefaultDeviceActionPresentation
 import com.android.sdklib.deviceprovisioner.awaitDisconnection
-import com.android.sdklib.deviceprovisioner.testing.FakeAdbDeviceProvisionerPlugin.FakeDeviceHandle
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -47,7 +46,7 @@ import kotlinx.coroutines.launch
  */
 class FakeAdbDeviceProvisionerPlugin(
   val scope: CoroutineScope,
-  private val fakeAdb: FakeAdbServerProvider,
+  private val fakeDeviceCreator: FakeDeviceCreator,
   override val priority: Int = 1,
 ) : DeviceProvisionerPlugin {
   /** If true, devices do not enter ready state after activation until finishBoot is called */
@@ -165,7 +164,7 @@ class FakeAdbDeviceProvisionerPlugin(
         override suspend fun activate() {
           val properties = state.properties
           fakeAdbDevice =
-            fakeAdb
+            fakeDeviceCreator
               .connectDevice(
                 serialNumber,
                 properties.manufacturer ?: "(Unknown manufacturer)",
@@ -184,7 +183,7 @@ class FakeAdbDeviceProvisionerPlugin(
           MutableStateFlow(TestDefaultDeviceActionPresentation.fromContext())
 
         override suspend fun deactivate() {
-          fakeAdb.disconnectDevice(serialNumber)
+          fakeDeviceCreator.disconnectDevice(serialNumber)
           fakeAdbDevice = null
         }
       }

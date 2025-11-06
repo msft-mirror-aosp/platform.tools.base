@@ -26,6 +26,8 @@ import static com.android.sdklib.internal.avd.ConfigKey.ROLL;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import static org.junit.Assert.assertThrows;
+
 import static java.util.stream.Collectors.toList;
 
 import com.android.annotations.Nullable;
@@ -45,6 +47,7 @@ import com.android.sdklib.repository.IdDisplay;
 import com.android.sdklib.repository.meta.DetailsTypes;
 import com.android.sdklib.repository.targets.SystemImage;
 import com.android.testutils.NoErrorsOrWarningsLogger;
+import com.android.utils.NullLogger;
 import com.android.utils.StdLogger;
 
 import org.jetbrains.annotations.NotNull;
@@ -58,6 +61,8 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class DeviceManagerTest {
 
@@ -1142,5 +1147,27 @@ public class DeviceManagerTest {
                             + "Warning: Unsupported device xr_headset_device\n"
                             + "Warning: Unsupported device ai_glasses_device\n"
                             + "Warning: Unsupported device xr_glasses_device\n");
+    }
+
+    @Test
+    public void testCancellation() {
+        int totalDeviceCount = createDeviceManager().getDevices(DeviceManager.ALL_DEVICES).size();
+
+        AtomicBoolean shouldThrow = new AtomicBoolean(true);
+        AndroidSdkHandler sdkHandler = sdkManager.getSdkHandler();
+        DeviceManager deviceManager =
+                DeviceManager.createInstance(
+                        sdkHandler,
+                        NullLogger.getLogger(),
+                        (device) -> {
+                            if (shouldThrow.get()) throw new CancellationException();
+                            return true;
+                        });
+        assertThrows(
+                CancellationException.class,
+                () -> deviceManager.getDevices(DeviceManager.ALL_DEVICES));
+        shouldThrow.set(false);
+        Collection<Device> devices = deviceManager.getDevices(DeviceManager.ALL_DEVICES);
+        assertThat(devices).hasSize(totalDeviceCount);
     }
 }

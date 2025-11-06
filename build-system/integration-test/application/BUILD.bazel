@@ -90,7 +90,6 @@ TEST_DATA = [
     "//tools/base/build-system/integration-test:test-projects/customArtifactDep",
     "//tools/base/build-system/integration-test:test-projects/daggerTwo",
     "//tools/base/build-system/integration-test:test-projects/databindingIncremental",
-    "//tools/base/build-system/integration-test:test-projects/densitySplit",
     "//tools/base/build-system/integration-test:test-projects/dependencies",
     "//tools/base/build-system/integration-test:test-projects/dynamicApp",
     "//tools/base/build-system/integration-test:test-projects/embedded",
@@ -260,7 +259,6 @@ single_gradle_integration_test_per_source(
             "src/test/java/com/android/build/gradle/integration/resources/**",
             "src/test/java/com/android/build/gradle/integration/dependencies/**",
             "src/test/java/com/android/build/gradle/integration/fusedlibrary/**",
-            "src/test/java/com/android/build/gradle/integration/privacysandbox/**",
             "src/test/java/com/android/build/gradle/integration/multiplatform/v2/**",
             "src/test/java/com/android/build/gradle/integration/multiplatform/v1/**",
             "src/test/java/com/android/build/gradle/integration/multiplatform/model/**",
@@ -720,83 +718,6 @@ gradle_integration_test(
     deps = TEST_DEPS,
 )
 
-PRIVACY_SANDBOX_CONSUMPTION_TESTS = [
-    "src/test/java/com/android/build/gradle/integration/privacysandbox/*Consumption*.java",
-    "src/test/java/com/android/build/gradle/integration/privacysandbox/*Consumption*.kt",
-]
-
-PRIVACY_SANDBOX_SDK_TO_SDK_TESTS = [
-    "src/test/java/com/android/build/gradle/integration/privacysandbox/PrivacySandboxSdkToSdkTest.kt",
-]
-
-PRIVACY_SANDBOX_MAVEN_REPOS = [
-    "//tools/base/build-system:android_gradle_plugin_runtime_dependencies",
-    "//tools/base/build-system/integration-test:androidx_latest",
-    "//tools/base/build-system/integration-test:support_library_latest",
-    "//tools/base/build-system/integration-test:kotlin_and_ksp_dependencies_for_privacy_sandbox_tests",
-    "//tools/base/build-system/integration-test/application:prebuilts",
-]
-
-gradle_integration_test(
-    name = "privacy-sandbox-tests",
-    timeout = "long",
-    srcs = glob(
-        [
-            "src/test/java/com/android/build/gradle/integration/privacysandbox/*.java",
-            "src/test/java/com/android/build/gradle/integration/privacysandbox/*.kt",
-        ],
-        exclude = CONNECTED_TESTS + PRIVACY_SANDBOX_CONSUMPTION_TESTS + PRIVACY_SANDBOX_SDK_TO_SDK_TESTS,
-    ),
-    data = TEST_DATA,
-    maven_repo_zips = [
-        "//tools/base/build-system:android_gradle_plugin",
-    ],
-    maven_repos = PRIVACY_SANDBOX_MAVEN_REPOS,
-    resources = glob(["src/test/resources/**"]),
-    shard_count = 5,
-    tags = [
-        "manual",  # b/438949791
-        "noci:studio-win",
-    ],
-    deps = TEST_DEPS,
-)
-
-single_gradle_integration_test(
-    name = "PrivacySandboxSdkToSdkTest",
-    timeout = "long",
-    srcs = "src/test/java/com/android/build/gradle/integration/privacysandbox/",
-    data = TEST_DATA,
-    maven_repo_zips = [
-        "//tools/base/build-system:android_gradle_plugin",
-    ],
-    maven_repos = PRIVACY_SANDBOX_MAVEN_REPOS,
-    resources = glob(["src/test/resources/**"]),
-    tags = [
-        "manual",  # b/438949791
-    ],
-    deps = TEST_DEPS,
-)
-
-gradle_integration_test(
-    name = "privacy-sandbox-consumption-tests",
-    timeout = "long",
-    srcs = glob(
-        PRIVACY_SANDBOX_CONSUMPTION_TESTS,
-        exclude = CONNECTED_TESTS,
-    ),
-    data = TEST_DATA,
-    maven_repo_zips = [
-        "//tools/base/build-system:android_gradle_plugin",
-    ],
-    maven_repos = PRIVACY_SANDBOX_MAVEN_REPOS,
-    resources = glob(["src/test/resources/**"]),
-    shard_count = 2,
-    tags = [
-        "manual",  # b/438949791
-    ],
-    deps = TEST_DEPS,
-)
-
 gradle_integration_test(
     name = "testfixtures-tests",
     timeout = "long",
@@ -1138,17 +1059,6 @@ maven_repository(
         "@maven//:androidx.navigation.navigation-fragment_2.5.2",
         "@maven//:androidx.navigation.navigation-safe-args-gradle-plugin_2.3.1",
         "@maven//:androidx.navigation.navigation-safe-args-gradle-plugin_2.5.2",
-        "@maven//:androidx.privacysandbox.activity.activity-client_1.0.0-alpha02",
-        "@maven//:androidx.privacysandbox.activity.activity-core_1.0.0-alpha02",
-        "@maven//:androidx.privacysandbox.activity.activity-provider_1.0.0-alpha02",
-        "@maven//:androidx.privacysandbox.sdkruntime.sdkruntime-client_1.0.0-alpha17",
-        "@maven//:androidx.privacysandbox.sdkruntime.sdkruntime-core_1.0.0-alpha17",
-        "@maven//:androidx.privacysandbox.tools.tools-apicompiler_1.0.0-alpha13",
-        "@maven//:androidx.privacysandbox.tools.tools-apigenerator_1.0.0-alpha13",
-        "@maven//:androidx.privacysandbox.tools.tools-apipackager_1.0.0-alpha13",
-        "@maven//:androidx.privacysandbox.tools.tools_1.0.0-alpha13",
-        "@maven//:androidx.privacysandbox.ui.ui-client_1.0.0-alpha16",
-        "@maven//:androidx.privacysandbox.ui.ui-core_1.0.0-alpha16",
         "@maven//:androidx.test.core_1.3.0",
         "@maven//:androidx.test.core_1.4.0-alpha06",
         "@maven//:androidx.test.espresso.espresso-core_3.5.1",

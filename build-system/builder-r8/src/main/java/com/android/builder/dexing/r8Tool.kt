@@ -643,6 +643,7 @@ data class ResourceShrinkingConfig(
     val mergedNotCompiledResourcesInputDirs: List<File>,
     val featureLinkedResourcesInputFiles: List<File>,
     val optimizedShrinking: Boolean,
+    val nonFinalResIds: Boolean,
     val logFile: File?,
     val shrunkResourcesOutputFiles: List<File>,
     val featureShrunkResourcesOutputDir: File?

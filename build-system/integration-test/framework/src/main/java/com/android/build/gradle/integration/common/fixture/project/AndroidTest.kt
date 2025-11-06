@@ -18,11 +18,11 @@ package com.android.build.gradle.integration.common.fixture.project
 
 import com.android.build.api.dsl.ApplicationExtension
 import com.android.build.api.dsl.TestExtension
-import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification
 import com.android.build.gradle.integration.common.fixture.dsl.DslProxy
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
+import com.android.build.gradle.integration.common.fixture.project.reversible.FileChangeController
 import java.nio.file.Path
 
 /*
@@ -69,8 +69,8 @@ internal class AndroidTestImpl(
     namespace,
 ), AndroidTestProject, GeneratesApk by GeneratesApkDelegate(projectDefinition.path, location) {
 
-    override fun getReversibleInstance(projectModification: TemporaryProjectModification): AndroidTestProject =
-        ReversibleAndroidTestProject(this, projectModification)
+    override fun getReversibleInstance(fileChangeController: FileChangeController): AndroidTestProject =
+        ReversibleAndroidTestProject(this, fileChangeController)
 }
 
 /**
@@ -78,9 +78,9 @@ internal class AndroidTestImpl(
  */
 internal class ReversibleAndroidTestProject(
     parentProject: AndroidTestProject,
-    projectModification: TemporaryProjectModification
+    fileChangeController: FileChangeController
 ) : ReversibleAndroidProject<AndroidTestProject, AndroidProjectDefinition<TestExtension>>(
     parentProject,
-    projectModification
+    fileChangeController
 ), AndroidTestProject, GeneratesApk by GeneratesApkFromParentDelegate(parentProject)
 

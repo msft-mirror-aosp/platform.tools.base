@@ -16,13 +16,6 @@ android {
     testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
   }
 
-  splits {
-    density {
-      enable = true
-      exclude "ldpi", "tvdpi", "xxxhdpi"
-    }
-  }
-
   dependencies {
     implementation 'junit:junit:4.12'
     implementation "androidx.test:runner:1.4.0-alpha06"

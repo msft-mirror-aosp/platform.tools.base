@@ -194,24 +194,19 @@ class TaskMethodModifiersAndAnnotationsTest {
                 "com.android.build.gradle.internal.tasks.AndroidReportTask\$CreationAction",
                 "com.android.build.gradle.internal.tasks.AppClasspathCheckTask\$CreationAction",
                 "com.android.build.gradle.internal.tasks.AppMetadataTask\$CreationForAssetPackBundleAction",
-                "com.android.build.gradle.internal.tasks.AppMetadataTask\$PrivacySandboxSdkCreationAction",
                 "com.android.build.gradle.internal.tasks.AssetPackPreBundleTask\$CreationForAssetPackBundleAction",
                 "com.android.build.gradle.internal.tasks.BaseTask\$CreationAction",
                 "com.android.build.gradle.internal.tasks.FinalizeBundleTask\$CreationForAssetPackBundleAction",
                 "com.android.build.gradle.internal.tasks.LinkManifestForAssetPackTask\$CreationForAssetPackBundleAction",
                 "com.android.build.gradle.internal.tasks.ListingFileRedirectTask\$CreationAction",
                 "com.android.build.gradle.internal.tasks.PackageBundleTask\$CreationForAssetPackBundleAction",
-                "com.android.build.gradle.internal.tasks.PerModuleBundleTask\$PrivacySandboxSdkCreationAction",
                 "com.android.build.gradle.internal.tasks.ProcessAssetPackManifestTask\$CreationForAssetPackBundleAction",
                 "com.android.build.gradle.internal.tasks.ProguardConfigurableTask\$PrivacySandboxSdkCreationAction",
-                "com.android.build.gradle.internal.tasks.R8Task\$PrivacySandboxSdkCreationAction",
                 "com.android.build.gradle.internal.tasks.ValidateSigningTask\$CreationForAssetPackBundleAction",
-                "com.android.build.gradle.internal.tasks.ValidateSigningTask\$PrivacySandboxSdkCreationAction",
                 "com.android.build.gradle.internal.tasks.factory.AndroidVariantTaskCreationAction",
                 "com.android.build.gradle.internal.tasks.factory.TaskConfigurationActionsTest\$createTaskAction\$creationAction$1",
                 "com.android.build.gradle.tasks.ExternalNativeBuildTaskKt\$createWorkingCxxBuildTask$1",
-                "com.android.build.gradle.tasks.JavaCompileCreationAction",
-                "com.android.build.gradle.tasks.PrivacySandboxSdkMergeDexTask\$CreationAction",
+                "com.android.build.gradle.tasks.JavaCompileCreationAction"
             )
     }
 
@@ -427,7 +422,6 @@ class TaskMethodModifiersAndAnnotationsTest {
             "com.android.build.gradle.tasks.ExternalNativeCleanTask.getSdkComponents",
             "com.android.build.gradle.tasks.MergeResources.getAapt2ThreadPoolBuildService",
             "com.android.build.gradle.tasks.PrefabPackageTask.getSdkComponents",
-            "com.android.build.gradle.tasks.PrivacySandboxSdkMergeResourcesTask.getAnalytics",
             "com.android.build.gradle.tasks.RenderscriptCompile.getSdkBuildService",
             "com.android.build.gradle.tasks.ShaderCompile.getSdkBuildService",
             "com.android.build.gradle.tasks.TestSuiteTestTask.getAvdService",

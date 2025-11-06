@@ -36,20 +36,7 @@ import org.junit.runners.model.Statement
  * Don't use directly, use [GradleRule.configure].
  */
 @GradleDefinitionDsl
-interface GradleRuleBuilder: TestRule, RuleOptionBuilder {
-
-    /**
-     * Returns the [GradleRule], for a project initialized with a [GradleBuildDefinition]
-     *
-     * @param folderName the name of the folder containing the build.
-     * @param logicalName The logical name of the build in gradle. This impact the groupId information of the subprojects. if null, same as folder name
-     * @param action the action to configure the build
-     */
-    fun from(
-        folderName: String = GradleBuildDefinition.DEFAULT_BUILD_NAME,
-        logicalName: String? = null,
-        action: GradleBuildDefinition.() -> Unit
-    ): GradleRule
+interface GradleRuleBuilder: GradleRuleEntryPoint, RuleOptionBuilder, TestRule {
 
     override fun withGradleLocation(action: GradleLocationBuilder.() -> Unit): GradleRuleBuilder
     override fun withGradleOptions(action: GradleOptionBuilder<*>.() -> Unit): GradleRuleBuilder
@@ -73,10 +60,30 @@ internal class GradleRuleBuilderImpl internal constructor(): GradleRuleBuilder {
         logicalName: String?,
         action: GradleBuildDefinition.() -> Unit
     ): GradleRule {
-        val builder = GradleBuildDefinitionImpl(name = logicalName ?: folderName, rootFolderName = folderName)
+        val builder = GradleBuildDefinitionImpl(
+            name = logicalName ?: folderName,
+            rootFolderName = folderName,
+            enableDefaultContentCreation = true
+        )
         action(builder)
 
         return create(builder)
+    }
+
+    override fun fromProject(
+        testProjectName: String,
+        folderName: String,
+        logicalName: String?,
+        action: GradleBuildDefinition.() -> Unit
+    ): GradleRule {
+        val builder = GradleBuildDefinitionImpl(
+            name = logicalName ?: folderName,
+            rootFolderName = folderName,
+            enableDefaultContentCreation = false,
+        )
+        action(builder)
+
+        return create(builder, testProjectName)
     }
 
     override fun withGradleLocation(action: GradleLocationBuilder.() -> Unit): GradleRuleBuilder {
@@ -107,13 +114,15 @@ internal class GradleRuleBuilderImpl internal constructor(): GradleRuleBuilder {
     // -------------------------
 
     internal fun create(
-        gradleBuild: GradleBuildDefinitionImpl
+        gradleBuild: GradleBuildDefinitionImpl,
+        testProjectName: String? = null
     ): GradleRule {
         return GradleRuleImpl(
             buildDefinition = gradleBuild,
             ruleOptionBuilder = ruleOptionBuilder,
             externalLibraries = mavenRepository.libraries,
-            enableProfileOutput
+            enableProfileOutput,
+            testProjectName,
         )
     }
 

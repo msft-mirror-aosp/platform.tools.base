@@ -49,6 +49,12 @@ interface BuildType : BaseConfig, AndroidModel {
     /** Whether the build type is configured to generate an apk with debuggable renderscript code. */
     val isRenderscriptDebuggable: Boolean
 
+    /**
+     * Specifies a sorted list of build types that the plugin should try to use when a direct
+     * variant match with a local module dependency is not possible.
+     */
+    val matchingFallbacks: List<String>
+
     /** The optimization level of the renderscript compilation. */
     val renderscriptOptimLevel: Int
 

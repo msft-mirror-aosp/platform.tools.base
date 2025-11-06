@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.integration.resources
 
+import com.android.SdkConstants
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.MinimalSubProject
 import com.android.build.gradle.integration.common.fixture.app.MultiModuleTestProject
@@ -98,7 +99,7 @@ class PrecompileRemoteResourcesTest {
     private val localLib = MinimalSubProject.lib("com.example.localLib")
         .appendToBuild(
             """
-                dependencies { implementation name: 'publishedLib-release', ext:'aar' }
+                dependencies { implementation(project.dependencyFactory.create(null, "publishedLib-release", null, null, "aar")) }
             """.trimIndent()
         )
         .withFile(
@@ -119,7 +120,7 @@ class PrecompileRemoteResourcesTest {
     private val app = MinimalSubProject.app("com.example.app")
         .appendToBuild(
             """
-                dependencies { implementation name: 'publishedLib-release', ext:'aar' }
+                dependencies { implementation(project.dependencyFactory.create(null, "publishedLib-release", null, null, "aar")) }
                 android {
                     buildTypes {
                         release {
@@ -264,8 +265,9 @@ class PrecompileRemoteResourcesTest {
         var outputDir: File? = null
         for (subdirectory in transformCacheDir.listFiles()!!) {
             if (subdirectory.isDirectory) {
+                val windowsPlatformPrefix = if (SdkConstants.currentPlatform() == SdkConstants.PLATFORM_WINDOWS) "workspace/" else ""
                 val outputDirCandidate =
-                    File(subdirectory, "transformed/com.precompileRemoteResourcesTest.publishedLib")
+                    File(subdirectory, "${windowsPlatformPrefix}transformed/com.precompileRemoteResourcesTest.publishedLib")
                 if (outputDirCandidate.exists() && outputDirCandidate.isDirectory) {
                     assertWithMessage("Found more than one directory that could contain the output of the transform").that(
                         outputDir

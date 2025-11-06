@@ -21,6 +21,7 @@ import com.android.build.gradle.internal.LoggerWrapper
 import com.android.build.gradle.internal.fixtures.FakeFileCollection
 import com.android.build.gradle.internal.fixtures.FakeGradleDirectory
 import com.android.build.gradle.internal.fixtures.FakeGradleDirectoryProperty
+import com.android.build.gradle.internal.fixtures.FakeGradleProvider
 import com.android.build.gradle.internal.fixtures.FakeLogger
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.utils.ApkSources
@@ -100,7 +101,7 @@ class InstallVariantTaskTest(private val deviceVersion: AndroidVersion) {
         val splitApk = getSdkSupportSplitApk()
         val deviceApkOutput = DefaultDeviceApkOutput(
             ApkSources(
-                FakeGradleDirectoryProperty(FakeGradleDirectory(temporaryFolder.root)),
+                FakeGradleProvider(listOf(FakeGradleDirectory(temporaryFolder.root))),
                 FakeFileCollection(getPrivacySandboxSdkApks()),
                 FakeGradleDirectoryProperty(FakeGradleDirectory(splitApk)),
                 FakeGradleDirectoryProperty(FakeGradleDirectory(privacySandboxLegacyApkSplitsDirectory)),
@@ -148,7 +149,7 @@ class InstallVariantTaskTest(private val deviceVersion: AndroidVersion) {
         createMainApkListingFile()
         val deviceApkOutput = DefaultDeviceApkOutput(
             ApkSources(
-                FakeGradleDirectoryProperty(FakeGradleDirectory(temporaryFolder.root)),
+                FakeGradleProvider(listOf(FakeGradleDirectory(temporaryFolder.root))),
                 FakeFileCollection(ImmutableSet.of<File>()),
                 FakeGradleDirectoryProperty(null),
                 FakeGradleDirectoryProperty(null),

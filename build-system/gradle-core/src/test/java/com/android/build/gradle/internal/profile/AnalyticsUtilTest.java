@@ -137,20 +137,6 @@ public class AnalyticsUtilTest {
                             DeviceInfo.ApplicationBinaryInterface.ARME_ABI,
                             DeviceInfo.ApplicationBinaryInterface.X86_ABI);
         }
-
-        splits.density(
-                it -> {
-                    it.setEnable(true);
-                    it.reset();
-                    it.include("xxxhdpi", "xxhdpi");
-                    return Unit.INSTANCE;
-                });
-        {
-            GradleBuildSplits proto = AnalyticsUtil.toProto(splits);
-            assertThat(proto.getDensityEnabled()).isTrue();
-            assertThat(proto.getDensityAuto()).isFalse();
-            assertThat(proto.getDensityValuesList()).containsExactly(640, 480);
-        }
     }
 
     @Test

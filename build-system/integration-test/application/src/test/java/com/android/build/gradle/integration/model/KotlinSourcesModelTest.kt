@@ -113,6 +113,7 @@ class KotlinSourcesModelTest {
 
         val basicProject =
             project.modelV2()
+                .withFailOnWarning(false) // b/455891987
                 .fetchModels().container.singleProjectInfo.basicAndroidProject!!
         val deviceTestsKotlinDirs =
                 basicProject.mainSourceSet!!.androidTestSourceProvider!!.kotlinDirectories

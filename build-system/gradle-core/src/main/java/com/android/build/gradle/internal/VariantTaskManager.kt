@@ -243,11 +243,6 @@ abstract class VariantTaskManager<VariantBuilderT : VariantBuilder, VariantT : V
             variants,
             project
         )
-
-        // Global tasks required for privacy sandbox sdk consumption
-        if (variants.any { it.variant.privacySandboxCreationConfig != null }) {
-            taskFactory.register(ValidateSigningTask.PrivacySandboxSdkCreationAction(globalConfig))
-        }
     }
 
     private fun createReportTasks() {
@@ -784,13 +779,14 @@ abstract class VariantTaskManager<VariantBuilderT : VariantBuilder, VariantT : V
 
     companion object {
         private const val MULTIDEX_VERSION = "1.0.2"
+        private const val ANDROIDX_MULTIDEX_VERSION = "2.0.0"
         private const val COM_ANDROID_SUPPORT_MULTIDEX =
             "com.android.support:multidex:$MULTIDEX_VERSION"
         private val ANDROIDX_MULTIDEX_MULTIDEX =
-            AndroidXDependencySubstitution.androidXMappings.getValue("com.android.support:multidex")
+            "androidx.multidex:multidex:$ANDROIDX_MULTIDEX_VERSION"
         private const val COM_ANDROID_SUPPORT_MULTIDEX_INSTRUMENTATION =
             "com.android.support:multidex-instrumentation:$MULTIDEX_VERSION"
         private val ANDROIDX_MULTIDEX_MULTIDEX_INSTRUMENTATION =
-            AndroidXDependencySubstitution.androidXMappings.getValue("com.android.support:multidex-instrumentation")
+        "androidx.multidex:multidex-instrumentation:$ANDROIDX_MULTIDEX_VERSION"
     }
 }

@@ -17,7 +17,6 @@
 package com.android.build.gradle.integration.common.fixture.project
 
 import com.android.build.api.dsl.AiPackExtension
-import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification
 import com.android.build.gradle.integration.common.fixture.dsl.DslProxy
 import com.android.build.gradle.integration.common.fixture.project.builder.BuildWriter
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleDefinitionDsl
@@ -25,6 +24,7 @@ import com.android.build.gradle.integration.common.fixture.project.builder.Gradl
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectFiles
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
+import com.android.build.gradle.integration.common.fixture.project.reversible.FileChangeController
 import java.nio.file.Path
 
 /*
@@ -94,8 +94,8 @@ internal class AiPackImpl(
     projectDefinition,
 ), AiPackProject {
 
-    override fun getReversibleInstance(projectModification: TemporaryProjectModification): AiPackProject =
-        ReversibleAiPackProject(this, projectModification)
+    override fun getReversibleInstance(fileChangeController: FileChangeController): AiPackProject =
+        ReversibleAiPackProject(this, fileChangeController)
 }
 
 /**
@@ -103,8 +103,8 @@ internal class AiPackImpl(
  */
 internal class ReversibleAiPackProject(
     parentProject: AiPackProject,
-    projectModification: TemporaryProjectModification
+    fileChangeController: FileChangeController
 ) : ReversibleGradleProject<AiPackProject, AiPackDefinition>(
     parentProject,
-    projectModification
+    fileChangeController
 ), AiPackProject

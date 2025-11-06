@@ -66,10 +66,12 @@ class HelloWorldAppKts private constructor(val namespace: String) : KotlinHelloW
                         minSdkVersion(libs.versions.supportLibMinSdk.get())
                         testInstrumentationRunner = "android.support.test.runner.AndroidJUnitRunner"
                     }
+            }
 
-                   kotlinOptions {
-                        jvmTarget = "11"
-                   }
+            kotlin {
+                compilerOptions {
+                    jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11
+                }
             }
 
             dependencies {

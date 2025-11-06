@@ -44,7 +44,7 @@ class KotlinMultiplatformBaselineProfilesTest {
 
     @Test
     fun testKmpBaselineProfileProcessingTaskExecuted() {
-        val result = project.executor().run(":kmpFirstLib:assemble")
+        val result = executor().run(":kmpFirstLib:assemble")
         Truth.assertThat(result.didWorkTasks).containsAtLeastElementsIn(
             listOf(
                 ":kmpFirstLib:prepareAndroidMainArtProfile",
@@ -54,7 +54,7 @@ class KotlinMultiplatformBaselineProfilesTest {
 
     @Test
     fun testLibraryAarContents() {
-        project.executor().run(":kmpFirstLib:assemble")
+        executor().run(":kmpFirstLib:assemble")
 
         project.getSubproject("kmpFirstLib").assertAar(AarSelector.NO_BUILD_TYPE) {
             textFile(SdkConstants.FN_ART_PROFILE).contains("Lcom/example/kmpfirstlib/*;")
@@ -63,11 +63,13 @@ class KotlinMultiplatformBaselineProfilesTest {
 
     @Test
     fun testAppConsumingKmpLibraryRunsPrepareArtProfileTask() {
-        val result = project.executor().run(":app:mergeDebugArtProfile")
+        val result = executor().run(":app:mergeDebugArtProfile")
         Truth.assertThat(result.didWorkTasks).containsAtLeastElementsIn(
             listOf(
                 ":kmpFirstLib:prepareAndroidMainArtProfile",
             )
         )
     }
+
+    private fun executor() = project.executor().withFailOnWarning(false) // b/455891987
 }

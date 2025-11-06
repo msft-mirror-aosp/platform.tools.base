@@ -69,12 +69,7 @@ fun getPrefabFromMaven(
     val version = projectOptions[StringOption.PREFAB_VERSION] ?: DEFAULT_PREFAB_VERSION
     services.dependencies.add(
         config.name,
-        mapOf(
-            "group" to "com.google.prefab",
-            "name" to "cli",
-            "classifier" to "all",
-            "version" to version
-        )
+        "com.google.prefab:cli:${version}:all"
     )
 
     return getPrefabArtifact(config.get())

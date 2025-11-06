@@ -16,11 +16,13 @@
 
 package com.android.build.gradle.internal.testing.utp
 
+import com.android.build.gradle.internal.testing.utp.worker.createUtpTempFile
+import com.android.tools.utp.plugins.result.listener.gradle.proto.GradleAndroidTestResultListenerProto.TestResultEvent
 import com.android.utils.FileUtils
+import org.gradle.api.logging.Logging
 import java.io.Closeable
 import java.io.File
 import java.io.IOException
-import org.gradle.api.logging.Logging
 
 /**
  * Runner of the [UtpTestResultListenerServer].
@@ -33,46 +35,56 @@ import org.gradle.api.logging.Logging
  * @param listener a listener to receive test result events
  */
 class UtpTestResultListenerServerRunner(
-        listener: UtpTestResultListener?,
-        startServerFunc: (File, File, File) -> UtpTestResultListenerServer? =
-                { certChainFile, privateKeyFile, trustCertCollectionFile ->
-                    UtpTestResultListenerServer.startServer(
-                            certChainFile,
-                            privateKeyFile,
-                            trustCertCollectionFile,
-                            listener)
-                }
-): Closeable {
+    startServerFunc: (File, File, File, UtpTestResultListener) -> UtpTestResultListenerServer? =
+        { certChainFile, privateKeyFile, trustCertCollectionFile, listener ->
+            UtpTestResultListenerServer.startServer(
+                certChainFile,
+                privateKeyFile,
+                trustCertCollectionFile,
+                listener
+            )
+        }
+) : Closeable {
 
     companion object {
         private val logger = Logging.getLogger(UtpTestResultListenerServerRunner::class.java)
     }
 
-    private val serverCert: File
-    private val serverPrivateKey: File
+    private val serverCert: File = createUtpTempFile("resultListenerServerCert", ".pem")
+    private val serverPrivateKey: File = createUtpTempFile("resultListenerServer", ".key")
 
-    private val clientCert: File
-    private val clientPrivateKey: File
+    private val clientCert: File = createUtpTempFile("resultListenerClientCert", ".pem")
+    private val clientPrivateKey: File = createUtpTempFile("resultListenerClient", ".key")
 
     private val server: UtpTestResultListenerServer
 
     val metadata: UtpTestResultListenerServerMetadata
 
-    init {
-        serverCert = createUtpTempFile("resultListenerServerCert", ".pem")
-        serverPrivateKey = createUtpTempFile("resultListenerServer", ".key")
-        clientCert = createUtpTempFile("resultListenerClientCert", ".pem")
-        clientPrivateKey = createUtpTempFile("resultListenerClient", ".key")
+    private var listener: UtpTestResultListener? = null
 
+    fun setListener(listener: UtpTestResultListener) {
+        this.listener = listener
+    }
+
+    init {
         generateRsaKeyPair(serverCert, serverPrivateKey)
         generateRsaKeyPair(clientCert, clientPrivateKey)
 
-        server = requireNotNull(startServerFunc(serverCert, serverPrivateKey, clientCert)) {
+        server = requireNotNull(startServerFunc(
+            serverCert,
+            serverPrivateKey,
+            clientCert,
+            object: UtpTestResultListener {
+                @Synchronized
+                override fun onTestResultEvent(testResultEvent: TestResultEvent) {
+                    listener?.onTestResultEvent(testResultEvent)
+                }
+            })) {
             "Unable to start the UTP test results listener gRPC server."
         }
 
         metadata = UtpTestResultListenerServerMetadata(
-                serverCert, server.port, clientCert, clientPrivateKey)
+            serverCert, server.port, clientCert, clientPrivateKey)
     }
 
     override fun close() {

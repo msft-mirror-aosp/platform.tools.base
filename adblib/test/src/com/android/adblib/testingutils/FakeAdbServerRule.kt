@@ -16,6 +16,7 @@
 package com.android.adblib.testingutils
 
 import com.android.fakeadbserver.DeviceState
+import com.android.fakeadbserver.FAKE_ADB_SERVER_EXECUTOR_TIMEOUT_MS
 import com.android.fakeadbserver.FakeAdbServer
 import com.android.fakeadbserver.hostcommandhandlers.ListDevicesCommandHandler.Companion.DEFAULT_SPEED
 import com.android.sdklib.AndroidApiLevel

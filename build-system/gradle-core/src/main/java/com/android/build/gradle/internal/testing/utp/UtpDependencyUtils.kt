@@ -17,9 +17,9 @@
 package com.android.build.gradle.internal.testing.utp
 
 import com.android.Version.ANDROID_TOOLS_BASE_VERSION
-import com.android.build.gradle.internal.component.ComponentCreationConfig
 import org.gradle.api.NonExtensible
 import org.gradle.api.artifacts.ConfigurationContainer
+import org.gradle.api.artifacts.dsl.DependencyHandler
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.tasks.Classpath
 import org.gradle.api.tasks.Optional
@@ -33,75 +33,75 @@ private val ANDROID_TOOLS_UTP_PLUGIN_VERSION = ANDROID_TOOLS_BASE_VERSION
  * Available Unified Test Platform dependencies.
  */
 enum class UtpDependency(
-        val artifactId: String,
-        val mainClass: String,
-        val mapperFunc: (UtpDependencies) -> ConfigurableFileCollection,
-        private val groupId: String = UTP_MAVEN_GROUP_ID,
-        private val version: String = UTP_DEFAULT_VERSION) {
+    val artifactId: String,
+    val mainClass: String,
+    val mapperFunc: (UtpDependencies) -> ConfigurableFileCollection,
+    private val groupId: String = UTP_MAVEN_GROUP_ID,
+    private val version: String = UTP_DEFAULT_VERSION) {
     LAUNCHER(
-            "launcher",
-            "com.google.testing.platform.launcher.Launcher",
-            UtpDependencies::launcher),
+        "launcher",
+        "com.google.testing.platform.launcher.Launcher",
+        UtpDependencies::launcher),
     CORE(
-            "core",
-            "com.google.testing.platform.main.MainKt",
-            UtpDependencies::core),
+        "core",
+        "com.google.testing.platform.main.MainKt",
+        UtpDependencies::core),
     ANDROID_DEVICE_PROVIDER_DDMLIB(
-            "android-device-provider-ddmlib",
-            "com.android.tools.utp.plugins.deviceprovider.ddmlib.DdmlibAndroidDeviceProvider",
-            UtpDependencies::deviceControllerDdmlib,
-            ANDROID_TOOLS_UTP_PLUGIN_MAVEN_GROUP_ID,
-            ANDROID_TOOLS_UTP_PLUGIN_VERSION),
+        "android-device-provider-ddmlib",
+        "com.android.tools.utp.plugins.deviceprovider.ddmlib.DdmlibAndroidDeviceProvider",
+        UtpDependencies::deviceControllerDdmlib,
+        ANDROID_TOOLS_UTP_PLUGIN_MAVEN_GROUP_ID,
+        ANDROID_TOOLS_UTP_PLUGIN_VERSION),
     ANDROID_DRIVER_INSTRUMENTATION(
-            "android-driver-instrumentation",
-            "com.google.testing.platform.runtime.android.driver.AndroidInstrumentationDriver",
-            UtpDependencies::driverInstrumentation),
+        "android-driver-instrumentation",
+        "com.google.testing.platform.runtime.android.driver.AndroidInstrumentationDriver",
+        UtpDependencies::driverInstrumentation),
     ANDROID_TEST_PLUGIN(
-            "android-test-plugin",
-            "com.google.testing.platform.plugin.android.AndroidDevicePlugin",
-            UtpDependencies::testPlugin),
+        "android-test-plugin",
+        "com.google.testing.platform.plugin.android.AndroidDevicePlugin",
+        UtpDependencies::testPlugin),
     ANDROID_TEST_DEVICE_INFO_PLUGIN(
-            "android-test-plugin-host-device-info",
-            "com.android.tools.utp.plugins.host.device.info.AndroidTestDeviceInfoPlugin",
-            UtpDependencies::testDeviceInfoPlugin,
-            ANDROID_TOOLS_UTP_PLUGIN_MAVEN_GROUP_ID,
-            ANDROID_TOOLS_UTP_PLUGIN_VERSION),
+        "android-test-plugin-host-device-info",
+        "com.android.tools.utp.plugins.host.device.info.AndroidTestDeviceInfoPlugin",
+        UtpDependencies::testDeviceInfoPlugin,
+        ANDROID_TOOLS_UTP_PLUGIN_MAVEN_GROUP_ID,
+        ANDROID_TOOLS_UTP_PLUGIN_VERSION),
     ANDROID_TEST_ADDITIONAL_TEST_OUTPUT_PLUGIN(
-            "android-test-plugin-host-additional-test-output",
-            "com.android.tools.utp.plugins.host.additionaltestoutput.AndroidAdditionalTestOutputPlugin",
-            UtpDependencies::additionalTestOutputPlugin,
-            ANDROID_TOOLS_UTP_PLUGIN_MAVEN_GROUP_ID,
-            ANDROID_TOOLS_UTP_PLUGIN_VERSION),
+        "android-test-plugin-host-additional-test-output",
+        "com.android.tools.utp.plugins.host.additionaltestoutput.AndroidAdditionalTestOutputPlugin",
+        UtpDependencies::additionalTestOutputPlugin,
+        ANDROID_TOOLS_UTP_PLUGIN_MAVEN_GROUP_ID,
+        ANDROID_TOOLS_UTP_PLUGIN_VERSION),
     ANDROID_TEST_PLUGIN_APK_INSTALLER(
-            "android-test-plugin-host-apk-installer",
-            "com.android.tools.utp.plugins.host.apkinstaller.AndroidTestApkInstallerPlugin",
-            UtpDependencies::testPluginApkInstaller,
-            ANDROID_TOOLS_UTP_PLUGIN_MAVEN_GROUP_ID,
-            ANDROID_TOOLS_UTP_PLUGIN_VERSION),
+        "android-test-plugin-host-apk-installer",
+        "com.android.tools.utp.plugins.host.apkinstaller.AndroidTestApkInstallerPlugin",
+        UtpDependencies::testPluginApkInstaller,
+        ANDROID_TOOLS_UTP_PLUGIN_MAVEN_GROUP_ID,
+        ANDROID_TOOLS_UTP_PLUGIN_VERSION),
     ANDROID_TEST_COVERAGE_PLUGIN(
-            "android-test-plugin-host-coverage",
-            "com.android.tools.utp.plugins.host.coverage.AndroidTestCoveragePlugin",
-            UtpDependencies::testCoveragePlugin,
-            ANDROID_TOOLS_UTP_PLUGIN_MAVEN_GROUP_ID,
-            ANDROID_TOOLS_UTP_PLUGIN_VERSION),
+        "android-test-plugin-host-coverage",
+        "com.android.tools.utp.plugins.host.coverage.AndroidTestCoveragePlugin",
+        UtpDependencies::testCoveragePlugin,
+        ANDROID_TOOLS_UTP_PLUGIN_MAVEN_GROUP_ID,
+        ANDROID_TOOLS_UTP_PLUGIN_VERSION),
     ANDROID_TEST_LOGCAT_PLUGIN(
-            "android-test-plugin-host-logcat",
-            "com.android.tools.utp.plugins.host.logcat.AndroidTestLogcatPlugin",
-            UtpDependencies::testLogcatPlugin,
-            ANDROID_TOOLS_UTP_PLUGIN_MAVEN_GROUP_ID,
-            ANDROID_TOOLS_UTP_PLUGIN_VERSION),
+        "android-test-plugin-host-logcat",
+        "com.android.tools.utp.plugins.host.logcat.AndroidTestLogcatPlugin",
+        UtpDependencies::testLogcatPlugin,
+        ANDROID_TOOLS_UTP_PLUGIN_MAVEN_GROUP_ID,
+        ANDROID_TOOLS_UTP_PLUGIN_VERSION),
     ANDROID_TEST_PLUGIN_HOST_EMULATOR_CONTROL(
-                "android-test-plugin-host-emulator-control",
-                "com.android.tools.utp.plugins.host.emulatorcontrol.EmulatorControlPlugin",
-                UtpDependencies::testEmulatorAccessPlugin,
-                ANDROID_TOOLS_UTP_PLUGIN_MAVEN_GROUP_ID,
-                ANDROID_TOOLS_UTP_PLUGIN_VERSION),
+        "android-test-plugin-host-emulator-control",
+        "com.android.tools.utp.plugins.host.emulatorcontrol.EmulatorControlPlugin",
+        UtpDependencies::testEmulatorAccessPlugin,
+        ANDROID_TOOLS_UTP_PLUGIN_MAVEN_GROUP_ID,
+        ANDROID_TOOLS_UTP_PLUGIN_VERSION),
     ANDROID_TEST_PLUGIN_RESULT_LISTENER_GRADLE(
-            "android-test-plugin-result-listener-gradle",
-            "com.android.tools.utp.plugins.result.listener.gradle.GradleAndroidTestResultListener",
-            UtpDependencies::testPluginResultListenerGradle,
-            ANDROID_TOOLS_UTP_PLUGIN_MAVEN_GROUP_ID,
-            ANDROID_TOOLS_UTP_PLUGIN_VERSION)
+        "android-test-plugin-result-listener-gradle",
+        "com.android.tools.utp.plugins.result.listener.gradle.GradleAndroidTestResultListener",
+        UtpDependencies::testPluginResultListenerGradle,
+        ANDROID_TOOLS_UTP_PLUGIN_MAVEN_GROUP_ID,
+        ANDROID_TOOLS_UTP_PLUGIN_VERSION)
     ;
 
     val configurationName: String = "_internal-unified-test-platform-${artifactId}"
@@ -167,20 +167,18 @@ abstract class UtpDependencies {
  * Looks for Nitrogen configurations in a project and creates and add to the project with default
  * values if missing.
  */
-fun maybeCreateUtpConfigurations(creationConfig: ComponentCreationConfig) {
-    val configurations = creationConfig.services.configurations
-    val dependencies = creationConfig.services.dependencies
-    UtpDependency.values().forEach { nitrogenDependency ->
-        if (!configurations.names.contains(nitrogenDependency.configurationName)) {
-            configurations.register(nitrogenDependency.configurationName) {
+fun maybeCreateUtpConfigurations(configurations: ConfigurationContainer, dependencies: DependencyHandler) {
+    UtpDependency.entries.forEach { utpDependency ->
+        if (!configurations.names.contains(utpDependency.configurationName)) {
+            configurations.register(utpDependency.configurationName) {
                 it.isVisible = false
                 it.isTransitive = true
                 it.isCanBeConsumed = false
                 it.description = "A configuration to resolve the Unified Test Platform dependencies."
             }
             dependencies.add(
-                nitrogenDependency.configurationName,
-                nitrogenDependency.mavenCoordinate())
+                utpDependency.configurationName,
+                utpDependency.mavenCoordinate())
         }
     }
 }
@@ -190,8 +188,8 @@ fun maybeCreateUtpConfigurations(creationConfig: ComponentCreationConfig) {
  * given [ConfigurationContainer].
  */
 fun UtpDependencies.resolveDependencies(configurationsContainer: ConfigurationContainer) {
-    UtpDependency.values().forEach { utpDependency ->
+    UtpDependency.entries.forEach { utpDependency ->
         utpDependency.mapperFunc(this)
-                .from(configurationsContainer.getByName(utpDependency.configurationName))
+            .from(configurationsContainer.getByName(utpDependency.configurationName))
     }
 }

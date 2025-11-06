@@ -21,6 +21,7 @@ import com.android.builder.model.v2.ide.GraphItem
 import com.android.builder.model.v2.ide.Library
 import com.android.builder.model.v2.ide.LibraryType
 import com.android.builder.model.v2.ide.SyncIssue
+import com.android.testutils.TestUtils.BUILT_IN_KOTLIN_VERSION
 import com.google.common.truth.Truth
 import org.junit.Rule
 import org.junit.Test
@@ -79,7 +80,9 @@ class ProvidedModelTest {
             "android.arch.core:common:1.1.1",
             "com.android.support:collections:28.0.0",
             "com.android.support.constraint:constraint-layout-solver:1.0.2",
-            "com.google.guava:guava:19.0"
+            "org.jetbrains:annotations:13.0",
+            "com.google.guava:guava:19.0",
+            "org.jetbrains.kotlin:kotlin-stdlib:$BUILT_IN_KOTLIN_VERSION"
         )
     }
 

@@ -60,21 +60,6 @@ interface Splits {
     fun abi(action: AbiSplit.() -> Unit)
 
     /**
-     * Encapsulates settings for
-     * [building per-density APKs](https://developer.android.com/studio/build/configure-apk-splits.html#configure-density-split).
-     */
-    val density: DensitySplit
-
-    /**
-     * Encapsulates settings for
-     * [building per-density APKs](https://developer.android.com/studio/build/configure-apk-splits.html#configure-density-split).
-     *
-     * For more information about the properties you can configure in this block, see
-     * [DensitySplit].
-     */
-    fun density(action: DensitySplit.() -> Unit)
-
-    /**
      * Returns the list of ABIs that the plugin will generate separate APKs for.
      *
      * If this property returns `null`, it means the plugin will not generate separate per-ABI APKs.
@@ -83,16 +68,4 @@ interface Splits {
      * @return a set of ABIs.
      */
     val abiFilters: Collection<String>
-
-    /**
-     * Returns the list of screen density configurations that the plugin will generate separate APKs
-     * for.
-     *
-     * If this property returns `null`, it means the plugin will not generate separate per-density
-     * APKs. That is, each APK will include resources for all screen density configurations your
-     * project supports.
-     *
-     * @return a set of screen density configurations.
-     */
-    val densityFilters: Collection<String>
 }

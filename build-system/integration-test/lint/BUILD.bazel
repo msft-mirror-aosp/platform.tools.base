@@ -104,22 +104,6 @@ gradle_integration_test(
     deps = DEPS,
 )
 
-gradle_integration_test(
-    name = "privacy-sandbox-sdk-tests",
-    timeout = "long",
-    srcs = glob(
-        include = PRIVACY_SANDBOX_SDK_TESTS,
-    ),
-    data = DATA,
-    maven_repo_zips = MAVEN_REPO_ZIPS,
-    maven_repos = MAVEN_REPOS + [
-        "//tools/base/build-system/integration-test:kotlin_and_ksp_dependencies_for_privacy_sandbox_tests",
-    ],
-    shard_count = 2,
-    tags = ["noci:studio-win"],
-    deps = DEPS,
-)
-
 # create a separate bazel target for long-running KMP tests (b/281652623)
 gradle_integration_test(
     name = "kotlin-multiplatform-tests",

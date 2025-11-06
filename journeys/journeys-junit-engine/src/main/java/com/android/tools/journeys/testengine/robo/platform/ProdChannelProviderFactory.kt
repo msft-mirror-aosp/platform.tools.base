@@ -53,10 +53,10 @@ class ProductionChannelProviderFactory : ChannelProviderFactory {
             return impersonated
         } catch (e: Exception) {
             throw JourneyExecutionException(
-                "Failed to obtain credentials for establishing connection with backend. " +
-                        "Make sure you are logged in to Android Studio before re-trying.",
-                reason = JourneyFailureReason.AUTHENTICATION_FAILED
-            )
+                "Failed to obtain credentials for establishing connection with backend. "
+                        + "Make sure you are logged in to Android Studio and are "
+                        + "connected to a network before re-trying.",
+                reason = JourneyFailureReason.AUTHENTICATION_FAILED);
         }
     }
 

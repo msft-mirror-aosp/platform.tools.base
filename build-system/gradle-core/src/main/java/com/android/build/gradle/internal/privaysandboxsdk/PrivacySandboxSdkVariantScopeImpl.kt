@@ -47,7 +47,6 @@ class PrivacySandboxSdkVariantScopeImpl(
     private val projectServices: ProjectServices,
     private val extensionProvider: () -> PrivacySandboxSdkExtension,
     private val bootClasspathConfigProvider: () -> BootClasspathConfig,
-    override val customLintConfiguration: Configuration?
 ): PrivacySandboxSdkVariantScope {
 
     override val services: TaskCreationServices
@@ -101,9 +100,6 @@ class PrivacySandboxSdkVariantScopeImpl(
         )
     override val aarOrJarTypeToConsume: AarOrJarTypeToConsume
         get() = getAarOrJarTypeToConsume(projectServices.projectOptions)
-
-    override val lintOptions: Lint
-        get() = extension.lint
 
     private fun getCompileSdkAndroidVersion(extension: PrivacySandboxSdkExtension): com.android.sdklib.AndroidVersion {
         return com.android.sdklib.AndroidVersion(

@@ -62,6 +62,8 @@ android {
             buildConfigField "String", "FOO", "\"bar\""
 
             resValue "string", "foo", "foo2"
+            matchingFallbacks = ['release']
+
         }
     }
 

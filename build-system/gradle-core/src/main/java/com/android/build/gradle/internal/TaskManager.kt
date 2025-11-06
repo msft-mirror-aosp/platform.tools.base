@@ -932,7 +932,6 @@ abstract class TaskManager(
         }
         val kotlinServices = creationConfig.services.builtInKotlinServices
 
-        maybeAddKotlinStdlibDependency(project, creationConfig, kotlinServices)
         val kotlinCompileTaskProvider =
             KotlinCompileCreationAction(creationConfig, kotlinServices).registerTask()
         val kaptGenerateStubsProvider =

@@ -185,10 +185,10 @@ public class RenderscriptNdkTest {
                         + " xmlns:tools=\"http://schemas.android.com/tools\">");
         TestFileUtils.searchAndReplace(
                 manifest.toFile(),
-                "<!-- Min/target SDK versions (<uses-sdk>) managed by build.gradle -->",
-                "<!-- Min/target SDK versions (<uses-sdk>) managed by build.gradle -->\n"
-                    + "    <uses-sdk tools:overrideLibrary=\"androidx.appcompat.resources,"
-                    + " androidx.appcompat\" android:minSdkVersion=\"20\"/>");
+                "<!-- <uses-sdk> for tools:overrideLibrary or similar -->",
+                "<!-- <uses-sdk> for tools:overrideLibrary or similar -->\n"
+                        + "    <uses-sdk tools:overrideLibrary=\"androidx.appcompat.resources,"
+                        + " androidx.appcompat\" />");
         TestFileUtils.searchAndReplace(
                 project.getBuildFile(), "renderscriptTargetApi = 28", "renderscriptTargetApi = 20");
         TestFileUtils.searchAndReplace(

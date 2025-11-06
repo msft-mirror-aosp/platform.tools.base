@@ -17,7 +17,6 @@
 package com.android.build.gradle.integration.common.fixture.project
 
 import com.android.build.api.dsl.FusedLibraryExtension
-import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification
 import com.android.build.gradle.integration.common.fixture.dsl.DslProxy
 import com.android.build.gradle.integration.common.fixture.project.builder.BuildWriter
 import com.android.build.gradle.integration.common.fixture.project.builder.DelayedGradleProjectFiles
@@ -27,6 +26,7 @@ import com.android.build.gradle.integration.common.fixture.project.builder.Gradl
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectFiles
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
+import com.android.build.gradle.integration.common.fixture.project.reversible.FileChangeController
 import com.android.build.gradle.internal.fusedlibrary.FusedLibraryConstants
 import java.nio.file.Path
 
@@ -108,8 +108,8 @@ internal class FusedLibraryImpl(
 
     override val files: GradleProjectFiles = DirectGradleProjectFiles(location)
 
-    override fun getReversibleInstance(projectModification: TemporaryProjectModification): FusedLibraryProject =
-        ReversibleFusedLibraryProject(this, projectModification)
+    override fun getReversibleInstance(fileChangeController: FileChangeController): FusedLibraryProject =
+        ReversibleFusedLibraryProject(this, fileChangeController)
 }
 
 /**
@@ -117,8 +117,8 @@ internal class FusedLibraryImpl(
  */
 internal class ReversibleFusedLibraryProject(
     parentProject: FusedLibraryProject,
-    projectModification: TemporaryProjectModification
+    fileChangeController: FileChangeController
 ) : BaseReversibleAndroidProjectImpl<FusedLibraryProject, FusedLibraryDefinition>(
     parentProject,
-    projectModification
+    fileChangeController
 ), FusedLibraryProject, GeneratesAar by GeneratesAarFromParentDelegate(parentProject)

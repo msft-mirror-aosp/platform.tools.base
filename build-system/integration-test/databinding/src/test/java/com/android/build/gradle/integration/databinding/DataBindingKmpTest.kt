@@ -159,6 +159,7 @@ class DataBindingKmpTest {
     fun testCompilation() {
         rule.build.executor
             .with(BooleanOption.ENABLE_LEGACY_API, true)
+            .withFailOnWarning(false) // b/455891987
             .run("clean", "compileDebugJavaWithJavac")
     }
 }

@@ -65,11 +65,6 @@ public class InjectedAbiSplitTest {
                         + "            include 'x86', 'armeabi-v7a'\n"
                         + "            universalApk = false\n"
                         + "        }\n"
-                        + "        density {\n"
-                        + "            enable = true\n"
-                        + "            reset()\n"
-                        + "            include \"ldpi\", \"hdpi\"\n"
-                        + "        }\n"
                         + "    }\n"
                         + "}",
                 sProject.getBuildFile(),

@@ -404,29 +404,6 @@ abstract class ProjectInputs {
         neverShrinking.setDisallowChanges(globalConfig.hasNoBuildTypeMinified)
     }
 
-    internal fun initialize(variantScope: PrivacySandboxSdkVariantScope, lintMode: LintMode) {
-
-        initializeFromProject(variantScope.services.projectInfo, lintMode)
-        projectType.setDisallowChanges(LintModelModuleType.PRIVACY_SANDBOX_SDK)
-
-        // This is always true for PrivacySandboxSdk module because it does not have any source and
-        // we should report lint issues from dependencies.
-        variantScope.lintOptions.checkDependencies = true
-
-        lintOptions.initialize(variantScope.lintOptions, lintMode)
-        resourcePrefix.setDisallowChanges("")
-
-        dynamicFeatures.setDisallowChanges(setOf())
-
-        bootClasspath.fromDisallowChanges(variantScope.bootClasspath)
-        // TODO: Change java version to something reasonable
-        javaSourceLevel.setDisallowChanges(JavaVersion.VERSION_HIGHER)
-
-        compileTarget.setDisallowChanges(variantScope.compileSdkVersion)
-
-        neverShrinking.setDisallowChanges(true)
-    }
-
     internal fun initializeForStandalone(
         project: Project,
         javaExtension: JavaPluginExtension,
@@ -2712,25 +2689,15 @@ abstract class UastInputs  {
 
     /**
      * The kotlin language version used by the corresponding [KotlinCompile] task. This property is
-     * set via [KotlinCompile.compilerOptions], which is the replacement for the deprecated
-     * [KotlinCompile.kotlinOptions].
+     * set via [KotlinCompile.compilerOptions].
      */
     @get:Input
     @get:Optional
     abstract val compilerOptionsKotlinLanguageVersion: Property<String>
 
     /**
-     * The kotlin language version used by the corresponding [KotlinCompile] task. This property is
-     * set via the deprecated [KotlinCompile.kotlinOptions].
-     */
-    @get:Input
-    @get:Optional
-    abstract val kotlinOptionsKotlinLanguageVersion: Property<String>
-
-    /**
      * The default kotlin language version used by the corresponding [KotlinCompile] task, which is
-     * used if the language version is not set on [KotlinCompile.compilerOptions] or
-     * [KotlinCompile.kotlinOptions].
+     * used if the language version is not set on [KotlinCompile.compilerOptions].
      */
     @get:Input
     @get:Optional
@@ -2750,7 +2717,6 @@ abstract class UastInputs  {
     val kotlinLanguageVersion: String?
         get() =
             compilerOptionsKotlinLanguageVersion.orNull
-                ?: kotlinOptionsKotlinLanguageVersion.orNull
                 ?: defaultKotlinLanguageVersion.orNull
 
     fun initialize(project: Project, variant: VariantCreationConfig) {
@@ -2766,10 +2732,6 @@ abstract class UastInputs  {
             project,
             variant.useBuiltInKotlinSupport
         )
-    }
-
-    fun initialize(variantScope: PrivacySandboxSdkVariantScope) {
-        this.useK2UastManualSetting.setDisallowChanges(variantScope.lintUseK2UastManualSetting)
     }
 
     fun initializeForStandalone(
@@ -2814,18 +2776,6 @@ abstract class UastInputs  {
             }
         )
         this.compilerOptionsKotlinLanguageVersion.disallowChanges()
-        // Ignore the type mismatch warning because the Gradle docs say "May return null"
-        this.kotlinOptionsKotlinLanguageVersion.set(
-            kotlinCompileTaskProvider.flatMap { kotlinCompileTask ->
-                // languageVersion is defined as a String? so it's ok to wrap it in a Provider
-                // as no task dependency needs to be carried over.
-                @Suppress("DEPRECATION_ERROR") // TODO(b/435372615): Remove this suppression
-                runCatching { kotlinCompileTask.kotlinOptions.languageVersion }.getOrNull()?.let {
-                    project.provider { it }
-                } ?: project.provider { null }
-            }
-        )
-        this.kotlinOptionsKotlinLanguageVersion.disallowChanges()
         this.defaultKotlinLanguageVersion.setDisallowChanges(
             runCatching { DEFAULT.version }.getOrNull()
         )

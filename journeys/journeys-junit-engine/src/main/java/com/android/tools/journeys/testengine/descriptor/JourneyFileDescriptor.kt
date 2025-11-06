@@ -46,10 +46,11 @@ import kotlin.io.path.outputStream
 
 class JourneyFileDescriptor(
     parentId: UniqueId,
-    private val journeyFile: File
+    private val journeyFile: File,
+    private val journeyFileRelativePath: String
 ) : AbstractTestDescriptor(
-    parentId.append(SEGMENT_TYPE, journeyFile.name),
-    journeyFile.name
+    parentId.append(SEGMENT_TYPE, journeyFileRelativePath),
+    journeyFileRelativePath
 ),
     Node<JourneysExecutionContext> {
 
@@ -89,10 +90,11 @@ class JourneyFileDescriptor(
         }
         val streamingConsumer = StreamingEventConsumer(reportEntryPublisher)
 
+        val outputDirName = journeyFileRelativePath.removeSuffixIgnoreCase(".journey.xml")
         val outputPath = Path(
             JourneysTestEngineInput.resultsDir.absolutePath,
             context.targetDeviceId,
-            journeyFile.nameWithoutExtension.removeSuffix(".journey")
+            outputDirName
         ).also { it.toFile().mkdirs() }
         val fileConsumer = JourneyRunAggregatorConsumer(outputPath.toFile())
 
@@ -203,6 +205,13 @@ class JourneyFileDescriptor(
                             .build()
                     ).build()
             ).build()
+    }
+
+    private fun String.removeSuffixIgnoreCase(suffix: String): String {
+        if (this.endsWith(suffix, ignoreCase = true)) {
+            return this.dropLast(suffix.length)
+        }
+        return this
     }
 }
 

@@ -76,7 +76,7 @@ class AvdBuilder(var metadataIniPath: Path, avdFolder: Path, var device: Device)
    * [avdFolder]. If it is an AVD in the process of being created, this should be an absolute path;
    * it will be copied to the AVD directory upon creation.
    */
-  var background: Path? = null
+  var environment: Path? = null
 
   var showDeviceFrame = true
   var screenOrientation: ScreenOrientation = ScreenOrientation.PORTRAIT
@@ -128,20 +128,23 @@ class AvdBuilder(var metadataIniPath: Path, avdFolder: Path, var device: Device)
     properties[ConfigKey.GPU_EMULATION] = if (gpuMode == GpuMode.OFF) "no" else "yes"
     properties[ConfigKey.AVD_ID] = avdName
     properties.putAll(bootMode.properties())
+    if (environment != null) {
+      properties[ConfigKey.LCD_TRANSPARENT] = "yes"
+    }
     binding.write(this, properties)
     return properties
   }
 
   fun environment(): Map<String, String> {
-    val environment = mutableMapOf<String, String>()
-    when (background?.extension?.lowercase()) {
-      in setOf("png") -> environment[EnvironmentKey.IMAGE] = background.toString()
-      in setOf("mov", "mp4") -> environment[EnvironmentKey.VIDEO] = background.toString()
+    val properties = mutableMapOf<String, String>()
+    when (environment?.extension?.lowercase()) {
+      in setOf("png", "jpg", "webp") -> properties[EnvironmentKey.IMAGE] = environment.toString()
+      in setOf("mov", "mp4", "webm") -> properties[EnvironmentKey.VIDEO] = environment.toString()
     }
-    return environment
+    return properties
   }
 
-  private fun backgroundFromConfig(environment: Map<String, String>): Path? {
+  private fun environmentFromConfig(environment: Map<String, String>): Path? {
     for (key in listOf(EnvironmentKey.IMAGE, EnvironmentKey.VIDEO)) {
       environment[key]?.let {
         return avdFolder.relativize(avdFolder.resolve(it))
@@ -206,7 +209,7 @@ class AvdBuilder(var metadataIniPath: Path, avdFolder: Path, var device: Device)
 
         sdCard = sdCardFromConfig(avdInfo.properties)
         skin = skinFromConfig(avdInfo.properties)
-        background = backgroundFromConfig(avdInfo.environment)
+        environment = environmentFromConfig(avdInfo.environment)
 
         bootMode = BootMode.fromProperties(avdInfo.properties)
         binding.read(this, avdInfo.properties)

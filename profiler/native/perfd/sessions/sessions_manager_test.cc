@@ -110,4 +110,44 @@ TEST_F(SessionsManagerTest, BeginSessionSendsQueuedEvents) {
   event_buffer.InterruptWriteEvents();
   read_thread.join();
 }
+
+TEST_F(SessionsManagerTest,
+       BeginLiveViewSessionInTaskBasedUx_SendsLiveViewStatusEvent) {
+  FakeClock clock;
+  proto::DaemonConfig daemon_config;
+  DaemonConfig config(daemon_config);
+  FileCache file_cache(std::unique_ptr<FileSystem>(new MemoryFileSystem()),
+                       "/");
+  EventBuffer event_buffer(&clock);
+  Daemon daemon(&clock, &config, &file_cache, &event_buffer);
+  auto* manager = SessionsManager::Instance();
+
+  proto::BeginSession begin_session;
+  begin_session.set_task_type(proto::ProfilerTaskType::LIVE_VIEW);
+  const int kPid = 1234;
+  manager->BeginSession(&daemon, 0, kPid, begin_session, true);
+
+  auto session_groups = event_buffer.Get(proto::Event::SESSION, 0, LLONG_MAX);
+  // Verify that a LIVE_VIEW_STATUS event was sent.
+  auto lv_groups =
+      event_buffer.Get(proto::Event::LIVE_VIEW_STATUS, 0, LLONG_MAX);
+  ASSERT_EQ(lv_groups.size(), 1);
+  // The LIVE_VIEW_STATUS event is added to the same group as the session
+  // events. Due to the singleton nature, we may have events from prior tests.
+  ASSERT_GT(lv_groups[0].events_size(), 1);
+  EXPECT_EQ(lv_groups[0].group_id(), session_groups[0].group_id());
+  // Find the LIVE_VIEW_STATUS event. `EventBuffer::Get` returns the entire
+  // group of events that contains at least one event of the requested kind.
+  // Since the order of events within the group is not guaranteed, we must
+  // iterate through them to find the one we are looking for.
+  const proto::Event* lv_event = nullptr;
+  for (const auto& event : lv_groups[0].events()) {
+    if (event.kind() == proto::Event::LIVE_VIEW_STATUS) {
+      lv_event = &event;
+      break;
+    }
+  }
+  ASSERT_NE(lv_event, nullptr);
+  EXPECT_EQ(lv_event->pid(), kPid);
+}
 }  // namespace profiler

@@ -47,13 +47,14 @@ class MonochromeLauncherIconDetector : Detector(), XmlScanner {
         briefDescription = "Monochrome icon is not defined",
         explanation =
           """
-                If `android:roundIcon` and `android:icon` are both in your manifest, \
-                you must either remove the reference to `android:roundIcon` if it is not needed; or, supply \
-                the monochrome icon in the drawable defined by the `android:roundIcon` and `android:icon` attribute.
-
-                For example, if `android:roundIcon` and `android:icon` are both in the manifest, a launcher might choose to use \
-                `android:roundIcon` over `android:icon` to display the adaptive app icon. Therefore, your themed application icon\
-                will not show if your monochrome attribute is not also specified in `android:roundIcon`.""",
+          The system may use the coloring of the user's chosen wallpaper and theme to tint app \
+          icons. \
+          Providing a `<monochrome>` layer (which will be used for tinting) for every \
+          adaptive icon is strongly recommended, otherwise Android 16 QPR 2 and above will simply \
+          tint the color version of the icon, which may look unusual. \
+          Devices running earlier Android versions will (with no monochrome layer) show the \
+          untinted color icon for your app, which will look inconsistent.
+          """,
         category = Category.ICONS,
         priority = 6,
         severity = Severity.WARNING,

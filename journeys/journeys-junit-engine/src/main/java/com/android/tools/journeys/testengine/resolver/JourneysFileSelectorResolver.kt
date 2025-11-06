@@ -23,7 +23,14 @@ import org.junit.platform.engine.DiscoverySelector
 import org.junit.platform.engine.support.discovery.SelectorResolver
 import org.junit.platform.engine.support.discovery.SelectorResolver.Match
 import org.junit.platform.engine.support.discovery.SelectorResolver.Resolution
+import java.io.File
+import java.nio.file.FileSystems
+import java.nio.file.FileVisitOption
+import java.nio.file.Files
+import java.nio.file.Path
 import java.util.Optional
+import java.util.stream.Collectors
+import kotlin.io.path.name
 
 class JourneysFileSelectorResolver : SelectorResolver {
 
@@ -42,18 +49,13 @@ class JourneysFileSelectorResolver : SelectorResolver {
         selector: DeviceSpecificDirectorySelector,
         context: SelectorResolver.Context
     ): Resolution {
-        val files = selector.directory.listFiles() ?: emptyArray()
-        val filter = JourneysTestEngineInput.journeysFilter
+        val journeyFiles =
+            findJourneyFiles(
+                selector.directory.toPath(),
+                JourneysTestEngineInput.journeysFilter
+            )
 
-        val matches = files.mapNotNull { file ->
-            if (!file.name.lowercase().endsWith(".journey.xml")) {
-                return@mapNotNull null
-            }
-
-            if (filter.isNotEmpty() && file.name !in filter) {
-                return@mapNotNull null
-            }
-
+        val matches = journeyFiles.mapNotNull { file ->
             // We resolve files directly using `context.addToParent` to ensure they are
             // correctly nested under their device-specific parent descriptor.
             // Creating and resolving a new `FileSelector` here would cause the parent
@@ -63,7 +65,8 @@ class JourneysFileSelectorResolver : SelectorResolver {
             // expanding a `SelectorResolver.Match`. A new `FileSelector` would not
             // satisfy this condition.
             context.addToParent { parent ->
-                Optional.of(JourneyFileDescriptor(parent.uniqueId, file))
+                val relativePath = file.relativeTo(selector.directory).toString()
+                Optional.of(JourneyFileDescriptor(parent.uniqueId, file, relativePath))
             }.map {
                 Match.exact(it)
             }.orElse(null)
@@ -74,5 +77,44 @@ class JourneysFileSelectorResolver : SelectorResolver {
         } else {
             Resolution.unresolved()
         }
+    }
+
+    /**
+     * Finds journey files, handling OS separators and special characters.
+     *
+     * @param baseDir The root directory to start the search from (e.g., "app/src/journeysTest").
+     * @param filter The list of filters (e.g., "auth", "auth/login.journey.xml", "basic.journey.xml").
+     * @return A list of files matching any of the filters.
+     */
+    private fun findJourneyFiles(baseDir: Path, filterList: List<String>): List<File> {
+        val allJourneyFiles = Files.walk(baseDir, FileVisitOption.FOLLOW_LINKS)
+            .filter { Files.isRegularFile(it) }
+            .filter { it.name.endsWith(".journey.xml", ignoreCase = true) }
+            .map { it.toFile() }
+            .collect(Collectors.toList())
+
+        if (filterList.isEmpty()) {
+            return allJourneyFiles
+        }
+
+        val matchers = filterList.map { filter ->
+            // Keep as is if users have provided wildcards or path to a journey file.
+            if (containsWildcard(filter) || filter.endsWith(".journey.xml", ignoreCase = true)) {
+                FileSystems.getDefault().getPathMatcher("glob:$filter")
+            } else {
+                // Append /** for directory matching when users did not provide that.
+                FileSystems.getDefault().getPathMatcher("glob:$filter/**")
+            }
+        }
+
+        return allJourneyFiles
+            .filter { file ->
+                val relativePath = baseDir.relativize(file.toPath())
+                matchers.any { it.matches(relativePath) }
+            }
+    }
+
+    private fun containsWildcard(filter: String): Boolean {
+        return filter.contains('*') || filter.contains('?') || filter.contains('[')
     }
 }

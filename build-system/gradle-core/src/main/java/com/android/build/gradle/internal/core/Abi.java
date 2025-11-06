@@ -20,6 +20,9 @@ import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 
+import java.util.Arrays;
+import java.util.List;
+
 /**
  * Enum of some well-known ABI values. This list may not be complete because the primary source that
  * defines ABIs in the meta/abis.json file. When this was written, support was being added for
@@ -69,6 +72,18 @@ public enum Abi {
     @NonNull
     public String getTag() {
         return name;
+    }
+
+    /**
+     * This is the set of default ABIs AGP uses in case user does not specify anything for abiFilter
+     * or DeviceSpec.abis
+     */
+    static public List<String> getDefaultSupportedAbis() {
+        return Arrays.asList(
+                SdkConstants.ABI_ARMEABI_V7A,
+                SdkConstants.ABI_ARM64_V8A,
+                SdkConstants.ABI_INTEL_ATOM,
+                SdkConstants.ABI_INTEL_ATOM64);
     }
 }
 

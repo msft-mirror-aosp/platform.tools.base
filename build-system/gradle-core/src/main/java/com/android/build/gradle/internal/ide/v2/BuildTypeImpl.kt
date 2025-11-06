@@ -35,6 +35,7 @@ data class BuildTypeImpl(
     override val isMinifyEnabled: Boolean,
     override val isZipAlignEnabled: Boolean,
     override val isEmbedMicroApp: Boolean,
+    override val matchingFallbacks: List<String>,
     override val signingConfig: String?,
     override val applicationIdSuffix: String?,
     override val versionNameSuffix: String?,

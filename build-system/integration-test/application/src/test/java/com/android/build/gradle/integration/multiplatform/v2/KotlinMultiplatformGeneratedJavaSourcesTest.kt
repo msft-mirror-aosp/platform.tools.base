@@ -94,7 +94,9 @@ class KotlinMultiplatformGeneratedJavaSourcesTest {
     @Test
     fun testGeneratedJavaSources() {
         val build = rule.build
-        build.executor.run(":kmpLib:assembleAndroidMain")
+        build.executor
+            .withFailOnWarning(false) // b/455891987
+            .run(":kmpLib:assembleAndroidMain")
 
         val action: AarSubject.() -> Unit = {
             mainJar {

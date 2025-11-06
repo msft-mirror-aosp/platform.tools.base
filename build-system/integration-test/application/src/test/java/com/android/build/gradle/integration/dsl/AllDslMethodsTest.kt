@@ -157,7 +157,7 @@ class AllDslMethodsTest(
         project
             .executor()
             .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
-            .withFailOnWarning(true)
+            .withFailOnWarning(false) // b/455891987
             // Workaround for b/382709449
             .withAdhocJvmArgument("-XX:CompileCommand=exclude,org.jetbrains.kotlin.serialization.deserialization.TypeDeserializer::simpleType")
             .withAdhocJvmArgument("-XX:CompileCommand=exclude,org.jetbrains.kotlin.serialization.deserialization.TypeDeserializer::toAttributes")
@@ -465,8 +465,11 @@ private class DslScriptGenerator(
             "public abstract void com.android.build.api.dsl.CommonExtension.setCompileSdkPreview(java.lang.String)",
             "public abstract void com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryExtension.setCompileSdkPreview(java.lang.String)",
 
-            "public abstract com.android.build.api.dsl.ExternalNativeBuild com.android.build.api.dsl.CommonExtension.getExternalNativeBuild()",
-            "public abstract void com.android.build.api.dsl.CommonExtension.externalNativeBuild(kotlin.jvm.functions.Function1)",
+            "public abstract com.android.build.api.dsl.ExternalNativeBuild com.android.build.api.dsl.ApplicationExtension.getExternalNativeBuild()",
+            "public abstract void com.android.build.api.dsl.ApplicationExtension.externalNativeBuild(kotlin.jvm.functions.Function1)",
+            "public abstract com.android.build.api.dsl.ExternalNativeBuild com.android.build.api.dsl.LibraryExtension.getExternalNativeBuild()",
+            "public abstract void com.android.build.api.dsl.LibraryExtension.externalNativeBuild(kotlin.jvm.functions.Function1)",
+
             "public abstract void com.android.build.api.dsl.CommonExtension.setNdkVersion(java.lang.String)",
             "public abstract void com.android.build.api.dsl.CommonExtension.setNdkPath(java.lang.String)",
 

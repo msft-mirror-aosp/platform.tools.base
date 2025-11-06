@@ -55,8 +55,11 @@ import org.gradle.api.Action
 import org.gradle.api.NamedDomainObjectContainer
 import org.gradle.api.plugins.ExtensionAware
 import org.gradle.api.plugins.ExtensionContainer
+import org.junit.Assert.fail
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.ExpectedException
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
@@ -68,6 +71,9 @@ class AndroidComponentsExtensionTest {
     private lateinit var sdkComponents: SdkComponents
     private lateinit var managedDeviceRegistry: ManagedDeviceRegistry
     private lateinit var applicationExtension: ApplicationExtension
+
+    @get:Rule
+    val exceptionRule: ExpectedException = ExpectedException.none()
 
     @Before
     fun setUp() {
@@ -491,6 +497,25 @@ class AndroidComponentsExtensionTest {
 
         variantApiOperationsRegistrar.executeDslFinalizationBlocks()
         assertThat(called).isTrue()
+    }
+
+    @Test
+    fun testFinalizationBlockAlreadyExecuted() {
+        val extension = mock<ApplicationExtension>()
+        val variantApiOperationsRegistrar = VariantApiOperationsRegistrar<ApplicationExtension, ApplicationVariantBuilder, ApplicationVariant>(extension)
+        val appExtension = ApplicationAndroidComponentsExtensionImpl(dslServices,
+            mock<SdkComponents>(),
+            mock<ManagedDeviceRegistry>(),
+            variantApiOperationsRegistrar,
+            extension
+        )
+
+        variantApiOperationsRegistrar.executeDslFinalizationBlocks()
+        exceptionRule.expect(RuntimeException::class.java)
+        exceptionRule.expectMessage("too late to call `finalizeDsl`")
+        appExtension.finalizeDsl {
+            fail("This should never execute !")
+        }
     }
 
     @Test

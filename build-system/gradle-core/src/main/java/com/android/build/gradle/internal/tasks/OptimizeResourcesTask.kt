@@ -48,6 +48,7 @@ import org.gradle.api.tasks.InputDirectory
 import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.Nested
 import org.gradle.api.tasks.OutputDirectory
+import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskProvider
@@ -81,6 +82,9 @@ abstract class OptimizeResourcesTask : NonIncrementalTask() {
     @get:Nested
     abstract val outputsHandler: Property<MultiOutputHandler>
 
+    @get:OutputFile
+    abstract val resourceConfigFile: RegularFileProperty
+
     @get:OutputDirectory
     abstract val optimizedProcessedRes: DirectoryProperty
 
@@ -93,7 +97,7 @@ abstract class OptimizeResourcesTask : NonIncrementalTask() {
 
             parameters.inputResFile.set(File(builtArtifact.outputFile))
             parameters.aapt2Executable.set(aapt2.getAapt2Executable().toFile())
-            parameters.enableResourceObfuscation.set(enableResourceObfuscation.get())
+            parameters.enableResourceObfuscation.set(enableResourceObfuscation)
             parameters.outputResFile.set(
                 File(
                     outputLocation.asFile,
@@ -105,8 +109,9 @@ abstract class OptimizeResourcesTask : NonIncrementalTask() {
                     )
                 )
             )
+            parameters.resourceConfigFile.set(resourceConfigFile)
 
-            parameters.outputResFile.get().asFile
+            return@submit parameters.outputResFile.get().asFile
         }
     }
 
@@ -115,6 +120,7 @@ abstract class OptimizeResourcesTask : NonIncrementalTask() {
         val inputResFile: RegularFileProperty
         val enableResourceObfuscation: Property<Boolean>
         val outputResFile: RegularFileProperty
+        val resourceConfigFile: RegularFileProperty
     }
 
     abstract class Aapt2OptimizeWorkAction
@@ -150,6 +156,11 @@ abstract class OptimizeResourcesTask : NonIncrementalTask() {
                         InternalArtifactType.LINKED_RESOURCES_BINARY_FORMAT,
                         InternalArtifactType.OPTIMIZED_PROCESSED_RES)
             }
+            creationConfig.artifacts.setInitialProvider(
+                taskProvider,
+                OptimizeResourcesTask::resourceConfigFile
+            ).withName("resources.cfg")
+                .on(InternalArtifactType.RESOURCES_CONFIG_MAP_FILE)
         }
 
         override fun configure(task: OptimizeResourcesTask) {
@@ -168,7 +179,8 @@ abstract class OptimizeResourcesTask : NonIncrementalTask() {
 enum class AAPT2OptimizeFlags(val flag: String) {
     COLLAPSE_RESOURCE_NAMES("--collapse-resource-names"),
     SHORTEN_RESOURCE_PATHS("--shorten-resource-paths"),
-    ENABLE_SPARSE_ENCODING("--enable-sparse-encoding")
+    ENABLE_SPARSE_ENCODING("--enable-sparse-encoding"),
+    RESOURCE_PATH_SHORTENING_MAP("--resource-path-shortening-map")
 }
 
 internal fun doFullTaskAction(params: OptimizeResourcesTask.OptimizeResourcesParams)  {
@@ -176,7 +188,8 @@ internal fun doFullTaskAction(params: OptimizeResourcesTask.OptimizeResourcesPar
     val outputFile = params.outputResFile.get().asFile
 
     val optimizeFlags = mutableSetOf(
-        AAPT2OptimizeFlags.SHORTEN_RESOURCE_PATHS.flag
+        AAPT2OptimizeFlags.SHORTEN_RESOURCE_PATHS.flag,
+        "${AAPT2OptimizeFlags.RESOURCE_PATH_SHORTENING_MAP.flag}=${params.resourceConfigFile.get().asFile.absolutePath}"
     )
     if (params.enableResourceObfuscation.get()) {
         optimizeFlags += AAPT2OptimizeFlags.COLLAPSE_RESOURCE_NAMES.flag

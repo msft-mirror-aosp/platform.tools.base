@@ -1491,13 +1491,27 @@ open class LintCliClient : LintClient {
    * parsing infrastructure, but in theory Gradle lets you configure different compileSdkVersions
    * for different modules, so here we pick the highest of the versions to make sure it's capable of
    * resolving all library calls into the platform.
+   *
+   * However, we cannot just blindly request the build target using the [Project.getBuildTarget]
+   * method because its implementation will default to the highest installed SDK platform when the
+   * project has not specified a compileSdkVersion. This can artificially increase the picked build
+   * target. Instead we should only use the projects that have an explicit compileSdkVersion
+   * specified. If there are none, then we should use the highest SDK platform.
    */
-  private fun pickBuildTarget(knownProjects: Collection<Project>): IAndroidTarget? {
-    return knownProjects
-      .asSequence()
-      .filter { it.isAndroidProject }
-      .mapNotNull { it.buildTarget }
-      .maxByOrNull { it.version }
+  @VisibleForTesting
+  fun pickBuildTarget(knownProjects: Collection<Project>): IAndroidTarget? {
+    val projectsWithExplicitlySpecifiedTarget =
+      knownProjects.filter { it.isAndroidProject && it.getCompileSdkResult().explicitlySpecified }
+
+    if (projectsWithExplicitlySpecifiedTarget.isEmpty()) {
+      // none of the projects have an explicitly specified build target so we should use the
+      // default value which will be calculated for any of the projects.
+      return knownProjects.firstOrNull { it.isAndroidProject }?.buildTarget
+    } else {
+      return projectsWithExplicitlySpecifiedTarget
+        .mapNotNull { it.buildTarget }
+        .maxByOrNull { it.version }
+    }
   }
 
   public override fun disposeProjects(knownProjects: Collection<Project>) {
