@@ -17,16 +17,12 @@
 package com.android.tools.utp.gradle
 
 import com.android.testutils.assertThrows
-import com.android.testutils.truth.PathSubject.assertThat
 import com.android.tools.utp.gradle.api.UtpDependencies
-import com.android.tools.utp.plugins.result.listener.gradle.proto.GradleAndroidTestResultListenerProto
 import com.google.common.truth.Truth.assertThat
 import com.google.common.util.concurrent.MoreExecutors
-import com.google.protobuf.Any
 import com.google.testing.platform.proto.api.config.RunnerConfigProto
-import com.google.testing.platform.proto.api.core.TestCaseProto
-import com.google.testing.platform.proto.api.core.TestResultProto
-import com.google.testing.platform.proto.api.core.TestSuiteResultProto
+import com.google.testing.platform.proto.api.core.TestStatusProto.TestStatus
+import com.google.testing.platform.proto.api.core.TestSuiteResultProto.TestSuiteResult
 import org.gradle.api.GradleException
 import org.gradle.api.logging.Logger
 import org.junit.Before
@@ -34,18 +30,12 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
-import org.mockito.Answers
-import org.mockito.ArgumentCaptor
-import org.mockito.Captor
 import org.mockito.Mock
 import org.mockito.junit.MockitoJUnitRunner
-import org.mockito.kotlin.capture
-import org.mockito.kotlin.doNothing
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.isA
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
-import org.mockito.kotlin.whenever
 import java.io.File
 import java.util.concurrent.ExecutionException
 
@@ -61,143 +51,123 @@ class UtpRunnerTest {
 
     @Mock
     private lateinit var logger: Logger
-    @Mock(answer = Answers.RETURNS_DEEP_STUBS)
-    private lateinit var utpDependencies: UtpDependencies
 
     @Mock
-    private lateinit var utpTestResultListenerServerRunner: UtpTestResultListenerServerRunner
+    private lateinit var utpDependencies: UtpDependencies
 
-    @Captor
-    private lateinit var utpTestResultListenerCaptor: ArgumentCaptor<UtpTestResultListener>
+    // Inputs
+    private lateinit var runnerConfig1: RunnerConfigProto.RunnerConfig
+    private lateinit var runnerConfig2: RunnerConfigProto.RunnerConfig
 
-    private lateinit var launcherJar: File
-    private lateinit var coreJar: File
-    private lateinit var xmlTestReportOutputDirectory: File
-    private lateinit var runnerConfig1: File
-    private lateinit var runnerConfig2: File
-    private lateinit var resultProtoFile1: File
-    private lateinit var resultProtoFile2: File
-    private lateinit var mergedResultProtoFile: File
-    private lateinit var testResultExitCodeFile: File
+    // Outputs
+    private lateinit var resultFile1: File
+    private lateinit var resultFile2: File
+    private lateinit var mergedResultFile: File
+    private lateinit var exitCodeFile: File
 
     private lateinit var utpRunner: UtpRunner
 
+    // Test State
     private var throwExceptionFromUtp = false
-    private val capturedUtpConfigs = mutableListOf<File>()
+    private var simulatedTestStatus = TestStatus.PASSED
+    private val capturedUtpConfigs = mutableListOf<RunnerConfigProto.RunnerConfig>()
 
     @Before
     fun setUp() {
-        coreJar = tempDir.newFile("core.jar")
-        launcherJar = tempDir.newFile("launcher.jar")
-        xmlTestReportOutputDirectory = tempDir.newFolder("xml-reports")
-        runnerConfig1 = tempDir.newFile("runner-config-1.pb")
-        runnerConfig2 = tempDir.newFile("runner-config-2.pb")
-        resultProtoFile1 = tempDir.newFile("result1.pb")
-        resultProtoFile2 = tempDir.newFile("result2.pb")
-        mergedResultProtoFile = tempDir.newFile("mergedResult.pb")
-        testResultExitCodeFile = tempDir.newFile("testResultExitCodeFile.txt")
+        // Setup Output Files
+        resultFile1 = tempDir.newFile("result-1.pb")
+        resultFile2 = tempDir.newFile("result-2.pb")
+        mergedResultFile = tempDir.newFile("merged-result.pb")
+        exitCodeFile = tempDir.newFile("exit-code.txt")
 
-        // Write empty proto data to the config files
-        val emptyConfig = RunnerConfigProto.RunnerConfig.getDefaultInstance()
-        runnerConfig1.outputStream().use { emptyConfig.writeTo(it) }
-        runnerConfig2.outputStream().use { emptyConfig.writeTo(it) }
+        // Setup Input Configs
+        runnerConfig1 = RunnerConfigProto.RunnerConfig.newBuilder().build()
+        runnerConfig2 = RunnerConfigProto.RunnerConfig.newBuilder().build()
 
-        // Mock UTP dependencies
-        whenever(utpDependencies.launcher.files).thenReturn(setOf(launcherJar))
-        whenever(utpDependencies.core.files).thenReturn(setOf(coreJar))
-
-        // Mock listener server
-        doNothing().whenever(utpTestResultListenerServerRunner).setListener(capture(utpTestResultListenerCaptor))
-
+        // Initialize Runner with a custom executor lambda to mock UTP behavior
         utpRunner = UtpRunner(
             utpDependencies,
-            enableUtpTestReportingForAndroidStudio = false,
-            utpTestResultListenerServerRunner,
             logger,
             MoreExecutors::newDirectExecutorService,
         ) { utpConfig ->
             capturedUtpConfigs.add(utpConfig)
+
             if (throwExceptionFromUtp) {
                 throw RuntimeException("UTP Process failed")
             }
+
+            // Simulate UTP writing a result file based on which config is running.
+            // In a real scenario, the config contains the output path.
+            // Here we map the input config instance to the pre-created output file.
+            val targetFile = when (utpConfig) {
+                runnerConfig1 -> resultFile1
+                runnerConfig2 -> resultFile2
+                else -> throw IllegalStateException("Unknown config")
+            }
+
+            // Write a dummy proto result to the file so the merger can read it later
+            val dummyResult = TestSuiteResult.newBuilder()
+                .setTestStatus(simulatedTestStatus)
+                .build()
+            targetFile.outputStream().use { dummyResult.writeTo(it) }
         }
     }
 
     @Test
-    fun execute_successfulRun_startsAllProcessesInParallelAndWritesResults() {
+    fun execute_successfulRun_startsAllProcessesInParallelAndMergesResults() {
         // Act
         utpRunner.execute(
-            utpRunnerConfigFileList = listOf(runnerConfig1, runnerConfig2),
-            deviceIDs = listOf("device1", "device2"),
-            deviceNames = listOf("deviceName1", "deviceName2"),
-            deviceShardNames = listOf("shardName1", "shardName2"),
-            projectPath = "myProject",
-            variantName = "myVariant",
-            xmlTestReportOutputDirectory = xmlTestReportOutputDirectory,
-            mergedUtpResultProtoOutputFile = mergedResultProtoFile,
-            testResultExitCodeFile = testResultExitCodeFile,
-            utpResultProtoOutputFileList = listOf(resultProtoFile1, resultProtoFile2)
+            listOf(runnerConfig1, runnerConfig2),
+            listOf(resultFile1, resultFile2),
+            mergedResultFile,
+            exitCodeFile
         )
 
         // Assert: Verify tasks were submitted
-        assertThat(capturedUtpConfigs).hasSize(2)
+        assertThat(capturedUtpConfigs).containsExactly(runnerConfig1, runnerConfig2)
 
-        // Assert: Verify listener received results and wrote proto files
-        val listener = utpTestResultListenerCaptor.value
-        val testSuiteResult = TestSuiteResultProto.TestSuiteResult.newBuilder()
-            .addTestResult(TestResultProto.TestResult.newBuilder()
-                .setTestCase(TestCaseProto.TestCase.newBuilder().setTestClass("myTest"))
-            )
-            .build()
-        val event = GradleAndroidTestResultListenerProto.TestResultEvent.newBuilder()
-            .setDeviceId("device1")
-            .setTestSuiteFinished(
-                GradleAndroidTestResultListenerProto.TestResultEvent.TestSuiteFinished.newBuilder()
-                    .setTestSuiteResult(Any.pack(testSuiteResult))
-            ).build()
+        // Assert: Verify exit code was written (0 for success)
+        assertThat(exitCodeFile.readText()).isEqualTo("0")
 
-        listener.onTestResultEvent(event)
-
-        // Verify the correct proto file was written
-        assertThat(resultProtoFile1.length()).isGreaterThan(0)
-        assertThat(resultProtoFile2.length()).isEqualTo(0)
-        val writtenProto = resultProtoFile1.inputStream().use {
-            TestSuiteResultProto.TestSuiteResult.parseFrom(it)
-        }
-        assertThat(writtenProto).isEqualTo(testSuiteResult)
-
-        val resultsXml = xmlTestReportOutputDirectory.resolve("TEST-shardName1-myProject-myVariant.xml")
-        assertThat(resultsXml).exists()
-        assertThat(resultsXml).containsAllOf(
-            """<property name="device" value="shardName1" />""",
-            """<property name="flavor" value="myVariant" />""",
-            """<property name="project" value="myProject" />""",
-        )
+        // Assert: Verify merged file has content
+        val mergedResult = mergedResultFile.inputStream().use { TestSuiteResult.parseFrom(it) }
+        assertThat(mergedResult.testStatus).isEqualTo(TestStatus.PASSED)
     }
 
     @Test
-    fun execute_oneTaskFails_throwsGradleException() {
+    fun execute_testFailures_writesFailureExitCode() {
+        // Arrange
+        simulatedTestStatus = TestStatus.FAILED
+
+        // Act
+        utpRunner.execute(
+            listOf(runnerConfig1, runnerConfig2),
+            listOf(resultFile1, resultFile2),
+            mergedResultFile,
+            exitCodeFile
+        )
+
+        // Assert: Verify exit code was written (1 for failure)
+        assertThat(exitCodeFile.readText()).isEqualTo("1")
+    }
+
+    @Test
+    fun execute_executionException_throwsGradleException() {
         // Arrange
         throwExceptionFromUtp = true
 
         // Act & Assert
         val e = assertThrows<GradleException> {
             utpRunner.execute(
-                utpRunnerConfigFileList = listOf(runnerConfig1, runnerConfig2),
-                deviceIDs = listOf("device1", "device2"),
-                deviceNames = listOf("deviceName1", "deviceName2"),
-                deviceShardNames = listOf("shardName1", "shardName2"),
-                projectPath = "myProject",
-                variantName = "myVariant",
-                xmlTestReportOutputDirectory = xmlTestReportOutputDirectory,
-                mergedUtpResultProtoOutputFile = mergedResultProtoFile,
-                testResultExitCodeFile = testResultExitCodeFile,
-                utpResultProtoOutputFileList = listOf(resultProtoFile1, resultProtoFile2)
+                listOf(runnerConfig1, runnerConfig2),
+                listOf(resultFile1, resultFile2),
+                mergedResultFile,
+                exitCodeFile
             )
         }
         assertThat(e).hasMessageThat().isEqualTo("Test Execution failed")
 
-        // Assert
+        // Assert: Logger should verify the underlying execution exception
         verify(logger, times(2))
             .warn(eq("Test Execution failed"), isA<ExecutionException>())
     }

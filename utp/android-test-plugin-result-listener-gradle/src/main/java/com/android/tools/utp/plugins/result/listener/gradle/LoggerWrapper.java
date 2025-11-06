@@ -14,22 +14,24 @@
  * limitations under the License.
  */
 
-package com.android.tools.utp.gradle;
+package com.android.tools.utp.plugins.result.listener.gradle;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.ide.common.resources.MergingException;
 import com.android.utils.ILogger;
-import java.io.Serializable;
-import java.util.function.Supplier;
+
 import org.gradle.api.logging.LogLevel;
 import org.gradle.api.logging.Logger;
 import org.gradle.api.logging.Logging;
 
+import java.io.Serializable;
+import java.util.function.Supplier;
+
 /**
  * Implementation of Android's {@link ILogger} over Gradle's {@link Logger}.
  *
- * Note that this maps info to the default user-visible lifecycle.
+ * <p>Note that this maps info to the default user-visible lifecycle.
  */
 public class LoggerWrapper implements ILogger {
 
@@ -108,7 +110,7 @@ public class LoggerWrapper implements ILogger {
         log(ILOGGER_VERBOSE, s, objects);
     }
 
-    private void log(@NonNull LogLevel logLevel, @NonNull String s, @Nullable Object[] objects){
+    private void log(@NonNull LogLevel logLevel, @NonNull String s, @Nullable Object[] objects) {
         if (!logger.isEnabled(logLevel)) {
             return;
         }
@@ -148,4 +150,3 @@ public class LoggerWrapper implements ILogger {
         }
     }
 }
-

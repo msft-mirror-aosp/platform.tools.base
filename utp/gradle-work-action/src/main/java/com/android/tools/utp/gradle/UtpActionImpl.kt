@@ -41,62 +41,50 @@ class UtpActionImpl : UtpAction {
                 "com.android.tools.utp.GradleAndroidProjectResolverExtension.enable"
             ).orNull?.toBoolean() ?: false
 
-        UtpTestResultListenerServerRunner().use { server ->
-            val utpRunConfigs = parameters.utpRunConfigs.get()
+        val utpRunConfigs = parameters.utpRunConfigs.get()
 
-            val utpRunnerConfigFileList = utpRunConfigs.map {
-                val utpRunConfigProto = createRunnerConfigProtoForLocalDevice(
-                    it.deviceId.get(),
-                    it.deviceSerialNumber.get(),
-                    it.testData.get(),
-                    it.targetApkConfigBundle.get(),
-                    it.additionalInstallOptions.get(),
-                    it.helperApks.toList(),
-                    it.uninstallIncompatibleApks.get(),
-                    parameters.utpDependencies.get(),
-                    parameters.androidSdkDirectory.get().asFile.absolutePath,
-                    parameters.adbExecutable.get().asFile.absolutePath,
-                    parameters.aaptExecutable.get().asFile.absolutePath,
-                    parameters.dexdumpExecutable.get().asFile.absolutePath,
-                    it.outputDir.get().asFile,
-                    createUtpTempDirectory("utpRunTemp"),
-                    it.emulatorControlConfig.get(),
-                    it.coverageOutputDir.get().asFile,
-                    it.useOrchestrator.get(),
-                    it.forceCompilation.get(),
-                    it.additionalTestOutputDir.orNull?.asFile,
-                    it.additionalTestOutputOnDeviceDir.orNull,
-                    it.installApkTimeout.orNull,
-                    it.extractedSdkApks.get().map { it.map { it.toPath() } },
-                    it.uninstallApksAfterTest.get(),
-                    it.reinstallIncompatibleApksBeforeTest.get(),
-                    it.shardConfig.orNull,
-                    server.metadata,
-                )
-
-                createUtpTempFile("runnerConfig", ".pb").also { file ->
-                    file.writeBytes(utpRunConfigProto.toByteArray())
-                }
-            }
-
-            val utpRunner = UtpRunner(
-                parameters.utpDependencies.get(),
-                enableUtpTestReportingForAndroidStudio,
-                server,
-            )
-
-            utpRunner.execute(
-                utpRunnerConfigFileList,
-                utpRunConfigs.map { it.deviceId.get() },
-                utpRunConfigs.map { it.deviceName.get() },
-                utpRunConfigs.map { it.deviceShardName.get() },
+        val utpRunnerConfigList = utpRunConfigs.map {
+            createRunnerConfigProtoForLocalDevice(
+                it.deviceId.get(),
+                it.deviceName.get(),
+                it.deviceShardName.get(),
                 parameters.projectPath.get(),
                 parameters.variantName.get(),
-                parameters.xmlTestReportOutputDirectory.asFile.get(),
-                parameters.mergedUtpResultProtoOutputFile.asFile.get(),
-                parameters.testResultExitCodeFile.asFile.get(),
-                utpRunConfigs.map { it.utpResultProtoOutputFile.get().asFile },
+                it.deviceSerialNumber.get(),
+                it.testData.get(),
+                it.targetApkConfigBundle.get(),
+                it.additionalInstallOptions.get(),
+                it.helperApks.toList(),
+                it.uninstallIncompatibleApks.get(),
+                parameters.utpDependencies.get(),
+                parameters.androidSdkDirectory.get().asFile.absolutePath,
+                parameters.adbExecutable.get().asFile.absolutePath,
+                parameters.aaptExecutable.get().asFile.absolutePath,
+                parameters.dexdumpExecutable.get().asFile.absolutePath,
+                it.outputDir.get().asFile,
+                createUtpTempDirectory("utpRunTemp"),
+                it.emulatorControlConfig.get(),
+                it.coverageOutputDir.get().asFile,
+                it.useOrchestrator.get(),
+                it.forceCompilation.get(),
+                it.additionalTestOutputDir.orNull?.asFile,
+                it.additionalTestOutputOnDeviceDir.orNull,
+                it.installApkTimeout.orNull,
+                it.extractedSdkApks.get().map { it.map { it.toPath() } },
+                it.uninstallApksAfterTest.get(),
+                it.reinstallIncompatibleApksBeforeTest.get(),
+                it.shardConfig.orNull,
+                enableUtpTestReportingForAndroidStudio,
+                parameters.xmlTestReportOutputDirectory.get().asFile,
+                it.utpResultProtoOutputFile.get().asFile,
             )
         }
+
+        UtpRunner(parameters.utpDependencies.get()).execute(
+            utpRunnerConfigList,
+            utpRunConfigs.map { it.utpResultProtoOutputFile.get().asFile },
+            parameters.mergedUtpResultProtoOutputFile.get().asFile,
+            parameters.testResultExitCodeFile.get().asFile,
+        )
     }
 }

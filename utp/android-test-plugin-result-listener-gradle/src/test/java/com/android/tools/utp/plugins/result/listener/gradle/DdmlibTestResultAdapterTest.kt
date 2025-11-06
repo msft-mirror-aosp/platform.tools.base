@@ -14,14 +14,15 @@
  * limitations under the License.
  */
 
-package com.android.tools.utp.gradle
+package com.android.tools.utp.plugins.result.listener.gradle
 
 import com.android.ddmlib.testrunner.TestIdentifier
 import com.android.ddmlib.testrunner.XmlTestRunListener
 import com.android.tools.utp.plugins.result.listener.gradle.proto.GradleAndroidTestResultListenerProto.TestResultEvent
+import com.google.common.truth.Truth.assertThat
 import com.google.protobuf.Any
 import com.google.protobuf.TextFormat
-import com.google.testing.platform.proto.api.core.TestSuiteResultProto
+import com.google.testing.platform.proto.api.core.TestSuiteResultProto.TestSuiteResult
 import org.junit.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
@@ -34,6 +35,8 @@ import org.mockito.kotlin.never
  */
 class DdmlibTestResultAdapterTest {
     private val mockDdmlibListener: XmlTestRunListener = mock()
+
+    private val adapter = DdmlibTestResultAdapter("runName", mockDdmlibListener)
 
     @Test
     fun testPassed() {
@@ -51,9 +54,7 @@ class DdmlibTestResultAdapterTest {
             }
         """.trimIndent())
 
-        val adapter = DdmlibTestResultAdapter("runName", mockDdmlibListener)
-
-        replayTestEvent(resultProto, adapter)
+        replayTestEvent(resultProto)
 
         inOrder(mockDdmlibListener).apply {
             verify(mockDdmlibListener).testRunStarted(eq("runName"), eq(1))
@@ -91,9 +92,7 @@ class DdmlibTestResultAdapterTest {
             }
         """.trimIndent())
 
-        val adapter = DdmlibTestResultAdapter("runName", mockDdmlibListener)
-
-        replayTestEvent(resultProto, adapter)
+        replayTestEvent(resultProto)
 
         inOrder(mockDdmlibListener).apply {
             verify(mockDdmlibListener).testRunStarted(eq("runName"), eq(1))
@@ -140,9 +139,7 @@ class DdmlibTestResultAdapterTest {
             }
         """)
 
-        val adapter = DdmlibTestResultAdapter("runName", mockDdmlibListener)
-
-        replayTestEvent(resultProto, adapter)
+        replayTestEvent(resultProto)
 
         inOrder(mockDdmlibListener).apply {
             verify(mockDdmlibListener).addSystemError(eq(
@@ -168,9 +165,7 @@ class DdmlibTestResultAdapterTest {
             }
         """)
 
-        val adapter = DdmlibTestResultAdapter("runName", mockDdmlibListener)
-
-        replayTestEvent(resultProto, adapter)
+        replayTestEvent(resultProto)
 
         inOrder(mockDdmlibListener).apply {
             verify(mockDdmlibListener).addSystemError(eq(
@@ -180,30 +175,95 @@ class DdmlibTestResultAdapterTest {
         }
     }
 
-    private fun replayTestEvent(
-        testSuiteResult: TestSuiteResultProto.TestSuiteResult,
-        utpListener: UtpTestResultListener) {
-        utpListener.onTestResultEvent(TestResultEvent.newBuilder().apply {
+    @Test
+    fun getPlatformErrorMessageShouldReturnErrorMessage() {
+        val resultProto = createResultProto("""
+            test_status: ERROR
+            platform_error {
+              errors {
+                summary {
+                  namespace {
+                    namespace: "com.google.testing.platform"
+                  }
+                  error_code: 3002
+                  error_name: "DEVICE_PROVISION_FAILED"
+                  error_classification: "UNDERLYING_TOOL"
+                  error_message: "Failed trying to provide device controller."
+                  stack_trace: "This stacktrace should not be included in the error message."
+                }
+                cause {
+                  summary {
+                    error_message: "Gradle was unable to attach one or more devices to the adb server."
+                    stack_trace: "stacktrace line1\nstacktrace line2"
+                  }
+                }
+              }
+            }
+        """)
+
+        assertThat(getPlatformErrorMessage(resultProto)).contains("""
+            Failed trying to provide device controller.
+            Gradle was unable to attach one or more devices to the adb server.
+            stacktrace line1
+            stacktrace line2
+            """.trimIndent())
+    }
+
+    @Test
+    fun getPlatformErrorMessageShouldReturnErrorMessageEvenIfErrorMessageIsMissingInProto() {
+        val resultProto = createResultProto("""
+            test_status: ERROR
+            platform_error {
+              errors {
+                summary {
+                  namespace {
+                    namespace: "com.google.testing.platform"
+                  }
+                  error_code: 3002
+                  error_name: "DEVICE_PROVISION_FAILED"
+                  error_classification: "UNDERLYING_TOOL"
+                  error_message: "Failed trying to provide device controller."
+                  stack_trace: "This stacktrace should not be included in the error message."
+                }
+                cause {
+                  summary {
+                    stack_trace: "stacktrace line1\nstacktrace line2"
+                  }
+                }
+              }
+            }
+        """)
+
+        assertThat(getPlatformErrorMessage(resultProto)).contains("""
+            Failed trying to provide device controller.
+            Unknown platform error occurred when running the UTP test suite. Please check logs for details.
+            stacktrace line1
+            stacktrace line2
+            """.trimIndent())
+    }
+
+    private fun replayTestEvent(testSuiteResult: TestSuiteResult) {
+        adapter.onTestResultEvent(TestResultEvent.newBuilder().apply {
             testSuiteStartedBuilder.apply {
                 deviceId = "mockDeviceSerialNumber"
                 testSuiteMetadata = Any.pack(testSuiteResult.testSuiteMetaData)
             }
         }.build())
         testSuiteResult.testResultList.forEach { testResult ->
-            utpListener.onTestResultEvent(TestResultEvent.newBuilder().apply {
+            adapter.onTestResultEvent(TestResultEvent.newBuilder().apply {
                 testCaseStartedBuilder.apply {
                     deviceId = "mockDeviceSerialNumber"
                     testCase = Any.pack(testResult.testCase)
                 }
             }.build())
-            utpListener.onTestResultEvent(TestResultEvent.newBuilder().apply {
+            adapter.onTestResultEvent(TestResultEvent.newBuilder().apply {
                 testCaseFinishedBuilder.apply {
                     deviceId = "mockDeviceSerialNumber"
                     testCaseResult = Any.pack(testResult)
                 }
             }.build())
         }
-        utpListener.onTestResultEvent(TestResultEvent.newBuilder().apply {
+        adapter.onTestResultEvent(TestResultEvent.newBuilder().apply {
             testSuiteFinishedBuilder.apply {
                 deviceId = "mockDeviceSerialNumber"
                 this.testSuiteResult = Any.pack(testSuiteResult)
@@ -211,7 +271,7 @@ class DdmlibTestResultAdapterTest {
         }.build())
     }
 
-    private fun createResultProto(asciiProto: String): TestSuiteResultProto.TestSuiteResult {
-        return TextFormat.parse(asciiProto, TestSuiteResultProto.TestSuiteResult::class.java)
+    private fun createResultProto(asciiProto: String): TestSuiteResult {
+        return TextFormat.parse(asciiProto, TestSuiteResult::class.java)
     }
 }
