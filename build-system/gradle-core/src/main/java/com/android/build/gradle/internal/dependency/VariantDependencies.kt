@@ -437,7 +437,10 @@ class VariantDependencies internal constructor(
             project: Project,
             projectOptions: ProjectOptions,
             dslInfo: KmpComponentDslInfo,
-            apiClasspath: Configuration,
+            apiConfiguration: Configuration,
+            implementationConfiguration: Configuration,
+            compileOnlyConfiguration: Configuration,
+            runtimeOnlyConfiguration: Configuration,
             compileClasspath: Configuration,
             runtimeClasspath: Configuration,
             lintChecksClasspath: Configuration,
@@ -492,11 +495,12 @@ class VariantDependencies internal constructor(
             }
 
             listOfNotNull(apiElements, apiPublication).forEach {
-                it.extendsFrom(apiClasspath)
+                it.extendsFrom(apiConfiguration)
             }
 
             listOfNotNull(runtimeElements, runtimePublication).forEach {
-                it.extendsFrom(runtimeClasspath)
+                it.extendsFrom(implementationConfiguration)
+                it.extendsFrom(runtimeOnlyConfiguration)
             }
 
             // add dependency on main project
