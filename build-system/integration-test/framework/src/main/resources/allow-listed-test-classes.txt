@@ -349,7 +349,6 @@ com.android.build.gradle.integration.dependencies.lib.LibWithProvidedDirectJarTe
 com.android.build.gradle.integration.dependencies.lib.LibWithProvidedLocalJarTest
 com.android.build.gradle.integration.dependencies.LocalJarInAarInModelTest
 com.android.build.gradle.integration.dependencies.MatchingFallbackTest
-com.android.build.gradle.integration.dependencies.MisplacedMissingDimensionStrategyTest
 com.android.build.gradle.integration.dependencies.MissingDimensionStrategyTest
 com.android.build.gradle.integration.dependencies.MistypedSourceSetTest
 com.android.build.gradle.integration.dependencies.NestedResourceFoldersTest
@@ -649,4 +648,3 @@ com.android.build.gradle.integration.testing.unit.UnitTestingRClassLoadTest
 com.android.build.gradle.integration.testing.unit.UnitTestingSupportTest
 com.android.build.gradle.integration.testing.unit.UnitTestingTestTaskAccess
 com.android.build.gradle.integration.validation.ValidateTaskPropertiesTest
-
