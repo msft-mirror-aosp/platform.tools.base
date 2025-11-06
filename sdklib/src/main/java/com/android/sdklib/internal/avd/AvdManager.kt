@@ -1203,37 +1203,6 @@ private constructor(
   }
 
   /**
-   * Writes a .ini file from a set of properties, using UTF-8 encoding. The keys are sorted. The
-   * file should be read back later by [.parseIniFile].
-   *
-   * @param iniFile The file to generate.
-   * @param values The properties to place in the ini file.
-   * @param addEncoding When true, add a property [ConfigKey.ENCODING] indicating the encoding used
-   *   to write the file.
-   * @throws IOException if [FileWriter] fails to open, write or close the file.
-   */
-  @Throws(IOException::class)
-  private fun writeIniFile(iniFile: Path, values: Map<String, String>, addEncoding: Boolean) {
-    val charset = StandardCharsets.UTF_8
-    OutputStreamWriter(Files.newOutputStream(iniFile), charset).use { writer ->
-      val finalValues =
-        if (addEncoding) {
-          // Write down the charset we're using in case we want to use it later.
-          values + (ConfigKey.ENCODING to charset.name())
-        } else {
-          values
-        }
-
-      for (key in finalValues.keys.sorted()) {
-        val value = finalValues[key]
-        if (value != null) {
-          writer.write("$key=$value\n")
-        }
-      }
-    }
-  }
-
-  /**
    * Removes an [AvdInfo] from the internal list.
    *
    * @param avdInfo The [AvdInfo] to remove.
@@ -1739,6 +1708,38 @@ private constructor(
         log.warning("Failed 'chattr' for %1\$s: %2\$s", avdFolder.toAbsolutePath().toString(), e)
       } catch (e: IOException) {
         log.warning("Failed 'chattr' for %1\$s: %2\$s", avdFolder.toAbsolutePath().toString(), e)
+      }
+    }
+  }
+}
+
+/**
+ * Writes a .ini file from a set of properties, using UTF-8 encoding. The keys are sorted. The file
+ * should be read back later by [.parseIniFile].
+ *
+ * @param iniFile The file to generate.
+ * @param values The properties to place in the ini file. If a value is null, the key will be
+ *   omitted.
+ * @param addEncoding When true, add a property [ConfigKey.ENCODING] indicating the encoding used to
+ *   write the file.
+ * @throws IOException if [FileWriter] fails to open, write or close the file.
+ */
+@Throws(IOException::class)
+internal fun writeIniFile(iniFile: Path, values: Map<String, String?>, addEncoding: Boolean) {
+  val charset = StandardCharsets.UTF_8
+  OutputStreamWriter(Files.newOutputStream(iniFile), charset).use { writer ->
+    val finalValues =
+      if (addEncoding) {
+        // Write down the charset we're using in case we want to use it later.
+        values + (ConfigKey.ENCODING to charset.name())
+      } else {
+        values
+      }
+
+    for (key in finalValues.keys.sorted()) {
+      val value = finalValues[key]
+      if (value != null) {
+        writer.write("$key=$value\n")
       }
     }
   }

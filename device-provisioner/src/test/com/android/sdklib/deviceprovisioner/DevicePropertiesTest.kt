@@ -165,5 +165,7 @@ private val pixel8Props =
       density = 240
       connectionType = ConnectionType.USB
       wearPairingId = "abcd"
+      pairedPhoneId = DeviceId("Test", false, "abcd")
+      pairedGlassesId = DeviceId("Test", false, "efgh")
     }
     .build()

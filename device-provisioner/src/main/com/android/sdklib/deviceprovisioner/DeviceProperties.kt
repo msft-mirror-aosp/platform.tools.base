@@ -136,6 +136,15 @@ interface DeviceProperties {
    */
   val wearPairingId: String?
 
+  /**
+   * ID of a phone paired to this device via the glasses pairing mechanism. (Not currently used for
+   * Wear; see [wearPairingId].)
+   */
+  val pairedPhoneId: DeviceId?
+
+  /** ID of a glasses device paired to this device via the glasses pairing mechanism. */
+  val pairedGlassesId: DeviceId?
+
   /** The type of connection to the device, if known. */
   val connectionType: ConnectionType?
 
@@ -182,6 +191,8 @@ interface DeviceProperties {
     var isDebuggable: Boolean? = null
     var isResizable: Boolean? = null
     var wearPairingId: String? = null
+    var pairedPhoneId: DeviceId? = null
+    var pairedGlassesId: DeviceId? = null
     var resolution: Resolution? = null
     var density: Int? = null
     var icon: Icon? = null
@@ -202,6 +213,8 @@ interface DeviceProperties {
       isDebuggable = properties.isDebuggable
       isResizable = properties.isResizable
       wearPairingId = properties.wearPairingId
+      pairedPhoneId = properties.pairedPhoneId
+      pairedGlassesId = properties.pairedGlassesId
       resolution = properties.resolution
       density = properties.density
       icon = properties.icon
@@ -317,6 +330,8 @@ interface DeviceProperties {
         isDebuggable = isDebuggable,
         isResizable = isResizable,
         wearPairingId = wearPairingId,
+        pairedPhoneId = pairedPhoneId,
+        pairedGlassesId = pairedGlassesId,
         resolution = resolution,
         density = density,
         icon = checkNotNull(icon),
@@ -341,6 +356,8 @@ data class BaseDeviceProperties(
   override val isDebuggable: Boolean?,
   override val isResizable: Boolean?,
   override val wearPairingId: String?,
+  override val pairedPhoneId: DeviceId?,
+  override val pairedGlassesId: DeviceId?,
   override val resolution: Resolution?,
   override val density: Int?,
   override val icon: Icon,

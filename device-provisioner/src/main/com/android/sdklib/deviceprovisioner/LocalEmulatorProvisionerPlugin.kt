@@ -34,6 +34,7 @@ import com.android.sdklib.deviceprovisioner.DeviceState.Connected
 import com.android.sdklib.deviceprovisioner.DeviceState.Disconnected
 import com.android.sdklib.deviceprovisioner.LocalEmulatorProvisionerPlugin.Companion.PLUGIN_ID
 import com.android.sdklib.devices.Abi
+import com.android.sdklib.internal.avd.AvdBuilder
 import com.android.sdklib.internal.avd.AvdInfo
 import com.android.sdklib.internal.avd.AvdInfo.AvdStatus
 import com.android.sdklib.internal.avd.BootMode
@@ -41,7 +42,9 @@ import com.android.sdklib.internal.avd.BootSnapshot
 import com.android.sdklib.internal.avd.ColdBoot
 import com.android.sdklib.internal.avd.ConfigKey
 import com.android.sdklib.internal.avd.HardwareProperties
+import com.android.sdklib.internal.avd.UserSettingsKey
 import com.android.sdklib.internal.avd.UserSettingsKey.PREFERRED_ABI
+import com.android.utils.ILogger
 import com.google.wireless.android.sdk.stats.DeviceInfo
 import com.intellij.icons.AllIcons
 import java.awt.Component
@@ -60,6 +63,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -153,6 +157,16 @@ internal constructor(
     /** Prompts the user to edit the given AVD. Returns true if the AVD was changed. */
     suspend fun editAvd(parent: Component?, avdInfo: AvdInfo): Boolean
 
+    /** Starts the Glasses Pairing Wizard to pair a phone to the current glasses. */
+    suspend fun pairGlasses(
+      parent: Component?,
+      glassesHandle: LocalEmulatorDeviceHandle,
+      deviceHandleFlow: Flow<List<LocalEmulatorDeviceHandle>>,
+    )
+
+    /** Unpairs the given device from its companion. */
+    suspend fun unpairGlasses(handle: LocalEmulatorDeviceHandle)
+
     /** Boots the AVD using the given BootMode, or default if null. */
     suspend fun startAvd(avdInfo: AvdInfo, bootMode: BootMode)
 
@@ -177,7 +191,7 @@ internal constructor(
   private val mutex = Mutex()
   @GuardedBy("mutex") private val deviceHandles = HashMap<Path, LocalEmulatorDeviceHandle>()
 
-  private val _devices = MutableStateFlow<List<DeviceHandle>>(emptyList())
+  private val _devices = MutableStateFlow<List<LocalEmulatorDeviceHandle>>(emptyList())
   override val devices: StateFlow<List<DeviceHandle>> = _devices.asStateFlow()
 
   // TODO: Consider if it would be better to use a filesystem watcher here instead of polling.
@@ -222,6 +236,7 @@ internal constructor(
                 LocalEmulatorDeviceHandle(
                   context,
                   ::refreshDevices,
+                  _devices,
                   scope.createChildScope(isSupervisor = true),
                   handleExtensions,
                   avdInfo,
@@ -322,6 +337,7 @@ class LocalEmulatorDeviceHandle
 internal constructor(
   private val context: LocalEmulatorContext,
   private val refreshDevices: () -> Unit,
+  private val deviceHandleFlow: Flow<List<LocalEmulatorDeviceHandle>>,
   override val scope: CoroutineScope,
   extensions: List<ExtensionProvider<LocalEmulatorDeviceHandle, *>> = emptyList(),
   initialAvdInfo: AvdInfo,
@@ -727,6 +743,34 @@ internal constructor(
       }
     }
 
+  override val pairGlassesAction =
+    object : PairGlassesAction {
+      override suspend fun pairGlasses(parent: Component?, glassesHandle: DeviceHandle) {
+        avdManager.pairGlasses(parent, this@LocalEmulatorDeviceHandle, deviceHandleFlow)
+      }
+
+      override val presentation: StateFlow<DeviceAction.Presentation>
+        get() =
+          defaultPresentation.fromContext().enabledIf {
+            it.properties.deviceType == DeviceType.AI_GLASSES &&
+              (it.properties as LocalEmulatorProperties).pairedPhoneId == null
+          }
+    }
+
+  override val unpairGlassesAction =
+    object : UnpairGlassesAction {
+      override suspend fun unpairGlasses() {
+        avdManager.unpairGlasses(this@LocalEmulatorDeviceHandle)
+      }
+
+      override val presentation: StateFlow<DeviceAction.Presentation>
+        get() =
+          defaultPresentation.fromContext().enabledIf {
+            it.properties.pairedPhoneId != null
+            it.properties.pairedGlassesId != null
+          }
+    }
+
   /**
    * Attempts to stop the AVD. We can either use the emulator console or AvdManager (which uses a
    * shell command to kill the process)
@@ -784,6 +828,25 @@ internal constructor(
       }
     }
 
+  /** Sets the phone that is paired to this device; if null, clears the paired phone. */
+  fun updatePairedPhone(companion: LocalEmulatorDeviceHandle?) {
+    updatePairedDevice(UserSettingsKey.PAIRED_PHONE_AVD_ID, companion)
+  }
+
+  /** Sets the glasses that are paired to this device; if null, clears the paired glasses. */
+  fun updatePairedGlasses(companion: LocalEmulatorDeviceHandle?) {
+    updatePairedDevice(UserSettingsKey.PAIRED_GLASSES_AVD_ID, companion)
+  }
+
+  private fun updatePairedDevice(key: String, companion: LocalEmulatorDeviceHandle?) {
+    AvdBuilder.updateUserSettings(
+      (state.properties as LocalEmulatorProperties).avdPath,
+      mapOf(key to companion?.id?.toString()),
+      logger.asILogger(),
+    )
+    refreshDevices()
+  }
+
   private fun DeviceAction.Presentation.enabledIf(condition: (DeviceState) -> Boolean) =
     stateFlow
       .map { this.copy(enabled = condition(it)) }
@@ -827,6 +890,8 @@ data class LocalEmulatorProperties(
   override val isDebuggable: Boolean?,
   override val isResizable: Boolean?,
   override val wearPairingId: String?,
+  override val pairedPhoneId: DeviceId?,
+  override val pairedGlassesId: DeviceId?,
   override val resolution: Resolution?,
   override val density: Int?,
   override val icon: Icon,
@@ -895,6 +960,10 @@ data class LocalEmulatorProperties(
       deviceType = avdInfo.toDeviceType()
       hasPlayStore = avdInfo.hasPlayStore()
       wearPairingId = avdInfo.id.takeIf { isPairable() }
+      pairedPhoneId =
+        avdInfo.userSettings[UserSettingsKey.PAIRED_PHONE_AVD_ID]?.let { DeviceId.fromString(it) }
+      pairedGlassesId =
+        avdInfo.userSettings[UserSettingsKey.PAIRED_GLASSES_AVD_ID]?.let { DeviceId.fromString(it) }
       density = avdInfo.density
       resolution = avdInfo.resolution
       isDebuggable = !avdInfo.hasPlayStore()
@@ -929,6 +998,8 @@ data class LocalEmulatorProperties(
         avdPath = checkNotNull(avdPath),
         displayName = checkNotNull(displayName),
         hasPlayStore = hasPlayStore,
+        pairedPhoneId = pairedPhoneId,
+        pairedGlassesId = pairedGlassesId,
         avdConfigProperties = avdConfigProperties.toImmutableMap(),
       )
   }
@@ -1043,3 +1114,22 @@ private val CONNECTION_TIMEOUT = CONNECTION_TIMEOUT_MINUTES.minutes
 
 private const val DISCONNECTION_TIMEOUT_MINUTES: Long = 1
 private val DISCONNECTION_TIMEOUT = DISCONNECTION_TIMEOUT_MINUTES.minutes
+
+fun AdbLogger.asILogger(): ILogger =
+  object : ILogger {
+    override fun error(t: Throwable?, msgFormat: String?, vararg args: Any?) {
+      log(AdbLogger.Level.ERROR, t, msgFormat?.format(*args) ?: t?.message ?: "")
+    }
+
+    override fun warning(msgFormat: String, vararg args: Any?) {
+      log(AdbLogger.Level.WARN, msgFormat.format(*args))
+    }
+
+    override fun info(msgFormat: String, vararg args: Any?) {
+      logIf(AdbLogger.Level.INFO) { msgFormat.format(*args) }
+    }
+
+    override fun verbose(msgFormat: String, vararg args: Any?) {
+      logIf(AdbLogger.Level.VERBOSE) { msgFormat.format(*args) }
+    }
+  }

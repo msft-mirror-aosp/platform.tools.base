@@ -52,20 +52,21 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 
+val emptyDeviceIcons =
+  DeviceIcons(
+    EmptyIcon.DEFAULT,
+    EmptyIcon.DEFAULT,
+    EmptyIcon.DEFAULT,
+    EmptyIcon.DEFAULT,
+    EmptyIcon.DEFAULT,
+    EmptyIcon.DEFAULT,
+  )
+
 class LocalEmulatorProvisionerPluginTest {
 
   @get:Rule val temporaryFolder = TemporaryFolder()
 
   val session = FakeAdbSession()
-  private val deviceIcons =
-    DeviceIcons(
-      EmptyIcon.DEFAULT,
-      EmptyIcon.DEFAULT,
-      EmptyIcon.DEFAULT,
-      EmptyIcon.DEFAULT,
-      EmptyIcon.DEFAULT,
-      EmptyIcon.DEFAULT,
-    )
 
   private lateinit var avdsPath: Path
   private lateinit var avdManager: FakeAvdManager
@@ -81,7 +82,7 @@ class LocalEmulatorProvisionerPluginTest {
         session.scope,
         session,
         avdManager,
-        deviceIcons,
+        emptyDeviceIcons,
         TestDefaultDeviceActionPresentation,
         Dispatchers.IO,
         Duration.ofMillis(100),

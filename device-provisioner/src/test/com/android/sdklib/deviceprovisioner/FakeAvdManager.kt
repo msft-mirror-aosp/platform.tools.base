@@ -34,6 +34,7 @@ import com.android.sdklib.internal.avd.ConfigKey
 import com.android.sdklib.repository.IdDisplay
 import java.awt.Component
 import java.nio.file.Path
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
@@ -95,6 +96,14 @@ class FakeAvdManager(val session: FakeAdbSession, val avdRoot: Path) :
     runningDevices += device
     updateDevices()
   }
+
+  override suspend fun unpairGlasses(handle: LocalEmulatorDeviceHandle) {}
+
+  override suspend fun pairGlasses(
+    parent: Component?,
+    glassesHandle: LocalEmulatorDeviceHandle,
+    deviceHandleFlow: Flow<List<LocalEmulatorDeviceHandle>>,
+  ) {}
 
   fun finishBoot(device: ConnectedDevice) {
     session.deviceServices.configureDeviceProperties(
