@@ -5159,10 +5159,8 @@ class UastTest : TestCase() {
               val unusedAlphaRead = alpha.value
               val unusedPositionRead = position.value
 
-              // TODO(b/446888066):
-              //  after https://youtrack.jetbrains.com/issue/KTIJ-35935
-              // alpha.value = 0.42
-              // position.value = 42f
+              alpha.value = 0.42
+              position.value = 42f
             }
           """
         ),
@@ -5382,8 +5380,7 @@ class UastTest : TestCase() {
       )
     }
     assertEquals(2, getCount)
-    // TODO(b/446888066): supposed to be 2
-    assertEquals(0, setCount)
+    assertEquals(2, setCount)
   }
 
   fun testResolutionToInternal_binary() {

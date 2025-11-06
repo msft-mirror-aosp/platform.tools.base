@@ -24,7 +24,9 @@ import com.intellij.psi.search.GlobalSearchScope
 import org.jetbrains.kotlin.analysis.api.KaSession
 import org.jetbrains.kotlin.analysis.api.symbols.*
 import org.jetbrains.kotlin.psi.KtElement
+import org.jetbrains.kotlin.psi.KtExpression
 import org.jetbrains.uast.kotlin.internal.FirKotlinUastLibraryPsiProviderService
+import org.jetbrains.uast.kotlin.readWriteAccess
 
 internal object DecompiledPsiDeclarationProvider : FirKotlinUastLibraryPsiProviderService {
   override fun KaSession.provide(symbol: KaSymbol, context: KtElement?): PsiElement? {
@@ -33,7 +35,7 @@ internal object DecompiledPsiDeclarationProvider : FirKotlinUastLibraryPsiProvid
       is KaConstructorSymbol -> providePsiForConstructor(symbol, project)
       is KaFunctionSymbol -> providePsiForFunction(symbol, project)
       is KaEnumEntrySymbol -> providePsiForEnumEntry(symbol, project)
-      is KaVariableSymbol -> providePsiForProperty(symbol, project)
+      is KaVariableSymbol -> providePsiForProperty(symbol, context, project)
       is KaClassLikeSymbol -> providePsiForClass(symbol, project)
       else -> null
     }
@@ -71,6 +73,7 @@ internal object DecompiledPsiDeclarationProvider : FirKotlinUastLibraryPsiProvid
 
   private fun KaSession.providePsiForProperty(
     variableLikeSymbol: KaVariableSymbol,
+    context: KtElement?,
     project: Project,
   ): PsiElement? {
     val candidates =
@@ -88,11 +91,14 @@ internal object DecompiledPsiDeclarationProvider : FirKotlinUastLibraryPsiProvid
       if (variableLikeSymbol is KaPropertySymbol) {
         val getterSymbol = variableLikeSymbol.getter
         val setterSymbol = variableLikeSymbol.setter
+        val readWriteAccess = (context as? KtExpression)?.readWriteAccess()
+        val isGetter = getterSymbol != null && readWriteAccess?.isRead == true
+        val isSetter = setterSymbol != null && readWriteAccess?.isWrite == true
         candidates
           ?.filterIsInstance<PsiMethod>()
           ?.firstOrNull { psiMethod ->
-            (getterSymbol != null && representsTheSameDeclaration(psiMethod, getterSymbol) ||
-              setterSymbol != null && representsTheSameDeclaration(psiMethod, setterSymbol))
+            (isGetter && representsTheSameDeclaration(psiMethod, getterSymbol)) ||
+              (isSetter && representsTheSameDeclaration(psiMethod, setterSymbol))
           }
           ?.let {
             return it
