@@ -28039,6 +28039,14 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "androidx.compose.compose-bom_2023.08.00",
+    pom = "repository/androidx/compose/compose-bom/2023.08.00/compose-bom-2023.08.00.pom",
+    repo_root_path = "repository",
+    repo_path = "androidx/compose/compose-bom/2023.08.00",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "androidx.compose.compose-bom_2024.09.00",
     pom = "repository/androidx/compose/compose-bom/2024.09.00/compose-bom-2024.09.00.pom",
     repo_root_path = "repository",

@@ -71,6 +71,7 @@ DATA = [
     "androidx.compose:compose-bom:pom:2023.01.00",  # Dependency of architecture-samples
     "androidx.compose:compose-bom:pom:2023.03.00",
     "androidx.compose:compose-bom:pom:2023.06.00",
+    "androidx.compose:compose-bom:pom:2023.08.00",
     "androidx.compose:compose-bom:pom:2024.09.00",
     "androidx.compose:compose-bom:pom:2025.02.00",
     "androidx.compose.foundation:foundation:1.3.0",
