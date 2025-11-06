@@ -93,7 +93,8 @@ class GoogleMavenRepositoryV2Test : BaseTestCase() {
             offlineMavenRepository.findVersion(
                 "android.arch.core",
                 "core-testing",
-                null as Predicate<Version>?
+                null as Predicate<Version>?,
+                compileSdk = 0,
             )
         )
     }
@@ -170,7 +171,73 @@ class GoogleMavenRepositoryV2Test : BaseTestCase() {
             offlineMavenRepository.findVersion(
                 "androidx.activity",
                 "activity",
-                null as Predicate<Version>?
+                null as Predicate<Version>?,
+                compileSdk = 0,
+            )
+        )
+    }
+
+    @Test
+    fun findVersion_withMinCompileSdk_returnsCompatibleVersion() {
+        val offlineMavenRepository =
+            GoogleMavenRepositoryV2.create(object : GoogleMavenRepositoryV2Host {
+                override val cacheDir: Path? = null
+
+                override fun readUrlData(
+                    url: String,
+                    timeout: Int,
+                    lastModified: Long
+                ): NetworkCache.ReadUrlDataResult =
+                    throw IllegalStateException("Should not be called")
+
+                override fun readDefaultData(relative: String): InputStream? {
+                    val samplePackages = """
+                        {
+                          "packages": [
+                            {
+                              "packageId": "androidx.activity",
+                              "artifacts": [
+                                {
+                                  "artifactId": "activity",
+                                  "versions": [
+                                    {
+                                      "version": "1.0.0"
+                                    },
+                                    {
+                                      "version": "1.2.0",
+                                      "properties": {
+                                        "minCompileSdk": "36",
+                                        "minCompileSdkExtension": "0",
+                                        "aarMetadataVersion": "1.0",
+                                        "aarFormatVersion": "1.0",
+                                        "coreLibraryDesugaringEnabled": "false",
+                                        "minAndroidGradlePluginVersion": "8.9.1"
+                                      }
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                    """.trimIndent()
+                    val byteArrayOutputStream = ByteArrayOutputStream()
+                    GZIPOutputStream(byteArrayOutputStream).use { gzipOutputStream ->
+                        gzipOutputStream.write(samplePackages.toByteArray(Charsets.UTF_8))
+                    }
+                    return ByteArrayInputStream(byteArrayOutputStream.toByteArray())
+                }
+
+                override fun error(throwable: Throwable, message: String?) {}
+            })
+
+        assertEquals(
+            Version.parse("1.0.0"),
+            offlineMavenRepository.findVersion(
+                "androidx.activity",
+                "activity",
+                null as Predicate<Version>?,
+                compileSdk = 35,
             )
         )
     }
@@ -181,7 +248,8 @@ class GoogleMavenRepositoryV2Test : BaseTestCase() {
             mockMavenRepository.findVersion(
                 "com.android.support",
                 "appcompat",
-                null as Predicate<Version>?
+                null as Predicate<Version>?,
+                compileSdk = 0,
             ),
             Version.parse("1.0.0")
         )
@@ -193,7 +261,9 @@ class GoogleMavenRepositoryV2Test : BaseTestCase() {
             mockMavenRepository.findVersion(
                 "com.android.support",
                 "appcompat",
-                Predicate { true }),
+                Predicate { true },
+                compileSdk = 0,
+                ),
             Version.parse("1.0.0")
         )
     }
@@ -204,7 +274,8 @@ class GoogleMavenRepositoryV2Test : BaseTestCase() {
             mockMavenRepository.findVersion(
                 "com.android.missing",
                 "appcompat",
-                { true }
+                { true },
+                compileSdk = 0,
             )
         )
     }
@@ -215,7 +286,8 @@ class GoogleMavenRepositoryV2Test : BaseTestCase() {
             mockMavenRepository.findVersion(
                 "com.android.support",
                 "missing",
-                { true }
+                { true },
+                compileSdk = 0,
             )
         )
     }
@@ -226,7 +298,8 @@ class GoogleMavenRepositoryV2Test : BaseTestCase() {
             mockMavenRepository.findVersion(
                 "com.android.support",
                 "appcompat",
-                null as ((Version) -> Boolean)?
+                null as ((Version) -> Boolean)?,
+                compileSdk = 0,
             ),
             Version.parse("1.0.0")
         )
@@ -239,7 +312,8 @@ class GoogleMavenRepositoryV2Test : BaseTestCase() {
                 "com.android.support",
                 "appcompat",
                 null as ((Version) -> Boolean)?,
-                true
+                true,
+                compileSdk = 0,
             ),
             Version.parse("1.0.1-preview")
         )
@@ -248,7 +322,12 @@ class GoogleMavenRepositoryV2Test : BaseTestCase() {
     @Test
     fun findVersion_withGroupIdArtifactIdAndFilter_returnsVersion() {
         assertEquals(
-            mockMavenRepository.findVersion("com.android.support", "appcompat", { true }),
+            mockMavenRepository.findVersion(
+                "com.android.support",
+                "appcompat",
+                { true },
+                compileSdk = 0
+            ),
             Version.parse("1.0.0")
         )
     }

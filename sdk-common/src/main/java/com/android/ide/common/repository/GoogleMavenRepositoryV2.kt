@@ -35,23 +35,33 @@ import java.util.zip.GZIPInputStream
 interface GoogleMavenRepositoryV2 {
 
     /**
-     * Returns [Version] for a given group, artifact and [Predicate].
+     * @param compileSdk null if non-Android module, otherwise project's compileSdk. This is used to
+     *  check compatibility against certain versions of Android dependencies if they specify a
+     *  minCompileSdk in the .aar's metadata.
+     *
+     * @return latest [Version] for a given group, artifact, matching the [Predicate], [compileSdk].
      */
     fun findVersion(
         groupId: String,
         artifactId: String,
         filter: Predicate<Version>?,
-        allowPreview: Boolean = false
+        allowPreview: Boolean = false,
+        compileSdk: Int? = null
     ): Version?
 
     /**
-     * Returns [Version] for a given group, artifact and filter.
+     * @param compileSdk null if non-Android module, otherwise project's compileSdk. This is used to
+     *  check compatibility against certain versions of Android dependencies if they specify a
+     *  minCompileSdk in the .aar's metadata.
+     *
+     * @return latest [Version] for a given group, artifact, matching the [filter], [compileSdk].
      */
     fun findVersion(
         groupId: String,
         artifactId: String,
         filter: ((Version) -> Boolean)? = null,
-        allowPreview: Boolean = false
+        allowPreview: Boolean = false,
+        compileSdk: Int? = null,
     ): Version?
 
     /**
@@ -140,23 +150,27 @@ private class GoogleMavenRepositoryV2Impl : GoogleMavenRepositoryV2 {
         groupId: String,
         artifactId: String,
         filter: Predicate<Version>?,
-        allowPreview: Boolean
+        allowPreview: Boolean,
+        compileSdk: Int?,
     ): Version? = findVersion(
         groupId,
         artifactId,
         filter?.let { filter -> filter::test },
-        allowPreview
+        allowPreview,
+        compileSdk
     )
 
     override fun findVersion(
         groupId: String,
         artifactId: String,
         filter: ((Version) -> Boolean)?,
-        allowPreview: Boolean
+        allowPreview: Boolean,
+        compileSdk: Int?
     ): Version? {
         val group = localGroups.firstOrNull { it.packageId == groupId } ?: return null
         val artifact = group.artifacts.firstOrNull { it.artifactId == artifactId } ?: return null
         return artifact.versions
+            .filter { compileSdk == null || (it.properties?.minCompileSdk?.toInt() ?: 0) <= compileSdk }
             .map { Version.parse(it.version) }
             .filter { (filter == null || filter(it)) && (allowPreview || !it.isPreview) }
             .maxOrNull()
