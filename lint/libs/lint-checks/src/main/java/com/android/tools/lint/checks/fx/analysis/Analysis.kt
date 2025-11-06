@@ -1077,7 +1077,8 @@ internal open class Analysis<FX : Any>(
         val (t, fx) = body
         // If the functional interface is something like `suspend () -> _`, `args` may have the
         // explicit one for the kontinuation
-        val truncatedArgs = (listOf(method) + args).subList(0, xs.size)
+        // The first argument is the `lambda` itself, which we don't need
+        val truncatedArgs = args.subList(1, 1 + xs.size)
         apply(rec, persistentMapOf(), xs, t, fx, truncatedArgs)
       }
     }

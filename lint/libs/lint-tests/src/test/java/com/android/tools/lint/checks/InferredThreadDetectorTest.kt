@@ -1194,6 +1194,43 @@ class InferredThreadDetectorTest : AbstractCheckTest() {
     Truth.assertThat(end - start).isLessThan(20_000)
   }
 
+  // Test reduced from ...trix.ritz.shared.model.channels.ReadableChannel
+  fun testNestedLambda2() {
+    lint()
+      .testModes(TestMode.DEFAULT)
+      .files(
+        java(
+            """
+          public interface ReadableChannel<V> {
+
+            void forEach(Consume1<V> callback);
+
+            default <X> void join1(ReadableChannel<X> other, Consume2<V, X> callback) {
+              forEach(a -> other.forEach(b -> callback.apply(a, b)));
+            }
+
+            default <X> void join2(ReadableChannel<X> other, Consume2<V, X> callback) {
+              join1(other, (a, b) -> other.forEach(c -> callback.apply(a, b)));
+            }
+
+            interface Consume1<V2> {
+              void accept(V2 value);
+            }
+
+            interface Consume2<A, B> {
+              void apply(A a, B b);
+            }
+          }
+          """
+              .trimIndent()
+          )
+          .indented()
+      )
+      .run()
+      .expectClean()
+    // This program never converged before the fix.
+  }
+
   fun testInterpreter_bigStep() {
     lint()
       .files(
