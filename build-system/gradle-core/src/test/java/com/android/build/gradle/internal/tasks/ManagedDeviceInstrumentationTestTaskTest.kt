@@ -68,12 +68,10 @@ import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.verifyNoMoreInteractions
 import org.mockito.kotlin.whenever
 import java.io.File
-import java.util.logging.Level
 
 class ManagedDeviceInstrumentationTestTaskTest {
     private lateinit var mockVersionedSdkLoader: VersionedSdkLoader
 
-    private lateinit var utpJvm: File
     private lateinit var emulatorFile: File
     private lateinit var avdFolder: File
     private lateinit var resultsFolder: File
@@ -129,8 +127,6 @@ class ManagedDeviceInstrumentationTestTaskTest {
         emulatorFile = temporaryFolderRule.newFolder("emulator")
         whenever(emulatorDirectory.asFile).thenReturn(emulatorFile)
         whenever(avdService.emulatorDirectory).thenReturn(FakeGradleProvider(emulatorDirectory))
-
-        utpJvm = temporaryFolderRule.newFile("java")
 
         avdFolder = temporaryFolderRule.newFolder("gradle/avd")
         whenever(avdDirectory.asFile).thenReturn(avdFolder)
@@ -231,12 +227,9 @@ class ManagedDeviceInstrumentationTestTaskTest {
         whenever(factory.sdkBuildService).thenReturn(FakeGradleProperty(sdkService))
         whenever(factory.avdComponents).thenReturn(FakeGradleProperty(avdService))
         whenever(factory.utpDependencies).thenReturn(mock<UtpDependencies>())
-        whenever(factory.utpLoggingLevel).thenReturn(FakeGradleProperty(Level.OFF))
         whenever(factory.installApkTimeout).thenReturn(FakeGradleProperty(0))
         whenever(factory.enableEmulatorDisplay).thenReturn(FakeGradleProperty(false))
         whenever(factory.getTargetIsSplitApk).thenReturn(FakeGradleProperty(false))
-        doReturn(mockFileProperty(utpJvmFile)).whenever(factory).jvmExecutable
-        doReturn(utpJvm).whenever(utpJvmFile).asFile
 
         val testRunner = factory.createTestRunner(workerExecutor, project.objects, null)
         assertThat(testRunner).isInstanceOf(ManagedDeviceTestRunner::class.java)

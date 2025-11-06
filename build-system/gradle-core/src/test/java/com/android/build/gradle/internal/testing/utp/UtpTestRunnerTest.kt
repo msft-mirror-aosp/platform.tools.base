@@ -41,7 +41,6 @@ import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 import java.io.File
-import java.util.logging.Level
 import kotlin.reflect.jvm.javaMethod
 
 /**
@@ -90,13 +89,11 @@ class UtpTestRunnerTest {
             mockObjectFactory,
             mock(),
             mock(),
-            mock(),
             mockVersionedSdkLoader,
             mock(),
             useOrchestrator = false,
             forceCompilation = false,
             uninstallIncompatibleApks = false,
-            Level.WARNING,
             null,
             false,
             false,
@@ -106,7 +103,7 @@ class UtpTestRunnerTest {
 
         mockStatic(::runUtpTestSuiteAndWait.javaMethod!!.declaringClass).use { mockedStatic ->
             mockedStatic.whenever<List<UtpTestRunResult>> {
-                runUtpTestSuiteAndWait(runnerConfigsCaptor.capture(), any(), any(), any(), any(), any(), any(), any(), any())
+                runUtpTestSuiteAndWait(runnerConfigsCaptor.capture(), any(), any(), any(), any(), any(), any(), any())
             }.thenReturn(listOf(result))
 
             return runner.runTests(

@@ -51,7 +51,6 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import java.io.File
-import java.util.logging.Level
 import kotlin.io.path.Path
 import kotlin.reflect.jvm.javaMethod
 
@@ -81,7 +80,6 @@ class ManagedDeviceTestRunnerTest {
     private lateinit var emulatorFolder: File
     private lateinit var avdFolder: File
     private lateinit var outputDirectory: File
-    private lateinit var jvmExecutable: File
 
     private val extractedSdkApks = listOf(listOf(Path("test1"), Path("test2")))
     private val sdkApkSet = setOf(File("test"))
@@ -91,8 +89,6 @@ class ManagedDeviceTestRunnerTest {
     @Before
     fun setupMocks() {
         Environment.initialize()
-
-        jvmExecutable = temporaryFolderRule.newFile()
 
         whenever(mockObjectFactory.newInstance(
             eq(UtpRunConfig::class.java))
@@ -164,7 +160,6 @@ class ManagedDeviceTestRunnerTest {
                 mockWorkerExecutor,
                 mockObjectFactory,
                 mockUtpDependencies,
-                jvmExecutable,
                 mockVersionedSdkLoader,
                 mockEmulatorControlConfig,
                 useOrchestrator = false,
@@ -173,7 +168,6 @@ class ManagedDeviceTestRunnerTest {
                 mockAvdComponents,
                 null,
                 false,
-                Level.WARNING,
                 false,
             )
 
@@ -185,7 +179,6 @@ class ManagedDeviceTestRunnerTest {
                 mockedStatic.whenever<List<UtpTestRunResult>> {
                     runUtpTestSuiteAndWait(
                         runnerConfigsCaptor.capture(),
-                        any(),
                         any(),
                         any(),
                         any(),

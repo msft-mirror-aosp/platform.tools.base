@@ -44,6 +44,8 @@ dependencies {
     implementation libs.com.android.tools.utp.androidTestPluginHostEmulatorControlProto
     implementation libs.com.android.tools.utp.androidTestPluginHostLogcatProto
     implementation libs.com.android.tools.utp.androidTestPluginResultListenerGradleProto
+    implementation libs.unified_test_platform_launcher
+    implementation "com.google.dagger:dagger:2.48"
 
     testImplementation gradleApi()
     testImplementation project(':base:utp:gradle-work-action-api')

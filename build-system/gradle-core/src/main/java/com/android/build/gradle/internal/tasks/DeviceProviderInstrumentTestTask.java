@@ -83,7 +83,6 @@ import com.google.common.io.Files;
 
 import org.gradle.api.GradleException;
 import org.gradle.api.InvalidUserDataException;
-import org.gradle.api.JavaVersion;
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.ArtifactCollection;
 import org.gradle.api.artifacts.Configuration;
@@ -92,7 +91,6 @@ import org.gradle.api.file.DirectoryProperty;
 import org.gradle.api.file.RegularFile;
 import org.gradle.api.file.RegularFileProperty;
 import org.gradle.api.logging.Logger;
-import org.gradle.api.logging.Logging;
 import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.plugins.JavaBasePlugin;
 import org.gradle.api.provider.ListProperty;
@@ -125,7 +123,6 @@ import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
-import java.util.logging.Level;
 import java.util.stream.Collectors;
 
 import javax.inject.Inject;
@@ -140,16 +137,6 @@ public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTas
             file -> SdkConstants.EXT_ANDROID_PACKAGE.equals(Files.getFileExtension(file.getName()));
 
     public abstract static class TestRunnerFactory {
-
-        /** Java runtime environment to run UTP in */
-        @Internal
-        public abstract RegularFileProperty getJvmExecutable();
-
-        @Input
-        public abstract Property<JavaVersion> getJavaVersion();
-
-        @Internal
-        public abstract Property<Boolean> getIsUtpLoggingEnabled();
 
         @Input
         public abstract Property<Boolean> getUninstallIncompatibleApks();
@@ -225,7 +212,6 @@ public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTas
                     workerExecutor,
                     objectFactory,
                     executorServiceAdapter,
-                    getJvmExecutable().get().getAsFile(),
                     getUtpDependencies(),
                     getSdkBuildService()
                             .get()
@@ -236,14 +222,9 @@ public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTas
                     useOrchestrator,
                     getForceCompilation().get(),
                     getUninstallIncompatibleApks().get(),
-                    utpLoggingLevel(),
                     getInstallApkTimeout().getOrNull(),
                     getTargetIsSplitApk().getOrElse(false),
                     !getKeepInstalledApks().get());
-        }
-
-        private Level utpLoggingLevel() {
-            return getIsUtpLoggingEnabled().get() ? Level.INFO : Level.OFF;
         }
     }
 
@@ -895,12 +876,6 @@ public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTas
                     .getForceCompilation()
                     .set(creationConfig.isForceAotCompilation());
 
-            task.getTestRunnerFactory()
-                    .getJvmExecutable()
-                    .set(new File(System.getProperty("java.home"), "bin/java"));
-
-            task.getTestRunnerFactory().getJavaVersion().set(JavaVersion.current());
-
             if (connectedCheckTargetSerials != null) {
                 task.getTestRunnerFactory()
                         .getConnectedCheckDeviceSerials()
@@ -919,10 +894,6 @@ public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTas
             UtpTestUtilsKt.resolveDependencies(
                     task.getTestRunnerFactory().getUtpDependencies(),
                     task.getProject().getConfigurations());
-
-            boolean infoLoggingEnabled =
-                    Logging.getLogger(DeviceProviderInstrumentTestTask.class).isInfoEnabled();
-            task.getTestRunnerFactory().getIsUtpLoggingEnabled().set(infoLoggingEnabled);
 
             task.getTestRunnerFactory()
                     .getUninstallIncompatibleApks()
