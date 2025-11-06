@@ -114,7 +114,7 @@ interface DeprecationReporter {
             Version.VERSION_10_0,
         "The legacy variant API is disabled by default in AGP 9.0, but can be " +
                 "re-enabled by adding \n" +
-                "    android.enableLegacyVariantApi=true\n" +
+                "    android.newDsl=false\n" +
                 "to this project's gradle.properties file."
         ),
 

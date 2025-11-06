@@ -152,16 +152,7 @@ abstract class BaseExtension protected constructor(
         lock()
     }
 
-    protected fun recordOldVariantApiUsage(elementName: String) {
-        if (!dslServices.projectOptions[BooleanOption.ENABLE_LEGACY_VARIANT_API]) {
-            dslServices.deprecationReporter.reportDeprecatedApi(
-                null,
-                elementName,
-                "https://developer.android.com/studio/releases/gradle-plugin-api-updates",
-                deprecationTarget = DeprecationReporter.DeprecationTarget.LEGACY_VARIANT_API,
-                requiresOptIn = true,
-            )
-        }
+    protected fun recordOldVariantApiUsage() {
         stats?.oldVariantApiInUse = true
         hasOldVariantApiUsage = true
     }

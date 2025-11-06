@@ -188,14 +188,6 @@ enum class BooleanOption(
 
     INCLUDE_DEPENDENCY_INFO_IN_APKS("android.includeDependencyInfoInApks", true, FeatureStage.Supported),
 
-    /**
-     * Whether the legacy variant API (android.applicationVariants etc.) can be used a runtime.
-     */
-    ENABLE_LEGACY_VARIANT_API(
-        "android.enableLegacyVariantApi", true, FeatureStage.Supported,
-        FutureStage(false, FeatureStage.Enforced(Version.VERSION_10_0), Version.VERSION_10_0)
-    ),
-
     /** Enables R8 strict full mode for keep rules (see [FULL_R8] for more context). */
     R8_STRICT_FULL_MODE_FOR_KEEP_RULES(
         "android.r8.strictFullModeForKeepRules",
@@ -747,7 +739,11 @@ enum class BooleanOption(
      * DEPRECATED FEATURES
     */
 
-    /** This flag is subsumed by android.enableLegacyVariantApi ([ENABLE_LEGACY_VARIANT_API]) */
+    /**
+     * This flag triggers some different behavior in the old Variant API for specific APIs that need
+     * to break the laziness of the new API.
+     * Without this flag, these old APIs do not work.
+     **/
     ENABLE_LEGACY_API(
         "android.compatibility.enableLegacyApi", true, FeatureStage.Deprecated(VERSION_10_0),
     ),
@@ -1174,6 +1170,19 @@ enum class BooleanOption(
         ApiStage.Removed(Version.VERSION_9_0),
     ),
 
+    /**
+     * Whether the legacy variant API (android.applicationVariants etc.) can be used a runtime.
+     *
+     * This is not used anymore and has been replaced by [USE_NEW_DSL]
+     */
+    @Deprecated("Do not use. Use newDsl instead")
+    ENABLE_LEGACY_VARIANT_API(
+        "android.enableLegacyVariantApi", false, ApiStage.Removed(
+            Version.VERSION_9_0,
+            "The android.enableLegacyVariantApi property has no effect, use android.newDsl instead"
+        )
+    ),
+
     @Suppress("unused")
     ENABLE_IN_PROCESS_AAPT2(
         "android.enableAapt2jni",
@@ -1285,7 +1294,6 @@ enum class BooleanOption(
         false,
         FeatureStage.Removed(Version.VERSION_8_11)
     ),
-
 
     /**
      * When enabled, Gradle Managed Device test results will be included in the mergeAndroidReports task from the

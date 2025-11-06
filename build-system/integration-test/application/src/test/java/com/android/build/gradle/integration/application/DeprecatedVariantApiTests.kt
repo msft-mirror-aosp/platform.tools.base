@@ -54,7 +54,7 @@ class DeprecatedVariantApiTests {
         }""".trimIndent())
 
         project.executor()
-            .with(BooleanOption.ENABLE_LEGACY_VARIANT_API, true)
+            .with(BooleanOption.USE_NEW_DSL, false)
             .run("assembleDebug")
 
         project.assertApk(ApkSelector.DEBUG) {

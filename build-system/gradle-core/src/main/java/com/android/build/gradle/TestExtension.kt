@@ -67,12 +67,12 @@ abstract class TestExtension @Inject constructor(
      */
     val applicationVariants: DefaultDomainObjectSet<ApplicationVariant>
         get() {
-            recordOldVariantApiUsage("applicationVariants")
+            recordOldVariantApiUsage()
             return applicationVariantList as DefaultDomainObjectSet<ApplicationVariant>
         }
 
     override fun addVariant(variant: BaseVariant) {
-        if (!dslServices.projectOptions[BooleanOption.ENABLE_LEGACY_VARIANT_API]) return
+        if (dslServices.projectOptions[BooleanOption.USE_NEW_DSL]) return
         applicationVariantList.add(variant as ApplicationVariant)
     }
 

@@ -55,12 +55,12 @@ abstract class TestedExtension(
      */
     override val testVariants: DomainObjectSet<TestVariant>
         get() {
-            recordOldVariantApiUsage("testVariants")
+            recordOldVariantApiUsage()
             return testVariantList
         }
 
     fun addTestVariant(testVariant: TestVariant) {
-        if (!dslServices.projectOptions[BooleanOption.ENABLE_LEGACY_VARIANT_API]) return
+        if (dslServices.projectOptions[BooleanOption.USE_NEW_DSL]) return
         testVariantList.add(testVariant)
     }
 
@@ -79,12 +79,12 @@ abstract class TestedExtension(
      */
     override val unitTestVariants: DomainObjectSet<UnitTestVariant>
         get() {
-            recordOldVariantApiUsage("unitTestVariants")
+            recordOldVariantApiUsage()
             return unitTestVariantList
         }
 
     fun addUnitTestVariant(testVariant: UnitTestVariant) {
-        if (!dslServices.projectOptions[BooleanOption.ENABLE_LEGACY_VARIANT_API]) return
+        if (dslServices.projectOptions[BooleanOption.USE_NEW_DSL]) return
         unitTestVariantList.add(testVariant)
     }
 

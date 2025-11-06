@@ -191,12 +191,12 @@ abstract class LibraryExtension @Inject constructor(
      */
     val libraryVariants: DefaultDomainObjectSet<LibraryVariant>
         get() {
-            recordOldVariantApiUsage("libraryVariants")
+            recordOldVariantApiUsage()
             return libraryVariantList as DefaultDomainObjectSet<LibraryVariant>
         }
 
     override fun addVariant(variant: BaseVariant) {
-        if (!dslServices.projectOptions[BooleanOption.ENABLE_LEGACY_VARIANT_API]) return
+        if (dslServices.projectOptions[BooleanOption.USE_NEW_DSL]) return
         libraryVariantList.add(variant as LibraryVariant)
     }
 

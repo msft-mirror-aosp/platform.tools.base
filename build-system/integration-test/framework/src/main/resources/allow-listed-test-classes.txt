@@ -384,7 +384,6 @@ com.android.build.gradle.integration.dsl.AllDslMethodsTest
 com.android.build.gradle.integration.dsl.BuildTypeDslTest
 com.android.build.gradle.integration.dsl.DslTest
 com.android.build.gradle.integration.feature.FeatureOnFeatureDependencyTest
-com.android.build.gradle.integration.gradleapi.ObsoleteApiTest
 com.android.build.gradle.integration.instrumentation.AsmTransformApiConfigurationCachingTest
 com.android.build.gradle.integration.instrumentation.AsmTransformApiFixFramesTest
 com.android.build.gradle.integration.instrumentation.AsmTransformApiIncrementalityTest

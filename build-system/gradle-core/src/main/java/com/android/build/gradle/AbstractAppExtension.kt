@@ -60,7 +60,7 @@ abstract class AbstractAppExtension(
      */
     val applicationVariants: DomainObjectSet<ApplicationVariant>
         get() {
-            recordOldVariantApiUsage("applicationVariants")
+            recordOldVariantApiUsage()
            return _applicationVariants
         }
 
@@ -68,7 +68,7 @@ abstract class AbstractAppExtension(
         dslServices.domainObjectSet(ApplicationVariant::class.java)
 
     override fun addVariant(variant: BaseVariant) {
-        if (!dslServices.projectOptions[BooleanOption.ENABLE_LEGACY_VARIANT_API]) return
+        if (dslServices.projectOptions[BooleanOption.USE_NEW_DSL]) return
         _applicationVariants.add(variant as ApplicationVariant)
     }
 }
