@@ -381,7 +381,7 @@ class FusedLibraryMergeResourcesTaskTest(private val publicationOnlyMode: Boolea
         }
     }
 
-    private class FusedLibraryConfigureMavenPublishCallback: GenericCallback {
+    class FusedLibraryConfigureMavenPublishCallback: GenericCallback {
         override fun handleProject(project: Project) {
             project.plugins.apply("maven-publish")
 
@@ -405,7 +405,7 @@ class FusedLibraryMergeResourcesTaskTest(private val publicationOnlyMode: Boolea
         }
     }
 
-    private class AndroidLibraryConfigureMavenPublishCallback : GenericCallback {
+    class AndroidLibraryConfigureMavenPublishCallback : GenericCallback {
 
         override fun handleProject(project: Project) {
             project.plugins.apply("maven-publish")

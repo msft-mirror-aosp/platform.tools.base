@@ -103,7 +103,6 @@ class FirebaseTestLabIntegrationTest {
             }
             pluginCallbacks += RegisterFakeHttpHandlerCallback::class.java
         }
-        disableBuiltInKotlin()
     }
 
     private val executor: GradleTaskExecutor
@@ -118,7 +117,7 @@ class FirebaseTestLabIntegrationTest {
         extensionType = TestLabGradlePluginExtension::class.java
     )
 
-    private class RegisterFakeHttpHandlerCallback : GenericCallback {
+    class RegisterFakeHttpHandlerCallback : GenericCallback {
 
         override fun handleProject(project: Project) {
             project.afterEvaluate {

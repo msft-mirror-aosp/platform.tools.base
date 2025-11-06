@@ -12,12 +12,10 @@ fun GradleBuildDefinition.simpleGMDProject() {
     androidApplication {
         addManagedDevice("device1")
     }
-    disableBuiltInKotlin()
 }
 
 fun GradleBuildDefinition.simpleProject() {
     androidApplication {
-        applyPlugin(PluginType.KOTLIN_ANDROID)
         android {
             defaultConfig {
                 minSdk = 21
@@ -53,9 +51,6 @@ fun GradleBuildDefinition.simpleProject() {
                 """.trimIndent()
             )
         }
-    }
-    gradleProperties {
-        add(BooleanOption.USE_ANDROID_X, true)
     }
 }
 

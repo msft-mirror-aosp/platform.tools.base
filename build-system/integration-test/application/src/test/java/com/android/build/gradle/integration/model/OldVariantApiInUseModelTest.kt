@@ -28,11 +28,16 @@ class OldVariantApiInUseModelTest : ReferenceModelComparator(
     referenceConfig = {
         androidApplication {
         }
-        this.gradleProperties { add(BooleanOption.ENABLE_PROFILE_JSON, true) }
+        gradleProperties {
+            add(BooleanOption.ENABLE_PROFILE_JSON, true)
+        }
     },
     deltaConfig = {
         androidApplication {
             pluginCallbacks += OldVariantApiCallback::class.java
+        }
+        gradleProperties {
+            add(BooleanOption.USE_NEW_DSL, false)
         }
     },
     syncOptions = {

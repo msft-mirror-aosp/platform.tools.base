@@ -44,7 +44,9 @@ import com.android.build.gradle.integration.common.fixture.project.PrivacySandbo
 import com.android.build.gradle.integration.common.fixture.project.PrivacySandboxSdkDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.options.GradlePropertiesBuilder
 import com.android.build.gradle.integration.common.fixture.project.options.GradlePropertiesDelegate
+import com.android.build.gradle.integration.common.fixture.project.plugins.PluginCallback
 import com.android.build.gradle.integration.common.fixture.project.prebuilts.HelloWorldAndroid
+import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.MavenRepoGenerator
 import java.io.File
 import java.nio.file.Path
@@ -631,6 +633,8 @@ internal class GradleBuildDefinitionImpl(
         handler.use {
             // include all the plugin callbacks
             for ((callbackClass, paths) in callbackMap) {
+                checkCallback(callbackClass)
+
                 val pluginClassName = it.addCallback(callbackClass)
 
                 // record this association, using the paths as keys since it'll be used
@@ -645,6 +649,19 @@ internal class GradleBuildDefinitionImpl(
         }
 
         return pluginClassMap
+    }
+
+    private fun checkCallback(callbackClass: Class<out PluginCallback>) {
+        val requiresOldVariantApi = callbackClass.getDeclaredConstructor()
+            .newInstance()
+            .requiresOldVariantApi
+        if (requiresOldVariantApi) {
+            val newDsl = propertiesDelegate.mutableBooleans[BooleanOption.USE_NEW_DSL]
+            val newDslAsString = propertiesDelegate.mutableProperties[BooleanOption.USE_NEW_DSL.propertyName]
+            if (newDsl != false && newDslAsString != "false") {
+                throw RuntimeException("Usage of Legacy Variant API requires to set android.newDsl=false")
+            }
+        }
     }
 }
 

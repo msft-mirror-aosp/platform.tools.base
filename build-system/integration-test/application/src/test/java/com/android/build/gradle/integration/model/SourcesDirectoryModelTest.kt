@@ -23,6 +23,7 @@ import com.android.build.gradle.integration.common.fixture.project.plugins.Appli
 import com.android.build.gradle.integration.common.fixture.project.plugins.LegacyApplicationCallback
 import com.android.build.gradle.integration.common.utils.disableBuiltInKotlin
 import com.android.build.gradle.internal.dsl.BaseAppModuleExtension
+import com.android.build.gradle.options.BooleanOption
 import com.android.builder.model.v2.ide.SyncIssue
 import org.gradle.api.DefaultTask
 import org.gradle.api.Project
@@ -108,6 +109,9 @@ class SourcesDirectoryModelTest : ModelComparator() {
         val build = rule.build {
             androidApplication {
                 pluginCallbacks += LegacyAppCallback::class.java
+            }
+            gradleProperties {
+                add(BooleanOption.USE_NEW_DSL, false)
             }
         }
 

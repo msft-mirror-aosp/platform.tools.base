@@ -16,21 +16,18 @@
 
 package com.android.build.gradle.integration.analytics
 
-import com.android.build.gradle.integration.common.fixture.SUPPORT_LIB_MIN_SDK
-import com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
-
-import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.fixture.ProfileCapturer
-import com.android.build.gradle.integration.common.fixture.app.KotlinHelloWorldApp
 import com.android.Version
 import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
-import com.android.build.gradle.integration.common.utils.disableBuiltInKotlin
+import com.android.build.gradle.integration.common.fixture.GradleTestProject
+import com.android.build.gradle.integration.common.fixture.ProfileCapturer
+import com.android.build.gradle.integration.common.fixture.SUPPORT_LIB_MIN_SDK
+import com.android.build.gradle.integration.common.fixture.app.KotlinHelloWorldApp
+import com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
 import com.android.testutils.TestUtils
 import com.google.common.collect.Iterables
 import com.google.wireless.android.sdk.stats.GradleBuildProject
-import com.google.wireless.android.sdk.stats.GradleBuildProject.GradlePlugin.ORG_JETBRAINS_KOTLIN_GRADLE_PLUGIN_KOTLINANDROIDPLUGINWRAPPER
 import com.google.wireless.android.sdk.stats.GradleBuildProject.GradlePlugin.COM_ANDROID_BUILD_GRADLE_APPPLUGIN
-import java.util.HashSet
+import com.google.wireless.android.sdk.stats.GradleBuildProject.GradlePlugin.ORG_JETBRAINS_KOTLIN_GRADLE_PLUGIN_KOTLINANDROIDPLUGINWRAPPER
 import org.junit.Rule
 import org.junit.Test
 import java.util.regex.Pattern

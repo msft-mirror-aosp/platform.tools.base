@@ -19,5 +19,7 @@ package com.android.build.gradle.integration.common.fixture.project.plugins
 /**
  * Base interface for all plugin callbacks.
  */
-interface PluginCallback
-
+interface PluginCallback {
+    val requiresOldVariantApi
+        get() = false
+}

@@ -23,6 +23,7 @@ import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.plugins.LegacyApplicationCallback
 import com.android.build.gradle.integration.common.fixture.project.plugins.LegacyLibraryCallback
 import com.android.build.gradle.internal.dsl.BaseAppModuleExtension
+import com.android.build.gradle.options.BooleanOption
 import com.android.utils.XmlUtils
 import com.google.common.io.Files
 import com.google.common.truth.Truth
@@ -75,6 +76,9 @@ class LegacyVariantApiDslManifestPlaceholderTest {
         }
         androidLibrary(":lib2") {
             files.update("src/main/AndroidManifest.xml").replaceWith(libraryManifest)
+        }
+        gradleProperties {
+            add(BooleanOption.USE_NEW_DSL, false)
         }
     }
 

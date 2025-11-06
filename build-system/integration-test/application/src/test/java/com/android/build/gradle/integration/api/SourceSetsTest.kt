@@ -115,6 +115,9 @@ class SourceSetsTest {
                 pluginCallbacks.add(AssetCallback::class.java)
                 pluginCallbacks.add(AssetViaOldApiCallback::class.java)
             }
+            gradleProperties {
+                add(BooleanOption.USE_NEW_DSL, false)
+            }
         }
 
         val app = build.androidApplication()
@@ -157,6 +160,9 @@ class SourceSetsTest {
                 // replace previous plugin
                 pluginCallbacks.clear()
                 pluginCallbacks += RegisterTaskViaOldApi::class.java
+            }
+            gradleProperties {
+                add(BooleanOption.USE_NEW_DSL, false)
             }
         }
 

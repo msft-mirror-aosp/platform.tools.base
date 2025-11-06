@@ -158,7 +158,7 @@ class BuiltInKotlinAutomaticStdlibTest {
 
 }
 
-private class MavenPublishPluginCallback: GenericCallback {
+class MavenPublishPluginCallback: GenericCallback {
     override fun handleProject(project: Project) {
         project.extensions.getByType(PublishingExtension::class.java).apply {
             publications.register("maven", MavenPublication::class.java) { publication ->

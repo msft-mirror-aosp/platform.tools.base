@@ -29,7 +29,6 @@ import com.android.build.gradle.integration.common.fixture.GradleTaskExecutor
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.plugins.ApplicationComponentCallback
 import com.android.build.gradle.integration.common.truth.ScannerSubject.Companion.assertThat
-import com.android.build.gradle.integration.common.utils.disableBuiltInKotlin
 import com.android.build.gradle.integration.manageddevice.utils.simpleProject
 import com.android.build.gradle.internal.utils.setDisallowChanges
 import com.android.testutils.truth.PathSubject.assertThat
@@ -145,7 +144,6 @@ class ManagedDeviceExtensionTest {
                 }
                 pluginCallbacks += AddCustomGMDCallback::class.java
             }
-            disableBuiltInKotlin()
     }
 
     class AddCustomGMDCallback : ApplicationComponentCallback {

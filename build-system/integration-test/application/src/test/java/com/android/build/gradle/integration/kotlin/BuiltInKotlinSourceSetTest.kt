@@ -52,7 +52,7 @@ class BuiltInKotlinSourceSetTest {
     }
 }
 
-private class AddExtraSourceSetsCallback: GenericCallback {
+class AddExtraSourceSetsCallback: GenericCallback {
 
     override fun handleProject(project: Project) {
         val androidExtension = project.extensions.getByType(CommonExtension::class.java)
@@ -68,7 +68,7 @@ private class AddExtraSourceSetsCallback: GenericCallback {
     }
 }
 
-private class PrintSourceSetsCallback: GenericCallback {
+class PrintSourceSetsCallback: GenericCallback {
 
     override fun handleProject(project: Project) {
         val androidExtension = project.extensions.getByType(CommonExtension::class.java)

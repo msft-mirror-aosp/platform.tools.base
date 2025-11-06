@@ -64,8 +64,8 @@ interface GradlePropertiesBuilder {
 
 internal class GradlePropertiesDelegate : GradlePropertiesBuilder {
 
-    private val mutableProperties = mutableMapOf<String, String>()
-    private val mutableBooleans = mutableMapOf<BooleanOption, Boolean>()
+    internal val mutableProperties = mutableMapOf<String, String>()
+    internal val mutableBooleans = mutableMapOf<BooleanOption, Boolean>()
     private val mutableStrings = mutableMapOf<StringOption, String>()
 
     override fun add(key: String, value: String) {

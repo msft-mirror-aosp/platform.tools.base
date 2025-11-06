@@ -60,4 +60,7 @@ interface LegacyApplicationCallback: PluginCallback {
         project: Project,
         extension: BaseAppModuleExtension
     )
+
+    override val requiresOldVariantApi: Boolean
+        get() = true
 }

@@ -63,6 +63,9 @@ class ProcessApplicationManifestWithSplitsTest(private val abi: String, private 
             }
             pluginCallbacks += MyAppCallback::class.java
         }
+        gradleProperties {
+            add(BooleanOption.USE_NEW_DSL, false)
+        }
     }
 
     class MyAppCallback: LegacyApplicationCallback {

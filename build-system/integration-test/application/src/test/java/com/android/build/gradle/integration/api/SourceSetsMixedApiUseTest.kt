@@ -50,6 +50,9 @@ class SourceSetsMixedApiUseTest {
             }
             pluginCallbacks += MyCallback::class.java
         }
+        gradleProperties {
+            add(BooleanOption.USE_NEW_DSL, false)
+        }
         disableBuiltInKotlin()
     }
 
