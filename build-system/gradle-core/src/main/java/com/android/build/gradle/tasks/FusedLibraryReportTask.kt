@@ -41,6 +41,10 @@ import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.work.DisableCachingByDefault
 import java.io.File
+import org.gradle.api.file.ConfigurableFileCollection
+import org.gradle.api.tasks.InputFiles
+import org.gradle.api.tasks.PathSensitive
+import org.gradle.api.tasks.PathSensitivity
 
 /**
  * Task for generating human-readable JSON report of dependencies included in artifacts and
@@ -57,6 +61,10 @@ abstract class FusedLibraryReportTask : NonIncrementalGlobalTask() {
     @get:Input
     abstract val dependencies: SetProperty<ModuleVersionIdentifier>
 
+    @get:InputFiles
+    @get:PathSensitive(PathSensitivity.NONE)
+    abstract val localJars: ConfigurableFileCollection
+
     @get:OutputFile
     abstract val report: RegularFileProperty
 
@@ -71,9 +79,10 @@ abstract class FusedLibraryReportTask : NonIncrementalGlobalTask() {
                     else -> error("Unknown type ${it.javaClass.name}")
                 }
             }
+        val included = includedDependenciesDisplayNames + localJars.files.map { it.name }
         val dependenciesDisplayNames = dependencies.get().map { it.toString() }
         val fusedLibReport = FusedLibraryReport(
-            includedDependenciesDisplayNames,
+            included,
             dependenciesDisplayNames
         )
         fusedLibReport.writeToFile(report.get().asFile)
@@ -111,6 +120,8 @@ abstract class FusedLibraryReportTask : NonIncrementalGlobalTask() {
             task.dependencies.setDisallowChanges(
                 getFusedLibraryDependencyModuleVersionIdentifiers(includeConfiguration)
             )
+
+            task.localJars.setFrom(creationConfig.getLocalJars())
         }
     }
 }

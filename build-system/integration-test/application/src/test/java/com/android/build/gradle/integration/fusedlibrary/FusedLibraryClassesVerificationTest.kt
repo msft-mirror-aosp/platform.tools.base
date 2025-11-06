@@ -435,6 +435,10 @@ class FusedLibraryClassesVerificationTest(private val publicationOnlyMode: Boole
                 )
             }
         }
+        build.checkFusedLibReportContents(
+            include = listOf("testClass.jar"),
+            dependencies = listOf()
+        )
     }
 
     @Test
