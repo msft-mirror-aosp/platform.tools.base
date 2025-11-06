@@ -23,10 +23,11 @@ import com.intellij.psi.PsiMethod
 import com.intellij.psi.search.GlobalSearchScope
 import org.jetbrains.kotlin.analysis.api.KaSession
 import org.jetbrains.kotlin.analysis.api.symbols.*
+import org.jetbrains.kotlin.psi.KtElement
 import org.jetbrains.uast.kotlin.internal.FirKotlinUastLibraryPsiProviderService
 
 internal object DecompiledPsiDeclarationProvider : FirKotlinUastLibraryPsiProviderService {
-  override fun KaSession.provide(symbol: KaSymbol): PsiElement? {
+  override fun KaSession.provide(symbol: KaSymbol, context: KtElement?): PsiElement? {
     val project = symbol.containingModule.project
     return when (symbol) {
       is KaConstructorSymbol -> providePsiForConstructor(symbol, project)
