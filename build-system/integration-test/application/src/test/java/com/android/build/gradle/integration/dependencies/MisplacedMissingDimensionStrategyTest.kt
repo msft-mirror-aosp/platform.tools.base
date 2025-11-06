@@ -16,10 +16,11 @@
 
 package com.android.build.gradle.integration.dependencies
 
-import com.android.build.gradle.integration.common.fixture.project.GradleRule
-import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_LIB_PATH
+import com.android.build.gradle.integration.common.fixture.GradleTestProject
+import com.android.build.gradle.integration.common.utils.TestFileUtils.appendToFile
 import org.gradle.api.internal.tasks.TaskDependencyResolveException
 import org.gradle.tooling.BuildException
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import kotlin.test.assertFailsWith
@@ -27,36 +28,52 @@ import kotlin.test.assertFailsWith
 class MisplacedMissingDimensionStrategyTest {
 
     @get:Rule
-    val rule = GradleRule.from {
-        androidApplication {
-            dependencies {
-                implementation(project(DEFAULT_LIB_PATH))
-            }
-        }
-        androidLibrary {
-            android {
-                defaultConfig {
-                    missingDimensionStrategy("libdim", "foo")
-                    flavorDimensions += "libdim"
+    val project: GradleTestProject =
+        GradleTestProject.builder().fromTestProject("projectWithModules").create()
 
-                    productFlavors {
-                        create("foo") {
-                            it.dimension = "libdim"
-                        }
-                        create("bar") {
-                            it.dimension = "libdim"
-                        }
-                    }
-                }
-            }
-        }
+
+    @Before
+    fun setUp() {
+        project.setIncludedProjects("app", "library")
+
+        // make the app depend on the library
+        val appProject = project.getSubproject("app")
+        appendToFile(
+            appProject.buildFile,
+            "\n"
+                    + "dependencies {\n"
+                    + "    implementation project(\":library\")\n"
+                    + "}\n"
+        )
+
+        // make the library have flavors and misplace the missing dimension strategy
+        val library = project.getSubproject("library")
+
+        appendToFile(
+            library.buildFile,
+            "\n"
+                    + "android {\n"
+                    + "    defaultConfig {\n"
+                    + "        missingDimensionStrategy 'libdim', 'foo'\n"
+                    + "    }\n"
+                    + "    flavorDimensions 'libdim'\n"
+                    + "    productFlavors {\n"
+                    + "        foo {\n"
+                    + "            dimension 'libdim'\n"
+                    + "        }\n"
+                    + "        bar {\n"
+                    + "            dimension 'libdim'\n"
+                    + "        }\n"
+                    + "    }\n"
+                    + "}\n"
+                    + "\n"
+        )
     }
 
     @Test
     fun checkCorrectError() {
-        val build = rule.build
         val exception = assertFailsWith(BuildException::class) {
-            build.executor.run(":app:assembleDebug")
+            project.executor().run(":app:assembleDebug")
         }
 
         exception.checkCause(TaskDependencyResolveException::class.java)
