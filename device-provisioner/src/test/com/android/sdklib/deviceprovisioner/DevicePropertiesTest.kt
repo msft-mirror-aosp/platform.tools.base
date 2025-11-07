@@ -25,6 +25,12 @@ import org.junit.Test
 
 class DevicePropertiesTest {
   @Test
+  fun build() {
+    assertThat(pixel8Props.abiList).isNotEmpty()
+    assertThat(pixel8Props.toString()).doesNotContain("null")
+  }
+
+  @Test
   fun equality() {
     val clonedProps = pixel8Props.toBuilder().build()
 
@@ -123,7 +129,7 @@ class DevicePropertiesTest {
   }
 
   @Test
-  fun build() {
+  fun buildInvalid() {
     try {
       DeviceProperties.build { icon = EmptyIcon.DEFAULT }
       fail("Expected exception")
@@ -146,5 +152,18 @@ private val pixel8Props =
       androidVersion = AndroidVersion(34)
       abiList = listOf(Abi.ARM64_V8A, Abi.RISCV64)
       icon = EmptyIcon.DEFAULT
+      preferredAbi = "arm64-v8a"
+      androidVersion = AndroidVersion(36, 0)
+      androidRelease = "Android 16"
+      disambiguator = "emulator-5554"
+      deviceType = DeviceType.HANDHELD
+      isVirtual = true
+      isRemote = false
+      isDebuggable = true
+      isResizable = false
+      resolution = Resolution(1920, 1080)
+      density = 240
+      connectionType = ConnectionType.USB
+      wearPairingId = "abcd"
     }
     .build()
