@@ -19,7 +19,12 @@ fun stringsXml() =
   """
 <resources>
     <string name="app_name">Basic Glasses Activity</string>
-    <string name="welcome_android_ai_glasses">Hello Android XR.</string>
-    <string name="click_me">Click Me!</string>
+    <string name="hello_android_xr_ai_glasses">Hello, AI Glasses!</string>
+    <string name="launch">Launch</string>
+    <string name="status_prefix">Status: </string>
+    <string name="status_connected">Connected</string>
+    <string name="status_disconnected">Disconnected</string>
+    <string name="unsupported_android_version">This version of Android is not supported</string>
+    <string name="close">Close</string>
 </resources>
 """
