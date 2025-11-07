@@ -2072,9 +2072,7 @@ class LintDriver(
     uElementVisitor.visitGroups(projectContext, allContexts)
 
     if (checkGeneratedSources) {
-      // Generated sources (excluding those that are also test sources).
-      val genContextsExcludingTest = generatedContexts.filter { !it.isTestSource }
-      if (visitUastDetectors(genContextsExcludingTest, uElementVisitor)) {
+      if (visitUastDetectors(generatedContexts, uElementVisitor)) {
         return
       }
     }
@@ -2084,32 +2082,15 @@ class LintDriver(
     }
 
     if (testContexts.isNotEmpty()) {
-      // Normally we only run test-specific lint checks on test sources,
-      // but with checkTestSources we run all checks.
+      // Normally we only run test-specific lint checks on sources in test folders,
+      // but with checkTestSources you can turn on running all checks on these
       val testScanners = if (checkTestSources) uastScanners else filterTestScanners(uastScanners)
       if (testScanners.isNotEmpty()) {
-        // Test sources (excluding those that are also generated).
-        val testContextsExcludingGen = testContexts.filter { !it.isGeneratedSource }
         val uTestVisitor = UElementVisitor(this, parser, testScanners)
-        if (visitUastDetectors(testContextsExcludingGen, uTestVisitor)) {
+        if (visitUastDetectors(testContexts, uTestVisitor)) {
           return
         }
-        testSourceCount += testContextsExcludingGen.size
-
-        // Sources that are both test and generated.
-        // We assume the lists are disjoint.
-        if (checkGeneratedSources) {
-          val genTest = generatedContexts.filter { it.isTestSource }
-          val testGen = testContexts.filter { it.isGeneratedSource }
-
-          if (genTest.isNotEmpty() || testGen.isNotEmpty()) {
-            val combined = genTest + testGen
-            if (visitUastDetectors(combined, uTestVisitor)) {
-              return
-            }
-            testSourceCount += combined.size
-          }
-        }
+        testSourceCount += testContexts.size
       }
     }
   }
