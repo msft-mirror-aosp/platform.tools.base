@@ -1740,6 +1740,55 @@ class InferredThreadDetectorTest : AbstractCheckTest() {
       )
   }
 
+  fun `test unannotated local variable having refined type`() {
+    lint()
+      .files(
+        kotlin(
+            """
+          import androidx.annotation.WorkerThread
+          import androidx.annotation.AnyThread
+
+          @WorkerThread fun work() { }
+
+          @AnyThread
+          fun wrapWork(): () -> Unit {
+              val doer = { work() }
+              return doer
+          }
+
+          fun wrapWorkAnnotated(): () -> Unit {
+              val doer : () -> Unit = { work() }
+              return doer
+          }
+
+          fun runIt(run: () -> Unit) = run()
+
+          @AnyThread
+          fun main() {
+              runIt(wrapWork())
+              runIt(wrapWorkAnnotated())
+          }
+          """
+              .trimIndent()
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
+        src/test.kt:21: Error: Call must be from @WorkerThread, but context is allowing @AnyThread [ThreadConstraint]
+            runIt(wrapWork())
+            ~~~~~~~~~~~~~~~~~
+        src/test.kt:22: Error: Call must be from @WorkerThread, but context is allowing @AnyThread [ThreadConstraint]
+            runIt(wrapWorkAnnotated())
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~
+        2 errors
+        """
+          .trimIndent()
+      )
+  }
+
   fun testOverloadedOperators() {
     lint()
       .files(

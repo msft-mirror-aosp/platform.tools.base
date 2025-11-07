@@ -135,6 +135,7 @@ import org.jetbrains.kotlin.psi.KtConstructor
 import org.jetbrains.kotlin.psi.KtElement
 import org.jetbrains.kotlin.psi.KtExpression
 import org.jetbrains.kotlin.psi.KtExpressionWithLabel
+import org.jetbrains.kotlin.psi.KtProperty
 import org.jetbrains.kotlin.psi.KtStringTemplateExpression
 import org.jetbrains.uast.UArrayAccessExpression
 import org.jetbrains.uast.UBinaryExpression
@@ -143,6 +144,7 @@ import org.jetbrains.uast.UClass
 import org.jetbrains.uast.UElement
 import org.jetbrains.uast.UExpression
 import org.jetbrains.uast.UExpressionList
+import org.jetbrains.uast.ULocalVariable
 import org.jetbrains.uast.UMethod
 import org.jetbrains.uast.UParenthesizedExpression
 import org.jetbrains.uast.UPolyadicExpression
@@ -2352,6 +2354,8 @@ fun hasImplicitDefaultConstructor(psiClass: PsiClass?): Boolean {
 
   return false
 }
+
+fun ULocalVariable.isImmutable(): Boolean = isFinal || (sourcePsi as? KtProperty)?.isVar == false
 
 // For compatibility reasons
 @Suppress("unused")
