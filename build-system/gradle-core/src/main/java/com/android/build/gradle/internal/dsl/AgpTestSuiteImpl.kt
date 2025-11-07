@@ -139,13 +139,22 @@ abstract class AgpTestSuiteImpl @Inject constructor(
         initializationBlock: T.() -> Unit
     ) {
         if (sources.isNotEmpty()) {
-            throw RuntimeException(
-                "It is not yet possible to register multiple sources for a test suite")
+            // this may be another initialization block for the same source.
+            val existingSource = sources.single()
+            if (existingSource is T) {
+                initializationBlock.invoke(existingSource)
+                return
+            } else {
+                throw RuntimeException(
+                    "It is not yet possible to register multiple sources for a test suite"
+                )
+            }
         }
         dslServices.newInstance(
             T::class.java,
             name,
             dslServices.projectInfo.projectDirectory,
+            dslServices.projectInfo.buildDirectory,
         ).also { newSources ->
             sources.add(newSources)
             initializationBlock.invoke(newSources)

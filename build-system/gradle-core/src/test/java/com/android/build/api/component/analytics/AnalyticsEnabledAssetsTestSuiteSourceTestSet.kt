@@ -29,27 +29,27 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.quality.Strictness
 
-class AnalyticsEnabledTestSuiteSourceTestSet {
+class AnalyticsEnabledAssetsTestSuiteSourceTestSet {
     @get:Rule
     val rule: MockitoRule = MockitoJUnit.rule().strictness(Strictness.STRICT_STUBS)
 
-    private val delegate: TestSuiteSourceSet = mock()
+    private val delegate: TestSuiteSourceSet.Assets = mock()
 
     private val stats = GradleBuildVariant.newBuilder()
-    private val proxy: AnalyticsEnabledTestSuiteSourceSet by lazy {
-        object: AnalyticsEnabledTestSuiteSourceSet(delegate, stats) {
+    private val proxy: AnalyticsEnabledAssetsTestSuiteSourceSet by lazy {
+        object: AnalyticsEnabledAssetsTestSuiteSourceSet(delegate, stats) {
             override val type: TestSuiteSourceType
-                get() = TestSuiteSourceType.TEST_APK
+                get() = TestSuiteSourceType.ASSETS
         }
     }
 
     @Test
-    fun dependencies() {
-        proxy.dependencies
+    fun testGet() {
+        proxy.get()
 
         Truth.assertThat(
             stats.variantApiAccess.variantPropertiesAccessList.first().type
-        ).isEqualTo(VariantPropertiesMethodType.TEST_SUITE_SOURCE_DEPENDENCIES_VALUE)
-        verify(delegate).dependencies
+        ).isEqualTo(VariantPropertiesMethodType.TEST_SUITE_SOURCE_ASSETS_VALUE)
+        verify(delegate).get()
     }
 }

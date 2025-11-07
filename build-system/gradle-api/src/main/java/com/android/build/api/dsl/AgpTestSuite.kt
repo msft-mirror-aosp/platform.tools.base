@@ -104,7 +104,8 @@ interface AgpTestSuite: TestSuite {
     val targetVariants: MutableList<String>
 
     /**
-     * Adds a asset folder to this test suite sources, containing static sources like xml, or json files.
+     * Adds an asset folder to this test suite sources, containing static sources like xml, or
+     * json files.
      *
      * The folder will be named 'assets' by default and will be therefore located at
      * `src/<testSuiteName>/assets/`

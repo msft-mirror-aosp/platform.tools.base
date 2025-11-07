@@ -50,7 +50,7 @@ import com.android.build.api.variant.impl.HasTestSuitesCreationConfig
 import com.android.build.api.variant.impl.HostTestBuilderImpl
 import com.android.build.api.variant.impl.InternalVariantBuilder
 import com.android.build.api.variant.impl.TestSuiteImpl
-import com.android.build.api.variant.impl.TestSuiteSourceContainer
+import com.android.build.gradle.internal.testsuites.impl.TestSuiteSourceContainer
 import com.android.build.api.variant.impl.capitalizeFirstChar
 import com.android.build.gradle.BaseExtension
 import com.android.build.gradle.internal.api.DefaultAndroidSourceSet
@@ -123,7 +123,6 @@ import com.google.common.collect.Maps
 import com.google.wireless.android.sdk.stats.ApiVersion
 import com.google.wireless.android.sdk.stats.GradleBuildVariant
 import org.gradle.api.Project
-import org.gradle.api.artifacts.Dependency
 import org.gradle.api.attributes.Attribute
 import org.gradle.api.internal.GeneratedSubclass
 import org.gradle.api.plugins.ExtensionAware

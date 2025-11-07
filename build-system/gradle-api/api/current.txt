@@ -3520,11 +3520,12 @@ package com.android.build.api.variant {
   @org.gradle.api.Incubating public static interface TestSuiteSourceSet.TestApk extends com.android.build.api.variant.TestSuiteSourceSet {
     method @org.gradle.api.Incubating public com.android.build.api.variant.SourceDirectories.Flat? getJava();
     method @org.gradle.api.Incubating public com.android.build.api.variant.SourceDirectories.Flat? getKotlin();
+    method @org.gradle.api.Incubating public java.io.File? getManifestFile();
     method @org.gradle.api.Incubating public com.android.build.api.variant.SourceDirectories.Flat getResources();
     method @org.gradle.api.Incubating public default com.android.build.api.variant.TestSuiteSourceType getType();
-    method @org.gradle.api.Incubating public java.io.File? manifestFile();
     property @org.gradle.api.Incubating public abstract com.android.build.api.variant.SourceDirectories.Flat? java;
     property @org.gradle.api.Incubating public abstract com.android.build.api.variant.SourceDirectories.Flat? kotlin;
+    property @org.gradle.api.Incubating public abstract java.io.File? manifestFile;
     property @org.gradle.api.Incubating public abstract com.android.build.api.variant.SourceDirectories.Flat resources;
     property @org.gradle.api.Incubating public default com.android.build.api.variant.TestSuiteSourceType type;
   }

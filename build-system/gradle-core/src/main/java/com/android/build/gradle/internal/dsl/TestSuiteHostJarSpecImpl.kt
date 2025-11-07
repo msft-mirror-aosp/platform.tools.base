@@ -24,14 +24,16 @@ import com.android.build.gradle.internal.services.VariantServices
 import com.android.build.gradle.internal.testsuites.TestSuiteSourceCreationConfig
 import org.gradle.api.Action
 import org.gradle.api.file.Directory
+import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.model.ObjectFactory
 import javax.inject.Inject
 
 open class TestSuiteHostJarSpecImpl @Inject internal constructor(
     objects: ObjectFactory,
-    override val name: String,
+    name: String,
     projectDirectory: Directory,
-): AbstractTestSuiteSpecImpl(projectDirectory),  TestSuiteHostJarSpec, TestSuiteSourceCreationConfig {
+    buildDirectory: DirectoryProperty,
+): AbstractTestSuiteSpecImpl(name, projectDirectory, buildDirectory),  TestSuiteHostJarSpec, TestSuiteSourceCreationConfig {
 
     /**
      * PUBLIC APIs

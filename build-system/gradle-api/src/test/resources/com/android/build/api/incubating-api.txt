@@ -663,9 +663,9 @@ https://issuetracker.google.com/392162853
   * com.android.build.api.variant.TestSuiteSourceSet$TestApk.access$getType$jd: com.android.build.api.variant.TestSuiteSourceType (com.android.build.api.variant.TestSuiteSourceSet$TestApk)
   * com.android.build.api.variant.TestSuiteSourceSet$TestApk.getJava: com.android.build.api.variant.SourceDirectories$Flat ()
   * com.android.build.api.variant.TestSuiteSourceSet$TestApk.getKotlin: com.android.build.api.variant.SourceDirectories$Flat ()
+  * com.android.build.api.variant.TestSuiteSourceSet$TestApk.getManifestFile: java.io.File ()
   * com.android.build.api.variant.TestSuiteSourceSet$TestApk.getResources: com.android.build.api.variant.SourceDirectories$Flat ()
   * com.android.build.api.variant.TestSuiteSourceSet$TestApk.getType: com.android.build.api.variant.TestSuiteSourceType ()
-  * com.android.build.api.variant.TestSuiteSourceSet$TestApk.manifestFile: java.io.File ()
   * com.android.build.api.variant.TestSuiteSourceSet.getDependencies: com.android.build.api.dsl.AgpTestSuiteDependencies ()
   * com.android.build.api.variant.TestSuiteSourceSet.getType: com.android.build.api.variant.TestSuiteSourceType ()
   * com.android.build.api.variant.TestSuiteSourceType extends java.lang.Enum

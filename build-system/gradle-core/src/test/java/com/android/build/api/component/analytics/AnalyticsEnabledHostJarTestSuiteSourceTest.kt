@@ -29,27 +29,47 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.quality.Strictness
 
-class AnalyticsEnabledTestSuiteSourceTestSet {
+class AnalyticsEnabledHostJarTestSuiteSourceTest {
     @get:Rule
     val rule: MockitoRule = MockitoJUnit.rule().strictness(Strictness.STRICT_STUBS)
 
-    private val delegate: TestSuiteSourceSet = mock()
+    private val delegate: TestSuiteSourceSet.HostJar = mock()
 
     private val stats = GradleBuildVariant.newBuilder()
-    private val proxy: AnalyticsEnabledTestSuiteSourceSet by lazy {
-        object: AnalyticsEnabledTestSuiteSourceSet(delegate, stats) {
+    private val proxy: AnalyticsEnabledHostJarTestSuiteSourceSet by lazy {
+        object: AnalyticsEnabledHostJarTestSuiteSourceSet(delegate, stats) {
             override val type: TestSuiteSourceType
-                get() = TestSuiteSourceType.TEST_APK
+                get() = TestSuiteSourceType.HOST_JAR
         }
     }
 
     @Test
-    fun dependencies() {
-        proxy.dependencies
+    fun testGetJava() {
+        proxy.java
 
         Truth.assertThat(
             stats.variantApiAccess.variantPropertiesAccessList.first().type
-        ).isEqualTo(VariantPropertiesMethodType.TEST_SUITE_SOURCE_DEPENDENCIES_VALUE)
-        verify(delegate).dependencies
+        ).isEqualTo(VariantPropertiesMethodType.TEST_SUITE_SOURCE_JAVA_VALUE)
+        verify(delegate).java
+    }
+
+    @Test
+    fun testGetKotlin() {
+        proxy.kotlin
+
+        Truth.assertThat(
+            stats.variantApiAccess.variantPropertiesAccessList.first().type
+        ).isEqualTo(VariantPropertiesMethodType.TEST_SUITE_SOURCE_KOTLIN_VALUE)
+        verify(delegate).kotlin
+    }
+
+    @Test
+    fun testGetResources() {
+        proxy.resources
+
+        Truth.assertThat(
+            stats.variantApiAccess.variantPropertiesAccessList.first().type
+        ).isEqualTo(VariantPropertiesMethodType.TEST_SUITE_SOURCE_RESOURCES_VALUE)
+        verify(delegate).resources
     }
 }

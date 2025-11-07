@@ -21,8 +21,8 @@ import com.android.build.api.dsl.AgpTestSuiteDependencies
 import com.android.build.api.variant.TestSuiteSourceSet
 import com.android.build.api.variant.impl.FlatSourceDirectoriesImpl
 import com.android.build.gradle.internal.services.VariantServices
-import java.io.File
 import org.gradle.api.file.Directory
+import java.io.File
 import org.gradle.api.provider.Provider
 
 internal class HostJarTestSuiteSourceSet(

@@ -17,6 +17,7 @@
 package com.android.build.gradle.internal.api
 
 import com.android.build.api.variant.impl.FileBasedDirectoryEntryImpl
+import com.android.build.api.variant.impl.FlatSourceDirectoriesForJavaImpl
 import com.android.build.api.variant.impl.FlatSourceDirectoriesImpl
 import com.android.build.gradle.internal.services.VariantServices
 import org.gradle.api.file.Directory
@@ -37,7 +38,7 @@ abstract class AbstractTestSuiteSourceSet(
         "src/$sourceSetName"
     )
 
-    protected fun createJavaSources() = FlatSourceDirectoriesImpl(
+    protected fun createJavaSources() = FlatSourceDirectoriesForJavaImpl(
         sourceSetName,
         variantServices,
         null,

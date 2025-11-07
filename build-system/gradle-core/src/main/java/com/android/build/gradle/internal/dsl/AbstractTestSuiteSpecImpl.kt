@@ -16,10 +16,18 @@
 
 package com.android.build.gradle.internal.dsl
 
+import com.android.SdkConstants
+import com.android.build.api.variant.impl.DirectoryEntry
+import com.android.build.api.variant.impl.TaskProviderBasedDirectoryEntryImpl
+import org.gradle.api.Task
 import org.gradle.api.file.Directory
-
+import org.gradle.api.file.DirectoryProperty
+import org.gradle.api.provider.Provider
+import org.gradle.api.tasks.TaskProvider
 abstract class AbstractTestSuiteSpecImpl(
+    val name: String,
     val projectDirectory: Directory,
+    val buildDirectory: DirectoryProperty,
 ) {
     protected val userAddedSourcesSets = mutableListOf<Directory>()
 

@@ -16,14 +16,12 @@
 
 package com.android.build.gradle.tasks
 
-import com.android.build.api.artifact.MultipleArtifact
 import com.android.build.api.artifact.SingleArtifact
 import com.android.build.api.dsl.AgpTestSuiteInputParameters
 import com.android.build.api.testsuites.TestEngineInputProperty
 import com.android.build.api.testsuites.TestSuiteExecutionClient.Companion.DEFAULT_ENV_VARIABLE
 import com.android.build.api.variant.TestSuiteSourceSet
 import com.android.build.api.variant.impl.JUnitEngineSpecImplForVariant
-import com.android.build.api.variant.impl.TestSuiteSourceContainer
 import com.android.build.gradle.internal.AvdComponentsBuildService
 import com.android.build.gradle.internal.BuildToolsExecutableInput
 import com.android.build.gradle.internal.component.TestSuiteCreationConfig
@@ -310,7 +308,7 @@ abstract class TestSuiteTestTask: Test(), GlobalTask {
             }
             task.classpath = creationConfig.services.fileCollection().also {
                 it.from(classesDir)
-                creationConfig.sources.forEach { sourceContainer: TestSuiteSourceContainer ->
+                creationConfig.sourceContainers.forEach { sourceContainer ->
                     it.from(sourceContainer.suiteSourceClasspath.runtimeClasspath)
                 }
             }
@@ -391,8 +389,7 @@ abstract class TestSuiteTestTask: Test(), GlobalTask {
                 testFramework.includeEngines(*creationConfig.junitEngineSpec.includeEngines.toTypedArray())
                 testFramework.excludeEngines("junit-jupiter")
             }
-            creationConfig.sources.forEach { sourceContainer: TestSuiteSourceContainer ->
-                val sourceSet =  sourceContainer.source
+            creationConfig.sources.forEach { sourceSet: TestSuiteSourceSet ->
                 when (sourceSet) {
                     is TestSuiteSourceSet.Assets -> {
                         task.sourceFolders.addAll(sourceSet.get().all)

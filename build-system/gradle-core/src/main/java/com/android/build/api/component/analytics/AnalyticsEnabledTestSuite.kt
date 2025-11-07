@@ -20,6 +20,7 @@ import com.android.build.api.dsl.TestTaskContext
 import com.android.build.api.variant.JUnitEngineSpec
 import com.android.build.api.variant.TestSuite
 import com.android.build.api.variant.TestSuiteSourceSet
+import com.android.build.api.variant.TestSuiteSourceType
 import com.android.build.api.variant.TestSuiteTarget
 import com.android.tools.build.gradle.internal.profile.VariantPropertiesMethodType
 import org.gradle.api.model.ObjectFactory
@@ -37,7 +38,14 @@ open class AnalyticsEnabledTestSuite(
             stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
                 VariantPropertiesMethodType.TEST_SUITE_SOURCES_VALUE
             return delegate.sources.map { source ->
-                AnalyticsEnabledTestSuiteSourceSet(source, stats)
+                when (source.type) {
+                    TestSuiteSourceType.ASSETS ->
+                        AnalyticsEnabledAssetsTestSuiteSourceSet(source as TestSuiteSourceSet.Assets, stats)
+                    TestSuiteSourceType.HOST_JAR ->
+                        AnalyticsEnabledHostJarTestSuiteSourceSet(source as TestSuiteSourceSet.HostJar, stats)
+                    TestSuiteSourceType.TEST_APK ->
+                        AnalyticsEnabledTestApkTestSuiteSourceSet(source as TestSuiteSourceSet.TestApk, stats)
+                }
             }
         }
 

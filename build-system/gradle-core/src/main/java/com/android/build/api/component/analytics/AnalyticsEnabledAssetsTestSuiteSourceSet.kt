@@ -16,22 +16,23 @@
 
 package com.android.build.api.component.analytics
 
-import com.android.build.api.dsl.AgpTestSuiteDependencies
+import com.android.build.api.variant.SourceDirectories
 import com.android.build.api.variant.TestSuiteSourceSet
+import com.android.build.api.variant.TestSuiteSourceType
 import com.android.tools.build.gradle.internal.profile.VariantPropertiesMethodType
 import com.google.wireless.android.sdk.stats.GradleBuildVariant
 
-abstract class AnalyticsEnabledTestSuiteSourceSet protected constructor(
-    private val source: TestSuiteSourceSet,
+open class AnalyticsEnabledAssetsTestSuiteSourceSet(
+    private val source: TestSuiteSourceSet.Assets,
     private val stats: GradleBuildVariant.Builder
-): TestSuiteSourceSet {
+): AnalyticsEnabledTestSuiteSourceSet(source, stats), TestSuiteSourceSet.Assets {
 
-    override val dependencies: AgpTestSuiteDependencies?
-        get() {
-            stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
-                VariantPropertiesMethodType.TEST_SUITE_SOURCE_DEPENDENCIES_VALUE
-            return source.dependencies
-        }
+    override fun get(): SourceDirectories.Flat {
+        stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
+            VariantPropertiesMethodType.TEST_SUITE_SOURCE_ASSETS_VALUE
+        return source.get()
+    }
 
-    override fun getName(): String = source.name
+    override val type: TestSuiteSourceType
+        get() = source.type
 }

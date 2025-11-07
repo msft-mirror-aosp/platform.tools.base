@@ -39,13 +39,10 @@ class TestApkTestSuiteSourceSet (
     kotlinEnabled,
 ), TestSuiteSourceSet.TestApk {
 
-    override fun manifestFile(): File? {
-        val manifest = File(
-            variantServices.projectInfo.projectDirectory.asFile,
-            "src/$sourceSetName/$FN_ANDROID_MANIFEST_XML"
-        )
-        return manifest.takeIf { it.exists() }
-    }
+    override val manifestFile = File(
+        variantServices.projectInfo.projectDirectory.asFile,
+        "src/$sourceSetName/$FN_ANDROID_MANIFEST_XML"
+    )
 
     override val java: FlatSourceDirectoriesImpl? = if (javaEnabled) createJavaSources() else null
 

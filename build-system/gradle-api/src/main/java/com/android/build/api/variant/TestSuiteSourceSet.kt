@@ -22,8 +22,12 @@ import org.gradle.api.Named
 import java.io.File
 
 /**
- * A test source abstraction which can be either an asset folder, a host jar source, or a test
- * apk source.
+ * A test source abstraction which can be either an asset folder, a host jar source, or a test apk
+ * source.
+ *
+ * Test suite sources attached to the [TestSuite]. These are not specific to a single variant but
+ * shared between all variants that the test suite targets through the
+ * [com.android.build.api.dsl.AgpTestSuite.targetVariants] API.
  */
 @Incubating
 interface TestSuiteSourceSet: Named {
@@ -45,6 +49,9 @@ interface TestSuiteSourceSet: Named {
     @get:Incubating
     val dependencies: AgpTestSuiteDependencies?
 
+    /**
+     * Represents a [TestSuiteSourceSet] for asset based tests.
+     */
     @Incubating
     interface Assets: TestSuiteSourceSet {
         @Incubating
@@ -54,6 +61,9 @@ interface TestSuiteSourceSet: Named {
             get() = TestSuiteSourceType.ASSETS
     }
 
+    /**
+     * Represents a [TestSuiteSourceSet] for host jars.
+     */
     @Incubating
     interface HostJar: TestSuiteSourceSet {
         @get:Incubating
@@ -77,10 +87,13 @@ interface TestSuiteSourceSet: Named {
         val manifestFile: File?
     }
 
+    /**
+     * Represents a [TestSuiteSourceSet] for test apks.
+     */
     @Incubating
     interface TestApk: TestSuiteSourceSet {
-        @Incubating
-        fun manifestFile(): File?
+        @get:Incubating
+        val manifestFile: File?
         @get:Incubating
         val java: SourceDirectories.Flat?
         @get:Incubating

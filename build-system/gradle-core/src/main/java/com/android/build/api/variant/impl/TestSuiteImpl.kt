@@ -21,6 +21,7 @@ import com.android.build.api.component.impl.computeTaskName
 import com.android.build.api.dsl.TestTaskContext
 import com.android.build.api.variant.JUnitEngineSpec
 import com.android.build.api.variant.TestSuite
+import com.android.build.api.variant.TestSuiteSourceSet
 import com.android.build.gradle.internal.component.TestSuiteCreationConfig
 import com.android.build.gradle.internal.component.TestSuiteTargetCreationConfig
 import com.android.build.gradle.internal.component.VariantCreationConfig
@@ -29,6 +30,7 @@ import com.android.build.gradle.internal.services.VariantServices
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfig
 import com.android.build.gradle.internal.testsuites.impl.JUnitEngineSpecForVariantBuilder
 import com.android.build.gradle.internal.testsuites.impl.TestSuiteBuilderImpl
+import com.android.build.gradle.internal.testsuites.impl.TestSuiteSourceContainer
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.api.tasks.testing.Test
@@ -38,7 +40,7 @@ import org.gradle.api.tasks.testing.Test
  */
 class TestSuiteImpl internal constructor(
     testSuiteBuilder: TestSuiteBuilderImpl,
-    override val sources: Collection<TestSuiteSourceContainer>,
+    override val sourceContainers: Collection<TestSuiteSourceContainer>,
     override val testedVariant: VariantCreationConfig,
     override val global: GlobalTaskCreationConfig,
     val variantServices: VariantServices,
@@ -69,6 +71,9 @@ class TestSuiteImpl internal constructor(
                 )
             )
         }
+
+    override val sources: Collection<TestSuiteSourceSet>
+        get() = sourceContainers.map { it.source }
 
     @Synchronized
     override fun configureTestTasks(action: Test.(context: TestTaskContext) -> Unit) {

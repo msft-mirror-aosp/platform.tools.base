@@ -29,14 +29,13 @@ import com.android.build.api.variant.ScopedArtifacts.Scope.ALL
 import com.android.build.api.variant.ScopedArtifacts.Scope.PROJECT
 import com.android.build.api.variant.TestSuiteSourceSet
 import com.android.build.api.variant.TestSuiteSourceType
-import com.android.build.api.variant.impl.FlatSourceDirectoriesImpl
 import com.android.build.api.variant.impl.HasDeviceTestsCreationConfig
 import com.android.build.api.variant.impl.HasHostTestsCreationConfig
 import com.android.build.api.variant.impl.HasTestFixtures
 import com.android.build.api.variant.impl.HasTestSuitesCreationConfig
 import com.android.build.api.variant.impl.ManifestFilesImpl
 import com.android.build.api.variant.impl.SourceDirectoriesImpl
-import com.android.build.api.variant.impl.TestSuiteSourceContainer
+import com.android.build.gradle.internal.testsuites.impl.TestSuiteSourceContainer
 import com.android.build.gradle.BaseExtension
 import com.android.build.gradle.internal.BuildTypeData
 import com.android.build.gradle.internal.ProductFlavorData
@@ -84,6 +83,7 @@ import com.android.build.gradle.internal.services.getBuildService
 import com.android.build.gradle.internal.tasks.AnchorTaskNames
 import com.android.build.gradle.internal.tasks.DeviceProviderInstrumentTestTask
 import com.android.build.gradle.internal.tasks.getPublishedCustomLintChecks
+import com.android.build.gradle.internal.testsuites.impl.AssetsTestSuiteSourceSet
 import com.android.build.gradle.internal.utils.getDesugarLibConfigFile
 import com.android.build.gradle.internal.utils.getDesugaredMethods
 import com.android.build.gradle.internal.utils.toImmutableSet
@@ -380,40 +380,40 @@ class ModelBuilder<ExtensionT : CommonExtension>(
                 val hostJarSources = mutableListOf<HostJarTestSuiteSource>()
                 val testApkSources = mutableListOf<TestApkTestSuiteSource>()
 
-                testSuiteBuilder.suite.sources.forEach { suiteSourceContainer ->
-                    when(val sourceSet = suiteSourceContainer.source) {
-                        is TestSuiteSourceSet.Assets -> {
+                testSuiteBuilder.suite.sources.forEach { suiteSourceSet ->
+                    when(suiteSourceSet) {
+                        is AssetsTestSuiteSourceSet -> {
                             assetsSources.add(
                                 AssetsTestSuiteSourceImpl(
-                                    name = suiteSourceContainer.name,
-                                    directories = sourceSet.get().all.get().map { it.asFile }
+                                    name = suiteSourceSet.name,
+                                    directories = suiteSourceSet.get().all.get().map { it.asFile }
                                 )
                             )
                         }
                         is HostJarTestSuiteSourceSet -> {
                             hostJarSources.add(
                                 HostJarTestSuiteSourceImpl(
-                                    name = suiteSourceContainer.name,
-                                    defaultTopLevel = sourceSet.defaultTopLevelFolder,
-                                    java = sourceSet.java?.all?.get()?.map { it.asFile } ?: emptyList(),
-                                    kotlin = sourceSet.kotlin?.all?.get()?.map { it.asFile } ?: emptyList(),
-                                    resources = sourceSet.resources.all.get().map { it.asFile },
+                                    name = suiteSourceSet.name,
+                                    defaultTopLevel = suiteSourceSet.defaultTopLevelFolder,
+                                    java = variantSourcesForModel(suiteSourceSet.java),
+                                    kotlin = variantSourcesForModel(suiteSourceSet.kotlin),
+                                    resources = variantSourcesForModel(suiteSourceSet.resources),
                                     // the IDE always want a manifest file path even if it does not
                                     // exist.
-                                    manifestFile = sourceSet.manifestFileCandidate
+                                    manifestFile = suiteSourceSet.manifestFileCandidate
                                 )
                             )
                         }
                         is TestApkTestSuiteSourceSet -> {
                             testApkSources.add(
                                 TestApkTestSuiteSourceImpl(
-                                    name = suiteSourceContainer.name,
+                                    name = suiteSourceSet.name,
                                     sourceProvider = SourceProviderImpl(
-                                        suiteSourceContainer.name,
-                                        sourceSet.manifestFile(),
-                                        variantSourcesForModel(sourceSet.java),
-                                        variantSourcesForModel(sourceSet.kotlin),
-                                        variantSourcesForModel(sourceSet.resources),
+                                        suiteSourceSet.name,
+                                        suiteSourceSet.manifestFile,
+                                        variantSourcesForModel(suiteSourceSet.java),
+                                        variantSourcesForModel(suiteSourceSet.kotlin),
+                                        variantSourcesForModel(suiteSourceSet.resources),
                                         aidlDirectories = null,
                                         renderscriptDirectories = null,
                                         baselineProfileDirectories = null,
@@ -470,7 +470,8 @@ class ModelBuilder<ExtensionT : CommonExtension>(
     }
 
     private fun variantSourcesForModel(sourceDirectories: SourceDirectoriesImpl?) =
-        sourceDirectories?.variantSourcesForModel { it.shouldBeAddedToIdeModel && !it.isGenerated } ?: emptyList()
+        // TODO : restrict list to non generated sources once model is updated.
+        sourceDirectories?.variantSourcesForModel { it.shouldBeAddedToIdeModel } ?: emptyList()
 
     /**
      * Intermediary data structure to hold the suite and all its associated targets built from the
@@ -1379,9 +1380,9 @@ class ModelBuilder<ExtensionT : CommonExtension>(
         testSuite: TestSuiteCreationConfig,
         libraryServices: LibraryService,
     ) = TestSuiteDependenciesImpl(
-        testSuite.sources.map { testSuiteSourceContainer ->
+        testSuite.sourceContainers.map { testSuiteSourceContainer ->
                     TestSuiteSourceDependenciesImpl(
-                        testSuiteSourceContainer.name,
+                        testSuiteSourceContainer.identifier,
                         createTestSuiteType(testSuiteSourceContainer.source.type),
                         getGraphBuilder(testSuiteSourceContainer, libraryServices).build()
                     )
@@ -1409,9 +1410,9 @@ class ModelBuilder<ExtensionT : CommonExtension>(
         graphEdgeCache: GraphEdgeCache,
         dontBuildRuntimeClasspath: Boolean
     ) = TestSuiteDependenciesAdjacencyListImpl(
-            testSuite.sources.map { testSuiteSourceContainer ->
+            testSuite.sourceContainers.map { testSuiteSourceContainer ->
                 TestSuiteSourceDependenciesAdjacencyListImpl(
-                    testSuiteSourceContainer.name,
+                    testSuiteSourceContainer.identifier,
                     createTestSuiteType(testSuiteSourceContainer.source.type),
                     getGraphBuilder(
                         testSuiteSourceContainer,
