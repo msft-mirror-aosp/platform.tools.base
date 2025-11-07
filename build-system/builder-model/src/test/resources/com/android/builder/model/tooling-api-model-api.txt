@@ -4,7 +4,7 @@ ATTENTION REVIEWER: If this needs to be changed, please make sure changes
 below are backwards compatible.
 -------------------------------------------------------------------------
 Sha256 of below classes:
-db4294915f7bf02d3d343f3dd48fff457691484fab1ccd9a5ce1d9fa62f33055
+bab5d38d4aad192c376deabd4fd77e301433f4117c5bf58cf7f43a4d3a8bf87c
 -------------------------------------------------------------------------
 com.android.builder.model.AaptOptions
 com.android.builder.model.AaptOptions$Namespacing extends java.lang.Enum
@@ -902,8 +902,10 @@ com.android.builder.model.v2.models.HostJarTestSuiteSource implements com.androi
 com.android.builder.model.v2.models.HostJarTestSuiteSource$DefaultImpls
 com.android.builder.model.v2.models.HostJarTestSuiteSource$DefaultImpls.getType: com.android.builder.model.v2.models.SourceType (com.android.builder.model.v2.models.HostJarTestSuiteSource)
 com.android.builder.model.v2.models.HostJarTestSuiteSource.access$getType$jd: com.android.builder.model.v2.models.SourceType (com.android.builder.model.v2.models.HostJarTestSuiteSource)
+com.android.builder.model.v2.models.HostJarTestSuiteSource.getDefaultTopLevel: java.io.File ()
 com.android.builder.model.v2.models.HostJarTestSuiteSource.getJava: java.util.Collection<java.io.File> ()
 com.android.builder.model.v2.models.HostJarTestSuiteSource.getKotlin: java.util.Collection<java.io.File> ()
+com.android.builder.model.v2.models.HostJarTestSuiteSource.getManifestFile: java.io.File ()
 com.android.builder.model.v2.models.HostJarTestSuiteSource.getResources: java.util.Collection<java.io.File> ()
 com.android.builder.model.v2.models.HostJarTestSuiteSource.getType: com.android.builder.model.v2.models.SourceType ()
 com.android.builder.model.v2.models.ModelBuilderParameter

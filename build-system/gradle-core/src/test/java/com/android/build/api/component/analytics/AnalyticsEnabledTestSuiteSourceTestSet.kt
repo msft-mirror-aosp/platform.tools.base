@@ -16,7 +16,7 @@
 
 package com.android.build.api.component.analytics
 
-import com.android.build.api.variant.TestSuiteSource
+import com.android.build.api.variant.TestSuiteSourceSet
 import com.android.tools.build.gradle.internal.profile.VariantPropertiesMethodType
 import com.google.common.truth.Truth
 import com.google.wireless.android.sdk.stats.GradleBuildVariant
@@ -28,15 +28,15 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.quality.Strictness
 
-class AnalyticsEnabledTestSuiteSourceTest {
+class AnalyticsEnabledTestSuiteSourceTestSet {
     @get:Rule
     val rule: MockitoRule = MockitoJUnit.rule().strictness(Strictness.STRICT_STUBS)
 
-    private val delegate: TestSuiteSource = mock()
+    private val delegate: TestSuiteSourceSet = mock()
 
     private val stats = GradleBuildVariant.newBuilder()
-    private val proxy: AnalyticsEnabledTestSuiteSource by lazy {
-        object: AnalyticsEnabledTestSuiteSource(delegate, stats) {}
+    private val proxy: AnalyticsEnabledTestSuiteSourceSet by lazy {
+        object: AnalyticsEnabledTestSuiteSourceSet(delegate, stats) {}
     }
 
     @Test

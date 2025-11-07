@@ -27,7 +27,9 @@ import com.android.build.api.dsl.CommonExtension
 import com.android.build.api.dsl.TestExtension
 import com.android.build.api.variant.ScopedArtifacts.Scope.ALL
 import com.android.build.api.variant.ScopedArtifacts.Scope.PROJECT
+import com.android.build.api.variant.TestSuiteSourceSet
 import com.android.build.api.variant.TestSuiteSourceType
+import com.android.build.api.variant.impl.FlatSourceDirectoriesImpl
 import com.android.build.api.variant.impl.HasDeviceTestsCreationConfig
 import com.android.build.api.variant.impl.HasHostTestsCreationConfig
 import com.android.build.api.variant.impl.HasTestFixtures
@@ -40,7 +42,8 @@ import com.android.build.gradle.internal.BuildTypeData
 import com.android.build.gradle.internal.ProductFlavorData
 import com.android.build.gradle.internal.VariantDimensionData
 import com.android.build.gradle.internal.api.DefaultAndroidSourceSet
-import com.android.build.gradle.internal.api.TestSuiteSourceSet
+import com.android.build.gradle.internal.api.HostJarTestSuiteSourceSet
+import com.android.build.gradle.internal.api.TestApkTestSuiteSourceSet
 import com.android.build.gradle.internal.attributes.VariantAttr
 import com.android.build.gradle.internal.component.ApkCreationConfig
 import com.android.build.gradle.internal.component.ComponentCreationConfig
@@ -278,7 +281,7 @@ class ModelBuilder<ExtensionT : CommonExtension>(
          * method not called by current versions of Studio, the MINIMUM_MODEL_CONSUMER version must
          * be increased to exclude all older versions of Studio that called that method.
          */
-        val modelProducer = VersionImpl(21, 0, humanReadable = "Android Gradle Plugin 9.0")
+        val modelProducer = VersionImpl(21, 1, humanReadable = "Android Gradle Plugin 9.1")
         /**
          * The minimum required model consumer version, to allow AGP to control support for older
          * versions of Android Studio.
@@ -387,26 +390,30 @@ class ModelBuilder<ExtensionT : CommonExtension>(
                                 )
                             )
                         }
-                        is TestSuiteSourceSet.HostJar -> {
+                        is HostJarTestSuiteSourceSet -> {
                             hostJarSources.add(
                                 HostJarTestSuiteSourceImpl(
                                     name = suiteSourceContainer.name,
-                                    java = sourceSet.java()?.all?.get()?.map { it.asFile } ?: emptyList(),
-                                    kotlin = sourceSet.kotlin()?.all?.get()?.map { it.asFile } ?: emptyList(),
-                                    resources = sourceSet.resources().all.get().map { it.asFile },
+                                    defaultTopLevel = sourceSet.defaultTopLevelFolder,
+                                    java = sourceSet.java?.all?.get()?.map { it.asFile } ?: emptyList(),
+                                    kotlin = sourceSet.kotlin?.all?.get()?.map { it.asFile } ?: emptyList(),
+                                    resources = sourceSet.resources.all.get().map { it.asFile },
+                                    // the IDE always want a manifest file path even if it does not
+                                    // exist.
+                                    manifestFile = sourceSet.manifestFileCandidate
                                 )
                             )
                         }
-                        is TestSuiteSourceSet.TestApk -> {
+                        is TestApkTestSuiteSourceSet -> {
                             testApkSources.add(
                                 TestApkTestSuiteSourceImpl(
                                     name = suiteSourceContainer.name,
                                     sourceProvider = SourceProviderImpl(
                                         suiteSourceContainer.name,
                                         sourceSet.manifestFile(),
-                                        variantSourcesForModel(sourceSet.java()),
-                                        variantSourcesForModel(sourceSet.kotlin()),
-                                        variantSourcesForModel(sourceSet.resources()),
+                                        variantSourcesForModel(sourceSet.java),
+                                        variantSourcesForModel(sourceSet.kotlin),
+                                        variantSourcesForModel(sourceSet.resources),
                                         aidlDirectories = null,
                                         renderscriptDirectories = null,
                                         baselineProfileDirectories = null,

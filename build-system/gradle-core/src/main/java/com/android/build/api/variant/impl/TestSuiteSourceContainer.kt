@@ -18,10 +18,9 @@ package com.android.build.api.variant.impl
 
 import com.android.build.api.artifact.impl.ArtifactsImpl
 import com.android.build.api.dsl.AgpTestSuiteDependencies
-import com.android.build.api.variant.TestSuiteSource
+import com.android.build.api.variant.TestSuiteSourceSet
 import com.android.build.api.variant.TestSuiteSourceType
 import com.android.build.gradle.internal.HostJarTestSuiteTaskManager
-import com.android.build.gradle.internal.api.TestSuiteSourceSet
 import com.android.build.gradle.internal.dependency.TestSuiteSourceClasspath
 import com.android.build.gradle.internal.services.TaskCreationServices
 import com.android.build.gradle.internal.tasks.factory.TaskFactoryImpl
@@ -45,7 +44,7 @@ class TestSuiteSourceContainer(
     internal val source: TestSuiteSourceSet,
     override val dependencies: AgpTestSuiteDependencies,
     internal val suiteSourceClasspath: TestSuiteSourceClasspath,
-): TestSuiteSource {
+): TestSuiteSourceSet {
 
     override fun getName(): String = testSuiteName
 
@@ -79,7 +78,11 @@ class TestSuiteSourceContainer(
                     taskFactory, taskCreationServices)
             }
             is TestSuiteSourceSet.TestApk -> {
-                throw RuntimeException("TEST_APK sources are not supported yet !")
+                // ignore for now.
+                null
+            }
+            else -> {
+                throw RuntimeException("Unhandled test suite source set $source of type ${source.type}")
             }
         }
     }

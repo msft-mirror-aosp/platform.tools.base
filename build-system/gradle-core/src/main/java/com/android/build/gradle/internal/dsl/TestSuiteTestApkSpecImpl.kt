@@ -18,18 +18,21 @@ package com.android.build.gradle.internal.dsl
 
 import com.android.build.api.dsl.AgpTestSuiteDependencies
 import com.android.build.api.dsl.TestSuiteTestApkSpec
-import com.android.build.gradle.internal.api.ApkTestSuiteSourceSet
-import com.android.build.gradle.internal.api.TestSuiteSourceSet
+import com.android.build.api.variant.TestSuiteSourceSet
+import com.android.build.gradle.internal.api.TestApkTestSuiteSourceSet
 import com.android.build.gradle.internal.services.VariantServices
 import com.android.build.gradle.internal.testsuites.TestSuiteSourceCreationConfig
 import org.gradle.api.Action
+import org.gradle.api.file.Directory
 import org.gradle.api.model.ObjectFactory
 import javax.inject.Inject
 
-class TestSuiteApkSpecImpl @Inject internal constructor(
+open class TestSuiteTestApkSpecImpl @Inject internal constructor(
     objects: ObjectFactory,
     override val name: String,
-): TestSuiteTestApkSpec, TestSuiteSourceCreationConfig {
+    projectDirectory: Directory,
+): AbstractTestSuiteSpecImpl(projectDirectory), TestSuiteTestApkSpec, TestSuiteSourceCreationConfig {
+
     /**
      * PUBLIC APIs
      */
@@ -46,10 +49,18 @@ class TestSuiteApkSpecImpl @Inject internal constructor(
     /**
      * INTERNAL APIs
      */
-    override fun createTestSuiteSourceSet(variantServices: VariantServices): TestSuiteSourceSet {
-        return ApkTestSuiteSourceSet(
+    override fun createTestSuiteSourceSet(
+        variantServices: VariantServices,
+        javaEnabled: Boolean,
+        kotlinEnabled: Boolean
+    ): TestSuiteSourceSet {
+        return TestApkTestSuiteSourceSet(
             sourceSetName = name,
             variantServices = variantServices,
+            userAddedSourceSets = userAddedSourcesSets,
+            javaEnabled = javaEnabled,
+            kotlinEnabled = kotlinEnabled,
+            dependencies = dependencies,
         )
     }
 }

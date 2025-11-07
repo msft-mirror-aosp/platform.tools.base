@@ -16,15 +16,18 @@
 
 package com.android.build.gradle.internal.api
 
+import com.android.build.api.dsl.AgpTestSuiteDependencies
 import com.android.build.api.variant.SourceDirectories
+import com.android.build.api.variant.TestSuiteSourceSet
 import com.android.build.api.variant.impl.FileBasedDirectoryEntryImpl
 import com.android.build.api.variant.impl.FlatSourceDirectoriesImpl
 import com.android.build.gradle.internal.services.VariantServices
 import java.io.File
 
 internal class AssetsTestSuiteSourceSet(
-    sourceSetName: String,
+    private val sourceSetName: String,
     variantServices: VariantServices,
+    override val dependencies: AgpTestSuiteDependencies?,
 ): TestSuiteSourceSet.Assets {
 
     private val assetsSourcesFolder = FlatSourceDirectoriesImpl(
@@ -42,4 +45,6 @@ internal class AssetsTestSuiteSourceSet(
     }
 
     override fun get(): SourceDirectories.Flat = assetsSourcesFolder
+
+    override fun getName(): String = sourceSetName
 }

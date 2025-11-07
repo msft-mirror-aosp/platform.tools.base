@@ -21,32 +21,31 @@ import com.android.build.api.dsl.AgpTestSuiteDependencies
 import com.android.build.api.variant.TestSuiteSourceSet
 import com.android.build.api.variant.impl.FlatSourceDirectoriesImpl
 import com.android.build.gradle.internal.services.VariantServices
-import java.io.File
 import org.gradle.api.file.Directory
-import org.gradle.api.provider.Provider
+import java.io.File
 
-internal class HostJarTestSuiteSourceSet(
+class TestApkTestSuiteSourceSet (
     sourceSetName: String,
     variantServices: VariantServices,
     userAddedSourceSets: Collection<Directory>,
     javaEnabled: Boolean,
     kotlinEnabled: Boolean,
-    includeAndroidResources: Provider<Boolean>,
     override val dependencies: AgpTestSuiteDependencies?,
 ): AbstractTestSuiteSourceSet(
     sourceSetName,
     variantServices,
     userAddedSourceSets,
     javaEnabled,
-    kotlinEnabled
-), TestSuiteSourceSet.HostJar {
+    kotlinEnabled,
+), TestSuiteSourceSet.TestApk {
 
-    val manifestFileCandidate = File(
-        variantServices.projectInfo.projectDirectory.asFile,
-        "src/$sourceSetName/$FN_ANDROID_MANIFEST_XML"
-    )
-
-    override val manifestFile: File? = manifestFileCandidate.takeIf { includeAndroidResources.get() }
+    override fun manifestFile(): File? {
+        val manifest = File(
+            variantServices.projectInfo.projectDirectory.asFile,
+            "src/$sourceSetName/$FN_ANDROID_MANIFEST_XML"
+        )
+        return manifest.takeIf { it.exists() }
+    }
 
     override val java: FlatSourceDirectoriesImpl? = if (javaEnabled) createJavaSources() else null
 

@@ -23,9 +23,13 @@ interface HostJarTestSuiteSource: TestSuiteSource {
     override val type: SourceType
         get() = SourceType.HOST_JAR
 
+    val defaultTopLevel: File
+
     val java: Collection<File>
 
     val kotlin: Collection<File>
 
     val resources: Collection<File>
+
+    val manifestFile: File?
 }

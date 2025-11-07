@@ -109,7 +109,7 @@ abstract class AgpTestSuiteImpl @Inject constructor(
     }
 
     override fun testApk(action: TestSuiteTestApkSpec.() -> Unit) {
-        addSource<TestSuiteApkSpecImpl>(action)
+        addSource<TestSuiteTestApkSpecImpl>(action)
     }
 
     fun testApk(action: Action<TestSuiteTestApkSpec>) {
@@ -144,7 +144,8 @@ abstract class AgpTestSuiteImpl @Inject constructor(
         }
         dslServices.newInstance(
             T::class.java,
-            name
+            name,
+            dslServices.projectInfo.projectDirectory,
         ).also { newSources ->
             sources.add(newSources)
             initializationBlock.invoke(newSources)

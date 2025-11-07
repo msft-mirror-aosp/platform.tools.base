@@ -109,7 +109,7 @@ internal abstract class TestSuiteBuilderImpl @Inject internal constructor(
     {
         // if the user does not define a single source set, add an assets one by default.
         if (testSuite.getSourceContainers().isEmpty()) {
-            return listOf(TestSuiteAssetsSpecImpl(objects, _name,))
+            return listOf(TestSuiteAssetsSpecImpl(objects, _name, services.projectInfo.projectDirectory))
         }
         return testSuite.getSourceContainers()
     }

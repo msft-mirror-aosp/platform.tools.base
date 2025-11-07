@@ -19,13 +19,14 @@ package com.android.build.api.variant
 import com.android.build.api.dsl.AgpTestSuiteDependencies
 import org.gradle.api.Incubating
 import org.gradle.api.Named
+import java.io.File
 
 /**
  * A test source abstraction which can be either an asset folder, a host jar source, or a test
  * apk source.
  */
 @Incubating
-interface TestSuiteSource: Named {
+interface TestSuiteSourceSet: Named {
 
     /**
      * The source type.
@@ -43,4 +44,51 @@ interface TestSuiteSource: Named {
      */
     @get:Incubating
     val dependencies: AgpTestSuiteDependencies?
+
+    @Incubating
+    interface Assets: TestSuiteSourceSet {
+        @Incubating
+        fun get(): SourceDirectories.Flat
+        @get:Incubating
+        override val type: TestSuiteSourceType
+            get() = TestSuiteSourceType.ASSETS
+    }
+
+    @Incubating
+    interface HostJar: TestSuiteSourceSet {
+        @get:Incubating
+        val java: SourceDirectories.Flat?
+
+        @get:Incubating
+        val kotlin: SourceDirectories.Flat?
+
+        @get:Incubating
+        val resources: SourceDirectories.Flat
+
+        @get:Incubating
+        override val type: TestSuiteSourceType
+            get() = TestSuiteSourceType.HOST_JAR
+
+        /**
+         * Will point to a manifest file location when [com.android.build.api.dsl.TestSuiteHostJarSpec.enableAndroidResources]
+         * is turned on.
+         */
+        @get:Incubating
+        val manifestFile: File?
+    }
+
+    @Incubating
+    interface TestApk: TestSuiteSourceSet {
+        @Incubating
+        fun manifestFile(): File?
+        @get:Incubating
+        val java: SourceDirectories.Flat?
+        @get:Incubating
+        val kotlin: SourceDirectories.Flat?
+        @get:Incubating
+        val resources: SourceDirectories.Flat
+        @get:Incubating
+        override val type: TestSuiteSourceType
+            get() = TestSuiteSourceType.TEST_APK
+    }
 }

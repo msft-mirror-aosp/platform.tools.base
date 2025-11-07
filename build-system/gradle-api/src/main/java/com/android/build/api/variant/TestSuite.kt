@@ -38,7 +38,7 @@ interface TestSuite: Named {
      *  - [com.android.build.api.dsl.AgpTestSuite.testApk]
      */
     @get:Incubating
-    val sources: Collection<TestSuiteSource>
+    val sources: Collection<TestSuiteSourceSet>
 
     /**
      * Configure the test tasks for this test target.

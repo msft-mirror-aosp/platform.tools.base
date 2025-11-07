@@ -3,6 +3,10 @@ Deprecated Android Gradle Plugin API.
 ATTENTION REVIEWER: If this needs to be changed, please make sure changes
 are announced on go/as-release-notes.
 -------------------------------------------------------------------------
+Deprecated from AGP 9.1.0
+  * com.android.build.api.variant.TestSuiteSourceSet$Assets$DefaultImpls.getType: com.android.build.api.variant.TestSuiteSourceType (com.android.build.api.variant.TestSuiteSourceSet$Assets)
+  * com.android.build.api.variant.TestSuiteSourceSet$HostJar$DefaultImpls.getType: com.android.build.api.variant.TestSuiteSourceType (com.android.build.api.variant.TestSuiteSourceSet$HostJar)
+  * com.android.build.api.variant.TestSuiteSourceSet$TestApk$DefaultImpls.getType: com.android.build.api.variant.TestSuiteSourceType (com.android.build.api.variant.TestSuiteSourceSet$TestApk)
 Deprecated from AGP 9.0.0
   * com.android.build.api.dsl.AndroidSourceDirectorySet.setSrcDirs: java.lang.Object (java.lang.Iterable<?>)
   * com.android.build.api.dsl.AndroidSourceDirectorySet.srcDir: java.lang.Object (java.lang.Object)

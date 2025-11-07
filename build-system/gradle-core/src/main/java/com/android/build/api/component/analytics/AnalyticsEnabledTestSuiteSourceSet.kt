@@ -17,16 +17,15 @@
 package com.android.build.api.component.analytics
 
 import com.android.build.api.dsl.AgpTestSuiteDependencies
-import com.android.build.api.variant.TestSuiteSource
+import com.android.build.api.variant.TestSuiteSourceSet
 import com.android.build.api.variant.TestSuiteSourceType
-import com.android.tools.build.gradle.internal.profile.VariantMethodType
 import com.android.tools.build.gradle.internal.profile.VariantPropertiesMethodType
 import com.google.wireless.android.sdk.stats.GradleBuildVariant
 
-open class AnalyticsEnabledTestSuiteSource(
-    private val source: TestSuiteSource,
+open class AnalyticsEnabledTestSuiteSourceSet(
+    private val source: TestSuiteSourceSet,
     private val stats: GradleBuildVariant.Builder
-): TestSuiteSource {
+): TestSuiteSourceSet {
 
     override val type: TestSuiteSourceType
         get() = source.type

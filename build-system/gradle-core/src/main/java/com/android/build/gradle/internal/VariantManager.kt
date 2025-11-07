@@ -100,6 +100,7 @@ import com.android.build.gradle.internal.tasks.SigningConfigUtils.Companion.crea
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfig
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfigImpl.Companion.toExecutionEnum
 import com.android.build.api.variant.HasTestSuitesBuilder
+import com.android.build.gradle.internal.services.BuiltInKotlinSupportMode
 import com.android.build.gradle.internal.testsuites.TestSuiteSourceCreationConfig
 import com.android.build.gradle.internal.testsuites.impl.TestSuiteBuilderImpl
 import com.android.build.gradle.internal.testsuites.impl.TestSuiteDependenciesBuilder
@@ -986,9 +987,13 @@ class VariantManager<
                                 project,
                                 variantBuilder.name,
                                 testSuiteSource.name,
-                                testSuiteSource.createTestSuiteSourceSet(variantServices),
-                                variantSpecificDependencies,
-                                TestSuiteDependenciesBuilder(
+                                source = testSuiteSource.createTestSuiteSourceSet(
+                                    variantServices,
+                                    true, // so far, java is always enabled.
+                                    variantInfo.variant.builtInKotlinSupportMode is BuiltInKotlinSupportMode.Supported
+                                ),
+                                dependencies = variantSpecificDependencies,
+                                suiteSourceClasspath = TestSuiteDependenciesBuilder(
                                     project,
                                     dslServices.projectOptions,
                                     projectServices.issueReporter,
