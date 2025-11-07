@@ -53,7 +53,7 @@ import org.gradle.api.JavaVersion
 import org.gradle.util.GradleVersion
 
 private val minAgpVersion = AndroidPluginVersion(8, 5, 0).beta(1)
-private val maxAgpVersion = AndroidPluginVersion(9, 0, Int.MAX_VALUE)
+private val maxAgpVersion = AndroidPluginVersion(9, Int.MAX_VALUE, Int.MAX_VALUE)
 
 /**
  * An entry point for Screenshot plugin that adds support for screenshot testing on Compose Previews
@@ -132,7 +132,7 @@ class PreviewScreenshotGradlePlugin : Plugin<Project> {
             if (agpVersion < minAgpVersion || (agpVersion > maxAgpVersion && agpVersion.previewType != "dev")) {
                 error(
                     """
-                    Preview screenshot plugin requires Android Gradle plugin version between ${minAgpVersion.toVersionString()} and ${maxAgpVersion.major}.${maxAgpVersion.minor}.
+                    Preview screenshot plugin requires Android Gradle plugin version ${minAgpVersion.toVersionString()} or higher, but less than ${maxAgpVersion.major + 1}.0.
                     Current version is $agpVersion.
                     """.trimIndent()
                 )

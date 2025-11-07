@@ -21,7 +21,6 @@ import com.android.build.api.variant.AndroidComponentsExtension
 import com.android.build.gradle.api.AndroidBasePlugin
 import com.google.common.truth.Truth.assertThat
 import org.gradle.api.Action
-import org.gradle.api.GradleException
 import org.gradle.api.Project
 import org.gradle.api.JavaVersion
 import org.gradle.util.GradleVersion
@@ -34,7 +33,6 @@ import org.mockito.Mock
 import org.mockito.Mockito
 import org.mockito.junit.MockitoJUnit
 import org.mockito.junit.MockitoRule
-import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.eq
 import org.mockito.Mockito.`when`
@@ -78,40 +76,30 @@ class PreviewScreenshotGradlePluginTest {
             mockedJava.`when`<JavaVersion> { JavaVersion.current() }.thenReturn(JavaVersion.VERSION_17)
 
             val unsupportedVersionsTooOld = listOf(
-                    AndroidPluginVersion(8, 5, 0).alpha(8),
-                    AndroidPluginVersion(8, 4),
+                AndroidPluginVersion(8, 4),
+                AndroidPluginVersion(8, 5, 0).alpha(8),
             )
             val supportedVersions = listOf(
-                    AndroidPluginVersion(8, 5).dev(),
-                    AndroidPluginVersion(8, 5, 0).beta(1),
-                    AndroidPluginVersion(8, 6, 0).alpha(1),
-                    AndroidPluginVersion(8, 7, 0).alpha(1),
-                    AndroidPluginVersion(8, 8, 0).alpha(1),
-                    AndroidPluginVersion(8, 9, 0).alpha(1),
-                    AndroidPluginVersion(8, 10, 0).alpha(1),
-                    AndroidPluginVersion(8, 11, 0).alpha(1),
-                    AndroidPluginVersion(8, 12, 0).alpha(1),
-                    AndroidPluginVersion(8, 13, 0).alpha(1),
-                    AndroidPluginVersion(9, 0, 0).alpha(1),
-                    AndroidPluginVersion(9, 0, Int.MAX_VALUE),
-                )
+                AndroidPluginVersion(8, 5, 0).beta(1),
+                AndroidPluginVersion(9, Int.MAX_VALUE, Int.MAX_VALUE),
+            )
             val unsupportedVersionsTooNew = listOf(
-                AndroidPluginVersion(9, 1, 0).alpha(1),
-                AndroidPluginVersion(9, 1),
+                AndroidPluginVersion(10, 0).alpha(1),
+                AndroidPluginVersion(10, 0),
             )
             unsupportedVersionsTooOld.forEach {
                 val e = assertThrows(IllegalStateException::class.java) {
                     applyScreenshotPlugin(it)
                 }
                 assertThat(e).hasMessageThat()
-                        .contains("requires Android Gradle plugin version between 8.5.0-beta01 and 9.0.")
+                        .contains("requires Android Gradle plugin version 8.5.0-beta01 or higher, but less than 10.0")
             }
             unsupportedVersionsTooNew.forEach {
                 val e = assertThrows(IllegalStateException::class.java) {
                     applyScreenshotPlugin(it)
                 }
                 assertThat(e).hasMessageThat()
-                    .contains("requires Android Gradle plugin version between 8.5.0-beta01 and 9.0.")
+                    .contains("requires Android Gradle plugin version 8.5.0-beta01 or higher, but less than 10.0")
             }
             supportedVersions.forEach {
                 applyScreenshotPlugin(it)

@@ -78,22 +78,11 @@ class TestLabGradlePluginTest {
 
   @Test
   fun agpVersionCheck() {
-    val unsupportedVersions =
-      listOf(
-        AndroidPluginVersion(8, 1, 0).alpha(9),
-        AndroidPluginVersion(8, 1),
-        AndroidPluginVersion(8, 2),
-        AndroidPluginVersion(8, 2, 0).alpha(9),
-        AndroidPluginVersion(9, 1),
-      )
+    val unsupportedVersions = listOf(AndroidPluginVersion(8, 2), AndroidPluginVersion(10, 0))
     val supportedVersions =
       listOf(
-        AndroidPluginVersion(8, 1).dev(),
-        AndroidPluginVersion(8, 3, 0).dev(),
-        AndroidPluginVersion(8, 3, 0).alpha(1),
-        AndroidPluginVersion(8, 3),
-        AndroidPluginVersion(8, 4),
-        AndroidPluginVersion(8, 5, 0).dev(),
+        AndroidPluginVersion(9, Int.MAX_VALUE, Int.MAX_VALUE),
+        AndroidPluginVersion(Int.MAX_VALUE, Int.MAX_VALUE, Int.MAX_VALUE).dev(),
       )
 
     unsupportedVersions.forEach {
@@ -102,7 +91,7 @@ class TestLabGradlePluginTest {
         .hasMessageThat()
         .contains(
           "Firebase TestLab plugin is an experimental feature. It requires Android " +
-            "Gradle plugin version between 8.3 and 9.0."
+            "Gradle plugin version 8.3 or higher, but less than 10.0."
         )
     }
 
