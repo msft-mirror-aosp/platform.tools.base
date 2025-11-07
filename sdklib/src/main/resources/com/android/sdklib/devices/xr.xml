@@ -95,8 +95,8 @@
                 <d:pixel-density>mdpi</d:pixel-density>
                 <d:screen-ratio>notlong</d:screen-ratio>
                 <d:dimensions>
-                    <d:x-dimension>200</d:x-dimension>
-                    <d:y-dimension>200</d:y-dimension>
+                    <d:x-dimension>450</d:x-dimension>
+                    <d:y-dimension>450</d:y-dimension>
                 </d:dimensions>
                 <d:xdpi>160</d:xdpi>
                 <d:ydpi>160</d:ydpi>
