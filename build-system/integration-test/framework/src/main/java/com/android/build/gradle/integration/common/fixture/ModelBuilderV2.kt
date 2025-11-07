@@ -210,8 +210,6 @@ class ModelBuilderV2 internal constructor(
         with(BooleanOption.ENABLE_PROBLEMS_API, true)
 
         suppressOptionWarning(BooleanOption.ENABLE_PROBLEMS_API)
-        // TODO(b/385745419): Remove this when most tests have been migrated to built-in Kotlin
-        suppressOptionWarning(BooleanOption.BUILT_IN_KOTLIN)
 
         setJvmArguments(executor)
 

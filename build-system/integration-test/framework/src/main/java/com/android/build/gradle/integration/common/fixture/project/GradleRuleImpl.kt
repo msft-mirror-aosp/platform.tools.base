@@ -36,6 +36,11 @@ import com.android.build.gradle.integration.common.fixture.project.builder.Gradl
 import com.android.build.gradle.integration.common.fixture.project.options.DefaultRuleOptionBuilder
 import com.android.build.gradle.integration.common.fixture.project.options.LocalRuleOptionBuilder
 import com.android.build.gradle.integration.common.truth.forEachLine
+import com.android.build.gradle.options.BooleanOption
+import com.android.build.gradle.options.BooleanOption.DEFAULT_TARGET_SDK_TO_COMPILE_SDK_IF_UNSET
+import com.android.build.gradle.options.BooleanOption.ENABLE_APP_COMPILE_TIME_R_CLASS
+import com.android.build.gradle.options.BooleanOption.ENABLE_LEGACY_VARIANT_API
+import com.android.build.gradle.options.BooleanOption.USE_NEW_DSL
 import com.android.sdklib.internal.project.ProjectProperties
 import com.android.testutils.MavenRepoGenerator
 import com.android.testutils.TestUtils
@@ -65,6 +70,16 @@ internal class GradleRuleImpl internal constructor(
     private val enableProfileOutput: Boolean,
     private val testProjectName: String?
 ): GradleRule {
+
+    companion object {
+        internal val AGP_9_OPT_OUTS = mapOf(
+            DEFAULT_TARGET_SDK_TO_COMPILE_SDK_IF_UNSET to false,
+            ENABLE_LEGACY_VARIANT_API to true,
+            // TODO(b/418804641): Migrate to the new DSL
+            USE_NEW_DSL to false
+        )
+    }
+
     private var status = Status.PENDING
 
     private lateinit var locations: GradleRuleLocation
@@ -332,7 +347,11 @@ internal class GradleRuleImpl internal constructor(
             projectConnection
         ) {
             lastBuildResult = it
-        }.withPerTestPrefsRoot(true)
+        }.withPerTestPrefsRoot(true).also {
+            for (entry in AGP_9_OPT_OUTS) {
+                it.suppressOptionWarning(entry.key)
+            }
+        }
 
     private fun getTestInfo(): GradleTestInfo = object : GradleTestInfo {
         override val androidSdkDir: File?

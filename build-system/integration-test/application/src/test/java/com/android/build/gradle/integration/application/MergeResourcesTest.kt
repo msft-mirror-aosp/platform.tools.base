@@ -42,7 +42,7 @@ import java.net.URLClassLoader
 class MergeResourcesTest {
 
     @get:Rule
-    val project = GradleRule.configure().from {
+    val project = GradleRule.from {
         androidApplication {
             applyPlugin(PluginType.ANDROID_BUILT_IN_KOTLIN)
 
@@ -131,7 +131,7 @@ class MergeResourcesTest {
                     """.trimIndent())
         }
         gradleProperties {
-            add(BooleanOption.USE_ANDROID_X, true)
+            add(BooleanOption.USE_NEW_DSL, true)
         }
     }
 
@@ -605,9 +605,7 @@ class MergeResourcesTest {
             }
         }
 
-        build.executor
-            .with(BooleanOption.ENABLE_APP_COMPILE_TIME_R_CLASS, false)
-            .runEnforceUniquePkg("clean", ":app:assembleDebug")
+        build.executor.runEnforceUniquePkg("clean", ":app:assembleDebug")
 
         val incrementalMergedValues = build.androidApplication().intermediatesDir
             .resolve("incremental/debug/mergeDebugResources/merged.dir/values/values.xml")
@@ -618,9 +616,13 @@ class MergeResourcesTest {
 
         assertThat(incrementalMergedValues).contains("my_library_string")
 
-        build.executor
-            .with(BooleanOption.ENABLE_APP_COMPILE_TIME_R_CLASS, true)
-            .runEnforceUniquePkg("clean", ":app:generateDebugRFile")
+        // had to use this as `executor.with()` won't work if the property is already
+        // defined in the gradle.properties file.
+        build.reconfigureGradleProperties {
+            add(BooleanOption.ENABLE_APP_COMPILE_TIME_R_CLASS, true)
+        }
+
+        build.executor.runEnforceUniquePkg("clean", ":app:generateDebugRFile")
 
         assertThat(incrementalMergedValues).doesNotExist()
         assertThat(smallMerge).doesNotContain("my_library_string")

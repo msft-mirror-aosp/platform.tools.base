@@ -53,7 +53,6 @@ public class ProjectOptionsBuilder {
     }
 
     List<String> getArguments() {
-        revertDefaultsForAgp9(booleans, suppressWarnings);
         injectWarningSuppression(strings, suppressWarnings);
         injectBazelSpecificOptions(booleans);
         ImmutableList.Builder<String> args = ImmutableList.builder();
@@ -62,24 +61,6 @@ public class ProjectOptionsBuilder {
         addArgs(args, integers);
         addArgs(args, strings);
         return args.build();
-    }
-
-    private void revertDefaultsForAgp9(
-            Map<BooleanOption, Boolean> booleans, Set<Option<?>> suppressWarnings) {
-        if (!booleans.containsKey(BooleanOption.DEFAULT_TARGET_SDK_TO_COMPILE_SDK_IF_UNSET)) {
-            booleans.put(BooleanOption.DEFAULT_TARGET_SDK_TO_COMPILE_SDK_IF_UNSET, false);
-            suppressWarnings.add(BooleanOption.DEFAULT_TARGET_SDK_TO_COMPILE_SDK_IF_UNSET);
-        }
-        if (!booleans.containsKey(BooleanOption.ENABLE_LEGACY_VARIANT_API)) {
-            booleans.put(BooleanOption.ENABLE_LEGACY_VARIANT_API, true);
-            suppressWarnings.add(BooleanOption.ENABLE_LEGACY_VARIANT_API);
-        }
-
-        // TODO(b/418804641): Migrate to the new DSL
-        if (!booleans.containsKey(BooleanOption.USE_NEW_DSL)) {
-            booleans.put(BooleanOption.USE_NEW_DSL, false);
-            suppressWarnings.add(BooleanOption.USE_NEW_DSL);
-        }
     }
 
     private static void injectWarningSuppression(

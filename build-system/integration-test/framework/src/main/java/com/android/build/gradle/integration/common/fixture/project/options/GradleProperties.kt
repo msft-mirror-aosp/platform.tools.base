@@ -16,9 +16,15 @@
 
 package com.android.build.gradle.integration.common.fixture.project.options
 
+import com.android.build.gradle.integration.common.fixture.project.GradleRuleImpl
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleDefinitionDsl
 import com.android.build.gradle.options.BooleanOption
+import com.android.build.gradle.options.BooleanOption.DEFAULT_TARGET_SDK_TO_COMPILE_SDK_IF_UNSET
+import com.android.build.gradle.options.BooleanOption.ENABLE_APP_COMPILE_TIME_R_CLASS
+import com.android.build.gradle.options.BooleanOption.ENABLE_LEGACY_VARIANT_API
+import com.android.build.gradle.options.BooleanOption.USE_NEW_DSL
 import com.android.build.gradle.options.StringOption
+import com.android.build.gradle.options.StringOption.SUPPRESS_UNSUPPORTED_OPTION_WARNINGS
 
 /**
  * Object to add Gradle Properties to a test project (via [GradleRule]
@@ -90,6 +96,25 @@ internal class GradlePropertiesDelegate : GradlePropertiesBuilder {
 
     override fun remove(option: StringOption) {
         mutableStrings.remove(option)
+    }
+
+    internal fun applyOptOutForAgp9() {
+        var suppressValue = mutableStrings[SUPPRESS_UNSUPPORTED_OPTION_WARNINGS] ?: ""
+
+        for (entry in GradleRuleImpl.AGP_9_OPT_OUTS) {
+            if (!mutableBooleans.containsKey(entry.key)) {
+                mutableBooleans[entry.key] = entry.value
+                suppressValue = if (suppressValue.isEmpty()) {
+                    entry.key.propertyName
+                } else {
+                    suppressValue + "," + entry.key.propertyName
+                }
+            }
+        }
+
+        if (suppressValue.isNotEmpty()) {
+            mutableStrings[SUPPRESS_UNSUPPORTED_OPTION_WARNINGS] = suppressValue
+        }
     }
 
     internal val properties: List<String>
