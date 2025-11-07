@@ -15,10 +15,16 @@
  */
 package com.android.build.gradle.integration.application
 
+import com.android.build.gradle.api.ApkVariantOutput
+import com.android.build.gradle.api.ApplicationVariant
 import com.android.build.gradle.integration.common.category.SmokeTests
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
+import com.android.build.gradle.integration.common.fixture.project.plugins.LegacyApplicationCallback
 import com.android.build.gradle.integration.common.fixture.project.prebuilts.BasicSpec
+import com.android.build.gradle.internal.dsl.BaseAppModuleExtension
+import com.android.build.gradle.options.BooleanOption
 import com.google.common.truth.Truth
+import org.gradle.api.Project
 import org.junit.Rule
 import org.junit.Test
 import org.junit.experimental.categories.Category
@@ -53,5 +59,43 @@ class BasicTest {
         val result = build.executor.run("compileDebugRenderscript")
         Truth.assertThat(result.getTask(":app:compileDebugRenderscript").executionState.toString())
             .isEqualTo("SKIPPED")
+    }
+
+    @Test
+    fun testOutputs() {
+        val build = rule.build {
+            androidApplication(":app") {
+                pluginCallbacks += BasicTestCallback::class.java
+            }
+            gradleProperties {
+                add(BooleanOption.USE_NEW_DSL, false)
+            }
+        }
+
+        val result = build.executor.run(":app:assembleRelease")
+
+        result.assertOutputContains("Customizing release / 12")
+        result.assertOutputContains("Done with release / 13")
+    }
+}
+
+
+class BasicTestCallback: LegacyApplicationCallback {
+    override fun handleExtension(
+        project: Project,
+        extension: BaseAppModuleExtension
+    ) {
+        // Override the versionCode of the release version
+        extension.applicationVariants.all { variant: ApplicationVariant ->
+            println(variant.name)
+            if (variant.buildType.name == "release") {
+                variant.outputs.all { output ->
+                    output as ApkVariantOutput
+                    println("Customizing ${output.name} / ${output.versionCodeOverride}")
+                    output.setVersionCodeOverride(13)
+                    println("Done with ${output.name} / ${output.versionCodeOverride}")
+                }
+            }
+        }
     }
 }

@@ -45,15 +45,15 @@ import java.io.File
  */
 class GeneratedKotlinSourcesAccessViaOldVariant {
     @get:Rule
-    val project = GradleRule.configure().from {
+    val project = GradleRule.from {
         gradleProperties {
-            add(BooleanOption.BUILT_IN_KOTLIN, false)
             add(BooleanOption.USE_NEW_DSL, false)
+            add(BooleanOption.BUILT_IN_KOTLIN, false)
         }
 
         androidApplication {
-            applyPlugin(PluginType.KOTLIN_ANDROID)
             android {
+                applyPlugin(PluginType.KOTLIN_ANDROID)
                 kotlin {
                     compilerOptions.jvmTarget.set(JvmTarget.JVM_11)
                 }

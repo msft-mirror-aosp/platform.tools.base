@@ -68,15 +68,12 @@ internal class GradleRuleImpl internal constructor(
     private val ruleOptionBuilder: DefaultRuleOptionBuilder,
     private val externalLibraries: List<MavenRepoGenerator.Library>,
     private val enableProfileOutput: Boolean,
-    private val testProjectName: String?
+    private val testProjectName: String?,
 ): GradleRule {
 
     companion object {
         internal val AGP_9_OPT_OUTS = mapOf(
             DEFAULT_TARGET_SDK_TO_COMPILE_SDK_IF_UNSET to false,
-            ENABLE_LEGACY_VARIANT_API to true,
-            // TODO(b/418804641): Migrate to the new DSL
-            USE_NEW_DSL to false
         )
     }
 
@@ -158,7 +155,12 @@ internal class GradleRuleImpl internal constructor(
             buildDefinition.handleCustomBuildLogic(rootBuildPath)
         )
 
-        buildDefinition.write(rootBuildPath, globalState)
+        buildDefinition.write(
+            rootBuildPath,
+            globalState,
+            ruleOptionBuilder.disableBrokenBuiltInKotlinOptOutChecks,
+            ruleOptionBuilder.disableBrokenNewDslOptOutChecks
+        )
 
         createAncillaryBuildFiles()
     }

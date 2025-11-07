@@ -66,7 +66,7 @@ class AddPreCompileCodeGeneratorTest {
     }
 
     @get:Rule
-    val project = GradleRule.configure().from {
+    val project = GradleRule.from {
         androidApplication {
             files {
                 add("src/main/kotlin/com/foo/bar/app/MyClass.kt",

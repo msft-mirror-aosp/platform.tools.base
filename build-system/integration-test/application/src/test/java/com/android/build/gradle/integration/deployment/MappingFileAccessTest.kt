@@ -22,6 +22,7 @@ import com.android.build.gradle.integration.common.fixture.project.prebuilts.Bas
 import com.android.build.gradle.integration.common.truth.ScannerSubject
 import com.android.build.gradle.internal.api.InstallableVariantImpl
 import com.android.build.gradle.internal.dsl.BaseAppModuleExtension
+import com.android.build.gradle.options.BooleanOption
 import com.google.common.truth.Truth.assertThat
 import org.gradle.api.DefaultTask
 import org.gradle.api.Project
@@ -46,6 +47,9 @@ class MappingFileAccessTest {
             }
 
             pluginCallbacks += AppVariantCallback::class.java
+        }
+        gradleProperties {
+            add(BooleanOption.USE_NEW_DSL, false)
         }
     }
 

@@ -21,7 +21,6 @@ import com.android.build.gradle.integration.common.fixture.SUPPORT_LIB_MIN_SDK
 import com.android.build.gradle.integration.common.fixture.model.ModelComparator
 import com.android.build.gradle.integration.common.truth.TruthHelper
 import com.android.build.gradle.integration.common.utils.TestFileUtils
-import com.android.build.gradle.integration.common.utils.disableBuiltInKotlin
 import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.apk.Apk
 import org.junit.Before

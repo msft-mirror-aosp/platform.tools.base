@@ -29,7 +29,7 @@ import org.junit.Test
 class FusedLibraryDslTest {
 
     @get:Rule
-    val rule = GradleRule.configure().from {
+    val rule = GradleRule.from {
         fusedLibrary(":$FUSED_LIB_PROJECT_NAME") {
             androidFusedLibrary {
                 namespace = null

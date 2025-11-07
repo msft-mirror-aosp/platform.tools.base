@@ -20,6 +20,24 @@ package com.android.build.gradle.integration.common.fixture.project.plugins
  * Base interface for all plugin callbacks.
  */
 interface PluginCallback {
+
+    /**
+     * Indicates that this callbacks requires the old DSL.
+     *
+     * This is meant to be used by the fixture callback interfaces, and not changed
+     * by the tests themselves
+     */
     val requiresOldVariantApi
+        get() = false
+
+    /**
+     * Indicates that the callback would like to run on the old DSL but does not
+     * actually requires it, meaning that it can run with both which is useful for
+     * parameterized tests on old/new DSL.
+     *
+     * A test should return true here to indicate that running with the old DSL
+     * is fine, and should not trigger an error.
+     */
+    val useWithOldDsl: Boolean
         get() = false
 }

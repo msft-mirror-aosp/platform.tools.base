@@ -39,6 +39,9 @@ import org.junit.runners.model.Statement
 @GradleDefinitionDsl
 interface GradleRuleBuilder: GradleRuleEntryPoint, RuleOptionBuilder, TestRule {
 
+    override fun disableBrokenBuiltInKotlinOptOutChecks(): GradleRuleBuilder
+    override fun disableBrokenNewDslOptOutChecks(): GradleRuleBuilder
+
     override fun withGradleLocation(action: GradleLocationBuilder.() -> Unit): GradleRuleBuilder
     override fun withGradleOptions(action: GradleOptionBuilder<*>.() -> Unit): GradleRuleBuilder
     override fun withSdk(action: SdkConfigurationBuilder.() -> Unit): GradleRuleBuilder
@@ -102,6 +105,16 @@ internal class GradleRuleBuilderImpl internal constructor(): GradleRuleBuilder {
         configAction?.invoke(builder)
 
         return create(builder, testProjectSpec.projectName)
+    }
+
+    override fun disableBrokenBuiltInKotlinOptOutChecks(): GradleRuleBuilder {
+        ruleOptionBuilder.disableBrokenBuiltInKotlinOptOutChecks()
+        return this
+    }
+
+    override fun disableBrokenNewDslOptOutChecks(): GradleRuleBuilder {
+        ruleOptionBuilder.disableBrokenNewDslOptOutChecks()
+        return this
     }
 
     override fun withGradleLocation(action: GradleLocationBuilder.() -> Unit): GradleRuleBuilder {

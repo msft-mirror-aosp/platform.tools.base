@@ -21,7 +21,6 @@ import com.android.build.gradle.integration.common.fixture.model.ModelComparator
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.plugins.ApplicationComponentCallback
 import com.android.build.gradle.integration.common.fixture.project.plugins.LegacyApplicationCallback
-import com.android.build.gradle.integration.common.utils.disableBuiltInKotlin
 import com.android.build.gradle.internal.dsl.BaseAppModuleExtension
 import com.android.build.gradle.options.BooleanOption
 import com.android.builder.model.v2.ide.SyncIssue
@@ -39,10 +38,10 @@ class SourcesDirectoryModelTest : ModelComparator() {
     val rule = GradleRule.from {
         androidApplication {
             android {
+                enableKotlin = false
                 defaultConfig.minSdk = 14
             }
         }
-        disableBuiltInKotlin()
     }
 
     @Test

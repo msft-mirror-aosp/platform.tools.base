@@ -22,7 +22,6 @@ import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_APP_PATH
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_LIB_PATH
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
-import com.android.build.gradle.integration.common.utils.disableBuiltInKotlin
 import com.android.builder.model.v2.ide.SyncIssue
 import org.junit.Rule
 import org.junit.Test
@@ -32,12 +31,18 @@ class AppWithCompileIndirectJavaProjectTest : ModelComparator() {
     @get:Rule
     val rule = GradleRule.from {
         androidApplication {
+            android {
+                enableKotlin = false
+            }
             dependencies {
                 implementation(project(DEFAULT_LIB_PATH))
                 runtimeOnly("com.google.guava:guava:19.0")
             }
         }
         androidLibrary {
+            android {
+                enableKotlin = false
+            }
             dependencies {
                 api(project(":jar"))
             }
@@ -64,7 +69,6 @@ class AppWithCompileIndirectJavaProjectTest : ModelComparator() {
                 """.trimIndent()
             )
         }
-        disableBuiltInKotlin()
     }
 
     @Test

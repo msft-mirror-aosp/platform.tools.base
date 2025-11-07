@@ -33,7 +33,7 @@ import org.junit.Test
 class ApkInstallGroupsTest {
 
     @get:Rule
-    val rule: GradleRule = GradleRule.configure().from {
+    val rule: GradleRule = GradleRule.from {
         androidApplication {
             android {
                 namespace = "com.example.android.kotlin"

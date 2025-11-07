@@ -22,7 +22,6 @@ import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
 import com.android.build.gradle.integration.common.fixture.app.KotlinHelloWorldApp
 import com.android.build.gradle.integration.common.runner.FilterableParameterized
 import com.android.build.gradle.integration.common.truth.ScannerSubject
-import com.android.build.gradle.integration.common.utils.disableBuiltInKotlin
 import com.android.build.gradle.internal.errors.DeprecationReporter
 import com.android.build.gradle.options.BooleanOption
 import com.android.builder.model.SyncIssue

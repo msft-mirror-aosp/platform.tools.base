@@ -324,8 +324,9 @@ abstract class UtpTestBase(val runWithBuiltInPlatform: Boolean) {
         }
 
         gradleProperties {
-            add(BooleanOption.USE_ANDROID_X, true)
             add(BooleanOption.ANDROID_BUILTIN_TEST_PLATFORM, runWithBuiltInPlatform)
+            add(BooleanOption.BUILT_IN_KOTLIN, false)
+            add(BooleanOption.USE_NEW_DSL, false)
         }
     }
 

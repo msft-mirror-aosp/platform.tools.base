@@ -19,7 +19,6 @@ package com.android.build.gradle.integration.model
 import com.android.build.gradle.integration.common.fixture.DESUGAR_DEPENDENCY_VERSION
 import com.android.build.gradle.integration.common.fixture.model.ModelComparator
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
-import com.android.build.gradle.integration.common.utils.disableBuiltInKotlin
 import com.android.builder.model.SyncIssue
 import org.junit.Rule
 import org.junit.Test
@@ -33,12 +32,13 @@ class DesugaredMethodsModelTest: ModelComparator() {
                 compileOptions {
                     isCoreLibraryDesugaringEnabled = true
                 }
+
+                enableKotlin = false
             }
             dependencies {
                 coreLibraryDesugaring(DESUGAR_DEPENDENCY)
             }
         }
-        disableBuiltInKotlin()
     }
 
     @Test

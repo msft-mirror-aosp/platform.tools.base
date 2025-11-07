@@ -55,7 +55,11 @@ class BuiltInKotlinCompilerPluginTest(
 
     @Test
     fun `test Kotlin compiler Gradle plugin is invoked`() {
-        val build = rule.build
+        val build = if (builtInKotlinBooleanOption) {
+            rule.build
+        } else {
+            rule.configure().disableBrokenBuiltInKotlinOptOutChecks().build
+        }
         build.addKotlinCompilerGradlePlugin()
 
         // Check Kotlin compiler Gradle plugin is invoked

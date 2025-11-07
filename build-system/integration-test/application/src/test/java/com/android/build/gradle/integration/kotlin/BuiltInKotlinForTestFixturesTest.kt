@@ -22,7 +22,6 @@ import com.android.build.gradle.integration.common.fixture.project.builder.Gradl
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
 import com.android.build.gradle.integration.common.fixture.project.plugins.GenericCallback
 import com.android.build.gradle.integration.common.truth.ScannerSubject
-import com.android.build.gradle.integration.common.utils.disableBuiltInKotlin
 import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.TestUtils
 import org.gradle.api.Project
@@ -31,6 +30,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.junit.Rule
 import org.junit.Test
 
+@Suppress("DEPRECATION")
 class BuiltInKotlinForTestFixturesTest {
 
     @get:Rule
@@ -45,7 +45,10 @@ class BuiltInKotlinForTestFixturesTest {
                 jvmToolchain(17)
             }
         }
-        disableBuiltInKotlin()
+        gradleProperties {
+            add(BooleanOption.BUILT_IN_KOTLIN, false)
+            add(BooleanOption.USE_NEW_DSL, false)
+        }
     }
 
     /**

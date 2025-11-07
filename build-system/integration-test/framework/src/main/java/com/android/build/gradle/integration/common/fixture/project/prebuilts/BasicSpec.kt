@@ -162,32 +162,6 @@ class BasicSpec : LocalTestProjectSpec {
                     resValues = true
                 }
             }
-
-            pluginCallbacks += BasicTestCallback::class.java
-        }
-
-        gradleProperties {
-            add(BooleanOption.USE_NEW_DSL, false)
-        }
-    }
-}
-
-class BasicTestCallback: LegacyApplicationCallback {
-    override fun handleExtension(
-        project: Project,
-        extension: BaseAppModuleExtension
-    ) {
-        // Override the versionCode of the release version
-        extension.applicationVariants.all { variant: ApplicationVariant ->
-            println(variant.name)
-            if (variant.buildType.name == "release") {
-                variant.outputs.all { output ->
-                    output as ApkVariantOutput
-                    println("Customizing $this")
-                    output.setVersionCodeOverride(13)
-                    println("Done with $this")
-                }
-            }
         }
     }
 }

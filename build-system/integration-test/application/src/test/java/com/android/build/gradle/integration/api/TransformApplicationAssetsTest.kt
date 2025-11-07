@@ -19,7 +19,6 @@ package com.android.build.gradle.integration.api
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.KotlinHelloWorldApp
 import com.android.build.gradle.integration.common.truth.ScannerSubject
-import com.android.build.gradle.integration.common.utils.disableBuiltInKotlin
 import com.android.utils.FileUtils
 import org.junit.Rule
 import org.junit.Test

@@ -299,7 +299,9 @@ class GradleBuildDefinitionTest {
                 additionalProperties = listOf(),
                 repositories = repositories,
                 customPluginMap = mapOf()
-            )
+            ),
+            disableUnnecessaryBuiltInKotlinOptOutChecks = false,
+            disableUnnecessaryNewDslOptOutChecks = false,
         )
 
         return folder

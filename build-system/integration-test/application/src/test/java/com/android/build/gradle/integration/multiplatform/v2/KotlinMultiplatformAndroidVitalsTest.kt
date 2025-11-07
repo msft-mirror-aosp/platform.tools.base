@@ -19,8 +19,8 @@ package com.android.build.gradle.integration.multiplatform.v2
 import com.android.SdkConstants.MAX_SUPPORTED_ANDROID_PLATFORM_VERSION
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
-import com.android.build.gradle.integration.common.utils.disableBuiltInKotlin
 import com.android.build.gradle.internal.plugins.KotlinMultiplatformAndroidPlugin.Companion.ANDROID_EXTENSION_ON_KOTLIN_EXTENSION_NAME
+import com.android.build.gradle.options.BooleanOption
 import org.junit.Rule
 import org.junit.Test
 
@@ -29,7 +29,6 @@ class KotlinMultiplatformAndroidVitalsTest {
     @get:Rule
     val rule = GradleRule.from {
         androidKotlinMultiplatformLibrary(":shared") { }
-        disableBuiltInKotlin()
     }
 
     @Test
@@ -84,12 +83,19 @@ class KotlinMultiplatformAndroidVitalsTest {
 
     @Test
     fun `fail when another android plugin is applied before kmp android`() {
-        val build = rule.build {
-            androidKotlinMultiplatformLibrary(":kmpModule") {
-                // Android lib plugin has to be applied before the kotlin multiplatform lib plugin
-                applyPlugin(PluginType.ANDROID_LIB, applyFirst = true)
+        val build = rule.configure()
+            .disableBrokenBuiltInKotlinOptOutChecks()
+            .disableBrokenNewDslOptOutChecks()
+            .build {
+                androidKotlinMultiplatformLibrary(":kmpModule") {
+                    // Android lib plugin has to be applied before the kotlin multiplatform lib plugin
+                    applyPlugin(PluginType.ANDROID_LIB, applyFirst = true)
+                }
+                gradleProperties {
+                    add(BooleanOption.BUILT_IN_KOTLIN, false)
+                    add(BooleanOption.USE_NEW_DSL, false)
+                }
             }
-        }
         val result = build.executor.expectFailure().run(":kmpModule:assembleAndroidMain")
         result.assertErrorContains(
             "'com.android.kotlin.multiplatform.library' and 'com.android.library' plugins cannot be applied in the same project."

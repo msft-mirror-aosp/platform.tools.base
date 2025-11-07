@@ -43,7 +43,6 @@ sealed class PluginType(
     object JAVA_GRADLE_PLUGIN: PluginType("java-gradle-plugin")
     // --------------
     // Kotlin plugins
-    @Deprecated("Consider using the built-in support with AGP 9.0 default behavior")
     object KOTLIN_JVM: PluginTypeWithExtension<KotlinExtension>(
         id = "org.jetbrains.kotlin.jvm",
         artifact = "org.jetbrains.kotlin:kotlin-gradle-plugin",
@@ -51,6 +50,7 @@ sealed class PluginType(
         extensionType = KotlinExtension::class.java,
         extensionName = "kotlin"
     )
+    @Deprecated("Consider using the built-in support with AGP 9.0 default behavior")
     object KOTLIN_ANDROID: PluginType(
         id = KOTLIN_ANDROID_PLUGIN_ID,
         isAndroid = true,

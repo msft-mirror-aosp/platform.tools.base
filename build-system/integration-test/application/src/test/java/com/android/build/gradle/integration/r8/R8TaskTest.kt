@@ -24,7 +24,6 @@ import com.android.build.gradle.integration.common.fixture.project.builder.Andro
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
 import com.android.build.gradle.integration.common.truth.TruthHelper
 import com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
-import com.android.build.gradle.integration.common.utils.disableBuiltInKotlin
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.options.IntegerOption
@@ -39,6 +38,7 @@ class R8TaskTest {
     val rule = GradleRule.from {
         androidJavaApplication {
             android {
+                enableKotlin = false
                 buildTypes {
                     named("release") {
                         it.isMinifyEnabled = true
@@ -52,7 +52,6 @@ class R8TaskTest {
             }
             files.add("proguard-rules.pro", "")
         }
-        disableBuiltInKotlin()
     }
 
     @Test

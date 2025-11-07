@@ -44,9 +44,9 @@ import com.android.build.gradle.integration.common.fixture.project.PrivacySandbo
 import com.android.build.gradle.integration.common.fixture.project.PrivacySandboxSdkDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.options.GradlePropertiesBuilder
 import com.android.build.gradle.integration.common.fixture.project.options.GradlePropertiesDelegate
-import com.android.build.gradle.integration.common.fixture.project.plugins.PluginCallback
 import com.android.build.gradle.integration.common.fixture.project.prebuilts.HelloWorldAndroid
-import com.android.build.gradle.options.BooleanOption
+import com.android.build.gradle.options.BooleanOption.BUILT_IN_KOTLIN
+import com.android.build.gradle.options.BooleanOption.USE_NEW_DSL
 import com.android.testutils.MavenRepoGenerator
 import java.io.File
 import java.nio.file.Path
@@ -489,7 +489,14 @@ internal class GradleBuildDefinitionImpl(
     internal fun write(
         location: Path,
         globalDefinitionState: GlobalDefinitionState,
+        disableUnnecessaryBuiltInKotlinOptOutChecks: Boolean,
+        disableUnnecessaryNewDslOptOutChecks: Boolean
     ) {
+        checkAgp9Behavior(
+            disableUnnecessaryBuiltInKotlinOptOutChecks,
+            disableUnnecessaryNewDslOptOutChecks
+        )
+
         location.createDirectories()
         this.globalDefinitionState = globalDefinitionState
 
@@ -542,7 +549,12 @@ internal class GradleBuildDefinitionImpl(
                 it.handleCustomBuildLogic(newLocation)
             )
 
-            it.write(newLocation,  globalState)
+            it.write(
+                newLocation,
+                globalState,
+                disableUnnecessaryBuiltInKotlinOptOutChecks,
+                disableUnnecessaryNewDslOptOutChecks
+            )
         }
     }
 
@@ -637,8 +649,6 @@ internal class GradleBuildDefinitionImpl(
         handler.use {
             // include all the plugin callbacks
             for ((callbackClass, paths) in callbackMap) {
-                checkCallback(callbackClass)
-
                 val pluginClassName = it.addCallback(callbackClass)
 
                 // record this association, using the paths as keys since it'll be used
@@ -655,16 +665,72 @@ internal class GradleBuildDefinitionImpl(
         return pluginClassMap
     }
 
-    private fun checkCallback(callbackClass: Class<out PluginCallback>) {
-        val requiresOldVariantApi = callbackClass.getDeclaredConstructor()
-            .newInstance()
-            .requiresOldVariantApi
-        if (requiresOldVariantApi) {
-            val newDsl = propertiesDelegate.mutableBooleans[BooleanOption.USE_NEW_DSL]
-            val newDslAsString = propertiesDelegate.mutableProperties[BooleanOption.USE_NEW_DSL.propertyName]
-            if (newDsl != false && newDslAsString != "false") {
-                throw RuntimeException("Usage of Legacy Variant API requires to set android.newDsl=false")
+    /**
+     * checks whether the test requires opting out of any AGP 9.0 behavior.
+     *
+     * For now this handles newDsl based on presence of a legacy callback.
+     */
+    private fun checkAgp9Behavior(
+        disableUnnecessaryBuiltInKotlinOptOutChecks: Boolean,
+        disableUnnecessaryNewDslOptOutChecks: Boolean
+    ) {
+        val subProjectList = subProjects.values
+
+        // check for legacy plugins
+        var foundLegacy = false
+        var foundNewCallbackForOldDsl = false
+        subProjectList
+            .flatMap { it.pluginCallbacks }
+            .forEach {
+                val callBackInstance = it.getDeclaredConstructor().newInstance()
+                val requiresOldVariantApi = callBackInstance.requiresOldVariantApi
+                if (requiresOldVariantApi) {
+                    foundLegacy = true
+                    val newDsl = propertiesDelegate.mutableBooleans[USE_NEW_DSL]
+                    val newDslAsString = propertiesDelegate.mutableProperties[USE_NEW_DSL.propertyName]
+                    if (newDsl != false && newDslAsString != "false") {
+                        throw RuntimeException(
+                            "Usage of Legacy Variant API requires to set ${USE_NEW_DSL.propertyName}=false"
+                        )
+                    }
+                }
+
+                foundNewCallbackForOldDsl = foundNewCallbackForOldDsl || callBackInstance.useWithOldDsl
             }
+
+        // check legacy kotlin plugin presence
+        val allPlugins = subProjectList
+            .flatMap {
+                it.plugins.map { appliedPlugin -> appliedPlugin.plugin }
+            }
+            .toSet()
+        val hasLegacyKotlin = allPlugins.contains(PluginType.KOTLIN_ANDROID)
+
+        // If we have not found a legacy plugin, then we don't need newDsl=false
+        if (!foundLegacy &&
+            propertiesDelegate.mutableBooleans[USE_NEW_DSL] == false &&
+            !foundNewCallbackForOldDsl &&
+            !hasLegacyKotlin
+        ) {
+            if (!disableUnnecessaryNewDslOptOutChecks) {
+                throw RuntimeException(
+                    "Usage of ${USE_NEW_DSL.propertyName}=false is not necessary without any legacy plugins"
+                )
+            }
+        }
+
+        val optedOutBuiltInKotlin = propertiesDelegate.mutableBooleans[BUILT_IN_KOTLIN] == false
+
+        if (hasLegacyKotlin && !optedOutBuiltInKotlin) {
+            throw RuntimeException("Usage of Legacy Kotlin Plugin requires to set ${BUILT_IN_KOTLIN.propertyName}=false")
+        } else if (!hasLegacyKotlin && optedOutBuiltInKotlin) {
+            if (!disableUnnecessaryBuiltInKotlinOptOutChecks) {
+                throw RuntimeException(
+                    "Usage of ${BUILT_IN_KOTLIN.propertyName}=false is not necessary without usage of Legacy kotlin plugin"
+                )
+            }
+        } else if (hasLegacyKotlin && propertiesDelegate.mutableBooleans[USE_NEW_DSL] != false) {
+            throw RuntimeException("Usage of Legacy Kotlin Plugin requires to set ${USE_NEW_DSL.propertyName}=false")
         }
     }
 }

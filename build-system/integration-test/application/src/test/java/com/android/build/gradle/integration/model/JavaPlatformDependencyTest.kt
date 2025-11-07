@@ -21,7 +21,6 @@ import com.android.build.gradle.integration.common.fixture.model.ModelComparator
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
 import com.android.build.gradle.integration.common.fixture.project.plugins.GenericCallback
-import com.android.build.gradle.integration.common.utils.disableBuiltInKotlin
 import com.android.builder.model.v2.ide.SyncIssue
 import com.android.testutils.MavenRepoGenerator
 import org.gradle.api.Project
@@ -33,6 +32,9 @@ class JavaPlatformDependencyTest : ModelComparator() {
     @get:Rule
     val rule = GradleRule.from {
         androidApplication {
+            android {
+                enableKotlin = false
+            }
             dependencies {
                 implementation(platform(project(":lib")))
             }
@@ -44,7 +46,6 @@ class JavaPlatformDependencyTest : ModelComparator() {
                 api(MavenRepoGenerator.Library("com.bar:foo:1.0"))
             }
         }
-        disableBuiltInKotlin()
     }
 
     class PlatformCallback: GenericCallback {

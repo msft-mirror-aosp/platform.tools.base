@@ -23,7 +23,6 @@ import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_APP_PATH
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_LIB_PATH
 import com.android.build.gradle.integration.common.fixture.project.plugins.LibraryComponentCallback
-import com.android.build.gradle.integration.common.utils.disableBuiltInKotlin
 import com.android.builder.model.v2.ide.SyncIssue
 import org.gradle.api.Project
 import org.gradle.jvm.tasks.Jar
@@ -34,6 +33,9 @@ class CustomConfigPublishingModelTest : ModelComparator() {
     @get:Rule
     val rule = GradleRule.from {
         androidApplication {
+            android {
+                enableKotlin = false
+            }
             dependencies {
                 implementation(project(DEFAULT_LIB_PATH, configuration = "custom"))
             }
@@ -42,7 +44,6 @@ class CustomConfigPublishingModelTest : ModelComparator() {
             pluginCallbacks += LibCallback::class.java
 
         }
-        disableBuiltInKotlin()
     }
 
     class LibCallback: LibraryComponentCallback {

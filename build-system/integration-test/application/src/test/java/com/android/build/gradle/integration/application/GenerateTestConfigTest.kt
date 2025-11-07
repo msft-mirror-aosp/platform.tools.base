@@ -33,12 +33,11 @@ import java.io.File
 class GenerateTestConfigTest {
 
     @get:Rule
-    val rule = GradleRule.configure()
-        .from {
-            androidApplication {
-                android.testOptions.unitTests.isIncludeAndroidResources = true
-            }
+    val rule = GradleRule.from {
+        androidApplication {
+            android.testOptions.unitTests.isIncludeAndroidResources = true
         }
+    }
 
     private val executor: GradleTaskExecutor
         get() = rule.build.executor.withEnableInfoLogging(false)

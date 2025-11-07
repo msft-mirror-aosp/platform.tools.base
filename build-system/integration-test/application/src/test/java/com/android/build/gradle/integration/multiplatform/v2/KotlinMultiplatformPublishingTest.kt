@@ -24,7 +24,7 @@ import com.android.build.gradle.integration.common.fixture.project.builder.Plugi
 import com.android.build.gradle.integration.common.fixture.project.plugins.GenericCallback
 import com.android.build.gradle.integration.common.fixture.project.plugins.KotlinMultiplatformCallback
 import com.android.build.gradle.integration.common.truth.ScannerSubject
-import com.android.build.gradle.integration.common.utils.disableBuiltInKotlin
+import com.android.build.gradle.options.BooleanOption
 import org.gradle.api.Project
 import org.gradle.api.publish.PublishingExtension
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
@@ -99,20 +99,27 @@ class KotlinMultiplatformPublishingTest {
 
     @Test
     fun `test kmp and com_android_library consumer`() {
-        val build = rule.build {
-            androidLibrary(":oldKmpConsumer") {
-                applyPlugin(PluginType.KOTLIN_MPP)
+        val build = rule
+            .configure()
+            .disableBrokenBuiltInKotlinOptOutChecks()
+            .disableBrokenNewDslOptOutChecks()
+            .build {
+                androidLibrary(":oldKmpConsumer") {
+                    applyPlugin(PluginType.KOTLIN_MPP)
 
-                android {
-                    namespace = "com.example.oldKmpConsumer"
-                    compileSdk = DEFAULT_COMPILE_SDK_VERSION
-                    defaultConfig.minSdk = 24
+                    android {
+                        namespace = "com.example.oldKmpConsumer"
+                        compileSdk = DEFAULT_COMPILE_SDK_VERSION
+                        defaultConfig.minSdk = 24
+                    }
+                    pluginCallbacks += AndroidDependencyCallback::class.java
+                    pluginCallbacks += EnableAndroidTargetCallback::class.java
                 }
-                pluginCallbacks += AndroidDependencyCallback::class.java
-                pluginCallbacks += EnableAndroidTargetCallback::class.java
+                gradleProperties {
+                    add(BooleanOption.BUILT_IN_KOTLIN, false)
+                    add(BooleanOption.USE_NEW_DSL, false)
+                }
             }
-            disableBuiltInKotlin()
-        }
         build.executor
             .withFailOnWarning(false) // b/455891987
             .run(":producer:publish")

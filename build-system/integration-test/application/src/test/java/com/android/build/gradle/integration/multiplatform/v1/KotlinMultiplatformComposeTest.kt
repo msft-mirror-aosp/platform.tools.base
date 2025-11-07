@@ -20,7 +20,6 @@ import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
 import com.android.build.gradle.integration.common.fixture.project.plugins.GenericCallback
-import com.android.build.gradle.integration.common.utils.disableBuiltInKotlin
 import com.android.build.gradle.internal.TaskManager.Companion.COMPOSE_UI_VERSION
 import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.TestUtils.KOTLIN_VERSION_FOR_COMPOSE_TESTS
@@ -80,7 +79,10 @@ class KotlinMultiplatformComposeTest {
                     """.trimIndent()
                 )
             }
-            disableBuiltInKotlin()
+            gradleProperties {
+                add(BooleanOption.USE_NEW_DSL, false)
+                add(BooleanOption.BUILT_IN_KOTLIN, false)
+            }
         }
 
     class Callback: GenericCallback {
@@ -99,7 +101,11 @@ class KotlinMultiplatformComposeTest {
     /** Regression test for b/203594737. */
     @Test
     fun testLibraryBuilds() {
-        rule.build.executor
+        rule.configure()
+            .disableBrokenNewDslOptOutChecks()
+            .disableBrokenBuiltInKotlinOptOutChecks()
+            .build
+            .executor
             .with(BooleanOption.USE_ANDROID_X, true)
             .withFailOnWarning(false) // b/455891987
             .run(":lib:assembleDebug")

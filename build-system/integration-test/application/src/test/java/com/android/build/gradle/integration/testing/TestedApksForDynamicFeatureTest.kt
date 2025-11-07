@@ -36,7 +36,7 @@ import kotlin.io.path.pathString
 class TestedApksForDynamicFeatureTest {
 
     @get:Rule
-    val rule: GradleRule = GradleRule.configure().from {
+    val rule: GradleRule = GradleRule.from {
         androidApplication {
             android {
                 namespace = "com.example.android.kotlin"

@@ -30,16 +30,15 @@ import java.io.IOException
 
 class ArtifactsLocationsReportTest {
     @get:Rule
-    val rule = GradleRule.configure()
-        .from {
-            gradleProperties {
-                add(BooleanOption.DUMP_ARTIFACTS_LOCATIONS.propertyName, "true")
-            }
-            androidApplication {
-                android {
-                }
+    val rule = GradleRule.from {
+        gradleProperties {
+            add(BooleanOption.DUMP_ARTIFACTS_LOCATIONS.propertyName, "true")
+        }
+        androidApplication {
+            android {
             }
         }
+    }
 
     @Test
     fun testDumping() {

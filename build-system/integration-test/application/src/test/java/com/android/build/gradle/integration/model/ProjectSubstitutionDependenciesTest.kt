@@ -20,7 +20,6 @@ import com.android.build.api.variant.ApplicationAndroidComponentsExtension
 import com.android.build.gradle.integration.common.fixture.model.ModelComparator
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.plugins.ApplicationComponentCallback
-import com.android.build.gradle.integration.common.utils.disableBuiltInKotlin
 import com.android.builder.model.v2.ide.SyncIssue
 import com.android.testutils.MavenRepoGenerator
 import org.gradle.api.Project
@@ -31,15 +30,25 @@ class ProjectSubstitutionDependenciesTest: ModelComparator() {
     @get:Rule
     val rule = GradleRule.from {
         androidApplication {
+            android {
+                enableKotlin = false
+            }
             dependencies {
                 runtimeOnly(MavenRepoGenerator.Library("com.example:lib:1.0"))
                 implementation(MavenRepoGenerator.Library("com.example:lib2:1.0"))
             }
             pluginCallbacks += AppCallback::class.java
         }
-        androidLibrary(":lib") { }
-        androidLibrary(":lib2") {  }
-        disableBuiltInKotlin()
+        androidLibrary(":lib") {
+            android {
+                enableKotlin = false
+            }
+        }
+        androidLibrary(":lib2") {
+            android {
+                enableKotlin = false
+            }
+        }
     }
 
     class AppCallback: ApplicationComponentCallback {

@@ -271,7 +271,6 @@ class FusedLibraryClassesVerificationTest(private val publicationOnlyMode: Boole
             gradleProperties {
                 add(BooleanOption.FUSED_LIBRARY_SUPPORT, true)
                 add(BooleanOption.FUSED_LIBRARY_PUBLICATION_ONLY_MODE, publicationOnlyMode)
-                add(BooleanOption.USE_ANDROID_X, true)
             }
         }
 
@@ -785,7 +784,7 @@ class FusedLibraryClassesVerificationTest(private val publicationOnlyMode: Boole
         const val FUSED_LIBRARY_R_CLASS = "com/example/fusedLib1/R.class"
 
         @JvmStatic
-        @Parameterized.Parameters
+        @Parameterized.Parameters(name = "{0}")
         fun publicationOnlyMode() = listOf(true, false)
     }
 }

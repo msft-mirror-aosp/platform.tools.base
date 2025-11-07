@@ -20,7 +20,6 @@ import com.android.build.gradle.integration.common.fixture.model.ModelComparator
 import com.android.build.gradle.integration.common.fixture.project.ApkSelector
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_APP_PATH
-import com.android.build.gradle.integration.common.utils.disableBuiltInKotlin
 import com.android.build.gradle.options.BooleanOption
 import com.android.builder.model.v2.ide.SyncIssue
 import org.junit.Rule
@@ -29,18 +28,22 @@ import org.junit.Test
 class AppWithKmpDependency : ModelComparator() {
 
     @get:Rule
-    val rule = GradleRule.from {
-        androidApplication {
-            android {
-                defaultConfig.minSdk = 21
+    val rule = GradleRule.configure()
+        .disableBrokenBuiltInKotlinOptOutChecks()
+        .from {
+            androidApplication {
+                android {
+                    defaultConfig.minSdk = 21
+                }
+                // this is a kmp dependency published with -android and -desktop variants
+                dependencies {
+                    implementation("androidx.lifecycle:lifecycle-runtime:2.8.0-alpha02")
+                }
             }
-            // this is a kmp dependency published with -android and -desktop variants
-            dependencies {
-                implementation("androidx.lifecycle:lifecycle-runtime:2.8.0-alpha02")
+            gradleProperties {
+                add(BooleanOption.BUILT_IN_KOTLIN, false)
             }
         }
-        disableBuiltInKotlin()
-    }
 
     @Test
     fun `test VariantDependencies model with kotlin attribute`() {

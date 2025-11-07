@@ -48,7 +48,6 @@ class NewDslImplementationSmokeTest {
     @Test
     fun smokeTest() {
         rule.build.executor
-            .with(BooleanOption.USE_NEW_DSL, true)
             .run(":app:tasks", ":lib:tasks", ":feature:tasks", ":test:tasks")
     }
 }
@@ -83,9 +82,6 @@ class OldDslNotRegisteredTest {
     val rule = GradleRule.from {
         androidLibrary {
             pluginCallbacks += CheckDslAccessibility::class.java
-        }
-        gradleProperties {
-            add(BooleanOption.USE_NEW_DSL, true)
         }
     }
 

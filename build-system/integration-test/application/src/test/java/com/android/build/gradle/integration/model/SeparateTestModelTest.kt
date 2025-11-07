@@ -21,7 +21,6 @@ import com.android.build.gradle.integration.common.fixture.ModelContainerV2
 import com.android.build.gradle.integration.common.fixture.model.ModelComparator
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_APP_PATH
-import com.android.build.gradle.integration.common.utils.disableBuiltInKotlin
 import com.android.builder.model.v2.ide.SyncIssue
 import org.junit.Before
 import org.junit.Rule
@@ -30,13 +29,17 @@ import org.junit.Test
 class SeparateTestModelTest: ModelComparator() {
     @get:Rule
     val rule = GradleRule.from {
-        androidApplication { }
+        androidApplication {
+            android {
+                enableKotlin = false
+            }
+        }
         androidTest {
             android {
                 targetProjectPath = DEFAULT_APP_PATH
+                enableKotlin = false
             }
         }
-        disableBuiltInKotlin()
     }
 
     private lateinit var result: ModelBuilderV2.FetchResult<ModelContainerV2>

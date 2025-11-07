@@ -26,9 +26,7 @@ import java.io.File
 
 class CustomConsumerProguardFilesInDslTest {
     @get:Rule
-    val rule = GradleRule.configure()
-
-        .from {
+    val rule = GradleRule.from {
             kotlinMultiplatformLibrary(":lib") {
                 applyPlugin(PluginType.ANDROID_KMP_LIBRARY)
                 android {
@@ -39,7 +37,6 @@ class CustomConsumerProguardFilesInDslTest {
                 }
             }
         }
-
 
     @Test
     fun testRelativePath() {

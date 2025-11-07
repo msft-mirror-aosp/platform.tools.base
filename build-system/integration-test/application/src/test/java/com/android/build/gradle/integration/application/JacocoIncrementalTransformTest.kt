@@ -29,7 +29,7 @@ import org.junit.Test
 class JacocoIncrementalTransformTest {
 
     @get:Rule
-    val project = GradleRule.configure().from {
+    val project = GradleRule.from {
         androidApplication {
             applyPlugin(PluginType.ANDROID_BUILT_IN_KOTLIN)
 
