@@ -571,7 +571,6 @@ internal class GradleBuildDefinitionImpl(
     }
 
     internal fun writeProperties(location: Path) {
-        propertiesDelegate.applyOptOutForAgp9()
         val properties = globalDefinitionState.additionalProperties + propertiesDelegate.properties
 
         val gradlePropPath = location.resolve("gradle.properties")

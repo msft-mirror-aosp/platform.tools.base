@@ -98,25 +98,6 @@ internal class GradlePropertiesDelegate : GradlePropertiesBuilder {
         mutableStrings.remove(option)
     }
 
-    internal fun applyOptOutForAgp9() {
-        var suppressValue = mutableStrings[SUPPRESS_UNSUPPORTED_OPTION_WARNINGS] ?: ""
-
-        for (entry in GradleRuleImpl.AGP_9_OPT_OUTS) {
-            if (!mutableBooleans.containsKey(entry.key)) {
-                mutableBooleans[entry.key] = entry.value
-                suppressValue = if (suppressValue.isEmpty()) {
-                    entry.key.propertyName
-                } else {
-                    suppressValue + "," + entry.key.propertyName
-                }
-            }
-        }
-
-        if (suppressValue.isNotEmpty()) {
-            mutableStrings[SUPPRESS_UNSUPPORTED_OPTION_WARNINGS] = suppressValue
-        }
-    }
-
     internal val properties: List<String>
         get() {
             // check for raw keys in mutableProperties that are coming from the *Options

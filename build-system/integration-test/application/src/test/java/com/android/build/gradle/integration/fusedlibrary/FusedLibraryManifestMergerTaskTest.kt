@@ -19,6 +19,7 @@ package com.android.build.gradle.integration.fusedlibrary
 import com.android.build.gradle.integration.common.fixture.project.AarSelector
 import com.android.build.gradle.integration.common.fixture.project.BaseAndroidProject
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
+import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition
 import com.android.build.gradle.internal.fusedlibrary.FusedLibraryInternalArtifactType.MERGED_MANIFEST
 import com.android.build.gradle.internal.manifest.parseManifest
 import com.android.build.gradle.options.BooleanOption
@@ -219,7 +220,8 @@ internal class FusedLibraryManifestMergerTaskTest {
                 )
         assertThat(parsedManifest.minSdkVersion?.apiLevel).isEqualTo(19)
         assertThat(parsedManifest.packageName).isEqualTo("com.example.app")
-        assertThat(parsedManifest.targetSdkVersion?.apiLevel).isEqualTo(19)
+        assertThat(parsedManifest.targetSdkVersion?.apiLevel)
+            .isEqualTo(GradleBuildDefinition.DEFAULT_COMPILE_SDK_VERSION)
     }
 
     @Test

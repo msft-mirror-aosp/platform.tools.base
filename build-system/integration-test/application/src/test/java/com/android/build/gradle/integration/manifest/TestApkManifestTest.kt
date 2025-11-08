@@ -18,6 +18,7 @@ package com.android.build.gradle.integration.manifest
 
 import com.android.build.gradle.integration.common.fixture.project.ApkSelector
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
+import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition
 import org.junit.Rule
 import org.junit.Test
 
@@ -54,7 +55,7 @@ class TestApkManifestTest {
                         A: platformBuildVersionName=16
                           E: uses-sdk
                             A: http://schemas.android.com/apk/res/android:minSdkVersion=24
-                            A: http://schemas.android.com/apk/res/android:targetSdkVersion=24
+                            A: http://schemas.android.com/apk/res/android:targetSdkVersion=${GradleBuildDefinition.DEFAULT_COMPILE_SDK_VERSION}
                           E: instrumentation
                             A: http://schemas.android.com/apk/res/android:label="Tests for com.example.app"
                             A: http://schemas.android.com/apk/res/android:name="androidx.test.runner.AndroidJUnitRunner"
