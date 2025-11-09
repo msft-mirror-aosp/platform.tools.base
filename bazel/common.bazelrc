@@ -55,7 +55,7 @@ build --//prebuilts/studio/jdk:jdk_bundle_version=next
 test --jvmopt='-Dembedded.jdk.path=prebuilts/studio/jdk/jbr-next'
 
 # Enable Kotlin K2 mode (b/373746515).
-test --jvmopt='-Didea.kotlin.plugin.use.k2=true'
+test --jvmopt='-Didea.kotlin.plugin.use.k1=false'
 # Enable K2 UAST by default (b/448273436)
 test --jvmopt='-Dlint.use.fir.uast=true'
 

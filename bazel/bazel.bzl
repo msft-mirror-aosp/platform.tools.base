@@ -638,7 +638,7 @@ def iml_module(
                 runtime_deps = [":" + name + "_testlib"] + test_utils,
                 jvm_flags = test_jvm_flags + [
                     "-Dtest.suite.jar=" + name + "_test.jar",
-                    "-Didea.kotlin.plugin.use.k2=false",
+                    "-Didea.kotlin.plugin.use.k1=true",
                 ],
                 main_class = test_main_class,
                 test_class = test_class,
