@@ -146,7 +146,6 @@ public class PluginDslTest {
                         + "println project.android.sourceSets.main.assets.srcDirs");
     }
 
-    @Ignore("b/268114435")
     @Test
     public void testProguardFiles_oldDsl() throws Exception {
         Eval.me(
@@ -375,7 +374,6 @@ public class PluginDslTest {
         }
     }
 
-    @Ignore("b/268114435")
     @Test
     public void testProguardFiles_newDsl() throws Exception {
         Eval.me(
