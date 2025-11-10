@@ -58,6 +58,12 @@ object AiGlassesCli {
           return
         }
 
+    val pairedBluetoothDeviceCount = glasses.getPairedBluetoothDeviceCount()
+    if (pairedBluetoothDeviceCount != null && pairedBluetoothDeviceCount > 0) {
+      println("Glasses already paired; factory reset (wipe data) to pair a new device")
+      return
+    }
+
     if (!phone.hasGlassesCompanionApp()) {
       println("Glasses companion app not detected")
       return

@@ -71,7 +71,9 @@ class AiGlassesPairing(val session: AdbSession) {
             "state=([\\w_]+)".toRegex().find(it.contents)?.groupValues?.get(1)
           }
           is ShellCommandOutputElement.StderrLine -> {
-            logger.warn("Poll pairing state error output: ${it.contents}")
+            if (it.contents.isNotBlank()) {
+              logger.warn("Poll pairing state error output: ${it.contents}")
+            }
             null
           }
           else -> null
@@ -93,6 +95,29 @@ class AiGlassesPairing(val session: AdbSession) {
   private suspend fun ConnectedDevice.monkey() {
     val command = "monkey -p $COMPANION_PKG -c android.intent.category.LAUNCHER 1"
     session.deviceServices.shellCommand(selector, command).withTextCollector().execute().single()
+  }
+
+  /**
+   * Returns the number of paired bluetooth devices, by parsing the output of "dumpsys
+   * bluetooth_manager", or null if we fail to find the number in the output.
+   */
+  suspend fun ConnectedDevice.getPairedBluetoothDeviceCount(): Int? {
+    val command = "dumpsys bluetooth_manager | grep 'Bonded devices:'"
+    var deviceCount: Int? = null
+    session.deviceServices.shellCommand(selector, command).withLineCollector().execute().collect {
+      when (it) {
+        is ShellCommandOutputElement.StdoutLine ->
+          "Bonded devices:\\s+(\\d+)".toRegex().find(it.contents)?.let {
+            deviceCount = it.groupValues[1].toIntOrNull()
+          }
+        is ShellCommandOutputElement.StderrLine ->
+          if (it.contents.isNotBlank()) {
+            logger.warn("dumpsys bluetooth_manager error output: ${it.contents}")
+          }
+        else -> {}
+      }
+    }
+    return deviceCount
   }
 
   suspend fun ConnectedDevice.getBluetoothAddress(): String? {
