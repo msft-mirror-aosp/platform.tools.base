@@ -7243,12 +7243,7 @@ public object ProtoObjectKt {
             val resolvedLHS =
               (node.leftOperand as USimpleNameReferenceExpression).resolve() as? PsiMethod
             assertNotNull(resolvedLHS)
-            if (useFirUast()) {
-              assertEquals("getProtoType", resolvedLHS!!.name)
-            } else {
-              assertEquals("setProtoType", resolvedLHS!!.name)
-            }
-
+            assertEquals("setProtoType", resolvedLHS!!.name)
             return super.visitBinaryExpression(node)
           }
         }
