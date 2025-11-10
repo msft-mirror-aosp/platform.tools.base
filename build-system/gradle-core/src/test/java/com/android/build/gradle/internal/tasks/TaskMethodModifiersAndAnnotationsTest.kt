@@ -201,7 +201,6 @@ class TaskMethodModifiersAndAnnotationsTest {
                 "com.android.build.gradle.internal.tasks.ListingFileRedirectTask\$CreationAction",
                 "com.android.build.gradle.internal.tasks.PackageBundleTask\$CreationForAssetPackBundleAction",
                 "com.android.build.gradle.internal.tasks.ProcessAssetPackManifestTask\$CreationForAssetPackBundleAction",
-                "com.android.build.gradle.internal.tasks.ProguardConfigurableTask\$PrivacySandboxSdkCreationAction",
                 "com.android.build.gradle.internal.tasks.ValidateSigningTask\$CreationForAssetPackBundleAction",
                 "com.android.build.gradle.internal.tasks.factory.AndroidVariantTaskCreationAction",
                 "com.android.build.gradle.internal.tasks.factory.TaskConfigurationActionsTest\$createTaskAction\$creationAction$1",
