@@ -175,6 +175,7 @@ kotlin_test(
 java_library(
     name = "avdmanager_lib",
     srcs = glob(["src/main/java/**/tool/AvdManagerCli.java"]),
+    javacopts = ["--release 11"],
     deps = [
         ":tools.sdklib.core",
         "//tools/base/annotations",
@@ -188,6 +189,7 @@ java_library(
 java_library(
     name = "sdkmanager_lib",
     srcs = glob(["src/main/java/**/tool/sdkmanager/*.java"]),
+    javacopts = ["--release 11"],
     deps = [
         ":tools.sdklib.core",
         "//tools/base/annotations",

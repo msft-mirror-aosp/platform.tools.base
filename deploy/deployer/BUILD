@@ -62,6 +62,7 @@ iml_module(
 java_library(
     name = "java_version",
     srcs = ["//tools/base/deploy/installer:Version.java"],
+    javacopts = ["--release 11"],
     visibility = ["//visibility:public"],
 )
 

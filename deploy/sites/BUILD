@@ -22,6 +22,7 @@ genrule(
 java_library(
     name = "java_sites",
     srcs = [":Sites.java"],
+    javacopts = ["--release 11"],
     visibility = ["//visibility:public"],
 )
 
