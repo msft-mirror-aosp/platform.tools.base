@@ -16,9 +16,7 @@
 
 package com.android.build.gradle.internal
 
-import com.android.build.api.artifact.impl.ArtifactsImpl
 import com.android.build.api.attributes.AgpVersionAttr
-import com.android.build.api.attributes.BuildTypeAttr
 import com.android.build.api.attributes.BuildTypeAttr.Companion.ATTRIBUTE
 import com.android.build.api.attributes.ProductFlavorAttr
 import com.android.build.gradle.internal.component.ComponentCreationConfig
@@ -41,11 +39,9 @@ import com.android.build.gradle.internal.dependency.CollectResourceSymbolsTransf
 import com.android.build.gradle.internal.dependency.DexingRegistration
 import com.android.build.gradle.internal.dependency.EnumerateClassesTransform
 import com.android.build.gradle.internal.dependency.ExtractAarTransform
-import com.android.build.gradle.internal.dependency.ExtractCompileSdkShimTransform
-import com.android.build.gradle.internal.dependency.ExtractNavigationXmlTransform
 import com.android.build.gradle.internal.dependency.ExtractJniTransform
+import com.android.build.gradle.internal.dependency.ExtractNavigationXmlTransform
 import com.android.build.gradle.internal.dependency.ExtractProGuardRulesTransform
-import com.android.build.gradle.internal.dependency.ExtractSdkShimTransform
 import com.android.build.gradle.internal.dependency.FilterShrinkerRulesTransform
 import com.android.build.gradle.internal.dependency.GenericTransformParameters
 import com.android.build.gradle.internal.dependency.IdentityTransform
@@ -64,20 +60,12 @@ import com.android.build.gradle.internal.dependency.registerDexingOutputSplitTra
 import com.android.build.gradle.internal.dsl.BaseFlavor
 import com.android.build.gradle.internal.dsl.BuildType
 import com.android.build.gradle.internal.dsl.DefaultConfig
-import com.android.build.gradle.internal.dsl.ModulePropertyKey
 import com.android.build.gradle.internal.dsl.ProductFlavor
 import com.android.build.gradle.internal.dsl.SigningConfig
-import com.android.build.gradle.internal.packaging.getDefaultDebugKeystoreSigningConfig
-import com.android.build.gradle.internal.profile.AnalyticsService
 import com.android.build.gradle.internal.publishing.AarOrJarTypeToConsume
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
-import com.android.build.gradle.internal.scope.InternalArtifactType
-import com.android.build.gradle.internal.services.AndroidLocationsBuildService
 import com.android.build.gradle.internal.services.ProjectServices
 import com.android.build.gradle.internal.services.getBuildService
-import com.android.build.gradle.internal.signing.SigningConfigData
-import com.android.build.gradle.internal.tasks.AsarToExtractedApksTransform
-import com.android.build.gradle.internal.tasks.AsarTransform
 import com.android.build.gradle.internal.tasks.factory.BootClasspathConfig
 import com.android.build.gradle.internal.utils.ATTR_ENABLE_CORE_LIBRARY_DESUGARING
 import com.android.build.gradle.internal.utils.ATTR_LINT_MIN_SDK
@@ -89,15 +77,11 @@ import com.android.build.gradle.internal.variant.VariantInputModel
 import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.options.StringOption
 import com.android.build.gradle.options.SyncOptions
-import com.android.builder.core.BuilderConstants
 import com.android.builder.dexing.R8Version
-import com.android.repository.Revision
 import com.google.common.collect.Maps
 import org.gradle.api.ActionConfiguration
 import org.gradle.api.Project
-import org.gradle.api.artifacts.ArtifactView
 import org.gradle.api.artifacts.Configuration
-import org.gradle.api.artifacts.Dependency
 import org.gradle.api.artifacts.dsl.DependencyHandler
 import org.gradle.api.artifacts.transform.TransformAction
 import org.gradle.api.artifacts.transform.TransformSpec
@@ -106,7 +90,6 @@ import org.gradle.api.artifacts.type.ArtifactTypeDefinition.ARTIFACT_TYPE_ATTRIB
 import org.gradle.api.attributes.AttributesSchema
 import org.gradle.api.attributes.Category
 import org.gradle.api.attributes.Usage
-import org.gradle.api.provider.Provider
 import org.gradle.testing.jacoco.plugins.JacocoPluginExtension
 import java.lang.Boolean.FALSE
 import java.lang.Boolean.TRUE
@@ -450,215 +433,6 @@ class DependencyConfigurator(
                 AndroidArtifacts.ArtifactType.JAR,
                 AndroidArtifacts.ArtifactType.PROCESSED_JAR
         )
-    }
-
-    fun configurePrivacySandboxSdkConsumerTransforms(
-        compileSdkHashString: String,
-        buildToolsRevision: Revision,
-        bootstrapCreationConfig: BootClasspathConfig,
-        privacySandboxExperimentalProperties: Map<String, Any>?
-    )
-    : DependencyConfigurator {
-        for (from in AsarTransform.supportedAsarTransformTypes) {
-            registerTransform(
-                    AsarTransform::class.java,
-                    AndroidArtifacts.ArtifactType.ANDROID_PRIVACY_SANDBOX_SDK_ARCHIVE,
-                    from
-            ) {
-                it.targetType.set(from)
-            }
-        }
-
-        fun configureExtractSdkShimTransforms(privacySandboxSdkProperties: Map<String, Any>?) {
-            val extractSdkShimTransformParamConfig =
-                { reg: TransformSpec<ExtractSdkShimTransform.Parameters> ->
-                    val experimentalPropertiesApiGenerator: Dependency? =
-                        privacySandboxSdkProperties?.let {
-                            ModulePropertyKey.Dependencies.ANDROID_PRIVACY_SANDBOX_SDK_API_GENERATOR
-                                .getValue(it)?.single()
-                        }
-                    val apigeneratorArtifact: Dependency =
-                        experimentalPropertiesApiGenerator
-                            ?: project.dependencies.create(
-                                projectServices.projectOptions.get(StringOption.ANDROID_PRIVACY_SANDBOX_SDK_API_GENERATOR)
-                                    ?: MavenCoordinates.ANDROIDX_PRIVACYSANDBOX_TOOLS_TOOLS_APIGENERATOR.toString()
-                            ) as Dependency
-
-                    val experimentalPropertiesRuntimeApigeneratorDependencies =
-                        privacySandboxSdkProperties?.let {
-                            ModulePropertyKey.Dependencies.ANDROID_PRIVACY_SANDBOX_SDK_API_GENERATOR_GENERATED_RUNTIME_DEPENDENCIES.getValue(
-                                it
-                            )
-                        }
-                    val runtimeDependenciesForShimSdk: List<Dependency> =
-                        experimentalPropertiesRuntimeApigeneratorDependencies
-                            ?: (projectServices.projectOptions
-                                .get(StringOption.ANDROID_PRIVACY_SANDBOX_SDK_API_GENERATOR_GENERATED_RUNTIME_DEPENDENCIES)
-                                ?.split(",")
-                                ?: listOf(
-                                    MavenCoordinates.ORG_JETBRAINS_KOTLIN_KOTLIN_STDLIB.toString(),
-                                    MavenCoordinates.ORG_JETBRAINS_KOTLINX_KOTLINX_COROUTINES_ANDROID.toString(),
-                                    MavenCoordinates.ANDROIDX_PRIVACYSANDBOX_UI_UI_CORE.toString(),
-                                    MavenCoordinates.ANDROIDX_CORE_CORE_KTX.toString(),
-                                    MavenCoordinates.ANDROIDX_PRIVACYSANDBOX_ACTIVITY_ACTIVITY_CORE.toString(),
-                                    MavenCoordinates.ANDROIDX_PRIVACYSANDBOX_ACTIVITY_ACTIVITY_PROVIDER.toString(),
-                                    MavenCoordinates.ANDROIDX_PRIVACYSANDBOX_ACTIVITY_ACTIVITY_CLIENT.toString(),
-                                    MavenCoordinates.ANDROIDX_PRIVACYSANDBOX_UI_UI_CLIENT.toString(),
-                                ))
-                                .map {
-                                    project.dependencies.create(it)
-                                }
-
-                    val params = reg.parameters
-                    val apiGeneratorConfiguration =
-                        project.configurations.detachedConfiguration(apigeneratorArtifact)
-                    apiGeneratorConfiguration.isCanBeConsumed = false
-                    apiGeneratorConfiguration.isCanBeResolved = true
-                    params.apiGenerator.setFrom(apiGeneratorConfiguration)
-                    params.buildTools.initialize(
-                        task = null,
-                        projectServices.buildServiceRegistry,
-                        compileSdkHashString,
-                        buildToolsRevision
-                    )
-
-                    // For kotlin compilation
-                    params.bootstrapClasspath.from(bootstrapCreationConfig.fullBootClasspath)
-
-                    val kotlinEmbeddableCompiler =
-                        privacySandboxSdkProperties?.let {
-                            ModulePropertyKey.Dependencies.ANDROID_PRIVACY_SANDBOX_SDK_KOTLIN_COMPILER_EMBEDDABLE.getValue(
-                                it
-                            )?.single()
-                        }
-                    val kotlinCompiler: Configuration =
-                        project.configurations.detachedConfiguration(
-                            kotlinEmbeddableCompiler ?: project.dependencies.create(
-                                projectServices.projectOptions.get(StringOption.ANDROID_PRIVACY_SANDBOX_SDK_KOTLIN_COMPILER_EMBEDDABLE)
-                                    ?: MavenCoordinates.ORG_JETBRAINS_KOTLIN_KOTLIN_COMPILER_EMBEDDABLE.toString()
-                            )
-                        )
-                    kotlinCompiler.isCanBeConsumed = false
-                    kotlinCompiler.isCanBeResolved = true
-                    params.kotlinCompiler.from(kotlinCompiler)
-                    params.requireServices.set(
-                        projectServices.projectOptions[BooleanOption.PRIVACY_SANDBOX_SDK_REQUIRE_SERVICES]
-                    )
-                    val configuration = project.configurations.detachedConfiguration(
-                        *runtimeDependenciesForShimSdk.toTypedArray()
-                    )
-                    configuration.isCanBeConsumed = false
-                    configuration.isCanBeResolved = true
-
-                    configuration.attributes {
-                        it.attribute(
-                            BuildTypeAttr.ATTRIBUTE,
-                            project.objects.named(
-                                BuildTypeAttr::class.java,
-                                BuilderConstants.RELEASE
-                            )
-                        )
-                    }
-                    params.runtimeDependencies.from(configuration.incoming.artifactView { config: ArtifactView.ViewConfiguration ->
-                        config.attributes.apply {
-                            attribute(
-                                Usage.USAGE_ATTRIBUTE,
-                                project.objects.named(Usage::class.java, Usage.JAVA_API)
-                            )
-                            attribute(
-                                AndroidArtifacts.ARTIFACT_TYPE,
-                                AndroidArtifacts.ArtifactType.CLASSES_JAR.type
-                            )
-                        }
-                    }.artifacts.artifactFiles)
-                }
-
-            fun registerExtractSdkShimTransform(usage: String) {
-                project.dependencies.registerTransform(
-                    ExtractCompileSdkShimTransform::class.java,
-                ) { reg ->
-                    val usageObj: Usage = project.objects.named(Usage::class.java, usage)
-                    reg.from.attribute(
-                        ARTIFACT_TYPE_ATTRIBUTE,
-                        AndroidArtifacts.ArtifactType.ANDROID_PRIVACY_SANDBOX_SDK_INTERFACE_DESCRIPTOR.type
-                    )
-                    reg.from.attribute(
-                        Usage.USAGE_ATTRIBUTE,
-                        usageObj
-                    )
-                    reg.to.attribute(
-                        ARTIFACT_TYPE_ATTRIBUTE,
-                        AndroidArtifacts.ArtifactType.CLASSES_JAR.type
-                    )
-                    reg.to.attribute(
-                        Usage.USAGE_ATTRIBUTE,
-                        usageObj
-                    )
-                    extractSdkShimTransformParamConfig(reg)
-                }
-            }
-            registerExtractSdkShimTransform(Usage.JAVA_API)
-            registerExtractSdkShimTransform(Usage.JAVA_RUNTIME)
-        }
-
-        configureExtractSdkShimTransforms(privacySandboxExperimentalProperties)
-
-        return this
-    }
-
-    fun configurePrivacySandboxSdkVariantTransforms(
-        variants: List<VariantCreationConfig>,
-    ): DependencyConfigurator {
-        fun registerAsarToApksTransform(variants: List<VariantCreationConfig>) {
-            // For signing privacy sandbox artifacts we allow per project signing configuration
-            // by the use of experimental properties. To reduce the expense of registering per
-            // variant we set a limit of one signing config in all variants, then register the
-            // AsarToApksTransform once. To maintain the semantic, the build file must explicitly
-            // declare the same signing config for all variants.
-            val variantSigningConfigs = variants.map { variant ->
-                val experimentalProps = variant.experimentalProperties
-                experimentalProps.finalizeValue()
-                SigningConfigData.fromExperimentalPropertiesSigningConfig(variant.experimentalProperties)
-            }.distinct()
-
-            val signingConfigProvider: Provider<SigningConfigData> =
-                    when (variantSigningConfigs.count()) {
-                        0 -> return // No variants
-                        1 -> if (variantSigningConfigs.singleOrNull() != null) {
-                            // An identical signing config is set in all variants by experimental properties.
-                            variants.first().services.provider {
-                                variantSigningConfigs.singleOrNull()
-                            }
-                        } else {
-                            // No experimental properties are set, use the default.
-                            getBuildService(
-                                    variants.first().services.buildServiceRegistry,
-                                    AndroidLocationsBuildService::class.java
-                            ).map(AndroidLocationsBuildService::getDefaultDebugKeystoreSigningConfig)
-                        }
-
-                        else -> throw UnsupportedOperationException(
-                                "It is not possible to override Privacy Sandbox experimental properties per variant.\n" +
-                                        "Set the same signing config using experimental properties in each variant explicitly.")
-                    }
-            registerTransform(
-                    AsarToExtractedApksTransform::class.java,
-                    AndroidArtifacts.ArtifactType.ANDROID_PRIVACY_SANDBOX_SDK_ARCHIVE,
-                    AndroidArtifacts.ArtifactType.ANDROID_PRIVACY_SANDBOX_EXTRACTED_SDK_APKS
-            ) { params ->
-                projectServices.initializeAapt2Input(params.aapt2, task = null)
-
-                params.signingConfigData.set(signingConfigProvider)
-                params.signingConfigValidationResultDir.set(
-                        ArtifactsImpl(project,
-                                "global").get(InternalArtifactType.VALIDATE_SIGNING_CONFIG)
-                )
-                params.analyticsService.set(getBuildService<AnalyticsService, AnalyticsService.Params>(project.gradle.sharedServices))
-            }
-        }
-        registerAsarToApksTransform(variants)
-
-        return this
     }
 
     fun configureCalculateStackFramesTransforms(

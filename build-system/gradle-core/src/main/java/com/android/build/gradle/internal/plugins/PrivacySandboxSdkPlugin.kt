@@ -310,23 +310,6 @@ class PrivacySandboxSdkPlugin @Inject constructor(
             project,
             projectServices
         )
-            .configurePrivacySandboxSdkConsumerTransforms(
-                variantScope.compileSdkVersion,
-                Revision.parseRevision(
-                    extension.buildToolsVersion,
-                    Revision.Precision.MICRO
-                ),
-                BootClasspathConfigImpl(
-                    project,
-                    projectServices,
-                    versionedSdkLoaderService,
-                    emptyList(),
-                    { true },
-                    { false },
-                    false
-                ),
-                variantScope.experimentalProperties.apply { disallowChanges() }.get()
-            )
     }
 
     override fun getAnalyticsPluginType(): GradleBuildProject.PluginType =
