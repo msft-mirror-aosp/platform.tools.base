@@ -44,7 +44,6 @@ import com.android.build.gradle.internal.ide.dependencies.ArtifactHandler
 import com.android.build.gradle.internal.ide.dependencies.MavenCoordinatesCacheBuildService
 import com.android.build.gradle.internal.ide.dependencies.UsesLibraryDependencyCacheBuildService
 import com.android.build.gradle.internal.ide.dependencies.getDependencyGraphBuilder
-import com.android.build.gradle.internal.privaysandboxsdk.PrivacySandboxSdkInternalArtifactType
 import com.android.build.gradle.internal.privaysandboxsdk.PrivacySandboxSdkVariantScope
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
 import com.android.build.gradle.internal.scope.InternalArtifactType
@@ -939,61 +938,6 @@ abstract class VariantInputs : UsesLibraryDependencyCacheBuildService {
             includeMainArtifact = true,
             isPerComponentLintAnalysis = false
         )
-    }
-
-    fun initialize(
-        task: Task,
-        variantScope: PrivacySandboxSdkVariantScope,
-        projectOptions: ProjectOptions,
-        useModuleDependencyLintModels: Boolean,
-        lintMode: LintMode,
-        fatalOnly: Boolean,
-    ) {
-        name.setDisallowChanges(variantScope.name)
-        this.useModuleDependencyLintModels.setDisallowChanges(useModuleDependencyLintModels)
-        mainArtifact.setDisallowChanges(
-            variantScope.services.newInstance(AndroidArtifactInput::class.java)
-                .initializeForPrivacySandboxSdk(
-                    task.project,
-                    variantScope,
-                    projectOptions,
-                    lintMode,
-                    useModuleDependencyLintModels,
-                    fatalOnly
-                ))
-        mainSourceProvider.set(
-            task.project.objects
-                .newInstance(SourceProviderInput::class.java)
-                .initializeForPrivacySandboxSdk()
-        )
-        testArtifact.disallowChanges()
-        hostTestSourceProvider.disallowChanges()
-        androidTestArtifact.disallowChanges()
-        testFixturesArtifact.disallowChanges()
-        namespace.setDisallowChanges("")
-        minSdkVersion.initialize(variantScope.minSdkVersion.apiLevel, variantScope.minSdkVersion.codename)
-        targetSdkVersion.initialize(variantScope.targetSdkVersion.apiLevel, variantScope.targetSdkVersion.codename)
-        manifestPlaceholders.disallowChanges()
-        resourceConfigurations.disallowChanges()
-        debuggable.setDisallowChanges(true)
-        shrinkable.setDisallowChanges(false)
-        useSupportLibraryVectorDrawables.setDisallowChanges(false)
-        mergedManifest.setDisallowChanges(variantScope.artifacts.get(
-            PrivacySandboxSdkInternalArtifactType.SANDBOX_MANIFEST
-        ))
-        manifestMergeReport.setDisallowChanges(null)
-        sourceProviders.add(mainSourceProvider)
-        sourceProviders.disallowChanges()
-        androidTestSourceProvider.disallowChanges()
-        testFixturesSourceProvider.disallowChanges()
-        buildFeatures.initializeForStandalone()
-        initializeLibraryDependencyCacheBuildService(task)
-        mavenCoordinatesCache.setDisallowChanges(getBuildService(task.project.gradle.sharedServices))
-        proguardFiles.add(variantScope.artifacts.get(PrivacySandboxSdkInternalArtifactType.GENERATED_PROGUARD_FILE))
-        proguardFiles.disallowChanges()
-        extractedProguardFiles.setDisallowChanges(null)
-        consumerProguardFiles.setDisallowChanges(null)
-        resValues.disallowChanges()
     }
 
     fun initialize(

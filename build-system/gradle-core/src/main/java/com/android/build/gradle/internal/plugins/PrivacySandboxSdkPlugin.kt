@@ -18,25 +18,15 @@ package com.android.build.gradle.internal.plugins
 
 import com.android.build.api.attributes.BuildTypeAttr
 import com.android.build.api.dsl.PrivacySandboxSdkExtension
-import com.android.build.gradle.internal.TaskManager
 import com.android.build.gradle.internal.crash.afterEvaluate
 import com.android.build.gradle.internal.dependency.configureKotlinPlatformAttribute
 import com.android.build.gradle.internal.dsl.InternalPrivacySandboxSdkExtension
 import com.android.build.gradle.internal.dsl.PrivacySandboxSdkExtensionImpl
 import com.android.build.gradle.internal.fusedlibrary.configureElements
 import com.android.build.gradle.internal.fusedlibrary.configureTransformsForFusedLibrary
-import com.android.build.gradle.internal.fusedlibrary.createTasks
 import com.android.build.gradle.internal.fusedlibrary.getDslServices
-import com.android.build.gradle.internal.lint.AndroidLintAnalysisTask
-import com.android.build.gradle.internal.lint.AndroidLintCopyReportTask
-import com.android.build.gradle.internal.lint.AndroidLintTask
-import com.android.build.gradle.internal.lint.AndroidLintTextOutputTask
-import com.android.build.gradle.internal.lint.LintModelWriterTask
-import com.android.build.gradle.internal.lint.LintTaskManager.Companion.needsCopyReportTask
-import com.android.build.gradle.internal.privaysandboxsdk.PrivacySandboxSdkInternalArtifactType
 import com.android.build.gradle.internal.privaysandboxsdk.PrivacySandboxSdkVariantScope
 import com.android.build.gradle.internal.privaysandboxsdk.PrivacySandboxSdkVariantScopeImpl
-import com.android.build.gradle.internal.publishing.AndroidArtifacts
 import com.android.build.gradle.internal.services.Aapt2DaemonBuildService
 import com.android.build.gradle.internal.services.Aapt2ThreadPoolBuildService
 import com.android.build.gradle.internal.services.DslServices
@@ -44,29 +34,21 @@ import com.android.build.gradle.internal.services.R8D8ThreadPoolBuildService
 import com.android.build.gradle.internal.services.R8MaxParallelTasksBuildService
 import com.android.build.gradle.internal.services.SymbolTableBuildService
 import com.android.build.gradle.internal.services.VersionedSdkLoaderService
-import com.android.build.gradle.internal.tasks.BaseTask
 import com.android.build.gradle.internal.tasks.factory.BootClasspathConfigImpl
-import com.android.build.gradle.internal.tasks.factory.TaskCreationAction
-import com.android.build.gradle.internal.tasks.factory.TaskFactoryImpl
-import com.android.build.gradle.internal.utils.createTargetSdkVersion
 import com.android.build.gradle.options.BooleanOption
-import com.android.builder.errors.IssueReporter
 import com.android.repository.Revision
 import com.google.wireless.android.sdk.stats.GradleBuildProject
-import java.util.Locale
-import javax.inject.Inject
 import org.gradle.api.GradleException
 import org.gradle.api.Plugin
 import org.gradle.api.Project
-import org.gradle.api.Task
 import org.gradle.api.artifacts.Configuration
 import org.gradle.api.attributes.Usage
 import org.gradle.api.attributes.java.TargetJvmEnvironment
 import org.gradle.api.component.SoftwareComponentFactory
 import org.gradle.api.configuration.BuildFeatures
 import org.gradle.api.plugins.JvmEcosystemPlugin
-import org.gradle.api.tasks.TaskProvider
 import org.gradle.build.event.BuildEventsListenerRegistry
+import javax.inject.Inject
 
 class PrivacySandboxSdkPlugin @Inject constructor(
         val softwareComponentFactory: SoftwareComponentFactory,
@@ -257,12 +239,7 @@ class PrivacySandboxSdkPlugin @Inject constructor(
                     configuration,
                     usage,
                     variantScope.artifacts,
-                    mapOf(
-                            PrivacySandboxSdkInternalArtifactType.ASAR to
-                                    AndroidArtifacts.ArtifactType.ANDROID_PRIVACY_SANDBOX_SDK_ARCHIVE,
-                            PrivacySandboxSdkInternalArtifactType.STUB_JAR to
-                                    AndroidArtifacts.ArtifactType.ANDROID_PRIVACY_SANDBOX_SDK_INTERFACE_DESCRIPTOR,
-                    )
+                    emptyMap()
             )
         }
         // this is the outgoing configuration for JAVA_API scoped declarations
