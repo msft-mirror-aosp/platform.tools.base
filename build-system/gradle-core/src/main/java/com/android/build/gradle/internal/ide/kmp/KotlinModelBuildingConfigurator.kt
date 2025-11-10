@@ -49,6 +49,7 @@ import com.android.kotlin.multiplatform.models.MainVariantInfo
 import com.android.kotlin.multiplatform.models.SourceProvider
 import com.android.kotlin.multiplatform.models.UnitTestInfo
 import org.gradle.api.Project
+import java.io.File
 
 /**
  * A singleton that is responsible for populating the android models sent along with the android
@@ -94,6 +95,9 @@ object KotlinModelBuildingConfigurator {
                     .setKotlinCompileTaskName(
                         component.androidKotlinCompilation.compileKotlinTaskName
                     )
+                    .addAllExtraClassesFolders(
+                        getExtraClassesFolders(component).map { it.convert() }
+                    )
                     .setIfNotNull(
                         (component as? KmpCreationConfig)?.toInfo(),
                         AndroidCompilation.Builder::setMainInfo
@@ -118,6 +122,14 @@ object KotlinModelBuildingConfigurator {
                     )
                     .build()
         }
+    }
+
+    private fun getExtraClassesFolders(creationConfig: KmpComponentCreationConfig): MutableIterable<File> {
+        val extraFolders = mutableListOf<File>()
+        if (creationConfig.withJava) {
+            extraFolders.add(creationConfig.artifacts.get(InternalArtifactType.JAVAC).get().asFile)
+        }
+        return extraFolders
     }
 
     /**
