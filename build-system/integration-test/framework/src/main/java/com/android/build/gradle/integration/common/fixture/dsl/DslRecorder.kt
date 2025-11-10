@@ -18,6 +18,7 @@ package com.android.build.gradle.integration.common.fixture.dsl
 
 import com.android.build.gradle.integration.common.fixture.project.builder.BooleanNameHandler
 import com.android.build.gradle.integration.common.fixture.project.builder.BuildWriter
+import com.android.build.gradle.integration.common.fixture.project.builder.CustomBlockInfo
 
 /**
  * Class that record calls to DSL objects
@@ -87,6 +88,28 @@ interface DslRecorder {
     )
 
     /**
+     * Records a nested block for a custom class. The block must be run as part of `action`
+     *
+     * Custom classes are not part of the AGP API. They are provided via 3P plugin extensions.
+     *
+     * This is used in test files via [ExtensionAwareDefinition.viaExtension]
+     *
+     * @param name the name of the method running the block
+     * @param blockClass the class representing the block
+     * @param parameters the other parameters to pass to the method running the block
+     * @param instanceProvider an action that will instantiate the proxy that the block applies to
+     * @param action the action that runs the block.
+     */
+    fun <T> runCustomBlock(
+        name: String,
+        blockClass: Class<T>,
+        parameters: List<Any?>,
+        instanceProvider: (DslRecorder) -> T,
+        action: T.() -> Unit,
+    )
+
+
+    /**
      * Create a chained event and returns the chained recorder.
      *
      * This must be passed to the matching Proxy object.
@@ -103,6 +126,7 @@ internal class DefaultDslRecorder(): DslRecorder {
         ASSIGNMENT,
         CALL,
         NESTED_BLOCK,
+        CUSTOM_BLOCK,
         CHAINED_CALL,
         COLLECTION_ADD_ALL,
         COLLECTION_ADD,
@@ -158,6 +182,13 @@ internal class DefaultDslRecorder(): DslRecorder {
         val args: List<Any?>
     ): NamedPayload
 
+    data class CustomBlockData(
+        override val name: String,
+        override val blockClass: Class<*>,
+        val dslRecorder: DslRecorder,
+        val args: List<Any?>
+    ): NamedPayload, CustomBlockInfo
+
     private val eventList = mutableListOf<Event>()
 
     internal fun clear() {
@@ -212,6 +243,24 @@ internal class DefaultDslRecorder(): DslRecorder {
         )
     }
 
+    override fun <T> runCustomBlock(
+        name: String,
+        blockClass: Class<T>,
+        parameters: List<Any?>,
+        instanceProvider: (DslRecorder) -> T,
+        action: T.() -> Unit,
+    ) {
+        val dslRecorder = DefaultDslRecorder()
+
+        action(instanceProvider(dslRecorder))
+
+        eventList += Event(
+            EventType.CUSTOM_BLOCK,
+            CustomBlockData(name, blockClass, dslRecorder, parameters)
+        )
+    }
+
+
     override fun createChainedRecorder(name: String): DslRecorder {
         val newRecorder = DefaultDslRecorder()
         eventList += Event(
@@ -240,6 +289,14 @@ internal class DefaultDslRecorder(): DslRecorder {
                 EventType.NESTED_BLOCK -> {
                     val data = event.payload as NestedBlockData
                     writer.block(parentName.dot(data.name), data.args, data.dslRecorder) {
+                        // parent name is always empty inside a nested block
+                        it.writeContent(this, parentName = null)
+                    }
+                }
+                EventType.CUSTOM_BLOCK -> {
+                    val data = event.payload as CustomBlockData
+                    val blockName = writer.getCustomBlockName(data)
+                    writer.block(parentName.dot(blockName), data.args, data.dslRecorder) {
                         // parent name is always empty inside a nested block
                         it.writeContent(this, parentName = null)
                     }

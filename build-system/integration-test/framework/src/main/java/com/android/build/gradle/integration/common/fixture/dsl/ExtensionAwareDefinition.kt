@@ -16,6 +16,8 @@
 
 package com.android.build.gradle.integration.common.fixture.dsl
 
+import com.android.build.api.dsl.BuildType
+import com.android.build.api.dsl.ProductFlavor
 import java.lang.reflect.Proxy
 import kotlin.reflect.KClass
 
@@ -45,13 +47,29 @@ interface ExtensionAwareDefinition {
             (Proxy.getInvocationHandler(this) as DslProxy).dslRecorder
         }
 
-        dslRecorder.runNestedBlock(
-            name = name,
-            parameters = listOf(),
-            instanceProvider = {
-                DslProxy.createProxy(theClass.java, it)
-            },
-            action = action
-        )
+        // when the extension is applied to a container item instance, Gradle is not able
+        // to generate the accessors and therefore we cannot just use the provided name
+        // as the block name. Instead we use a custom block that will use the right syntax
+        // (in KTS).
+        if (this is ProductFlavor || this is BuildType) {
+            dslRecorder.runCustomBlock(
+                name = name,
+                blockClass = theClass.java,
+                parameters = listOf(),
+                instanceProvider = {
+                    DslProxy.createProxy(theClass.java, it)
+                },
+                action = action
+            )
+        } else {
+            dslRecorder.runNestedBlock(
+                name = name,
+                parameters = listOf(),
+                instanceProvider = {
+                    DslProxy.createProxy(theClass.java, it)
+                },
+                action = action
+            )
+        }
     }
 }

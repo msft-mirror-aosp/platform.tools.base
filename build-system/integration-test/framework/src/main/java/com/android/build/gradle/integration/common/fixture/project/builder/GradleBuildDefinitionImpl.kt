@@ -626,6 +626,8 @@ internal class GradleBuildDefinitionImpl(
     /**
      * This method handles project with custom plugins applied to them via
      * [com.android.build.gradle.integration.common.fixture.project.plugins.PluginCallback]
+     *
+     * This returns a map of project path to list of plugin names to be applied
      */
     internal fun handleCustomBuildLogic(location: Path): Map<String, Set<String>> {
         // gather all the custom callbacks. This returns a map from each callback class

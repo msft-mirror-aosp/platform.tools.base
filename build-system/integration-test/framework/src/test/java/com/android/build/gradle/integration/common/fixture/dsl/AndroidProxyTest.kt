@@ -17,6 +17,8 @@
 package com.android.build.gradle.integration.common.fixture.dsl
 
 import com.android.build.api.dsl.ApplicationExtension
+import com.android.build.api.dsl.Person
+import com.android.build.gradle.integration.common.fixture.project.builder.BuildWriterTest
 import com.android.build.gradle.integration.common.fixture.project.builder.GroovyBuildWriter
 import com.android.build.gradle.integration.common.fixture.project.builder.KtsBuildWriter
 import com.google.common.truth.Truth
@@ -27,7 +29,7 @@ import org.junit.Test
  *
  * This does not test the content, this is handled by [BasicDslProxyTest] and [DslRecorderTest]
  */
-class AndroidProxyTest {
+class AndroidProxyTest: ExtensionAwareDefinition {
 
     @Test
     fun testFullApp_Groovy() {
@@ -306,6 +308,71 @@ class AndroidProxyTest {
         """.trimIndent())
     }
 
+    @Test
+    fun viaExtension_Kts() {
+        val content = generateKtsContent {
+            viaExtension("person", Person::class) {
+                name = "android"
+            }
+            buildTypes {
+                named("debug") {
+                    it.viaExtension("person", Person::class) {
+                        name = "debug"
+                    }
+                }
+            }
+        }
+
+        Truth.assertThat(content).isEqualTo("""
+            android {
+              person {
+                name = "android"
+              }
+              buildTypes {
+                named("debug") {
+                  configure<com.android.build.api.dsl.Person> {
+                    name = "debug"
+                  }
+                }
+              }
+            }
+
+        """.trimIndent())
+
+    }
+
+    @Test
+    fun viaExtension_Groovy() {
+        val content = generateGroovyContent {
+            viaExtension("person", Person::class) {
+                name = "android"
+            }
+            buildTypes {
+                named("debug") {
+                    it.viaExtension("person", Person::class) {
+                        name = "debug"
+                    }
+                }
+            }
+        }
+
+        Truth.assertThat(content).isEqualTo("""
+            android {
+              person {
+                name = 'android'
+              }
+              buildTypes {
+                named('debug') {
+                  person {
+                    name = 'debug'
+                  }
+                }
+              }
+            }
+
+        """.trimIndent())
+
+    }
 
     private fun generateKtsContent(action: ApplicationExtension.() -> Unit): String {
         val dslRecorder = DefaultDslRecorder()
