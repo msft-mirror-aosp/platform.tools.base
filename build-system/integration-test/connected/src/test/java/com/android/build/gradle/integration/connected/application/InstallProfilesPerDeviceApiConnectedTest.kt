@@ -314,7 +314,7 @@ class InstallProfilesPerDeviceApiConnectedTest {
         }
     }
 
-    private class MavenPublishPluginCallback: GenericCallback {
+    class MavenPublishPluginCallback: GenericCallback {
         override fun handleProject(project: Project) {
             project.extensions.getByType(PublishingExtension::class.java).apply {
                 publications.register("app", MavenPublication::class.java) { publication ->
