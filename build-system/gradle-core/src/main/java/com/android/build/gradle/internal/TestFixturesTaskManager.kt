@@ -190,7 +190,12 @@ class TestFixturesTaskManager(
 
         // packaging tasks
 
-        // Create jar with library classes used for publishing to runtime elements.
+        // Create jars with library classes used for publishing to API/runtime elements.
+        taskFactory.register(
+            BundleLibraryClassesJar.CreationAction(
+                testFixturesComponent, AndroidArtifacts.PublishedConfigType.API_ELEMENTS
+            )
+        )
         taskFactory.register(
             BundleLibraryClassesJar.CreationAction(
                 testFixturesComponent, AndroidArtifacts.PublishedConfigType.RUNTIME_ELEMENTS

@@ -19,6 +19,8 @@ package com.android.build.gradle.tasks
 import com.android.build.api.artifact.MultipleArtifact
 import com.android.build.gradle.internal.component.ComponentCreationConfig
 import com.android.build.gradle.internal.component.NestedComponentCreationConfig
+import com.android.build.gradle.internal.component.TestComponentCreationConfig
+import com.android.build.gradle.internal.component.TestFixturesCreationConfig
 import com.android.build.gradle.internal.profile.PROPERTY_VARIANT_NAME_KEY
 import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactType.CLASSES_JAR
 import com.android.build.gradle.internal.publishing.AndroidArtifacts.ConsumedConfigType.COMPILE_CLASSPATH
@@ -166,6 +168,18 @@ internal fun KotlinJvmCompile.configureKotlinJvmCompile(creationConfig: Componen
             PublishingSpecs.getVariantPublishingSpec(mainComponent.componentType)
                 .getSpec(CLASSES_JAR, COMPILE_CLASSPATH.publishedTo)!!.outputType
         friendPaths.from(mainComponent.artifacts.get(mainComponentClassesJar))
+    }
+
+    // Set friendPaths to allow tests to access internal functions/properties of test fixtures
+    if (creationConfig is TestComponentCreationConfig) {
+        val testFixturesComponent = creationConfig.mainVariant.nestedComponents
+            .filterIsInstance<TestFixturesCreationConfig>().firstOrNull()
+        if (testFixturesComponent != null) {
+            val testFixturesClassesJar =
+                PublishingSpecs.getVariantPublishingSpec(testFixturesComponent.componentType)
+                    .getSpec(CLASSES_JAR, COMPILE_CLASSPATH.publishedTo)!!.outputType
+            friendPaths.from(testFixturesComponent.artifacts.get(testFixturesClassesJar))
+        }
     }
 
     sourceSetName.set(creationConfig.name)

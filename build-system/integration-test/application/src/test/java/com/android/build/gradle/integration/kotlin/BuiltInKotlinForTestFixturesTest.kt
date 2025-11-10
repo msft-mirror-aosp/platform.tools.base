@@ -29,14 +29,26 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.junit.Rule
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.junit.runners.Parameterized
 
-@Suppress("DEPRECATION")
-class BuiltInKotlinForTestFixturesTest {
+@RunWith(Parameterized::class)
+class BuiltInKotlinForTestFixturesTest(private val builtInKotlin: Boolean) {
+
+    companion object {
+
+        @Parameterized.Parameters(name = "builtInKotlin_{0}")
+        @JvmStatic
+        fun parameters() = listOf(true, false)
+    }
 
     @get:Rule
     val rule = GradleRule.from {
         androidLibrary {
-            applyPlugin(PluginType.KOTLIN_ANDROID)
+            if (!builtInKotlin) {
+                @Suppress("DEPRECATION")
+                applyPlugin(PluginType.KOTLIN_ANDROID)
+            }
 
             android {
                 defaultConfig.minSdk = 21
@@ -45,9 +57,11 @@ class BuiltInKotlinForTestFixturesTest {
                 jvmToolchain(17)
             }
         }
-        gradleProperties {
-            add(BooleanOption.BUILT_IN_KOTLIN, false)
-            add(BooleanOption.USE_NEW_DSL, false)
+        if (!builtInKotlin) {
+            gradleProperties {
+                add(BooleanOption.USE_NEW_DSL, false)
+                add(BooleanOption.BUILT_IN_KOTLIN, false)
+            }
         }
     }
 
@@ -78,7 +92,10 @@ class BuiltInKotlinForTestFixturesTest {
                 )
             }
             androidLibrary(":lib2") {
-                applyPlugin(PluginType.KOTLIN_ANDROID)
+                if (!builtInKotlin) {
+                    @Suppress("DEPRECATION")
+                    applyPlugin(PluginType.KOTLIN_ANDROID)
+                }
                 kotlin {
                     jvmToolchain(17)
                 }
@@ -133,6 +150,40 @@ class BuiltInKotlinForTestFixturesTest {
         }
 
         build.executor.run(":lib:assembleDebugTestFixtures")
+    }
+
+    /** Regression test for b/450568272. */
+    @Test
+    fun `test internal methods in test fixtures are accessible from tests`() {
+        val build = rule.build {
+            enableTestFixturesKotlinSupport()
+            androidLibrary {
+                files {
+                    add(
+                        "src/testFixtures/kotlin/ExampleTestFixtureClass.kt",
+                        """
+                        package com.example.lib
+                        class ExampleTestFixtureClass {
+                            internal fun internalMethodInTestFixture() {}
+                        }
+                        """.trimIndent()
+                    )
+                    add(
+                        "src/test/kotlin/ExampleUnitTest.kt",
+                        """
+                        package com.example.lib
+                        class ExampleUnitTest {
+                            fun test() {
+                                ExampleTestFixtureClass().internalMethodInTestFixture()
+                            }
+                        }
+                        """.trimIndent()
+                    )
+                }
+            }
+        }
+
+        build.executor.run(":lib:compileDebugUnitTestKotlin")
     }
 
     // Regression test for b/364331837
