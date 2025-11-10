@@ -59,6 +59,7 @@ maven_repository(
         "@maven//:org.junit.junit-bom_5.10.2",
     ],
     visibility = [
+        "//tools/adt/idea/project-system-gradle:__subpackages__",
         "//tools/base/build-system/integration-test:__subpackages__",
     ],
 )
@@ -90,6 +91,7 @@ gradle_build(
     ],
     tasks = [":base:firebase:testlab:testlab-gradle-plugin:zipPlugin"],
     visibility = [
+        "//tools/adt/idea/project-system-gradle:__subpackages__",
         "//tools/base/build-system/integration-test:__subpackages__",
         "//tools/base/gmaven:__pkg__",
     ],
