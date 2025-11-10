@@ -156,8 +156,6 @@ class PublishingSpecs {
 
                 api(RES_STATIC_LIBRARY, ArtifactType.RES_STATIC_LIBRARY)
                 api(FEATURE_RESOURCE_PKG, ArtifactType.FEATURE_RESOURCE_PKG)
-                runtime(InternalArtifactType.EXTRACTED_SDK_APKS, ArtifactType.ANDROID_PRIVACY_SANDBOX_SDK_COMPAT_SPLIT_APKS)
-                runtime(InternalArtifactType.USES_SDK_LIBRARY_SPLIT_FOR_LOCAL_DEPLOYMENT, ArtifactType.USES_SDK_LIBRARY_SPLIT_FOR_LOCAL_DEPLOYMENT)
 
                 // FIXME: need data binding artifacts as well for Dynamic apps.
 

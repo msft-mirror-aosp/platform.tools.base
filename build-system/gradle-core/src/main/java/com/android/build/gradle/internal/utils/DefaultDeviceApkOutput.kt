@@ -54,19 +54,6 @@ class DefaultDeviceApkOutput(
             if (mainApks.isNotEmpty()) {
                 apkFiles.addAll(mainApks)
             }
-            val privacySandboxSdksPresent =
-                    !apkSources.privacySandboxSdksApksFiles.isEmpty
-                            || (apkSources.additionalSupportedSdkApkSplits?.isPresent ?: false)
-            if (privacySandboxSdksPresent && deviceSpec.supportsPrivacySandbox) {
-                apkSources.privacySandboxSdksApksFiles.files
-                    .mapNotNull { BuiltArtifactsLoaderImpl().load { it } }
-                    .map { artifacts -> artifacts.applicationId to artifacts.elements.map { RegularFile { File(it.outputFile) }  } }
-                    .forEach { (applicationId, sdkApkFiles) -> apkInstallGroups.add(DefaultSdkApkInstallGroup(applicationId, sdkApkFiles)) }
-
-                apkSources.additionalSupportedSdkApkSplits?.let { apkFiles.addAll(getFiles(it)) }
-            } else {
-                apkSources.privacySandboxSdkSplitApksForLegacy?.let { apkFiles.addAll(getFiles(it)) }
-            }
 
             apkSources.mainApkArtifacts.get().forEach {
                 addDexMetadataFiles(
@@ -97,15 +84,6 @@ class DefaultDeviceApkOutput(
         fun getApkInputs(apkSources: ApkSources, deviceSpec: DeviceSpec): Set<Any> {
             val taskInputs = mutableSetOf<Any>(apkSources.mainApkArtifacts)
             apkSources.dexMetadataDirectory?.let { taskInputs.add(it) }
-
-            if (deviceSpec.supportsPrivacySandbox) {
-                // If the device supports privacy sandbox, we depend on privacy sandbox sdk apks and support sdk apk splits.
-                taskInputs.add(apkSources.privacySandboxSdksApksFiles)
-                apkSources.additionalSupportedSdkApkSplits?.let { taskInputs.add(it) }
-            } else {
-                // If the device does not support privacy sandbox, we only depend on legacy sdk split apks.
-                apkSources.privacySandboxSdkSplitApksForLegacy?.let { taskInputs.add(it) }
-            }
             return taskInputs
         }
         fun getMainApks(mainApkDirectory: Directory, supportedAbis: Set<String>?, deviceSpec: DeviceSpec): List<File> {
@@ -128,12 +106,7 @@ class DefaultDeviceApkOutput(
 
 data class ApkSources(
     val mainApkArtifacts: Provider<List<Directory>>,
-    val privacySandboxSdksApksFiles: FileCollection,
     val additionalSupportedSdkApkSplits: Provider<Directory>?,
     val privacySandboxSdkSplitApksForLegacy: Provider<Directory>?,
-    val dexMetadataDirectory: Provider<Directory>? = null)
-
-data class PrivacySandboxApkSources(
-    val privacySandboxSdksApksFiles: FileCollection,
-    val additionalSupportedSdkApkSplits: Provider<Directory>?,
-    val privacySandboxSdkSplitApksForLegacy: Provider<Directory>?)
+    val dexMetadataDirectory: Provider<Directory>? = null
+)

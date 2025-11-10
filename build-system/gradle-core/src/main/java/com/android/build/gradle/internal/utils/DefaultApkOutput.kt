@@ -71,20 +71,11 @@ class DefaultApkOutput(variant: VariantCreationConfig, val deviceSpec: DeviceSpe
     }
 
     private fun getApkSources(variant: VariantCreationConfig, privacySandboxApks: FileCollection): ApkSources {
-        val privacySandboxApkSources =getPrivacySandboxApkSources(variant, privacySandboxApks)
         return ApkSources(
             mainApkArtifacts = variant.artifacts.get(SingleArtifact.APK).map { listOf(it) },
-            privacySandboxSdksApksFiles = privacySandboxApkSources.privacySandboxSdksApksFiles,
-            additionalSupportedSdkApkSplits = privacySandboxApkSources.additionalSupportedSdkApkSplits,
-            privacySandboxSdkSplitApksForLegacy = privacySandboxApkSources.privacySandboxSdkSplitApksForLegacy,
-            dexMetadataDirectory = variant.artifacts.get(InternalArtifactType.DEX_METADATA_DIRECTORY))
-    }
-
-    private fun getPrivacySandboxApkSources(variant: VariantCreationConfig, privacySandboxApks: FileCollection) : PrivacySandboxApkSources {
-        return PrivacySandboxApkSources(
-            privacySandboxSdksApksFiles = privacySandboxApks,
-            additionalSupportedSdkApkSplits = variant.artifacts.get(
-                InternalArtifactType.USES_SDK_LIBRARY_SPLIT_FOR_LOCAL_DEPLOYMENT),
-            privacySandboxSdkSplitApksForLegacy = variant.artifacts.get(InternalArtifactType.EXTRACTED_SDK_APKS))
+            additionalSupportedSdkApkSplits = null,
+            privacySandboxSdkSplitApksForLegacy = null,
+            dexMetadataDirectory = variant.artifacts.get(InternalArtifactType.DEX_METADATA_DIRECTORY)
+        )
     }
 }

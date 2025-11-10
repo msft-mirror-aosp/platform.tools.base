@@ -288,19 +288,6 @@ class AndroidTestTaskManager(
         val testedVariant = androidTestProperties.mainVariant
         val isLibrary = testedVariant.componentType.isAar
 
-        val privacySandboxSdkApks = androidTestProperties.privacySandboxCreationConfig?.let {
-            testedVariant
-                    .variantDependencies
-                    .getArtifactFileCollection(
-                            AndroidArtifacts.ConsumedConfigType.RUNTIME_CLASSPATH,
-                            AndroidArtifacts.ArtifactScope.ALL,
-                            AndroidArtifacts.ArtifactType.ANDROID_PRIVACY_SANDBOX_EXTRACTED_SDK_APKS)
-        }
-
-        val privacySandboxCompatSdkApks = androidTestProperties.privacySandboxCreationConfig?.let {
-            testedVariant.artifacts.get(InternalArtifactType.EXTRACTED_SDK_APKS)
-        }
-
         val testData: AbstractTestDataImpl = if (testedVariant.componentType.isDynamicFeature) {
             BundleTestDataImpl(
                 androidTestProperties.namespace,
@@ -313,8 +300,8 @@ class AndroidTestTaskManager(
                         AndroidArtifacts.ConsumedConfigType.RUNTIME_CLASSPATH,
                         AndroidArtifacts.ArtifactScope.PROJECT,
                         AndroidArtifacts.ArtifactType.APKS_FROM_BUNDLE),
-                privacySandboxSdkApks,
-                privacySandboxCompatSdkApks,
+                null,
+                null,
                 androidTestProperties
                     .services
                     .projectOptions
@@ -325,9 +312,9 @@ class AndroidTestTaskManager(
                 androidTestProperties,
                 androidTestProperties.artifacts.get(SingleArtifact.APK),
                 if (isLibrary) null else testedVariant.artifacts.get(SingleArtifact.APK),
-                privacySandboxSdkApks,
-                privacySandboxCompatSdkApks,
-                testedVariant.artifacts.get(InternalArtifactType.USES_SDK_LIBRARY_SPLIT_FOR_LOCAL_DEPLOYMENT),
+                null,
+                null,
+                null,
                 androidTestProperties
                     .services
                     .projectOptions

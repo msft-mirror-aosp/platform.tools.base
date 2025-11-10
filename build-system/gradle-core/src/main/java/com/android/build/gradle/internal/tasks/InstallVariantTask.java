@@ -112,7 +112,6 @@ public abstract class InstallVariantTask extends NonIncrementalTask {
                             new DefaultDeviceApkOutput(
                                     new ApkSources(
                                             getApkDirectory().map(Collections::singletonList),
-                                            getPrivacySandboxSdksApksFiles(),
                                             getPrivacySandboxSupportedSdkAdditionalSplitApks(),
                                             getPrivacySandboxCompatApks(),
                                             getDexMetadataDirectory()),
@@ -329,27 +328,6 @@ public abstract class InstallVariantTask extends NonIncrementalTask {
                     .getArtifacts()
                     .setTaskInputToFinalProduct(
                             SingleArtifact.APK.INSTANCE, task.getApkDirectory());
-            if (creationConfig.getPrivacySandboxCreationConfig() != null) {
-                task.getPrivacySandboxSdksApksFiles()
-                        .setFrom(
-                                creationConfig
-                                        .getVariantDependencies()
-                                        .getArtifactFileCollection(
-                                                AndroidArtifacts.ConsumedConfigType
-                                                        .RUNTIME_CLASSPATH,
-                                                AndroidArtifacts.ArtifactScope.ALL,
-                                                ANDROID_PRIVACY_SANDBOX_EXTRACTED_SDK_APKS));
-                task.getPrivacySandboxSupportedSdkAdditionalSplitApks().set(
-                                creationConfig.getArtifacts().get(
-                                        InternalArtifactType.USES_SDK_LIBRARY_SPLIT_FOR_LOCAL_DEPLOYMENT.INSTANCE
-                                )
-                );
-                task.getPrivacySandboxCompatApks()
-                        .set(
-                                creationConfig
-                                        .getArtifacts()
-                                        .get(InternalArtifactType.EXTRACTED_SDK_APKS.INSTANCE));
-            }
             task.getPrivacySandboxSdksApksFiles().disallowChanges();
             task.getPrivacySandboxSupportedSdkAdditionalSplitApks().disallowChanges();
             task.getPrivacySandboxCompatApks().disallowChanges();

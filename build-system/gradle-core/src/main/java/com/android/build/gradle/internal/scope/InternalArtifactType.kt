@@ -469,22 +469,11 @@ InternalArtifactType<T : FileSystemLocation>(
     }
     // APK Set archive with APKs generated from a bundle.
     object APKS_FROM_BUNDLE: InternalArtifactType<RegularFile>(FILE), Replaceable
-    // APKS file containing split APK files.
-    object SDK_SPLITS_APKS: InternalArtifactType<Directory>(DIRECTORY), Replaceable
     // output of ExtractApks applied to APKS_FROM_BUNDLE and a device config.
     object EXTRACTED_APKS: InternalArtifactType<Directory>(DIRECTORY), Replaceable, ContainsMany
 
-    // APK files extracted from SDK_SPLITS_APKS APKS for local Privacy Sandbox deployment.
-    object EXTRACTED_SDK_APKS: InternalArtifactType<Directory>(DIRECTORY), Replaceable, ContainsMany
     // The manifest meant to be consumed by the bundle.
     object BUNDLE_MANIFEST: InternalArtifactType<RegularFile>(FILE), Replaceable
-
-    object EXTRACTED_APKS_FROM_PRIVACY_SANDBOX_SDKs: InternalArtifactType<Directory>(DIRECTORY), ContainsMany
-    object EXTRACTED_APKS_FROM_PRIVACY_SANDBOX_SDKs_IDE_MODEL: InternalArtifactType<RegularFile>(FILE)
-
-    // The proto passed to bundle tool to instruct which privacy sandbox SDKs are used
-    object PRIVACY_SANDBOX_SDK_RUNTIME_CONFIG_FILE: InternalArtifactType<RegularFile>(FILE)
-    object PRIVACY_SANDBOX_SDK_R_PACKAGE_JAR: InternalArtifactType<RegularFile>(FILE)
 
     // file containing the metadata for the full feature set. This contains the feature names: InternalArtifactType<RegularFile>(FILE), Replaceable
     // the res ID offset: InternalArtifactType<RegularFile>(FILE), Replaceable both tied to the feature module path. Published by the base for the
@@ -570,7 +559,6 @@ InternalArtifactType<T : FileSystemLocation>(
     object APK_IDE_MODEL: InternalArtifactType<RegularFile>(FILE), Replaceable
     object BUNDLE_IDE_MODEL : InternalArtifactType<RegularFile>(FILE), Replaceable
     object APK_FROM_BUNDLE_IDE_MODEL : InternalArtifactType<RegularFile>(FILE)
-    object APK_FROM_SDKS_IDE_MODEL : InternalArtifactType<RegularFile>(FILE)
 
     // and the redirect file pointing to the one above, these artifacts are final and can not be
     // replaced as their value is transferred in the IDE model.
@@ -649,10 +637,6 @@ InternalArtifactType<T : FileSystemLocation>(
     // Directory containing the dex metadata files to be installed as baseline profiles on devices
     // It should also contain a file which writes out mappings from API level to ".dm" file
     object DEX_METADATA_DIRECTORY: InternalArtifactType<Directory>(DIRECTORY)
-
-    object RUNTIME_ENABLED_SDK_TABLE : InternalArtifactType<RegularFile>(FILE)
-
-    object USES_SDK_LIBRARY_SPLIT_FOR_LOCAL_DEPLOYMENT : InternalArtifactType<Directory>(DIRECTORY), Replaceable
 
     object SCREENSHOTS_RENDERED: InternalArtifactType<Directory>(DIRECTORY), Replaceable
 

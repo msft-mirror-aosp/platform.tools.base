@@ -18,7 +18,6 @@ package com.android.build.gradle.internal.tasks
 import com.android.build.api.variant.impl.BuiltArtifactImpl
 import com.android.build.api.variant.impl.BuiltArtifactsImpl
 import com.android.build.gradle.internal.LoggerWrapper
-import com.android.build.gradle.internal.fixtures.FakeFileCollection
 import com.android.build.gradle.internal.fixtures.FakeGradleDirectory
 import com.android.build.gradle.internal.fixtures.FakeGradleDirectoryProperty
 import com.android.build.gradle.internal.fixtures.FakeGradleProvider
@@ -42,11 +41,7 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
-import java.io.BufferedOutputStream
 import java.io.File
-import java.io.FileOutputStream
-import java.util.zip.ZipEntry
-import java.util.zip.ZipOutputStream
 
 @RunWith(Parameterized::class)
 class InstallVariantTaskTest(private val deviceVersion: AndroidVersion) {
@@ -70,22 +65,15 @@ class InstallVariantTaskTest(private val deviceVersion: AndroidVersion) {
     private val deviceConnector: DeviceConnector = mock()
     private lateinit var mainOutputFileApk: File
 
-    private var sandboxSupported: Boolean = false
-
-    lateinit var privacySandboxLegacyApkSplitsDirectory: File
-
     @Before
     fun setUp() {
-        sandboxSupported = deviceVersion.apiLevel >= 34
         whenever(deviceConnector.name).thenReturn("Test Device")
         whenever(deviceConnector.apiLevel).thenReturn(deviceVersion.apiLevel)
         whenever(deviceConnector.apiCodeName).thenReturn(deviceVersion.codename)
         whenever(deviceConnector.abis).thenReturn(listOf("x86_64"))
         whenever(deviceConnector.density).thenReturn(-1)
-        whenever(deviceConnector.supportsPrivacySandbox).thenReturn(sandboxSupported)
+        whenever(deviceConnector.supportsPrivacySandbox).thenReturn(false)
         logger = FakeLogger()
-
-        privacySandboxLegacyApkSplitsDirectory = temporaryFolder.newFolder("privacysandbox-legacy-split-apks")
     }
 
     @Test
@@ -98,13 +86,11 @@ class InstallVariantTaskTest(private val deviceVersion: AndroidVersion) {
     @Throws(Exception::class)
     fun checkDependencyApkInstallation() {
         createMainApkListingFile()
-        val splitApk = getSdkSupportSplitApk()
         val deviceApkOutput = DefaultDeviceApkOutput(
             ApkSources(
                 FakeGradleProvider(listOf(FakeGradleDirectory(temporaryFolder.root))),
-                FakeFileCollection(getPrivacySandboxSdkApks()),
-                FakeGradleDirectoryProperty(FakeGradleDirectory(splitApk)),
-                FakeGradleDirectoryProperty(FakeGradleDirectory(privacySandboxLegacyApkSplitsDirectory)),
+                null,
+                null,
                 FakeGradleDirectoryProperty(null)
             ),
             ImmutableSet.of(), AndroidVersion.DEFAULT, "variant", "project", LoggerWrapper(logger)
@@ -125,18 +111,10 @@ class InstallVariantTaskTest(private val deviceVersion: AndroidVersion) {
         var timeoutArgumentCaptor = argumentCaptor<Int>()
         var optionsArgumentCaptor = argumentCaptor<Collection<String>>()
         var loggerArgumentCaptor = argumentCaptor<LoggerWrapper>()
-        if (sandboxSupported) {
-            verify(deviceConnector, times(3)).installPackage(apkArgumentCaptor.capture(), optionsArgumentCaptor.capture(), timeoutArgumentCaptor.capture(), loggerArgumentCaptor.capture())
-            assertThat(apkArgumentCaptor.allValues).contains(mainOutputFileApk)
-            assertThat(apkArgumentCaptor.allValues.filter { it.name.contains("standalone.apk") }.size).isEqualTo(2)
-            assertThat(optionsArgumentCaptor.allValues).containsExactly(ImmutableSet.of<String>(), ImmutableSet.of<String>(), ImmutableSet.of<String>())
-            assertThat((timeoutArgumentCaptor.allValues)).containsExactly(4000, 4000, 4000)
-        } else {
-            verify(deviceConnector, times(1)).installPackage(apkArgumentCaptor.capture(), optionsArgumentCaptor.capture(), timeoutArgumentCaptor.capture(), loggerArgumentCaptor.capture())
-            assertThat(apkArgumentCaptor.allValues).contains(mainOutputFileApk)
-            assertThat(optionsArgumentCaptor.allValues).containsExactly(ImmutableSet.of<String>())
-            assertThat((timeoutArgumentCaptor.allValues)).containsExactly(4000)
-        }
+        verify(deviceConnector, times(1)).installPackage(apkArgumentCaptor.capture(), optionsArgumentCaptor.capture(), timeoutArgumentCaptor.capture(), loggerArgumentCaptor.capture())
+        assertThat(apkArgumentCaptor.allValues).contains(mainOutputFileApk)
+        assertThat(optionsArgumentCaptor.allValues).containsExactly(ImmutableSet.of<String>())
+        assertThat((timeoutArgumentCaptor.allValues)).containsExactly(4000)
     }
 
     private fun getSdkSupportSplitApk(): File {
@@ -150,7 +128,6 @@ class InstallVariantTaskTest(private val deviceVersion: AndroidVersion) {
         val deviceApkOutput = DefaultDeviceApkOutput(
             ApkSources(
                 FakeGradleProvider(listOf(FakeGradleDirectory(temporaryFolder.root))),
-                FakeFileCollection(ImmutableSet.of<File>()),
                 FakeGradleDirectoryProperty(null),
                 FakeGradleDirectoryProperty(null),
                 FakeGradleDirectoryProperty(null)
@@ -224,26 +201,6 @@ class InstallVariantTaskTest(private val deviceVersion: AndroidVersion) {
     }
   ]
 }""", Charsets.UTF_8)
-    }
-
-    private fun getPrivacySandboxSdkApks(): Set<File> {
-        val sdkApkDir = temporaryFolder.newFolder("sdkApks")
-        val sdks = listOf("sdkApk1", "sdkApk2")
-        val sdkFiles = mutableSetOf<File>()
-        sdks.forEach { sdk ->
-            val sdkApkSubDir = sdkApkDir.resolve(sdk)
-            sdkApkSubDir.mkdirs()
-            sdkFiles.add(sdkApkSubDir)
-            val standaloneApk = sdkApkSubDir.resolve("standalone.apk")
-            standaloneApk.createNewFile()
-            BuiltArtifactsImpl(
-                artifactType = InternalArtifactType.EXTRACTED_APKS_FROM_PRIVACY_SANDBOX_SDKs,
-                applicationId = sdk,
-                variantName = "",
-                elements = listOf(BuiltArtifactImpl.make(outputFile = standaloneApk.toString()))
-            ).saveToDirectory(sdkApkSubDir)
-        }
-        return sdkFiles
     }
 
 }

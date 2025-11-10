@@ -96,24 +96,14 @@ public class TestApplicationTaskManager
                                                 .ANDROID_PRIVACY_SANDBOX_EXTRACTED_SDK_APKS)
                         : null;
 
-        Provider<Directory> privacySandboxCompatSdkApks =
-                testVariantProperties.getPrivacySandboxEnabled()
-                        ? testVariantProperties.getPrivacySandboxCompatApks()
-                        : null;
-
-        Provider<Directory> additionalSdkSupportedApkSplits =
-                testVariantProperties.getPrivacySandboxEnabled()
-                        ? testVariantProperties.getUsesSdkLibrarySplitForLocalDeployment()
-                        : null;
-
         return new SeparateTestModuleTestData(
                 testVariantProperties.getNamespace(),
                 testVariantProperties,
                 testingApk,
                 testVariantProperties.getTestedApks(),
-                privacySandboxSdkApks,
-                privacySandboxCompatSdkApks,
-                additionalSdkSupportedApkSplits,
+                null,
+                null,
+                null,
                 testVariantProperties
                         .getServices()
                         .getProjectOptions()
