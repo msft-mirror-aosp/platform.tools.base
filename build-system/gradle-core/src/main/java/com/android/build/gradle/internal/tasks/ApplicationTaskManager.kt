@@ -131,7 +131,6 @@ class ApplicationTaskManager(
             )
         }
 
-        taskFactory.register(AsarsToCompatSplitsTask.CreationAction(variant))
         createDynamicBundleTask(variantInfo)
 
         // This should match the implementation in [PackageAndroidArtifact] configure: vcsTaskRan
