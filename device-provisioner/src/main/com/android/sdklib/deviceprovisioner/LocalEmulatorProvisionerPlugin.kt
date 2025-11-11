@@ -766,8 +766,7 @@ internal constructor(
       override val presentation: StateFlow<DeviceAction.Presentation>
         get() =
           defaultPresentation.fromContext().enabledIf {
-            it.properties.pairedPhoneId != null
-            it.properties.pairedGlassesId != null
+            it.properties.pairedPhoneId != null || it.properties.pairedGlassesId != null
           }
     }
 
