@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.integration.multiplatform.v1
+package com.android.build.gradle.integration.compose
 
 import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
@@ -31,7 +31,7 @@ import org.junit.Rule
 import org.junit.Test
 
 /** Check Compose works with KMP projects. */
-class KotlinMultiplatformComposeTest {
+class KotlinMultiplatformComposeTestOldIntegration {
 
     @get:Rule
     val rule = GradleRule.configure()

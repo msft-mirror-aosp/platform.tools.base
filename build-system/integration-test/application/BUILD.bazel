@@ -260,14 +260,13 @@ single_gradle_integration_test_per_source(
             "src/test/java/com/android/build/gradle/integration/dependencies/**",
             "src/test/java/com/android/build/gradle/integration/fusedlibrary/**",
             "src/test/java/com/android/build/gradle/integration/multiplatform/v2/**",
-            "src/test/java/com/android/build/gradle/integration/multiplatform/v1/**",
             "src/test/java/com/android/build/gradle/integration/multiplatform/model/**",
             "src/test/java/com/android/build/gradle/integration/r8/**",
             "src/test/java/com/android/build/gradle/integration/application/Java11CompileTest.kt",
             "src/test/java/com/android/build/gradle/integration/application/AgpVersionConsistencyTest.kt",
             "src/test/java/com/android/build/gradle/integration/application/JavaCompileWithToolChainTest.kt",
             "src/test/java/com/android/build/gradle/integration/application/ComposeHelloWorldTest.kt",
-            "src/test/java/com/android/build/gradle/integration/compose/ComposePluginOptionsTest.kt",
+            "src/test/java/com/android/build/gradle/integration/compose/**",
             "src/test/java/com/android/build/gradle/integration/api/R8VersionCheckTest.kt",
             "src/test/java/com/android/build/gradle/integration/declarative/GradleDeclarativeTest.kt",
         ],
@@ -397,8 +396,7 @@ gradle_integration_test(
 
 COMPOSE_TESTS = [
     "src/test/java/com/android/build/gradle/integration/application/ComposeHelloWorldTest.kt",
-    "src/test/java/com/android/build/gradle/integration/compose/ComposePluginOptionsTest.kt",
-    "src/test/java/com/android/build/gradle/integration/multiplatform/v1/KotlinMultiplatformComposeTest.kt",
+    "src/test/java/com/android/build/gradle/integration/compose/**",
 ]
 
 gradle_integration_test(
