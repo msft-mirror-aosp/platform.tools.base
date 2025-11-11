@@ -998,7 +998,9 @@ internal open class Analysis<FX : Any>(
           Type.MethodRef(receiver.constructor, method),
           listOf(receiver) + args,
         ]
-      is Type.Lambda -> rec[receiver, listOf(receiver) + args]
+      is Type.Lambda ->
+        if (receiver.params.size == args.size) rec[receiver, listOf(receiver) + args]
+        else instantiationLattice.bottom
       is Type.MethodRef -> rec[receiver, args]
       is Type.SpecializedMethodRef -> rec[receiver.ref, listOf(receiver.receiver) + args]
       is Type.Sym.Param,
@@ -1223,13 +1225,7 @@ internal open class Analysis<FX : Any>(
           is Type.WildCard,
           is Type.MethodRef -> pure(this)
           is Type.Union -> cases.joinedOver(instantiationLattice) { it.substAndInvoke(base) }
-          is Type.Lambda -> {
-            val (bodyT0, bodyFx0) = body
-            val (bodyT, bodyFx) = bodyT0.substAndInvoke(base)
-            pure(
-              Type.Lambda(params, Result(bodyT, effectLattice.joinOf(bodyFx0, bodyFx.result)), intf)
-            )
-          }
+          is Type.Lambda -> pure(this)
           is Type.SpecializedMethodRef -> {
             val (t, fx) = receiver.substAndInvoke(base)
             Result(copy(receiver = t), fx)
