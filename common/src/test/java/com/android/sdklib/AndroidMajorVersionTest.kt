@@ -32,4 +32,10 @@ class AndroidMajorVersionTest {
     assertThat(AndroidMajorVersion(34, "Codename"))
       .isLessThan(AndroidMajorVersion(34, "VanillaIceCream"))
   }
+
+  @Test
+  fun secondaryConstructor() {
+    assertThat(AndroidMajorVersion(AndroidApiLevel(34)).apiString).isEqualTo("34")
+    assertThat(AndroidMajorVersion(AndroidApiLevel(36, 1)).apiString).isEqualTo("36")
+  }
 }

@@ -23,6 +23,10 @@ package com.android.sdklib
 data class AndroidMajorVersion
 @JvmOverloads
 constructor(val apiLevel: Int, val codename: String? = null) : Comparable<AndroidMajorVersion> {
+
+  @JvmOverloads
+  constructor(apiLevel: AndroidApiLevel, codename: String? = null): this(apiLevel.majorVersion, codename)
+
   val apiString
     get() = codename ?: apiLevel.toString()
 
