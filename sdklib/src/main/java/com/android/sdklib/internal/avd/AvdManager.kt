@@ -63,7 +63,6 @@ import java.nio.file.Files
 import java.nio.file.NoSuchFileException
 import java.nio.file.Path
 import java.nio.file.Paths
-import java.util.NoSuchElementException
 import java.util.Scanner
 import java.util.concurrent.TimeoutException
 import java.util.regex.Matcher
@@ -493,6 +492,7 @@ private constructor(
       } else {
         updatedEnvironment = mutableMapOf()
         environmentIniPath.deleteIfExists()
+        deleteContentOf(avdFolder.resolve(ENVIRONMENT_DIR))
       }
 
       val oldAvdInfo = getAvd(avdName, false /*validAvdOnly*/)
@@ -581,7 +581,10 @@ private constructor(
       val source = avdFolder.fileSystem.getPath(value)
       if (source.isAbsolute) {
         // An absolute path indicates an environment file that should be copied to the AVD folder.
-        val destination = avdFolder.resolve(source.fileName)
+        val environmentDir = avdFolder.resolve(ENVIRONMENT_DIR)
+        Files.createDirectories(environmentDir)
+        deleteContentOf(environmentDir)
+        val destination = environmentDir.resolve(source.fileName)
         try {
           if (source != destination) {
             FileUtils.copyFile(source, destination)
@@ -608,6 +611,7 @@ private constructor(
       relative == SDCARD_IMG ||
       relative == USER_SETTINGS_INI ||
       relative == BOOT_PROP ||
+      relative == ENVIRONMENT_DIR ||
       relative == ENVIRONMENT_INI ||
       relative == USERDATA_IMG ||
       relative == avd.environment[EnvironmentKey.IMAGE] ||
@@ -1535,6 +1539,7 @@ private constructor(
     const val USER_SETTINGS_INI: String = "user-settings.ini" // $NON-NLS-1$
 
     private const val BOOT_PROP = "boot.prop"
+    const val ENVIRONMENT_DIR = "environment"
     const val ENVIRONMENT_INI = "environment.ini"
     const val CONFIG_INI: String = "config.ini"
     private const val HARDWARE_QEMU_INI = "hardware-qemu.ini"

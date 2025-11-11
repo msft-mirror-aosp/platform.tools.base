@@ -20,6 +20,7 @@ import com.android.prefs.AbstractAndroidLocations
 import com.android.sdklib.AndroidVersion
 import com.android.sdklib.PathFileWrapper
 import com.android.sdklib.devices.DeviceManager
+import com.android.sdklib.internal.avd.AvdManager.Companion.ENVIRONMENT_DIR
 import com.android.sdklib.internal.avd.ConfigKey.ENCODING
 import com.android.sdklib.repository.AndroidSdkHandler
 import com.android.sdklib.repository.targets.SystemImage
@@ -35,7 +36,6 @@ import com.google.common.collect.ImmutableMap
 import com.google.common.truth.Truth.assertThat
 import java.io.BufferedWriter
 import java.io.File
-import java.io.IOException
 import java.io.OutputStreamWriter
 import java.nio.file.Files
 import java.nio.file.Path
@@ -404,7 +404,7 @@ class AvdManagerTest {
     assertTrue(Files.exists(metadataIniFile))
     assertTrue(Files.exists(avdFolder.resolve("boot.prop")))
     assertTrue(Files.exists(avdFolder.resolve("user-settings.ini")))
-    assertTrue(Files.exists(avdFolder.resolve(backgroundFile.fileName)))
+    assertTrue(Files.exists(avdFolder.resolve(ENVIRONMENT_DIR).resolve(backgroundFile.fileName)))
 
     // Move the AVD, updating its name and data folder path
     val newAvdName = avdInfo.name + "_2"
@@ -417,7 +417,7 @@ class AvdManagerTest {
     val newMetadataIniPath = metadataIniFile.resolveSibling("$newAvdName.ini")
     assertTrue(Files.exists(newMetadataIniPath))
     assertTrue(Files.isDirectory(newAvdFolder))
-    assertTrue(Files.exists(newAvdFolder.resolve(backgroundFile.fileName)))
+    assertTrue(Files.exists(newAvdFolder.resolve(ENVIRONMENT_DIR).resolve(backgroundFile.fileName)))
 
     // The contents of the metadata .ini reflect the new paths
     val metadata = AvdManager.parseIniFile(PathFileWrapper(newMetadataIniPath), null)!!
