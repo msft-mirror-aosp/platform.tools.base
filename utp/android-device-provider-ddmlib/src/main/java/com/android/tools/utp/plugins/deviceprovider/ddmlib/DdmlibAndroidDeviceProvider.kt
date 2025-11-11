@@ -28,6 +28,7 @@ import com.google.testing.platform.api.config.environment
 import com.google.testing.platform.api.config.parseConfig
 import com.google.testing.platform.api.config.setup
 import com.google.testing.platform.api.context.Context
+import com.google.testing.platform.api.context.coroutineScope
 import com.google.testing.platform.api.device.DeviceController
 import com.google.testing.platform.config.v1.extension.hostOrDefault
 import com.google.testing.platform.core.device.DeviceProviderException
@@ -37,6 +38,7 @@ import com.google.testing.platform.lib.process.logger.SubprocessLogger
 import com.google.testing.platform.proto.api.config.LocalAndroidDeviceProviderProto
 import com.google.testing.platform.runtime.android.AndroidDeviceProvider
 import com.google.testing.platform.runtime.android.device.AndroidDevice
+import kotlinx.coroutines.CoroutineScope
 import java.util.concurrent.TimeUnit
 
 /**
@@ -55,6 +57,7 @@ class DdmlibAndroidDeviceProvider() : AndroidDeviceProvider {
     private lateinit var ddmlibAndroidDeviceProviderConfig: AndroidDeviceProviderDdmlibConfigProto.DdmlibAndroidDeviceProviderConfig
     private lateinit var deviceProviderConfig: LocalAndroidDeviceProviderProto.LocalAndroidDeviceProvider
     private lateinit var profileManager: DeviceProviderProfileManager
+    private lateinit var coroutineScope: CoroutineScope
 
     constructor(deviceFinder: DdmlibAndroidDeviceFinder) : this() {
         this.deviceFinder = deviceFinder
@@ -66,6 +69,8 @@ class DdmlibAndroidDeviceProvider() : AndroidDeviceProvider {
      * @param config The config class which has all the required data classes.
      */
     override fun configure(context: Context) {
+        coroutineScope = context.coroutineScope
+
         val config = context[Context.CONFIG_KEY] as Config
         environment = config.environment
         testSetup = config.setup
@@ -120,7 +125,8 @@ class DdmlibAndroidDeviceProvider() : AndroidDeviceProvider {
         return profileManager.recordDeviceProvision {
             val deviceController = DdmlibAndroidDeviceController(
                 apkPackageNameResolver,
-                ddmlibAndroidDeviceProviderConfig.uninstallIncompatibleApks
+                ddmlibAndroidDeviceProviderConfig.uninstallIncompatibleApks,
+                coroutineScope,
             )
             val device = deviceFinder.findDevice(deviceProviderConfig.serial)
                 ?: throw DeviceProviderException(

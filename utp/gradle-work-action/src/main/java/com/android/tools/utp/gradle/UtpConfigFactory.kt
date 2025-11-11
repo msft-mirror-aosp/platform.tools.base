@@ -50,6 +50,8 @@ import java.io.File
 import java.nio.file.Path
 import java.util.concurrent.TimeUnit
 import kotlin.io.path.absolutePathString
+import kotlin.time.Duration.Companion.seconds
+import kotlin.time.DurationUnit
 
 // This is an arbitrary string. This ID is used to lookup test results from UTP.
 // UTP can run multiple test fixtures at a time so we have to give a name for
@@ -134,6 +136,11 @@ fun createRunnerConfigProtoForLocalDevice(
         )
         singleDeviceExecutor = createSingleDeviceExecutor(deviceSerialNumber, shardConfig)
         addTestResultListenerPlugin(utpDependencies, serverMetadata, deviceId)
+        cancellationConfigBuilder.apply {
+            pluginCleanupTimeoutMs = 1.seconds.toLong(DurationUnit.MILLISECONDS)
+            executorCancellationTimeoutMs = 1.seconds.toLong(DurationUnit.MILLISECONDS)
+            executorCancellationAbortMs = 1.seconds.toLong(DurationUnit.MILLISECONDS)
+        }
     }.build()
 }
 

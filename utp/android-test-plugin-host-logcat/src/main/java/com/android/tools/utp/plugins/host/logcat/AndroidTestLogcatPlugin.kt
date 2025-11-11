@@ -38,6 +38,7 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.logging.Logger
+import kotlin.coroutines.cancellation.CancellationException
 
 /**
  * This plugin updates [TestSuiteResult] proto with logcat artifacts
@@ -259,6 +260,8 @@ class AndroidTestLogcatPlugin(
                 logcatCommandHandle.stop()
                 logcatCommandHandle.waitFor() // Wait for the command to exit gracefully.
             }
+        } catch (_: CancellationException) {
+            /* logcatCommandHandle may throw CancellationException after calling stop(). */
         } catch (t: Throwable) {
             logger.warning("Stopping logcat failed with the following error: $t")
         } finally {

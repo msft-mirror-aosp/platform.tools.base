@@ -32,7 +32,7 @@ import com.google.testing.platform.proto.api.core.LogMessageProto
 import com.google.testing.platform.proto.api.core.TestArtifactProto.Artifact
 import com.google.testing.platform.proto.api.core.TestArtifactProto.ArtifactType.ANDROID_APK
 import com.google.testing.platform.runtime.android.device.AndroidDevice
-import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.Flow
@@ -50,6 +50,7 @@ import java.util.logging.Logger
 class DdmlibAndroidDeviceController(
     private val apkPackageNameResolver: ApkPackageNameResolver,
     private val uninstallIncompatibleApks: Boolean,
+    private val coroutineScope: CoroutineScope,
     private val logger: Logger = getLogger()
 ) : DeviceController {
 
@@ -146,7 +147,7 @@ class DdmlibAndroidDeviceController(
 
     override fun executeAsync(args: List<String>, processor: (String) -> Unit): CommandHandle {
         var isCancelled = false
-        val deferred = GlobalScope.async {
+        val deferred = coroutineScope.async {
             val command = args.first().toLowerCase()
             val commandArgs = args.subList(1, args.size)
 
@@ -321,6 +322,7 @@ class DdmlibAndroidDeviceController(
 
             override fun stop() {
                 isCancelled = true
+                deferred.cancel()
             }
 
             override fun isRunning(): Boolean = deferred.isActive
