@@ -19,7 +19,6 @@ package com.android.build.gradle.integration.resources
 import com.android.build.gradle.integration.common.fixture.GradleTestProjectBuilder
 import com.android.build.gradle.integration.common.truth.ScannerSubject
 import com.android.build.gradle.integration.common.utils.TestFileUtils
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 
@@ -32,7 +31,6 @@ class CompileRClassTest {
         .create()
 
     @Test
-    @Ignore("b/439843451: Agp is not filtering the androidTest compile classpath correctly")
     fun cannotAccessTransitiveResource() {
         val result = project.executor()
             .expectFailure()

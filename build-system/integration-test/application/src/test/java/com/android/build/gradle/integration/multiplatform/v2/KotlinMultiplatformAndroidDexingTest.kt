@@ -149,8 +149,6 @@ class KotlinMultiplatformAndroidDexingTest {
         )
 
         project.executor()
-            // TODO(b/439843451) - Opt back into `android.enableAppCompileTimeRClass`
-            .with(BooleanOption.ENABLE_APP_COMPILE_TIME_R_CLASS, false)
             .withFailOnWarning(false) // b/455891987
             .run(":kmpFirstLib:assembleDeviceTest")
 
@@ -168,9 +166,6 @@ class KotlinMultiplatformAndroidDexingTest {
                 "test/KmpAndroidFirstLibActivityTest",
                 "test/KmpAndroidFirstLibActivityTest$\$ExternalSyntheticLambda0",
                 "test/R$",
-                "test/R\$drawable",
-                "test/R\$string",
-                "test/R\$style",
                 "R\$drawable",
                 "R\$string",
                 "R"

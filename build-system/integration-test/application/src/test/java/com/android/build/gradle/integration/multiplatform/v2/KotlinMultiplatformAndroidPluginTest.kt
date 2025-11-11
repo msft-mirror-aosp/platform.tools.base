@@ -262,8 +262,6 @@ class KotlinMultiplatformAndroidPluginTest(private val publishLibs: Boolean) {
         )
 
         executor()
-            // TODO(b/439843451) - Opt back into `android.enableAppCompileTimeRClass`
-            .with(BooleanOption.ENABLE_APP_COMPILE_TIME_R_CLASS, false)
             .run(":kmpFirstLib:assembleDeviceTest")
 
         project.getSubproject("kmpFirstLib").assertApk(
@@ -287,9 +285,6 @@ class KotlinMultiplatformAndroidPluginTest(private val publishLibs: Boolean) {
                     // other
                     "KmpAndroidActivity",
                     "test/R$",
-                    "test/R\$drawable",
-                    "test/R\$string",
-                    "test/R\$style",
                     "R\$drawable",
                     "R\$string",
                     "R"
