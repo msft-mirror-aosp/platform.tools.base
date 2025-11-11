@@ -32,6 +32,7 @@ import com.android.build.api.dsl.TestBaseFlavor
 import com.android.build.api.variant.impl.ResValueKeyImpl
 import com.android.build.gradle.internal.services.DslServices
 import com.android.build.gradle.internal.utils.updateIfChanged
+import com.android.build.gradle.options.BooleanOption
 import com.android.builder.core.AbstractProductFlavor
 import com.android.builder.core.BuilderConstants
 import com.android.builder.core.DefaultApiVersion
@@ -42,6 +43,7 @@ import com.android.builder.model.ProductFlavor
 import com.google.common.collect.Iterables
 import java.io.File
 import org.gradle.api.Action
+import org.gradle.api.provider.Provider
 import org.gradle.declarative.dsl.model.annotations.Adding
 import org.gradle.declarative.dsl.model.annotations.Restricted
 
@@ -56,6 +58,9 @@ abstract class BaseFlavor(name: String, private val dslServices: DslServices) :
 
     /** Encapsulates per-variant configurations for the NDK, such as ABI filters.  */
     override val ndk: NdkOptions = dslServices.newInstance(NdkOptions::class.java)
+
+    private val disallowProviderInAndroidSourceSet =
+        dslServices.projectOptions.get(BooleanOption.DISALLOW_PROVIDER_IN_ANDROID_SOURCE_SET)
 
     override val ndkConfig: CoreNdkOptions
         get() {
@@ -384,10 +389,29 @@ abstract class BaseFlavor(name: String, private val dslServices: DslServices) :
         addResValue(resValueKey.toString(), ClassFieldImpl(type, name, value))
     }
 
+    private fun checkNoProvider(target: Any) {
+        if (target is Provider<*>) {
+            if (disallowProviderInAndroidSourceSet) {
+                throw RuntimeException(
+                    "Error : You cannot add Provider instances to the Proguard files APIs.\n" +
+                            "It is not possible for Android Studio to determine if the Provider points\n" +
+                            "to a directory that contains generated (read-only) or static (read-write) files. \n\n" +
+                            "Instead you should use the Variant API, in particular\n" +
+                            "Variant.proguardFiles and CanProduceConsumerProguardFiles.addStaticDirectories.\n" +
+                            "\n" +
+                            "You can re-enable the behavior by setting the " +
+                            "`${BooleanOption.DISALLOW_PROVIDER_IN_ANDROID_SOURCE_SET.propertyName}=false` to gradle.properties.\n" +
+                            "However, be aware that any Gradle Task dependency will not be automatically carried."
+                )
+            }
+        }
+    }
+
     override val proguardFiles: MutableList<File>
         get() = super.proguardFiles
 
     override fun proguardFile(proguardFile: Any) {
+        checkNoProvider(proguardFile)
         proguardFiles.add(dslServices.file(proguardFile))
     }
 
@@ -411,6 +435,7 @@ abstract class BaseFlavor(name: String, private val dslServices: DslServices) :
         }
 
     override fun testProguardFile(proguardFile: Any) {
+        checkNoProvider(proguardFile)
         testProguardFiles.add(dslServices.file(proguardFile))
     }
 
@@ -436,6 +461,7 @@ abstract class BaseFlavor(name: String, private val dslServices: DslServices) :
         get() = super.consumerProguardFiles
 
     override fun consumerProguardFile(proguardFile: Any) {
+        checkNoProvider(proguardFile)
         consumerProguardFiles.add(dslServices.file(proguardFile))
     }
 
