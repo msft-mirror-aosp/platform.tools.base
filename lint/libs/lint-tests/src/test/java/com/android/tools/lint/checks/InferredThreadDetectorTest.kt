@@ -1216,6 +1216,37 @@ class InferredThreadDetectorTest : AbstractCheckTest() {
       .expectClean()
   }
 
+  // Test reduced from .../dfu/FirmwareUpdateStateMachine
+  fun testNested() {
+    lint()
+      .files(
+        java(
+            """
+          final class Test {
+
+            private Container rec(Tag root) {
+              return root.container().map(rec(root));
+            }
+
+            interface Tag {
+              Container container();
+            }
+
+            static final class Container {
+              public Container map(Object f) {
+                return this;
+              }
+            }
+          }
+          """
+              .trimIndent()
+          )
+          .indented()
+      )
+      .run()
+      .expectClean()
+  }
+
   // Test reduced from third_party/.../kotlin-result/../result/Zip.kt
   fun testNestedLambda() {
     val start = System.currentTimeMillis()

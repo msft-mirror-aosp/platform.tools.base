@@ -1228,7 +1228,11 @@ internal open class Analysis<FX : Any>(
             val (t, fx) = receiver.substAndInvoke(base)
             Result(copy(receiver = t), fx)
           }
-          is Type.Sym.Fix -> throw IllegalStateException("Nested inductive set not expected")
+          is Type.Sym.Fix ->
+            with(instantiationLattice) {
+              baseCases.joinedOver { it.substAndInvoke(base) } join
+                inductiveCases.joinedOver { it.substAndInvoke(base) }
+            }
         }
 
       val (baseCases, indCases) = fixed
