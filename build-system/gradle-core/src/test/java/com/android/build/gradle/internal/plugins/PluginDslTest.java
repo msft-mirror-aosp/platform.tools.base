@@ -17,6 +17,7 @@
 package com.android.build.gradle.internal.plugins;
 
 
+import static com.android.build.gradle.internal.fixture.VariantCreationConfigCheckerKt.countVariants;
 import static com.google.common.truth.Truth.assertThat;
 
 import com.android.SdkConstants;
@@ -34,7 +35,6 @@ import com.android.build.gradle.internal.errors.SyncIssueReporterImpl;
 import com.android.build.gradle.internal.fixture.AppVariantCreationConfigChecker;
 import com.android.build.gradle.internal.fixture.TestConstants;
 import com.android.build.gradle.internal.fixture.TestProjects;
-import com.android.build.gradle.internal.fixture.VariantCheckers;
 import com.android.build.gradle.internal.fixture.VariantCreationConfigChecker;
 import com.android.build.gradle.internal.services.BuildServicesKt;
 import com.android.build.gradle.internal.variant.ComponentInfo;
@@ -221,7 +221,7 @@ public class PluginDslTest {
         map.put("androidTests", 1);
         VariantCreationConfigChecker checker = new AppVariantCreationConfigChecker(plugin);
 
-        assertThat(VariantCheckers.countVariants(map))
+        assertThat(countVariants(map))
                 .isEqualTo(
                         plugin.getVariantManager().getMainComponents().size()
                                 + plugin.getVariantManager().getTestComponents().size());
@@ -263,7 +263,7 @@ public class PluginDslTest {
         map.put("androidTests", 2);
         VariantCreationConfigChecker checker = new AppVariantCreationConfigChecker(plugin);
 
-        assertThat(VariantCheckers.countVariants(map))
+        assertThat(countVariants(map))
                 .isEqualTo(
                         plugin.getVariantManager().getMainComponents().size()
                                 + plugin.getVariantManager().getTestComponents().size());
@@ -323,7 +323,7 @@ public class PluginDslTest {
 
         ImmutableMap<String, Integer> map =
                 ImmutableMap.of("appVariants", 12, "unitTests", 6, "androidTests", 6);
-        assertThat(VariantCheckers.countVariants(map))
+        assertThat(countVariants(map))
                 .isEqualTo(checker.getMainVariants().size() + checker.getTestComponents().size());
 
         // we can now call this since the variants/tasks have been created

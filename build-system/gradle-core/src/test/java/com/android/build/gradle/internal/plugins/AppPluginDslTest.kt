@@ -16,23 +16,19 @@
 package com.android.build.gradle.internal.plugins
 
 import com.android.build.api.dsl.ApplicationExtension
-import com.android.build.gradle.AppExtension
-import com.android.build.gradle.internal.dsl.BaseAppModuleExtension
 import com.android.build.gradle.internal.fixture.TestConstants
 import com.android.build.gradle.internal.fixture.TestProjects
-import com.android.build.gradle.internal.fixture.VariantChecker
-import com.android.build.gradle.internal.fixture.VariantCheckers
 import com.android.build.gradle.internal.utils.importOfflineMavenRepo
 import com.android.build.gradle.tasks.MergeResources
 import com.google.common.truth.Truth
 import com.google.common.truth.Truth.assertThat
 import groovy.util.Eval
+import java.util.Arrays
 import org.gradle.api.Project
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
-import java.util.*
 
 /** Tests for the public DSL of the App plugin ("com.android.application")  */
 class AppPluginDslTest {

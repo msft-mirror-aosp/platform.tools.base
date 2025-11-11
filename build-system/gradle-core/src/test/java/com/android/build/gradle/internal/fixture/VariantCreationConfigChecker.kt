@@ -17,12 +17,15 @@
 package com.android.build.gradle.internal.fixture
 
 import com.android.build.gradle.internal.component.ApkCreationConfig
+import com.android.build.gradle.internal.component.ComponentCreationConfig
 import com.android.build.gradle.internal.component.TestComponentCreationConfig
 import com.android.build.gradle.internal.component.TestCreationConfig
 import com.android.build.gradle.internal.component.VariantCreationConfig
 import com.android.build.gradle.internal.plugins.AppPlugin
 import com.android.build.gradle.internal.plugins.BasePlugin
 import com.android.build.gradle.internal.plugins.LibraryPlugin
+import com.google.common.collect.Lists
+import com.google.common.truth.Truth
 import com.google.common.truth.Truth.assertThat
 
 interface VariantCreationConfigChecker {
@@ -33,11 +36,12 @@ interface VariantCreationConfigChecker {
         variantName: String,
         testedVariantName: String,
         withMainVariant: ((VariantCreationConfig) -> Unit)? = null,
-        withTestedVariant: ((VariantCreationConfig) -> Unit)? = null
+        withTestedVariant: ((VariantCreationConfig) -> Unit)? = null,
     )
 
-    fun checkNonTestedVariant(variantName: String,
-        withMainVariant: ((VariantCreationConfig) -> Unit)? = null
+    fun checkNonTestedVariant(
+        variantName: String,
+        withMainVariant: ((VariantCreationConfig) -> Unit)? = null,
     )
 }
 
@@ -54,7 +58,7 @@ class CommonVariantCreationConfigChecker(val plugin: BasePlugin<*, *, *, *, *, *
         variantName: String,
         testedVariantName: String,
         withMainVariant: ((VariantCreationConfig) -> Unit)?,
-        withTestedVariant: ((VariantCreationConfig) -> Unit)?
+        withTestedVariant: ((VariantCreationConfig) -> Unit)?,
     ) {
         variant(variantName) { requestedVariant ->
             checkTasks(requestedVariant)
@@ -73,7 +77,7 @@ class CommonVariantCreationConfigChecker(val plugin: BasePlugin<*, *, *, *, *, *
 
     override fun checkNonTestedVariant(
         variantName: String,
-        withMainVariant: ((VariantCreationConfig) -> Unit)?
+        withMainVariant: ((VariantCreationConfig) -> Unit)?,
     ) {
         variant(variantName) { requestedVariant ->
             checkTasks(requestedVariant)
@@ -99,7 +103,7 @@ class CommonVariantCreationConfigChecker(val plugin: BasePlugin<*, *, *, *, *, *
 
     private fun variant(
         variantName: String,
-        withVariant: (VariantCreationConfig) -> Unit
+        withVariant: (VariantCreationConfig) -> Unit,
     ) {
         val requestedVariant = mainVariants.find { it.name == variantName }
         assertThat(requestedVariant).isNotNull()
@@ -145,7 +149,7 @@ class AppVariantCreationConfigChecker private constructor(val checker: CommonVar
 
     override fun checkNonTestedVariant(
         variantName: String,
-        withMainVariant: ((VariantCreationConfig) -> Unit)?
+        withMainVariant: ((VariantCreationConfig) -> Unit)?,
     ) {
         return checker.checkNonTestedVariant(variantName) {
             checkTasks(it)
@@ -176,7 +180,7 @@ class LibraryVariantCreationConfigChecker private constructor(val checker: Commo
 
     override fun checkNonTestedVariant(
         variantName: String,
-        withMainVariant: ((VariantCreationConfig) -> Unit)?
+        withMainVariant: ((VariantCreationConfig) -> Unit)?,
     ) {
         return checker.checkNonTestedVariant(variantName) {
             checkTasks(it)
@@ -198,4 +202,32 @@ class LibraryVariantCreationConfigChecker private constructor(val checker: Commo
             }
         }
     }
+}
+
+fun countVariants(variants: MutableMap<String?, Int?>): Int {
+    return variants.values.filterNotNull().sum()
+}
+
+fun checkDefaultVariants(components: MutableList<ComponentCreationConfig?>) {
+    Truth.assertThat(
+        Lists.transform<ComponentCreationConfig?, String>(
+            components,
+            ComponentCreationConfig::name
+        )
+    ).containsExactly("release", "debug", "debugAndroidTest", "debugUnitTest")
+}
+
+/**
+ * Returns the component with the given name. Fails if there is no such variant.
+ *
+ * @param components the item collection to search for a match
+ * @param name the name of the item to return
+ * @return the found variant
+ */
+fun findComponent(
+    components: MutableCollection<ComponentCreationConfig?>, name: String,
+): ComponentCreationConfig {
+    val result =
+        components.find { it!!.name == name }
+    return result ?: throw AssertionError("Component for $name not found.")
 }
