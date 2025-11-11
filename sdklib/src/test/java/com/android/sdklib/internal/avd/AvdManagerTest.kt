@@ -41,6 +41,8 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardOpenOption
 import java.util.TreeMap
+import kotlin.io.path.createFile
+import kotlin.io.path.createParentDirectories
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -94,7 +96,6 @@ class AvdManagerTest {
   }
 
   @Test
-  @Throws(IOException::class, AvdManagerException::class)
   fun getPidHardwareQemuIniLockScannerHasNextLong() {
     // Arrange
     val avd =
@@ -115,7 +116,6 @@ class AvdManagerTest {
   }
 
   @Test
-  @Throws(IOException::class, AvdManagerException::class)
   fun getPidHardwareQemuIniLockIsEmpty() {
     // Arrange
     val avd =
@@ -136,7 +136,6 @@ class AvdManagerTest {
   }
 
   @Test
-  @Throws(IOException::class, AvdManagerException::class)
   fun getPidHardwareQemuIniLockScannerDoesntHaveNextLong() {
     // Arrange
     val avd =
@@ -157,7 +156,6 @@ class AvdManagerTest {
   }
 
   @Test
-  @Throws(IOException::class, AvdManagerException::class)
   fun getPidUserdataQemuImgLockScannerHasNextLong() {
     // Arrange
     val avd =
@@ -178,7 +176,6 @@ class AvdManagerTest {
   }
 
   @Test
-  @Throws(AvdManagerException::class)
   fun getPid() {
     // Arrange
     val avd =
@@ -196,7 +193,6 @@ class AvdManagerTest {
   }
 
   @Test
-  @Throws(AvdManagerException::class)
   fun createAvdWithoutSnapshot() {
     avdManager.createAvd(
       avdFolder = avdFolder,
@@ -227,7 +223,6 @@ class AvdManagerTest {
   }
 
   @Test
-  @Throws(AvdManagerException::class)
   fun createAvdWithUserdata() {
     avdManager.createAvd(
       avdFolder = avdFolder,
@@ -256,7 +251,6 @@ class AvdManagerTest {
   }
 
   @Test
-  @Throws(AvdManagerException::class)
   fun createAvdWithNullValueUserSettings() {
     val userSettings: MutableMap<String, String> = HashMap()
     avdManager.createAvd(
@@ -288,7 +282,6 @@ class AvdManagerTest {
   }
 
   @Test
-  @Throws(AvdManagerException::class)
   fun createAvdWithBootProps() {
     val expected: MutableMap<String, String> = TreeMap()
     expected["ro.build.display.id"] = "sdk-eng 4.3 JB_MR2 774058 test-keys"
@@ -310,7 +303,6 @@ class AvdManagerTest {
   }
 
   @Test
-  @Throws(AvdManagerException::class)
   fun createChromeOsAvd() {
     avdManager.createAvd(
       avdFolder = avdFolder,
@@ -325,7 +317,6 @@ class AvdManagerTest {
   }
 
   @Test
-  @Throws(AvdManagerException::class)
   fun createNonChromeOsAvd() {
     avdManager.createAvd(
       avdFolder = avdFolder,
@@ -340,7 +331,6 @@ class AvdManagerTest {
   }
 
   @Test
-  @Throws(AvdManagerException::class)
   fun createAvdForGradleManagedDevice() {
     gradleManagedDeviceAvdManager.createAvd(
       avdFolder = gradleManagedDeviceAvdFolder,
@@ -356,7 +346,6 @@ class AvdManagerTest {
   }
 
   @Test
-  @Throws(AvdManagerException::class)
   fun createTabletAvd() {
     avdManager.createAvd(
       avdFolder = avdFolder,
@@ -373,7 +362,6 @@ class AvdManagerTest {
   }
 
   @Test
-  @Throws(AvdManagerException::class)
   fun createAvdWithSkin() {
     val log = MockLog()
     val deviceManager = DeviceManager.createInstance(androidSdkHandler, log)
@@ -392,7 +380,6 @@ class AvdManagerTest {
   }
 
   @Test
-  @Throws(AvdManagerException::class)
   fun moveAvd() {
     val hardwareConfig =
       ImmutableMap.of("ro.build.display.id", "sdk-eng 4.3 JB_MR2 774058 test-keys")
@@ -453,7 +440,6 @@ class AvdManagerTest {
   }
 
   @Test
-  @Throws(AvdManagerException::class)
   fun renameAvd() {
     // Create an AVD
     val origAvd =
@@ -515,7 +501,6 @@ class AvdManagerTest {
   }
 
   @Test
-  @Throws(AvdManagerException::class)
   fun editAvdViaBuilder() {
     val log = MockLog()
     val deviceManager = DeviceManager.createInstance(androidSdkHandler, log)
@@ -537,7 +522,32 @@ class AvdManagerTest {
   }
 
   @Test
-  @Throws(Exception::class)
+  fun editGlassesAvdViaBuilder() {
+    val log = MockLog()
+    val deviceManager = DeviceManager.createInstance(androidSdkHandler, log)
+    val device = deviceManager.getDevice("ai_glasses_device", "Google")!!
+    val builder = avdManager.createAvdBuilder(device)
+    builder.systemImage = systemImages.api33ext4.image
+    val backgroundPath =
+      mockFs.someRoot
+        .resolve("temp")
+        .resolve("background1.png")
+        .createParentDirectories()
+        .createFile()
+    builder.environment = backgroundPath
+    val initialAvdInfo = avdManager.createAvd(builder)
+    assertThat(initialAvdInfo).isNotNull()
+
+    val newBuilder = AvdBuilder.createForExistingDevice(device, initialAvdInfo)
+    assertThat(newBuilder.environment?.isAbsolute).isFalse()
+    newBuilder.bootMode = ColdBoot
+
+    val editedAvdInfo = avdManager.editAvd(initialAvdInfo, newBuilder)
+    assertThat(editedAvdInfo.properties).containsEntry(ConfigKey.FORCE_COLD_BOOT_MODE, "yes")
+    assertThat(editedAvdInfo.environment).isEqualTo(initialAvdInfo.environment)
+  }
+
+  @Test
   fun duplicateAvd() {
     // Create an AVD
     val origAvdConfig = HashMap<String, String>()
@@ -628,7 +638,6 @@ class AvdManagerTest {
   }
 
   @Test
-  @Throws(Exception::class)
   fun duplicateAvdViaBuilder() {
     val log = MockLog()
     val deviceManager = DeviceManager.createInstance(androidSdkHandler, log)
@@ -716,7 +725,6 @@ class AvdManagerTest {
   }
 
   @Test
-  @Throws(Exception::class)
   fun reloadAvds() {
     // Create an AVD.
     var avd =
@@ -737,7 +745,6 @@ class AvdManagerTest {
   }
 
   @Test
-  @Throws(AvdManagerException::class)
   fun playStoreProperty() {
     val expected: MutableMap<String, String> = TreeMap()
     expected["ro.build.display.id"] = "sdk-eng 4.3 JB_MR2 774058 test-keys"
@@ -819,7 +826,6 @@ class AvdManagerTest {
   }
 
   @Test
-  @Throws(Exception::class)
   fun updateDeviceChanged() {
     val log = MockLog()
     val devMan = DeviceManager.createInstance(androidSdkHandler, log)
@@ -866,7 +872,6 @@ class AvdManagerTest {
   }
 
   @Test
-  @Throws(Exception::class)
   fun parseAvdInfo() {
     avdManager.createAvd(
       avdFolder = avdFolder,
@@ -911,7 +916,6 @@ class AvdManagerTest {
   }
 
   @Test
-  @Throws(Exception::class)
   fun parseAvdInfoWithExtensionLevel() {
     val image: SystemImage = systemImages.api33ext4.image
     avdManager.createAvd(avdFolder = avdFolder, avdName = name.methodName, systemImage = image)
@@ -930,7 +934,6 @@ class AvdManagerTest {
   }
 
   @Test
-  @Throws(Exception::class)
   fun parseAvdInfoWithoutDisplayName() {
     avdManager.createAvd(
       avdFolder = avdFolder,
@@ -949,7 +952,6 @@ class AvdManagerTest {
     assertEquals(expectedDisplayName, avdInfo.getProperty(ConfigKey.DISPLAY_NAME))
   }
 
-  @Throws(IOException::class)
   private fun removeKeyFromIniFile(path: Path, key: String) {
     val lines = mutableListOf<String>()
     Files.newBufferedReader(path).use { reader ->
@@ -967,4 +969,3 @@ class AvdManagerTest {
     }
   }
 }
-

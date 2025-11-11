@@ -579,14 +579,20 @@ private constructor(
     val value = environment[key]
     if (value != null) {
       val source = avdFolder.fileSystem.getPath(value)
-      val destination = avdFolder.resolve(source.fileName)
-      try {
-        if (source != destination) {
-          FileUtils.copyFile(source, destination)
+      if (source.isAbsolute) {
+        // An absolute path indicates an environment file that should be copied to the AVD folder.
+        val destination = avdFolder.resolve(source.fileName)
+        try {
+          if (source != destination) {
+            FileUtils.copyFile(source, destination)
+          }
+          environment[key] = avdFolder.relativize(destination).toString()
+        } catch (e: IOException) {
+          throw AvdManagerException("Unable to copy background to AVD directory", e)
         }
-        environment[key] = avdFolder.relativize(destination).toString()
-      } catch (e: IOException) {
-        throw AvdManagerException("Unable to copy background to AVD directory", e)
+      } else if (!Files.exists(avdFolder.resolve(source))) {
+        // A relative path means that the environment should already be present.
+        log.warning("$key $source not present in $avdFolder")
       }
     }
   }
