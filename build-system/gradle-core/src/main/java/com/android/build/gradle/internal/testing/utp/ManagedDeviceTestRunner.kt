@@ -38,11 +38,13 @@ import org.gradle.api.model.ObjectFactory
 import org.gradle.workers.WorkerExecutor
 import java.io.File
 import java.nio.file.Path
+import java.util.logging.Level
 
 class ManagedDeviceTestRunner(
     private val workerExecutor: WorkerExecutor,
     private val objectFactory: ObjectFactory,
     private val utpDependencies: UtpDependencies,
+    private val utpJvmExecutable: File,
     private val versionedSdkLoader: SdkComponentsBuildService.VersionedSdkLoader,
     private val emulatorControlConfig: EmulatorControlConfig,
     private val useOrchestrator: Boolean,
@@ -51,6 +53,7 @@ class ManagedDeviceTestRunner(
     private val avdComponents: AvdComponentsBuildService,
     private val installApkTimeout: Int?,
     private val enableEmulatorDisplay: Boolean,
+    private val utpLoggingLevel: Level,
     private val targetIsSplitApk: Boolean,
 ) {
 
@@ -145,12 +148,14 @@ class ManagedDeviceTestRunner(
                     uninstallApksAfterTest = false,
                     reinstallIncompatibleApksBeforeTest = true,
                     shardConfig,
+                    utpLoggingLevel,
                 )
             }
 
             runUtpTestSuiteAndWait(
                 runnerConfigs,
                 workerExecutor,
+                utpJvmExecutable,
                 projectPath,
                 variantName,
                 outputDirectory,

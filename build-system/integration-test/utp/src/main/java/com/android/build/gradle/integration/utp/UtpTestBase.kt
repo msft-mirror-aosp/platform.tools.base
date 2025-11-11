@@ -924,14 +924,14 @@ abstract class UtpTestBase(val runWithBuiltInPlatform: Boolean) {
 
         rule.build.androidApplication().reconfigure { enableForceCompilation() }
 
-        val result = executor.withEnableInfoLogging(true).run(testTaskName)
+        executor.run(testTaskName)
 
         assertThat(project.resolve(testReportPath)).exists()
         assertThat(project.resolve(testResultPbPath)).exists()
-        result.assertOutputContains(
-            "Running force AOT compilation for com.example.android.kotlin")
-        result.assertOutputContains(
-            "Running force AOT compilation for com.example.android.kotlin.test")
+        assertThat(project.resolve(testResultPbPath).parent.resolve("utp.0.log")).contains(
+            "INFO: Running force AOT compilation for com.example.android.kotlin")
+        assertThat(project.resolve(testResultPbPath).parent.resolve("utp.0.log")).contains(
+            "INFO: Running force AOT compilation for com.example.android.kotlin.test")
     }
 
     /**

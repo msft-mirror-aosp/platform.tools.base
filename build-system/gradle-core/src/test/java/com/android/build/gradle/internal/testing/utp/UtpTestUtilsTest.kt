@@ -54,9 +54,11 @@ class UtpTestUtilsTest {
     private val mockLogger: ILogger = mock()
 
     lateinit var utpResultDir: File
+    lateinit var jvmExecutable: File
 
     @Before
     fun setupMocks() {
+        jvmExecutable = temporaryFolderRule.newFile()
         whenever(mockWorkerExecutor.classLoaderIsolation(any()))
             .thenReturn(mockWorkQueue)
     }
@@ -80,6 +82,7 @@ class UtpTestUtilsTest {
         return runUtpTestSuiteAndWait(
             listOf(config),
             mockWorkerExecutor,
+            jvmExecutable,
             "projectName",
             "variantName",
             utpResultDir,

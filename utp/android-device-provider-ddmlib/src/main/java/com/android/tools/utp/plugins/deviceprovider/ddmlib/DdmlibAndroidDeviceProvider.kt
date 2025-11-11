@@ -87,6 +87,7 @@ class DdmlibAndroidDeviceProvider() : AndroidDeviceProvider {
                 ddmlibAndroidDeviceProviderConfig.localAndroidDeviceProviderConfig.value))
 
         if (!this::deviceFinder.isInitialized) {
+            AndroidDebugBridge.init(false)
             val adb = requireNotNull(AndroidDebugBridge.createBridge(
                     config.androidSdk.adbPath,
                     /*forceNewBridge=*/false,

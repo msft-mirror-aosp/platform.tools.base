@@ -41,6 +41,7 @@ import org.gradle.api.model.ObjectFactory
 import org.gradle.workers.WorkerExecutor
 import java.io.File
 import java.nio.file.Path
+import java.util.logging.Level
 
 const val TEST_RESULT_PB_FILE_NAME = "test-result.pb"
 
@@ -74,6 +75,7 @@ data class UtpTestRunResult(
 fun runUtpTestSuiteAndWait(
     runnerConfigs: List<RunUtpWorkParameters.UtpRunConfig>,
     workerExecutor: WorkerExecutor,
+    jvmExecutable: File,
     projectPath: String,
     variantName: String,
     resultsDir: File,
@@ -85,6 +87,7 @@ fun runUtpTestSuiteAndWait(
         workerExecutor,
         runnerConfigs,
         utpDependencies,
+        jvmExecutable,
         projectPath,
         variantName,
         resultsDir,
@@ -131,6 +134,7 @@ private fun runUtpTestSuiteAndWait(
     workerExecutor: WorkerExecutor,
     configs: List<RunUtpWorkParameters.UtpRunConfig>,
     utpDependencies: UtpDependencies,
+    jvmExecutable: File,
     projectPath: String,
     variantName: String,
     xmlTestReportOutputDirectory: File,
@@ -141,6 +145,7 @@ private fun runUtpTestSuiteAndWait(
     }
 
     workQueue.submit(RunUtpWorkAction::class.java) { params ->
+        params.jvm.set(jvmExecutable)
         params.utpRunConfigs.setDisallowChanges(configs)
         params.utpDependencies.setDisallowChanges(utpDependencies)
         params.projectPath.setDisallowChanges(projectPath)
@@ -219,6 +224,7 @@ fun createUtpRunConfig(
     uninstallApksAfterTest: Boolean,
     reinstallIncompatibleApksBeforeTest: Boolean,
     shardConfig: ShardConfig?,
+    loggingLevel: Level,
 ): RunUtpWorkParameters.UtpRunConfig {
     val utpRunConfig = objectFactory.newInstance(RunUtpWorkParameters.UtpRunConfig::class.java)
 
@@ -251,6 +257,7 @@ fun createUtpRunConfig(
     utpRunConfig.uninstallApksAfterTest.setDisallowChanges(uninstallApksAfterTest)
     utpRunConfig.reinstallIncompatibleApksBeforeTest.setDisallowChanges(reinstallIncompatibleApksBeforeTest)
     utpRunConfig.shardConfig.setDisallowChanges(shardConfig)
+    utpRunConfig.loggingLevel.setDisallowChanges(loggingLevel)
 
     return utpRunConfig
 }

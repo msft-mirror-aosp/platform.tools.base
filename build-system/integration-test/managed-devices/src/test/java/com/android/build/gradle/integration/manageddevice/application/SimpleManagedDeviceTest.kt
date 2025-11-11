@@ -2,6 +2,7 @@ package com.android.build.gradle.integration.manageddevice.application
 
 import com.android.build.gradle.integration.common.fixture.GradleTaskExecutor
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
+import com.android.build.gradle.integration.common.truth.ScannerSubject.Companion.assertThat
 import com.android.build.gradle.integration.manageddevice.utils.CustomAndroidSdkRule
 import com.android.build.gradle.integration.manageddevice.utils.CustomAndroidSdkRule.Companion.withCustomAndroidSdk
 import com.android.build.gradle.integration.manageddevice.utils.CustomAndroidSdkRule.Companion.withCustomSdkDir
@@ -55,15 +56,25 @@ class SimpleManagedDeviceTest {
             "com.example.android.kotlin.ExampleInstrumentedTest.html")).exists()
     }
 
+    private fun assertUtpLogExist() {
+        val outputDir = FileUtils.join(
+            rule.build.androidApplication().buildDir.pathString,
+            "outputs",
+            "androidTest-results",
+            "managedDevice",
+            "debug",
+            "device1")
+        assertThat(File(outputDir, "utp.0.log")).exists()
+        assertThat(File(outputDir, "utp.0.log")).contains(
+            "INFO: Execute com.example.android.kotlin.ExampleInstrumentedTest.useAppContext: PASSED")
+    }
+
     @Test
     fun runBasicManagedDevice() {
-        val result = executor.withEnableInfoLogging(true)
-            .run(":app:device1DebugAndroidTest")
+        executor.run(":app:device1DebugAndroidTest")
 
         assertTestReportExists()
-
-        result.assertOutputContains(
-            "Execute com.example.android.kotlin.ExampleInstrumentedTest.useAppContext: PASSED")
+        assertUtpLogExist()
     }
 
     @Test
@@ -73,8 +84,11 @@ class SimpleManagedDeviceTest {
             .run(":app:device1DebugAndroidTest")
 
         assertTestReportExists()
-
-        result.assertOutputContains("tests on device1_0")
-        result.assertOutputContains("tests on device1_1")
+        result.stdout.use {
+            assertThat(it).contains("tests on device1_0")
+        }
+        result.stdout.use {
+            assertThat(it).contains("tests on device1_1")
+        }
     }
 }

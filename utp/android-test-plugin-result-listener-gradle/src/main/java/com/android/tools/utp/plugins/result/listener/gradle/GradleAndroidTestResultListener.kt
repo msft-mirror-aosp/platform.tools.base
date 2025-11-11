@@ -32,8 +32,6 @@ import com.google.testing.platform.proto.api.core.TestCaseProto
 import com.google.testing.platform.proto.api.core.TestResultProto
 import com.google.testing.platform.proto.api.core.TestSuiteResultProto
 import io.grpc.ManagedChannel
-import io.grpc.Status
-import io.grpc.StatusRuntimeException
 import io.grpc.netty.GrpcSslContexts
 import io.grpc.netty.NettyChannelBuilder
 import io.grpc.stub.StreamObserver
@@ -82,12 +80,8 @@ class GradleAndroidTestResultListener(
             }
 
             override fun onError(error: Throwable) {
-                // A CANCELLED status typically occurs if the user aborts the Gradle build.
-                // We handle this case explicitly to avoid logging a confusing generic error.
-                if (error is StatusRuntimeException && error.status.code == Status.CANCELLED.code) {
-                    return
-                }
-                logger.severe("GradleAndroidTestResultListenerService failed with an error: $error")
+                logger.severe {"recordTestResultEvent failed with an error: $error" }
+                throw error
             }
 
             override fun onCompleted() {

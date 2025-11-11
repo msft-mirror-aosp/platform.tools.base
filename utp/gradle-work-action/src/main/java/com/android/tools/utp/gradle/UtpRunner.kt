@@ -19,14 +19,12 @@ package com.android.tools.utp.gradle
 import com.android.tools.utp.gradle.api.UtpDependencies
 import com.android.tools.utp.gradle.api.UtpDependency
 import com.android.tools.utp.plugins.result.listener.gradle.proto.GradleAndroidTestResultListenerProto
-import com.google.testing.platform.launcher.Launcher
+import com.android.utils.GrabProcessOutput
 import com.google.testing.platform.proto.api.core.TestSuiteResultProto
 import org.gradle.api.GradleException
 import org.gradle.api.logging.Logger
 import org.gradle.api.logging.Logging
 import java.io.File
-import java.lang.reflect.Proxy
-import java.net.URLClassLoader
 import java.util.Base64
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.ExecutorService
@@ -34,32 +32,33 @@ import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 
 /**
- * Runs UTP test suites.
+ * Runs UTP test suites in external Java processes.
  *
- * This class is designed to be used within a Gradle Worker. It handles the
+ * This class is designed to be used within a Gradle WorkAction. It handles the
  * entire lifecycle of running UTP, including:
- * 1. Executing multiple UTP instances in parallel using an [ExecutorService].
- * 2. Isolating UTP execution using separate [URLClassLoader]s to avoid dependency conflicts.
- * 3. Collecting results via the [utpTestResultListenerServer], which generates XML reports and writes
- * the final `test-result.pb` file.
+ * 1. Launching all UTP processes in parallel using an [ExecutorService].
+ * 2. Collecting results via the utpTestResultListenerServer, which generates XML reports and writes
+ *    the final `test-result.pb` file.
  *
+ * @param javaExecFile The path to the `java` executable.
  * @param utpDependencies Resolved UTP dependency artifacts.
  * @param enableUtpTestReportingForAndroidStudio If true, test results are also printed
  * to stdout in a base64-encoded format for Android Studio to parse.
  * @param utpTestResultListenerServer The server that listens for UTP test results. This runner
  * is responsible for setting the listener on this server, but not for managing its lifecycle.
  * @param logger A Gradle logger instance.
+ * @param processBuilderFactory A factory function to create [ProcessBuilder] instances.
  * @param executorServiceFactory A factory function to create the [ExecutorService]
  * used for parallel process execution.
- * @param utpExecutor The function used to execute a single UTP instance given its config file.
  */
 class UtpRunner(
+    private val javaExecFile: File,
     private val utpDependencies: UtpDependencies,
     private val enableUtpTestReportingForAndroidStudio: Boolean,
     private val utpTestResultListenerServer: UtpTestResultListenerServerRunner,
     private val logger: Logger = Logging.getLogger(UtpRunner::class.java),
+    private val processBuilderFactory: (List<String>) -> ProcessBuilder = { ProcessBuilder(it) },
     private val executorServiceFactory: () -> ExecutorService = Executors::newCachedThreadPool,
-    private val utpExecutor: UtpRunner.(File) -> Unit = UtpRunner::execute,
 ) {
     /**
      * Executes all UTP test runs.
@@ -69,6 +68,7 @@ class UtpRunner(
      * them in parallel, waiting for all to complete.
      *
      * @param utpRunnerConfigFileList List of base UTP runner config files (one per shard/run).
+     * @param loggingPropertiesFileList List of logging properties files (one per shard/run).
      * @param deviceIDs List of device IDs, used to tag results and create listener plugins.
      * @param deviceNames List of device names, used for XML report generation.
      * @param deviceShardNames List of shard names, used for XML report generation.
@@ -80,6 +80,7 @@ class UtpRunner(
      */
     fun execute(
         utpRunnerConfigFileList: List<File>,
+        loggingPropertiesFileList: List<File>,
         deviceIDs: List<String>,
         deviceNames: List<String>,
         deviceShardNames: List<String>,
@@ -126,26 +127,31 @@ class UtpRunner(
             }
         })
 
-        execute(utpRunnerConfigFileList)
+        execute(utpRunnerConfigFileList, loggingPropertiesFileList)
     }
 
     /**
      * Executes all the configured UTP test suites in parallel.
      *
-     * This private method submits tasks to the [ExecutorService] to run
-     * UTP. It waits for all tasks to complete.
+     * This private method launches the external Java processes, each configured with a
+     * runner config and logging properties. It waits for all processes to complete.
      *
      * @param utpRunnerConfigFileList List of base UTP runner config files (one per shard/run).
-     * @throws GradleException if any UTP task fails or an exception occurs.
+     * @param loggingPropertiesFileList List of logging properties files (one per shard/run).
+     * @throws GradleException if any UTP process fails or an exception occurs.
      */
-    private fun execute(utpRunnerConfigFileList: List<File>) {
+    private fun execute(
+        utpRunnerConfigFileList: List<File>,
+        loggingPropertiesFileList: List<File>,
+    ) {
         val executorService = executorServiceFactory()
         try {
-            val futures = utpRunnerConfigFileList.map { runConfig ->
-                executorService.submit {
-                    utpExecutor(runConfig)
-                }
-            }.toList()
+            val futures = utpRunnerConfigFileList.zip(loggingPropertiesFileList)
+                .map { (runConfig, loggingPropertiesFile) ->
+                    executorService.submit {
+                        execute(runConfig, loggingPropertiesFile)
+                    }
+                }.toList()
 
             var hasExecutionFailures = false
             futures.forEach {
@@ -167,52 +173,65 @@ class UtpRunner(
     }
 
     /**
-     * Executes a single UTP run for a given configuration.
+     * Executes a single UTP process for a given configuration.
+     *
+     * This method blocks until the external UTP process terminates. It streams the process output
+     * to the logger. If the Gradle build is cancelled, the [InterruptedException] is caught,
+     * the process is forcibly destroyed, and the exception is re-thrown to signal cancellation.
      *
      * @param utpRunnerConfigFile The runner configuration proto file for this specific UTP execution.
+     * @param loggingPropertiesFile The logging properties file for this specific UTP execution.
      */
-    private fun execute(utpRunnerConfigFile: File) {
-        /**
-         * UTP core classes needs to be loaded by a separate classloader from UTP launcher classes.
-         * UTP launcher classes are loaded in the Gradle worker's class-loader.
-         *
-         * +------------------------------------+
-         * | [Gradle Worker / UTP Base Loader]  |
-         * | - Config APIs                      |
-         * | - Plugin APIs                      |
-         * | - Device APIs                      |
-         * +------------------+-----------------+
-         * ^
-         * |
-         * +-------------------------+-------------------------+
-         * |                         |                         |
-         * +-------------------+     +-------------------+     +-------------------+
-         * |    [UTP Core]     |     |   [Plugin Foo]    |     | [Result Listener] |
-         * | - Classes         |     | - Classes         |     | - Classes         |
-         * | - Deps            |     | - Deps            |     | - Deps            |
-         * +-------------------+     +-------------------+     +-------------------+
-         */
-        val utpCoreClassLoader = URLClassLoader(
-            utpDependencies.core.files.map { it.toURI().toURL() }.toTypedArray(),
-            Launcher::class.java.classLoader)
+    private fun execute(utpRunnerConfigFile: File, loggingPropertiesFile: File) {
+        val processBuilder = processBuilderFactory(
+            listOf(
+                javaExecFile.absolutePath,
+                "-Djava.awt.headless=true",
+                "-Djava.util.logging.config.file=${loggingPropertiesFile.absolutePath}",
+                "-Dfile.encoding=UTF-8",
+                "-cp",
+                utpDependencies.launcher.files.joinToString(File.pathSeparator) { it.absolutePath },
+                UtpDependency.LAUNCHER.mainClass,
+                utpDependencies.core.files.joinToString(File.pathSeparator) { it.absolutePath },
+                "--proto_config=${utpRunnerConfigFile.absolutePath}",
+            )
+        )
+        val process = processBuilder.start()
 
-        val mainClass = utpCoreClassLoader.loadClass(UtpDependency.CORE.mainClass)
+        // Shutdown hook to close the process if gradle is closed/cancelled.
+        val shutdownHook = Thread(process::destroyForcibly)
 
-        val onExitCallbackClass = utpCoreClassLoader.loadClass(
-            kotlin.jvm.functions.Function1::class.java.name)
+        try {
+            Runtime.getRuntime().addShutdownHook(shutdownHook)
 
-        val mainMethod = mainClass.getMethod(
-            "main",
-            arrayOf<String>()::class.java,
-            onExitCallbackClass)
+            try {
+                GrabProcessOutput.grabProcessOutput(
+                    process,
+                    GrabProcessOutput.Wait.WAIT_FOR_READERS,
+                    object : GrabProcessOutput.IProcessOutput {
+                        override fun out(line: String?) {
+                            if (!line.isNullOrBlank()) {
+                                logger.info(line)
+                            }
+                        }
 
-        val onExitCallbackProxy = Proxy.newProxyInstance(
-            utpCoreClassLoader,
-            arrayOf(onExitCallbackClass)) { _, _, _ -> }
+                        override fun err(line: String?) {
+                            if (!line.isNullOrBlank()) {
+                                logger.info(line)
+                            }
+                        }
+                    }, null, null
+                )
+            } catch (e: InterruptedException) {
+                process.destroyForcibly()
+                process.waitFor()
 
-        mainMethod(
-            null,
-            arrayOf("--proto_config=${utpRunnerConfigFile.absolutePath}"),
-            onExitCallbackProxy)
+                // Re-throw the exception so Gradle knows the work was cancelled.
+                Thread.currentThread().interrupt()
+                throw e
+            }
+        } finally {
+            Runtime.getRuntime().removeShutdownHook(shutdownHook)
+        }
     }
 }

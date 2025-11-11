@@ -49,6 +49,7 @@ class UtpConnectedTest(runWithBuiltInPlatform: Boolean) : UtpTestBase(runWithBui
         private const val TEST_REPORT = "build/reports/androidTests/connected/debug/com.example.android.kotlin.html"
         private const val TEST_REPORT_FOR_DYNAMIC_FEATURE = "build/reports/androidTests/connected/debug/com.example.android.kotlin.feature.html"
         private const val TEST_RESULT_PB = "build/outputs/androidTest-results/connected/debug/$DEVICE_NAME/test-result.pb"
+        private const val UTP_LOG = "build/outputs/androidTest-results/connected/debug/$DEVICE_NAME/utp.0.log"
         private const val AGGREGATED_TEST_RESULT_PB = "build/outputs/androidTest-results/connected/debug/test-result.pb"
         private const val TEST_COV_XML = "build/reports/coverage/androidTest/debug/connected/report.xml"
         private const val ENABLE_UTP_TEST_REPORT_PROPERTY = "com.android.tools.utp.GradleAndroidProjectResolverExtension.enable"
@@ -162,16 +163,18 @@ class UtpConnectedTest(runWithBuiltInPlatform: Boolean) : UtpTestBase(runWithBui
 
         selectModule("lib")
 
-        val result = executor.withEnableInfoLogging(true).run(testTaskName)
+        executor.run(testTaskName)
 
-        result.assertOutputContains("Uninstalling com.example.android.kotlin.library.test")
+        val utpLogFile = project.resolve("lib/$UTP_LOG")
+        assertThat(utpLogFile).exists()
+        assertThat(utpLogFile).contains("Uninstalling com.example.android.kotlin.library.test")
 
-        val result2 = executor
+        executor
             .with(BooleanOption.ANDROID_TEST_LEAVE_APKS_INSTALLED_AFTER_RUN, true)
-            .withEnableInfoLogging(true)
             .run(testTaskName)
 
-        result2.assertOutputDoesNotContain("Uninstalling com.example.android.kotlin.library.test")
+        assertThat(utpLogFile).exists()
+        assertThat(utpLogFile).doesNotContain("Uninstalling com.example.android.kotlin.library.test")
     }
 
     @Test

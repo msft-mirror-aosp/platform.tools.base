@@ -16,18 +16,12 @@
 
 package com.android.tools.utp.gradle
 
-import com.android.ddmlib.AndroidDebugBridge
 import com.android.tools.utp.gradle.api.RunUtpWorkParameters
 import com.android.tools.utp.gradle.api.UtpAction
+import com.google.common.io.Files
 import org.gradle.api.provider.ProviderFactory
 
 class UtpActionImpl : UtpAction {
-
-    init {
-        // ADB should be initialized only once when this ADB classes are loaded.
-        // UTP may assume that ADB classes are initialized.
-        AndroidDebugBridge.init(false)
-    }
 
     override fun run(
         parameters: RunUtpWorkParameters,
@@ -79,7 +73,22 @@ class UtpActionImpl : UtpAction {
                 }
             }
 
+            val loggingPropertiesFileList = utpRunConfigs.map {
+                createUtpTempFile("logging", "properties").also { file ->
+                    Files.asCharSink(file, Charsets.UTF_8).write("""
+                        .level=INFO
+                        .handlers=java.util.logging.ConsoleHandler,java.util.logging.FileHandler
+                        java.util.logging.ConsoleHandler.level=${it.loggingLevel.get().name}
+                        java.util.logging.SimpleFormatter.format=%4${'$'}s: %5${'$'}s%n
+                        java.util.logging.FileHandler.level=INFO
+                        java.util.logging.FileHandler.pattern=${it.outputDir.get().asFile.invariantSeparatorsPath}/utp.%u.log
+                        java.util.logging.FileHandler.formatter=java.util.logging.SimpleFormatter
+                    """.trimIndent())
+                }
+            }
+
             val utpRunner = UtpRunner(
+                parameters.jvm.asFile.get(),
                 parameters.utpDependencies.get(),
                 enableUtpTestReportingForAndroidStudio,
                 server,
@@ -87,6 +96,7 @@ class UtpActionImpl : UtpAction {
 
             utpRunner.execute(
                 utpRunnerConfigFileList,
+                loggingPropertiesFileList,
                 utpRunConfigs.map { it.deviceId.get() },
                 utpRunConfigs.map { it.deviceName.get() },
                 utpRunConfigs.map { it.deviceShardName.get() },
