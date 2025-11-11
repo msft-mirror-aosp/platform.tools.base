@@ -162,8 +162,6 @@ class AiGlassesPairing(val session: AdbSession) {
 
     monkey()
 
-    sendPairingCommand(glassesBluetoothAddress, useCdm)
-
     emit("POLLING")
     while (true) {
       val state =
@@ -172,11 +170,16 @@ class AiGlassesPairing(val session: AdbSession) {
             emit("POLLING_FAILED")
             return@flow
           }
+
       emit(state)
-      if (state in TERMINAL_STATES) {
-        return@flow
+      when (state) {
+        "IDLE" -> {
+          sendPairingCommand(glassesBluetoothAddress, useCdm)
+          delay(4.seconds)
+        }
+        in TERMINAL_STATES -> return@flow
+        else -> delay(2.seconds)
       }
-      delay(2.seconds)
     }
   }
 
