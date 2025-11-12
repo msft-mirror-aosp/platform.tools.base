@@ -36,5 +36,5 @@ android {
 }
 
 dependencies {
-    implementation(project(":transitiveDependencyLib"))
+    api(project(":transitiveDependencyLib"))
 }
