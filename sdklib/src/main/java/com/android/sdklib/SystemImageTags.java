@@ -70,7 +70,7 @@ public class SystemImageTags {
 
     /** Tag to apply to system images for AI Glasses compatible devices. */
     public static final IdDisplay AI_GLASSES_COMPATIBLE_TAG =
-            IdDisplay.create("android_ai_glasses_compatible", "Android AI Glasses Compatible");
+            IdDisplay.create("ai_glasses_compatible", "AI Glasses Compatible");
 
     /** Tag to apply to system images for Chrome OS device. */
     public static final IdDisplay CHROMEOS_TAG = IdDisplay.create("chromeos", "Chrome OS Device");
