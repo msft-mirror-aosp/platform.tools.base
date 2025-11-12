@@ -16,7 +16,6 @@
 
 package com.android.build.gradle.integration.application
 
-import com.android.SdkConstants
 import com.android.build.gradle.integration.common.fixture.project.AndroidApplicationProject
 import com.android.build.gradle.integration.common.fixture.project.ApkSelector
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
@@ -30,13 +29,12 @@ import com.android.build.gradle.options.IntegerOption
 import com.android.testutils.truth.PathSubject.assertThat
 import com.android.testutils.truth.ZipFileSubject.assertThat
 import com.google.common.truth.Truth.assertThat
-import org.gradle.api.JavaVersion
-import org.junit.Rule
-import org.junit.Test
-import java.net.URLClassLoader
 import java.nio.file.Path
 import kotlin.io.path.getLastModifiedTime
 import kotlin.io.path.readLines
+import org.gradle.api.JavaVersion
+import org.junit.Rule
+import org.junit.Test
 
 class MergeResourcesTest {
 
@@ -743,23 +741,11 @@ class MergeResourcesTest {
             }
         }
 
-        build.executor
-            .with(BooleanOption.ENFORCE_UNIQUE_PACKAGE_NAMES, false)
-            .run(":app:assembleDebug")
-
-        val rJar = build.androidApplication()
-            .resolve(InternalArtifactType.COMPILE_AND_RUNTIME_R_CLASS_JAR)
-            .resolve(
-                "debug/processDebugResources/${SdkConstants.FN_R_CLASS_JAR}"
-            )
-        URLClassLoader.newInstance(arrayOf(rJar.toUri().toURL())).use { urlClassLoader ->
-            val rClassStrings =
-                urlClassLoader.loadClass("com.example.android.multiproject.R\$string")?.fields
-            val rClassIds =
-                urlClassLoader.loadClass("com.example.android.multiproject.R\$id")?.fields
-
-            assertThat(rClassStrings?.map { it.name }).contains("app_name")
-            assertThat(rClassIds?.map { it.name }).contains("app_name")
+        build.executor.expectFailure().run(":app:processDebugMainManifest").apply {
+            assertErrorContains(
+                "Namespace 'com.example.android.multiproject' is used in multiple modules and/or " +
+                        "libraries: AndroidManifest.xml, :lib. Please ensure that all modules and " +
+                        "libraries have a unique namespace.")
         }
     }
 

@@ -581,8 +581,6 @@ class DataBindingIncrementalityTest {
      */
     private fun runFullBuild(): GradleBuildResult {
         val result = project.executor()
-            // Disabled as the test project depends on Androidx vector drawables
-            .with(BooleanOption.ENFORCE_UNIQUE_PACKAGE_NAMES, false)
             .run(CLEAN_TASK, APP_COMPILE_TASK)
         recordTimestamps()
         return result
@@ -590,10 +588,7 @@ class DataBindingIncrementalityTest {
 
     /** Runs an incremental build. */
     private fun runIncrementalBuild(): GradleBuildResult {
-        val result = project.executor()
-            // Disabled as the test project depends on Androidx vector drawables
-            .with(BooleanOption.ENFORCE_UNIQUE_PACKAGE_NAMES, false)
-            .run(APP_COMPILE_TASK)
+        val result = project.executor().run(APP_COMPILE_TASK)
         recordChangedFiles()
         return result
     }
