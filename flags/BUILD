@@ -10,6 +10,7 @@ iml_module(
     test_deps = [
         "//tools/adt/idea/.idea/libraries:junit4",
         "//tools/adt/idea/.idea/libraries:truth",
+        "//tools/adt/idea/.idea/libraries:kotlin-test",
     ],
     test_srcs = ["src/test/java"],
     visibility = ["//visibility:public"],

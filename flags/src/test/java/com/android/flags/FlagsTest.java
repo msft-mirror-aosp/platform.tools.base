@@ -21,9 +21,13 @@ import static com.google.common.truth.Truth.assertThat;
 import com.android.flags.overrides.InMemoryFlagValueContainer;
 import com.android.flags.overrides.PropertyOverrides;
 
+import com.google.common.collect.ImmutableList;
+
+import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.util.List;
 import java.util.Properties;
 
 public class FlagsTest {
@@ -37,6 +41,42 @@ public class FlagsTest {
         DOTLESS_ı
     }
 
+    private record CustomValue(String content) {}
+
+    private static CustomValue customValue(String content) {
+        return new CustomValue(content);
+    }
+
+    private static class CustomValueFlag extends CustomTypeFlag<CustomValue> {
+        CustomValueFlag(
+                FlagGroup group,
+                String name,
+                String displayName,
+                String description,
+                CustomValue defaultValue,
+                List<CustomValue> examples) {
+            super(
+                    CustomValue.class,
+                    group,
+                    name,
+                    displayName,
+                    description,
+                    defaultValue,
+                    new Flag.ValueConverter<>() {
+                        @Override
+                        public @NotNull String serialize(CustomValue value) {
+                            return value.content;
+                        }
+
+                        @Override
+                        public CustomValue deserialize(@NotNull String strValue) {
+                            return new CustomValue(strValue);
+                        }
+                    },
+                    examples);
+        }
+    }
+
     @Test
     public void propertiesCanOverrideFlagValues() throws Exception {
         Properties properties = new Properties();
@@ -44,6 +84,7 @@ public class FlagsTest {
         properties.setProperty("test.bool", "true");
         properties.setProperty("test.str", "Property override");
         properties.setProperty("test.enum", "bar");
+        properties.setProperty("test.custom", "baz");
 
         PropertyOverrides propertyOverrides = new PropertyOverrides(properties);
         Flags flags = new Flags(propertyOverrides);
@@ -54,11 +95,20 @@ public class FlagsTest {
         Flag<String> flagStr = new StringFlag(group, "str", "Unused", "Unused", "Default value");
         Flag<TestingEnum> flagEnum =
                 new EnumFlag(group, "enum", "Unused", "Unused", TestingEnum.FOO);
+        Flag<CustomValue> flagCustom =
+                new CustomValueFlag(
+                        group,
+                        "custom",
+                        "Unused",
+                        "Unused",
+                        customValue("foo"),
+                        ImmutableList.of());
 
         assertThat(flagInt.get()).isEqualTo(123);
         assertThat(flagBool.get()).isEqualTo(true);
         assertThat(flagStr.get()).isEqualTo("Property override");
         assertThat(flagEnum.get()).isEqualTo(TestingEnum.BAR);
+        assertThat(flagCustom.get()).isEqualTo(customValue("baz"));
     }
 
     @Test
@@ -72,26 +122,38 @@ public class FlagsTest {
         Flag<String> flagStr = new StringFlag(group, "str", "Unused", "Unused", "Default value");
         Flag<TestingEnum> flagEnum =
                 new EnumFlag(group, "enum", "Unused", "Unused", TestingEnum.FOO);
+        Flag<CustomValue> flagCustom =
+                new CustomValueFlag(
+                        group,
+                        "custom",
+                        "Unused",
+                        "Unused",
+                        customValue("foo"),
+                        ImmutableList.of());
 
         flags.getUserOverrides().put(flagInt, "456");
         flags.getUserOverrides().put(flagBool, "true");
         flags.getUserOverrides().put(flagStr, "Manual override");
         flags.getUserOverrides().put(flagEnum, "bar");
+        flags.getUserOverrides().put(flagCustom, "baz");
 
         assertThat(flagInt.get()).isEqualTo(456);
         assertThat(flagBool.get()).isEqualTo(true);
         assertThat(flagStr.get()).isEqualTo("Manual override");
         assertThat(flagEnum.get()).isEqualTo(TestingEnum.BAR);
+        assertThat(flagCustom.get()).isEqualTo(customValue("baz"));
 
         flags.getUserOverrides().remove(flagInt);
         flags.getUserOverrides().remove(flagBool);
         flags.getUserOverrides().remove(flagStr);
         flags.getUserOverrides().remove(flagEnum);
+        flags.getUserOverrides().remove(flagCustom);
 
         assertThat(flagInt.get()).isEqualTo(10);
         assertThat(flagBool.get()).isEqualTo(false);
         assertThat(flagStr.get()).isEqualTo("Default value");
         assertThat(flagEnum.get()).isEqualTo(TestingEnum.FOO);
+        assertThat(flagCustom.get()).isEqualTo(customValue("foo"));
     }
 
     @Test
@@ -207,7 +269,7 @@ public class FlagsTest {
             Assert.fail("Expected validation Assert.failure");
         } catch (IllegalArgumentException error) {
             assertThat(error.getLocalizedMessage())
-                    .isEqualTo("Default value cannot be deserialized.");
+                    .isEqualTo("Default value 'DOTLESS_ı' cannot be deserialized.");
         }
 
         try {
