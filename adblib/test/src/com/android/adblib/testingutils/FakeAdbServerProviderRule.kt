@@ -21,14 +21,15 @@ import com.android.adblib.SOCKET_CONNECT_TIMEOUT_MS
 import org.junit.rules.ExternalResource
 import java.time.Duration
 
-/** Manages the lifecycle of a FakeAdbServerProvider */
+/**
+ * Manages the lifecycle of a FakeAdbServerProvider.
+ *
+ * @param configure An optional lambda to apply additional customization to the
+ * [FakeAdbServerProvider] after the default command handlers have been installed.
+ */
 open class FakeAdbServerProviderRule(
-    configure: (FakeAdbServerProvider.() -> FakeAdbServerProvider)? = null
+    private val configure: (FakeAdbServerProvider.() -> Unit)? = null
 ) : ExternalResource() {
-
-    private val configure: FakeAdbServerProvider.() -> FakeAdbServerProvider = configure ?: {
-        installDefaultCommandHandlers()
-    }
 
     lateinit var fakeAdb: FakeAdbServerProvider
         private set
@@ -40,7 +41,10 @@ open class FakeAdbServerProviderRule(
         private set
 
     public override fun before() {
-        fakeAdb = FakeAdbServerProvider().configure().build().start()
+        fakeAdb = FakeAdbServerProvider()
+            .installDefaultCommandHandlers()
+            .apply { configure?.invoke(this) }
+            .build().start()
         host = TestingAdbSessionHost()
         adbSession = createTestAdbSession(host)
     }

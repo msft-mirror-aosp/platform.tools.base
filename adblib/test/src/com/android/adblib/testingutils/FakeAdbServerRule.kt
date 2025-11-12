@@ -27,24 +27,22 @@ import org.junit.rules.ExternalResource
 /**
  * This rule sets up `com.android.fakeadbserver.FakeAdbServer`.
  *
- * @param configure An optional lambda to customize the [FakeAdbServer]
- * before it is built and started. If not provided, it defaults to installing
- * the default command handlers.
+ * @param configure An optional lambda to apply additional customization to the
+ * [FakeAdbServer] after the default command handlers have been installed.
  */
 open class FakeAdbServerRule(
-    configure: (FakeAdbServer.Builder.() -> FakeAdbServer.Builder)? = null
+    private val configure: (FakeAdbServer.Builder.() -> Unit)? = null
 ) : ExternalResource(), FakeDeviceCreator {
 
     lateinit var adbServer: FakeAdbServer
         private set
 
-    private val configure: FakeAdbServer.Builder.() -> FakeAdbServer.Builder = configure ?: {
-        // TODO: make installDefaultCommandHandlers always installed by FakeAdbServer
-        installDefaultCommandHandlers()
-    }
-
     public override fun before() {
-        adbServer = FakeAdbServer.Builder().configure().build().also { it.start() }
+        adbServer = FakeAdbServer.Builder()
+            .installDefaultCommandHandlers()
+            .apply { configure?.invoke(this) }
+            .build()
+            .also { it.start() }
     }
 
     override fun after() {

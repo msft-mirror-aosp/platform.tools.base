@@ -23,9 +23,8 @@ import com.android.sdklib.deviceprovisioner.DeviceProvisioner
 import com.android.sdklib.deviceprovisioner.EmptyIcon
 
 /** A [FakeAdbServerProviderRule] that also provides a [DeviceProvisioner] */
-class DeviceProvisionerRule(
-  configure: (FakeAdbServerProvider.() -> FakeAdbServerProvider)? = null
-) : FakeAdbServerProviderRule(configure) {
+class DeviceProvisionerRule(configure: (FakeAdbServerProvider.() -> Unit)? = null) :
+  FakeAdbServerProviderRule(configure) {
 
   lateinit var deviceProvisioner: DeviceProvisioner
     private set
