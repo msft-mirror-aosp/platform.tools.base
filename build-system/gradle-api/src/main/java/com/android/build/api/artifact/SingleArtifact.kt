@@ -158,7 +158,6 @@ sealed class SingleArtifact<T : FileSystemLocation>(
      * The native libraries in this directory have not yet been stripped during the current build
      * (though some of them might already be stripped if they are from remote dependencies).
      */
-    @Incubating
     object MERGED_NATIVE_LIBS : SingleArtifact<Directory>(DIRECTORY)
 
     /**

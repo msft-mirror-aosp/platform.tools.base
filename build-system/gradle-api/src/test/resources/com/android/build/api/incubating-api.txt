@@ -3,8 +3,6 @@ Incubating Android Gradle Plugin API.
 ATTENTION REVIEWER: If this needs to be changed, please make sure changes
 have associated tracking issues.
 -------------------------------------------------------------------------
-https://issuetracker.google.com/328747466
-  * com.android.build.api.artifact.SingleArtifact$MERGED_NATIVE_LIBS extends com.android.build.api.artifact.SingleArtifact
 https://issuetracker.google.com/328747467
   * com.android.build.api.dsl.ExternalNativeBuild.getExperimentalProperties: java.util.Map<java.lang.String, java.lang.Object> ()
 https://issuetracker.google.com/328747468
