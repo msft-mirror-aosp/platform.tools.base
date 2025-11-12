@@ -1079,4 +1079,49 @@ src/MyRecord.java:4: Warning: This reference is unused: p1 [NoOp]
       .run()
       .expectClean()
   }
+
+  fun testNonCustomOperatorResolution() {
+    // b/459808143
+    lint()
+      .files(
+        kotlin(
+            """
+            interface State {
+              val property: Property
+            }
+
+            interface Property {
+              val p1: String?
+              val p2: String?
+            }
+
+            fun State.enabledIf(condition: (State) -> Boolean) = condition(this)
+
+            val State.foo: Boolean
+              get() =
+                s.enabledIf {
+                  it.property.p1 != null ||
+                    it.property.p2 != null
+                }
+
+            val State.bar: Boolean
+              get() =
+                s.enabledIf {
+                  it.property.p1 != null
+                  it.property.p2 != null
+                }
+          """
+          )
+          .indented()
+      )
+      .run()
+      .expect(
+        """
+src/State.kt:22: Warning: This reference is unused: it.property.p1 != null [NoOp]
+      it.property.p1 != null
+      ~~~~~~~~~~~~~~~~~~~~~~
+0 errors, 1 warning
+        """
+      )
+  }
 }
