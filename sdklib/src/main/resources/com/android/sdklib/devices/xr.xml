@@ -243,11 +243,11 @@
             </d:boot-prop>
             <d:boot-prop>
                 <d:prop-name>emulator.dev.xr.mm_to_dp</d:prop-name>
-                <d:prop-value>1.01</d:prop-value>
+                <d:prop-value>1.5</d:prop-value>
             </d:boot-prop>
             <d:boot-prop>
                 <d:prop-name>emulator.dev.xr.dp_per_meter</d:prop-name>
-                <d:prop-value>800</d:prop-value>
+                <d:prop-value>1200</d:prop-value>
             </d:boot-prop>
             <d:boot-prop>
                 <d:prop-name>emulator.dev.xr.display_modality</d:prop-name>
