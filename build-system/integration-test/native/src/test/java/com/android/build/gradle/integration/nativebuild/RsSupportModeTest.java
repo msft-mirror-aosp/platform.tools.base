@@ -41,8 +41,6 @@ public class RsSupportModeTest {
                     .setSideBySideNdkVersion(DEFAULT_NDK_SIDE_BY_SIDE_VERSION)
                     .addGradleProperties(BooleanOption.PRIVACY_SANDBOX_SDK_SUPPORT.getPropertyName() + "=false")
                     .addGradleProperties(BooleanOption.USE_ANDROID_X.getPropertyName() + "=true")
-                    // Enforcing unique package names to prevent regressions. Remove when b/116109681 fixed.
-                    .addGradleProperties(BooleanOption.ENFORCE_UNIQUE_PACKAGE_NAMES.getPropertyName() + "=true")
                     .create();
 
     @Test

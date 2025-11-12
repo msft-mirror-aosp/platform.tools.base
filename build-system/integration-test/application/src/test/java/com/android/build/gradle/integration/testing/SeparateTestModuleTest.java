@@ -38,9 +38,6 @@ public class SeparateTestModuleTest {
     @Rule
     public GradleTestProject project =
             GradleTestProject.builder().fromTestProject("separateTestModule")
-                    // Enforcing unique package names to prevent regressions. Remove when b/116109681 fixed.
-                    .addGradleProperties(
-                            BooleanOption.ENFORCE_UNIQUE_PACKAGE_NAMES.getPropertyName() + "=true")
                     .addGradleProperties(BooleanOption.USE_ANDROID_X.getPropertyName() + "=true")
                     .create();
 

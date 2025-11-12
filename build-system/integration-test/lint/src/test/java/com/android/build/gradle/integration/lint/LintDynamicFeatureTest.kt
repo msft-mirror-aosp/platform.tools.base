@@ -35,8 +35,6 @@ class LintDynamicFeatureTest {
     val project: GradleTestProject =
         GradleTestProject.builder()
             .fromTestProject("dynamicApp")
-            // Enforcing unique package names to prevent regressions. Remove when b/116109681 fixed.
-            .addGradleProperties("${BooleanOption.ENFORCE_UNIQUE_PACKAGE_NAMES.propertyName}=true")
             .addGradleProperties("${BooleanOption.PRIVACY_SANDBOX_SDK_SUPPORT.propertyName}=false")
             .create()
 

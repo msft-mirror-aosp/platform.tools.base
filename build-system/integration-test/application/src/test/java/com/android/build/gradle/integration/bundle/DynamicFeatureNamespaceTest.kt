@@ -73,9 +73,7 @@ class DynamicFeatureNamespaceTest {
     fun `app manifest should have applicationId as package`() {
         val build = rule.build
 
-        build.executor
-            .with(BooleanOption.ENFORCE_UNIQUE_PACKAGE_NAMES, true)
-            .run(":app:assembleDebug")
+        build.executor.run(":app:assembleDebug")
 
         build.androidApplication().assertApk(ApkSelector.DEBUG) {
             applicationId().isEqualTo("com.example.test")
