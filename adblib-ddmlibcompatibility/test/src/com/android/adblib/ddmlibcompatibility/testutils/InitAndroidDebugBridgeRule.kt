@@ -31,11 +31,11 @@ import org.junit.rules.ExternalResource
  */
 class InitAndroidDebugBridgeRule(
     private val alsoCreateBridge: Boolean = false,
-    private val portSuppier: () -> Int
+    private val portSupplier: () -> Int
 ) : ExternalResource() {
 
     public override fun before() {
-        AndroidDebugBridge.enableFakeAdbServerMode(portSuppier())
+        AndroidDebugBridge.enableFakeAdbServerMode(portSupplier())
         AndroidDebugBridge.init(AdbInitOptions.DEFAULT)
         if (alsoCreateBridge) {
             AndroidDebugBridge.createBridge(10, TimeUnit.SECONDS)
