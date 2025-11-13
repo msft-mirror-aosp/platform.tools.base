@@ -48,6 +48,7 @@ import com.intellij.openapi.roots.LanguageLevelProjectExtension
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.KeyedExtensionCollector
 import com.intellij.openapi.util.registry.Registry
+import com.intellij.openapi.vfs.StandardFileSystems
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.platform.syntax.psi.CommonElementTypeConverterFactory
 import com.intellij.platform.syntax.psi.ElementTypeConverterFactory
@@ -56,6 +57,7 @@ import com.intellij.pom.PomModel
 import com.intellij.pom.core.impl.PomModelImpl
 import com.intellij.pom.java.LanguageFeatureProvider
 import com.intellij.pom.tree.TreeAspect
+import com.intellij.psi.PsiManager
 import com.intellij.psi.PsiNameHelper
 import com.intellij.psi.augment.PsiAugmentProvider
 import com.intellij.psi.impl.PsiNameHelperImpl
@@ -65,6 +67,8 @@ import com.intellij.util.KeyedLazyInstance
 import java.nio.file.Path
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.collections.plus
+import kotlin.io.path.absolutePathString
+import org.jetbrains.kotlin.analysis.api.KaExperimentalApi
 import org.jetbrains.kotlin.analysis.api.KaImplementationDetail
 import org.jetbrains.kotlin.analysis.api.impl.base.util.LibraryUtils
 import org.jetbrains.kotlin.analysis.api.projectStructure.KaModule
@@ -74,6 +78,7 @@ import org.jetbrains.kotlin.analysis.decompiler.konan.KlibMetaFileType
 import org.jetbrains.kotlin.analysis.project.structure.builder.KtModuleBuilder
 import org.jetbrains.kotlin.analysis.project.structure.builder.KtModuleProviderBuilder
 import org.jetbrains.kotlin.analysis.project.structure.builder.buildKtLibraryModule
+import org.jetbrains.kotlin.analysis.project.structure.builder.buildKtScriptModule
 import org.jetbrains.kotlin.analysis.project.structure.builder.buildKtSdkModule
 import org.jetbrains.kotlin.analysis.project.structure.builder.buildKtSourceModule
 import org.jetbrains.kotlin.cli.common.CLIConfigurationKeys
@@ -91,6 +96,7 @@ import org.jetbrains.kotlin.platform.CommonPlatforms
 import org.jetbrains.kotlin.platform.has
 import org.jetbrains.kotlin.platform.jvm.JvmPlatform
 import org.jetbrains.kotlin.platform.jvm.JvmPlatforms
+import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.resolve.diagnostics.DiagnosticSuppressor
 import org.jetbrains.uast.UastContext
 import org.jetbrains.uast.UastLanguagePlugin
@@ -182,7 +188,7 @@ internal fun configureProjectEnvironment(
   )
 }
 
-@OptIn(KaImplementationDetail::class)
+@OptIn(KaImplementationDetail::class, KaExperimentalApi::class)
 internal fun configureAnalysisApiProjectStructure(
   config: UastEnvironment.Configuration
 ): KtModuleProviderBuilder.() -> Unit = {
@@ -274,30 +280,25 @@ internal fun configureAnalysisApiProjectStructure(
 
     val (scripts, nonScripts) =
       sourceFilePaths.partition(coreApplicationEnvironment.localFileSystem, VirtualFile::isKts)
-    // TODO: https://youtrack.jetbrains.com/issue/KT-62161
-    //   This must be [KtScriptModule], but until the above YT resolved
-    //   add this fake [KtSourceModule] to suppress errors from module lookup.
-    if (!scripts.isEmpty()) {
-      addModule(
-        buildKtSourceModule {
-          addModuleDependencies("Temporary module for scripts in " + m.name)
-          platform = mPlatform
-          moduleName = m.name
-          addSourcePaths(scripts)
-        }
-      )
-    }
-    /*
-    for (scriptFile in scriptFiles) {
+
+    val fs = StandardFileSystems.local()
+    val psiManager = PsiManager.getInstance(project)
+    val ktsFiles =
+      scripts.physicalFiles.mapNotNull { physicalFilePath ->
+        val virtualFile =
+          fs.findFileByPath(physicalFilePath.absolutePathString()) ?: return@mapNotNull null
+        psiManager.findFile(virtualFile) as? KtFile
+      } + scripts.virtualFiles.mapNotNull { psiManager.findFile(it) as? KtFile }
+
+    for (kts in ktsFiles) {
       addModule(
         buildKtScriptModule {
           platform = mPlatform
-          file = scriptFile
-          addModuleDependencies("Script " + scriptFile.name)
+          file = kts
+          addModuleDependencies("Script " + kts.name)
         }
       )
     }
-    */
 
     val ktModule =
       when {

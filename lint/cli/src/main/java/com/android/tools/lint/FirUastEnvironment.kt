@@ -37,6 +37,8 @@ import org.jetbrains.kotlin.compiler.plugin.CompilerPluginRegistrar
 import org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi
 import org.jetbrains.kotlin.config.CompilerConfiguration
 import org.jetbrains.kotlin.scripting.compiler.plugin.ScriptingK2CompilerPluginRegistrar
+import org.jetbrains.kotlin.scripting.compiler.plugin.definitions.CliScriptDefinitionProvider
+import org.jetbrains.kotlin.scripting.definitions.ScriptDefinitionProvider
 import org.jetbrains.uast.UastLanguagePlugin
 import org.jetbrains.uast.kotlin.BaseKotlinUastResolveProviderService
 import org.jetbrains.uast.kotlin.FirKotlinUastLanguagePlugin
@@ -140,6 +142,8 @@ private fun createAnalysisSession(
         KaResolveExtensionProvider.EP_NAME.name,
         KaResolveExtensionProvider::class.java,
       )
+      // Scripting support
+      registerProjectService(ScriptDefinitionProvider::class.java, CliScriptDefinitionProvider())
       registerProjectService(
         ClsJavaStubByVirtualFileCache::class.java,
         ClsJavaStubByVirtualFileCache(),
