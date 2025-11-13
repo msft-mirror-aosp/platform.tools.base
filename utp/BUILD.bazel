@@ -83,5 +83,7 @@ merged_zip(
     ],
     visibility = [
         "//tools/base/build-system/integration-test:__subpackages__",
+        "//tools/vendor/google/android-ndk:__subpackages__",
+        "//tools/vendor/google/lldb-integration-tests:__subpackages__",
     ],
 )
