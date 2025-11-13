@@ -2302,6 +2302,10 @@ com/android/tools/external/com-intellij/kotlin-compiler
   META-INF/js.sourcemap.kotlin_module
   META-INF/js.translator.kotlin_module
   META-INF/jvm-backend.kotlin_module
+  META-INF/kotlin-assignment-compiler-plugin.cli.kotlin_module
+  META-INF/kotlin-assignment-compiler-plugin.common.kotlin_module
+  META-INF/kotlin-assignment-compiler-plugin.k1.kotlin_module
+  META-INF/kotlin-assignment-compiler-plugin.k2.kotlin_module
   META-INF/kotlin-build-common.kotlin_module
   META-INF/kotlin-build-statistics.kotlin_module
   META-INF/kotlin-build-tools-api.kotlin_module
@@ -2670,6 +2674,11 @@ com/android/tools/external/com-intellij/kotlin-compiler
   org/jetbrains/kotlin/asJava/classes/
   org/jetbrains/kotlin/asJava/elements/
   org/jetbrains/kotlin/asJava/finder/
+  org/jetbrains/kotlin/assignment/
+  org/jetbrains/kotlin/assignment/plugin/
+  org/jetbrains/kotlin/assignment/plugin/diagnostics/
+  org/jetbrains/kotlin/assignment/plugin/k2/
+  org/jetbrains/kotlin/assignment/plugin/k2/diagnostics/
   org/jetbrains/kotlin/backend/
   org/jetbrains/kotlin/backend/common/
   org/jetbrains/kotlin/backend/common/actualizer/
