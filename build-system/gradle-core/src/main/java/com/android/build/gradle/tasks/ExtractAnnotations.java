@@ -17,6 +17,7 @@
 package com.android.build.gradle.tasks;
 
 import static com.android.SdkConstants.DOT_JAVA;
+import static com.android.SdkConstants.DOT_KT;
 import static com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactScope.EXTERNAL;
 import static com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactType.CLASSES_JAR;
 import static com.android.build.gradle.internal.publishing.AndroidArtifacts.ConsumedConfigType.COMPILE_CLASSPATH;
@@ -433,7 +434,8 @@ public abstract class ExtractAnnotations extends NonIncrementalTask {
         public void visitFile(FileVisitDetails details) {
             File file = details.getFile();
             String path = file.getPath();
-            if (path.endsWith(DOT_JAVA) && !path.contains(BUILD_GENERATED)) {
+            if ((path.endsWith(DOT_JAVA) || path.endsWith(DOT_KT))
+                    && !path.contains(BUILD_GENERATED)) {
                 // Infer the source roots. These are available as relative paths
                 // on the file visit details.
                 if (!path.startsWith(mostRecentRoot)) {
