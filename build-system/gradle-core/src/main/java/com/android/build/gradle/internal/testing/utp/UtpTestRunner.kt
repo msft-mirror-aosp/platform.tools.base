@@ -30,7 +30,6 @@ import com.google.common.collect.ImmutableList
 import org.gradle.api.model.ObjectFactory
 import org.gradle.workers.WorkerExecutor
 import java.io.File
-import java.util.logging.Level
 
 /**
  * Runs Android Instrumentation tests using UTP (Unified Test Platform).
@@ -40,14 +39,12 @@ class UtpTestRunner(
         private val workerExecutor: WorkerExecutor,
         private val objectFactory: ObjectFactory,
         executor: ExecutorServiceAdapter,
-        private val utpJvmExecutable: File,
         private val utpDependencies: UtpDependencies,
         private val versionedSdkLoader: SdkComponentsBuildService.VersionedSdkLoader,
         private val emulatorControlConfig: EmulatorControlConfig,
         private val useOrchestrator: Boolean,
         private val forceCompilation: Boolean,
         private val uninstallIncompatibleApks: Boolean,
-        private val utpLoggingLevel: Level,
         private val installApkTimeout: Int?,
         private val targetIsSplitApk: Boolean,
         private val uninstallApksAfterTest: Boolean,
@@ -111,14 +108,12 @@ class UtpTestRunner(
                     uninstallApksAfterTest,
                     reinstallIncompatibleApksBeforeTest = false,
                     shardConfig = null,
-                    utpLoggingLevel,
                 )
             }.toList()
 
         return runUtpTestSuiteAndWait(
             runnerConfigs,
             workerExecutor,
-            utpJvmExecutable,
             projectName,
             variantName,
             resultsDir,
