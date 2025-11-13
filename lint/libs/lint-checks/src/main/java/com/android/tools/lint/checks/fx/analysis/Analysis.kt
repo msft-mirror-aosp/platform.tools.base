@@ -1258,7 +1258,7 @@ internal open class Analysis<FX : Any>(
           pure(Type.Sym.Fix(instBaseCases, instIndCases as PersistentSet<Type.Sym.Invoke<FX>>))
         }
         else -> {
-          tailrec fun fix(t0: Type<FX>, fx0: Instantiation<FX>): InstAns<FX> {
+          fun fix(t0: Type<FX>, fx0: Instantiation<FX>): InstAns<FX> {
             val (t1, fx1) = instIndCases.joinedOver(instantiationLattice) { it.substAndInvoke(t0) }
             val tN = typeLattice.widen(t0, t1)
             val fxN = fxInstantiationLattice.widen(fx0, fx1)
