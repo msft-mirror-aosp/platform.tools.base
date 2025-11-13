@@ -274,7 +274,7 @@
             "version": "1.0"
           },
           "artifact": {
-            "absolutePath": "{GRADLE_CACHE}/{MODULES_2}/{LIBRARY_COORDINATES}/{CHECKSUM}/kmpSecondLib.aar"
+            "absolutePath": "{GRADLE_CACHE}/{MODULES_2}/com.example/kmpSecondLib-android/1.0/{CHECKSUM}/kmpSecondLib.aar"
           },
           "androidLibraryData": {
             "manifest": {
@@ -327,10 +327,7 @@
             }
           ]
         }
-      },
-      "org.jetbrains.kotlin.gradle.idea.tcs.IdeaKotlinClasspath;sourcesClasspath": [
-        "{INCLUDED_BUILD(:kotlinMultiplatform)}/testRepo/com/example/kmpSecondLib-android/1.0/kmpSecondLib-android-1.0-sources.jar"
-      ]
+      }
     }
   },
   {
@@ -361,10 +358,7 @@
     },
     "extras": {
       "org.gradle.api.artifacts.result.ResolvedArtifactResult;gradleArtifact": "kmpJvmOnly-jvm-1.0.jar -\u003e kmpJvmOnly-jvm-1.0.jar (com.example:kmpJvmOnly-jvm:1.0)",
-      "org.jetbrains.kotlin.gradle.plugin.ide.IdeDependencyResolver;resolvedBy": "org.jetbrains.kotlin.gradle.plugin.ide.dependencyResolvers.IdeBinaryDependencyResolver",
-      "org.jetbrains.kotlin.gradle.idea.tcs.IdeaKotlinClasspath;sourcesClasspath": [
-        "{INCLUDED_BUILD(:kotlinMultiplatform)}/testRepo/com/example/kmpJvmOnly-jvm/1.0/kmpJvmOnly-jvm-1.0-sources.jar"
-      ]
+      "org.jetbrains.kotlin.gradle.plugin.ide.IdeDependencyResolver;resolvedBy": "org.jetbrains.kotlin.gradle.plugin.ide.dependencyResolvers.IdeBinaryDependencyResolver"
     }
   },
   {
@@ -424,10 +418,7 @@
     },
     "extras": {
       "org.gradle.api.artifacts.result.ResolvedArtifactResult;gradleArtifact": "guava-19.0.jar -\u003e guava-19.0.jar (com.google.guava:guava:19.0)",
-      "org.jetbrains.kotlin.gradle.plugin.ide.IdeDependencyResolver;resolvedBy": "org.jetbrains.kotlin.gradle.plugin.ide.dependencyResolvers.IdeBinaryDependencyResolver",
-      "org.jetbrains.kotlin.gradle.idea.tcs.IdeaKotlinClasspath;sourcesClasspath": [
-        "{LOCAL_REPO}/com/google/guava/guava/19.0/guava-19.0-sources.jar"
-      ]
+      "org.jetbrains.kotlin.gradle.plugin.ide.IdeDependencyResolver;resolvedBy": "org.jetbrains.kotlin.gradle.plugin.ide.dependencyResolvers.IdeBinaryDependencyResolver"
     }
   },
   {
@@ -456,10 +447,7 @@
     },
     "extras": {
       "org.gradle.api.artifacts.result.ResolvedArtifactResult;gradleArtifact": "annotations-13.0.jar -\u003e annotations-13.0.jar (org.jetbrains:annotations:13.0)",
-      "org.jetbrains.kotlin.gradle.plugin.ide.IdeDependencyResolver;resolvedBy": "org.jetbrains.kotlin.gradle.plugin.ide.dependencyResolvers.IdeBinaryDependencyResolver",
-      "org.jetbrains.kotlin.gradle.idea.tcs.IdeaKotlinClasspath;sourcesClasspath": [
-        "{LOCAL_REPO}/org/jetbrains/annotations/13.0/annotations-13.0-sources.jar"
-      ]
+      "org.jetbrains.kotlin.gradle.plugin.ide.IdeDependencyResolver;resolvedBy": "org.jetbrains.kotlin.gradle.plugin.ide.dependencyResolvers.IdeBinaryDependencyResolver"
     }
   },
   {
@@ -488,10 +476,7 @@
     },
     "extras": {
       "org.gradle.api.artifacts.result.ResolvedArtifactResult;gradleArtifact": "junit-4.13.2.jar -\u003e junit-4.13.2.jar (junit:junit:4.13.2)",
-      "org.jetbrains.kotlin.gradle.plugin.ide.IdeDependencyResolver;resolvedBy": "org.jetbrains.kotlin.gradle.plugin.ide.dependencyResolvers.IdeBinaryDependencyResolver",
-      "org.jetbrains.kotlin.gradle.idea.tcs.IdeaKotlinClasspath;sourcesClasspath": [
-        "{LOCAL_REPO}/junit/junit/4.13.2/junit-4.13.2-sources.jar"
-      ]
+      "org.jetbrains.kotlin.gradle.plugin.ide.IdeDependencyResolver;resolvedBy": "org.jetbrains.kotlin.gradle.plugin.ide.dependencyResolvers.IdeBinaryDependencyResolver"
     }
   },
   {
@@ -520,10 +505,7 @@
     },
     "extras": {
       "org.gradle.api.artifacts.result.ResolvedArtifactResult;gradleArtifact": "hamcrest-core-1.3.jar -\u003e hamcrest-core-1.3.jar (org.hamcrest:hamcrest-core:1.3)",
-      "org.jetbrains.kotlin.gradle.plugin.ide.IdeDependencyResolver;resolvedBy": "org.jetbrains.kotlin.gradle.plugin.ide.dependencyResolvers.IdeBinaryDependencyResolver",
-      "org.jetbrains.kotlin.gradle.idea.tcs.IdeaKotlinClasspath;sourcesClasspath": [
-        "{LOCAL_REPO}/org/hamcrest/hamcrest-core/1.3/hamcrest-core-1.3-sources.jar"
-      ]
+      "org.jetbrains.kotlin.gradle.plugin.ide.IdeDependencyResolver;resolvedBy": "org.jetbrains.kotlin.gradle.plugin.ide.dependencyResolvers.IdeBinaryDependencyResolver"
     }
   },
   {
@@ -756,7 +738,7 @@
             "version": "1.0"
           },
           "artifact": {
-            "absolutePath": "{GRADLE_CACHE}/{MODULES_2}/{LIBRARY_COORDINATES}/{CHECKSUM}/kmpSecondLib.aar"
+            "absolutePath": "{GRADLE_CACHE}/{MODULES_2}/com.example/kmpSecondLib-android/1.0/{CHECKSUM}/kmpSecondLib.aar"
           },
           "androidLibraryData": {
             "manifest": {
@@ -894,7 +876,7 @@
             "version": "1.0"
           },
           "artifact": {
-            "absolutePath": "{GRADLE}/caches/modules-2/files-2.1/com.example/kmpLibraryPlugin-android/1.0/c7b9fe98c4aeffe5d326676fbdc578222f832b9c/kmpLibraryPlugin-release.aar"
+            "absolutePath": "{GRADLE_CACHE}/{MODULES_2}/com.example/kmpLibraryPlugin-android/1.0/{CHECKSUM}/kmpLibraryPlugin-release.aar"
           },
           "androidLibraryData": {
             "manifest": {

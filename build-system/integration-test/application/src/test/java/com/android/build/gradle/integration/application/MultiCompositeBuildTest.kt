@@ -18,7 +18,6 @@ package com.android.build.gradle.integration.application
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.model.ModelComparator
-import com.android.build.gradle.integration.common.utils.disableBuiltInKotlin
 import com.google.common.truth.Truth.assertThat
 import org.junit.Rule
 import org.junit.Test
@@ -87,7 +86,7 @@ class MultiCompositeBuildTest: ModelComparator() {
             .getSubproject("TestCompositeLib1")
             .modelV2()
             .withFailOnWarning(false)
-            .fetchModels(variantName = "debug")
+            .fetchModels(variantName = "prodDebug")
 
         val rootModelMap = model.container.rootInfoMap
         assertThat(rootModelMap.entries).hasSize(2)

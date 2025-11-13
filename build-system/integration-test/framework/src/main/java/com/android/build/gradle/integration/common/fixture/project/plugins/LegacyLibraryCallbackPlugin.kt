@@ -58,4 +58,7 @@ interface LegacyLibraryCallback: PluginCallback {
         project: Project,
         extension: LibraryExtension
     )
+
+    override val requiresOldVariantApi: Boolean
+        get() = true
 }

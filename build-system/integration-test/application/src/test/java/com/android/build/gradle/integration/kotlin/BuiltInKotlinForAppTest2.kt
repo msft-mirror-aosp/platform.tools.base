@@ -23,8 +23,8 @@ import com.android.build.gradle.integration.common.fixture.project.builder.Andro
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
 import com.android.build.gradle.integration.common.fixture.project.plugins.ApplicationComponentCallback
 import com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
-import com.android.build.gradle.integration.common.utils.disableBuiltInKotlin
 import com.android.build.gradle.internal.scope.InternalArtifactType
+import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.truth.PathSubject
 import org.gradle.api.Project
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
@@ -32,6 +32,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.junit.Rule
 import org.junit.Test
 
+@Suppress("DEPRECATION")
 class BuiltInKotlinForAppTest2 {
 
     @get:Rule
@@ -70,7 +71,10 @@ class BuiltInKotlinForAppTest2 {
                         val l = com.foo.library.LibFoo()
                     """.trimIndent())
             }
-            disableBuiltInKotlin()
+            gradleProperties {
+                add(BooleanOption.BUILT_IN_KOTLIN, false)
+                add(BooleanOption.USE_NEW_DSL, false)
+            }
         }
 
         build.executor.run(":app:assembleDebug")
@@ -171,17 +175,15 @@ class BuiltInKotlinForAppTest2 {
                     )
                 }
                 // Add the custom source directories to the source sets.
-                kotlin {
-                    sourceSets {
-                        create("main") {
-                            it.kotlin.srcDir("src/fooMain/kotlin")
-                        }
-                        create("debug") {
-                            it.kotlin.srcDir("src/fooDebug/kotlin")
-                        }
-                        create("androidTest") {
-                            it.kotlin.srcDir("src/fooAndroidTest/kotlin")
-                        }
+                android {
+                    sourceSets.named("main") {
+                        it.kotlin.directories += "src/fooMain/kotlin"
+                    }
+                    sourceSets.named("debug") {
+                        it.kotlin.directories += "src/fooDebug/kotlin"
+                    }
+                    sourceSets.named("androidTest") {
+                        it.kotlin.directories += "src/fooAndroidTest/kotlin"
                     }
                 }
             }

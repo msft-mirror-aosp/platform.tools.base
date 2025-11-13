@@ -17,17 +17,30 @@
 package com.android.build.api.extension.impl
 
 import org.gradle.api.Action
+import java.util.concurrent.atomic.AtomicBoolean
 
 open class DslLifecycleComponentsOperationsRegistrar<T>(
         private val extension: T,
 ) {
     private val dslFinalizationOperations = mutableListOf<Action<T>>()
+    private val finalizationOperationsExecuted = AtomicBoolean(false)
 
+    @Synchronized
     fun add(action: Action<T>) {
+        if (finalizationOperationsExecuted.get()) {
+            throw RuntimeException(
+                """It is too late to call `finalizeDsl` as the DSL finalization
+                    |blocks have already been executed.\n
+                    |In particular, you cannot call `finalizeDsl` within the `beforeVariants` or `onVariants` blocks.
+                    |Instead, you must call `finalizeDsl` directly within the `androidComponents` block""".trimMargin()
+            )
+        }
         dslFinalizationOperations.add(action)
     }
 
+    @Synchronized
     fun executeDslFinalizationBlocks() {
+        finalizationOperationsExecuted.set(true)
         dslFinalizationOperations.forEach { it.execute(extension) }
     }
 }

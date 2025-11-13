@@ -21,6 +21,8 @@ import com.android.sdklib.ISystemImage
 import com.android.sdklib.devices.Device
 import com.android.sdklib.devices.DeviceManager
 import com.android.sdklib.devices.Storage
+import com.android.sdklib.internal.avd.AvdManager.Companion.USER_SETTINGS_INI
+import com.android.utils.ILogger
 import java.nio.file.Path
 import kotlin.io.path.extension
 import kotlin.io.path.name
@@ -128,6 +130,9 @@ class AvdBuilder(var metadataIniPath: Path, avdFolder: Path, var device: Device)
     properties[ConfigKey.GPU_EMULATION] = if (gpuMode == GpuMode.OFF) "no" else "yes"
     properties[ConfigKey.AVD_ID] = avdName
     properties.putAll(bootMode.properties())
+    if (environment != null) {
+      properties[ConfigKey.LCD_TRANSPARENT] = "yes"
+    }
     binding.write(this, properties)
     return properties
   }
@@ -214,6 +219,20 @@ class AvdBuilder(var metadataIniPath: Path, avdFolder: Path, var device: Device)
         userSettings.putAll(avdInfo.userSettings)
         userSettings.remove(ConfigKey.ENCODING)
       }
+    }
+
+    /**
+     * Updates the user-settings.ini of an AVD; this is simpler than updating the entire AVD. The
+     * supplied properties will be merged with the existing properties. A property can be cleared by
+     * setting its key to null in [userSettings].
+     */
+    fun updateUserSettings(avdFolder: Path, userSettings: Map<String, String?>, logger: ILogger) {
+      val currentSettings = AvdInfo.parseUserSettingsFile(avdFolder, logger)
+      writeIniFile(
+        iniFile = avdFolder.resolve(USER_SETTINGS_INI),
+        values = currentSettings + userSettings,
+        addEncoding = true,
+      )
     }
   }
 }

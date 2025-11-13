@@ -29,13 +29,16 @@ import com.android.build.gradle.internal.tasks.BuildAnalyzer
 import com.android.build.gradle.internal.tasks.GlobalTask
 import com.android.build.gradle.internal.tasks.NonIncrementalGlobalTask
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationAction
-import com.android.build.gradle.internal.tasks.factory.TaskCreationAction
 import com.android.buildanalyzer.common.TaskCategory
 import com.android.builder.packaging.JarFlinger
+import java.io.File
+import org.gradle.api.Action
 import org.gradle.api.file.ConfigurableFileCollection
+import org.gradle.api.file.CopySpec
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.RegularFile
 import org.gradle.api.file.RegularFileProperty
+import org.gradle.api.internal.file.copy.DefaultCopySpec
 import org.gradle.api.tasks.Classpath
 import org.gradle.api.tasks.InputDirectory
 import org.gradle.api.tasks.InputFiles
@@ -44,6 +47,7 @@ import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.api.tasks.bundling.Jar
+import org.gradle.api.tasks.Optional
 import org.gradle.work.DisableCachingByDefault
 
 @DisableCachingByDefault(because = "Task does not calculate anything, only creates a jar.")
@@ -109,12 +113,13 @@ abstract class FusedLibraryBundleAar: FusedLibraryBundle() {
             task.destinationDirectory.set(
                 creationConfig.projectLayout.buildDirectory.dir("$FD_OUTPUTS/$EXT_AAR"))
             task.archiveFileName.set("${task.project.name}${SdkConstants.DOT_AAR}")
+            task.includeEmptyDirs = false
+
             task.from(
                 creationConfig.artifacts.get(FusedLibraryInternalArtifactType.CLASSES_JAR),
                 creationConfig.artifacts.get(FusedLibraryInternalArtifactType.LINT_JAR),
                 creationConfig.artifacts.get(FusedLibraryInternalArtifactType.MERGED_MANIFEST),
                 creationConfig.artifacts.get(FusedLibraryInternalArtifactType.MERGED_RES),
-
                 creationConfig.artifacts.get(FusedLibraryInternalArtifactType.MERGED_AIDL),
                 creationConfig.artifacts.get(FusedLibraryInternalArtifactType.MERGED_CONSUMER_PROGUARD_RULES),
                 creationConfig.artifacts.get(FusedLibraryInternalArtifactType.MERGED_RENDERSCRIPT_HEADERS),
@@ -122,8 +127,7 @@ abstract class FusedLibraryBundleAar: FusedLibraryBundle() {
                 creationConfig.artifacts.get(FusedLibraryInternalArtifactType.MERGED_PREFAB_PACKAGE_CONFIGURATION),
                 creationConfig.artifacts.get(FusedLibraryInternalArtifactType.MERGED_JNI),
                 creationConfig.artifacts.get(FusedLibraryInternalArtifactType.MERGED_NAVIGATION_JSON),
-
-                creationConfig.artifacts.get(FusedLibraryInternalArtifactType.COMPILE_SYMBOL_LIST),
+                creationConfig.artifacts.get(FusedLibraryInternalArtifactType.COMPILE_SYMBOL_LIST)
             )
 
             task.from(creationConfig.artifacts.get(FusedLibraryInternalArtifactType.MERGED_AAR_METADATA)) {
@@ -151,10 +155,14 @@ abstract class FusedLibraryBundleClasses: NonIncrementalGlobalTask() {
     @get:Classpath
     abstract val include: ConfigurableFileCollection
 
+    @get:Optional
     @get:OutputFile
     abstract val jar: RegularFileProperty
 
     override fun doTaskAction() {
+        if (include.asFileTree.none(File::isFile)) {
+            return
+        }
         JarFlinger(jar.get().asFile.toPath()).use { jarFlinger ->
             for (artifact in include) {
                 when {

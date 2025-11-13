@@ -21,12 +21,15 @@ import static com.android.testutils.truth.PathSubject.assertThat;
 import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor;
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.connected.utils.EmulatorUtils;
-import java.io.IOException;
+import com.android.build.gradle.options.BooleanOption;
+
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExternalResource;
+
+import java.io.IOException;
 
 /** Connected test for kotlinApp */
 public class KotlinAppConnectedTest {
@@ -55,6 +58,8 @@ public class KotlinAppConnectedTest {
         project.executor()
                 .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
                 .withArgument("-Dorg.gradle.unsafe.configuration-cache.max-problems=10000")
+                // TODO(b/439843451) - Opt back into `android.enableAppCompileTimeRClass`
+                .with(BooleanOption.ENABLE_APP_COMPILE_TIME_R_CLASS, false)
                 .run("connectedAndroidTest");
 
         String testReportPath =

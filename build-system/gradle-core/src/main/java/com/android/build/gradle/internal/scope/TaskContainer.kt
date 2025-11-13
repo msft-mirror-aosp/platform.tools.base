@@ -36,7 +36,7 @@ import org.gradle.api.tasks.bundling.Zip
 import org.gradle.api.tasks.compile.JavaCompile
 
 /**
- * Task container for the tasks needed by the Variant API.
+ * Task container for the tasks needed by the Old Variant API.
  */
 interface TaskContainer {
 

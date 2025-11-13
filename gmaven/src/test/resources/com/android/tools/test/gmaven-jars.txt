@@ -111,6 +111,7 @@ com/android/tools/adblib/adblib-tools
   com/android/
   com/android/adblib/
   com/android/adblib/tools/
+  com/android/adblib/tools/aiglasses/
   com/android/adblib/tools/debugging/
   com/android/adblib/tools/debugging/impl/
   com/android/adblib/tools/debugging/packets/
@@ -524,6 +525,7 @@ com/android/tools/build/gradle
   com/android/build/gradle/internal/core/dsl/impl/
   com/android/build/gradle/internal/core/dsl/impl/features/
   com/android/build/gradle/internal/coverage/
+  com/android/build/gradle/internal/coverage/report/
   com/android/build/gradle/internal/crash/
   com/android/build/gradle/internal/cxx/
   com/android/build/gradle/internal/cxx/attribution/
@@ -586,6 +588,7 @@ com/android/tools/build/gradle
   com/android/build/gradle/internal/services/
   com/android/build/gradle/internal/signing/
   com/android/build/gradle/internal/tasks/
+  com/android/build/gradle/internal/tasks/creationconfig/
   com/android/build/gradle/internal/tasks/databinding/
   com/android/build/gradle/internal/tasks/device_targeting_config_schema.xsd
   com/android/build/gradle/internal/tasks/factory/
@@ -3561,6 +3564,7 @@ com/android/tools/sdk-common
   com/android/ide/common/internal/
   com/android/ide/common/pagealign/
   com/android/ide/common/process/
+  com/android/ide/common/r8/
   com/android/ide/common/rendering/
   com/android/ide/common/repository/
   com/android/ide/common/resources/
@@ -4526,6 +4530,31 @@ com/android/tools/utp/android-test-plugin-result-listener-gradle-proto
   com/android/tools/utp/plugins/result/listener/gradle/proto/
   gradle_android_test_result_listener.proto
   gradle_android_test_result_listener_config.proto
+
+com/android/tools/utp/gradle-work-action
+  META-INF/
+  META-INF/MANIFEST.MF
+  META-INF/gradle-work-action.kotlin_module
+  META-INF/services/
+  META-INF/services/com.android.tools.utp.gradle.api.UtpAction
+  NOTICE
+  com/
+  com/android/
+  com/android/tools/
+  com/android/tools/utp/
+  com/android/tools/utp/gradle/
+
+com/android/tools/utp/gradle-work-action-api
+  META-INF/
+  META-INF/MANIFEST.MF
+  META-INF/gradle-work-action-api.kotlin_module
+  NOTICE
+  com/
+  com/android/
+  com/android/tools/
+  com/android/tools/utp/
+  com/android/tools/utp/gradle/
+  com/android/tools/utp/gradle/api/
 
 com/android/tools/utp/utp-common
   META-INF/

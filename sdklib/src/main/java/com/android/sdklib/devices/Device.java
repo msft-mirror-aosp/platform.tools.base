@@ -17,6 +17,7 @@
 package com.android.sdklib.devices;
 
 import static com.android.sdklib.SystemImageTags.AI_GLASSES_TAG;
+import static com.android.sdklib.SystemImageTags.DEPRECATED_AI_GLASSES_TAG;
 import static com.android.sdklib.SystemImageTags.XR_HEADSET_TAG;
 
 import com.android.annotations.NonNull;
@@ -714,7 +715,10 @@ public final class Device {
 
     /** Whether the given device is an AI Glasses device */
     public static boolean isAiGlasses(@Nullable Device device) {
-        return AI_GLASSES_TAG.getId().equals(device != null ? device.getTagId() : null);
+        return AI_GLASSES_TAG.getId().equals(device != null ? device.getTagId() : null)
+                || DEPRECATED_AI_GLASSES_TAG
+                        .getId()
+                        .equals(device != null ? device.getTagId() : null);
     }
 
     /** Whether the given device is an XR Glasses device */

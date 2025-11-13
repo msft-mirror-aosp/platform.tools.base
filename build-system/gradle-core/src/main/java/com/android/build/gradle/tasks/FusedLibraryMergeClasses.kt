@@ -126,33 +126,4 @@ abstract class FusedLibraryMergeClasses: NonIncrementalGlobalTask() {
             task.includeManifest.setDisallowChanges(includeManifest)
         }
     }
-
-    internal class PrivacySandboxSdkCreationAction(val creationConfig: PrivacySandboxSdkVariantScope) :
-            GlobalTaskCreationAction<FusedLibraryMergeClasses>() {
-        override val name: String
-            get() = "mergeClasses"
-        override val type: Class<FusedLibraryMergeClasses>
-            get() = FusedLibraryMergeClasses::class.java
-
-        override fun handleProvider(taskProvider: TaskProvider<FusedLibraryMergeClasses>) {
-            super.handleProvider(taskProvider)
-            creationConfig.artifacts.setInitialProvider(
-                    taskProvider,
-                    FusedLibraryMergeClasses::outputDirectory
-            ).on(FusedLibraryInternalArtifactType.MERGED_CLASSES)
-        }
-
-        override fun configure(task: FusedLibraryMergeClasses) {
-            super.configure(task)
-            task.incoming.from(
-                    creationConfig.dependencies.getArtifactFileCollection(
-                            AndroidArtifacts.ConsumedConfigType.RUNTIME_CLASSPATH,
-                            AndroidArtifacts.ArtifactType.CLASSES_JAR)
-            )
-            task.incoming.from(creationConfig.artifacts.get(PrivacySandboxSdkInternalArtifactType.RUNTIME_R_CLASS))
-            task.incoming.disallowChanges()
-
-            task.includeManifest.setDisallowChanges(false)
-        }
-    }
 }

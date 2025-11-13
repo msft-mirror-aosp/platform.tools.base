@@ -19,6 +19,7 @@ package com.android.build.gradle.integration.api
 import com.android.build.api.dsl.LibraryExtension
 import com.android.build.api.variant.LibraryAndroidComponentsExtension
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
+import com.android.build.gradle.integration.common.fixture.project.plugins.GenericCallback
 import com.android.build.gradle.integration.common.fixture.project.plugins.LibraryComponentCallback
 import com.android.build.gradle.options.BooleanOption
 import org.gradle.api.Project
@@ -32,7 +33,7 @@ import org.junit.Test
 class NewDslImplementationSmokeTest {
 
     @get:Rule
-    val rule = GradleRule.configure().from {
+    val rule = GradleRule.from {
         androidApplication { }
         androidLibrary { }
         androidFeature { }
@@ -47,15 +48,13 @@ class NewDslImplementationSmokeTest {
     @Test
     fun smokeTest() {
         rule.build.executor
-            .with(BooleanOption.USE_NEW_DSL, true)
             .run(":app:tasks", ":lib:tasks", ":feature:tasks", ":test:tasks")
     }
 }
 
-class CheckDslAccessibility: LibraryComponentCallback {
-    override fun handleExtension(
+class CheckDslAccessibility: GenericCallback {
+    override fun handleProject(
         project: Project,
-        androidComponents: LibraryAndroidComponentsExtension
     ) {
         project.extensions.getByType(LibraryExtension::class.java)
         project.extensions.checkNotRegistered(com.android.build.gradle.LibraryExtension::class.java)
@@ -80,7 +79,7 @@ class CheckDslAccessibility: LibraryComponentCallback {
 class OldDslNotRegisteredTest {
 
     @get:Rule
-    val rule = GradleRule.configure().from {
+    val rule = GradleRule.from {
         androidLibrary {
             pluginCallbacks += CheckDslAccessibility::class.java
         }
@@ -89,7 +88,6 @@ class OldDslNotRegisteredTest {
     @Test
     fun smokeTest() {
         val result = rule.build.executor
-            .with(BooleanOption.USE_NEW_DSL, true)
             .run(":lib:tasks")
         result.assertOutputContains("CheckDslAccessibility checks done")
     }

@@ -20,6 +20,7 @@ import com.android.build.gradle.integration.common.fixture.project.GradleRule.Co
 import com.android.build.gradle.integration.common.fixture.project.GradleRule.Companion.from
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinitionImpl
+import com.android.build.gradle.integration.common.fixture.project.builder.LocalTestProjectSpec
 import com.android.build.gradle.integration.common.fixture.project.options.LocalRuleOptionBuilder
 import org.junit.rules.TestRule
 import java.nio.file.Path
@@ -30,27 +31,82 @@ import java.nio.file.Path
  * Entry point to create instances via [from] and [configure]
  */
 interface GradleRule: TestRule {
-    companion object {
+    companion object : GradleRuleEntryPoint {
         /**
-         * Returns a [GradleRule] for a project configured with the [GradleBuildDefinition].
+         * Returns a [GradleRule] for a synthetic project configured with the [GradleBuildDefinition].
          *
          * To configure the rule, use [configure] instead
          *
          * @param folderName the name of the folder containing the build.
          * @param logicalName The logical name of the build in gradle. This impact the groupId information of the subprojects. if null, same as folder name
-         * @param action the action to configure the build
+         * @param configAction the action to configure the build
          */
-        fun from(
+        override fun from(
+            folderName: String,
+            logicalName: String?,
+            configAction: GradleBuildDefinition.() -> Unit
+        ): GradleRule = fromImplementation(
+            null,
+            folderName,
+            logicalName,
+            specConfigAction = null,
+            configAction
+        )
+
+        /**
+         * Returns a [GradleRule] for a project configured from both an on-disk test project and
+         * a [GradleBuildDefinition].
+         *
+         * To configure the rule, use [configure] instead
+         *
+         * @param testProjectName the name of the on-disk test project.
+         * @param folderName the name of the folder containing the build.
+         * @param logicalName The logical name of the build in gradle. This impact the groupId information of the subprojects. if null, same as folder name
+         * @param configAction the action to configure the build
+         */
+        override fun fromProject(
+            testProjectName: String,
+            folderName: String,
+            logicalName: String?,
+            configAction: GradleBuildDefinition.() -> Unit
+        ): GradleRule = fromImplementation(
+           testProjectName,
+            folderName,
+            logicalName,
+            specConfigAction = null,
+            configAction
+        )
+
+        override fun fromProject(
+            testProjectSpec: LocalTestProjectSpec,
+            folderName: String,
+            logicalName: String?,
+            configAction: (GradleBuildDefinition.() -> Unit)?
+        ): GradleRule = fromImplementation(
+            testProjectSpec.projectName,
+            folderName,
+            logicalName,
+            specConfigAction = testProjectSpec.configAction,
+            configAction
+        )
+
+        private fun fromImplementation(
+            testProjectName: String?,
             folderName: String = GradleBuildDefinition.DEFAULT_BUILD_NAME,
             logicalName: String? = null,
-            action: GradleBuildDefinition.() -> Unit
-        ): GradleRule =
-            GradleRuleBuilderImpl().create(
-                GradleBuildDefinitionImpl(
-                    name = logicalName ?: folderName, rootFolderName = folderName
-                ).also {
-                    action(it)
-                })
+            specConfigAction: (GradleBuildDefinition.() -> Unit)? = null,
+            configAction: (GradleBuildDefinition.() -> Unit)?
+        ): GradleRule = GradleRuleBuilderImpl().create(
+            GradleBuildDefinitionImpl(
+                name = logicalName ?: folderName,
+                rootFolderName = folderName,
+                enableDefaultContentCreation = testProjectName == null,
+            ).also {
+                specConfigAction?.invoke( it)
+                configAction?.invoke(it)
+            },
+            testProjectName
+        )
 
         /**
          * Returns a [GradleRuleBuilder] that can be configured before calling [GradleRuleBuilder.from]

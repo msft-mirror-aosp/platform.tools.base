@@ -32,7 +32,7 @@ import org.junit.Test
 /** Tests for [AarMetadataTask]. */
 class AarMetadataTaskTest {
     @get:Rule
-    val rule = GradleRule.from(action = HELLO_WORLD_LIBRARY)
+    val rule = GradleRule.from(configAction = HELLO_WORLD_LIBRARY)
 
     @Test
     fun testBasic() {

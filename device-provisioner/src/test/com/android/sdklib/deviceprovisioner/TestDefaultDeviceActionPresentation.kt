@@ -34,4 +34,6 @@ object TestDefaultDeviceActionPresentation : DeviceAction.DefaultPresentation {
   override val repairDeviceAction = DeviceAction.Presentation("Repair", icon, true)
   override val pairDeviceAction = DeviceAction.Presentation("Pair", icon, true)
   override val hideDeviceAction = DeviceAction.Presentation("Hide", icon, true)
+  override val pairGlassesAction = DeviceAction.Presentation("Pair Glasses", icon, true)
+  override val unpairGlassesAction = DeviceAction.Presentation("Unpair Glasses", icon, true)
 }

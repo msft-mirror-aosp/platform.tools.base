@@ -21,7 +21,6 @@ import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_APP_PATH
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_LIB_PATH
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
-import com.android.build.gradle.integration.common.utils.disableBuiltInKotlin
 import com.android.builder.model.v2.ide.SyncIssue
 import org.junit.Rule
 import org.junit.Test
@@ -31,11 +30,17 @@ class AppWithJarDependOnLibTest : ModelComparator() {
     @get:Rule
     val rule = GradleRule.from {
         androidApplication {
+            android {
+                enableKotlin = false
+            }
             dependencies {
                 api(project(":jar"))
             }
         }
         androidLibrary {
+            android {
+                enableKotlin = false
+            }
         }
         genericProject(":jar") {
             applyPlugin(PluginType.JAVA_LIBRARY)
@@ -43,7 +48,6 @@ class AppWithJarDependOnLibTest : ModelComparator() {
                 api(project(DEFAULT_LIB_PATH))
             }
         }
-        disableBuiltInKotlin()
     }
 
     @Test

@@ -66,6 +66,12 @@ interface ProductFlavor : BaseConfig, AndroidModel {
     /** The targetSdkVersion, or null if not specified. This is only the value set on this product flavor. */
     val targetSdkVersion: ApiVersion?
 
+    /**
+     * Specifies a sorted list of product flavors that the plugin should try to use when a direct
+     * variant match with a local module dependency is not possible.
+     */
+    val matchingFallbacks: List<String>
+
     /** The maxSdkVersion, or null if not specified. This is only the value set on this produce flavor. */
     val maxSdkVersion: Int?
 

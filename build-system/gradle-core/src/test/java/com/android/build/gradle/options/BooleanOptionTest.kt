@@ -20,6 +20,7 @@ import com.google.common.truth.Truth.assertWithMessage
 import org.junit.Test
 
 /** Tests for [BooleanOption]. */
+@OptIn(ExperimentalStdlibApi::class)  // For Enum.entries
 class BooleanOptionTest {
 
     @Test
@@ -55,6 +56,7 @@ class BooleanOptionTest {
         // Experimental features should have an (estimated) FutureStage -- see FutureStage's kdoc.
         // If you can't estimate a FutureStage, add it to the following ignore list.
         val ignoreList = listOf(
+            BooleanOption.KMP_USE_JVM_PLATFORM_TYPE,
             BooleanOption.DISABLE_KMP_RUNTIME_CLASSPATH,
             BooleanOption.BUILD_FEATURE_MLMODELBINDING,
             BooleanOption.ENABLE_DEFAULT_DEBUG_SIGNING_CONFIG,
@@ -155,15 +157,11 @@ class BooleanOptionTest {
 
     @Test
     fun `check softly-enforced and enforced features have default value 'true'`() {
-        val ignoreList = listOf(
-            BooleanOption.DISALLOW_USES_SDK_IN_MANIFEST
-        )
         checkViolatingProjectOptions(
             violatingOptions = BooleanOption.entries.filter {
                 (it.stage is FeatureStage.SoftlyEnforced || it.stage is FeatureStage.Enforced)
                         && !it.defaultValue
             },
-            ignoreList = ignoreList,
             requirement = "Softly-enforced and enforced features must have default value `true`."
         )
     }

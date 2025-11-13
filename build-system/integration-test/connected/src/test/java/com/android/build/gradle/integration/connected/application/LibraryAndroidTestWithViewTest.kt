@@ -136,7 +136,7 @@ class LibraryAndroidTestWithViewTest {
             files.add("src/androidTest/java/${srcPackage}/TestTestView.kt", testTestViewSrc)
         }
         gradleProperties {
-            add(BooleanOption.USE_ANDROID_X, true)
+            add(BooleanOption.DEFAULT_TARGET_SDK_TO_COMPILE_SDK_IF_UNSET, false)
         }
     }
 

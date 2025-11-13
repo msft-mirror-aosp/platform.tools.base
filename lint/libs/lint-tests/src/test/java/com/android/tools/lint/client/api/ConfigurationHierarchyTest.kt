@@ -219,6 +219,7 @@ class ConfigurationHierarchyTest : AbstractCheckTest() {
       // TODO -- remove this after fixing bug listed below
       .testModes(TestMode.PARTIAL)
       .reportFrom(main)
+      .allowManifestMergerErrors(true)
       .run()
       .expect(
         // TODO: The second entry is wrong; we're not handling *indirect* configuration
@@ -330,6 +331,7 @@ class ConfigurationHierarchyTest : AbstractCheckTest() {
       // TODO -- remove this after fixing bug listed below
       .testModes(TestMode.PARTIAL)
       .projects(main)
+      .allowManifestMergerErrors(true)
       .run()
       .expect(
         // TODO: Here the second result is wrong; somehow when computing the configuration
@@ -440,6 +442,7 @@ class ConfigurationHierarchyTest : AbstractCheckTest() {
           .indented(),
       )
       .issues(*manifestIssues)
+      .allowManifestMergerErrors(true)
       .run()
       .expect(
         """

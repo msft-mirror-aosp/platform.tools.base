@@ -22,6 +22,30 @@ package com.android.build.gradle.integration.common.fixture.project.options
 interface RuleOptionBuilder {
 
     /**
+     * Disable checks for improper built-in Kotlin opt-out
+     *
+     * There are cases where it's not possible for the fixture to accurately detect
+     * that the test requires opt-out.
+     *
+     * Using this method will make the fixture not check for this.
+     *
+     * Make sure to use this only on the tests that need it, and not on whole classes.
+     */
+    fun disableBrokenBuiltInKotlinOptOutChecks(): RuleOptionBuilder
+
+    /**
+     * Disable checks for improper newDsl opt-out
+     *
+     * There are cases where it's not possible for the fixture to accurately detect
+     * that the test requires opt-out.
+     *
+     * Using this method will make the fixture not check for this.
+     *
+     * Make sure to use this only on the tests that need it, and not on whole classes.
+     */
+    fun disableBrokenNewDslOptOutChecks(): RuleOptionBuilder
+
+    /**
      * configures the Gradle version or location
      */
     fun withGradleLocation(action: GradleLocationBuilder.() -> Unit): RuleOptionBuilder
@@ -37,6 +61,8 @@ interface RuleOptionBuilder {
 }
 
 internal open class DefaultRuleOptionBuilder: RuleOptionBuilder {
+    internal var disableBrokenBuiltInKotlinOptOutChecks = false
+    internal var disableBrokenNewDslOptOutChecks = false
     private val gradleLocationDelegate = GradleLocationDelegate()
     private val sdkConfigurationDelegate = SdkConfigurationDelegate()
     private val gradleOptionsDelegate = GradleOptionsDelegate(null)
@@ -49,6 +75,16 @@ internal open class DefaultRuleOptionBuilder: RuleOptionBuilder {
 
     val gradleOptions: GradleOptions
         get() = gradleOptionsDelegate.asGradleOptions
+
+    override fun disableBrokenBuiltInKotlinOptOutChecks(): DefaultRuleOptionBuilder {
+        disableBrokenBuiltInKotlinOptOutChecks = true
+        return this
+    }
+
+    override fun disableBrokenNewDslOptOutChecks(): DefaultRuleOptionBuilder {
+        disableBrokenNewDslOptOutChecks = true
+        return this
+    }
 
     override fun withGradleLocation(action: GradleLocationBuilder.() -> Unit): DefaultRuleOptionBuilder {
         action(gradleLocationDelegate)
@@ -66,6 +102,10 @@ internal open class DefaultRuleOptionBuilder: RuleOptionBuilder {
     }
 
     internal fun mergeWith(other: DefaultRuleOptionBuilder) {
+        disableBrokenBuiltInKotlinOptOutChecks =
+            disableBrokenBuiltInKotlinOptOutChecks || other.disableBrokenBuiltInKotlinOptOutChecks
+        disableBrokenNewDslOptOutChecks =
+            disableBrokenNewDslOptOutChecks || other.disableBrokenNewDslOptOutChecks
         gradleLocationDelegate.mergeWith(other.gradleLocationDelegate)
         sdkConfigurationDelegate.mergeWith(other.sdkConfigurationDelegate)
         gradleOptionsDelegate.mergeWith(other.gradleOptionsDelegate)

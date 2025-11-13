@@ -75,10 +75,8 @@ class NonTransitiveCompileRClassFlowTest {
                     public class Example {
                         public void checkLibRFilesConstant() {
                             int x = com.example.lib2.R.string.lib2String;
-                            switch(x) {
-                                // These must be constant expressions.
-                                case com.example.lib1.R.string.lib1String:
-                                case com.example.lib2.R.string.lib2String:
+                            if(x == com.example.lib1.R.string.lib1String) {
+                            } else if (x == com.example.lib2.R.string.lib2String) {
                             }
                         }
                     }
@@ -97,9 +95,6 @@ class NonTransitiveCompileRClassFlowTest {
 
     @get:Rule
     val project = GradleTestProject.builder().fromTestApp(testApp)
-        .addGradleProperties("${BooleanOption.USE_ANDROID_X.propertyName}=true")
-        // Enforcing unique package names to prevent regressions. Remove when b/116109681 fixed.
-        .addGradleProperties("${BooleanOption.ENFORCE_UNIQUE_PACKAGE_NAMES.propertyName}=true")
         // consider using default heap size when b/339837484 is resolved
         .withHeap("2048m")
         .create()
@@ -121,13 +116,17 @@ class NonTransitiveCompileRClassFlowTest {
             "implementation '",
             "api '"
         )
+        TestFileUtils.searchAndReplace(
+            project.file("lib2/build.gradle"),
+            "implementation",
+            "api"
+        )
 
         val lib2RJar = project.getSubproject("lib2")
             .getIntermediateFile("compile_r_class_jar", "debug", "generateDebugRFile", "R.jar")
 
         project.executor()
             .with(BooleanOption.NON_TRANSITIVE_R_CLASS, true)
-            .with(BooleanOption.USE_NON_FINAL_RES_IDS, false)
             .run(tasks)
         assertThat(lib2RJar) {
             // It shouldn't contain any other R classes other than the local one
@@ -140,7 +139,6 @@ class NonTransitiveCompileRClassFlowTest {
 
         project.executor()
             .with(BooleanOption.NON_TRANSITIVE_R_CLASS, false)
-            .with(BooleanOption.USE_NON_FINAL_RES_IDS, false)
             .run(tasks)
         assertThat(lib2RJar) {
             // It shouldn't contain any other R classes other than the local one

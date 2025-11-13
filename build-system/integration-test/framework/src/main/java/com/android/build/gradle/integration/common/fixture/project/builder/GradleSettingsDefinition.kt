@@ -147,7 +147,7 @@ internal class GradleSettingsDefinitionImpl: GradleSettingsDefinition {
         useOldPluginStyle: Boolean,
         repositories: Collection<Path>?,
         includedBuilds: Collection<GradleBuildDefinitionImpl>,
-        subProjectPaths: Collection<String>,
+        subProjectPaths: Collection<GradleProjectDefinitionImpl>,
         buildWriter: BuildWriter,
     ) {
         val finalRepositoryList = if (repositories == null) {
@@ -182,7 +182,14 @@ internal class GradleSettingsDefinitionImpl: GradleSettingsDefinition {
             emptyLine()
 
             block("dependencyResolutionManagement") {
-                method("repositoriesMode.set", rawString("RepositoriesMode.FAIL_ON_PROJECT_REPOS"))
+                // check if any project is using the repositories block, in which cae
+                // we don't write this.
+                if (!subProjectPaths.any {
+                    it.repositoriesBuilder.isUsed
+                }) {
+                    method("repositoriesMode.set", rawString("RepositoriesMode.FAIL_ON_PROJECT_REPOS"))
+                }
+
                 block("repositories") {
                     for (repository in finalRepositoryList) {
                         mavenSnippet(repository)
@@ -239,7 +246,7 @@ internal class GradleSettingsDefinitionImpl: GradleSettingsDefinition {
             }
 
             for (project in subProjectPaths) {
-                method("include", project)
+                method("include", project.path)
             }
         }.also {
             val file = location.resolve(it.settingsFileName)

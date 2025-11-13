@@ -847,7 +847,9 @@ private class LintModelVariantWriter(
       printer.printAttribute("type", artifact.type.name, indent)
     }
     if (artifact is LintModelAndroidArtifact) {
-      printer.printAttribute("applicationId", artifact.applicationId, indent)
+      if (artifact.applicationId != null) {
+        printer.printAttribute("applicationId", artifact.applicationId!!, indent)
+      }
       printer.printFiles("generatedSourceFolders", artifact.generatedSourceFolders, indent)
       printer.printFiles("generatedResourceFolders", artifact.generatedResourceFolders, indent)
       printer.printFiles("desugaredMethodsFiles", artifact.desugaredMethodsFiles, indent)

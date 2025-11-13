@@ -26,9 +26,7 @@ import java.io.File
 
 class CustomConsumerProguardFilesInDslTest {
     @get:Rule
-    val rule = GradleRule.configure()
-
-        .from {
+    val rule = GradleRule.from {
             kotlinMultiplatformLibrary(":lib") {
                 applyPlugin(PluginType.ANDROID_KMP_LIBRARY)
                 android {
@@ -40,7 +38,6 @@ class CustomConsumerProguardFilesInDslTest {
             }
         }
 
-
     @Test
     fun testRelativePath() {
         val project = rule.build {
@@ -48,9 +45,13 @@ class CustomConsumerProguardFilesInDslTest {
                 files.add("proguard-rules.pro", "some proguard statements")
             }
         }
-        project.executor.run("clean")
+        project.executor
+            .withFailOnWarning(false) // b/455891987
+            .run("clean")
 
-        project.executor.run("assemble")
+        project.executor
+            .withFailOnWarning(false) // b/455891987
+            .run("assemble")
 
         // check the resulting aar.
         project.kotlinMultiplatformLibrary(":lib").assertAar(AarSelector.NO_BUILD_TYPE) {
@@ -72,6 +73,7 @@ class CustomConsumerProguardFilesInDslTest {
         val project = rule.build
         project.executor
             .with(BooleanOption.FAIL_ON_MISSING_PROGUARD_FILES, false)
+            .withFailOnWarning(false) // b/455891987
             .run("assemble")
             .assertOutputContains("Supplied consumer proguard configuration does not exist")
     }

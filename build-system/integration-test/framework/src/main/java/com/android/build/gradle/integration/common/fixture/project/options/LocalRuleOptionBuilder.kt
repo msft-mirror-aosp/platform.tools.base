@@ -45,6 +45,16 @@ class LocalRuleOptionBuilder internal constructor(
         return gradleRule.build(action)
     }
 
+    override fun disableBrokenBuiltInKotlinOptOutChecks(): LocalRuleOptionBuilder {
+        delegate.disableBrokenBuiltInKotlinOptOutChecks()
+        return this
+    }
+
+    override fun disableBrokenNewDslOptOutChecks(): LocalRuleOptionBuilder {
+        delegate.disableBrokenNewDslOptOutChecks()
+        return this
+    }
+
     override fun withGradleLocation(action: GradleLocationBuilder.() -> Unit): LocalRuleOptionBuilder {
         delegate.withGradleLocation(action)
         return this

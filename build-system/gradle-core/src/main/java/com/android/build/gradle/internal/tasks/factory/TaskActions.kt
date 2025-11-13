@@ -17,6 +17,7 @@
 package com.android.build.gradle.internal.tasks.factory
 
 import com.android.build.gradle.internal.component.ComponentCreationConfig
+import com.android.build.gradle.internal.component.TaskCreationConfig
 import com.android.build.gradle.internal.privaysandboxsdk.PrivacySandboxSdkConstants
 import com.android.build.gradle.internal.tasks.AndroidVariantTask
 import com.android.build.gradle.internal.tasks.BaseTask
@@ -54,7 +55,7 @@ abstract class TaskCreationAction<TaskT : Task> :
 }
 
 /** [TaskCreationAction] for a [VariantTask]. */
-abstract class VariantTaskCreationAction<TaskT, CreationConfigT : ComponentCreationConfig>
+abstract class VariantTaskCreationAction<TaskT, CreationConfigT : TaskCreationConfig>
     @JvmOverloads
     constructor(
         @JvmField protected val creationConfig: CreationConfigT,

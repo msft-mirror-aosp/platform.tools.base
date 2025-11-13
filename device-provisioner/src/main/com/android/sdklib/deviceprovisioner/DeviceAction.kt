@@ -66,6 +66,8 @@ interface DeviceAction {
     val repairDeviceAction: Presentation
     val pairDeviceAction: Presentation
     val hideDeviceAction: Presentation
+    val pairGlassesAction: Presentation
+    val unpairGlassesAction: Presentation
   }
 }
 
@@ -252,6 +254,18 @@ interface HideDeviceAction : DeviceAction {
   suspend fun hide()
 
   override fun DefaultPresentation.fromContext() = hideDeviceAction
+}
+
+interface PairGlassesAction : DeviceAction {
+  suspend fun pairGlasses(parent: Component?, glassesHandle: DeviceHandle)
+
+  override fun DefaultPresentation.fromContext() = pairGlassesAction
+}
+
+interface UnpairGlassesAction : DeviceAction {
+  suspend fun unpairGlasses()
+
+  override fun DefaultPresentation.fromContext() = unpairGlassesAction
 }
 
 /**

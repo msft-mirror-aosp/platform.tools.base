@@ -2920,7 +2920,7 @@ public final class SdkConstants {
      * Studio product. It need not actually be the latest version of Gradle, but it will most likely
      * be fairly recent.
      */
-    public static final String GRADLE_LATEST_VERSION = "9.0.0";
+    public static final String GRADLE_LATEST_VERSION = "9.1.0";
 
     /**
      * The minimum released version of the Android Gradle Plugin for which Studio will attempt a
@@ -2934,7 +2934,7 @@ public final class SdkConstants {
      * The minimum released version of the Android Gradle Plugin that this version of Studio will
      * support. (Support of the development series leading up to it is unknown.)
      */
-    public static final String GRADLE_PLUGIN_MINIMUM_VERSION = "4.1.0";
+    public static final String GRADLE_PLUGIN_MINIMUM_VERSION = "4.2.0";
 
     /**
      * The minimum released version of the Android Gradle Plugin that the next version of Studio

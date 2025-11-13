@@ -18,10 +18,10 @@ package com.android.build.gradle.integration.common.fixture.project
 
 import com.android.build.gradle.integration.common.fixture.GradleTaskExecutor
 import com.android.build.gradle.integration.common.fixture.ModelBuilderV2
-import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectFiles
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleSettingsDefinition
 import com.android.build.gradle.integration.common.fixture.project.options.GradlePropertiesBuilder
+import com.android.build.gradle.integration.common.fixture.project.reversible.FileChangeController
 import java.nio.file.Path
 
 /**
@@ -36,7 +36,7 @@ import java.nio.file.Path
  */
 internal class ReversibleGradleBuild(
     private val parentBuild: GradleBuildImpl,
-    private val projectModification: TemporaryProjectModification,
+    private val fileChangeController: FileChangeController,
 ): BaseGradleBuildImpl() {
 
     private val modifiableSubProject = mutableMapOf<String, GradleProject<*>>()
@@ -56,16 +56,14 @@ internal class ReversibleGradleBuild(
         val project = parentBuild.subProject(path)
 
         return modifiableSubProject.computeIfAbsent(path) {
-            (project as GenericProjectImpl).getReversibleInstance(
-                projectModification.delegate(project)
-            )
+            (project as GradleProjectImpl<*>).getReversibleInstance(fileChangeController)
         }
     }
 
     override fun includedBuild(name: String): GradleBuild {
         val b = parentBuild.includedBuild(name) as GradleBuildImpl
         return wrappedIncludedBuild.computeIfAbsent(name) {
-            ReversibleGradleBuild(b, projectModification.delegate(null))
+            ReversibleGradleBuild(b, fileChangeController)
         }
     }
 

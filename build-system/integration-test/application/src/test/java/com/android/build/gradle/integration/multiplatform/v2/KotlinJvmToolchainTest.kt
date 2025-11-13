@@ -77,7 +77,9 @@ class KotlinJvmToolchainTest {
                 }
             }
         }
-        val result = build.executor.run("clean", ":library:assemble")
+        val result = build.executor
+            .withFailOnWarning(false) // b/455891987
+            .run("clean", ":library:assemble")
         ScannerSubject.assertThat(result.stdout).contains("kotlinc jvm-target=21")
         ScannerSubject.assertThat(result.stdout).contains("javac jvm-target=21")
     }
@@ -94,7 +96,9 @@ class KotlinJvmToolchainTest {
                 }
             }
         }
-        val result = build.executor.run("clean", ":library:assemble")
+        val result = build.executor
+            .withFailOnWarning(false) // b/455891987
+            .run("clean", ":library:assemble")
         ScannerSubject.assertThat(result.stdout).contains("kotlinc jvm-target=11")
         ScannerSubject.assertThat(result.stdout).contains("javac jvm-target=11")
     }
@@ -109,7 +113,9 @@ class KotlinJvmToolchainTest {
                 pluginCallbacks += SetCompilationCompilerOptionsCallback::class.java
             }
         }
-        val result = build.executor.run("clean", ":library:assemble")
+        val result = build.executor
+            .withFailOnWarning(false) // b/455891987
+            .run("clean", ":library:assemble")
         ScannerSubject.assertThat(result.stdout).contains("kotlinc jvm-target=11")
         ScannerSubject.assertThat(result.stdout).contains("javac jvm-target=11")
     }
@@ -127,7 +133,9 @@ class KotlinJvmToolchainTest {
                 pluginCallbacks += KmpVariantApiCallback::class.java
             }
         }
-        val result = build.executor.run("clean", ":library:assemble")
+        val result = build.executor
+            .withFailOnWarning(false) // b/455891987
+            .run("clean", ":library:assemble")
         ScannerSubject.assertThat(result.stdout).contains("kotlinc jvm-target=11")
         ScannerSubject.assertThat(result.stdout).contains("javac jvm-target=17")
     }

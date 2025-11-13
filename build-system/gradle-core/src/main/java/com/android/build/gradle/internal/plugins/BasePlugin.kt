@@ -93,6 +93,7 @@ import com.android.build.gradle.internal.tasks.factory.TaskManagerConfig
 import com.android.build.gradle.internal.tasks.factory.TaskManagerConfigImpl
 import com.android.build.gradle.internal.testing.ManagedDeviceRegistry
 import com.android.build.gradle.internal.utils.getKotlinAndroidPluginVersion
+import com.android.build.gradle.internal.utils.handleKotlinStdlibDependency
 import com.android.build.gradle.internal.utils.syncAgpAndKgpSources
 import com.android.build.gradle.internal.utils.toImmutableMap
 import com.android.build.gradle.internal.variant.ComponentInfo
@@ -688,9 +689,6 @@ To learn more, go to https://d.android.com/r/tools/java-8-support-message.html
         variantInputModel.lock()
         extension.disableWrite()
 
-        @Suppress("DEPRECATION")
-        syncAgpAndKgpSources(project, projectServices, extension.sourceSets)
-
         val projectBuilder = configuratorService.getProjectBuilder(
             project.path
         )
@@ -779,39 +777,6 @@ To learn more, go to https://d.android.com/r/tools/java-8-support-message.html
                         configureJacocoTransforms()
                     }
                 }
-                .apply {
-                    // Registering privacy sandbox transforms creates various detatched
-                    // configurations for tools it uses. Only register them if privacy sandbox
-                    // consumption is enabled.
-                    if (anyVariantSupportsSdkConsumption) {
-                        val privacySandboxProperties = mutableMapOf<String, Any>().apply {
-                            variants.forEach {
-                                it.experimentalProperties.apply { disallowChanges() }.get()
-                                    .filterKeysByPrefix("android.privacySandboxSdk")
-                                    .entries
-                                    .forEach { (key, value) ->
-                                        if (key !in this) {
-                                            this[key] = value as Any
-                                        } else if (value != this[key]) {
-                                            error(
-                                                "Privacy Sandbox related properties can not have different values in multiple variants. " +
-                                                        "Gradle property '${key}' was found to have a different value '${value}' in multiple variants."
-                                            )
-                                        }
-                                    }
-                            }
-                        }.toImmutableMap()
-
-                        configurePrivacySandboxSdkConsumerTransforms(
-                            globalConfig.compileSdkHashString,
-                            globalConfig.buildToolsRevision,
-                            globalConfig,
-                            privacySandboxProperties
-                        )
-                        configurePrivacySandboxSdkVariantTransforms(variants)
-                    }
-                }
-
 
         // Run the old Variant API, after the variants and tasks have been created.
         @Suppress("DEPRECATION")
@@ -823,6 +788,13 @@ To learn more, go to https://d.android.com/r/tools/java-8-support-message.html
 
         // Make sure no SourceSets were added through the DSL without being properly configured
         variantInputModel.sourceSetManager.checkForUnconfiguredSourceSets()
+
+        // Built-in Kotlin
+        val useBuiltInKotlinSupport = variantManager.mainComponents.any { it.variant.useBuiltInKotlinSupport }
+        syncAgpAndKgpSources(project, projectServices, extension.sourceSets, useBuiltInKotlinSupport)
+        if (useBuiltInKotlinSupport) {
+            handleKotlinStdlibDependency(project, projectServices, extension.sourceSets)
+        }
 
         // configure compose related tasks.
         taskManager.createPostApiTasks()

@@ -21,7 +21,6 @@ import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition.Companion.DEFAULT_COMPILE_SDK_VERSION
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
 import com.android.build.gradle.integration.common.fixture.project.plugins.GenericCallback
-import com.android.build.gradle.integration.common.utils.disableBuiltInKotlin
 import com.android.build.gradle.options.BooleanOption
 import org.gradle.api.Project
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
@@ -33,6 +32,8 @@ import org.junit.Test
 class DataBindingKmpTest {
     @get:Rule
     val rule = GradleRule.configure()
+        .disableBrokenBuiltInKotlinOptOutChecks()
+        .disableBrokenNewDslOptOutChecks()
         .withGradleOptions {
             // this is necessary because KMP does not work with project Isolation.
             // There were some tests where it worked but that's because they used the root
@@ -95,7 +96,8 @@ class DataBindingKmpTest {
                                     android:dataFromLib="@{libData}" />
                             </layout>
                         """.trimIndent()
-                    )                }
+                    )
+                }
             }
             androidLibrary(":lib", createMinimumProject = false) {
                 applyPlugin(PluginType.KOTLIN_MPP)
@@ -130,8 +132,9 @@ class DataBindingKmpTest {
             }
             gradleProperties {
                 add(BooleanOption.USE_ANDROID_X, true)
+                add(BooleanOption.BUILT_IN_KOTLIN, false)
+                add(BooleanOption.USE_NEW_DSL, false)
             }
-            disableBuiltInKotlin()
         }
 
     class Callback: GenericCallback {
@@ -158,7 +161,7 @@ class DataBindingKmpTest {
     @Test
     fun testCompilation() {
         rule.build.executor
-            .with(BooleanOption.ENABLE_LEGACY_API, true)
+            .withFailOnWarning(false) // b/455891987
             .run("clean", "compileDebugJavaWithJavac")
     }
 }

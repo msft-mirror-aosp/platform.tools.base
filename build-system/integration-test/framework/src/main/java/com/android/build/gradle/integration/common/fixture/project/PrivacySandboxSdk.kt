@@ -17,7 +17,6 @@
 package com.android.build.gradle.integration.common.fixture.project
 
 import com.android.build.api.dsl.PrivacySandboxSdkExtension
-import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification
 import com.android.build.gradle.integration.common.fixture.dsl.DslProxy
 import com.android.build.gradle.integration.common.fixture.project.builder.BuildWriter
 import com.android.build.gradle.integration.common.fixture.project.builder.DelayedGradleProjectFiles
@@ -28,6 +27,7 @@ import com.android.build.gradle.integration.common.fixture.project.builder.Gradl
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectFiles
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
+import com.android.build.gradle.integration.common.fixture.project.reversible.FileChangeController
 import java.nio.file.Path
 
 /*
@@ -107,8 +107,8 @@ internal class PrivacySandboxSdkImpl(
 
     override val files: GradleProjectFiles = DirectGradleProjectFiles(location)
 
-    override fun getReversibleInstance(projectModification: TemporaryProjectModification): PrivacySandboxSdkProject =
-        ReversiblePrivacySandboxSdkProject(this, projectModification)
+    override fun getReversibleInstance(fileChangeController: FileChangeController): PrivacySandboxSdkProject =
+        ReversiblePrivacySandboxSdkProject(this, fileChangeController)
 }
 
 /**
@@ -116,8 +116,8 @@ internal class PrivacySandboxSdkImpl(
  */
 internal class ReversiblePrivacySandboxSdkProject(
     parentProject: PrivacySandboxSdkProject,
-    projectModification: TemporaryProjectModification
+    fileChangeController: FileChangeController
 ) : BaseReversibleAndroidProjectImpl<PrivacySandboxSdkProject, PrivacySandboxSdkDefinition>(
     parentProject,
-    projectModification
+    fileChangeController
 ), PrivacySandboxSdkProject

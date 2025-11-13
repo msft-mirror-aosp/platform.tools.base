@@ -17,7 +17,6 @@
 package com.android.build.gradle.integration.common.fixture.project
 
 import com.android.build.api.dsl.AssetPackExtension
-import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification
 import com.android.build.gradle.integration.common.fixture.dsl.DslProxy
 import com.android.build.gradle.integration.common.fixture.project.builder.BuildWriter
 import com.android.build.gradle.integration.common.fixture.project.builder.DelayedGradleProjectFiles
@@ -26,6 +25,7 @@ import com.android.build.gradle.integration.common.fixture.project.builder.Gradl
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectFiles
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
+import com.android.build.gradle.integration.common.fixture.project.reversible.FileChangeController
 import java.nio.file.Path
 
 /*
@@ -101,8 +101,8 @@ internal class AssetPackImpl(
 
     override val files: GradleProjectFiles = DirectGradleProjectFiles(location)
 
-    override fun getReversibleInstance(projectModification: TemporaryProjectModification): AssetPackProject =
-        ReversibleAssetPackProject(this, projectModification)
+    override fun getReversibleInstance(fileChangeController: FileChangeController): AssetPackProject =
+        ReversibleAssetPackProject(this, fileChangeController)
 }
 
 /**
@@ -110,9 +110,9 @@ internal class AssetPackImpl(
  */
 internal class ReversibleAssetPackProject(
     parentProject: AssetPackProject,
-    projectModification: TemporaryProjectModification
+    fileChangeController: FileChangeController
 ) : ReversibleGradleProject<AssetPackProject, AssetPackDefinition>(
     parentProject,
-    projectModification,
+    fileChangeController,
 ), AssetPackProject
 

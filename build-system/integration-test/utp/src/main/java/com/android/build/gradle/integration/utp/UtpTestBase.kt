@@ -23,7 +23,6 @@ import com.android.build.gradle.integration.common.fixture.GradleTaskExecutor
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
-import com.android.build.gradle.integration.common.utils.disableBuiltInKotlin
 import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.truth.PathSubject.assertThat
 import com.android.tools.utp.plugins.host.device.info.proto.AndroidTestDeviceInfoProto.AndroidTestDeviceInfo
@@ -68,269 +67,266 @@ abstract class UtpTestBase(val runWithBuiltInPlatform: Boolean) {
     val ruleBuilder = GradleRule.configure()
 
     @get:Rule
-    val rule: GradleRule by lazy {
-        ruleBuilder.from {
-            androidApplication {
-                applyPlugin(PluginType.KOTLIN_ANDROID)
-                android {
-                    namespace = "com.example.android.kotlin"
-                    installation {
-                        timeOutInMs = 30000
-                    }
-                    defaultConfig {
-                        minSdk = 21
-                        versionCode = 1
-                        versionName = "1.0"
-                        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-                    }
-                    dependencies {
-                        androidTestImplementation("androidx.test:core:1.4.0-alpha06")
-                        androidTestImplementation("androidx.test.ext:junit:1.1.3-alpha02")
-                        androidTestImplementation("androidx.test:monitor:1.4.0-alpha06")
-                        androidTestImplementation("androidx.test:rules:1.4.0-alpha06")
-                        androidTestImplementation("androidx.test:runner:1.4.0-alpha06")
-                    }
+    val rule = ruleBuilder.from {
+        androidApplication {
+            applyPlugin(PluginType.KOTLIN_ANDROID)
+            android {
+                namespace = "com.example.android.kotlin"
+                installation {
+                    timeOutInMs = 30000
                 }
-                kotlin {
-                    jvmToolchain(17)
+                defaultConfig {
+                    minSdk = 21
+                    versionCode = 1
+                    versionName = "1.0"
+                    testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
                 }
-                files {
-                    add(
-                        "src/main/java/com/example/android/kotlin/MainActivity.kt",
-                        //language=kotlin
-                        """
-                    package com.example.android.kotlin
+                dependencies {
+                    androidTestImplementation("androidx.test:core:1.4.0-alpha06")
+                    androidTestImplementation("androidx.test.ext:junit:1.1.3-alpha02")
+                    androidTestImplementation("androidx.test:monitor:1.4.0-alpha06")
+                    androidTestImplementation("androidx.test:rules:1.4.0-alpha06")
+                    androidTestImplementation("androidx.test:runner:1.4.0-alpha06")
+                }
+            }
+            kotlin {
+                jvmToolchain(17)
+            }
+            files {
+                add(
+                    "src/main/java/com/example/android/kotlin/MainActivity.kt",
+                    //language=kotlin
+                    """
+                package com.example.android.kotlin
 
-                    import android.app.Activity
-                    import java.util.logging.Logger.getLogger
+                import android.app.Activity
+                import java.util.logging.Logger.getLogger
 
-                    class MainActivity : Activity() {
-                        companion object {
-                            fun stubFuncForTestingCodeCoverage() {
-                                getLogger("MainActivity").info("stubFuncForTestingCodeCoverage()")
-                            }
+                class MainActivity : Activity() {
+                    companion object {
+                        fun stubFuncForTestingCodeCoverage() {
+                            getLogger("MainActivity").info("stubFuncForTestingCodeCoverage()")
                         }
                     }
-                    """.trimIndent()
-                    )
-                    add(
-                        "src/androidTest/java/com/example/android/kotlin/InstrumentedTest.kt",
-                        //language=kotlin
-                        """
-                    package com.example.android.kotlin
+                }
+                """.trimIndent()
+                )
+                add(
+                    "src/androidTest/java/com/example/android/kotlin/InstrumentedTest.kt",
+                    //language=kotlin
+                    """
+                package com.example.android.kotlin
 
-                    import androidx.test.ext.junit.runners.AndroidJUnit4
+                import androidx.test.ext.junit.runners.AndroidJUnit4
 
-                    import org.junit.Test
-                    import org.junit.runner.RunWith
+                import org.junit.Test
+                import org.junit.runner.RunWith
 
-                    import java.util.logging.Logger.getLogger
+                import java.util.logging.Logger.getLogger
 
-                    @RunWith(AndroidJUnit4::class)
-                    class ExampleInstrumentedTest {
-                        private val logger = getLogger("TestLogger")
+                @RunWith(AndroidJUnit4::class)
+                class ExampleInstrumentedTest {
+                    private val logger = getLogger("TestLogger")
 
-                        @Test
-                        fun useAppContext() {
-                            logger.info("test logs")
-                            MainActivity.stubFuncForTestingCodeCoverage()
+                    @Test
+                    fun useAppContext() {
+                        logger.info("test logs")
+                        MainActivity.stubFuncForTestingCodeCoverage()
+                    }
+                }
+                """.trimIndent()
+                )
+                add("src/main/res/values/strings.xml",
+                    //language=xml
+                    """
+                <?xml version="1.0" encoding="utf-8"?>
+                <resources>
+                    <string name="title_dynamicfeature1">dynamicfeature1</string>
+                </resources>
+                """.trimIndent())
+            }
+        }
+
+        androidLibrary {
+            applyPlugin(PluginType.KOTLIN_ANDROID)
+            android {
+                namespace = "com.example.android.kotlin.library"
+                installation {
+                    timeOutInMs = 30000
+                }
+                defaultConfig {
+                    minSdk = 21
+                    testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+                }
+                dependencies {
+                    androidTestImplementation("androidx.test:core:1.4.0-alpha06")
+                    androidTestImplementation("androidx.test.ext:junit:1.1.3-alpha02")
+                    androidTestImplementation("androidx.test:monitor:1.4.0-alpha06")
+                    androidTestImplementation("androidx.test:rules:1.4.0-alpha06")
+                    androidTestImplementation("androidx.test:runner:1.4.0-alpha06")
+                }
+            }
+            kotlin {
+                jvmToolchain(17)
+            }
+            files {
+                add(
+                    "src/androidTest/java/com/example/android/kotlin/lib/InstrumentedTest.kt",
+                    //language=kotlin
+                    """
+                package com.example.android.kotlin.lib
+
+                import androidx.test.ext.junit.runners.AndroidJUnit4
+
+                import org.junit.Test
+                import org.junit.runner.RunWith
+
+                @RunWith(AndroidJUnit4::class)
+                class ExampleInstrumentedTest {
+                    @Test
+                    fun useAppContext() {}
+                }
+                """.trimIndent()
+                )
+            }
+        }
+
+        androidTest {
+            applyPlugin(PluginType.KOTLIN_ANDROID)
+            android {
+                namespace = "com.example.android.kotlin.testonly"
+                targetProjectPath = ":app"
+                installation {
+                    timeOutInMs = 30000
+                }
+                defaultConfig {
+                    minSdk = 21
+                    testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+                }
+                dependencies {
+                    implementation("androidx.test:core:1.4.0-alpha06")
+                    implementation("androidx.test.ext:junit:1.1.3-alpha02")
+                    implementation("androidx.test:monitor:1.4.0-alpha06")
+                    implementation("androidx.test:rules:1.4.0-alpha06")
+                    implementation("androidx.test:runner:1.4.0-alpha06")
+                }
+            }
+            kotlin {
+                jvmToolchain(17)
+            }
+            files {
+                add(
+                    "src/main/java/com/example/android/kotlin/InstrumentedTest.kt",
+                    //language=kotlin
+                    """
+                package com.example.android.kotlin
+
+                import androidx.test.ext.junit.runners.AndroidJUnit4
+                import org.junit.Test
+                import org.junit.runner.RunWith
+
+                @RunWith(AndroidJUnit4::class)
+                class ExampleInstrumentedTest {
+                    @Test
+                    fun useAppContext() {}
+                }
+                """.trimIndent()
+                )
+            }
+        }
+
+        androidFeature {
+            applyPlugin(PluginType.KOTLIN_ANDROID)
+            android {
+                namespace = "com.example.android.kotlin.feature"
+                installation {
+                    timeOutInMs = 30000
+                }
+                defaultConfig {
+                    minSdk = 21
+                    testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+                }
+                dependencies {
+                    implementation(project(":app"))
+                    implementation("androidx.test:core:1.4.0-alpha06")
+                    implementation("androidx.test.ext:junit:1.1.3-alpha02")
+                    implementation("androidx.test:monitor:1.4.0-alpha06")
+                    implementation("androidx.test:rules:1.4.0-alpha06")
+                    implementation("androidx.test:runner:1.4.0-alpha06")
+                }
+            }
+            kotlin {
+                jvmToolchain(17)
+            }
+            files {
+                remove("src/main/AndroidManifest.xml")
+                add("src/main/AndroidManifest.xml",
+                    //language=xml
+                    """
+                <?xml version="1.0" encoding="utf-8"?>
+                <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+                          xmlns:dist="http://schemas.android.com/apk/distribution"
+                          android:versionCode="1">
+
+                    <dist:module
+                        dist:instant="false"
+                        dist:title="@string/title_dynamicfeature1">
+                        <dist:delivery>
+                            <dist:on-demand />
+                        </dist:delivery>
+                        <dist:fusing dist:include="true" />
+                    </dist:module>
+                </manifest>
+                """.trimIndent())
+                add(
+                    "src/main/java/com/example/android/kotlin/feature/DynamicFeature1.kt",
+                    //language=kotlin
+                    """
+                package com.example.android.kotlin.feature
+
+                import java.util.logging.Logger.getLogger
+
+                class DynamicFeature1 () {
+                    companion object {
+                        fun stubDynamicFeature1FuncForTestingCodeCoverage() {
+                            getLogger("DynamicFeature1").info("stubDynamicFeature1FuncForTestingCodeCoverage()")
                         }
                     }
-                    """.trimIndent()
-                    )
-                    add("src/main/res/values/strings.xml",
-                        //language=xml
-                        """
-                    <?xml version="1.0" encoding="utf-8"?>
-                    <resources>
-                        <string name="title_dynamicfeature1">dynamicfeature1</string>
-                    </resources>
-                    """.trimIndent())
                 }
+                """.trimIndent()
+                )
+                add(
+                    "src/androidTest/java/com/example/android/kotlin/feature/InstrumentedTest.kt",
+                    //language=kotlin
+                    """
+                package com.example.android.kotlin.feature
+
+                import androidx.test.ext.junit.runners.AndroidJUnit4
+
+                import org.junit.Test
+                import org.junit.runner.RunWith
+
+                import java.util.logging.Logger.getLogger
+
+                @RunWith(AndroidJUnit4::class)
+                class ExampleInstrumentedTest {
+                    private val logger = getLogger("TestLogger")
+
+                    @Test
+                    fun useAppContext() {
+                        logger.info("test logs")
+                        DynamicFeature1.stubDynamicFeature1FuncForTestingCodeCoverage()
+                    }
+                }
+                """.trimIndent()
+                )
             }
+        }
 
-            androidLibrary {
-                applyPlugin(PluginType.KOTLIN_ANDROID)
-                android {
-                    namespace = "com.example.android.kotlin.library"
-                    installation {
-                        timeOutInMs = 30000
-                    }
-                    defaultConfig {
-                        minSdk = 21
-                        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-                    }
-                    dependencies {
-                        androidTestImplementation("androidx.test:core:1.4.0-alpha06")
-                        androidTestImplementation("androidx.test.ext:junit:1.1.3-alpha02")
-                        androidTestImplementation("androidx.test:monitor:1.4.0-alpha06")
-                        androidTestImplementation("androidx.test:rules:1.4.0-alpha06")
-                        androidTestImplementation("androidx.test:runner:1.4.0-alpha06")
-                    }
-                }
-                kotlin {
-                    jvmToolchain(17)
-                }
-                files {
-                    add(
-                        "src/androidTest/java/com/example/android/kotlin/lib/InstrumentedTest.kt",
-                        //language=kotlin
-                        """
-                    package com.example.android.kotlin.lib
-
-                    import androidx.test.ext.junit.runners.AndroidJUnit4
-
-                    import org.junit.Test
-                    import org.junit.runner.RunWith
-
-                    @RunWith(AndroidJUnit4::class)
-                    class ExampleInstrumentedTest {
-                        @Test
-                        fun useAppContext() {}
-                    }
-                    """.trimIndent()
-                    )
-                }
-            }
-
-            androidTest {
-                applyPlugin(PluginType.KOTLIN_ANDROID)
-                android {
-                    namespace = "com.example.android.kotlin.testonly"
-                    targetProjectPath = ":app"
-                    installation {
-                        timeOutInMs = 30000
-                    }
-                    defaultConfig {
-                        minSdk = 21
-                        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-                    }
-                    dependencies {
-                        implementation("androidx.test:core:1.4.0-alpha06")
-                        implementation("androidx.test.ext:junit:1.1.3-alpha02")
-                        implementation("androidx.test:monitor:1.4.0-alpha06")
-                        implementation("androidx.test:rules:1.4.0-alpha06")
-                        implementation("androidx.test:runner:1.4.0-alpha06")
-                    }
-                }
-                kotlin {
-                    jvmToolchain(17)
-                }
-                files {
-                    add(
-                        "src/main/java/com/example/android/kotlin/InstrumentedTest.kt",
-                        //language=kotlin
-                        """
-                    package com.example.android.kotlin
-
-                    import androidx.test.ext.junit.runners.AndroidJUnit4
-                    import org.junit.Test
-                    import org.junit.runner.RunWith
-
-                    @RunWith(AndroidJUnit4::class)
-                    class ExampleInstrumentedTest {
-                        @Test
-                        fun useAppContext() {}
-                    }
-                    """.trimIndent()
-                    )
-                }
-            }
-
-            androidFeature {
-                applyPlugin(PluginType.KOTLIN_ANDROID)
-                android {
-                    namespace = "com.example.android.kotlin.feature"
-                    installation {
-                        timeOutInMs = 30000
-                    }
-                    defaultConfig {
-                        minSdk = 21
-                        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-                    }
-                    dependencies {
-                        implementation(project(":app"))
-                        implementation("androidx.test:core:1.4.0-alpha06")
-                        implementation("androidx.test.ext:junit:1.1.3-alpha02")
-                        implementation("androidx.test:monitor:1.4.0-alpha06")
-                        implementation("androidx.test:rules:1.4.0-alpha06")
-                        implementation("androidx.test:runner:1.4.0-alpha06")
-                    }
-                }
-                kotlin {
-                    jvmToolchain(17)
-                }
-                files {
-                    remove("src/main/AndroidManifest.xml")
-                    add("src/main/AndroidManifest.xml",
-                        //language=xml
-                        """
-                    <?xml version="1.0" encoding="utf-8"?>
-                    <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-                              xmlns:dist="http://schemas.android.com/apk/distribution"
-                              android:versionCode="1">
-
-                        <dist:module
-                            dist:instant="false"
-                            dist:title="@string/title_dynamicfeature1">
-                            <dist:delivery>
-                                <dist:on-demand />
-                            </dist:delivery>
-                            <dist:fusing dist:include="true" />
-                        </dist:module>
-                    </manifest>
-                    """.trimIndent())
-                    add(
-                        "src/main/java/com/example/android/kotlin/feature/DynamicFeature1.kt",
-                        //language=kotlin
-                        """
-                    package com.example.android.kotlin.feature
-
-                    import java.util.logging.Logger.getLogger
-
-                    class DynamicFeature1 () {
-                        companion object {
-                            fun stubDynamicFeature1FuncForTestingCodeCoverage() {
-                                getLogger("DynamicFeature1").info("stubDynamicFeature1FuncForTestingCodeCoverage()")
-                            }
-                        }
-                    }
-                    """.trimIndent()
-                    )
-                    add(
-                        "src/androidTest/java/com/example/android/kotlin/feature/InstrumentedTest.kt",
-                        //language=kotlin
-                        """
-                    package com.example.android.kotlin.feature
-
-                    import androidx.test.ext.junit.runners.AndroidJUnit4
-
-                    import org.junit.Test
-                    import org.junit.runner.RunWith
-
-                    import java.util.logging.Logger.getLogger
-
-                    @RunWith(AndroidJUnit4::class)
-                    class ExampleInstrumentedTest {
-                        private val logger = getLogger("TestLogger")
-
-                        @Test
-                        fun useAppContext() {
-                            logger.info("test logs")
-                            DynamicFeature1.stubDynamicFeature1FuncForTestingCodeCoverage()
-                        }
-                    }
-                    """.trimIndent()
-                    )
-                }
-            }
-
-            gradleProperties {
-                add(BooleanOption.USE_ANDROID_X, true)
-                add(BooleanOption.ANDROID_BUILTIN_TEST_PLATFORM, runWithBuiltInPlatform)
-            }
-
-            disableBuiltInKotlin()
+        gradleProperties {
+            add(BooleanOption.ANDROID_BUILTIN_TEST_PLATFORM, runWithBuiltInPlatform)
+            add(BooleanOption.BUILT_IN_KOTLIN, false)
+            add(BooleanOption.USE_NEW_DSL, false)
         }
     }
 

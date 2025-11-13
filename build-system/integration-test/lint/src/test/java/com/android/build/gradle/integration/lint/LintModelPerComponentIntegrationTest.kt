@@ -20,7 +20,6 @@ import com.android.build.gradle.integration.common.fixture.DESUGAR_DEPENDENCY_VE
 import com.android.build.gradle.integration.common.fixture.GradleTaskExecutor
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.utils.TestFileUtils
-import com.android.build.gradle.integration.common.utils.disableBuiltInKotlin
 import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.truth.PathSubject.assertThat
 import com.google.common.truth.Truth
@@ -38,8 +37,6 @@ class LintModelPerComponentIntegrationTest {
     val project: GradleTestProject =
         GradleTestProject.builder()
             .fromTestProject("lintKotlin")
-            // Enforcing unique package names to prevent regressions. Remove when b/116109681 fixed.
-            .addGradleProperties("${BooleanOption.ENFORCE_UNIQUE_PACKAGE_NAMES.propertyName}=true")
             .addGradleProperties("${BooleanOption.USE_ANDROID_X.propertyName}=true")
             .addGradleProperties("${BooleanOption.R8_PROGUARD_ANDROID_TXT_DISALLOWED.propertyName}=true")
             .disableBuiltInKotlin()

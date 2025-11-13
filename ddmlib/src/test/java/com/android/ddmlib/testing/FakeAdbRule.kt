@@ -30,11 +30,11 @@ import com.android.fakeadbserver.services.StatusWriter
 import com.android.sdklib.AndroidApiLevel
 import com.google.common.truth.Truth.assertThat
 import com.google.common.util.concurrent.Uninterruptibles
-import kotlinx.coroutines.CoroutineScope
-import org.junit.rules.ExternalResource
 import java.net.Socket
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
+import kotlinx.coroutines.CoroutineScope
+import org.junit.rules.ExternalResource
 
 /**
  * Rule that sets up and tears down a FakeAdbServer, and provides some convenience methods for interacting with it.
@@ -132,7 +132,7 @@ class FakeAdbRule : ExternalResource() {
   }
 
   fun disconnectDevice(deviceId: String) {
-      fakeAdbServer.disconnectDevice(deviceId).get()
+    fakeAdbServer.disconnectDevice(deviceId).get()
   }
 
   /**

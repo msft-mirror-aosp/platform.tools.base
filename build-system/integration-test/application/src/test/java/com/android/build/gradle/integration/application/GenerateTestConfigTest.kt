@@ -24,21 +24,23 @@ import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_APP_PATH
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_LIB_PATH
+import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition
 import com.android.build.gradle.tasks.GenerateTestConfig.Companion.TEST_CONFIG_FILE
 import com.android.testutils.truth.PathSubject.assertThat
+import com.google.common.truth.Truth
 import org.junit.Rule
 import org.junit.Test
 import java.io.File
+import kotlin.io.path.readText
 
 class GenerateTestConfigTest {
 
     @get:Rule
-    val rule = GradleRule.configure()
-        .from {
-            androidApplication {
-                android.testOptions.unitTests.isIncludeAndroidResources = true
-            }
+    val rule = GradleRule.from {
+        androidApplication {
+            android.testOptions.unitTests.isIncludeAndroidResources = true
         }
+    }
 
     private val executor: GradleTaskExecutor
         get() = rule.build.executor.withEnableInfoLogging(false)
@@ -225,12 +227,16 @@ class GenerateTestConfigTest {
 
                 <uses-sdk
                     android:minSdkVersion="1"
-                    android:targetSdkVersion="1" />
+                    android:targetSdkVersion="${GradleBuildDefinition.DEFAULT_COMPILE_SDK_VERSION}" />
 
                 <instrumentation
                     android:name="androidx.test.runner.AndroidJUnitRunner"
                     android:label="Tests for pkg.name.lib.test"
                     android:targetPackage="pkg.name.lib" />
+
+                <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+                <uses-permission android:name="android.permission.READ_PHONE_STATE" />
+                <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
 
                 <application android:debuggable="true" >
                     <meta-data
@@ -258,7 +264,7 @@ class GenerateTestConfigTest {
 
                 <uses-sdk
                     android:minSdkVersion="1"
-                    android:targetSdkVersion="1" />
+                    android:targetSdkVersion="${GradleBuildDefinition.DEFAULT_COMPILE_SDK_VERSION}" />
 
                 <application android:debuggable="true" >
                     <meta-data

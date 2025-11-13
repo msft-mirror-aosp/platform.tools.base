@@ -107,6 +107,12 @@ interface DeviceHandle : Extensible {
   val hideDeviceAction: HideDeviceAction?
     get() = null
 
+  val pairGlassesAction: PairGlassesAction?
+    get() = null
+
+  val unpairGlassesAction: UnpairGlassesAction?
+    get() = null
+
   /** Waits until this device handle is no longer associated with [device]. */
   suspend fun awaitRelease(device: ConnectedDevice) {
     stateFlow.takeWhile { it.connectedDevice == device }.collect()

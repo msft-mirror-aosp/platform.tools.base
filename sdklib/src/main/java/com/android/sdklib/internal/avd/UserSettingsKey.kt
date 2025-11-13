@@ -31,4 +31,10 @@ object UserSettingsKey {
 
   /** Extra command-line options to pass to the emulator. */
   const val COMMAND_LINE_OPTIONS = "commandLineOptions"
+
+  /** The folder name of the paired Phone AVD (AvdInfo.dataFolderPath.fileName). */
+  const val PAIRED_PHONE_AVD_ID = "paired.phone.avd"
+
+  /** The folder name of the paired Glasses AVD (AvdInfo.dataFolderPath.fileName). */
+  const val PAIRED_GLASSES_AVD_ID = "paired.glasses.avd"
 }

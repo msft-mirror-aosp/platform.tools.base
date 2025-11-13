@@ -19,14 +19,7 @@ package com.android.build.gradle.internal.testing.utp.emulatorcontrol
 import com.android.build.gradle.internal.dsl.EmulatorControl
 import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.options.ProjectOptions
-import java.io.Serializable
-
-// Information needed to access the emulator from within the tests.
-data class EmulatorControlConfig(
-    val enabled: Boolean,
-    val allowedEndpoints: Set<String>,
-    val secondsValid: Int,
-) : Serializable
+import com.android.tools.utp.gradle.api.EmulatorControlConfig
 
 fun createEmulatorControlConfig(
     projectOptions: ProjectOptions, emulatorControl: EmulatorControl

@@ -36,16 +36,13 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 
 import org.gradle.api.Project;
-import org.gradle.api.internal.project.DefaultProject;
 import org.gradle.api.provider.Provider;
 import org.gradle.build.event.BuildEventsListenerRegistry;
-import org.gradle.initialization.GradlePropertiesController;
 import org.gradle.testfixtures.ProjectBuilder;
 import org.gradle.tooling.events.OperationCompletionListener;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
@@ -196,33 +193,7 @@ public class TestProjects {
 
     public static void prepareProject(
             @NonNull Project project, @NonNull Map<String, String> gradleProperties) {
-        try {
-            loadGradleProperties(project, gradleProperties);
-            addPrebuiltMavenRepository(project);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-    }
-
-    // TODO(bingran) remove this workaround when gradle issue #13122 is fixed
-    // https://github.com/gradle/gradle/issues/13122
-    private static void loadGradleProperties(
-            @NonNull Project project, @NonNull Map<String, String> gradleProperties)
-            throws IOException {
-        File propertiesFile = new File(project.getProjectDir(), "gradle.properties");
-        StringBuilder stringBuilder = new StringBuilder();
-        for (Map.Entry<String, String> entry : gradleProperties.entrySet()) {
-            stringBuilder
-                    .append(entry.getKey())
-                    .append("=")
-                    .append(entry.getValue())
-                    .append(System.lineSeparator());
-        }
-        Files.write(propertiesFile.toPath(), stringBuilder.toString().getBytes());
-        ((DefaultProject) project)
-                .getServices()
-                .get(GradlePropertiesController.class)
-                .loadGradlePropertiesFrom(project.getProjectDir(), false);
+        addPrebuiltMavenRepository(project);
     }
 
     /**

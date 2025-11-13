@@ -20,6 +20,7 @@ import com.android.tools.lint.checks.infrastructure.LintDetectorTest
 import com.android.tools.lint.checks.infrastructure.TestLintTask
 import com.android.tools.lint.checks.infrastructure.TestMode
 import com.android.tools.lint.useFirUast
+import com.google.common.truth.Truth
 
 @Suppress("LintDocExample")
 class InferredThreadDetectorTest : AbstractCheckTest() {
@@ -72,6 +73,84 @@ class InferredThreadDetectorTest : AbstractCheckTest() {
               g()
               ~~~
           2 errors
+        """
+          .trimIndent()
+      )
+  }
+
+  fun testBaseAssumption_forEach() {
+    lint()
+      .files(
+        kotlin(
+            """
+          package test.pkg
+          import androidx.annotation.WorkerThread
+          import androidx.annotation.UiThread
+
+          @WorkerThread fun worker() { }
+
+          @UiThread fun ui(l : List<*>) {
+              l.forEach { worker() }
+          }
+          """
+              .trimIndent()
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
+          src/test/pkg/test.kt:8: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+              l.forEach { worker() }
+                ~~~~~~~~~~~~~~~~~~~~
+          1 error
+        """
+          .trimIndent()
+      )
+  }
+
+  fun testBaseAssumption_commonScopingFunctions() {
+    lint()
+      .files(
+        kotlin(
+            """
+          package test.pkg
+          import androidx.annotation.WorkerThread
+          import androidx.annotation.UiThread
+
+          @WorkerThread fun worker() { }
+
+          @WorkerThread fun Any.slow() { }
+
+          @UiThread fun ui(l : List<*>) {
+              Any().apply { worker() }
+              42.also(Any::slow)
+              with("foo") { slow() }
+              "foo".let(Any::slow)
+          }
+          """
+              .trimIndent()
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
+          src/test/pkg/test.kt:10: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+              Any().apply { worker() }
+                    ~~~~~~~~~~~~~~~~~~
+          src/test/pkg/test.kt:11: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+              42.also(Any::slow)
+                 ~~~~~~~~~~~~~~~
+          src/test/pkg/test.kt:12: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+              with("foo") { slow() }
+              ~~~~~~~~~~~~~~~~~~~~~~
+          src/test/pkg/test.kt:13: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+              "foo".let(Any::slow)
+                    ~~~~~~~~~~~~~~
+          4 errors
         """
           .trimIndent()
       )
@@ -1137,6 +1216,130 @@ class InferredThreadDetectorTest : AbstractCheckTest() {
       .expectClean()
   }
 
+  // Test reduced from .../dfu/FirmwareUpdateStateMachine
+  fun testNested() {
+    lint()
+      .files(
+        java(
+            """
+          final class Test {
+
+            private Container rec(Tag root) {
+              return root.container().map(rec(root));
+            }
+
+            interface Tag {
+              Container container();
+            }
+
+            static final class Container {
+              public Container map(Object f) {
+                return this;
+              }
+            }
+          }
+          """
+              .trimIndent()
+          )
+          .indented()
+      )
+      .run()
+      .expectClean()
+  }
+
+  // Test reduced from third_party/.../kotlin-result/../result/Zip.kt
+  fun testNestedLambda() {
+    val start = System.currentTimeMillis()
+    lint()
+      .files(
+        kotlin(
+            """
+          sealed class Res<out V>
+          class Ok<out V>(val value: V) : Res<V>()
+          object Err : Res<Nothing>()
+
+          fun <T1, T2, T3, T4, T5, V> zip(
+            result1: () -> Res<T1>,
+            result2: () -> Res<T2>,
+            result3: () -> Res<T3>,
+            result4: () -> Res<T4>,
+            result5: () -> Res<T5>,
+            transform: (T1, T2, T3, T4, T5) -> V
+          ): Res<V> =
+            result1().bind { v1 ->
+              result2().bind { v2 ->
+                result3().bind { v3 ->
+                  result4().bind { v4 ->
+                    result5().map { v5 ->
+                      transform(v1, v2, v3, v4, v5)
+                    }
+                  }
+                }
+              }
+            }
+
+          private infix fun <V, U> Res<V>.map(transform: (V) -> U): Res<U> =
+            when (this) {
+              is Ok -> Ok(transform(value))
+              is Err -> this
+            }
+
+          private infix fun <V, U> Res<V>.bind(transform: (V) -> Res<U>): Res<U> =
+            when (this) {
+              is Ok -> transform(value)
+              is Err -> this
+            }
+
+          """
+              .trimIndent()
+          )
+          .indented()
+      )
+      .run()
+      .expectClean()
+    val end = System.currentTimeMillis()
+    // Before the fix, this test took ~115s on an M3 Pro. After the fix, it takes <2s (including
+    // project initialization time). We give it 10x leeway.
+    Truth.assertThat(end - start).isLessThan(20_000)
+  }
+
+  // Test reduced from ...trix.ritz.shared.model.channels.ReadableChannel
+  fun testNestedLambda2() {
+    lint()
+      .testModes(TestMode.DEFAULT)
+      .files(
+        java(
+            """
+          public interface ReadableChannel<V> {
+
+            void forEach(Consume1<V> callback);
+
+            default <X> void join1(ReadableChannel<X> other, Consume2<V, X> callback) {
+              forEach(a -> other.forEach(b -> callback.apply(a, b)));
+            }
+
+            default <X> void join2(ReadableChannel<X> other, Consume2<V, X> callback) {
+              join1(other, (a, b) -> other.forEach(c -> callback.apply(a, b)));
+            }
+
+            interface Consume1<V2> {
+              void accept(V2 value);
+            }
+
+            interface Consume2<A, B> {
+              void apply(A a, B b);
+            }
+          }
+          """
+              .trimIndent()
+          )
+          .indented()
+      )
+      .run()
+      .expectClean()
+    // This program never converged before the fix.
+  }
+
   fun testInterpreter_bigStep() {
     lint()
       .files(
@@ -1641,6 +1844,55 @@ class InferredThreadDetectorTest : AbstractCheckTest() {
               id(Test2()).workerProp = 43
               ~~~~~~~~~~~~~~~~~~~~~~~~~~~
           9 errors
+        """
+          .trimIndent()
+      )
+  }
+
+  fun `test unannotated local variable having refined type`() {
+    lint()
+      .files(
+        kotlin(
+            """
+          import androidx.annotation.WorkerThread
+          import androidx.annotation.AnyThread
+
+          @WorkerThread fun work() { }
+
+          @AnyThread
+          fun wrapWork(): () -> Unit {
+              val doer = { work() }
+              return doer
+          }
+
+          fun wrapWorkAnnotated(): () -> Unit {
+              val doer : () -> Unit = { work() }
+              return doer
+          }
+
+          fun runIt(run: () -> Unit) = run()
+
+          @AnyThread
+          fun main() {
+              runIt(wrapWork())
+              runIt(wrapWorkAnnotated())
+          }
+          """
+              .trimIndent()
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
+        src/test.kt:21: Error: Call must be from @WorkerThread, but context is allowing @AnyThread [ThreadConstraint]
+            runIt(wrapWork())
+            ~~~~~~~~~~~~~~~~~
+        src/test.kt:22: Error: Call must be from @WorkerThread, but context is allowing @AnyThread [ThreadConstraint]
+            runIt(wrapWorkAnnotated())
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~
+        2 errors
         """
           .trimIndent()
       )

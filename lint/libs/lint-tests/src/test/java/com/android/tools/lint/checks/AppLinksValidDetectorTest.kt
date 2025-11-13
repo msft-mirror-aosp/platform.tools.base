@@ -712,7 +712,7 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
               <uses-sdk android:compileSdkVersion="35" android:minSdkVersion="31" android:targetSdkVersion="35" />
 
               <application>
-                  <activity android:name=".MainActivity">
+                  <activity android:name=".MainActivity" android:exported="true">
                       <intent-filter android:autoVerify="true">
                           <action android:name="android.intent.action.VIEW" />
                           <category android:name="android.intent.category.DEFAULT" />
@@ -758,7 +758,7 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
               <uses-sdk android:compileSdkVersion="35" android:minSdkVersion="31" android:targetSdkVersion="35" />
 
               <application>
-                  <activity android:name=".MainActivity">
+                  <activity android:name=".MainActivity" android:exported="true">
                       <intent-filter android:autoVerify="true">
                           <action android:name="android.intent.action.VIEW" />
                           <category android:name="android.intent.category.DEFAULT" />
@@ -803,7 +803,7 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
               <uses-sdk android:compileSdkVersion="35" android:minSdkVersion="31" android:targetSdkVersion="35" />
 
               <application>
-                  <activity android:name=".MainActivity">
+                  <activity android:name=".MainActivity" android:exported="true">
                       <intent-filter android:autoVerify="true">
                           <action android:name="android.intent.action.VIEW" />
                           <category android:name="android.intent.category.DEFAULT" />
@@ -845,7 +845,7 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
               <uses-sdk android:compileSdkVersion="35" android:minSdkVersion="31" android:targetSdkVersion="35" />
 
               <application>
-                  <activity android:name=".MainActivity">
+                  <activity android:name=".MainActivity" android:exported="true">
                       <intent-filter android:autoVerify="true">
                           <action android:name="android.intent.action.VIEW" />
                           <category android:name="android.intent.category.DEFAULT" />
@@ -882,7 +882,7 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
               <uses-sdk android:compileSdkVersion="35" android:minSdkVersion="31" android:targetSdkVersion="35" />
 
               <application>
-                  <activity android:name=".MainActivity">
+                  <activity android:name=".MainActivity" android:exported="true">
                       <intent-filter android:autoVerify="true">
                           <action android:name="android.intent.action.VIEW" />
                           <category android:name="android.intent.category.DEFAULT" />
@@ -920,7 +920,7 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
               <uses-sdk android:compileSdkVersion="35" android:minSdkVersion="31" android:targetSdkVersion="35" />
 
               <application>
-                  <activity android:name=".MainActivity">
+                  <activity android:name=".MainActivity" android:exported="true">
                       <intent-filter android:autoVerify="true">
                           <action android:name="android.intent.action.VIEW" />
                           <category android:name="android.intent.category.DEFAULT" />
@@ -958,7 +958,7 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
               <uses-sdk android:compileSdkVersion="35" android:minSdkVersion="31" android:targetSdkVersion="35" />
 
               <application>
-                  <activity android:name=".MainActivity">
+                  <activity android:name=".MainActivity" android:exported="true">
                       <intent-filter android:autoVerify="true">
                           <action android:name="android.intent.action.VIEW" />
                           <category android:name="android.intent.category.DEFAULT" />
@@ -994,7 +994,7 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
               <uses-sdk android:compileSdkVersion="35" android:minSdkVersion="31" android:targetSdkVersion="35" />
 
               <application>
-                  <activity android:name=".MainActivity">
+                  <activity android:name=".MainActivity" android:exported="true">
                       <intent-filter android:autoVerify="true">
                           <action android:name="android.intent.action.VIEW" />
                           <category android:name="android.intent.category.DEFAULT" />
@@ -1030,7 +1030,7 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
               <uses-sdk android:compileSdkVersion="35" android:minSdkVersion="31" android:targetSdkVersion="35" />
 
               <application>
-                  <activity android:name=".MainActivity">
+                  <activity android:name=".MainActivity" android:exported="true">
                       <intent-filter android:autoVerify="true">
                           <action android:name="android.intent.action.VIEW" />
                           <category android:name="android.intent.category.DEFAULT" />
@@ -2797,7 +2797,7 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
               package="com.example.helloworld" >
 
               <application>
-                  <activity android:name=".FullscreenActivity">
+                  <activity android:name=".FullscreenActivity" android:exported="true">
                       <intent-filter android:autoVerify='true'>
                       </intent-filter>
                   </activity>
@@ -2807,6 +2807,8 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
           )
           .indented()
       )
+      // Necessary because the manifest merger complains about empty intent filters.
+      .allowManifestMergerErrors(true)
       .run()
       .expect(
         """
@@ -2840,7 +2842,7 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
               package="com.example.helloworld" >
 
               <application>
-                  <activity android-ns:name=".FullscreenActivity">
+                  <activity android-ns:name=".FullscreenActivity" android-ns:exported="true">
                       <intent-filter android-ns:autoVerify='true'>
                       </intent-filter>
                   </activity>
@@ -2850,6 +2852,8 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
           )
           .indented()
       )
+      // Necessary because the manifest merger complains about empty intent filters.
+      .allowManifestMergerErrors(true)
       .run()
       .expect(
         """
@@ -3300,6 +3304,7 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
               compileSdkVersion 35
 
               defaultConfig {
+                  applicationId "com.example.helloworld"
                   minSdkVersion 30
                   targetSdkVersion 35
               }
@@ -3311,7 +3316,7 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
             """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="com.example.helloworld" >
-                    <uses-sdk android:compileSdkVersion="35" android:minSdkVersion="31" android:targetSdkVersion="35" />
+                    <uses-sdk android:compileSdkVersion="35" android:minSdkVersion="30" android:targetSdkVersion="35" />
 
                     <application>
                         <activity android:name=".FullscreenActivity" android:exported="true">
@@ -3435,6 +3440,7 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
               compileSdkVersion 35
 
               defaultConfig {
+                  applicationId "com.example.helloworld"
                   minSdkVersion 30
                   targetSdkVersion 35
               }
@@ -3446,7 +3452,7 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
             """
             <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                 package="com.example.helloworld" >
-                <uses-sdk android:minSdkVersion="31" android:targetSdkVersion="35" />
+                <uses-sdk android:minSdkVersion="30" android:targetSdkVersion="35" />
 
                 <application>
                     <activity android:name=".FullscreenActivity" android:exported="true">
@@ -3557,6 +3563,7 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
               compileSdkVersion 35
 
               defaultConfig {
+                  applicationId "com.example.helloworld"
                   minSdkVersion 30
                   targetSdkVersion 35
               }
@@ -3568,7 +3575,7 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
             """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="com.example.helloworld" >
-                    <uses-sdk android:minSdkVersion="31" android:targetSdkVersion="35" />
+                    <uses-sdk android:minSdkVersion="30" android:targetSdkVersion="35" />
 
                     <application>
                         <activity android:name=".FullscreenActivity" android:exported="true">
@@ -3635,6 +3642,7 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
               compileSdkVersion 35
 
               defaultConfig {
+                  applicationId "com.example.helloworld"
                   minSdkVersion 30
                   targetSdkVersion 35
               }
@@ -3645,7 +3653,7 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
             """
                 <manifest xmlns:android-ns="http://schemas.android.com/apk/res/android"
                     package="com.example.helloworld" >
-                    <uses-sdk android-ns:minSdkVersion="31" android-ns:targetSdkVersion="35" />
+                    <uses-sdk android-ns:minSdkVersion="30" android-ns:targetSdkVersion="35" />
 
                     <application>
                         <activity android-ns:name=".FullscreenActivity" android-ns:exported="true">
@@ -3712,6 +3720,7 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
               compileSdkVersion 35
 
               defaultConfig {
+                  applicationId "com.example.helloworld"
                   minSdkVersion 30
                   targetSdkVersion 35
               }
@@ -3723,7 +3732,7 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
             """
           <manifest xmlns:android="http://schemas.android.com/apk/res/android"
               package="com.example.helloworld" >
-              <uses-sdk android:minSdkVersion="31" android:targetSdkVersion="35" />
+              <uses-sdk android:minSdkVersion="30" android:targetSdkVersion="35" />
 
               <application>
                   <activity android:name=".FullscreenActivity" android:exported="true">
@@ -3777,6 +3786,7 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
               compileSdkVersion 34
 
               defaultConfig {
+                  applicationId "com.example.helloworld"
                   minSdkVersion 30
                   targetSdkVersion 35
               }
@@ -3835,6 +3845,7 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
               compileSdkVersion 35
 
               defaultConfig {
+                  applicationId "com.example.helloworld"
                   minSdkVersion 30
                   targetSdkVersion 34
               }
@@ -3893,6 +3904,7 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
               compileSdkVersion 35
 
               defaultConfig {
+                  applicationId "com.example.helloworld"
                   minSdkVersion 30
                   targetSdkVersion 35
               }
@@ -3904,7 +3916,7 @@ class AppLinksValidDetectorTest : AbstractCheckTest() {
             """
               <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                   package="com.example.helloworld" >
-                  <uses-sdk android:compileSdkVersion="35" android:minSdkVersion="31" android:targetSdkVersion="35" />
+                  <uses-sdk android:compileSdkVersion="35" android:minSdkVersion="30" android:targetSdkVersion="35" />
 
                   <application>
                       <activity android:name=".FullscreenActivity" android:exported="true">

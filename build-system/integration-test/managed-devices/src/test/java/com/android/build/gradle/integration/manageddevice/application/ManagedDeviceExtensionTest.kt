@@ -29,9 +29,9 @@ import com.android.build.gradle.integration.common.fixture.GradleTaskExecutor
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.plugins.ApplicationComponentCallback
 import com.android.build.gradle.integration.common.truth.ScannerSubject.Companion.assertThat
-import com.android.build.gradle.integration.common.utils.disableBuiltInKotlin
 import com.android.build.gradle.integration.manageddevice.utils.simpleProject
 import com.android.build.gradle.internal.utils.setDisallowChanges
+import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.truth.PathSubject.assertThat
 import com.android.utils.FileUtils
 import org.gradle.api.Project
@@ -113,39 +113,41 @@ class ManagedDeviceExtensionTest {
     }
 
     @get:Rule
-    val rule = GradleRule.configure()
-        .from {
-            simpleProject()
-            rootProject {
-                buildscript {
-                    classpath(localJar("myCustomGmdClasses") {
-                        addClasses(
-                            MyCustomDevice::class.java,
-                            MyCustomDeviceImpl::class.java,
-                            ManagedDeviceExtensionTest::class.java,
-                            SetupConfigAction::class.java,
-                            SetupInput::class.java,
-                            SetupTaskAction::class.java,
-                            TestRunConfigAction::class.java,
-                            TestRunInput::class.java,
-                            TestRunTaskAction::class.java,
-                        )
-                    })
-                }
+    val rule = GradleRule.from {
+        simpleProject()
+        rootProject {
+            buildscript {
+                classpath(localJar("myCustomGmdClasses") {
+                    addClasses(
+                        MyCustomDevice::class.java,
+                        MyCustomDeviceImpl::class.java,
+                        ManagedDeviceExtensionTest::class.java,
+                        SetupConfigAction::class.java,
+                        SetupInput::class.java,
+                        SetupTaskAction::class.java,
+                        TestRunConfigAction::class.java,
+                        TestRunInput::class.java,
+                        TestRunTaskAction::class.java,
+                    )
+                })
             }
-            androidApplication {
-                android.testOptions.managedDevices {
-                    allDevices.create("myCustomDevice", MyCustomDevice::class.java) {}
-                }
-                pluginCallbacks += AddCustomGMDCallback::class.java
+        }
+        androidApplication {
+            android.testOptions.managedDevices {
+                allDevices.create("myCustomDevice", MyCustomDevice::class.java) {}
             }
-            androidApplication(":emptyAppProject") {
-                android.testOptions.managedDevices {
-                    allDevices.create("myCustomDevice", MyCustomDevice::class.java) {}
-                }
-                pluginCallbacks += AddCustomGMDCallback::class.java
+            pluginCallbacks += AddCustomGMDCallback::class.java
+        }
+        androidApplication(":emptyAppProject") {
+            android.testOptions.managedDevices {
+                allDevices.create("myCustomDevice", MyCustomDevice::class.java) {}
             }
-            disableBuiltInKotlin()
+            pluginCallbacks += AddCustomGMDCallback::class.java
+        }
+        gradleProperties {
+            // TODO(b/458859093) remove when test is fixed to not require this.
+            add(BooleanOption.ENABLE_APP_COMPILE_TIME_R_CLASS, false)
+        }
     }
 
     class AddCustomGMDCallback : ApplicationComponentCallback {
@@ -222,7 +224,10 @@ class ManagedDeviceExtensionTest {
     fun runCustomManagedDeviceWithNoTests() {
         val project = rule.build.androidApplication(":emptyAppProject")
 
-        val result = executor.run(":emptyAppProject:myCustomDeviceCheck")
+        val result = executor
+            // TODO(b/439843451) - Opt back into `android.enableAppCompileTimeRClass`
+            .with(BooleanOption.ENABLE_APP_COMPILE_TIME_R_CLASS, false)
+            .run(":emptyAppProject:myCustomDeviceCheck")
 
         result.stdout.use {
             assertThat(it).contains("No tests found, nothing to do.")

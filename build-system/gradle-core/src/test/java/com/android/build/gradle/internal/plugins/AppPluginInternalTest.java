@@ -16,6 +16,9 @@
 
 package com.android.build.gradle.internal.plugins;
 
+import static com.android.build.gradle.internal.fixture.VariantCreationConfigCheckerKt.checkDefaultVariants;
+import static com.android.build.gradle.internal.fixture.VariantCreationConfigCheckerKt.countVariants;
+import static com.android.build.gradle.internal.fixture.VariantCreationConfigCheckerKt.findComponent;
 import static com.android.build.gradle.internal.instrumentation.InstrumentationUtilsKt.ASM_API_VERSION;
 import static com.android.build.gradle.internal.utils.OfflineMavenRepoUtilKt.importOfflineMavenRepo;
 
@@ -37,7 +40,6 @@ import com.android.build.gradle.internal.core.dsl.ApplicationVariantDslInfo;
 import com.android.build.gradle.internal.dsl.BuildType;
 import com.android.build.gradle.internal.fixture.TestConstants;
 import com.android.build.gradle.internal.fixture.TestProjects;
-import com.android.build.gradle.internal.fixture.VariantCheckers;
 import com.android.build.gradle.internal.packaging.GradleKeystoreHelper;
 import com.android.build.gradle.internal.variant.ComponentInfo;
 import com.android.build.gradle.internal.variant.VariantInputModel;
@@ -107,11 +109,11 @@ public class AppPluginInternalTest {
 
         List<ComponentCreationConfig> components = getComponents(plugin.getVariantManager());
 
-        VariantCheckers.checkDefaultVariants(components);
+        checkDefaultVariants(components);
 
-        VariantCheckers.findComponent(components, "debug");
-        VariantCheckers.findComponent(components, "release");
-        VariantCheckers.findComponent(components, "debugAndroidTest");
+        findComponent(components, "debug");
+        findComponent(components, "release");
+        findComponent(components, "debugAndroidTest");
     }
 
     @Test
@@ -191,16 +193,15 @@ public class AppPluginInternalTest {
         map.put("appVariants", 3);
         map.put("unitTests", 1);
         map.put("androidTests", 1);
-        TestCase.assertEquals(VariantCheckers.countVariants(map), components.size());
+        TestCase.assertEquals(countVariants(map), components.size());
 
         String[] variantNames = new String[] {"debug", "release", "staging"};
 
         for (String variantName : variantNames) {
-            VariantCheckers.findComponent(components, variantName);
+            findComponent(components, variantName);
         }
 
-        ComponentCreationConfig testVariant =
-                VariantCheckers.findComponent(components, "stagingAndroidTest");
+        ComponentCreationConfig testVariant = findComponent(components, "stagingAndroidTest");
         TestCase.assertEquals("staging", testVariant.getBuildType());
     }
     @Test
@@ -232,7 +233,7 @@ public class AppPluginInternalTest {
         map.put("appVariants", 4);
         map.put("unitTests", 2);
         map.put("androidTests", 2);
-        TestCase.assertEquals(VariantCheckers.countVariants(map), components.size());
+        TestCase.assertEquals(countVariants(map), components.size());
 
         String[] variantNames =
                 new String[] {
@@ -245,7 +246,7 @@ public class AppPluginInternalTest {
                 };
 
         for (String variantName : variantNames) {
-            VariantCheckers.findComponent(components, variantName);
+            findComponent(components, variantName);
         }
     }
     @Test
@@ -288,7 +289,7 @@ public class AppPluginInternalTest {
         map.put("appVariants", 12);
         map.put("unitTests", 6);
         map.put("androidTests", 6);
-        TestCase.assertEquals(VariantCheckers.countVariants(map), components.size());
+        TestCase.assertEquals(countVariants(map), components.size());
 
         String[] variantNames =
                 new String[] {
@@ -313,7 +314,7 @@ public class AppPluginInternalTest {
                 };
 
         for (String variantName : variantNames) {
-            VariantCheckers.findComponent(components, variantName);
+            findComponent(components, variantName);
         }
     }
     @Test
@@ -381,12 +382,12 @@ public class AppPluginInternalTest {
         map.put("appVariants", 6);
         map.put("unitTests", 2);
         map.put("androidTests", 2);
-        TestCase.assertEquals(VariantCheckers.countVariants(map), components.size());
+        TestCase.assertEquals(countVariants(map), components.size());
 
         ComponentCreationConfig variant;
         SigningConfigImpl signingConfig;
 
-        variant = VariantCheckers.findComponent(components, "flavor1Debug");
+        variant = findComponent(components, "flavor1Debug");
         signingConfig = ((ApplicationVariantImpl) variant).getSigningConfig();
         TestCase.assertNotNull(signingConfig);
         final File file = signingConfig.getStoreFile().get();
@@ -399,17 +400,17 @@ public class AppPluginInternalTest {
                                         new StdLogger(StdLogger.Level.VERBOSE),
                                         true) {}));
 
-        variant = VariantCheckers.findComponent(components, "flavor1Staging");
+        variant = findComponent(components, "flavor1Staging");
         signingConfig = ((ApplicationVariantImpl) variant).getSigningConfig();
         TestCase.assertNotNull(signingConfig);
 
-        variant = VariantCheckers.findComponent(components, "flavor1Release");
+        variant = findComponent(components, "flavor1Release");
         signingConfig = ((ApplicationVariantImpl) variant).getSigningConfig();
         TestCase.assertNotNull(signingConfig);
         TestCase.assertEquals(
                 new File(project.getProjectDir(), "a3"), signingConfig.getStoreFile().get());
 
-        variant = VariantCheckers.findComponent(components, "flavor2Debug");
+        variant = findComponent(components, "flavor2Debug");
         signingConfig = ((ApplicationVariantImpl) variant).getSigningConfig();
         TestCase.assertNotNull(signingConfig);
         final File file1 = signingConfig.getStoreFile().get();
@@ -422,13 +423,13 @@ public class AppPluginInternalTest {
                                         new StdLogger(StdLogger.Level.VERBOSE),
                                         true) {}));
 
-        variant = VariantCheckers.findComponent(components, "flavor2Staging");
+        variant = findComponent(components, "flavor2Staging");
         signingConfig = ((ApplicationVariantImpl) variant).getSigningConfig();
         TestCase.assertNotNull(signingConfig);
         TestCase.assertEquals(
                 new File(project.getProjectDir(), "a1"), signingConfig.getStoreFile().get());
 
-        variant = VariantCheckers.findComponent(components, "flavor2Release");
+        variant = findComponent(components, "flavor2Release");
         signingConfig = ((ApplicationVariantImpl) variant).getSigningConfig();
         TestCase.assertNotNull(signingConfig);
         TestCase.assertEquals(
@@ -489,7 +490,7 @@ public class AppPluginInternalTest {
         ComponentCreationConfig variant;
         SigningConfigImpl signingConfig;
 
-        variant = VariantCheckers.findComponent(components, "flavor1Staging");
+        variant = findComponent(components, "flavor1Staging");
         signingConfig = ((ApplicationVariantImpl) variant).getSigningConfig();
         TestCase.assertNotNull(signingConfig);
         TestCase.assertEquals(signingConfig.getKeyAlias().get(), "c1");
@@ -497,7 +498,7 @@ public class AppPluginInternalTest {
         TestCase.assertTrue(signingConfig.hasConfig());
         TestCase.assertTrue(signingConfig.isSigningReady());
 
-        variant = VariantCheckers.findComponent(components, "flavor1Release");
+        variant = findComponent(components, "flavor1Release");
         signingConfig = ((ApplicationVariantImpl) variant).getSigningConfig();
         TestCase.assertNotNull(signingConfig);
         TestCase.assertFalse(signingConfig.hasConfig());
@@ -624,7 +625,7 @@ public class AppPluginInternalTest {
         plugin.createAndroidTasks(project);
         List<ComponentCreationConfig> components = getComponents(plugin.getVariantManager());
 
-        VariantCheckers.checkDefaultVariants(components);
+        checkDefaultVariants(components);
 
         int latestAvailableAsmApi = -1;
         int currentAsmApi = -1;

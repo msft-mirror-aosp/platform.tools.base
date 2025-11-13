@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.integration.common.fixture.dsl
 
+import com.android.build.gradle.integration.common.fixture.project.builder.CustomObjectInstance
 import groovy.lang.Closure
 import org.gradle.api.Action
 import org.gradle.api.DomainObjectCollection
@@ -27,12 +28,28 @@ import org.gradle.api.Namer
 import org.gradle.api.Rule
 import org.gradle.api.provider.Provider
 import org.gradle.api.specs.Spec
+import java.lang.reflect.Proxy
 import java.util.SortedMap
 import java.util.SortedSet
 
 class NamedDomainObjectContainerProxy<T>(
     private val theInterface: Class<T>,
     internal val dslRecorder: DslRecorder,
+    /**
+     * A path to the instance of the container. This is not to be used everywhere.
+     *
+     * Mostly this is useful for references to android.signingConfigs from inside flavors/build type
+     * as we need to be able to do
+     * ```
+     *    signingConfig = signingConfigs.getByName("blue")
+     * ```
+     *
+     * The idea is to allow getByName to return a fake item that can just rewrite the call
+     * site that generated it.
+     *
+     * Much care should be applied if deciding to use this for something else.
+     */
+    private val pathToInstance: String? = null,
 ): NamedDomainObjectContainer<T> {
 
     override fun named(
@@ -74,6 +91,21 @@ class NamedDomainObjectContainerProxy<T>(
             instanceProvider = { DslProxy.createProxy(theInterface, it) }
         ) {
             action.execute(this)
+        }
+    }
+
+    override fun getByName(name: String): T {
+        return if (pathToInstance == null) {
+            throw RuntimeException("'pathToInstance' is null and therefore getByName cannot return proxied items")
+        } else {
+            @Suppress("UNCHECKED_CAST")
+            Proxy.newProxyInstance(
+                ContainerItemProxy::class.java.classLoader,
+                // also include CustomObjectInstance to automaticall support it inside
+                // the BuildWriter formatting method.
+                arrayOf(theInterface, CustomObjectInstance::class.java),
+                ContainerItemProxy(itemName = name, pathToParent = pathToInstance)
+            ) as T
         }
     }
 
@@ -132,10 +164,6 @@ class NamedDomainObjectContainerProxy<T>(
     }
 
     override fun findByName(name: String): T? {
-        throw RuntimeException("Not Supported")
-    }
-
-    override fun getByName(name: String): T {
         throw RuntimeException("Not Supported")
     }
 

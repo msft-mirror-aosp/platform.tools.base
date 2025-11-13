@@ -17,6 +17,7 @@
 package com.android.build.gradle.integration.testing.screenshot
 
 import com.android.build.api.dsl.CommonExtension
+import com.android.build.api.dsl.TestExtension
 import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
 import com.android.build.gradle.integration.common.fixture.GradleBuildResult
 import com.android.build.gradle.integration.common.fixture.GradleTaskExecutor
@@ -29,7 +30,6 @@ import com.android.build.gradle.integration.common.fixture.project.builder.Plugi
 import com.android.build.gradle.integration.common.fixture.project.plugins.GenericCallback
 import com.android.build.gradle.integration.common.truth.ScannerSubject.Companion.assertThat
 import com.android.build.gradle.integration.common.truth.forEachLine
-import com.android.build.gradle.integration.common.utils.disableBuiltInKotlin
 import com.android.build.gradle.internal.TaskManager
 import com.android.build.gradle.options.BooleanOption
 import com.android.compose.screenshot.gradle.ScreenshotTestOptions
@@ -72,8 +72,9 @@ class ScreenshotTest {
 
             gradleProperties {
                 add(BooleanOption.ENABLE_SCREENSHOT_TEST, true)
+                add(BooleanOption.BUILT_IN_KOTLIN, false)
+                add(BooleanOption.USE_NEW_DSL, false)
             }
-            disableBuiltInKotlin()
         }
 
     @JvmField
@@ -219,9 +220,7 @@ class ScreenshotTest {
             buildFeatures.apply {
                 compose = true
             }
-            composeOptions {
-                kotlinCompilerExtensionVersion = TestUtils.COMPOSE_COMPILER_FOR_TESTS
-            }
+            composeOptions.kotlinCompilerExtensionVersion = TestUtils.COMPOSE_COMPILER_FOR_TESTS
             experimentalProperties["android.experimental.enableScreenshotTest"] = true
         }
         dependencies {

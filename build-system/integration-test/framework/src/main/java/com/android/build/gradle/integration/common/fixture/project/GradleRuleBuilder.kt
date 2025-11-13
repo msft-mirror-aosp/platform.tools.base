@@ -19,6 +19,7 @@ package com.android.build.gradle.integration.common.fixture.project
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleDefinitionDsl
+import com.android.build.gradle.integration.common.fixture.project.builder.LocalTestProjectSpec
 import com.android.build.gradle.integration.common.fixture.project.builder.MavenRepository
 import com.android.build.gradle.integration.common.fixture.project.builder.MavenRepositoryImpl
 import com.android.build.gradle.integration.common.fixture.project.options.DefaultRuleOptionBuilder
@@ -36,20 +37,10 @@ import org.junit.runners.model.Statement
  * Don't use directly, use [GradleRule.configure].
  */
 @GradleDefinitionDsl
-interface GradleRuleBuilder: TestRule, RuleOptionBuilder {
+interface GradleRuleBuilder: GradleRuleEntryPoint, RuleOptionBuilder, TestRule {
 
-    /**
-     * Returns the [GradleRule], for a project initialized with a [GradleBuildDefinition]
-     *
-     * @param folderName the name of the folder containing the build.
-     * @param logicalName The logical name of the build in gradle. This impact the groupId information of the subprojects. if null, same as folder name
-     * @param action the action to configure the build
-     */
-    fun from(
-        folderName: String = GradleBuildDefinition.DEFAULT_BUILD_NAME,
-        logicalName: String? = null,
-        action: GradleBuildDefinition.() -> Unit
-    ): GradleRule
+    override fun disableBrokenBuiltInKotlinOptOutChecks(): GradleRuleBuilder
+    override fun disableBrokenNewDslOptOutChecks(): GradleRuleBuilder
 
     override fun withGradleLocation(action: GradleLocationBuilder.() -> Unit): GradleRuleBuilder
     override fun withGradleOptions(action: GradleOptionBuilder<*>.() -> Unit): GradleRuleBuilder
@@ -71,12 +62,59 @@ internal class GradleRuleBuilderImpl internal constructor(): GradleRuleBuilder {
     override fun from(
         folderName: String,
         logicalName: String?,
-        action: GradleBuildDefinition.() -> Unit
+        configAction: GradleBuildDefinition.() -> Unit
     ): GradleRule {
-        val builder = GradleBuildDefinitionImpl(name = logicalName ?: folderName, rootFolderName = folderName)
-        action(builder)
+        val builder = GradleBuildDefinitionImpl(
+            name = logicalName ?: folderName,
+            rootFolderName = folderName,
+            enableDefaultContentCreation = true
+        )
+        configAction(builder)
 
         return create(builder)
+    }
+
+    override fun fromProject(
+        testProjectName: String,
+        folderName: String,
+        logicalName: String?,
+        configAction: GradleBuildDefinition.() -> Unit
+    ): GradleRule {
+        val builder = GradleBuildDefinitionImpl(
+            name = logicalName ?: folderName,
+            rootFolderName = folderName,
+            enableDefaultContentCreation = false,
+        )
+        configAction(builder)
+
+        return create(builder, testProjectName)
+    }
+
+    override fun fromProject(
+        testProjectSpec: LocalTestProjectSpec,
+        folderName: String,
+        logicalName: String?,
+        configAction: (GradleBuildDefinition.() -> Unit)?
+    ): GradleRule {
+        val builder = GradleBuildDefinitionImpl(
+            name = logicalName ?: folderName,
+            rootFolderName = folderName,
+            enableDefaultContentCreation = false,
+        )
+        testProjectSpec.configAction(builder)
+        configAction?.invoke(builder)
+
+        return create(builder, testProjectSpec.projectName)
+    }
+
+    override fun disableBrokenBuiltInKotlinOptOutChecks(): GradleRuleBuilder {
+        ruleOptionBuilder.disableBrokenBuiltInKotlinOptOutChecks()
+        return this
+    }
+
+    override fun disableBrokenNewDslOptOutChecks(): GradleRuleBuilder {
+        ruleOptionBuilder.disableBrokenNewDslOptOutChecks()
+        return this
     }
 
     override fun withGradleLocation(action: GradleLocationBuilder.() -> Unit): GradleRuleBuilder {
@@ -107,13 +145,15 @@ internal class GradleRuleBuilderImpl internal constructor(): GradleRuleBuilder {
     // -------------------------
 
     internal fun create(
-        gradleBuild: GradleBuildDefinitionImpl
+        gradleBuild: GradleBuildDefinitionImpl,
+        testProjectName: String? = null
     ): GradleRule {
         return GradleRuleImpl(
             buildDefinition = gradleBuild,
             ruleOptionBuilder = ruleOptionBuilder,
             externalLibraries = mavenRepository.libraries,
-            enableProfileOutput
+            enableProfileOutput,
+            testProjectName,
         )
     }
 

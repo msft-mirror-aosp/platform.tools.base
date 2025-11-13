@@ -21,19 +21,19 @@ import com.android.build.api.artifact.impl.ArtifactsImpl
 import com.android.build.api.artifact.impl.InternalScopedArtifacts
 import com.android.build.api.variant.Packaging
 import com.android.build.api.variant.ScopedArtifacts
+import com.android.build.api.variant.impl.PackagingImpl
 import com.android.build.gradle.internal.TaskManager
 import com.android.build.gradle.internal.component.ApkCreationConfig
 import com.android.build.gradle.internal.component.ComponentCreationConfig
+import com.android.build.gradle.internal.tasks.creationconfig.ProcessJavaResCreationConfig
 import com.android.build.gradle.internal.dependency.PluginDependencies
 import com.android.build.gradle.internal.fusedlibrary.FusedLibraryGlobalScope
 import com.android.build.gradle.internal.fusedlibrary.FusedLibraryInternalArtifactType
 import com.android.build.gradle.internal.packaging.defaultExcludes
-import com.android.build.gradle.internal.privaysandboxsdk.PrivacySandboxSdkVariantScope
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.scope.InternalArtifactType.JAVA_RES
 import com.android.build.gradle.internal.tasks.MergeJavaResWorkAction.SourcedInput
-import com.android.build.gradle.internal.tasks.factory.AndroidVariantTaskCreationAction
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationAction
 import com.android.build.gradle.internal.tasks.factory.VariantTaskCreationAction
 import com.android.build.gradle.internal.utils.fromDisallowChanges
@@ -276,7 +276,12 @@ abstract class MergeJavaResourcesGlobalTask : MergeJavaResourcesInputsOutputs, N
     override fun doTaskAction(inputChanges: InputChanges) =
         runTaskAction(inputChanges, this, this)
 
-    abstract class CommonCreationAction(val artifacts: ArtifactsImpl, val dependencies: PluginDependencies, val projectLayout: ProjectLayout)
+    abstract class CommonCreationAction(
+        val artifacts: ArtifactsImpl,
+        val dependencies: PluginDependencies,
+        val projectLayout: ProjectLayout,
+        val packaging: Packaging? = null
+    )
         :  GlobalTaskCreationAction<MergeJavaResourcesGlobalTask>() {
 
         override val name: String
@@ -303,10 +308,15 @@ abstract class MergeJavaResourcesGlobalTask : MergeJavaResourcesInputsOutputs, N
                 )
             )
 
-            // For configuring the merging rules (we may want to add DSL for this in the future.)
-            task.excludes.setDisallowChanges(defaultExcludes)
-            task.pickFirsts.setDisallowChanges(emptySet())
-            task.merges.setDisallowChanges(emptySet())
+            if (packaging != null) {
+                task.excludes.setDisallowChanges(packaging.resources.excludes)
+                task.pickFirsts.setDisallowChanges(packaging.resources.pickFirsts)
+                task.merges.setDisallowChanges(packaging.resources.merges)
+            } else {
+                task.excludes.setDisallowChanges(defaultExcludes)
+                task.pickFirsts.setDisallowChanges(emptySet())
+                task.merges.setDisallowChanges(emptySet())
+            }
 
             val mergeJavaResDir = projectLayout.buildDirectory
                 .dir(SdkConstants.FD_INTERMEDIATES)
@@ -331,16 +341,9 @@ abstract class MergeJavaResourcesGlobalTask : MergeJavaResourcesInputsOutputs, N
         CommonCreationAction(
             creationConfig.artifacts,
             creationConfig.dependencies,
-            creationConfig.projectLayout
+            creationConfig.projectLayout,
+            creationConfig.packaging
         )
-
-    class PrivacySandboxSdkCreationAction(
-        val creationConfig: PrivacySandboxSdkVariantScope
-    ) : CommonCreationAction(
-        creationConfig.artifacts,
-        creationConfig.dependencies,
-        creationConfig.layout
-    )
 }
 
 private fun runTaskAction(
@@ -496,8 +499,7 @@ private fun configureHasIncludedBuilds(
     task.hasIncludedBuilds.setDisallowChanges(gradle.includedBuilds.isNotEmpty())
 }
 
-/** Returns true if anything's been added to the annotation processor configuration. */
-fun projectHasAnnotationProcessors(creationConfig: ComponentCreationConfig): Boolean {
-    val config = creationConfig.variantDependencies.annotationProcessorConfiguration
+fun projectHasAnnotationProcessors(creationConfig: ProcessJavaResCreationConfig): Boolean {
+    val config = creationConfig.annotationProcessorConfiguration
     return config != null && config.incoming.dependencies.isNotEmpty()
 }

@@ -67,7 +67,7 @@ fun checkLintModels(
     }
 }
 
-private val cacheReplace = Regex("""/[a-zA-Z0-9]{32}/""")
+private val cacheReplace = Regex("""/[a-zA-Z0-9]{32}/(workspace/)?""")
 
 private val localRepositories = GradleTestProject.localRepositories
         .map { it.toAbsolutePath().toString() }

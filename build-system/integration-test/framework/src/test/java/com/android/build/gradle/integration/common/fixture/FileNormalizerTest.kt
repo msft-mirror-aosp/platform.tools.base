@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.integration.common.fixture
 
+import com.android.SdkConstants
 import com.android.build.gradle.integration.common.fixture.GradleTestProject.Companion.DEFAULT_NDK_SIDE_BY_SIDE_VERSION
 import com.android.testutils.AssumeUtil
 import com.google.common.truth.Truth
@@ -71,8 +72,9 @@ class FileNormalizerTest {
 
     @Test
     fun `Test Gradle Transform Cache`() {
+        val windowsPlatformPrefix = if (SdkConstants.currentPlatform() == SdkConstants.PLATFORM_WINDOWS) "workspace/" else ""
         Truth.assertThat(normalizer.normalize(
-            File("/path/to/Gradle/caches/transforms-3/12345678901234567890123456789012/transformed/foo")
+            File("/path/to/Gradle/caches/transforms-3/12345678901234567890123456789012/${windowsPlatformPrefix}transformed/foo")
         ))
             .isEqualTo("{GRADLE_CACHE}/{CHECKSUM}/transformed/foo{!}")
     }

@@ -17,9 +17,6 @@
 package com.android.build.gradle.internal.dsl
 
 import com.android.build.gradle.internal.dsl.decorator.androidPluginDslDecorator
-import com.android.builder.core.ComponentType
-import com.android.builder.core.ComponentTypeImpl
-import com.android.utils.usLocaleCapitalize
 import com.android.utils.usLocaleDecapitalize
 import com.google.common.truth.Expect
 import com.google.common.truth.Truth.assertWithMessage
@@ -63,6 +60,11 @@ class GroovyExtensionsTest {
     @Test
     fun testLibraryExtension() {
         validate("Library", InternalLibraryExtension::class.java, LibraryExtensionImpl::class.java)
+    }
+
+    @Test
+    fun testFusedLibraryExtension() {
+        validate("FusedLibrary", InternalFusedLibraryExtension::class.java, FusedLibraryExtensionImpl::class.java)
     }
 
     @Test

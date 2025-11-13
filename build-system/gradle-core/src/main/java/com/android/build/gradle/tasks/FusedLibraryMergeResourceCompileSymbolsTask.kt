@@ -20,7 +20,6 @@ import com.android.SdkConstants
 import com.android.build.gradle.internal.fusedlibrary.FusedLibraryInternalArtifactType
 import com.android.build.gradle.internal.fusedlibrary.FusedLibraryGlobalScope
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
-import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.services.SymbolTableBuildService
 import com.android.build.gradle.internal.services.getBuildService
 import com.android.build.gradle.internal.tasks.BuildAnalyzer
@@ -40,7 +39,7 @@ import org.gradle.api.services.ServiceReference
 import org.gradle.api.tasks.CacheableTask
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFiles
-import org.gradle.api.tasks.Internal
+import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
@@ -60,6 +59,7 @@ abstract class FusedLibraryMergeResourceCompileSymbolsTask : NonIncrementalGloba
     @get:ServiceReference
     abstract val symbolTableBuildService: Property<SymbolTableBuildService>
 
+    @get:Optional
     @get:OutputFile
     abstract val fusedSymbolFile: RegularFileProperty
 
@@ -72,13 +72,12 @@ abstract class FusedLibraryMergeResourceCompileSymbolsTask : NonIncrementalGloba
             depSymbolTables = symbolTableBuildService.get().loadClasspath(symbolDependencyTables),
             namespace.get(),
             rClassOutputJar = null,
-            symbolFileOut = fusedSymbolFile.get().asFile,
+            symbolFileOut = if (symbolDependencyTables.files.none()) null else fusedSymbolFile.get().asFile,
             platformSymbols = SymbolTable.EMPTY,
             nonTransitiveRClass = false,
             generateDependencyRClasses = false,
             idProvider = IdProvider.constant()
         )
-
         SymbolIo.writeSymbolListWithPackageName(
             fusedSymbolFile.get().asFile.toPath(),
             namespace.get(),

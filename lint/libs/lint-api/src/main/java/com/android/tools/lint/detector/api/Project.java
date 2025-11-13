@@ -120,7 +120,7 @@ public class Project {
     protected int buildSdk = -1;
     protected AndroidApiLevel buildSdkLevel = null;
     protected String buildTargetHash;
-    protected IAndroidTarget target;
+    protected LintClient.CompileSdkResult target;
 
     protected ApiConstraint manifestMinSdks = ApiConstraint.ALL;
     protected AndroidVersion manifestMinSdk = AndroidVersion.DEFAULT;
@@ -1009,13 +1009,23 @@ public class Project {
      *
      * @return the build target, or null
      */
-    @Nullable
-    public IAndroidTarget getBuildTarget() {
+    @NonNull
+    public LintClient.CompileSdkResult getCompileSdkResult() {
         if (target == null) {
-            target = client.getCompileTarget(this);
+            target = client.getCompileSdkResult(this);
         }
 
         return target;
+    }
+
+    /**
+     * Returns the target used to build the project, or null if not known
+     *
+     * @return the build target, or null
+     */
+    @Nullable
+    public IAndroidTarget getBuildTarget() {
+        return getCompileSdkResult().getTarget();
     }
 
     /**

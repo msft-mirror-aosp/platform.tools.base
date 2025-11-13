@@ -45,6 +45,7 @@ import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskProvider
 import java.io.File
+import org.gradle.api.tasks.Optional
 
 /*
    Task intended to perform bytecode rewriting of compiled merged classes before publishing to
@@ -59,6 +60,7 @@ import java.io.File
 @BuildAnalyzer(primaryTaskCategory = TaskCategory.COMPILED_CLASSES, secondaryTaskCategories = [TaskCategory.SOURCE_PROCESSING])
 abstract class FusedLibraryClassesRewriteTask : NonIncrementalGlobalTask() {
 
+    @get:Optional
     @get:OutputDirectory
     abstract val rewrittenClassesDirectory: DirectoryProperty
 
@@ -80,7 +82,6 @@ abstract class FusedLibraryClassesRewriteTask : NonIncrementalGlobalTask() {
     abstract val symbolTableBuildService: Property<SymbolTableBuildService>
 
     override fun doTaskAction() {
-        val rewrittenClasses = rewrittenClassesDirectory.get().asFile
         val dependencyTables = symbolTableBuildService.get()
             .loadClasspath(librariesSymbolLists.files)
             .filterNot { it.symbols.isEmpty }
@@ -91,9 +92,13 @@ abstract class FusedLibraryClassesRewriteTask : NonIncrementalGlobalTask() {
                 onlyRewriteReferencesInFirstSymbolTable = true
             )
         namespaceRewriter.writeRClass(fusedLibraryRClass.get().asFile.toPath())
+        val mergedClassFiles = mergedClasses.asFileTree.files
+        if (mergedClassFiles.none()) {
+            return
+        }
         rewriteRClassReferencesToFusedLibraryNamespace(
-            mergedClasses.asFileTree.files,
-            rewrittenClasses,
+            mergedClassFiles,
+            rewrittenClassesDirectory.get().asFile,
             namespaceRewriter
         )
     }

@@ -1,9 +1,16 @@
 load("//tools/base/bazel:gradle.bzl", "gradle_build")
 load("//tools/base/bazel:maven.bzl", "maven_repository")
+load("//tools/base/bazel:utils.bzl", "merged_zip")
 load("//tools/base/build-system:hybrid_build.bzl", "GRADLE_PROPERTIES")
+
+filegroup(
+    name = "agp_gradle_build_files",
+    srcs = ["build.gradle"],
+)
 
 # keep sorted
 UTP_SOURCE_FILES = [
+    ":agp_gradle_build_files",
     "//tools:agp_gradle_build_files",
     "//tools/base/common:agp_gradle_build_files",
     "//tools/base/utp/android-device-provider-ddmlib:agp_gradle_build_files",
@@ -15,6 +22,8 @@ UTP_SOURCE_FILES = [
     "//tools/base/utp/android-test-plugin-host-emulator-control:agp_gradle_build_files",
     "//tools/base/utp/android-test-plugin-host-logcat:agp_gradle_build_files",
     "//tools/base/utp/android-test-plugin-result-listener-gradle:agp_gradle_build_files",
+    "//tools/base/utp/gradle-work-action:agp_gradle_build_files",
+    "//tools/base/utp/gradle-work-action-api:agp_gradle_build_files",
     "//tools/buildSrc:agp_gradle_build_files",
     "//tools/buildSrc/base:agp_gradle_build_files",
 ]
@@ -41,11 +50,10 @@ maven_repository(
         "@maven//:com.google.testing.compile.compile-testing",
         "@maven//:com.google.testing.platform.android-device-provider-local",
         "@maven//:com.google.testing.platform.android-driver-instrumentation",
+        "@maven//:com.google.testing.platform.android-test-plugin",
+        "@maven//:com.google.testing.platform.core",
         "@maven//:com.google.testing.platform.core-proto",
         "@maven//:com.google.testing.platform.launcher",
-    ],
-    visibility = [
-        "//tools/base/build-system/integration-test:__subpackages__",
     ],
 )
 
@@ -60,9 +68,20 @@ gradle_build(
         ":utp_dependencies",
         "//tools/base:agp_dependencies",
     ],
-    tasks = [":zipPlugin"],
+    tasks = [":base:utp:zipUtp"],
+    visibility = [
+        "//tools/base/gmaven:__pkg__",
+    ],
+)
+
+merged_zip(
+    name = "utp_maven_repo_for_integration_tests",
+    testonly = 1,
+    srcs = [
+        ":utp.zip",
+        ":utp_dependencies.zip",
+    ],
     visibility = [
         "//tools/base/build-system/integration-test:__subpackages__",
-        "//tools/base/gmaven:__pkg__",
     ],
 )

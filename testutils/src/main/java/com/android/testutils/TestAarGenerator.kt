@@ -40,6 +40,7 @@ fun generateAarWithContent(
     apiJar: ByteArray? = null,
     lintJar: ByteArray? = null,
     manifest: String = """<manifest package="$packageName"></manifest>""",
+    proguardTxt: String? = null,
     extraFiles: Map<String, ByteArray> = mapOf()
 ): ByteArray {
     val entries = mutableMapOf<String, ByteArray>()
@@ -53,6 +54,7 @@ fun generateAarWithContent(
     }
     apiJar?.let { entries["api.jar"] = it }
     lintJar?.let { entries["lint.jar"] = it }
+    proguardTxt?.let { entries[SdkConstants.FN_PROGUARD_TXT] = it.toByteArray() }
     entries.putAll(extraFiles)
     return ZipContents(entries).toByteArray()
 }

@@ -22,6 +22,16 @@ import com.android.tools.lint.checks.fx.utils.map
 import com.android.tools.lint.checks.fx.utils.partitionToPersistentSets
 import com.android.tools.lint.checks.fx.utils.unboundedSetOf
 import com.intellij.psi.PsiMethod
+import kotlin.reflect.KClass
+import kotlin.reflect.KFunction
+import kotlin.reflect.KFunction0
+import kotlin.reflect.KFunction1
+import kotlin.reflect.KFunction2
+import kotlin.reflect.KFunction3
+import kotlin.reflect.KFunction4
+import kotlin.reflect.KFunction5
+import kotlin.reflect.KParameter
+import kotlin.reflect.jvm.javaMethod
 import kotlinx.collections.immutable.PersistentSet
 import kotlinx.collections.immutable.persistentSetOf
 
@@ -96,6 +106,68 @@ sealed interface Type<out FX> {
     constructor(method: PsiMethod) : this(ClassId.of(method.containingClass!!), MethodId(method))
 
     override fun toString() = "$klass::$method"
+
+    companion object {
+      @JvmName("virtual0") fun virtual(method: KFunction1<*, *>) = uncheckedVirtual(method)
+
+      @JvmName("virtual1") fun <X0> virtual(method: KFunction2<*, X0, *>) = uncheckedVirtual(method)
+
+      @JvmName("virtual2")
+      fun <X0, X1> virtual(method: KFunction3<*, X0, X1, *>) = uncheckedVirtual(method)
+
+      @JvmName("virtual3")
+      fun <X0, X1, X2> virtual(method: KFunction4<*, X0, X1, X2, *>) = uncheckedVirtual(method)
+
+      @JvmName("virtual4")
+      fun <X0, X1, X2, X3> virtual(method: KFunction5<*, X0, X1, X2, X3, *>) =
+        uncheckedVirtual(method)
+
+      @JvmName("static0") fun static(method: KFunction0<*>) = uncheckedStatic(method)
+
+      @JvmName("static1") fun <X0> static(method: KFunction1<X0, *>) = uncheckedStatic(method)
+
+      @JvmName("static2")
+      fun <X0, X1> static(method: KFunction2<X0, X1, *>) = uncheckedStatic(method)
+
+      @JvmName("static3")
+      fun <X0, X1, X2> static(method: KFunction3<X0, X1, X2, *>) = uncheckedStatic(method)
+
+      @JvmName("static4")
+      fun <X0, X1, X2, X3> static(method: KFunction4<X0, X1, X2, X3, *>) = uncheckedStatic(method)
+
+      @JvmName("static5")
+      fun <X0, X1, X2, X3, X4> static(method: KFunction5<X0, X1, X2, X3, X4, *>) =
+        uncheckedStatic(method)
+
+      private fun uncheckedVirtual(method: KFunction<*>): MethodRef {
+        val receiver =
+          method.parameters.firstOrNull()?.takeIf { it.kind == KParameter.Kind.INSTANCE }
+            ?: throw IllegalArgumentException("$method is static")
+        return MethodRef(
+          ClassId.of(receiver.type.classifier as KClass<*>),
+          MethodId.ofVirtual(method),
+        )
+      }
+
+      // TODO for some reason, `kotlin.collections.CollectionsKt` show up as either
+      //  `kotlin.collections.CollectionsKt___CollectionsKt` or
+      //  `kotlin.collections.CollectionsKt` in tests and android studio.
+      //   So we're adding both for now
+      private fun uncheckedStatic(method: KFunction<*>): List<MethodRef> {
+        val methodId = MethodId.ofStatic(method)
+        fun methodRef(classFqn: String) = MethodRef(ClassId.of(classFqn), methodId)
+        val rawName = method.javaMethod!!.declaringClass.canonicalName!!
+        val ktTruncatedName = run {
+          val lastDot = rawName.lastIndexOf('.')
+          require(lastDot >= 0)
+          val lastUnderscore = rawName.lastIndexOf('_')
+          if (lastUnderscore == -1) return@run null
+          if (lastUnderscore + 1 !in rawName.indices) return@run null
+          "${rawName.substring(0, lastDot)}.${rawName.substring(lastUnderscore + 1, rawName.length)}"
+        }
+        return listOfNotNull(methodRef(rawName), ktTruncatedName?.let(::methodRef))
+      }
+    }
   }
 
   data class SpecializedMethodRef<out FX>(val receiver: Type<FX>, val ref: MethodRef) : Type<FX> {

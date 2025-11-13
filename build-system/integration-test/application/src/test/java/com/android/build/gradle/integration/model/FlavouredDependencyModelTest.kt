@@ -18,7 +18,6 @@ package com.android.build.gradle.integration.model
 
 import com.android.build.gradle.integration.common.fixture.model.ModelComparator
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
-import com.android.build.gradle.integration.common.utils.disableBuiltInKotlin
 import com.android.builder.model.v2.ide.SyncIssue
 import org.junit.Rule
 import org.junit.Test
@@ -33,6 +32,7 @@ class FlavouredDependencyModelTest: ModelComparator() {
     val rule = GradleRule.from {
         androidLibrary(":lib1") {
             android {
+                enableKotlin = false
                 flavorDimensions += listOf("model", "market")
                 productFlavors {
                     create("basic") { it.dimension = "model" }
@@ -47,6 +47,7 @@ class FlavouredDependencyModelTest: ModelComparator() {
         }
         androidLibrary(":lib2") {
             android {
+                enableKotlin = false
                 flavorDimensions += listOf("model", "market")
                 productFlavors {
                     create("basic") { it.dimension = "model" }
@@ -61,6 +62,7 @@ class FlavouredDependencyModelTest: ModelComparator() {
         }
         androidLibrary(":lib3") {
             android {
+                enableKotlin = false
                 flavorDimensions += listOf("market")
                 productFlavors {
                     create("play") { it.dimension = "market" }
@@ -68,7 +70,6 @@ class FlavouredDependencyModelTest: ModelComparator() {
                 }
             }
         }
-        disableBuiltInKotlin()
     }
 
     @Test

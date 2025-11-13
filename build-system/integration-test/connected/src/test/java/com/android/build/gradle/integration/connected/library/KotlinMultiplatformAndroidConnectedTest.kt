@@ -71,6 +71,7 @@ class KotlinMultiplatformAndroidConnectedTest {
         // of each test and (2) check the adb connection before taking the time to build anything.
         project.executor()
             .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
+            .withFailOnWarning(false) // b/455891987
             .run("androidUninstallAll")
     }
 
@@ -78,6 +79,7 @@ class KotlinMultiplatformAndroidConnectedTest {
     fun connectedKmpLibraryTests() {
         project.executor()
             .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
+            .withFailOnWarning(false) // b/455891987
             .run(":kmpFirstLib:androidConnectedCheck")
 
         val testResultFolder = FileUtils.join(

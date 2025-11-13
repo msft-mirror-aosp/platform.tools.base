@@ -1050,23 +1050,38 @@ abstract class LintClient {
       }
   }
 
+  /** Represents a result of a CompileSdk lookup */
+  class CompileSdkResult(
+    /**
+     * true if he obtained [target] was calculated from the [Project]'s specification false if the
+     * obtained [target] was calculated from the highest compilation target that is currently
+     * installed.
+     *
+     * This typically happens with plain java projects
+     */
+    val explicitlySpecified: Boolean,
+    /** The compile target to use for the give project. */
+    val target: IAndroidTarget?,
+  )
+
   /**
    * Returns the compile target to use for the given project
    *
    * @param project the project in question
-   * @return the compile target to use to build the given project
+   * @return the compile target to use to build the given project and whether it was explicitly
+   *   specified or obtained from the list of installed platforms.
    */
-  open fun getCompileTarget(project: Project): IAndroidTarget? {
+  open fun getCompileSdkResult(project: Project): CompileSdkResult {
     if (!project.isAndroidProject) {
-      return null
+      return CompileSdkResult(explicitlySpecified = false, target = null)
     }
 
-    val lookup = getPlatformLookup() ?: return null
+    val lookup = getPlatformLookup() ?: return CompileSdkResult(false, null)
     val buildTargetHash = project.buildTargetHash
     if (buildTargetHash != null) {
       val target = lookup.getTarget(buildTargetHash)
       if (target != null) {
-        return target
+        return CompileSdkResult(explicitlySpecified = true, target = target)
       }
     }
 
@@ -1074,15 +1089,26 @@ abstract class LintClient {
     val buildSdk = project.buildSdk
     val target = lookup.getTarget(buildSdk)
     if (target != null) {
-      return target
+      return CompileSdkResult(explicitlySpecified = true, target = target)
     }
 
     // Pick the highest compilation target we can find; the build API level
     // is not known or not found, but having *any* SDK is better than not (without
     // it, most symbol resolution will fail.)
-    return lookup.getLatestSdkTarget(includePreviews = false) // prefer stable
-    ?: lookup.getLatestSdkTarget(includePreviews = true)
+    return CompileSdkResult(
+      explicitlySpecified = false,
+      target = lookup.getLatestSdkTarget(includePreviews = false) // prefer stable
+        ?: lookup.getLatestSdkTarget(includePreviews = true),
+    )
   }
+
+  /**
+   * Returns the compile target to use for the given project
+   *
+   * @param project the project in question
+   * @return the compile target to use to build the given project
+   */
+  open fun getCompileTarget(project: Project): IAndroidTarget? = getCompileSdkResult(project).target
 
   /** The highest known API level. */
   val highestKnownApiLevel: Int

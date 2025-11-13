@@ -16,7 +16,9 @@
 package com.android.adblib.testingutils
 
 import com.android.fakeadbserver.DeviceState
+import com.android.fakeadbserver.FAKE_ADB_SERVER_EXECUTOR_TIMEOUT_MS
 import com.android.fakeadbserver.FakeAdbServer
+import com.android.fakeadbserver.FakeDeviceCreator
 import com.android.fakeadbserver.hostcommandhandlers.ListDevicesCommandHandler.Companion.DEFAULT_SPEED
 import com.android.sdklib.AndroidApiLevel
 import java.util.concurrent.TimeUnit
@@ -31,12 +33,13 @@ import org.junit.rules.ExternalResource
  */
 open class FakeAdbServerRule(
     configure: (FakeAdbServer.Builder.() -> FakeAdbServer.Builder)? = null
-) : ExternalResource() {
+) : ExternalResource(), FakeDeviceCreator {
 
     lateinit var adbServer: FakeAdbServer
         private set
 
     private val configure: FakeAdbServer.Builder.() -> FakeAdbServer.Builder = configure ?: {
+        // TODO: make installDefaultCommandHandlers always installed by FakeAdbServer
         installDefaultCommandHandlers()
     }
 
@@ -47,6 +50,31 @@ open class FakeAdbServerRule(
     override fun after() {
         adbServer.stop()
         adbServer.close()
+    }
+
+    override fun connectDevice(
+        deviceId: String,
+        manufacturer: String,
+        deviceModel: String,
+        release: String,
+        sdk: AndroidApiLevel,
+        hostConnectionType: DeviceState.HostConnectionType,
+        maxSpeedMbps: Long,
+        negotiatedSpeedMbps: Long
+    ): DeviceState {
+        return connectDevice(
+            deviceId = deviceId,
+            manufacturer = manufacturer,
+            deviceModel = deviceModel,
+            release = release,
+            sdk = sdk,
+            hostConnectionType = hostConnectionType,
+            cpuAbi = "x86_64",
+            properties = emptyMap(),
+            isRoot = false,
+            maxSpeedMbps = maxSpeedMbps,
+            negotiatedSpeedMbps = negotiatedSpeedMbps
+        )
     }
 
     fun connectDevice(
@@ -78,7 +106,7 @@ open class FakeAdbServerRule(
             ?: throw IllegalArgumentException()
     }
 
-    fun disconnectDevice(deviceId: String) {
+    override fun disconnectDevice(deviceId: String) {
         adbServer.disconnectDevice(deviceId)
             .get(FAKE_ADB_SERVER_EXECUTOR_TIMEOUT_MS, TimeUnit.MILLISECONDS)
     }

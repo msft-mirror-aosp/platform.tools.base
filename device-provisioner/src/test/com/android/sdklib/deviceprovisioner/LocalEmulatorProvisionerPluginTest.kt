@@ -23,24 +23,17 @@ import com.android.sdklib.AndroidVersion
 import com.android.sdklib.SystemImageTags
 import com.android.sdklib.deviceprovisioner.DeviceState.Connected
 import com.android.sdklib.deviceprovisioner.DeviceState.Disconnected
+import com.android.sdklib.deviceprovisioner.testing.SdkFixture
 import com.android.sdklib.devices.Abi
-import com.android.sdklib.devices.DeviceManager
 import com.android.sdklib.internal.avd.AvdInfo
 import com.android.sdklib.internal.avd.AvdInfo.AvdStatus
-import com.android.sdklib.internal.avd.AvdManager
 import com.android.sdklib.internal.avd.BootSnapshot
 import com.android.sdklib.internal.avd.ConfigKey
 import com.android.sdklib.internal.avd.UserSettingsKey.PREFERRED_ABI
-import com.android.sdklib.repository.AndroidSdkHandler
-import com.android.sdklib.testing.TestSystemImages
-import com.android.testutils.file.createInMemoryFileSystem
-import com.android.testutils.file.someRoot
-import com.android.utils.NullLogger
 import com.google.common.truth.Truth.assertThat
 import com.google.wireless.android.sdk.stats.DeviceInfo
 import com.google.wireless.android.sdk.stats.DeviceInfo.ApplicationBinaryInterface
 import com.google.wireless.android.sdk.stats.DeviceInfo.MdnsConnectionType
-import java.nio.file.Files
 import java.nio.file.Path
 import java.time.Duration
 import java.util.concurrent.atomic.AtomicInteger
@@ -59,20 +52,21 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 
+val emptyDeviceIcons =
+  DeviceIcons(
+    EmptyIcon.DEFAULT,
+    EmptyIcon.DEFAULT,
+    EmptyIcon.DEFAULT,
+    EmptyIcon.DEFAULT,
+    EmptyIcon.DEFAULT,
+    EmptyIcon.DEFAULT,
+  )
+
 class LocalEmulatorProvisionerPluginTest {
 
   @get:Rule val temporaryFolder = TemporaryFolder()
 
   val session = FakeAdbSession()
-  private val deviceIcons =
-    DeviceIcons(
-      EmptyIcon.DEFAULT,
-      EmptyIcon.DEFAULT,
-      EmptyIcon.DEFAULT,
-      EmptyIcon.DEFAULT,
-      EmptyIcon.DEFAULT,
-      EmptyIcon.DEFAULT,
-    )
 
   private lateinit var avdsPath: Path
   private lateinit var avdManager: FakeAvdManager
@@ -88,7 +82,7 @@ class LocalEmulatorProvisionerPluginTest {
         session.scope,
         session,
         avdManager,
-        deviceIcons,
+        emptyDeviceIcons,
         TestDefaultDeviceActionPresentation,
         Dispatchers.IO,
         Duration.ofMillis(100),
@@ -389,33 +383,21 @@ class LocalEmulatorProvisionerPluginTest {
 
   /** Creates a realistic AvdInfo for a resizable device by using AvdBuilder. */
   private fun createResizableAvdInfo(): AvdInfo {
-    val fileSystem = createInMemoryFileSystem()
-    val sdkRoot: Path = Files.createDirectories(fileSystem.someRoot.resolve("sdk"))
-    val avdRoot: Path = sdkRoot.root.resolve("avd")
-    val sdkHandler = AndroidSdkHandler(sdkRoot, avdRoot)
-    val testSystemImages = TestSystemImages(sdkHandler)
-    val deviceManager = DeviceManager.createInstance(sdkHandler, NullLogger.getLogger())
-    val avdManager =
-      AvdManager.createInstance(sdkHandler, avdRoot, deviceManager, NullLogger.getLogger())
-    val resizableDeviceProfile = deviceManager.getDevice("resizable", "Generic")!!
-    val builder = avdManager.createAvdBuilder(resizableDeviceProfile)
-    builder.systemImage = testSystemImages.api34TabletPlayStore.image
-    return avdManager.createAvd(builder)
+    with(SdkFixture()) {
+      val resizableDeviceProfile = deviceManager.getDevice("resizable", "Generic")!!
+      val builder = avdManager.createAvdBuilder(resizableDeviceProfile)
+      builder.systemImage = testSystemImages.api34TabletPlayStore.image
+      return avdManager.createAvd(builder)
+    }
   }
 
   private fun createMultiAbiAvdInfo(): AvdInfo {
-    val fileSystem = createInMemoryFileSystem()
-    val sdkRoot: Path = Files.createDirectories(fileSystem.someRoot.resolve("sdk"))
-    val avdRoot: Path = sdkRoot.root.resolve("avd")
-    val sdkHandler = AndroidSdkHandler(sdkRoot, avdRoot)
-    val testSystemImages = TestSystemImages(sdkHandler)
-    val deviceManager = DeviceManager.createInstance(sdkHandler, NullLogger.getLogger())
-    val avdManager =
-      AvdManager.createInstance(sdkHandler, avdRoot, deviceManager, NullLogger.getLogger())
-    val resizableDeviceProfile = deviceManager.getDevice("pixel_9", "Google")!!
-    val builder = avdManager.createAvdBuilder(resizableDeviceProfile)
-    builder.systemImage = testSystemImages.api36.image
-    return avdManager.createAvd(builder)
+    with(SdkFixture()) {
+      val resizableDeviceProfile = deviceManager.getDevice("pixel_9", "Google")!!
+      val builder = avdManager.createAvdBuilder(resizableDeviceProfile)
+      builder.systemImage = testSystemImages.api36.image
+      return avdManager.createAvd(builder)
+    }
   }
 
   @Test

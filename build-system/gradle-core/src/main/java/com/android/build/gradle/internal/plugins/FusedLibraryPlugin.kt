@@ -126,7 +126,7 @@ class FusedLibraryPlugin @Inject constructor(
         val fusedLibraryExtensionImpl =
             FusedLibraryExtensionImpl.getDecoratedInstance(dslServices, settingsExtension)
 
-        abstract class Extension(
+        open class Extension(
                 val publicExtensionImpl: FusedLibraryExtensionImpl,
         ): InternalFusedLibraryExtension by publicExtensionImpl
 

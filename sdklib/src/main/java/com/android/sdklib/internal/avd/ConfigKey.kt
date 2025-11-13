@@ -268,4 +268,6 @@ object ConfigKey {
   const val ROLL_RESIZE_3_AT_POSTURE = "hw.sensor.roll.resize_to_displayRegion.0.3_at_posture"
 
   const val ROLL_PERCENTAGES_POSTURE_DEFINITIONS = "hw.sensor.roll_percentages_posture_definitions"
+
+  const val LCD_TRANSPARENT = "hw.lcd.transparent"
 }

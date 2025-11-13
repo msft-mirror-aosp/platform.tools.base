@@ -21,6 +21,7 @@ import com.android.build.gradle.integration.common.fixture.GradleTestProjectBuil
 import com.android.build.gradle.integration.common.fixture.project.ApkSelector
 import com.android.build.gradle.integration.common.truth.ScannerSubject
 import com.android.build.gradle.integration.common.utils.TestFileUtils
+import com.android.build.gradle.options.BooleanOption
 import com.android.utils.FileUtils
 import org.junit.Before
 import org.junit.Rule
@@ -92,7 +93,9 @@ class KotlinMultiplatformAndroidDexingTest {
 
     @Test
     fun testDesugaringForInstrumentedTestApk() {
-        project.executor().run(":kmpFirstLib:assembleDeviceTest")
+        project.executor()
+            .withFailOnWarning(false) // b/455891987
+            .run(":kmpFirstLib:assembleDeviceTest")
 
         project.getSubproject("kmpFirstLib").assertApk(
             ApkSelector.NO_BUILD_TYPE.forTestSuite("androidTest")
@@ -145,7 +148,9 @@ class KotlinMultiplatformAndroidDexingTest {
             """.trimIndent()
         )
 
-        project.executor().run(":kmpFirstLib:assembleDeviceTest")
+        project.executor()
+            .withFailOnWarning(false) // b/455891987
+            .run(":kmpFirstLib:assembleDeviceTest")
 
         project.getSubproject("kmpFirstLib").assertApk(ApkSelector.NO_BUILD_TYPE.forTestSuite("androidTest")) {
             classes().classDefinition("com/example/kmpfirstlib/KmpAndroidActivity")
@@ -161,9 +166,6 @@ class KotlinMultiplatformAndroidDexingTest {
                 "test/KmpAndroidFirstLibActivityTest",
                 "test/KmpAndroidFirstLibActivityTest$\$ExternalSyntheticLambda0",
                 "test/R$",
-                "test/R\$drawable",
-                "test/R\$string",
-                "test/R\$style",
                 "R\$drawable",
                 "R\$string",
                 "R"

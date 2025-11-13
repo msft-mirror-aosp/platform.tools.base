@@ -17,13 +17,12 @@
 package com.android.build.gradle.integration.common.fixture.project
 
 import com.android.build.api.dsl.LibraryExtension
-import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification
 import com.android.build.gradle.integration.common.fixture.dsl.DslProxy
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
+import com.android.build.gradle.integration.common.fixture.project.reversible.FileChangeController
 import com.android.build.gradle.integration.common.output.ApkSubject
-import com.android.testutils.apk.Apk
 import java.nio.file.Path
 
 /*
@@ -89,8 +88,8 @@ internal class AndroidLibraryImpl(
         return apkDelegate.getApkLocationForCopy(apkSelector)
     }
 
-    override fun getReversibleInstance(projectModification: TemporaryProjectModification): AndroidLibraryProject =
-        ReversibleAndroidLibraryProject(this, projectModification)
+    override fun getReversibleInstance(fileChangeController: FileChangeController): AndroidLibraryProject =
+        ReversibleAndroidLibraryProject(this, fileChangeController)
 }
 
 /**
@@ -98,10 +97,10 @@ internal class AndroidLibraryImpl(
  */
 internal class ReversibleAndroidLibraryProject(
     parentProject: AndroidLibraryProject,
-    projectModification: TemporaryProjectModification
+    fileChangeController: FileChangeController
 ) : ReversibleAndroidProject<AndroidLibraryProject, AndroidProjectDefinition<LibraryExtension>>(
     parentProject,
-    projectModification
+    fileChangeController
 ), AndroidLibraryProject,
     GeneratesApk by GeneratesApkFromParentDelegate(parentProject),
     GeneratesAar by GeneratesAarFromParentDelegate(parentProject)

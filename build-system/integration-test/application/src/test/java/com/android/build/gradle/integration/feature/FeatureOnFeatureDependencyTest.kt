@@ -138,7 +138,7 @@ class FeatureOnFeatureDependencyTest {
             .appendToBuild(
                 """
                 dependencies {
-                    implementation group: 'com.google.code.gson', name: 'gson', version: '2.8.5'
+                    implementation("com.google.code.gson:gson:2.8.5")
                 }"""
             )
 

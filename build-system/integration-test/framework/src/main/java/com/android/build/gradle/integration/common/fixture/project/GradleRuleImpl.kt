@@ -25,6 +25,7 @@ import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.GradleTestProjectBuilder
 import com.android.build.gradle.integration.common.fixture.ModelBuilderV2
 import com.android.build.gradle.integration.common.fixture.ProjectPropertiesWorkingCopy
+import com.android.build.gradle.integration.common.fixture.TestProjectPaths
 import com.android.build.gradle.integration.common.fixture.debugGradleConnectionExceptionThenRethrow
 import com.android.build.gradle.integration.common.fixture.gradle_project.BuildSystem
 import com.android.build.gradle.integration.common.fixture.gradle_project.TestLocation
@@ -48,14 +49,23 @@ import org.junit.runners.model.Statement
 import java.io.File
 import java.nio.file.Path
 import java.util.concurrent.TimeUnit
+import kotlin.io.path.ExperimentalPathApi
+import kotlin.io.path.PathWalkOption
 import kotlin.io.path.createDirectories
+import kotlin.io.path.isDirectory
+import kotlin.io.path.name
+import kotlin.io.path.readBytes
+import kotlin.io.path.walk
+import kotlin.io.path.writeBytes
 
 internal class GradleRuleImpl internal constructor(
     private val buildDefinition: GradleBuildDefinitionImpl,
     private val ruleOptionBuilder: DefaultRuleOptionBuilder,
     private val externalLibraries: List<MavenRepoGenerator.Library>,
     private val enableProfileOutput: Boolean,
+    private val testProjectName: String?,
 ): GradleRule {
+
     private var status = Status.PENDING
 
     private lateinit var locations: GradleRuleLocation
@@ -106,6 +116,12 @@ internal class GradleRuleImpl internal constructor(
         FileUtils.deleteRecursivelyIfExists(rootBuildPath.toFile())
         rootBuildPath.createDirectories()
 
+        // if we have a test Project, make a copy of it, without the build files
+        if (testProjectName != null) {
+            val sourceProject = TestProjectPaths.getTestProjectPath(testProjectName)
+            copyProjectWithoutBuildFiles(sourceProject, rootBuildPath)
+        }
+
         // always create the maven repo as new items can be added during reconfiguration
         val repoPath = computeMavenRepoLocation()
 
@@ -128,9 +144,34 @@ internal class GradleRuleImpl internal constructor(
             buildDefinition.handleCustomBuildLogic(rootBuildPath)
         )
 
-        buildDefinition.write(rootBuildPath, globalState)
+        buildDefinition.write(
+            rootBuildPath,
+            globalState,
+            ruleOptionBuilder.disableBrokenBuiltInKotlinOptOutChecks,
+            ruleOptionBuilder.disableBrokenNewDslOptOutChecks
+        )
 
         createAncillaryBuildFiles()
+    }
+
+    @OptIn(ExperimentalPathApi::class)
+    private fun copyProjectWithoutBuildFiles(
+        source: Path,
+        destination: Path,
+    ) {
+        source.walk(PathWalkOption.INCLUDE_DIRECTORIES).forEach { sourceFile ->
+            val name = sourceFile.name
+            if (name.endsWith(".gradle") || name.endsWith(".gradle.kts"))
+                return@forEach
+
+            val relativePath = source.relativize(sourceFile)
+            val destinationFile = destination.resolve(relativePath)
+            if (sourceFile.isDirectory()) {
+                destinationFile.createDirectories()
+            } else {
+                destinationFile.writeBytes(sourceFile.readBytes())
+            }
+        }
     }
 
     private fun getDefaultProperties(): List<String> {
@@ -338,7 +379,9 @@ internal class GradleRuleImpl internal constructor(
     override fun apply(
         base: Statement,
         description: Description
-    ): Statement? {
+    ): Statement {
+        validateWithAllowList(description.testClass)
+
         return object: Statement() {
             override fun evaluate() {
                 // We should not support class level application of this rule as it does not make
@@ -387,6 +430,20 @@ internal class GradleRuleImpl internal constructor(
                     }
                 }
             }
+        }
+    }
+
+    private fun validateWithAllowList(testClass: Class<*>) {
+        // make sure the allow list for test classes using the old fixture
+        // does not contain a converted test.
+        if (GradleTestProject.allowedTests.contains(testClass.name)) {
+            throw RuntimeException(
+                """
+                    Test class ${testClass.name} was found in the allow list for the old test fixture.
+                    Remove it from:
+                    tools/base/build-system/integration-test/framework/src/main/resources/allow-listed-test-classes.txt
+                """.trimIndent()
+            )
         }
     }
 

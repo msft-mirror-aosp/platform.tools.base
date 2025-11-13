@@ -36,7 +36,6 @@ import com.android.build.gradle.integration.common.fixture.project.FusedLibraryD
 import com.android.build.gradle.integration.common.fixture.project.FusedLibraryDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.GenericProjectDefinition
 import com.android.build.gradle.integration.common.fixture.project.GenericProjectDefinitionImpl
-import com.android.build.gradle.integration.common.fixture.project.JavaLibraryProject
 import com.android.build.gradle.integration.common.fixture.project.JavaLibraryProjectDefinition
 import com.android.build.gradle.integration.common.fixture.project.JavaLibraryProjectDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.KotlinMultiplatformDefinition
@@ -46,6 +45,8 @@ import com.android.build.gradle.integration.common.fixture.project.PrivacySandbo
 import com.android.build.gradle.integration.common.fixture.project.options.GradlePropertiesBuilder
 import com.android.build.gradle.integration.common.fixture.project.options.GradlePropertiesDelegate
 import com.android.build.gradle.integration.common.fixture.project.prebuilts.HelloWorldAndroid
+import com.android.build.gradle.options.BooleanOption.BUILT_IN_KOTLIN
+import com.android.build.gradle.options.BooleanOption.USE_NEW_DSL
 import com.android.testutils.MavenRepoGenerator
 import java.io.File
 import java.nio.file.Path
@@ -55,6 +56,11 @@ import kotlin.io.path.writeText
 internal class GradleBuildDefinitionImpl(
     override val name: String,
     internal val rootFolderName: String,
+    /**
+     * Whether creation of new sub-project can include project content.
+     * This is disabled if the build definition is attached to an existing on-disk test project.
+     */
+    private val enableDefaultContentCreation: Boolean,
 ): GradleBuildDefinition {
 
     internal val settings = GradleSettingsDefinitionImpl()
@@ -83,7 +89,7 @@ internal class GradleBuildDefinitionImpl(
     ): GradleBuildDefinition {
         val build = includedBuilds.computeIfAbsent(name) {
             // for included builds, name and rootFolderName is always the same.
-            GradleBuildDefinitionImpl(it, it)
+            GradleBuildDefinitionImpl(it, it, enableDefaultContentCreation)
         }
         action(build)
 
@@ -121,6 +127,8 @@ internal class GradleBuildDefinitionImpl(
         if (path == ":") throw RuntimeException("root project cannot be an android project")
         if (!path.startsWith(":")) throw RuntimeException("Project paths must start with ':' (value: $path)")
 
+        val createMinimumProject = createMinimumProject && enableDefaultContentCreation
+
         val project = subProjects.computeIfAbsent(path) {
             AndroidApplicationDefinitionImpl(it, createMinimumProject).also {
                 if (createMinimumProject) {
@@ -140,18 +148,22 @@ internal class GradleBuildDefinitionImpl(
     override fun androidJavaApplication(
         path: String,
         action: AndroidProjectDefinition<ApplicationExtension>.() -> Unit
-    ): AndroidProjectDefinition<ApplicationExtension> = androidApplication(
-        path,
-        createMinimumProject = true,
-        action
-    ).also {
-        HelloWorldAndroid.setupJava(it.files)
+    ): AndroidProjectDefinition<ApplicationExtension> {
+        if (!enableDefaultContentCreation) throw RuntimeException("Cannot call androidJavaApplication with a testProject")
+        return androidApplication(
+            path,
+            createMinimumProject = true,
+            action
+        ).also {
+            HelloWorldAndroid.setupJava(it.files)
+        }
     }
 
     override fun androidKotlinApplication(
         path: String,
         action: AndroidProjectDefinition<ApplicationExtension>.() -> Unit
     ): AndroidProjectDefinition<ApplicationExtension> {
+        if (!enableDefaultContentCreation) throw RuntimeException("Cannot call androidKotlinApplication with a testProject")
         // kotlin plugin must be applied first (or you cannot access the kotlin {} block,
         // so order is important here.
         val app = androidApplication(path, createMinimumProject = true) {
@@ -173,6 +185,8 @@ internal class GradleBuildDefinitionImpl(
         if (path == ":") throw RuntimeException("root project cannot be an android project")
         if (!path.startsWith(":")) throw RuntimeException("Project paths must start with ':' (value: $path)")
 
+        val createMinimumProject = createMinimumProject && enableDefaultContentCreation
+
         val project = subProjects.computeIfAbsent(path) {
             AndroidLibraryDefinitionImpl(it, createMinimumProject)
         }
@@ -192,6 +206,8 @@ internal class GradleBuildDefinitionImpl(
     ): AndroidProjectDefinition<DynamicFeatureExtension> {
         if (path == ":") throw RuntimeException("root project cannot be an android project")
         if (!path.startsWith(":")) throw RuntimeException("Project paths must start with ':' (value: $path)")
+
+        val createMinimumProject = createMinimumProject && enableDefaultContentCreation
 
         val project = subProjects.computeIfAbsent(path) {
             AndroidDynamicFeatureDefinitionImpl(it, createMinimumProject).also {
@@ -217,6 +233,8 @@ internal class GradleBuildDefinitionImpl(
         if (path == ":") throw RuntimeException("root project cannot be an android project")
         if (!path.startsWith(":")) throw RuntimeException("Project paths must start with ':' (value: $path)")
 
+        val createMinimumProject = createMinimumProject && enableDefaultContentCreation
+
         val project = subProjects.computeIfAbsent(path) {
             AndroidTestDefinitionImpl(it, createMinimumProject).also {
                 if (createMinimumProject) {
@@ -241,6 +259,8 @@ internal class GradleBuildDefinitionImpl(
         if (path == ":") throw RuntimeException("root project cannot be a privacy sandbox sdk")
         if (!path.startsWith(":")) throw RuntimeException("Project paths must start with ':' (value: $path)")
 
+        val createMinimumProject = createMinimumProject && enableDefaultContentCreation
+
         val project = subProjects.computeIfAbsent(path) {
             PrivacySandboxSdkDefinitionImpl(it, createMinimumProject)
         }
@@ -260,6 +280,8 @@ internal class GradleBuildDefinitionImpl(
     ): AndroidProjectDefinition<LibraryExtension> {
         if (path == ":") throw RuntimeException("root project cannot be a privacy sandbox library")
         if (!path.startsWith(":")) throw RuntimeException("Project paths must start with ':' (value: $path)")
+
+        val createMinimumProject = createMinimumProject && enableDefaultContentCreation
 
         val project = subProjects.computeIfAbsent(path) {
             AndroidXPrivacySandboxLibraryDefinitionImpl(it, createMinimumProject)
@@ -319,6 +341,8 @@ internal class GradleBuildDefinitionImpl(
         if (path == ":") throw RuntimeException("root project cannot be an asset pack bundle")
         if (!path.startsWith(":")) throw RuntimeException("Project paths must start with ':' (value: $path)")
 
+        val createMinimumProject = createMinimumProject && enableDefaultContentCreation
+
         val project = subProjects.computeIfAbsent(path) {
             AssetPackBundleDefinitionImpl(it, createMinimumProject)
         }
@@ -338,6 +362,8 @@ internal class GradleBuildDefinitionImpl(
     ): FusedLibraryDefinition {
         if (path == ":") throw RuntimeException("root project cannot be a fused library")
         if (!path.startsWith(":")) throw RuntimeException("Project paths must start with ':' (value: $path)")
+
+        val createMinimumProject = createMinimumProject && enableDefaultContentCreation
 
         val project = subProjects.computeIfAbsent(path) {
             FusedLibraryDefinitionImpl(it, createMinimumProject)
@@ -376,7 +402,7 @@ internal class GradleBuildDefinitionImpl(
     ): KotlinMultiplatformDefinition = kotlinMultiplatformLibrary(
         path,
         plugins = listOf(),
-        createMinimumAndroidProject = false,
+        createMinimumProject = false,
         action
     )
 
@@ -384,28 +410,34 @@ internal class GradleBuildDefinitionImpl(
         path: String,
         createMinimumProject: Boolean,
         action: KotlinMultiplatformDefinition.() -> Unit
-    ): KotlinMultiplatformDefinition = kotlinMultiplatformLibrary(
-        path,
-        plugins = listOf(PluginType.ANDROID_KMP_LIBRARY),
-        createMinimumAndroidProject = createMinimumProject,
-        action
-    )
+    ): KotlinMultiplatformDefinition {
+        if (!enableDefaultContentCreation) throw RuntimeException("Cannot call androidKotlinMultiplatformLibrary with a testProject")
+
+        return kotlinMultiplatformLibrary(
+            path,
+            plugins = listOf(PluginType.ANDROID_KMP_LIBRARY),
+            createMinimumProject,
+            action
+        )
+    }
 
     private fun kotlinMultiplatformLibrary(
         path: String,
         plugins: List<PluginType>,
-        createMinimumAndroidProject: Boolean,
+        createMinimumProject: Boolean,
         action: KotlinMultiplatformDefinition.() -> Unit
     ): KotlinMultiplatformDefinition {
         if (path == ":") throw RuntimeException("root project cannot be an Android Kotlin multiplatform library")
         if (!path.startsWith(":")) throw RuntimeException("Project paths must start with ':' (value: $path)")
+
+        val createMinimumProject = createMinimumProject && enableDefaultContentCreation
 
         val project = subProjects.computeIfAbsent(path) {
             KotlinMultiplatformDefinitionImpl(it).also { project ->
                 for (plugin in plugins) {
                     project.applyPlugin(plugin)
                 }
-                if (createMinimumAndroidProject) {
+                if (createMinimumProject) {
                     project.android {
                         namespace = "pkg.name${path.replace(':', '.').replace('-', '_')}"
                         compileSdk = GradleBuildDefinition.DEFAULT_COMPILE_SDK_VERSION
@@ -457,7 +489,14 @@ internal class GradleBuildDefinitionImpl(
     internal fun write(
         location: Path,
         globalDefinitionState: GlobalDefinitionState,
+        disableUnnecessaryBuiltInKotlinOptOutChecks: Boolean,
+        disableUnnecessaryNewDslOptOutChecks: Boolean
     ) {
+        checkAgp9Behavior(
+            disableUnnecessaryBuiltInKotlinOptOutChecks,
+            disableUnnecessaryNewDslOptOutChecks
+        )
+
         location.createDirectories()
         this.globalDefinitionState = globalDefinitionState
 
@@ -470,7 +509,11 @@ internal class GradleBuildDefinitionImpl(
         val allPlugins = if (useOldPluginStyleForSeparateClassloaders) mapOf() else computeAllPluginMap()
 
         // only give the repositories to the project if they need it.
-        val repoForProjects = if (useOldPluginStyleForSeparateClassloaders) globalDefinitionState.repositories else listOf()
+        val locallyDefinedRepo = subProjects.values.any { it.repositoriesBuilder.isUsed }
+        val projectRepositories = if (useOldPluginStyleForSeparateClassloaders || locallyDefinedRepo)
+            globalDefinitionState.repositories
+        else
+            listOf()
 
         writeSetting(location)
 
@@ -480,7 +523,7 @@ internal class GradleBuildDefinitionImpl(
             allPlugins,
             customPluginMap,
             useOldPluginStyleForSeparateClassloaders,
-            repoForProjects,
+            projectRepositories,
             buildFileType.getNewWriter())
 
         subProjects.values.forEach {
@@ -489,7 +532,7 @@ internal class GradleBuildDefinitionImpl(
                 allPlugins,
                 customPluginMap,
                 useOldPluginStyleForSeparateClassloaders,
-                repoForProjects,
+                projectRepositories,
                 buildFileType.getNewWriter()
             )
         }
@@ -506,7 +549,12 @@ internal class GradleBuildDefinitionImpl(
                 it.handleCustomBuildLogic(newLocation)
             )
 
-            it.write(newLocation,  globalState)
+            it.write(
+                newLocation,
+                globalState,
+                disableUnnecessaryBuiltInKotlinOptOutChecks,
+                disableUnnecessaryNewDslOptOutChecks
+            )
         }
     }
 
@@ -517,13 +565,12 @@ internal class GradleBuildDefinitionImpl(
             useOldPluginStyle = useOldPluginStyleForSeparateClassloaders,
             repositories = globalDefinitionState.repositories,
             includedBuilds = includedBuilds.values,
-            subProjectPaths = subProjects.values.map { it.path },
+            subProjectPaths = subProjects.values,
             buildWriter = buildFileType.getNewWriter(),
         )
     }
 
     internal fun writeProperties(location: Path) {
-
         val properties = globalDefinitionState.additionalProperties + propertiesDelegate.properties
 
         val gradlePropPath = location.resolve("gradle.properties")
@@ -615,6 +662,75 @@ internal class GradleBuildDefinitionImpl(
         }
 
         return pluginClassMap
+    }
+
+    /**
+     * checks whether the test requires opting out of any AGP 9.0 behavior.
+     *
+     * For now this handles newDsl based on presence of a legacy callback.
+     */
+    private fun checkAgp9Behavior(
+        disableUnnecessaryBuiltInKotlinOptOutChecks: Boolean,
+        disableUnnecessaryNewDslOptOutChecks: Boolean
+    ) {
+        val subProjectList = subProjects.values
+
+        // check for legacy plugins
+        var foundLegacy = false
+        var foundNewCallbackForOldDsl = false
+        subProjectList
+            .flatMap { it.pluginCallbacks }
+            .forEach {
+                val callBackInstance = it.getDeclaredConstructor().newInstance()
+                val requiresOldVariantApi = callBackInstance.requiresOldVariantApi
+                if (requiresOldVariantApi) {
+                    foundLegacy = true
+                    val newDsl = propertiesDelegate.mutableBooleans[USE_NEW_DSL]
+                    val newDslAsString = propertiesDelegate.mutableProperties[USE_NEW_DSL.propertyName]
+                    if (newDsl != false && newDslAsString != "false") {
+                        throw RuntimeException(
+                            "Usage of Legacy Variant API requires to set ${USE_NEW_DSL.propertyName}=false"
+                        )
+                    }
+                }
+
+                foundNewCallbackForOldDsl = foundNewCallbackForOldDsl || callBackInstance.useWithOldDsl
+            }
+
+        // check legacy kotlin plugin presence
+        val allPlugins = subProjectList
+            .flatMap {
+                it.plugins.map { appliedPlugin -> appliedPlugin.plugin }
+            }
+            .toSet()
+        val hasLegacyKotlin = allPlugins.contains(PluginType.KOTLIN_ANDROID)
+
+        // If we have not found a legacy plugin, then we don't need newDsl=false
+        if (!foundLegacy &&
+            propertiesDelegate.mutableBooleans[USE_NEW_DSL] == false &&
+            !foundNewCallbackForOldDsl &&
+            !hasLegacyKotlin
+        ) {
+            if (!disableUnnecessaryNewDslOptOutChecks) {
+                throw RuntimeException(
+                    "Usage of ${USE_NEW_DSL.propertyName}=false is not necessary without any legacy plugins"
+                )
+            }
+        }
+
+        val optedOutBuiltInKotlin = propertiesDelegate.mutableBooleans[BUILT_IN_KOTLIN] == false
+
+        if (hasLegacyKotlin && !optedOutBuiltInKotlin) {
+            throw RuntimeException("Usage of Legacy Kotlin Plugin requires to set ${BUILT_IN_KOTLIN.propertyName}=false")
+        } else if (!hasLegacyKotlin && optedOutBuiltInKotlin) {
+            if (!disableUnnecessaryBuiltInKotlinOptOutChecks) {
+                throw RuntimeException(
+                    "Usage of ${BUILT_IN_KOTLIN.propertyName}=false is not necessary without usage of Legacy kotlin plugin"
+                )
+            }
+        } else if (hasLegacyKotlin && propertiesDelegate.mutableBooleans[USE_NEW_DSL] != false) {
+            throw RuntimeException("Usage of Legacy Kotlin Plugin requires to set ${USE_NEW_DSL.propertyName}=false")
+        }
     }
 }
 

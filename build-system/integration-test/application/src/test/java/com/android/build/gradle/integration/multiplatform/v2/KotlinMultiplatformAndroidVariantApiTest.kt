@@ -47,7 +47,7 @@ class KotlinMultiplatformAndroidVariantApiTest {
             """.trimIndent()
         )
 
-        val result = project.executor().run(":kmpFirstLib:assemble")
+        val result = executor().run(":kmpFirstLib:assemble")
 
         result.assertOutputContains("kmpFirstLib${File.separator}src${File.separator}androidMain${File.separator}stableAidl")
     }
@@ -65,7 +65,7 @@ class KotlinMultiplatformAndroidVariantApiTest {
             """.trimIndent()
         )
 
-        val result = project.executor().run(":kmpFirstLib:assemble")
+        val result = executor().run(":kmpFirstLib:assemble")
 
         result.assertOutputContains("androidMain:1")
     }
@@ -85,7 +85,7 @@ class KotlinMultiplatformAndroidVariantApiTest {
             """.trimIndent()
         )
 
-        val result = project.executor().run(":kmpFirstLib:assemble")
+        val result = executor().run(":kmpFirstLib:assemble")
 
         result.assertOutputContains("androidMain:androidHostTest")
         result.assertOutputContains("androidMain:androidDeviceTest")
@@ -140,13 +140,13 @@ class KotlinMultiplatformAndroidVariantApiTest {
             """.trimIndent()
         )
 
-        project.executor().run(":kmpFirstLib:assembleAndroidMain")
+        executor().run(":kmpFirstLib:assembleAndroidMain")
 
         project.getSubproject("kmpFirstLib").assertAar(AarSelector.NO_BUILD_TYPE) {
             assets().containsExactly("asset.txt")
         }
 
-        project.executor().run(":kmpFirstLib:assembleDeviceTest")
+        executor().run(":kmpFirstLib:assembleDeviceTest")
 
         project.getSubproject("kmpFirstLib").assertApk(ApkSelector.NO_BUILD_TYPE.forTestSuite("androidTest")) {
             assets().containsExactly("asset.txt")
@@ -171,22 +171,13 @@ class KotlinMultiplatformAndroidVariantApiTest {
             // language=kotlin
             """
                 abstract class FetchApkTask : DefaultTask() {
-                    @get:Internal
-                    abstract val privacySandboxEnabledApkOutput: Property<ApkOutput>
 
                     @get:Internal
-                    abstract val privacySandboxDisabledApkOutput: Property<ApkOutput>
+                    abstract val apkOutput: Property<ApkOutput>
 
                     @TaskAction
                     fun execute() {
-                        var apkInstall = privacySandboxEnabledApkOutput.get().apkInstallGroups
-                        if (apkInstall.size != 1 || apkInstall[0].apks.size != 1) {
-                            throw GradleException("Unexpected number of apks")
-                        }
-                        assert(apkInstall[0].apks.first().asFile.name.contains("kmpFirstLib-androidTest.apk"))
-                        assert(apkInstall[0].description.contains("Testing Apk"))
-
-                        apkInstall = privacySandboxDisabledApkOutput.get().apkInstallGroups
+                        val apkInstall = apkOutput.get().apkInstallGroups
                         if (apkInstall.size != 1 || apkInstall[0].apks.size != 1) {
                             throw GradleException("Unexpected number of apks")
                         }
@@ -198,19 +189,9 @@ class KotlinMultiplatformAndroidVariantApiTest {
                 androidComponents {
                     onVariants { variant ->
                         variant.androidTest?.let {
-                            it.outputProviders.provideApkOutputToTask(
-                                taskProvider,
-                                FetchApkTask::privacySandboxEnabledApkOutput,
-                                DeviceSpec.Builder()
-                                    .setName("testDevice")
-                                    .setApiLevel(34)
-                                    .setCodeName("")
-                                    .setAbis(listOf())
-                                    .setSupportsPrivacySandbox(true)
-                                    .build())
                         it.outputProviders.provideApkOutputToTask(
                             taskProvider,
-                            FetchApkTask::privacySandboxDisabledApkOutput,
+                            FetchApkTask::apkOutput,
                             DeviceSpec.Builder()
                                 .setName("testDevice")
                                 .setApiLevel(34)
@@ -224,7 +205,7 @@ class KotlinMultiplatformAndroidVariantApiTest {
             """.trimIndent()
         )
 
-        project.executor().run(":kmpFirstLib:fetchApks")
+        executor().run(":kmpFirstLib:fetchApks")
     }
 
     @Test
@@ -252,7 +233,7 @@ class KotlinMultiplatformAndroidVariantApiTest {
             """.trimIndent()
         )
 
-        project.executor().run(":kmpFirstLib:assembleDeviceTest")
+        executor().run(":kmpFirstLib:assembleDeviceTest")
 
         project.getSubproject("kmpFirstLib").assertApk(
             ApkSelector.NO_BUILD_TYPE.forTestSuite("androidTest")
@@ -260,4 +241,7 @@ class KotlinMultiplatformAndroidVariantApiTest {
             assets().containsExactly("static.txt", "asset.txt")
         }
     }
+
+
+    private fun executor() = project.executor().withFailOnWarning(false) // b/455891987
 }

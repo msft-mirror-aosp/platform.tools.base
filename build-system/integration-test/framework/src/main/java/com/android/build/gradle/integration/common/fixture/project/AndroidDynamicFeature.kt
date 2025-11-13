@@ -17,11 +17,11 @@
 package com.android.build.gradle.integration.common.fixture.project
 
 import com.android.build.api.dsl.DynamicFeatureExtension
-import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification
 import com.android.build.gradle.integration.common.fixture.dsl.DslProxy
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
+import com.android.build.gradle.integration.common.fixture.project.reversible.FileChangeController
 import java.nio.file.Path
 
 /*
@@ -71,8 +71,8 @@ internal class AndroidFeatureImpl(
     namespace,
 ), AndroidDynamicFeatureProject {
 
-    override fun getReversibleInstance(projectModification: TemporaryProjectModification): AndroidDynamicFeatureProject =
-        ReversibleAndroidDynamicFeatureProject(this, projectModification)
+    override fun getReversibleInstance(fileChangeController: FileChangeController): AndroidDynamicFeatureProject =
+        ReversibleAndroidDynamicFeatureProject(this, fileChangeController)
 }
 
 /**
@@ -80,8 +80,8 @@ internal class AndroidFeatureImpl(
  */
 internal class ReversibleAndroidDynamicFeatureProject(
     parentProject: AndroidDynamicFeatureProject,
-    projectModification: TemporaryProjectModification
+    fileChangeController: FileChangeController
 ) : ReversibleAndroidProject<AndroidDynamicFeatureProject, AndroidProjectDefinition<DynamicFeatureExtension>>(
     parentProject,
-    projectModification
+    fileChangeController
 ), AndroidDynamicFeatureProject

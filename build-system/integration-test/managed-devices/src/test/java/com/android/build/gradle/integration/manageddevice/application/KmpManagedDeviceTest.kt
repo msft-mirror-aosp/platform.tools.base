@@ -111,7 +111,9 @@ class KmpManagedDeviceTest {
 
   @Test
   fun runManagedDeviceTest() {
-    executor.run(":kmpLibrary:device1AndroidDeviceTest")
+    executor
+        .withFailOnWarning(false) // b/455891987
+        .run(":kmpLibrary:device1AndroidDeviceTest")
 
     val reportDir = FileUtils.join(
       rule.build.subProject(":kmpLibrary").buildDir.pathString,

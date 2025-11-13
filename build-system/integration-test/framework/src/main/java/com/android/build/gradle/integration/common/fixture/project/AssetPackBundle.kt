@@ -17,8 +17,6 @@
 package com.android.build.gradle.integration.common.fixture.project
 
 import com.android.build.api.dsl.AssetPackBundleExtension
-import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification
 import com.android.build.gradle.integration.common.fixture.dsl.DslProxy
 import com.android.build.gradle.integration.common.fixture.project.builder.BuildWriter
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition
@@ -27,6 +25,7 @@ import com.android.build.gradle.integration.common.fixture.project.builder.Gradl
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectFiles
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
+import com.android.build.gradle.integration.common.fixture.project.reversible.FileChangeController
 import java.nio.file.Path
 
 /*
@@ -105,9 +104,9 @@ internal class AssetPackBundleImpl(
 ), AssetPackBundleProject, GeneratesAab by GeneratesAabDelegate(location) {
 
     override fun getReversibleInstance(
-        projectModification: TemporaryProjectModification
+        fileChangeController: FileChangeController
     ): AssetPackBundleProject =
-        ReversibleAssetPackBundleProject(this, projectModification)
+        ReversibleAssetPackBundleProject(this, fileChangeController)
 }
 
 /**
@@ -115,9 +114,9 @@ internal class AssetPackBundleImpl(
  */
 internal class ReversibleAssetPackBundleProject(
     parentProject: AssetPackBundleProject,
-    projectModification: TemporaryProjectModification
+    fileChangeController: FileChangeController
 ) : ReversibleGradleProject<AssetPackBundleProject, AssetPackBundleDefinition>(
     parentProject,
-    projectModification,
+    fileChangeController,
 ), AssetPackBundleProject,
     GeneratesAab by GeneratesAabFromParentDelegate(parentProject)

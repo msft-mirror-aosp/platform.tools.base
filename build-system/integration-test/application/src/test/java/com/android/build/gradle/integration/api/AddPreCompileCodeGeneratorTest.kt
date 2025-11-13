@@ -23,9 +23,10 @@ import com.android.build.api.variant.LibraryAndroidComponentsExtension
 import com.android.build.gradle.integration.common.fixture.project.AarSelector
 import com.android.build.gradle.integration.common.fixture.project.ApkSelector
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
-import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
 import com.android.build.gradle.integration.common.fixture.project.plugins.ApplicationComponentCallback
 import com.android.build.gradle.integration.common.fixture.project.plugins.LibraryComponentCallback
+import com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
+import com.android.build.gradle.integration.common.utils.getVariantByName
 import com.google.common.truth.Truth
 import org.gradle.api.DefaultTask
 import org.gradle.api.Project
@@ -36,7 +37,6 @@ import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.TaskAction
 import org.junit.Rule
 import org.junit.Test
-
 import org.objectweb.asm.ClassWriter
 import org.objectweb.asm.Opcodes
 import java.io.File
@@ -66,7 +66,7 @@ class AddPreCompileCodeGeneratorTest {
     }
 
     @get:Rule
-    val project = GradleRule.configure().from {
+    val project = GradleRule.from {
         androidApplication {
             files {
                 add("src/main/kotlin/com/foo/bar/app/MyClass.kt",
@@ -148,6 +148,24 @@ class AddPreCompileCodeGeneratorTest {
         gradleBuild.androidApplication(":app").assertApk(ApkSelector.DEBUG) {
             classes().contains("com/foo/utils/app/GeneratorUtils")
         }
+    }
+
+    @Test
+    fun ensureAddedDirsAreInIdeModels() {
+        val gradleBuild = project.build
+        val intermediatesDir = gradleBuild.androidApplication().intermediatesDir.toFile()
+        val androidProject =
+            gradleBuild.modelBuilder.fetchModels().container.getProject(":app").androidProject!!
+        val debugArtifact = androidProject.getVariantByName("debug").mainArtifact
+        assertThat(debugArtifact.generatedClassPaths.values)
+            .containsExactly(
+                intermediatesDir.resolve("pre_compilation_classes/debug/generatedebugBytecodes")
+            )
+        val releaseArtifact = androidProject.getVariantByName("release").mainArtifact
+        assertThat(releaseArtifact.generatedClassPaths.values)
+            .containsExactly(
+                intermediatesDir.resolve("pre_compilation_classes/release/generatereleaseBytecodes")
+            )
     }
 }
 

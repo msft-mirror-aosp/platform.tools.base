@@ -22,14 +22,6 @@ import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.options.StringOption
 
 @Deprecated("Do not use this method. Try to migrate the test to built-in Kotlin instead (b/385745419).")
-fun GradleBuildDefinition.disableBuiltInKotlin() {
-    gradleProperties {
-        add(BooleanOption.BUILT_IN_KOTLIN, false)
-        add(StringOption.SUPPRESS_UNSUPPORTED_OPTION_WARNINGS, "${StringOption.SUPPRESS_UNSUPPORTED_OPTION_WARNINGS.propertyName},${BooleanOption.BUILT_IN_KOTLIN.propertyName}")
-    }
-}
-
-@Deprecated("Do not use this method. Try to migrate the test to built-in Kotlin instead (b/385745419).")
 fun GradleTestProjectBuilder.disableBuiltInKotlin(): GradleTestProjectBuilder {
     addGradleProperty(BooleanOption.BUILT_IN_KOTLIN, false)
     addGradleProperties("${StringOption.SUPPRESS_UNSUPPORTED_OPTION_WARNINGS.propertyName}=${StringOption.SUPPRESS_UNSUPPORTED_OPTION_WARNINGS.propertyName},${BooleanOption.BUILT_IN_KOTLIN.propertyName}")

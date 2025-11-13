@@ -63,7 +63,6 @@ import java.nio.file.Files
 import java.nio.file.NoSuchFileException
 import java.nio.file.Path
 import java.nio.file.Paths
-import java.util.NoSuchElementException
 import java.util.Scanner
 import java.util.concurrent.TimeoutException
 import java.util.regex.Matcher
@@ -493,6 +492,7 @@ private constructor(
       } else {
         updatedEnvironment = mutableMapOf()
         environmentIniPath.deleteIfExists()
+        deleteContentOf(avdFolder.resolve(ENVIRONMENT_DIR))
       }
 
       val oldAvdInfo = getAvd(avdName, false /*validAvdOnly*/)
@@ -579,14 +579,23 @@ private constructor(
     val value = environment[key]
     if (value != null) {
       val source = avdFolder.fileSystem.getPath(value)
-      val destination = avdFolder.resolve(source.fileName)
-      try {
-        if (source != destination) {
-          FileUtils.copyFile(source, destination)
+      if (source.isAbsolute) {
+        // An absolute path indicates an environment file that should be copied to the AVD folder.
+        val environmentDir = avdFolder.resolve(ENVIRONMENT_DIR)
+        Files.createDirectories(environmentDir)
+        deleteContentOf(environmentDir)
+        val destination = environmentDir.resolve(source.fileName)
+        try {
+          if (source != destination) {
+            FileUtils.copyFile(source, destination)
+          }
+          environment[key] = avdFolder.relativize(destination).toString()
+        } catch (e: IOException) {
+          throw AvdManagerException("Unable to copy background to AVD directory", e)
         }
-        environment[key] = avdFolder.relativize(destination).toString()
-      } catch (e: IOException) {
-        throw AvdManagerException("Unable to copy background to AVD directory", e)
+      } else if (!Files.exists(avdFolder.resolve(source))) {
+        // A relative path means that the environment should already be present.
+        log.warning("$key $source not present in $avdFolder")
       }
     }
   }
@@ -602,6 +611,7 @@ private constructor(
       relative == SDCARD_IMG ||
       relative == USER_SETTINGS_INI ||
       relative == BOOT_PROP ||
+      relative == ENVIRONMENT_DIR ||
       relative == ENVIRONMENT_INI ||
       relative == USERDATA_IMG ||
       relative == avd.environment[EnvironmentKey.IMAGE] ||
@@ -1203,37 +1213,6 @@ private constructor(
   }
 
   /**
-   * Writes a .ini file from a set of properties, using UTF-8 encoding. The keys are sorted. The
-   * file should be read back later by [.parseIniFile].
-   *
-   * @param iniFile The file to generate.
-   * @param values The properties to place in the ini file.
-   * @param addEncoding When true, add a property [ConfigKey.ENCODING] indicating the encoding used
-   *   to write the file.
-   * @throws IOException if [FileWriter] fails to open, write or close the file.
-   */
-  @Throws(IOException::class)
-  private fun writeIniFile(iniFile: Path, values: Map<String, String>, addEncoding: Boolean) {
-    val charset = StandardCharsets.UTF_8
-    OutputStreamWriter(Files.newOutputStream(iniFile), charset).use { writer ->
-      val finalValues =
-        if (addEncoding) {
-          // Write down the charset we're using in case we want to use it later.
-          values + (ConfigKey.ENCODING to charset.name())
-        } else {
-          values
-        }
-
-      for (key in finalValues.keys.sorted()) {
-        val value = finalValues[key]
-        if (value != null) {
-          writer.write("$key=$value\n")
-        }
-      }
-    }
-  }
-
-  /**
    * Removes an [AvdInfo] from the internal list.
    *
    * @param avdInfo The [AvdInfo] to remove.
@@ -1560,6 +1539,7 @@ private constructor(
     const val USER_SETTINGS_INI: String = "user-settings.ini" // $NON-NLS-1$
 
     private const val BOOT_PROP = "boot.prop"
+    const val ENVIRONMENT_DIR = "environment"
     const val ENVIRONMENT_INI = "environment.ini"
     const val CONFIG_INI: String = "config.ini"
     private const val HARDWARE_QEMU_INI = "hardware-qemu.ini"
@@ -1739,6 +1719,38 @@ private constructor(
         log.warning("Failed 'chattr' for %1\$s: %2\$s", avdFolder.toAbsolutePath().toString(), e)
       } catch (e: IOException) {
         log.warning("Failed 'chattr' for %1\$s: %2\$s", avdFolder.toAbsolutePath().toString(), e)
+      }
+    }
+  }
+}
+
+/**
+ * Writes a .ini file from a set of properties, using UTF-8 encoding. The keys are sorted. The file
+ * should be read back later by [.parseIniFile].
+ *
+ * @param iniFile The file to generate.
+ * @param values The properties to place in the ini file. If a value is null, the key will be
+ *   omitted.
+ * @param addEncoding When true, add a property [ConfigKey.ENCODING] indicating the encoding used to
+ *   write the file.
+ * @throws IOException if [FileWriter] fails to open, write or close the file.
+ */
+@Throws(IOException::class)
+internal fun writeIniFile(iniFile: Path, values: Map<String, String?>, addEncoding: Boolean) {
+  val charset = StandardCharsets.UTF_8
+  OutputStreamWriter(Files.newOutputStream(iniFile), charset).use { writer ->
+    val finalValues =
+      if (addEncoding) {
+        // Write down the charset we're using in case we want to use it later.
+        values + (ConfigKey.ENCODING to charset.name())
+      } else {
+        values
+      }
+
+    for (key in finalValues.keys.sorted()) {
+      val value = finalValues[key]
+      if (value != null) {
+        writer.write("$key=$value\n")
       }
     }
   }

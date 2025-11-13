@@ -22,6 +22,7 @@ import com.android.adblib.impl.AdbActivityManagerServicesImpl
 import com.android.adblib.impl.AdbSessionImpl
 import com.android.adblib.impl.ConnectedDevicesDeviceCacheProvider
 import com.android.adblib.impl.ConnectedDevicesTrackerImpl
+import com.android.adblib.impl.ConnectionStatusTrackerImpl
 import com.android.adblib.impl.DeviceInfoTracker
 import com.android.adblib.impl.SessionDeviceTracker
 import com.android.adblib.impl.TrackerConnecting
@@ -383,6 +384,21 @@ val AdbSession.connectedDevicesTracker: ConnectedDevicesTracker
  * The [Key] used to identify the [ConnectedDevicesTracker] in [AdbSession.cache].
  */
 private object ConnectedDevicesManagerKey : Key<ConnectedDevicesTracker>(ConnectedDevicesTracker::class.java.simpleName)
+
+/**
+ * Returns the [ConnectionStatusTracker] associated to this session
+ */
+val AdbSession.connectionStatusTracker: ConnectionStatusTracker
+    get() {
+        return this.cache.getOrPut(ConnectionStatusTrackerKey) {
+            ConnectionStatusTrackerImpl(this)
+        }
+    }
+
+/**
+ * The [Key] used to identify the [ConnectionStatusTracker] in [AdbSession.cache].
+ */
+private object ConnectionStatusTrackerKey : Key<ConnectionStatusTracker>(ConnectionStatusTracker::class.java.simpleName)
 
 /**
  * Provides a way to store data in a device cache by device selector.

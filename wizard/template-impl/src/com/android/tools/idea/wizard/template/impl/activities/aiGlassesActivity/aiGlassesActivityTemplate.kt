@@ -34,7 +34,7 @@ import java.io.File
 
 val aiGlassesActivityTemplate
   get() = template {
-    name = "Basic Glasses Activity"
+    name = "Basic AI Glasses Activity"
     description = "Creates a new basic AI glasses activity"
     minApi = 30
     constraints =

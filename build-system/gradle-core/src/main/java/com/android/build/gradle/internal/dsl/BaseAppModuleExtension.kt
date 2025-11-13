@@ -24,7 +24,9 @@ import com.android.build.api.dsl.ComposeOptions
 import com.android.build.gradle.AppExtension
 import com.android.build.gradle.api.AndroidSourceSet
 import com.android.build.gradle.api.BaseVariantOutput
+import com.android.build.gradle.internal.CompileOptions
 import com.android.build.gradle.internal.DependenciesExtension
+import com.android.build.gradle.internal.coverage.JacocoOptions
 import com.android.build.gradle.internal.dependency.SourceSetManager
 import com.android.build.gradle.internal.services.DslServices
 import com.android.build.gradle.internal.tasks.factory.BootClasspathConfig
@@ -103,6 +105,12 @@ abstract class BaseAppModuleExtension @Inject constructor(
     override val defaultConfig: DefaultConfig
         get() = publicExtensionImpl.defaultConfig as DefaultConfig
 
+    override val signingConfigs: NamedDomainObjectContainer<SigningConfig>
+        get() = publicExtensionImpl.signingConfigs
+
+    override val externalNativeBuild: ExternalNativeBuild
+        get() = publicExtensionImpl.externalNativeBuild as ExternalNativeBuild
+
     override val productFlavors: NamedDomainObjectContainer<out ProductFlavor>
         get() = publicExtensionImpl.productFlavors as NamedDomainObjectContainer<ProductFlavor>
 
@@ -122,14 +130,38 @@ abstract class BaseAppModuleExtension @Inject constructor(
     override val libraryRequests: MutableCollection<LibraryRequest>
         get() = publicExtensionImpl.libraryRequests
 
+    override val aaptOptions: AaptOptions
+        get() = publicExtensionImpl.aaptOptions
+
+    override val adbOptions: AdbOptions
+        get() = publicExtensionImpl.adbOptions
+
     override val androidResources: ApplicationAndroidResources
         get() = publicExtensionImpl.androidResources
 
     override val buildFeatures: ApplicationBuildFeatures
         get() = publicExtensionImpl.buildFeatures
 
+    override val dataBinding: DataBindingOptions
+        get() = publicExtensionImpl.dataBinding
+
     override val packagingOptions: PackagingOptions
         get() = publicExtensionImpl.packagingOptions
+
+    override val jacoco: JacocoOptions
+        get() = publicExtensionImpl.jacoco
+
+    override val testOptions: TestOptions
+        get() = publicExtensionImpl.testOptions
+
+    override val splits: Splits
+        get() = publicExtensionImpl.splits as Splits
+
+    override val lintOptions: LintOptions
+        get() = publicExtensionImpl.lintOptions
+
+    override val compileOptions: CompileOptions
+        get() = publicExtensionImpl.compileOptions as CompileOptions
 
     @Configuring
     override fun defaultConfig(action: ApplicationDefaultConfig.() -> Unit) {

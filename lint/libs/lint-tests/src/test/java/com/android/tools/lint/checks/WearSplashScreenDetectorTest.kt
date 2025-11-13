@@ -28,12 +28,11 @@ class WearSplashScreenDetectorTest : AbstractCheckTest() {
       .run()
       .expect(
         """
-              AndroidManifest.xml:16: Warning: Applications using splash screens are strongly recommended to use the 'androidx.core:core-splashscreen' library [WearSplashScreen]
-                      <activity android:name=".SplashActivity"
-                      ^
-              0 errors, 1 warnings
-            """
-          .trimIndent()
+        AndroidManifest.xml:17: Warning: Applications using splash screens are strongly recommended to use the 'androidx.core:core-splashscreen' library [WearSplashScreen]
+                <activity android:name=".SplashActivity"
+                ^
+        0 errors, 1 warnings
+        """
       )
 
     // API > 30 will generate splash screens so we do not want the user to add the splashscreen
@@ -46,8 +45,11 @@ class WearSplashScreenDetectorTest : AbstractCheckTest() {
   }
 
   private fun manifestWithActivityTheme(minSdk: Int) =
-    manifest(activityThemeManifestApi30.getContents()!!.replace("minSdkVersion=\"30\"", "minSdkVersion=\"$minSdk\""))
-
+    manifest(
+      activityThemeManifestApi30
+        .getContents()!!
+        .replace("minSdkVersion=\"30\"", "minSdkVersion=\"$minSdk\"")
+    )
 
   private val activityThemeManifestApi30: TestFile =
     manifest(
@@ -62,14 +64,16 @@ class WearSplashScreenDetectorTest : AbstractCheckTest() {
                   android:icon="@mipmap/ic_launcher"
                   android:label="@string/app_name">
                   <activity android:name=".MainActivity"
-                      android:theme="@style/AppTheme">
+                      android:theme="@style/AppTheme"
+                      android:exported="true">
                        <intent-filter>
                           <action android:name="android.intent.action.MAIN" />
                           <category android:name="android.intent.category.LAUNCHER" />
                       </intent-filter>
                    </activity>
                   <activity android:name=".SplashActivity"
-                      android:theme="@style/AppTheme">
+                      android:theme="@style/AppTheme"
+                      android:exported="true">
                        <intent-filter>
                           <action android:name="android.intent.action.MAIN" />
                           <category android:name="android.intent.category.LAUNCHER" />

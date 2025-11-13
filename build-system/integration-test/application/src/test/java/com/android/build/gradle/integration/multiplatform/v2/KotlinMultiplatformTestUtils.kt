@@ -161,6 +161,8 @@ internal fun GradleTestProject.publishLibs(
     }
 
     projectsToPublish.forEach {
-        executor().run(":$it:publish")
+        executor()
+            .withFailOnWarning(false) // b/455891987
+            .run(":$it:publish")
     }
 }

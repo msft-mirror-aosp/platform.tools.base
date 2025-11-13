@@ -16,13 +16,19 @@
 package com.android.sdklib.deviceprovisioner
 
 import com.android.adblib.testing.FakeAdbLoggerFactory
+import com.android.adblib.testing.FakeAdbSession
+import com.android.adblib.testingutils.CoroutineTestUtils.runBlockingWithTimeout
+import com.android.adblib.testingutils.CoroutineTestUtils.yieldUntil
 import com.android.adblib.utils.createChildScope
+import com.android.sdklib.deviceprovisioner.testing.SdkFixture
 import com.android.sdklib.internal.avd.AvdInfo
+import com.android.sdklib.internal.avd.AvdManager
 import com.android.sdklib.internal.avd.BootMode
 import com.android.testutils.file.createInMemoryFileSystemAndFolder
 import com.google.common.truth.Truth.assertThat
 import java.awt.Component
 import java.nio.file.Path
+import java.time.Duration
 import kotlin.time.Duration.Companion.minutes
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -30,8 +36,11 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.takeWhile
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceTimeBy
@@ -56,6 +65,7 @@ class LocalEmulatorDeviceHandleTest {
       LocalEmulatorDeviceHandle(
         context,
         {},
+        MutableStateFlow(emptyList()),
         this.createChildScope(),
         emptyList(),
         makeAvdInfo(createInMemoryFileSystemAndFolder("avds"), 1),
@@ -74,6 +84,63 @@ class LocalEmulatorDeviceHandleTest {
 
     handle.scope.cancel()
   }
+
+  class AvdManagerWrapper(val avdManager: AvdManager) : StubAvdManager() {
+    override suspend fun rescanAvds(): List<AvdInfo> {
+      avdManager.reloadAvds()
+      return avdManager.allAvds
+    }
+  }
+
+  /**
+   * updatePaired{Glasses/Phone} should result in properties.paired{Glasses/Phone}Id being updated.
+   */
+  @Test
+  fun updatePairedDevices(): Unit =
+    runBlockingWithTimeout(Duration.ofSeconds(5)) {
+      with(SdkFixture()) {
+        avdManager.createAvd(
+          avdManager.createAvdBuilder(deviceManager.getDevice("pixel_9", "Google")!!).apply {
+            systemImage = testSystemImages.api36.image
+          }
+        )
+        avdManager.createAvd(
+          avdManager
+            .createAvdBuilder(deviceManager.getDevice("ai_glasses_device", "Google")!!)
+            .apply { systemImage = testSystemImages.aiGlasses.image }
+        )
+
+        val session = FakeAdbSession()
+
+        val plugin =
+          LocalEmulatorProvisionerPlugin(
+            session.scope,
+            session,
+            AvdManagerWrapper(avdManager),
+            emptyDeviceIcons,
+            TestDefaultDeviceActionPresentation,
+            Dispatchers.IO,
+            Duration.ofMillis(100),
+          )
+
+        yieldUntil { plugin.devices.value.size == 2 }
+
+        val devices = plugin.devices.value.map { it as LocalEmulatorDeviceHandle }
+        val phone = devices.first { it.state.properties.deviceType == DeviceType.HANDHELD }
+        val glasses = devices.first { it.state.properties.deviceType == DeviceType.AI_GLASSES }
+        phone.updatePairedGlasses(glasses)
+        glasses.updatePairedPhone(phone)
+
+        phone.stateFlow.first { it.properties.pairedGlassesId != null }
+        glasses.stateFlow.first { it.properties.pairedPhoneId != null }
+
+        phone.updatePairedGlasses(null)
+        glasses.updatePairedPhone(null)
+
+        phone.stateFlow.first { it.properties.pairedGlassesId == null }
+        glasses.stateFlow.first { it.properties.pairedPhoneId == null }
+      }
+    }
 }
 
 fun unsupportedOperation(): Nothing = throw UnsupportedOperationException()
@@ -89,6 +156,14 @@ open class StubAvdManager : LocalEmulatorProvisionerPlugin.AvdManager {
 
   override suspend fun editAvd(parent: Component?, avdInfo: AvdInfo): Boolean =
     unsupportedOperation()
+
+  override suspend fun unpairGlasses(handle: LocalEmulatorDeviceHandle) = unsupportedOperation()
+
+  override suspend fun pairGlasses(
+    parent: Component?,
+    glassesHandle: LocalEmulatorDeviceHandle,
+    deviceHandleFlow: Flow<List<LocalEmulatorDeviceHandle>>,
+  ) = unsupportedOperation()
 
   override suspend fun startAvd(avdInfo: AvdInfo, bootMode: BootMode): Unit = unsupportedOperation()
 

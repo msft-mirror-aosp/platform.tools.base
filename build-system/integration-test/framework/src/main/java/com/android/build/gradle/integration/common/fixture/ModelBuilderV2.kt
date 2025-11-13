@@ -210,8 +210,6 @@ class ModelBuilderV2 internal constructor(
         with(BooleanOption.ENABLE_PROBLEMS_API, true)
 
         suppressOptionWarning(BooleanOption.ENABLE_PROBLEMS_API)
-        // TODO(b/385745419): Remove this when most tests have been migrated to built-in Kotlin
-        suppressOptionWarning(BooleanOption.BUILT_IN_KOTLIN)
 
         setJvmArguments(executor)
 
@@ -437,7 +435,10 @@ class FileNormalizerImpl(
         mutableList.add(RootData(gradleCacheDir, "GRADLE_CACHE") {
             // Remove the actual checksum (size 32)
             // incoming string is "XXXX/..." so removing XXX leaves a leading /
-            "{CHECKSUM}${it.substring(32)}"
+            // For windows platform, also need to remove the "workspace/" which is "added" due to
+            // our bazel set up
+            val startingIndex = if (SdkConstants.currentPlatform() == SdkConstants.PLATFORM_WINDOWS) 42 else 32
+            "{CHECKSUM}${it.substring(startingIndex)}"
         })
         mutableList.add(RootData(gradleUserHome, "GRADLE"))
 

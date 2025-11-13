@@ -1,5 +1,5 @@
 > VariantDependencies:
-   - name                 = "debug"
+   - name                 = "prodDebug"
    > mainArtifact:
       > compileDependencies:
          > com.android.support|appcompat-v7|28.0.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|com.android.support:appcompat-v7:28.0.0:
@@ -274,9 +274,6 @@
    < mainArtifact
    > androidTestArtifact:
       > compileDependencies:
-         - :|:composite1|debug|com.android.build.api.attributes.AgpVersionAttr>{AGP_Version}, com.android.build.gradle.internal.attributes.VariantAttr>debug, org.gradle.category>library, org.gradle.jvm.environment>android, org.gradle.usage>java-api, org.jetbrains.kotlin.platform.type>androidJvm|com.test.composite:composite1:1.0:
-            - requestedCoordinates = (null)
-            - dependencies         = []
          > com.android.support|appcompat-v7|28.0.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|com.android.support:appcompat-v7:28.0.0:
             - requestedCoordinates = (null)
             > dependencies:
@@ -504,9 +501,12 @@
                      - org.jetbrains|annotations|13.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|org.jetbrains:annotations:13.0:
                         - requestedCoordinates = (null)
                         - dependencies         = []
+         - :|:composite1|debug|environment>prod|com.android.build.api.attributes.AgpVersionAttr>{AGP_Version}, com.android.build.gradle.internal.attributes.VariantAttr>prodDebug, org.gradle.category>library, org.gradle.jvm.environment>android, org.gradle.usage>java-api, org.jetbrains.kotlin.platform.type>androidJvm|com.test.composite:composite1:1.0:
+            - requestedCoordinates = (null)
+            - dependencies         = []
       < compileDependencies
       > runtimeDependencies:
-         > :|:composite1|debug|com.android.build.api.attributes.AgpVersionAttr>{AGP_Version}, com.android.build.gradle.internal.attributes.VariantAttr>debug, org.gradle.category>library, org.gradle.jvm.environment>android, org.gradle.usage>java-runtime, org.jetbrains.kotlin.platform.type>androidJvm|com.test.composite:composite1:1.0:
+         > :|:composite1|debug|environment>prod|com.android.build.api.attributes.AgpVersionAttr>{AGP_Version}, com.android.build.gradle.internal.attributes.VariantAttr>prodDebug, org.gradle.category>library, org.gradle.jvm.environment>android, org.gradle.usage>java-runtime, org.jetbrains.kotlin.platform.type>androidJvm|com.test.composite:composite1:1.0:
             - requestedCoordinates = (null)
             > dependencies:
                > com.android.support|appcompat-v7|28.0.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|com.android.support:appcompat-v7:28.0.0:
@@ -544,7 +544,7 @@
                               - requestedCoordinates = (null)
                               - dependencies         = []
             < dependencies
-         < :|:composite1|debug|com.android.build.api.attributes.AgpVersionAttr>{AGP_Version}, com.android.build.gradle.internal.attributes.VariantAttr>debug, org.gradle.category>library, org.gradle.jvm.environment>android, org.gradle.usage>java-runtime, org.jetbrains.kotlin.platform.type>androidJvm|com.test.composite:composite1:1.0
+         < :|:composite1|debug|environment>prod|com.android.build.api.attributes.AgpVersionAttr>{AGP_Version}, com.android.build.gradle.internal.attributes.VariantAttr>prodDebug, org.gradle.category>library, org.gradle.jvm.environment>android, org.gradle.usage>java-runtime, org.jetbrains.kotlin.platform.type>androidJvm|com.test.composite:composite1:1.0
          - com.android.support|appcompat-v7|28.0.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|com.android.support:appcompat-v7:28.0.0:
             - dependencies = "*visited*"
          - org.jetbrains.kotlin|kotlin-stdlib-jdk7|{KOTLIN_VERSION_FOR_TESTS}|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|org.jetbrains.kotlin:kotlin-stdlib-jdk7:{KOTLIN_VERSION_FOR_TESTS}:
@@ -558,9 +558,6 @@
    < androidTestArtifact
    > unitTestArtifact:
       > compileDependencies:
-         - :|:composite1|debug|com.android.build.api.attributes.AgpVersionAttr>{AGP_Version}, com.android.build.gradle.internal.attributes.VariantAttr>debug, org.gradle.category>library, org.gradle.jvm.environment>android, org.gradle.usage>java-api, org.jetbrains.kotlin.platform.type>androidJvm|com.test.composite:composite1:1.0:
-            - requestedCoordinates = (null)
-            - dependencies         = []
          > com.android.support|appcompat-v7|28.0.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|com.android.support:appcompat-v7:28.0.0:
             - requestedCoordinates = (null)
             > dependencies:
@@ -788,9 +785,12 @@
                      - org.jetbrains|annotations|13.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|org.jetbrains:annotations:13.0:
                         - requestedCoordinates = (null)
                         - dependencies         = []
+         - :|:composite1|debug|environment>prod|com.android.build.api.attributes.AgpVersionAttr>{AGP_Version}, com.android.build.gradle.internal.attributes.VariantAttr>prodDebug, org.gradle.category>library, org.gradle.jvm.environment>android, org.gradle.usage>java-api, org.jetbrains.kotlin.platform.type>androidJvm|com.test.composite:composite1:1.0:
+            - requestedCoordinates = (null)
+            - dependencies         = []
       < compileDependencies
       > runtimeDependencies:
-         > :|:composite1|debug|com.android.build.api.attributes.AgpVersionAttr>{AGP_Version}, com.android.build.gradle.internal.attributes.VariantAttr>debug, org.gradle.category>library, org.gradle.jvm.environment>android, org.gradle.usage>java-runtime, org.jetbrains.kotlin.platform.type>androidJvm|com.test.composite:composite1:1.0:
+         > :|:composite1|debug|environment>prod|com.android.build.api.attributes.AgpVersionAttr>{AGP_Version}, com.android.build.gradle.internal.attributes.VariantAttr>prodDebug, org.gradle.category>library, org.gradle.jvm.environment>android, org.gradle.usage>java-runtime, org.jetbrains.kotlin.platform.type>androidJvm|com.test.composite:composite1:1.0:
             - requestedCoordinates = (null)
             > dependencies:
                > com.android.support|appcompat-v7|28.0.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|com.android.support:appcompat-v7:28.0.0:
@@ -828,7 +828,7 @@
                               - requestedCoordinates = (null)
                               - dependencies         = []
             < dependencies
-         < :|:composite1|debug|com.android.build.api.attributes.AgpVersionAttr>{AGP_Version}, com.android.build.gradle.internal.attributes.VariantAttr>debug, org.gradle.category>library, org.gradle.jvm.environment>android, org.gradle.usage>java-runtime, org.jetbrains.kotlin.platform.type>androidJvm|com.test.composite:composite1:1.0
+         < :|:composite1|debug|environment>prod|com.android.build.api.attributes.AgpVersionAttr>{AGP_Version}, com.android.build.gradle.internal.attributes.VariantAttr>prodDebug, org.gradle.category>library, org.gradle.jvm.environment>android, org.gradle.usage>java-runtime, org.jetbrains.kotlin.platform.type>androidJvm|com.test.composite:composite1:1.0
          - com.android.support|appcompat-v7|28.0.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|com.android.support:appcompat-v7:28.0.0:
             - dependencies = "*visited*"
          - org.jetbrains.kotlin|kotlin-stdlib-jdk7|{KOTLIN_VERSION_FOR_TESTS}|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|org.jetbrains.kotlin:kotlin-stdlib-jdk7:{KOTLIN_VERSION_FOR_TESTS}:
@@ -842,7 +842,7 @@
    < unitTestArtifact
    - testFixturesArtifact = (null)
    > libraries:
-      > :|:composite1|debug|com.android.build.api.attributes.AgpVersionAttr>{AGP_Version}, com.android.build.gradle.internal.attributes.VariantAttr>debug, org.gradle.category>library, org.gradle.jvm.environment>android, org.gradle.usage>java-api, org.jetbrains.kotlin.platform.type>androidJvm|com.test.composite:composite1:1.0:
+      > :|:composite1|debug|environment>prod|com.android.build.api.attributes.AgpVersionAttr>{AGP_Version}, com.android.build.gradle.internal.attributes.VariantAttr>prodDebug, org.gradle.category>library, org.gradle.jvm.environment>android, org.gradle.usage>java-api, org.jetbrains.kotlin.platform.type>androidJvm|com.test.composite:composite1:1.0:
          - type               = PROJECT
          - artifact           = (null)
          > projectInfo:
@@ -850,10 +850,11 @@
             - projectPath    = ":composite1"
             - isTestFixtures = false
             - buildType      = "debug"
-            - productFlavors = []
+            - productFlavors:
+               * "environment -> prod"
             - attributes:
                * "com.android.build.api.attributes.AgpVersionAttr -> {AGP_Version}"
-               * "com.android.build.gradle.internal.attributes.VariantAttr -> debug"
+               * "com.android.build.gradle.internal.attributes.VariantAttr -> prodDebug"
                * "org.gradle.category -> library"
                * "org.gradle.jvm.environment -> android"
                * "org.gradle.usage -> java-api"
@@ -864,8 +865,8 @@
          - libraryInfo        = (null)
          - lintJar            = (null)
          - androidLibraryData = (null)
-      < :|:composite1|debug|com.android.build.api.attributes.AgpVersionAttr>{AGP_Version}, com.android.build.gradle.internal.attributes.VariantAttr>debug, org.gradle.category>library, org.gradle.jvm.environment>android, org.gradle.usage>java-api, org.jetbrains.kotlin.platform.type>androidJvm|com.test.composite:composite1:1.0
-      > :|:composite1|debug|com.android.build.api.attributes.AgpVersionAttr>{AGP_Version}, com.android.build.gradle.internal.attributes.VariantAttr>debug, org.gradle.category>library, org.gradle.jvm.environment>android, org.gradle.usage>java-runtime, org.jetbrains.kotlin.platform.type>androidJvm|com.test.composite:composite1:1.0:
+      < :|:composite1|debug|environment>prod|com.android.build.api.attributes.AgpVersionAttr>{AGP_Version}, com.android.build.gradle.internal.attributes.VariantAttr>prodDebug, org.gradle.category>library, org.gradle.jvm.environment>android, org.gradle.usage>java-api, org.jetbrains.kotlin.platform.type>androidJvm|com.test.composite:composite1:1.0
+      > :|:composite1|debug|environment>prod|com.android.build.api.attributes.AgpVersionAttr>{AGP_Version}, com.android.build.gradle.internal.attributes.VariantAttr>prodDebug, org.gradle.category>library, org.gradle.jvm.environment>android, org.gradle.usage>java-runtime, org.jetbrains.kotlin.platform.type>androidJvm|com.test.composite:composite1:1.0:
          - type               = PROJECT
          - artifact           = (null)
          > projectInfo:
@@ -873,10 +874,11 @@
             - projectPath    = ":composite1"
             - isTestFixtures = false
             - buildType      = "debug"
-            - productFlavors = []
+            - productFlavors:
+               * "environment -> prod"
             - attributes:
                * "com.android.build.api.attributes.AgpVersionAttr -> {AGP_Version}"
-               * "com.android.build.gradle.internal.attributes.VariantAttr -> debug"
+               * "com.android.build.gradle.internal.attributes.VariantAttr -> prodDebug"
                * "org.gradle.category -> library"
                * "org.gradle.jvm.environment -> android"
                * "org.gradle.usage -> java-runtime"
@@ -887,7 +889,7 @@
          - libraryInfo        = (null)
          - lintJar            = (null)
          - androidLibraryData = (null)
-      < :|:composite1|debug|com.android.build.api.attributes.AgpVersionAttr>{AGP_Version}, com.android.build.gradle.internal.attributes.VariantAttr>debug, org.gradle.category>library, org.gradle.jvm.environment>android, org.gradle.usage>java-runtime, org.jetbrains.kotlin.platform.type>androidJvm|com.test.composite:composite1:1.0
+      < :|:composite1|debug|environment>prod|com.android.build.api.attributes.AgpVersionAttr>{AGP_Version}, com.android.build.gradle.internal.attributes.VariantAttr>prodDebug, org.gradle.category>library, org.gradle.jvm.environment>android, org.gradle.usage>java-runtime, org.jetbrains.kotlin.platform.type>androidJvm|com.test.composite:composite1:1.0
       > android.arch.core|common|1.1.1|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|android.arch.core:common:1.1.1:
          - type               = JAVA_LIBRARY
          - artifact           = {LOCAL_REPO}/android/arch/core/common/1.1.1/common-1.1.1.jar{F}

@@ -488,8 +488,17 @@ class KotlinMultiplatformAndroidPlugin @Inject constructor(
             project = project,
             projectOptions = projectServices.projectOptions,
             dslInfo = dslInfo,
-            apiClasspath = project.configurations.getByName(
+            apiConfiguration = project.configurations.getByName(
                 androidKotlinCompilation.apiConfigurationName
+            ),
+            implementationConfiguration = project.configurations.getByName(
+                androidKotlinCompilation.implementationConfigurationName
+            ),
+            compileOnlyConfiguration = project.configurations.getByName(
+                androidKotlinCompilation.compileOnlyConfigurationName
+            ),
+            runtimeOnlyConfiguration = project.configurations.getByName(
+                androidKotlinCompilation.runtimeOnlyConfigurationName
             ),
             compileClasspath = project.configurations.getByName(
                 androidKotlinCompilation.compileDependencyConfigurationName

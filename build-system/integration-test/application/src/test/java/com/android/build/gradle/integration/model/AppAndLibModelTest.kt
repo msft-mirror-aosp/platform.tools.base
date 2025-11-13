@@ -21,7 +21,6 @@ import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_APP_PATH
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_LIB_PATH
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
-import com.android.build.gradle.integration.common.utils.disableBuiltInKotlin
 import com.android.builder.model.v2.ide.SyncIssue
 import com.android.testutils.MavenRepoGenerator
 import com.android.testutils.TestInputsGenerator
@@ -34,12 +33,18 @@ class HelloWorldAppAndLibModelTest: ModelComparator() {
     @get:Rule
     val rule = GradleRule.from {
         androidApplication {
+            android {
+                enableKotlin = false
+            }
             dependencies {
                 implementation(project(DEFAULT_LIB_PATH))
             }
         }
-        androidLibrary { }
-        disableBuiltInKotlin()
+        androidLibrary {
+            android {
+                enableKotlin = false
+            }
+        }
     }
 
     @Test
@@ -59,6 +64,9 @@ class AppAndLibTestFixturesModelTest: ModelComparator() {
     @get:Rule
     val rule = GradleRule.from {
         androidApplication {
+            android {
+                enableKotlin = false
+            }
             dependencies {
                 implementation(project(DEFAULT_LIB_PATH))
                 androidTestImplementation(project(DEFAULT_LIB_PATH, testFixtures = true))
@@ -71,9 +79,9 @@ class AppAndLibTestFixturesModelTest: ModelComparator() {
                 testFixtures {
                     enable = true
                 }
+                enableKotlin = false
             }
         }
-        disableBuiltInKotlin()
     }
 
     @Test
@@ -93,6 +101,9 @@ class AppAndJavaLibTestFixturesModelTest: ModelComparator() {
     @get:Rule
     val rule = GradleRule.from {
         androidApplication {
+            android {
+                enableKotlin = false
+            }
             dependencies {
                 implementation(project(":lib"))
                 androidTestImplementation(project(":lib", testFixtures = true))
@@ -103,7 +114,6 @@ class AppAndJavaLibTestFixturesModelTest: ModelComparator() {
             applyPlugin(PluginType.JAVA_TEST_FIXTURES)
             version = "1.2.3"
         }
-        disableBuiltInKotlin()
     }
 
     @Test
@@ -123,6 +133,9 @@ class AppAndExternalJavaLibTestFixturesModelTest: ModelComparator() {
     @get:Rule
     val rule = GradleRule.from {
         androidApplication {
+            android {
+                enableKotlin = false
+            }
             dependencies {
                 implementation(
                     MavenRepoGenerator.libraryWithFixtures(
@@ -146,7 +159,6 @@ class AppAndExternalJavaLibTestFixturesModelTest: ModelComparator() {
                 )
             }
         }
-        disableBuiltInKotlin()
     }
 
     @Test
@@ -166,6 +178,9 @@ class AppAndExternalAarLibTestFixturesModelTest: ModelComparator() {
     @get:Rule
     val rule = GradleRule.from {
         androidApplication {
+            android {
+                enableKotlin = false
+            }
             dependencies {
                 implementation(
                     MavenRepoGenerator.libraryWithFixtures(
@@ -201,7 +216,6 @@ class AppAndExternalAarLibTestFixturesModelTest: ModelComparator() {
                 )
             }
         }
-        disableBuiltInKotlin()
     }
 
     @Test

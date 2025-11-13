@@ -381,6 +381,7 @@ open class BuiltinIssueRegistry : IssueRegistry() {
           PrivateKeyDetector.ISSUE,
           PrivateResourceDetector.ISSUE,
           ProguardAndroidTxtDetector.ISSUE,
+          ProguardConsumerRulesDetector.GLOBAL_OPTION_ISSUE,
           ProguardDetector.SPLIT_CONFIG,
           ProguardDetector.WRONG_KEEP,
           PropertyFileDetector.ESCAPE,

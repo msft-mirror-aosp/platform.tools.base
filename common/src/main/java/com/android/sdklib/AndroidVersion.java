@@ -415,7 +415,7 @@ public final class AndroidVersion implements Comparable<AndroidVersion>, Seriali
 
     /** Returns the major version of this version as an {@link AndroidMajorVersion}. */
     public AndroidMajorVersion getMajorVersion() {
-        return new AndroidMajorVersion(mAndroidApiLevel.getMajorVersion(), mCodename);
+        return new AndroidMajorVersion(mAndroidApiLevel, mCodename);
     }
 
     /**

@@ -1,5 +1,5 @@
 > AndroidDsl:
-   - groupId           = ""
+   - groupId           = "project"
    - compileTarget     = DEFAULT_COMPILE_SDK_VERSION
    - buildToolsVersion = DEFAULT_BUILD_TOOLS_REVISION
    > defaultConfig:
@@ -63,6 +63,7 @@
       - vectorDrawables:
          - generatedDensities = ["hdpi", "ldpi", "mdpi", "xhdpi", "xxhdpi", "xxxhdpi"]
          - useSupportLibrary  = false
+      - matchingFallbacks                  = []
    < defaultConfig
    > buildTypes:
       > debug:
@@ -92,7 +93,7 @@
          - multiDexKeepProguard     = (null)
          - isDefault                = false
          - isDebuggable             = true
-         - isTestCoverageEnabled    = true
+         - isTestCoverageEnabled    = false
          - isPseudoLocalesEnabled   = false
          - isJniDebuggable          = false
          - isRenderscriptDebuggable = false
@@ -101,6 +102,8 @@
          - isZipAlignEnabled        = true
          - isEmbedMicroApp          = false
          - signingConfig            = "debug"
+         - matchingFallbacks:
+            * "release"
       < debug
       > release:
          - name                     = "release"
@@ -126,6 +129,7 @@
          - isZipAlignEnabled        = true
          - isEmbedMicroApp          = false
          - signingConfig            = (null)
+         - matchingFallbacks        = []
       < release
    < buildTypes
    - flavorDimensions  = []
@@ -167,13 +171,13 @@
       - checkGeneratedSources     = true
       - explainIssues             = true
       - showAll                   = true
-      - lintConfig                = {PROJECT}/default-lint.xml{!}
+      - lintConfig                = {PROJECT}/app/default-lint.xml{!}
       - textReport                = true
-      - textOutput                = stdout{!}
+      - textOutput                = (null)
       - htmlReport                = true
-      - htmlOutput                = {PROJECT}/lint-report.html{!}
+      - htmlOutput                = {PROJECT}/app/lint-report.html{!}
       - xmlReport                 = true
-      - xmlOutput                 = {PROJECT}/lint-report.xml{!}
+      - xmlOutput                 = {PROJECT}/app/lint-report.xml{!}
       - sarifReport               = false
       - sarifOutput               = (null)
       - checkReleaseBuilds        = true

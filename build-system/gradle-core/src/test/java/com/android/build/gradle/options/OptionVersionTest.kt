@@ -21,6 +21,7 @@ import com.android.ide.common.repository.AgpVersion
 import org.junit.Test
 
 /** Tests the validity of the Android Gradle plugin versions associated with the [Option]s. */
+@OptIn(ExperimentalStdlibApi::class)  // For Enum.entries
 class OptionVersionTest {
 
     companion object {
@@ -47,7 +48,6 @@ class OptionVersionTest {
         private val INVALID_DEPRECATION_TARGET: List<Option<*>> = listOf(
             BooleanOption.ANDROID_TEST_USES_UNIFIED_TEST_PLATFORM,
             BooleanOption.DISABLE_MINIFY_LOCAL_DEPENDENCIES_FOR_LIBRARIES,
-            BooleanOption.DISALLOW_USES_SDK_IN_MANIFEST,
             BooleanOption.ENABLE_EMULATOR_CONTROL,
             BooleanOption.ENABLE_RESOURCE_OPTIMIZATIONS,
             BooleanOption.CUSTOM_SHADER_PATH_REQUIRED,
@@ -71,7 +71,6 @@ class OptionVersionTest {
             BooleanOption.ANDROID_BUILTIN_TEST_PLATFORM,
             BooleanOption.ANDROID_TEST_USES_UNIFIED_TEST_PLATFORM,
             BooleanOption.DISABLE_MINIFY_LOCAL_DEPENDENCIES_FOR_LIBRARIES,
-            BooleanOption.DISALLOW_USES_SDK_IN_MANIFEST,
             BooleanOption.ENABLE_EMULATOR_CONTROL,
             BooleanOption.ENABLE_RESOURCE_OPTIMIZATIONS,
             BooleanOption.CUSTOM_SHADER_PATH_REQUIRED,

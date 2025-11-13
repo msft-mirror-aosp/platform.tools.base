@@ -20,7 +20,6 @@ import com.android.build.gradle.integration.common.fixture.model.ModelComparator
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
 import com.android.build.gradle.integration.common.fixture.project.plugins.GenericCallback
-import com.android.build.gradle.integration.common.utils.disableBuiltInKotlin
 import com.android.build.gradle.options.BooleanOption
 import com.android.builder.model.v2.ide.SyncIssue
 import org.gradle.api.Project
@@ -91,6 +90,9 @@ class CyclicPomDependencyTest: ModelComparator() {
     @get:Rule
     val rule = GradleRule.from {
         androidApplication {
+            android {
+                enableKotlin = false
+            }
             dependencies {
                 implementation("com.foo:bar1:1.0")
             }
@@ -112,7 +114,6 @@ class CyclicPomDependencyTest: ModelComparator() {
             // b/308936442
             add(BooleanOption.PRIVACY_SANDBOX_SDK_SUPPORT, false)
         }
-        disableBuiltInKotlin()
     }
 
 

@@ -167,6 +167,11 @@ object TestFiles {
   }
 
   @JvmStatic
+  fun proguard(into: String, @Language("proguard") proguard: String): TestFile {
+    return source(into, proguard)
+  }
+
+  @JvmStatic
   fun manifest(): ManifestTestFile {
     return ManifestTestFile()
   }

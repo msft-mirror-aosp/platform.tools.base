@@ -42,11 +42,18 @@ https://issuetracker.google.com/328748132
   * com.android.build.api.dsl.BundleDeviceTier.setDefaultTier: void (java.lang.String)
   * com.android.build.api.dsl.BundleDeviceTier.setEnableSplit: void (java.lang.Boolean)
 https://issuetracker.google.com/328748193
+  * com.android.build.api.dsl.ApplicationExtension.getJacoco: com.android.build.api.dsl.JacocoOptions ()
+  * com.android.build.api.dsl.ApplicationExtension.jacoco: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.JacocoOptions, kotlin.Unit>)
   * com.android.build.api.dsl.CommonExtension.getJacoco: com.android.build.api.dsl.JacocoOptions ()
-  * com.android.build.api.dsl.CommonExtension.jacoco: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.JacocoOptions, kotlin.Unit>)
+  * com.android.build.api.dsl.DynamicFeatureExtension.getJacoco: com.android.build.api.dsl.JacocoOptions ()
+  * com.android.build.api.dsl.DynamicFeatureExtension.jacoco: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.JacocoOptions, kotlin.Unit>)
   * com.android.build.api.dsl.JacocoOptions implements com.android.build.api.dsl.TestCoverage
   * com.android.build.api.dsl.JacocoOptions.getVersion: java.lang.String ()
   * com.android.build.api.dsl.JacocoOptions.setVersion: void (java.lang.String)
+  * com.android.build.api.dsl.LibraryExtension.getJacoco: com.android.build.api.dsl.JacocoOptions ()
+  * com.android.build.api.dsl.LibraryExtension.jacoco: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.JacocoOptions, kotlin.Unit>)
+  * com.android.build.api.dsl.TestExtension.getJacoco: com.android.build.api.dsl.JacocoOptions ()
+  * com.android.build.api.dsl.TestExtension.jacoco: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.JacocoOptions, kotlin.Unit>)
 https://issuetracker.google.com/328748252
   * com.android.build.api.dsl.AndroidSourceSet.getJni: com.android.build.api.dsl.AndroidSourceDirectorySet ()
 https://issuetracker.google.com/328748254
@@ -263,8 +270,13 @@ https://issuetracker.google.com/328748935
   * com.android.build.api.dsl.ConsumerKeepRules.setIgnoreFromAllExternalDependencies: void (boolean)
   * com.android.build.api.dsl.ConsumerKeepRules.setPublish: void (boolean)
 https://issuetracker.google.com/328748959
+  * com.android.build.api.dsl.ApplicationExtension.getLintOptions: com.android.build.api.dsl.LintOptions ()
+  * com.android.build.api.dsl.ApplicationExtension.lintOptions: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.LintOptions, kotlin.Unit>)
   * com.android.build.api.dsl.CommonExtension.getLintOptions: com.android.build.api.dsl.LintOptions ()
-  * com.android.build.api.dsl.CommonExtension.lintOptions: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.LintOptions, kotlin.Unit>)
+  * com.android.build.api.dsl.DynamicFeatureExtension.getLintOptions: com.android.build.api.dsl.LintOptions ()
+  * com.android.build.api.dsl.DynamicFeatureExtension.lintOptions: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.LintOptions, kotlin.Unit>)
+  * com.android.build.api.dsl.LibraryExtension.getLintOptions: com.android.build.api.dsl.LintOptions ()
+  * com.android.build.api.dsl.LibraryExtension.lintOptions: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.LintOptions, kotlin.Unit>)
   * com.android.build.api.dsl.LintOptions
   * com.android.build.api.dsl.LintOptions.baseline: void (java.io.File)
   * com.android.build.api.dsl.LintOptions.baseline: void (java.lang.String)
@@ -339,6 +351,8 @@ https://issuetracker.google.com/328748959
   * com.android.build.api.dsl.LintOptions.textOutput: void (java.lang.String)
   * com.android.build.api.dsl.LintOptions.warning: void (java.lang.String)
   * com.android.build.api.dsl.LintOptions.warning: void (java.lang.String[])
+  * com.android.build.api.dsl.TestExtension.getLintOptions: com.android.build.api.dsl.LintOptions ()
+  * com.android.build.api.dsl.TestExtension.lintOptions: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.LintOptions, kotlin.Unit>)
 https://issuetracker.google.com/328748998
   * com.android.build.api.dsl.LibraryExtension.getAidlPackagedList: java.util.Collection<java.lang.String> ()
 https://issuetracker.google.com/328749001
@@ -684,3 +698,6 @@ https://issuetracker.google.com/444699160
   * com.android.build.api.variant.HostTest.getAndroidResourcesIncluded: boolean ()
   * com.android.build.api.variant.HostTestBuilder.getIncludeAndroidResources: boolean ()
   * com.android.build.api.variant.HostTestBuilder.setIncludeAndroidResources: void (boolean)
+https://issuetracker.google.com/449986388
+  * com.android.build.api.dsl.FusedLibraryExtension.getPackaging: com.android.build.api.dsl.Packaging ()
+  * com.android.build.api.dsl.FusedLibraryExtension.packaging: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.Packaging, kotlin.Unit>)

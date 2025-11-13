@@ -37,8 +37,6 @@ import com.android.build.gradle.internal.test.report.ReportType
 import com.android.build.gradle.internal.test.report.TestReport
 import com.android.build.gradle.internal.testing.TestData
 import com.android.build.gradle.internal.testing.utp.ManagedDeviceTestRunner
-import com.android.build.gradle.internal.testing.utp.UtpDependencies
-import com.android.build.gradle.internal.testing.utp.emulatorcontrol.EmulatorControlConfig
 import com.android.build.gradle.internal.testing.utp.emulatorcontrol.createEmulatorControlConfig
 import com.android.build.gradle.internal.testing.utp.maybeCreateUtpConfigurations
 import com.android.build.gradle.internal.testing.utp.resolveDependencies
@@ -48,6 +46,8 @@ import com.android.build.gradle.options.IntegerOption
 import com.android.buildanalyzer.common.TaskCategory
 import com.android.builder.model.TestOptions
 import com.android.repository.Revision
+import com.android.tools.utp.gradle.api.EmulatorControlConfig
+import com.android.tools.utp.gradle.api.UtpDependencies
 import com.android.utils.FileUtils
 import com.google.common.annotations.VisibleForTesting
 import org.gradle.api.GradleException
@@ -383,7 +383,9 @@ abstract class ManagedDeviceInstrumentationTestTask: NonIncrementalTask(), Andro
                     .on(InternalArtifactType.MANAGED_DEVICE_ANDROID_TEST_ADDITIONAL_OUTPUT)
             }
 
-            maybeCreateUtpConfigurations(creationConfig)
+            maybeCreateUtpConfigurations(
+                creationConfig.services.configurations,
+                creationConfig.services.dependencies)
         }
 
         override fun configure(task: ManagedDeviceInstrumentationTestTask) {

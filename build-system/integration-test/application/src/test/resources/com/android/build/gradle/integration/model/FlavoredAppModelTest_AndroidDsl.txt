@@ -38,6 +38,7 @@
       - vectorDrawables:
          - generatedDensities = ["hdpi", "ldpi", "mdpi", "xhdpi", "xxhdpi", "xxxhdpi"]
          - useSupportLibrary  = false
+      - matchingFallbacks                  = []
    < defaultConfig
    > buildTypes:
       > debug:
@@ -64,6 +65,7 @@
          - isZipAlignEnabled        = true
          - isEmbedMicroApp          = false
          - signingConfig            = "debug"
+         - matchingFallbacks        = []
       < debug
       > release:
          - name                     = "release"
@@ -89,6 +91,7 @@
          - isZipAlignEnabled        = true
          - isEmbedMicroApp          = false
          - signingConfig            = (null)
+         - matchingFallbacks        = []
       < release
    < buildTypes
    - flavorDimensions  = ["model"]
@@ -129,6 +132,7 @@
          - vectorDrawables:
             - generatedDensities = (null)
             - useSupportLibrary  = (null)
+         - matchingFallbacks                  = []
       < basic
       > pro:
          - name                               = "pro"
@@ -166,6 +170,7 @@
          - vectorDrawables:
             - generatedDensities = (null)
             - useSupportLibrary  = (null)
+         - matchingFallbacks                  = []
       < pro
    < productFlavors
    > signingConfigs:

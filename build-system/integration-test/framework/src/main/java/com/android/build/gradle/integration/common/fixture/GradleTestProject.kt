@@ -41,6 +41,10 @@ import com.android.build.gradle.internal.TaskManager
 import com.android.build.gradle.internal.plugins.VersionCheckPlugin
 import com.android.build.gradle.internal.privaysandboxsdk.PrivacySandboxSdkConstants.androidxPrivacySandboxLibraryPluginVersion
 import com.android.build.gradle.options.BooleanOption
+import com.android.build.gradle.options.BooleanOption.DEFAULT_TARGET_SDK_TO_COMPILE_SDK_IF_UNSET
+import com.android.build.gradle.options.BooleanOption.ENABLE_APP_COMPILE_TIME_R_CLASS
+import com.android.build.gradle.options.BooleanOption.ENABLE_LEGACY_VARIANT_API
+import com.android.build.gradle.options.BooleanOption.USE_NEW_DSL
 import com.android.builder.core.ToolsRevisionUtils
 import com.android.builder.model.v2.ide.SyncIssue
 import com.android.sdklib.internal.project.ProjectProperties
@@ -182,6 +186,12 @@ open class GradleTestProject @JvmOverloads constructor(
         private const val COMMON_VERSIONS = "commonVersions.gradle"
         const val VERSION_CATALOG = "versionCatalog.gradle"
         const val DEFAULT_TEST_PROJECT_NAME = "project"
+
+        internal val AGP_9_OPT_OUTS = mapOf(
+            DEFAULT_TARGET_SDK_TO_COMPILE_SDK_IF_UNSET to false,
+            // TODO(b/418804641): Migrate to the new DSL
+            USE_NEW_DSL to false
+        )
 
         @JvmStatic
         fun builder(): GradleTestProjectBuilder {
@@ -369,8 +379,14 @@ open class GradleTestProject @JvmOverloads constructor(
                 throw Throwables.propagate(t)
             }
         }
-    }
 
+        internal val allowedTests by lazy {
+            val contentUrl = GradleTestProject::class.java.getResource("/allow-listed-test-classes.txt")
+                ?: throw RuntimeException("unable to find allow-listed-test-classes.txt")
+
+            contentUrl.readText().lines()
+        }
+    }
 
     private val ndkSymlinkPath: File? by lazy {
         relativeNdkSymlinkPath?.let { location.testLocation.buildDir.resolve(it).canonicalFile }
@@ -506,6 +522,8 @@ open class GradleTestProject @JvmOverloads constructor(
         base: Statement,
         description: Description
     ): Statement {
+        validateWithAllowList(description.testClass)
+
         return if (rootProject != this) {
             rootProject.apply(base, description)
         } else object : Statement() {
@@ -574,6 +592,25 @@ open class GradleTestProject @JvmOverloads constructor(
                     }
                 }
             }
+        }
+    }
+
+    private fun validateWithAllowList(testClass: Class<*>) {
+        if (!allowedTests.contains(testClass.name)) {
+            throw RuntimeException(
+                """
+                    GradleTestProject is deprecated, you must use the GradleRule test fixture instead.
+
+                    If that fixture does not work for your test, you should file a bug to fix it
+                    first and then use GradleRule.
+
+                     You should only use GradleTestProject as a last resort if fixing GradleRule
+                     is too complex or would take too long. In that case, file another bug to
+                     convert the test once the fixture is fixed.
+                     To enable using GradleTestProject, add the test class '${testClass.name}' to
+                     tools/base/build-system/integration-test/framework/src/main/resources/allow-listed-test-classes.txt
+                """.trimIndent()
+            )
         }
     }
 
@@ -1333,6 +1370,12 @@ allprojects { proj ->
 
         for (option in booleanOptions.keys) {
             executor.suppressOptionWarning(option)
+        }
+
+        // apply the AGP 9.0 opt-outs
+        for (entry in AGP_9_OPT_OUTS) {
+            executor.with(entry.key, entry.value)
+            executor.suppressOptionWarning(entry.key)
         }
 
         // TODO(b/385745419): Remove this when most tests have been migrated to built-in Kotlin

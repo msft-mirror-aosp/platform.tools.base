@@ -95,8 +95,8 @@
                 <d:pixel-density>mdpi</d:pixel-density>
                 <d:screen-ratio>notlong</d:screen-ratio>
                 <d:dimensions>
-                    <d:x-dimension>200</d:x-dimension>
-                    <d:y-dimension>200</d:y-dimension>
+                    <d:x-dimension>450</d:x-dimension>
+                    <d:y-dimension>450</d:y-dimension>
                 </d:dimensions>
                 <d:xdpi>160</d:xdpi>
                 <d:ydpi>160</d:ydpi>
@@ -153,7 +153,7 @@
             <d:keyboard-state>keyshidden</d:keyboard-state>
             <d:nav-state>nonav</d:nav-state>
         </d:state>
-        <d:tag-id>android-ai-glasses</d:tag-id>
+        <d:tag-id>ai-glasses</d:tag-id>
     </d:device>
 
     <d:device>
@@ -243,11 +243,11 @@
             </d:boot-prop>
             <d:boot-prop>
                 <d:prop-name>emulator.dev.xr.mm_to_dp</d:prop-name>
-                <d:prop-value>1.01</d:prop-value>
+                <d:prop-value>1.5</d:prop-value>
             </d:boot-prop>
             <d:boot-prop>
                 <d:prop-name>emulator.dev.xr.dp_per_meter</d:prop-name>
-                <d:prop-value>800</d:prop-value>
+                <d:prop-value>1200</d:prop-value>
             </d:boot-prop>
             <d:boot-prop>
                 <d:prop-name>emulator.dev.xr.display_modality</d:prop-name>

@@ -103,7 +103,7 @@
                 "org.jetbrains.kotlin.platform.type": "androidJvm"
               },
               "capabilities": [
-                "Kotlin Multiplatform.:kmpLibraryPlugin:unspecified"
+                "Kotlin Multiplatform:kmpLibraryPlugin:unspecified"
               ],
               "isTestFixtures": false
             },

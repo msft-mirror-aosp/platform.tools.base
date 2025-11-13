@@ -21,7 +21,6 @@ import com.android.build.gradle.integration.common.fixture.ModelContainerV2
 import com.android.build.gradle.integration.common.fixture.model.ModelComparator
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
-import com.android.build.gradle.integration.common.utils.disableBuiltInKotlin
 import com.android.builder.model.v2.ide.SyncIssue
 import org.junit.Before
 import org.junit.Rule
@@ -31,6 +30,9 @@ class HelloWorldCompositeModelTest: ModelComparator() {
     @get:Rule
     val rule = GradleRule.from {
         androidApplication {
+            android {
+                enableKotlin = false
+            }
             dependencies {
                 implementation("com.composite-build:lib:1.2")
             }
@@ -38,17 +40,21 @@ class HelloWorldCompositeModelTest: ModelComparator() {
         includedBuild("other-build") {
             includedBuild("nested-build") {
                 androidLibrary(":anotherLib") {
+                    android {
+                        enableKotlin = false
+                    }
                     group = "com.nested-build"
                     version = "1.3"
                 }
             }
             androidLibrary(":lib") {
+                android {
+                    enableKotlin = false
+                }
                 group = "com.composite-build"
                 version = "1.2"
             }
-            disableBuiltInKotlin()
         }
-        disableBuiltInKotlin()
     }
 
     private lateinit var result: ModelBuilderV2.FetchResult<ModelContainerV2>
@@ -98,6 +104,9 @@ class CompositeBuildWithSameNameTest: ModelComparator() {
     @get:Rule
     val rule = GradleRule.from {
         androidApplication {
+            android {
+                enableKotlin = false
+            }
             dependencies {
                 implementation("com.androidlib:lib:1.0")
                 implementation("com.javalib:lib:1.0")
@@ -105,10 +114,12 @@ class CompositeBuildWithSameNameTest: ModelComparator() {
         }
         includedBuild("includedBuild1") {
             androidLibrary(":lib") {
+                android {
+                    enableKotlin = false
+                }
                 group = "com.androidlib"
                 version = "1.0"
             }
-            disableBuiltInKotlin()
         }
         includedBuild("includedBuild2") {
             genericProject(":lib") {
@@ -116,9 +127,7 @@ class CompositeBuildWithSameNameTest: ModelComparator() {
                 group = "com.javalib"
                 version = "1.0"
             }
-            disableBuiltInKotlin()
         }
-        disableBuiltInKotlin()
     }
 
     private lateinit var result: ModelBuilderV2.FetchResult<ModelContainerV2>
@@ -143,12 +152,19 @@ class DependencySubstitutionInCompositeModelTest: ModelComparator() {
     @get:Rule
     val rule = GradleRule.from {
         androidApplication {
+            android {
+                enableKotlin = false
+            }
             dependencies {
                 implementation("com.example.included:lib:1.0")
             }
         }
         includedBuild("includedBuild") {
             androidLibrary(":lib") {
+                android {
+                    enableKotlin = false
+                }
+
                 group = "com.example.included"
                 version = "1.0"
             }
@@ -157,9 +173,7 @@ class DependencySubstitutionInCompositeModelTest: ModelComparator() {
                     substitute(module("com.example.included:lib")).using(project(":lib"))
                 }
             }
-            disableBuiltInKotlin()
         }
-        disableBuiltInKotlin()
     }
 
     private lateinit var result: ModelBuilderV2.FetchResult<ModelContainerV2>

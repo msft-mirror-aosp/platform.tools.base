@@ -173,9 +173,6 @@ class ExtendingDslIntegrationTest {
     fun checkOutputNewDslGroovy() {
         val build = project.build {
             buildFileType = BuildFileType.GROOVY
-            gradleProperties {
-                add(BooleanOption.USE_NEW_DSL, true)
-            }
         }
         val result = build.executor.run("tasks")
         expectedOutputs.forEach {
@@ -202,9 +199,6 @@ class ExtendingDslIntegrationTest {
     fun checkOutputNewDslKts() {
         val build = project.build {
             buildFileType = BuildFileType.KTS
-            gradleProperties {
-                add(BooleanOption.USE_NEW_DSL, true)
-            }
         }
         val result = build.executor.run("tasks")
         expectedOutputs.forEach {
@@ -228,8 +222,9 @@ class ExtendingDslIntegrationTest {
     }
 }
 
-
 class ExtendingCallback: GenericComponentCallback {
+    override val useWithOldDsl: Boolean
+        get() = true
 
     override fun handleExtension(
         project: Project,

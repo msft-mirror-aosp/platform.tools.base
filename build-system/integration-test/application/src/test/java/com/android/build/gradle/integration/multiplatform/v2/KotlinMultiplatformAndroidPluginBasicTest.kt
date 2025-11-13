@@ -42,7 +42,7 @@ class KotlinMultiplatformAndroidPluginBasicTest {
                 id("org.jetbrains.kotlin.multiplatform")
             """.trimIndent(), "")
 
-        val result = project.executor().expectFailure().run(":kmpFirstLib:assembleAndroidMain")
+        val result = executor().expectFailure().run(":kmpFirstLib:assembleAndroidMain")
         // In case of missing KGP the build script will not compile
         result.assertErrorContains(
             "Script compilation errors:"
@@ -65,7 +65,7 @@ class KotlinMultiplatformAndroidPluginBasicTest {
             """.trimIndent()
         )
 
-        project.executor().run(":kmpFirstLib:assembleAndroidMain")
+        executor().run(":kmpFirstLib:assembleAndroidMain")
     }
 
     @Test
@@ -90,8 +90,7 @@ class KotlinMultiplatformAndroidPluginBasicTest {
             """.trimIndent()
         )
 
-        project.executor()
-            .run(":kmpFirstLib:androidPrebuild")
+        executor().run(":kmpFirstLib:androidPrebuild")
     }
 
     @Test
@@ -107,8 +106,7 @@ class KotlinMultiplatformAndroidPluginBasicTest {
             """.trimIndent()
         )
 
-        project.executor()
-            .run(":kmpSecondLib:androidPrebuild")
+        executor().run(":kmpSecondLib:androidPrebuild")
     }
 
     @Test
@@ -122,7 +120,7 @@ class KotlinMultiplatformAndroidPluginBasicTest {
 
         val deleted = Files.deleteIfExists(manifest)
         Truth.assertThat(deleted).isTrue()
-        val result = project.executor().run(":kmpFirstLib:packageAndroidDeviceTest")
+        val result = executor().run(":kmpFirstLib:packageAndroidDeviceTest")
 
         ScannerSubject.assertThat(result.stderr).doesNotContain(
             "Manifest file does not exist"
@@ -145,7 +143,7 @@ class KotlinMultiplatformAndroidPluginBasicTest {
                 }
             """.trimIndent()
         )
-        project.executor().run(":kmpSecondLib:assembleAndroidDeviceTest")
+        executor().run(":kmpSecondLib:assembleAndroidDeviceTest")
 
         project.getSubproject("kmpSecondLib").assertApk(ApkSelector.NO_BUILD_TYPE.forTestSuite("androidTest")) {
             manifest().contains("android:targetSdkVersion=31")
@@ -171,7 +169,7 @@ class KotlinMultiplatformAndroidPluginBasicTest {
                 }
             """.trimIndent()
         )
-        project.executor().run(":kmpSecondLib:assembleAndroidDeviceTest")
+        executor().run(":kmpSecondLib:assembleAndroidDeviceTest")
 
         project.getSubproject("kmpSecondLib").assertApk(ApkSelector.NO_BUILD_TYPE.forTestSuite("androidTest")) {
             manifest().contains("android:targetSdkVersion=36")
@@ -193,7 +191,7 @@ class KotlinMultiplatformAndroidPluginBasicTest {
                 }
             """.trimIndent())
 
-        val result = project.executor()
+        val result = executor()
             .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.OFF)
             .run(":kmpFirstLib:printAndroidComponents")
 
@@ -201,4 +199,6 @@ class KotlinMultiplatformAndroidPluginBasicTest {
         ScannerSubject.assertThat(result.stdout).contains("androidHostTest")
         ScannerSubject.assertThat(result.stdout).contains("androidDeviceTest")
     }
+
+    private fun executor() = project.executor().withFailOnWarning(false) // b/455891987
 }

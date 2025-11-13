@@ -365,12 +365,12 @@ class TestSystemImages(val sdkHandler: AndroidSdkHandler) {
 
   val api34TabletPlayStore =
     TestSystemImage("android-34/google_apis_playstore_tablet/x86_64") {
-        write("system.img")
-        createDirectories("data")
-        // Note that we must use schema version 3 or higher ("/03") for multi-tag to work.
-        write(
-            "package.xml",
-            """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+      write("system.img")
+      createDirectories("data")
+      // Note that we must use schema version 3 or higher ("/03") for multi-tag to work.
+      write(
+        "package.xml",
+        """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <ns3:sdk-sys-img xmlns:ns2="http://schemas.android.com/sdk/android/repo/repository2/03"
                  xmlns:ns3="http://schemas.android.com/sdk/android/repo/sys-img2/03"
                  xmlns:ns4="http://schemas.android.com/repository/android/common/02"
@@ -399,7 +399,7 @@ class TestSystemImages(val sdkHandler: AndroidSdkHandler) {
   </localPackage>
 </ns3:sdk-sys-img>
 """,
-        )
+      )
     }
 
   val api36 =
@@ -445,6 +445,94 @@ class TestSystemImages(val sdkHandler: AndroidSdkHandler) {
                 </min-revision>
             </dependency>
         </dependencies>
+    </localPackage>
+</ns3:sdk-sys-img>
+""",
+      )
+    }
+
+  val api36GlassesCore =
+    TestSystemImage("android-36/google_apis/x86_64") {
+      write("system.img")
+      createDirectories("data")
+      // Note that we must use the current schema version here ("/04") for multiple ABIs to work.
+      write(
+        "package.xml",
+        """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<ns3:sdk-sys-img xmlns:ns2="http://schemas.android.com/sdk/android/repo/repository2/03"
+                 xmlns:ns3="http://schemas.android.com/sdk/android/repo/sys-img2/04"
+                 xmlns:ns4="http://schemas.android.com/repository/android/common/02"
+                 xmlns:ns5="http://schemas.android.com/sdk/android/repo/addon2/03">
+    <localPackage path="system-images;android-36;google_apis;x86_64" obsolete="false">
+        <type-details xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="ns3:sysImgDetailsType">
+            <api-level>36</api-level>
+            <extension-level>17</extension-level>
+            <base-extension>true</base-extension>
+            <tag>
+                <id>google_apis</id>
+                <display>Google APIs</display>
+            </tag>
+            <tag>
+                <id>android_ai_glasses_compatible</id>
+                <display>AI Glasses compatible</display>
+            </tag>
+            <vendor>
+                <id>google</id>
+                <display>Google Inc.</display>
+            </vendor>
+            <abi>x86_64</abi>
+            <abis>x86_64</abis>
+            <translatedAbis>arm64-v8a</translatedAbis>
+        </type-details>
+        <revision>
+            <major>7</major>
+        </revision>
+        <display-name>Google APIs Intel x86_64 Atom System Image</display-name>
+        <uses-license ref="android-sdk-license"/>
+    </localPackage>
+</ns3:sdk-sys-img>
+""",
+      )
+    }
+
+  val aiGlasses =
+    TestSystemImage("android-36/ai-glasses/x86_64") {
+      write("system.img")
+      createDirectories("data")
+      // Note that we must use the current schema version here ("/04") for multiple ABIs to work.
+      write(
+        "package.xml",
+        """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<ns3:sdk-sys-img xmlns:ns2="http://schemas.android.com/sdk/android/repo/repository2/03"
+                 xmlns:ns3="http://schemas.android.com/sdk/android/repo/sys-img2/04"
+                 xmlns:ns4="http://schemas.android.com/repository/android/common/02"
+                 xmlns:ns5="http://schemas.android.com/sdk/android/repo/addon2/03">
+    <localPackage path="system-images;android-36;ai-glasses;x86_64" obsolete="false">
+        <type-details xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="ns3:sysImgDetailsType">
+            <api-level>36</api-level>
+            <extension-level>17</extension-level>
+            <base-extension>true</base-extension>
+            <tag>
+                <id>google_apis</id>
+                <display>Google APIs</display>
+            </tag>
+            <tag>
+                <id>ai-glasses</id>
+                <display>AI Glasses</display>
+            </tag>
+            <vendor>
+                <id>google</id>
+                <display>Google Inc.</display>
+            </vendor>
+            <abi>x86_64</abi>
+            <abis>x86_64</abis>
+            <translatedAbis>arm64-v8a</translatedAbis>
+        </type-details>
+        <revision>
+            <major>7</major>
+        </revision>
+        <display-name>Google APIs Intel x86_64 Atom System Image</display-name>
+        <uses-license ref="android-sdk-license"/>
     </localPackage>
 </ns3:sdk-sys-img>
 """,

@@ -18,7 +18,6 @@ package com.android.build.gradle.integration.common.fixture.project
 
 import com.android.build.gradle.integration.common.fixture.GradleTaskExecutor
 import com.android.build.gradle.integration.common.fixture.ModelBuilderV2
-import com.android.build.gradle.integration.common.fixture.TemporaryProjectModification
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_APP_PATH
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_FEATURE_PATH
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_LIB_PATH
@@ -30,6 +29,7 @@ import com.android.build.gradle.integration.common.fixture.project.builder.Gradl
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleSettingsDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
 import com.android.build.gradle.integration.common.fixture.project.options.GradlePropertiesBuilder
+import com.android.build.gradle.integration.common.fixture.project.reversible.FileChangeController
 import com.android.build.gradle.internal.ide.level2.JavaLibraryImpl
 import java.nio.file.Path
 
@@ -390,8 +390,8 @@ internal class GradleBuildImpl(
      * via [GradleProjectFiles] are reversed so that the build is the same as before this method
      */
     override fun withReversibleModifications(action: (GradleBuild) -> Unit) {
-        TemporaryProjectModification(null).use {
-            action(ReversibleGradleBuild(this, it))
+        FileChangeController().use { controller ->
+            action(ReversibleGradleBuild(this, controller))
         }
     }
 

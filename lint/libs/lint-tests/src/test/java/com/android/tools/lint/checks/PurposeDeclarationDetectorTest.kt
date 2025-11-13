@@ -56,6 +56,9 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
                 <permission name="USE_FOO" requiresSpecificPurposeMinTargetSdkVersion="37">
                     <valid-specific-purpose name="specificPurposeForSdk37+" minSdkVersion="37" />
                     <valid-specific-purpose name="specificPurposeForSdk38+" minSdkVersion="38" />
+                    <valid-specific-purpose name="specificPurposeForSdk37+2" minSdkVersion="37" />
+                    <valid-specific-purpose name="specificPurposeForSdk37+3" minSdkVersion="37" />
+                    <valid-specific-purpose name="specificPurposeForSdk37+4" minSdkVersion="37" />
                 </permission>
             </permissions>
         """
@@ -160,7 +163,6 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
         manifest(
             """
               <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-                xmlns:tools="http://schemas.android.com/tools"
                 package="com.example.helloworld">
                 <uses-sdk android:minSdkVersion="30" android:targetSdkVersion="37" />
                 <uses-permission android:name="USE_FOO" />
@@ -173,7 +175,7 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
       .run()
       .expect(
         """
-        AndroidManifest.xml:5: Error: USE_FOO permission is missing required purpose attributes/elements: missing one or more <specific-purpose> tags required for API level(s) 37 [MissingPurpose]
+        AndroidManifest.xml:4: Error: USE_FOO permission is missing required purpose attributes/elements: missing one or more <specific-purpose> tags required for API level(s) 37 [MissingPurpose]
           <uses-permission android:name="USE_FOO" />
           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         1 errors, 0 warnings
@@ -188,7 +190,6 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
         manifest(
             """
               <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-                xmlns:tools="http://schemas.android.com/tools"
                 package="com.example.helloworld">
                 <uses-sdk android:minSdkVersion="30" android:targetSdkVersion="38" />
                 <uses-permission android:name="USE_FOO">
@@ -203,7 +204,7 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
       .run()
       .expect(
         """
-        AndroidManifest.xml:5: Error: USE_FOO permission is missing required purpose attributes/elements: missing one or more <specific-purpose> tags required for API level(s) 37 [MissingPurpose]
+        AndroidManifest.xml:4: Error: USE_FOO permission is missing required purpose attributes/elements: missing one or more <specific-purpose> tags required for API level(s) 37 [MissingPurpose]
           <uses-permission android:name="USE_FOO">
            ~~~~~~~~~~~~~~~
         1 errors, 0 warnings
@@ -218,7 +219,6 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
         manifest(
             """
               <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-                xmlns:tools="http://schemas.android.com/tools"
                 package="com.example.helloworld">
                 <uses-sdk android:minSdkVersion="30" android:targetSdkVersion="37" />
                 <uses-permission android:name="USE_FOO" />
@@ -231,7 +231,7 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
       .run()
       .expect(
         """
-        AndroidManifest.xml:5: Error: USE_FOO permission is missing required purpose attributes/elements: missing purposeString attribute [MissingPurpose]
+        AndroidManifest.xml:4: Error: USE_FOO permission is missing required purpose attributes/elements: missing purposeString attribute [MissingPurpose]
           <uses-permission android:name="USE_FOO" />
           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         1 errors, 0 warnings
@@ -246,7 +246,6 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
         manifest(
             """
               <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-                xmlns:tools="http://schemas.android.com/tools"
                 package="com.example.helloworld">
                 <uses-sdk android:minSdkVersion="30" android:targetSdkVersion="37" />
                 <uses-permission android:name="USE_FOO" android:purposeString="@array/foo_array_resource" />
@@ -259,7 +258,7 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
       .run()
       .expect(
         """
-        AndroidManifest.xml:5: Error: purposeString must reference a string resource (e.g. @string/my_purpose_resource) [MissingPurpose]
+        AndroidManifest.xml:4: Error: purposeString must reference a string resource (e.g. @string/my_purpose_resource) [MissingPurpose]
           <uses-permission android:name="USE_FOO" android:purposeString="@array/foo_array_resource" />
                                                                          ~~~~~~~~~~~~~~~~~~~~~~~~~
         1 errors, 0 warnings
@@ -274,7 +273,6 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
         manifest(
             """
               <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-                xmlns:tools="http://schemas.android.com/tools"
                 package="com.example.helloworld">
                 <uses-sdk android:minSdkVersion="30" android:targetSdkVersion="37" />
                 <uses-permission android:name="USE_FOO" android:purposeString="@string/myPurposeString" />
@@ -288,7 +286,7 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
       .run()
       .expect(
         """
-        AndroidManifest.xml:5: Error: The referenced purposeString must be non-blank and have no more than 300 characters. Invalid example(s) include: myPurposeString (Default) [InvalidPurposeString]
+        AndroidManifest.xml:4: Error: The referenced purposeString must be non-blank and have no more than 300 characters. Invalid example(s) include: myPurposeString (Default) [InvalidPurposeString]
           <uses-permission android:name="USE_FOO" android:purposeString="@string/myPurposeString" />
                                                                          ~~~~~~~~~~~~~~~~~~~~~~~
         1 errors, 0 warnings
@@ -303,7 +301,6 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
         manifest(
             """
               <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-                xmlns:tools="http://schemas.android.com/tools"
                 package="com.example.helloworld">
                 <uses-sdk android:minSdkVersion="30" android:targetSdkVersion="37" />
                 <uses-permission android:name="USE_FOO" android:purposeString="@string/myPurposeString" />
@@ -317,7 +314,7 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
       .run()
       .expect(
         """
-        AndroidManifest.xml:5: Error: The referenced purposeString must be non-blank and have no more than 300 characters. Invalid example(s) include: myPurposeString (en-rNZ) [InvalidPurposeString]
+        AndroidManifest.xml:4: Error: The referenced purposeString must be non-blank and have no more than 300 characters. Invalid example(s) include: myPurposeString (en-rNZ) [InvalidPurposeString]
           <uses-permission android:name="USE_FOO" android:purposeString="@string/myPurposeString" />
                                                                          ~~~~~~~~~~~~~~~~~~~~~~~
         1 errors, 0 warnings
@@ -332,7 +329,6 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
         manifest(
             """
               <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-                xmlns:tools="http://schemas.android.com/tools"
                 package="com.example.helloworld">
                 <uses-sdk android:minSdkVersion="30" android:targetSdkVersion="37" />
                 <uses-permission android:name="USE_FOO" android:purposeString="@string/myPurposeString" />
@@ -354,7 +350,6 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
         manifest(
             """
               <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-                xmlns:tools="http://schemas.android.com/tools"
                 package="com.example.helloworld">
                 <uses-sdk android:minSdkVersion="30" android:targetSdkVersion="37" />
                 <uses-permission android:name="USE_FOO" />
@@ -367,7 +362,7 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
       .run()
       .expect(
         """
-        AndroidManifest.xml:5: Error: USE_FOO permission is missing required purpose attributes/elements: missing one or more <specific-purpose> tags required for API level(s) 37; missing purposeString attribute [MissingPurpose]
+        AndroidManifest.xml:4: Error: USE_FOO permission is missing required purpose attributes/elements: missing one or more <specific-purpose> tags required for API level(s) 37; missing purposeString attribute [MissingPurpose]
           <uses-permission android:name="USE_FOO" />
           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         1 errors, 0 warnings
@@ -382,7 +377,6 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
         manifest(
             """
               <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-                xmlns:tools="http://schemas.android.com/tools"
                 package="com.example.helloworld">
                 <uses-sdk android:minSdkVersion="30" android:targetSdkVersion="37" />
                 <uses-permission android:name="USE_FOO" android:purposeString="@array/my_array_resource" />
@@ -395,10 +389,10 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
       .run()
       .expect(
         """
-        AndroidManifest.xml:5: Error: USE_FOO permission is missing required purpose attributes/elements: missing one or more <specific-purpose> tags required for API level(s) 37 [MissingPurpose]
+        AndroidManifest.xml:4: Error: USE_FOO permission is missing required purpose attributes/elements: missing one or more <specific-purpose> tags required for API level(s) 37 [MissingPurpose]
           <uses-permission android:name="USE_FOO" android:purposeString="@array/my_array_resource" />
           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        AndroidManifest.xml:5: Error: purposeString must reference a string resource (e.g. @string/my_purpose_resource) [MissingPurpose]
+        AndroidManifest.xml:4: Error: purposeString must reference a string resource (e.g. @string/my_purpose_resource) [MissingPurpose]
           <uses-permission android:name="USE_FOO" android:purposeString="@array/my_array_resource" />
                                                                          ~~~~~~~~~~~~~~~~~~~~~~~~
         2 errors, 0 warnings
@@ -413,7 +407,6 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
         manifest(
             """
               <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-                xmlns:tools="http://schemas.android.com/tools"
                 package="com.example.helloworld">
                 <uses-sdk android:minSdkVersion="30" android:targetSdkVersion="37" />
                 <uses-permission android:name="USE_FOO" android:purposeString="@string/myPurposeString" />
@@ -430,10 +423,10 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
       .run()
       .expect(
         """
-        AndroidManifest.xml:5: Error: USE_FOO permission is missing required purpose attributes/elements: missing one or more <specific-purpose> tags required for API level(s) 37 [MissingPurpose]
+        AndroidManifest.xml:4: Error: USE_FOO permission is missing required purpose attributes/elements: missing one or more <specific-purpose> tags required for API level(s) 37 [MissingPurpose]
           <uses-permission android:name="USE_FOO" android:purposeString="@string/myPurposeString" />
           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        AndroidManifest.xml:5: Error: The referenced purposeString must be non-blank and have no more than 300 characters. Invalid example(s) include: myPurposeString (Default), myPurposeString (en-rNZ) [InvalidPurposeString]
+        AndroidManifest.xml:4: Error: The referenced purposeString must be non-blank and have no more than 300 characters. Invalid example(s) include: myPurposeString (Default), myPurposeString (en-rNZ) [InvalidPurposeString]
           <uses-permission android:name="USE_FOO" android:purposeString="@string/myPurposeString" />
                                                                          ~~~~~~~~~~~~~~~~~~~~~~~
         2 errors, 0 warnings
@@ -448,7 +441,6 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
         manifest(
             """
               <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-                xmlns:tools="http://schemas.android.com/tools"
                 package="com.example.helloworld">
                 <uses-sdk android:minSdkVersion="30" android:targetSdkVersion="36" />
                 <uses-permission android:name="USE_FOO" />
@@ -469,7 +461,6 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
         manifest(
             """
               <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-                xmlns:tools="http://schemas.android.com/tools"
                 package="com.example.helloworld">
                 <uses-sdk android:minSdkVersion="30" android:targetSdkVersion="37" />
                 <uses-permission android:name="USE_FOO" android:purposeString="@string/my_string_resource">
@@ -492,7 +483,6 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
         manifest(
             """
               <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-                xmlns:tools="http://schemas.android.com/tools"
                 package="com.example.helloworld">
                 <uses-sdk android:minSdkVersion="30" android:targetSdkVersion="37" />
                 <uses-permission-sdk-23 android:name="USE_FOO" />
@@ -505,7 +495,7 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
       .run()
       .expect(
         """
-        AndroidManifest.xml:5: Error: USE_FOO permission is missing required purpose attributes/elements: missing one or more <specific-purpose> tags required for API level(s) 37 [MissingPurpose]
+        AndroidManifest.xml:4: Error: USE_FOO permission is missing required purpose attributes/elements: missing one or more <specific-purpose> tags required for API level(s) 37 [MissingPurpose]
           <uses-permission-sdk-23 android:name="USE_FOO" />
           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         1 errors, 0 warnings
@@ -520,7 +510,6 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
         manifest(
             """
               <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-                xmlns:tools="http://schemas.android.com/tools"
                 package="com.example.helloworld">
                 <uses-sdk android:minSdkVersion="30" android:targetSdkVersion="37" />
                 <uses-permission android:name="USE_FOO">
@@ -543,7 +532,6 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
         manifest(
             """
               <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-                xmlns:tools="http://schemas.android.com/tools"
                 package="com.example.helloworld">
                 <uses-sdk android:minSdkVersion="30" android:targetSdkVersion="37" />
                 <uses-permission android:name="USE_FOO">
@@ -567,7 +555,6 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
         manifest(
             """
               <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-                xmlns:tools="http://schemas.android.com/tools"
                 package="com.example.helloworld">
                 <uses-sdk android:minSdkVersion="30" android:targetSdkVersion="36" />
                 <uses-permission android:name="USE_FOO" />
@@ -588,7 +575,6 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
         manifest(
             """
               <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-                xmlns:tools="http://schemas.android.com/tools"
                 package="com.example.helloworld">
                 <uses-sdk android:minSdkVersion="30" android:targetSdkVersion="37" />
                 <uses-permission android:name="USE_FOO" android:maxSdkVersion="36" />
@@ -610,7 +596,6 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
         manifest(
             """
               <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-                xmlns:tools="http://schemas.android.com/tools"
                 package="com.example.helloworld">
                 <uses-sdk android:minSdkVersion="30" android:targetSdkVersion="38" />
                 <uses-permission android:name="USE_FOO" android:minSdkVersion="38">
@@ -634,7 +619,6 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
         manifest(
             """
               <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-                xmlns:tools="http://schemas.android.com/tools"
                 package="com.example.helloworld">
                 <uses-sdk android:minSdkVersion="38" android:targetSdkVersion="38" />
                 <uses-permission android:name="USE_FOO">
@@ -658,7 +642,6 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
         manifest(
             """
               <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-                xmlns:tools="http://schemas.android.com/tools"
                 package="com.example.helloworld">
                 <uses-sdk android:minSdkVersion="30" android:targetSdkVersion="37" />
                 <uses-permission android:name="USE_FOO" />
@@ -680,7 +663,6 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
         manifest(
             """
               <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-                xmlns:tools="http://schemas.android.com/tools"
                 package="com.example.helloworld">
                 <uses-sdk android:minSdkVersion="30" android:targetSdkVersion="37" />
                 <uses-permission android:name="USE_BAR" />
@@ -701,7 +683,6 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
         manifest(
             """
               <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-                xmlns:tools="http://schemas.android.com/tools"
                 package="com.example.helloworld">
                 <uses-sdk android:minSdkVersion="30" android:targetSdkVersion="39" />
                 <uses-permission android:name="USE_FOO">
@@ -716,7 +697,7 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
       .run()
       .expect(
         """
-        AndroidManifest.xml:5: Error: USE_FOO permission is missing required purpose attributes/elements: missing one or more <specific-purpose> tags required for API level(s) 38-39 [MissingPurpose]
+        AndroidManifest.xml:4: Error: USE_FOO permission is missing required purpose attributes/elements: missing one or more <specific-purpose> tags required for API level(s) 38-39 [MissingPurpose]
           <uses-permission android:name="USE_FOO">
            ~~~~~~~~~~~~~~~
         1 errors, 0 warnings
@@ -731,7 +712,6 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
         manifest(
             """
               <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-                xmlns:tools="http://schemas.android.com/tools"
                 package="com.example.helloworld">
                 <uses-sdk android:minSdkVersion="30" android:targetSdkVersion="38" />
                 <uses-permission android:name="USE_FOO">
@@ -749,10 +729,10 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
       .run()
       .expect(
         """
-        AndroidManifest.xml:5: Error: USE_FOO permission is missing required purpose attributes/elements: missing one or more <specific-purpose> tags required for API level(s) 38 [MissingPurpose]
+        AndroidManifest.xml:4: Error: USE_FOO permission is missing required purpose attributes/elements: missing one or more <specific-purpose> tags required for API level(s) 38 [MissingPurpose]
           <uses-permission android:name="USE_FOO">
            ~~~~~~~~~~~~~~~
-        AndroidManifest.xml:8: Error: USE_BAR permission is missing required purpose attributes/elements: missing one or more <specific-purpose> tags required for API level(s) 38 [MissingPurpose]
+        AndroidManifest.xml:7: Error: USE_BAR permission is missing required purpose attributes/elements: missing one or more <specific-purpose> tags required for API level(s) 38 [MissingPurpose]
           <uses-permission android:name="USE_BAR">
            ~~~~~~~~~~~~~~~
         2 errors, 0 warnings
@@ -767,7 +747,6 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
         manifest(
             """
               <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-                xmlns:tools="http://schemas.android.com/tools"
                 package="com.example.helloworld">
                 <uses-sdk android:minSdkVersion="30" android:targetSdkVersion="39" />
                 <uses-permission android:name="USE_FOO">
@@ -794,13 +773,12 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
         manifest(
             """
               <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-                xmlns:tools="http://schemas.android.com/tools"
                 package="com.example.helloworld">
                 <uses-sdk android:minSdkVersion="30" android:targetSdkVersion="42" />
                 <uses-permission android:name="USE_FOO">
                   <specific-purpose android:name="specificPurposeForSdk37+" android:minSdkVersion="37" android:maxSdkVersion="37" />
-                  <specific-purpose android:name="specificPurposeForSdk37+" android:minSdkVersion="38" android:maxSdkVersion="41" />
-                  <specific-purpose android:name="specificPurposeForSdk37+" android:minSdkVersion="42" android:maxSdkVersion="42" />
+                  <specific-purpose android:name="specificPurposeForSdk37+2" android:minSdkVersion="38" android:maxSdkVersion="41" />
+                  <specific-purpose android:name="specificPurposeForSdk37+3" android:minSdkVersion="42" android:maxSdkVersion="42" />
                 </uses-permission>
               </manifest>
               """
@@ -819,14 +797,13 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
         manifest(
             """
               <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-                xmlns:tools="http://schemas.android.com/tools"
                 package="com.example.helloworld">
                 <uses-sdk android:minSdkVersion="30" android:targetSdkVersion="42" />
                 <uses-permission android:name="USE_FOO">
                   <specific-purpose android:name="specificPurposeForSdk37+" android:maxSdkVersion="34" />
-                  <specific-purpose android:name="specificPurposeForSdk37+" android:minSdkVersion="32" android:maxSdkVersion="36" />
-                  <specific-purpose android:name="specificPurposeForSdk37+" android:minSdkVersion="35" android:maxSdkVersion="41" />
-                  <specific-purpose android:name="specificPurposeForSdk37+" android:minSdkVersion="40" />
+                  <specific-purpose android:name="specificPurposeForSdk37+2" android:minSdkVersion="32" android:maxSdkVersion="38" />
+                  <specific-purpose android:name="specificPurposeForSdk37+3" android:minSdkVersion="35" android:maxSdkVersion="41" />
+                  <specific-purpose android:name="specificPurposeForSdk37+4" android:minSdkVersion="40" />
                 </uses-permission>
               </manifest>
               """
@@ -845,13 +822,12 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
         manifest(
             """
               <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-                xmlns:tools="http://schemas.android.com/tools"
                 package="com.example.helloworld">
                 <uses-sdk android:minSdkVersion="30" android:targetSdkVersion="45" />
                 <uses-permission android:name="USE_FOO">
                   <specific-purpose android:name="specificPurposeForSdk37+" android:minSdkVersion="34" android:maxSdkVersion="36" />
-                  <specific-purpose android:name="specificPurposeForSdk37+" android:minSdkVersion="39" android:maxSdkVersion="39" />
-                  <specific-purpose android:name="specificPurposeForSdk37+" android:minSdkVersion="41" android:maxSdkVersion="42" />
+                  <specific-purpose android:name="specificPurposeForSdk37+2" android:minSdkVersion="39" android:maxSdkVersion="39" />
+                  <specific-purpose android:name="specificPurposeForSdk37+3" android:minSdkVersion="41" android:maxSdkVersion="42" />
                   <specific-purpose android:name="invalidPurpose" android:minSdkVersion="43" />
                 </uses-permission>
               </manifest>
@@ -863,7 +839,7 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
       .run()
       .expect(
         """
-        AndroidManifest.xml:5: Error: USE_FOO permission is missing required purpose attributes/elements: missing one or more <specific-purpose> tags required for API level(s) 37-38, 40, 43-45 [MissingPurpose]
+        AndroidManifest.xml:4: Error: USE_FOO permission is missing required purpose attributes/elements: missing one or more <specific-purpose> tags required for API level(s) 37-38, 40, 43-45 [MissingPurpose]
           <uses-permission android:name="USE_FOO">
            ~~~~~~~~~~~~~~~
         1 errors, 0 warnings
@@ -878,7 +854,6 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
         manifest(
             """
               <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-                xmlns:tools="http://schemas.android.com/tools"
                 package="com.example.helloworld">
                 <uses-sdk android:minSdkVersion="30" android:targetSdkVersion="37" />
                 <uses-permission android:name="USE_FOO" />
@@ -899,7 +874,6 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
         manifest(
             """
               <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-                xmlns:tools="http://schemas.android.com/tools"
                 package="com.example.helloworld">
                 <uses-sdk android:minSdkVersion="30" android:targetSdkVersion="37" />
                 <uses-permission android:name="USE_FOO" />

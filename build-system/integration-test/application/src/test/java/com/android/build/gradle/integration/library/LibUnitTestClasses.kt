@@ -25,7 +25,7 @@ import org.junit.Test
 class LibUnitTestClasses {
 
     @get:Rule
-    val library = GradleRule.configure().from {
+    val library = GradleRule.from {
         androidLibrary {
             android {
                 testOptions {

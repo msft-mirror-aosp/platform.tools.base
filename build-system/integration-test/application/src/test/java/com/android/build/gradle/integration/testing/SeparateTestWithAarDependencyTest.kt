@@ -21,7 +21,6 @@ import com.android.build.gradle.integration.common.fixture.SUPPORT_LIB_MIN_SDK
 import com.android.build.gradle.integration.common.fixture.model.ModelComparator
 import com.android.build.gradle.integration.common.truth.TruthHelper
 import com.android.build.gradle.integration.common.utils.TestFileUtils
-import com.android.build.gradle.integration.common.utils.disableBuiltInKotlin
 import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.apk.Apk
 import org.junit.Before
@@ -33,8 +32,6 @@ class SeparateTestWithAarDependencyTest : ModelComparator() {
     @get:Rule
     val project = GradleTestProject.builder()
         .fromTestProject("separateTestModule")
-        // Enforcing unique package names to prevent regressions. Remove when b/116109681 fixed.
-        .addGradleProperties("${BooleanOption.ENFORCE_UNIQUE_PACKAGE_NAMES.propertyName}=true")
         .addGradleProperties("${BooleanOption.USE_ANDROID_X.propertyName}=true")
         .disableBuiltInKotlin()
         .create()

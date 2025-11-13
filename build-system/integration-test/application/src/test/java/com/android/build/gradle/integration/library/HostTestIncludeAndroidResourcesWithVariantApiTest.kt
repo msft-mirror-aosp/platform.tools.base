@@ -28,7 +28,7 @@ import org.junit.Test
 
 class HostTestIncludeAndroidResourcesWithVariantApiTest {
     @get:Rule
-    val project = GradleRule.configure().from {
+    val project = GradleRule.from {
         androidApplication {
             android {
                 compileSdk = 34

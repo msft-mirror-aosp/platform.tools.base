@@ -2,8 +2,8 @@ androidx.databinding:databinding-adapters
   pomName=
   description=
   dependencies:
+    org.jetbrains.kotlin:kotlin-stdlib (compile)
     androidx.databinding:databinding-common (compile)
-    org.jetbrains.kotlin:kotlin-stdlib (runtime)
     androidx.databinding:databinding-runtime (runtime)
 
 androidx.databinding:databinding-common
@@ -62,7 +62,7 @@ androidx.databinding:databinding-runtime
     androidx.databinding:databinding-common (compile)
     androidx.databinding:viewbinding (compile)
     androidx.lifecycle:lifecycle-runtime (compile)
-    org.jetbrains.kotlin:kotlin-stdlib (runtime)
+    org.jetbrains.kotlin:kotlin-stdlib (compile)
     androidx.collection:collection (runtime)
 
 androidx.databinding:viewbinding
@@ -70,7 +70,7 @@ androidx.databinding:viewbinding
   description=
   dependencies:
     androidx.annotation:annotation (compile)
-    org.jetbrains.kotlin:kotlin-stdlib (runtime)
+    org.jetbrains.kotlin:kotlin-stdlib (compile)
 
 com.android:signflinger
   pomName=com.android.signflinger
@@ -120,8 +120,8 @@ com.android.databinding:adapters
   pomName=
   description=
   dependencies:
+    org.jetbrains.kotlin:kotlin-stdlib (compile)
     com.android.databinding:baseLibrary (compile)
-    org.jetbrains.kotlin:kotlin-stdlib (runtime)
     com.android.databinding:library (runtime)
 
 com.android.databinding:baseLibrary
@@ -134,7 +134,7 @@ com.android.databinding:library
   dependencies:
     com.android.databinding:viewbinding (compile)
     android.arch.lifecycle:runtime (compile)
-    org.jetbrains.kotlin:kotlin-stdlib (runtime)
+    org.jetbrains.kotlin:kotlin-stdlib (compile)
     com.android.support:support-core-utils (runtime)
     com.android.databinding:baseLibrary (runtime)
 
@@ -143,7 +143,7 @@ com.android.databinding:viewbinding
   description=
   dependencies:
     com.android.support:support-annotations (compile)
-    org.jetbrains.kotlin:kotlin-stdlib (runtime)
+    org.jetbrains.kotlin:kotlin-stdlib (compile)
 
 com.android.dynamic-feature:com.android.dynamic-feature.gradle.plugin
   pomName=com.android.tools.build.gradle
@@ -555,14 +555,7 @@ com.android.tools.build:gradle
     com.android.databinding:baseLibrary (runtime)
     com.android.tools.build:builder-test-api (runtime)
     com.android.tools.layoutlib:layoutlib-api (runtime)
-    com.android.tools.utp:android-device-provider-ddmlib-proto (runtime)
-    com.android.tools.utp:android-device-provider-profile-proto (runtime)
-    com.android.tools.utp:android-test-plugin-host-additional-test-output-proto (runtime)
-    com.android.tools.utp:android-test-plugin-host-coverage-proto (runtime)
-    com.android.tools.utp:android-test-plugin-host-emulator-control-proto (runtime)
-    com.android.tools.utp:android-test-plugin-host-logcat-proto (runtime)
-    com.android.tools.utp:android-test-plugin-host-apk-installer-proto (runtime)
-    com.android.tools.utp:android-test-plugin-result-listener-gradle-proto (runtime)
+    com.android.tools.utp:gradle-work-action-api (runtime)
     org.jetbrains.kotlin:kotlin-stdlib (runtime)
     org.apache.httpcomponents:httpmime (runtime)
     commons-io:commons-io (runtime)
@@ -570,7 +563,6 @@ com.android.tools.build:gradle
     org.ow2.asm:asm-analysis (runtime)
     org.ow2.asm:asm-commons (runtime)
     org.ow2.asm:asm-util (runtime)
-    org.bouncycastle:bcpkix-jdk18on (runtime)
     org.glassfish.jaxb:jaxb-runtime (runtime)
     net.sf.jopt-simple:jopt-simple (runtime)
     com.android.tools.build:bundletool (runtime)
@@ -581,11 +573,6 @@ com.android.tools.build:gradle
     com.google.protobuf:protobuf-java (runtime)
     com.google.protobuf:protobuf-java-util (runtime)
     com.google.code.gson:gson (runtime)
-    io.grpc:grpc-core (runtime)
-    io.grpc:grpc-netty (runtime)
-    io.grpc:grpc-protobuf (runtime)
-    io.grpc:grpc-stub (runtime)
-    io.grpc:grpc-inprocess (runtime)
     com.google.crypto.tink:tink (runtime)
     com.google.testing.platform:core-proto (runtime)
     org.tensorflow:tensorflow-lite-metadata (runtime)
@@ -1002,6 +989,38 @@ com.android.tools.utp:android-test-plugin-result-listener-gradle-proto
     io.grpc:grpc-stub (runtime)
     javax.annotation:javax.annotation-api (runtime)
     com.google.protobuf:protobuf-java (runtime)
+
+com.android.tools.utp:gradle-work-action
+  pomName=com.android.tools.utp.gradle-work-action
+  description=Provides Gradle WorkAction implementations for executing the Unified Test Platform (UTP) in isolation.
+  dependencies:
+    org.jetbrains.kotlin:kotlin-stdlib (compile)
+    com.android.tools:common (runtime)
+    com.android.tools:sdk-common (runtime)
+    com.android.tools.ddms:ddmlib (runtime)
+    io.grpc:grpc-core (runtime)
+    io.grpc:grpc-netty (runtime)
+    io.grpc:grpc-protobuf (runtime)
+    io.grpc:grpc-stub (runtime)
+    io.grpc:grpc-inprocess (runtime)
+    org.bouncycastle:bcpkix-jdk18on (runtime)
+    com.google.crypto.tink:tink (runtime)
+    commons-io:commons-io (runtime)
+    com.google.testing.platform:core-proto (runtime)
+    com.android.tools.utp:android-device-provider-ddmlib-proto (runtime)
+    com.android.tools.utp:android-device-provider-profile-proto (runtime)
+    com.android.tools.utp:android-test-plugin-host-additional-test-output-proto (runtime)
+    com.android.tools.utp:android-test-plugin-host-apk-installer-proto (runtime)
+    com.android.tools.utp:android-test-plugin-host-coverage-proto (runtime)
+    com.android.tools.utp:android-test-plugin-host-emulator-control-proto (runtime)
+    com.android.tools.utp:android-test-plugin-host-logcat-proto (runtime)
+    com.android.tools.utp:android-test-plugin-result-listener-gradle-proto (runtime)
+
+com.android.tools.utp:gradle-work-action-api
+  pomName=com.android.tools.utp.gradle-work-action-api
+  description=Provides Gradle WorkAction API for executing the Unified Test Platform (UTP) in isolation.
+  dependencies:
+    org.jetbrains.kotlin:kotlin-stdlib (compile)
 
 com.android.tools.utp:utp-common
   pomName=com.android.tools.utp.utp-common

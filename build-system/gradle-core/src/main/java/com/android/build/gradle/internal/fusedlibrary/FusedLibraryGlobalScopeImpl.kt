@@ -18,10 +18,13 @@ package com.android.build.gradle.internal.fusedlibrary
 
 import com.android.SdkConstants.EXT_JAR
 import com.android.build.api.artifact.impl.ArtifactsImpl
+import com.android.build.api.variant.Packaging
+import com.android.build.api.variant.impl.PackagingImpl
 import com.android.build.gradle.internal.dependency.VariantDependencies
 import com.android.build.gradle.internal.dsl.AarMetadataImpl
 import com.android.build.gradle.internal.dsl.InternalFusedLibraryExtension
 import com.android.build.gradle.internal.fusedlibrary.FusedLibraryConstants.EXTENSION_NAME
+import com.android.build.gradle.internal.ide.v2.PackagingOptionsImpl
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
 import com.android.build.gradle.internal.services.ProjectServices
 import com.android.build.gradle.internal.services.TaskCreationServices
@@ -42,6 +45,14 @@ class FusedLibraryGlobalScopeImpl(
 
     override val aarMetadata: AarMetadataImpl
         get() = extension.aarMetadata as AarMetadataImpl
+
+    override val packaging: Packaging
+        get() = PackagingImpl(extension.packaging.also {
+            it.dex.useLegacyPackaging?.let {
+                error("${EXTENSION_NAME}.packaging.dex.useLegacyPackaging is not a supported option.")
+            }
+        }, VariantServicesImpl(projectServices))
+
     override val artifacts= ArtifactsImpl(project, "single")
     override val dependencies = FusedLibraryDependencies()
     override val incomingConfigurations = dependencies.configurations

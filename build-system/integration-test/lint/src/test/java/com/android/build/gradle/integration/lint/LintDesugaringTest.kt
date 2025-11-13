@@ -15,29 +15,115 @@
  */
 package com.android.build.gradle.integration.lint
 
-import com.android.build.gradle.integration.common.fixture.GradleTestProject.Companion.builder
+import com.android.build.gradle.integration.common.fixture.DESUGAR_DEPENDENCY_VERSION
+import com.android.build.gradle.integration.common.fixture.SUPPORT_LIB_VERSION
+import com.android.build.gradle.integration.common.fixture.project.GradleRule
+import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition
 import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.truth.PathSubject
+import org.gradle.api.JavaVersion
 import org.junit.Rule
 import org.junit.Test
+import java.io.File
 
 /** Integration test for lint analyzing library desugaring from Gradle.  */
 class LintDesugaringTest {
+
     @get:Rule
-    val project = builder()
-        .fromTestProject("lintDesugaring")
-        .disableBuiltInKotlin()
-        .create()
+    val rule = GradleRule.fromProject("lintDesugaring") {
+        androidApplication(":app") {
+            android {
+                namespace = "com.example.android.lint.kotlin"
+                compileSdk {
+                    version = release(GradleBuildDefinition.DEFAULT_COMPILE_SDK_VERSION)
+                }
+
+                defaultConfig {
+                    minSdk {
+                        version = release(24)
+                    }
+                    targetSdk {
+                        version = release(GradleBuildDefinition.DEFAULT_COMPILE_SDK_VERSION)
+                    }
+                }
+
+                lint {
+                    disable += "GradleDependency" // such that we don't flag newly available Kotlin versions etc
+                    xmlReport = true
+                    xmlOutput = File("lint-report.xml")
+                    textReport = true
+                    checkOnly += "NewApi"
+                }
+
+                compileOptions {
+                    isCoreLibraryDesugaringEnabled = true
+                    sourceCompatibility = JavaVersion.VERSION_11
+                    targetCompatibility = JavaVersion.VERSION_11
+                }
+            }
+
+            dependencies {
+                implementation(project(":library"))
+                coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:$DESUGAR_DEPENDENCY_VERSION")
+            }
+        }
+
+        androidLibrary(":library") {
+            android {
+                namespace = "com.example.android.lint.desugaring.library"
+                compileSdk {
+                    version = release(GradleBuildDefinition.DEFAULT_COMPILE_SDK_VERSION)
+                }
+
+                defaultConfig {
+                    minSdk {
+                        version = release(24)
+                    }
+                }
+
+                lint {
+                    disable += "GradleDependency" // such that we don't flag newly available Kotlin versions etc
+                    xmlReport = true
+                    xmlOutput = File("lint-report.xml")
+                    textReport = true
+                    checkOnly += "NewApi"
+                }
+
+                compileOptions {
+                    isCoreLibraryDesugaringEnabled = true
+                    sourceCompatibility = JavaVersion.VERSION_11
+                    targetCompatibility = JavaVersion.VERSION_11
+                }
+            }
+
+            dependencies {
+                api("com.android.support:appcompat-v7:$SUPPORT_LIB_VERSION")
+                coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:$DESUGAR_DEPENDENCY_VERSION")
+            }
+
+        }
+
+        gradleProperties {
+            // Disabled due to a dependency on com.android.support:animated-vector-drawable:28.0.0
+            add(BooleanOption.ENFORCE_UNIQUE_PACKAGE_NAMES, false)
+        }
+    }
 
     @Test
     fun checkFindErrors() {
-        project.executor()
-            // Disabled due to a dependency on com.android.support:animated-vector-drawable:28.0.0
-            .with(BooleanOption.ENFORCE_UNIQUE_PACKAGE_NAMES, false)
-            .run(":app:clean", ":app:lintDebug", ":library:lintDebug")
-        val appReport = project.file("app/build/reports/lint-results.txt")
+        val build = rule.build
+
+        build.executor.run(":app:clean", ":app:lintDebug", ":library:lintDebug")
+
+        val appReport = build
+            .androidApplication(":app")
+            .buildDir
+            .resolve("reports/lint-results-debug.txt")
         PathSubject.assertThat(appReport).contains("No issues found.")
-        val libReport = project.file("library/build/reports/lint-results.txt")
+        val libReport = build
+            .androidLibrary(":library")
+            .buildDir
+            .resolve("reports/lint-results-debug.txt")
         PathSubject.assertThat(libReport).contains("No issues found.")
     }
 }

@@ -20,18 +20,29 @@ import com.android.annotations.concurrency.Slow
 import com.android.annotations.concurrency.UiThread
 import com.android.annotations.concurrency.WorkerThread
 import com.android.tools.lint.checks.ThreadConstraintDetector
+import com.android.tools.lint.checks.ThreadConstraintDetector.ThreadConstraintLattice.Companion.assumeCommonJavaAndKotlinSignatures
+import com.android.tools.lint.checks.fx.AssumptionTableBuilder.Companion.build
+import com.android.tools.lint.checks.fx.get
+import com.android.tools.lint.checks.fx.invoke
+import com.android.tools.lint.checks.fx.result.Type
+import com.android.tools.lint.checks.fx.result.Type.MethodRef.Companion.virtual
+import com.android.tools.lint.checks.fx.result.plus
 import com.android.tools.lint.checks.studio.IntellijInferredThreadDetector.Thread
 import com.android.tools.lint.detector.api.Category
 import com.android.tools.lint.detector.api.Implementation
 import com.android.tools.lint.detector.api.Issue
 import com.android.tools.lint.detector.api.Scope
 import com.android.tools.lint.detector.api.Severity
+import com.intellij.openapi.application.Application
+import com.intellij.openapi.application.ModalityState
+import com.intellij.openapi.util.Condition
 import com.intellij.util.concurrency.annotations.RequiresBackgroundThread
 import com.intellij.util.concurrency.annotations.RequiresEdt
+import java.util.concurrent.Callable
+import java.util.concurrent.Future
 import org.jetbrains.uast.UAnnotation
 
-class IntellijInferredThreadDetector :
-  ThreadConstraintDetector<Thread>(ThreadConstraintLattice.of()) {
+class IntellijInferredThreadDetector : ThreadConstraintDetector<Thread>(lattice, assumptions) {
 
   override val violationIssue = THREAD
   override val unsatisfiableConstraintIssue = UNSATISFIABLE_CONSTRAINT
@@ -113,5 +124,67 @@ class IntellijInferredThreadDetector :
         enabledByDefault = true,
         implementation = Impl,
       )
+
+    private val lattice = ThreadConstraintLattice(Thread::class.java)
+
+    private val assumptions by
+      lazy(LazyThreadSafetyMode.NONE) {
+        lattice.build {
+          assumeCommonJavaAndKotlinSignatures()
+
+          // `Application.invokeLater` overloadings
+          run {
+            virtual<Runnable>(Application::invokeLater) assumedAs
+              forAll<Runnable> { runnable ->
+                given(Application::class(), runnable) {
+                  constraint += runnable[Runnable::run] to lattice.of(Thread.Ui)
+                }
+              }
+            virtual<_, Condition<*>>(Application::invokeLater) assumedAs
+              forAll<Runnable> { runnable ->
+                given(Application::class(), runnable, Condition::class(Type.WildCard)) {
+                  constraint += runnable[Runnable::run] to lattice.of(Thread.Ui)
+                }
+              }
+            virtual<_, ModalityState>(Application::invokeLater) assumedAs
+              forAll<Runnable> { runnable ->
+                given(Application::class(), runnable, ModalityState::class()) {
+                  constraint += runnable[Runnable::run] to lattice.of(Thread.Ui)
+                }
+              }
+            virtual<_, _, _>(Application::invokeLater) assumedAs
+              forAll<Runnable> { runnable ->
+                given(
+                  Application::class(),
+                  runnable,
+                  ModalityState::class(),
+                  Condition::class(Type.WildCard),
+                ) {
+                  constraint += runnable[Runnable::run] to lattice.of(Thread.Ui)
+                }
+              }
+          }
+
+          // `Application.executeOnPooledThread` overloadings
+          run {
+            virtual<Runnable>(Application::executeOnPooledThread) assumedAs
+              forAll<Runnable> { runnable ->
+                given(Application::class(), runnable) {
+                  range = Future::class(Type.Unit)
+                  constraint += runnable[Runnable::run] to lattice.of(Thread.Slow)
+                }
+              }
+            virtual<Callable<Any>>(Application::executeOnPooledThread) assumedAs
+              forAll { a ->
+                forAll(Callable::class(a)) { callable ->
+                  given(Application::class(), callable) {
+                    range = Future::class(a)
+                    constraint += callable[Callable<*>::call] to lattice.of(Thread.Slow)
+                  }
+                }
+              }
+          }
+        }
+      }
   }
 }

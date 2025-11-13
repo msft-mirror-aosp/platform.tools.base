@@ -1714,8 +1714,9 @@ class ProjectInitializerTest {
                     package="com.android.tools.lint.test"
                     android:versionCode="1"
                     android:versionName="1.0" >
-                    <uses-sdk android:minSdkVersion="10" android:targetSdkVersion="31" />
-                    <uses-sdk android:minSdkVersion="10" android:targetSdkVersion="31" />
+                    <application>
+                      <uses-sdk android:minSdkVersion="10" android:targetSdkVersion="31" />
+                    </application>
                 </manifest>
                 """,
             )
@@ -1750,13 +1751,15 @@ class ProjectInitializerTest {
 
     MainTest.checkDriver(
       """
-            layout/SomethingNamedAndroidManifest.xml:6: Error: There should only be a single <uses-sdk> element in the manifest: merge these together [MultipleUsesSdk]
-                <uses-sdk android:minSdkVersion="10" android:targetSdkVersion="31" />
-                 ~~~~~~~~
-                layout/SomethingNamedAndroidManifest.xml:5: Also appears here
-            1 error
+      layout/SomethingNamedAndroidManifest.xml:6: Error: The <uses-sdk> element must be a direct child of the <manifest> root element [WrongManifestParent]
+            <uses-sdk android:minSdkVersion="10" android:targetSdkVersion="31" />
+             ~~~~~~~~
+      layout/SomethingNamedAndroidManifest.xml:6: Warning: <uses-sdk> tag appears after <application> tag [ManifestOrder]
+            <uses-sdk android:minSdkVersion="10" android:targetSdkVersion="31" />
+             ~~~~~~~~
+      1 error, 1 warning
             """,
-      "Manifest merger failed with multiple errors, see logs",
+      null,
 
       // Expected exit code
       ERRNO_SUCCESS,
@@ -1764,7 +1767,7 @@ class ProjectInitializerTest {
       // Args
       arrayOf(
         "--check",
-        "RequiredSize,ManifestOrder,ContentDescription,MultipleUsesSdk",
+        "RequiredSize,ManifestOrder,ContentDescription,WrongManifestParent",
         "--project",
         descriptorFile.path,
       ),

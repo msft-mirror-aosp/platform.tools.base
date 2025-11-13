@@ -22,7 +22,7 @@ import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
 import com.android.build.gradle.integration.common.fixture.project.plugins.GenericCallback
 import com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
-import com.android.build.gradle.integration.common.utils.disableBuiltInKotlin
+import com.android.build.gradle.options.BooleanOption
 import org.gradle.api.Project
 import org.gradle.api.publish.PublishingExtension
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
@@ -36,6 +36,8 @@ class KotlinMultiplatformPublishingTest {
 
     @get:Rule
     val rule = GradleRule.configure()
+        .disableBrokenBuiltInKotlinOptOutChecks()
+        .disableBrokenNewDslOptOutChecks()
         .withGradleOptions {
             // this is necessary because KMP does not work with project Isolation.
             // There were some tests where it worked but that's because they used the root
@@ -55,7 +57,10 @@ class KotlinMultiplatformPublishingTest {
                     version = "0.1.2"
                 }
             }
-            disableBuiltInKotlin()
+            gradleProperties {
+                add(BooleanOption.BUILT_IN_KOTLIN, false)
+                add(BooleanOption.USE_NEW_DSL, false)
+            }
         }
 
     class Callback: GenericCallback {
@@ -87,7 +92,9 @@ class KotlinMultiplatformPublishingTest {
         val build = rule.build
         val lib = build.androidLibrary()
 
-        build.executor.run("publishAllPublicationsToBuildDirRepository")
+        build.executor
+            .withFailOnWarning(false) // b/455891987
+            .run("publishAllPublicationsToBuildDirRepository")
 
         val mainModule =
             lib.buildDir.resolve("testRepo/com/example/lib/0.1.2/lib-0.1.2.module")

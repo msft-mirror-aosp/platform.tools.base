@@ -54,6 +54,7 @@ class CacheabilityTest {
             ":app:extractDeepLinks${DEBUG_RELEASE}",
             ":app:generate${DEBUG_RELEASE}Resources",
             ":app:generate${DEBUG_RELEASE}ResValues",
+            ":app:generate${DEBUG_RELEASE}RFile",
             ":app:jacocoDebug",
             ":app:javaPreCompile${DEBUG_RELEASE}",
             ":app:javaPreCompileDebugUnitTest",

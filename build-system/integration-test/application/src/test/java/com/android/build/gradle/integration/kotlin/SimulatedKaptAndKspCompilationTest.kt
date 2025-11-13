@@ -29,6 +29,7 @@ import com.android.build.gradle.integration.common.fixture.project.builder.Plugi
 import com.android.build.gradle.integration.common.fixture.project.plugins.ApplicationComponentCallback
 import com.android.build.gradle.integration.common.fixture.project.plugins.LegacyApplicationCallback
 import com.android.build.gradle.internal.dsl.BaseAppModuleExtension
+import com.android.build.gradle.options.BooleanOption
 import com.google.common.truth.Truth
 import org.gradle.api.DefaultTask
 import org.gradle.api.Project
@@ -44,8 +45,6 @@ import org.gradle.api.tasks.TaskAction
 import org.junit.Rule
 import org.junit.Test
 import java.io.File
-import java.nio.file.Files
-import kotlin.test.fail
 
 /**
  * Test to simulate how KAPT and KSP are interacting with each other. This should also cover when
@@ -54,7 +53,7 @@ import kotlin.test.fail
 class SimulatedKaptAndKspCompilationTest {
 
     @get:Rule
-    val project = GradleRule.configure().from {
+    val project = GradleRule.from {
         androidApplication {
             applyPlugin(PluginType.ANDROID_BUILT_IN_KOTLIN)
             files {
@@ -102,6 +101,9 @@ class SimulatedKaptAndKspCompilationTest {
             }
             pluginCallbacks += MyAppCallback::class.java
             pluginCallbacks += MyAppLegacyCallBack::class.java
+        }
+        gradleProperties {
+            add(BooleanOption.USE_NEW_DSL, false)
         }
     }
 

@@ -67,7 +67,7 @@ interface BuildWriter: BooleanNameHandler {
     fun rawMethod(name: String, params: List<Pair<String, Any>>): RawString
 
     /** Writes a block with a sub item */
-    fun <T> block(name: String, parameters: List<Any>, item: T, action: BuildWriter.(T) -> Unit): BuildWriter
+    fun <T> block(name: String, parameters: List<Any?>, item: T, action: BuildWriter.(T) -> Unit): BuildWriter
     /** Writes a block with a sub item, and parameters passed to the block */
     fun <T> block(name: String, item: T, action: BuildWriter.(T) -> Unit): BuildWriter
     /** Writes a block without an item or parameters */
@@ -358,7 +358,7 @@ internal abstract class BaseBuildWriter(
 
     override fun <T> block(
         name: String,
-        parameters: List<Any>,
+        parameters: List<Any?>,
         item: T,
         action: BuildWriter.(T) -> Unit
     ): BuildWriter {

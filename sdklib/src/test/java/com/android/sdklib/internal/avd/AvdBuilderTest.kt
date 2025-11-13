@@ -28,6 +28,7 @@ import com.android.testutils.file.someRoot
 import com.android.utils.NullLogger
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
+import java.io.File
 import kotlin.io.path.exists
 import kotlin.reflect.full.memberProperties
 import org.junit.Test
@@ -234,15 +235,19 @@ class AvdBuilderTest {
     val avdInfo = avdManager.createAvd(avdBuilder)
 
     assertThat(avdBuilder.avdFolder.resolve(AvdManager.ENVIRONMENT_INI).exists()).isTrue()
-    assertThat(avdInfo.environment).containsExactly(EnvironmentKey.IMAGE, "img1.png")
-    assertThat(avdInfo.dataFolderPath.resolve("img1.png").exists()).isTrue()
+    assertThat(avdInfo.environment)
+      .containsExactly(EnvironmentKey.IMAGE, "environment" + File.separator + "img1.png")
+    val environmentDir = avdInfo.dataFolderPath.resolve(AvdManager.ENVIRONMENT_DIR)
+    assertThat(environmentDir.resolve("img1.png").exists()).isTrue()
+    assertThat(avdInfo.properties[ConfigKey.LCD_TRANSPARENT]).isEqualTo("yes")
 
     // Verify that we can read the background back from disk
     avdManager.reloadAvds()
     val newAvdInfo = avdManager.getAvd(avdInfo.name, true)!!
-    assertThat(newAvdInfo.environment).containsExactly(EnvironmentKey.IMAGE, "img1.png")
+    assertThat(newAvdInfo.environment)
+      .containsExactly(EnvironmentKey.IMAGE, "environment${File.separator}img1.png")
     AvdBuilder.createForExistingDevice(device, newAvdInfo).let {
-      assertThat(it.environment?.nameCount).isEqualTo(1)
+      assertThat(it.environment?.nameCount).isEqualTo(2)
       assertThat(it.environment?.fileName.toString()).isEqualTo("img1.png")
     }
   }

@@ -118,7 +118,9 @@ class VariantApiAndroidResourcesTest {
     @Test
     fun testResourcesAddedViaVariantAPI() {
         val build = rule.build
-        build.executor.run(":kmplibrary:bundleAndroidMainAar", ":androidlibrary:bundleDebugAar")
+        build.executor
+            .withFailOnWarning(false) // b/455891987
+            .run(":kmplibrary:bundleAndroidMainAar", ":androidlibrary:bundleDebugAar")
 
         build.kotlinMultiplatformLibrary(":kmplibrary").assertAar(AarSelector.NO_BUILD_TYPE) {
             publicResFile().isEqualTo("""

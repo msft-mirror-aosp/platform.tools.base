@@ -32,6 +32,7 @@ import com.android.tools.lint.detector.api.SourceCodeScanner
 import com.google.common.truth.Truth.assertThat
 import com.intellij.psi.PsiMethod
 import org.jetbrains.uast.UCallExpression
+import org.junit.Ignore
 import org.junit.Test
 
 @Suppress("LintDocExample")
@@ -74,6 +75,7 @@ class LintTestTaskTest {
   }
 
   @Test
+  @Ignore("b/458700546")
   fun testMultiRunWithK1andK2() {
     // Replica of [LintTestTaskTest.checkFlagsAcrossTestModes]
     // but with initial configurations for K1 / K2

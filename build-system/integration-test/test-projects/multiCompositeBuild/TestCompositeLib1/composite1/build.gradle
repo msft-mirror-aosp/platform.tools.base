@@ -23,6 +23,17 @@ android {
         }
     }
 
+    flavorDimensions 'environment'
+    productFlavors {
+        prod {
+            dimension 'environment'
+            matchingFallbacks = ['abc']
+        }
+        abc {
+            dimension 'environment'
+        }
+    }
+
 }
 
 group = 'com.test.composite'

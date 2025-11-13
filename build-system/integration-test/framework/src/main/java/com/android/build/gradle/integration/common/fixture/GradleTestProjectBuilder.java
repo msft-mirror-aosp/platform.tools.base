@@ -197,6 +197,7 @@ public class GradleTestProjectBuilder implements GradleOptionBuilder<GradleTestP
                 outputLogOnFailure);
     }
 
+
     public GradleTestProjectBuilder withAdditionalMavenRepo(
             @Nullable MavenRepoGenerator mavenRepo) {
         additionalMavenRepo = mavenRepo;

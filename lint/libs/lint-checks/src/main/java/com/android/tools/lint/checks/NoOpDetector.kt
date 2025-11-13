@@ -33,6 +33,7 @@ import com.android.tools.lint.detector.api.Severity
 import com.android.tools.lint.detector.api.SourceCodeScanner
 import com.android.tools.lint.detector.api.UastLintUtils
 import com.android.tools.lint.detector.api.getUMethod
+import com.android.tools.lint.detector.api.isMemberOfPrimitiveOrString
 import com.intellij.psi.CommonClassNames.JAVA_LANG_BOOLEAN
 import com.intellij.psi.CommonClassNames.JAVA_LANG_BYTE
 import com.intellij.psi.CommonClassNames.JAVA_LANG_CHARACTER
@@ -443,7 +444,8 @@ class NoOpDetector : Detector(), SourceCodeScanner {
         if (node.operator is UastBinaryOperator.AssignOperator) {
           return
         }
-        if (node.resolveOperator() != null) {
+        val customOperator = node.resolveOperator()?.takeUnless { it.isMemberOfPrimitiveOrString() }
+        if (customOperator != null) {
           // Custom operator
           return
         }

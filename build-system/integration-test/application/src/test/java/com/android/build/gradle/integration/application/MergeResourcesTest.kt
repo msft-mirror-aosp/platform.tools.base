@@ -17,8 +17,6 @@
 package com.android.build.gradle.integration.application
 
 import com.android.SdkConstants
-import com.android.build.gradle.integration.common.fixture.GradleBuildResult
-import com.android.build.gradle.integration.common.fixture.GradleTaskExecutor
 import com.android.build.gradle.integration.common.fixture.project.AndroidApplicationProject
 import com.android.build.gradle.integration.common.fixture.project.ApkSelector
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
@@ -27,7 +25,6 @@ import com.android.build.gradle.integration.common.fixture.project.builder.Plugi
 import com.android.build.gradle.integration.common.output.ApkContentSize
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.scope.InternalArtifactType.MERGED_RES
-import com.android.build.gradle.internal.scope.getOutputDir
 import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.options.IntegerOption
 import com.android.testutils.truth.PathSubject.assertThat
@@ -36,13 +33,15 @@ import com.google.common.truth.Truth.assertThat
 import org.gradle.api.JavaVersion
 import org.junit.Rule
 import org.junit.Test
-import java.io.File
 import java.net.URLClassLoader
+import java.nio.file.Path
+import kotlin.io.path.getLastModifiedTime
+import kotlin.io.path.readLines
 
 class MergeResourcesTest {
 
     @get:Rule
-    val project = GradleRule.configure().from {
+    val project = GradleRule.from {
         androidApplication {
             applyPlugin(PluginType.ANDROID_BUILT_IN_KOTLIN)
 
@@ -130,26 +129,26 @@ class MergeResourcesTest {
                     </resources>
                     """.trimIndent())
         }
-        gradleProperties {
-            add(BooleanOption.USE_ANDROID_X, true)
-        }
     }
 
     @Test
     fun mergesRawWithLibraryWithOverride() {
-        val build = project.build
-        /*
-         * Set app to depend on library.
-         */
-        build.androidApplication().reconfigure {
-            dependencies {
-                api(project(DEFAULT_LIB_PATH))
+        val build = project.build {
+            androidApplication() {
+                /*
+                 * Set app to depend on library.
+                 */
+                dependencies {
+                    api(project(DEFAULT_LIB_PATH))
+                }
             }
         }
+        val lib = build.androidLibrary()
+        val app = build.androidApplication()
 
-        build.executor.runEnforceUniquePkg(":app:assembleDebug")
+        build.executor.run(":app:assembleDebug")
 
-        val rDef = build.androidLibrary()
+        val rDef = lib
             .resolve(InternalArtifactType.LOCAL_ONLY_SYMBOL_LIST)
             .resolve("debug/parseDebugLocalResources/R-def.txt")
 
@@ -162,24 +161,23 @@ class MergeResourcesTest {
          * It should also show up in build/intermediates/merged_res/debug/raw/me.raw
          */
         val rawMeDotRawRelativePath = "src/main/res/raw/me.raw"
-        build.androidLibrary().files.add(rawMeDotRawRelativePath, byteArrayOf(0, 1, 2))
+        lib.files.add(rawMeDotRawRelativePath, byteArrayOf(0, 1, 2))
 
-        build.executor.runEnforceUniquePkg(":app:assembleDebug")
+        build.executor.run(":app:assembleDebug")
 
         assertThat(rDef).exists()
         assertThat(rDef).contains("raw me")
 
-        build.androidApplication().assertApk(ApkSelector.DEBUG) {
+        app.assertApk(ApkSelector.DEBUG) {
             androidResources().resourceAsBytes("raw/me.raw").isEqualTo(byteArrayOf(0, 1, 2))
         }
 
-        val inIntermediate = build.androidApplication()
+        val inIntermediate = app
             .resolve(MERGED_RES)
             .resolve("debug/mergeDebugResources/raw_me.raw.flat").toFile()
-        val inCompiledLocalResources =
-            build.androidLibrary()
-                .resolve(InternalArtifactType.COMPILED_LOCAL_RESOURCES)
-                .resolve("debug/compileDebugLibraryResources/out/raw_me.raw.flat")
+        val inCompiledLocalResources = lib
+            .resolve(InternalArtifactType.COMPILED_LOCAL_RESOURCES)
+            .resolve("debug/compileDebugLibraryResources/out/raw_me.raw.flat")
 
         if (BooleanOption.PRECOMPILE_DEPENDENCIES_RESOURCES.defaultValue) {
             assertThat(inIntermediate).doesNotExist()
@@ -195,11 +193,11 @@ class MergeResourcesTest {
          *
          * The change should also show up in build/intermediates/merged_res/debug/raw/me.raw
          */
-        build.androidApplication().files.add(rawMeDotRawRelativePath, byteArrayOf(3))
+        app.files.add(rawMeDotRawRelativePath, byteArrayOf(3))
 
-        project.build.executor.runEnforceUniquePkg(":app:assembleDebug")
+        project.build.executor.run(":app:assembleDebug")
 
-        build.androidApplication().assertApk(ApkSelector.DEBUG) {
+        app.assertApk(ApkSelector.DEBUG) {
             androidResources().resourceAsBytes("raw/me.raw").isEqualTo(byteArrayOf(3))
         }
         assertThat(inIntermediate).exists()
@@ -207,46 +205,50 @@ class MergeResourcesTest {
         /*
          * Now, modify the library's and check that nothing changed.
          */
-        val apUnderscore = build.androidApplication().getLinkedResourcesFile()
+        val apUnderscore = app.getLinkedResourcesFile()
 
         assertThat(apUnderscore).exists()
 
-        build.androidLibrary().files.update(rawMeDotRawRelativePath)
+        lib.files.update(rawMeDotRawRelativePath)
             .replaceWith(byteArrayOf(0, 1, 2, 4))
 
-        build.executor.runEnforceUniquePkg(":app:assembleDebug")
+        build.executor.run(":app:assembleDebug")
 
-        build.androidApplication().assertApk(ApkSelector.DEBUG) {
+        app.assertApk(ApkSelector.DEBUG) {
             androidResources().resourceAsBytes("raw/me.raw").isEqualTo(byteArrayOf(3))
         }
 
         assertThat(inIntermediate).wasModifiedAt(inIntermediate.lastModified())
-        assertThat(apUnderscore).wasModifiedAt(apUnderscore.lastModified())
+        assertThat(apUnderscore).wasModifiedAt(apUnderscore.getLastModifiedTime())
         // Sometimes fails with the APK being modified even when it shouldn't. b/37617310
         //assertThat(apk).wasModifiedAt(apkModified);
     }
 
     @Test
     fun removeResourceFile() {
-        val build = project.build
-        /*
-         * Add a resource file to the project and build it.
-         */
-        build.androidApplication()
-            .files.add("src/main/res/raw/me.raw", byteArrayOf(0, 1, 2))
-        build.executor.runEnforceUniquePkg(":app:assembleDebug")
+        val build = project.build {
+            androidApplication {
+                /*
+                 * Add a resource file to the project and build it.
+                 */
+                files.add("src/main/res/raw/me.raw", byteArrayOf(0, 1, 2))
+            }
+        }
+
+        build.executor.run(":app:assembleDebug")
+
+        val app = build.androidApplication()
 
         /*
          * Check that the file is merged and in the apk.
          */
-        val inIntermediate =
-            build.androidApplication()
-                .resolve(MERGED_RES)
-                .resolve("debug/mergeDebugResources/raw_me.raw.flat")
+        val inIntermediate = app
+            .resolve(MERGED_RES)
+            .resolve("debug/mergeDebugResources/raw_me.raw.flat")
 
         assertThat(inIntermediate).exists()
 
-        val apUnderscore = build.androidApplication().getLinkedResourcesFile()
+        val apUnderscore = app.getLinkedResourcesFile()
 
         assertThat(apUnderscore).exists()
         assertThat(apUnderscore) {
@@ -259,8 +261,8 @@ class MergeResourcesTest {
         /*
          * Remove the resource from the project and build the project incrementally.
          */
-        build.androidApplication().files.remove("src/main/res/raw/me.raw")
-        build.executor.runEnforceUniquePkg(":app:assembleDebug")
+        app.files.remove("src/main/res/raw/me.raw")
+        build.executor.run(":app:assembleDebug")
 
         /*
          * Check that the file has been removed from the intermediates and from the apk.
@@ -271,27 +273,29 @@ class MergeResourcesTest {
 
     @Test
     fun updateResourceFile() {
-        val build = project.build
-        /*
-         * Add a resource file to the project and build it.
-         */
         val rawRelativePath = "src/main/res/raw/me.raw"
-        build.androidApplication().files.add(
-                rawRelativePath,
-                byteArrayOf(0, 1, 2)
-            )
 
-        build.executor.runEnforceUniquePkg(":app:assembleDebug")
+        val build = project.build {
+            androidApplication {
+                /*
+                 * Add a resource file to the project and build it.
+                 */
+                files.add(rawRelativePath, byteArrayOf(0, 1, 2))
+            }
+        }
+        val app = build.androidApplication()
+
+        build.executor.run(":app:assembleDebug")
 
         /*
          * Check that the file is merged and in the apk.
          */
-        val inIntermediate = build.androidApplication()
+        val inIntermediate = app
             .resolve(MERGED_RES)
             .resolve("debug/mergeDebugResources/raw_me.raw.flat")
         assertThat(inIntermediate).exists()
 
-        val apUnderscore = build.androidApplication().getLinkedResourcesFile()
+        val apUnderscore = app.getLinkedResourcesFile()
 
         assertThat(apUnderscore) {
             it.exists()
@@ -304,10 +308,9 @@ class MergeResourcesTest {
         /*
          * Change the resource file from the project and build the project incrementally.
          */
-        build.androidApplication().files.update(rawRelativePath)
-            .replaceWith(byteArrayOf(1, 2, 3, 4))
+        app.files.update(rawRelativePath).replaceWith(byteArrayOf(1, 2, 3, 4))
 
-        build.executor.runEnforceUniquePkg(":app:assembleDebug")
+        build.executor.run(":app:assembleDebug")
 
         /*
          * Check that the file has been updated in the intermediates directory and in the project.
@@ -315,10 +318,7 @@ class MergeResourcesTest {
         assertThat(inIntermediate).exists()
 
         assertThat(apUnderscore) {
-            it.containsFileWithContent(
-                "res/raw/me.raw",
-                byteArrayOf(1, 2, 3, 4)
-            )
+            it.containsFileWithContent("res/raw/me.raw", byteArrayOf(1, 2, 3, 4))
         }
     }
 
@@ -326,17 +326,20 @@ class MergeResourcesTest {
     // Regression test for b/448768899
     @Test
     fun pickupNavigationXmlForIncremental() {
-        val build = project.build
+        val build = project.build {
+            androidApplication {
+                files.add(
+                    "src/main/res/navigation/nav_graph.xml",
+                    //language=xml
+                    """
+                    <navigation xmlns:android="http://schemas.android.com/apk/res/android">
+                    </navigation>
+                    """.trimIndent()
+                )
+            }
+        }
         val app = build.androidApplication()
 
-        app.files.add(
-            "src/main/res/navigation/nav_graph.xml",
-            //language=xml
-            """
-            <navigation xmlns:android="http://schemas.android.com/apk/res/android">
-            </navigation>
-            """.trimIndent()
-        )
         build.executor.withArgument("--build-cache").run("clean", ":app:parseDebugLocalResources")
 
         val rDef = app
@@ -346,6 +349,7 @@ class MergeResourcesTest {
         assertThat(rDef).exists()
 
         app.files.update("src/main/res/navigation/nav_graph.xml").transform {
+            //language=xml
             """
             <navigation xmlns:android="http://schemas.android.com/apk/res/android"
                 xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -394,8 +398,10 @@ class MergeResourcesTest {
                 }
             }
         }
-        build.executor.runEnforceUniquePkg("clean", ":app:assembleDebug")
-        build.androidApplication().files.add("src/main/res/layout/additional.xml",
+        val app = build.androidApplication()
+
+        build.executor.run("clean", ":app:assembleDebug")
+        app.files.add("src/main/res/layout/additional.xml",
             //language=xml
             """<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
                             android:layout_width="fill_parent"
@@ -403,15 +409,15 @@ class MergeResourcesTest {
                             android:orientation="vertical" >
                         </LinearLayout>"""
             )
-        build.executor.runEnforceUniquePkg(":app:assembleDebug")
+        build.executor.run(":app:assembleDebug")
 
         // Verify the resource can be moved to a different source set.
-        build.androidApplication().files
+        app.files
             .update("src/main/res/layout/additional.xml")
             .moveTo("src/flavor1/res/layout/additional.xml")
 
-        build.executor.runEnforceUniquePkg(":app:assembleDebug")
-        build.androidApplication().assertApk(ApkSelector.DEBUG.withFlavor("flavor1")) {
+        build.executor.run(":app:assembleDebug")
+        app.assertApk(ApkSelector.DEBUG.withFlavor("flavor1")) {
             androidResources().containsExactly(
                 "layout/main.xml",
                 "layout/additional.xml"
@@ -421,46 +427,45 @@ class MergeResourcesTest {
 
     @Test
     fun replaceResourceFileWithDifferentExtension() {
-        val build = project.build
-        /*
-         * Add a resource file to the project and build it.
-         */
-        build.androidApplication().files
-            .add("src/main/res/raw/me.raw", byteArrayOf(0, 1, 2))
+        val build = project.build {
+            androidApplication {
+                /*
+                 * Add a resource file to the project and build it.
+                 */
+                files.add("src/main/res/raw/me.raw", byteArrayOf(0, 1, 2))
+            }
+        }
+        val app = build.androidApplication()
 
-        build.executor.runEnforceUniquePkg(":app:assembleDebug")
+        build.executor.run(":app:assembleDebug")
 
         /*
          * Check that the file is merged and in the apk.
          */
-        val inIntermediate = File(
-                MERGED_RES.getOutputDir(build.androidApplication().buildDir.toFile()),
-                "debug/mergeDebugResources/raw_me.raw.flat")
+        val inIntermediate = app.resolve(MERGED_RES)
+            .resolve("debug/mergeDebugResources/raw_me.raw.flat")
         assertThat(inIntermediate).exists()
 
-        val apUnderscore = build.androidApplication().getLinkedResourcesFile()
+        val apUnderscore = app.getLinkedResourcesFile()
 
         assertThat(apUnderscore).exists()
         assertThat(apUnderscore) {
-            it.containsFileWithContent(
-                "res/raw/me.raw",
-                byteArrayOf(0, 1, 2)
-            )
+            it.containsFileWithContent("res/raw/me.raw", byteArrayOf(0, 1, 2))
         }
 
         /*
          * Change the resource file with one with a different extension and build the project
          * incrementally.
          */
-        build.androidApplication().files.remove("src/main/res/raw/me.raw")
-        build.androidApplication().files.add("src/main/res/raw/me.war", byteArrayOf(1, 2, 3, 4))
-        build.executor.runEnforceUniquePkg(":app:assembleDebug")
+        app.files.remove("src/main/res/raw/me.raw")
+        app.files.add("src/main/res/raw/me.war", byteArrayOf(1, 2, 3, 4))
+        build.executor.run(":app:assembleDebug")
 
         /*
          * Check that the file has been updated in the intermediates directory and in the project.
          */
         assertThat(inIntermediate).doesNotExist()
-        assertThat(File(inIntermediate.parent, "raw_me.war.flat")).exists()
+        assertThat(inIntermediate.parent.resolve("raw_me.war.flat")).exists()
         assertThat(apUnderscore).doesNotContain("res/raw/me.raw")
         assertThat(apUnderscore) {
             it.containsFileWithContent(
@@ -472,48 +477,55 @@ class MergeResourcesTest {
 
     @Test
     fun injectedMinSdk() {
-        val build = project.build
-        val app = build.androidApplication()
-        app.files.add("src/main/res/layout-v23/main.xml",
-            //language=xml
-            """<?xml version="1.0" encoding="utf-8"?>
+        val build = project.build {
+            androidApplication {
+                files {
+                    add("src/main/res/layout-v23/main.xml",
+                        //language=xml
+                        """<?xml version="1.0" encoding="utf-8"?>
+                        <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                            android:orientation="horizontal"
+                            android:layout_width="fill_parent"
+                            android:layout_height="fill_parent">
+                        </LinearLayout>
+                        """.trimIndent()
+                    )
+                    update(
+                        "src/main/java/com/example/android/multiproject/app/MainActivity.java"
+                    ).appendMethod("public int useFoo() { return R.id.foo; }")
+                }
 
-            <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-                android:orientation="horizontal"
-                android:layout_width="fill_parent"
-                android:layout_height="fill_parent">
-            </LinearLayout>
-            """
-        )
-
-        app.files.update(
-            "src/main/java/com/example/android/multiproject/app/MainActivity.java")
-            .appendMethod("public int useFoo() { return R.id.foo; }")
-
-        build.executor.with(IntegerOption.IDE_TARGET_DEVICE_API, 23)
-            .runEnforceUniquePkg(":app:assembleDebug")
+            }
+        }
+        build.executor
+            .with(IntegerOption.IDE_TARGET_DEVICE_API, 23)
+            .run(":app:assembleDebug")
     }
 
     @Test
     fun mergeResourceOmitsNavigationXml() {
-        val build = project.build
-        val app = build.androidApplication()
-        app.files.add(
-            "src/main/res/navigation/nav_graph.xml",
-            //language=xml
-            """
-            <navigation xmlns:app="http://schemas.android.com/apk/res-auto">
-            </navigation>
-            """.trimIndent()
-        )
+        val build = project.build {
+            androidApplication {
+                files.add(
+                    "src/main/res/navigation/nav_graph.xml",
+                    //language=xml
+                    """
+                    <navigation xmlns:app="http://schemas.android.com/apk/res-auto">
+                    </navigation>
+                    """.trimIndent()
+                )
+            }
+        }
 
-        build.executor.runEnforceUniquePkg(":app:mergeDebugResources")
+        val app = build.androidApplication()
+
+        build.executor.run(":app:mergeDebugResources")
 
         val resourcesFolder = app
             .resolve(MERGED_RES)
-            .resolve("debug/mergeDebugResources").toFile()
-        assertThat(File(resourcesFolder, "navigation_nav_graph.xml.flat")).doesNotExist()
-        assertThat(File(resourcesFolder, "layout_main.xml.flat")).exists()
+            .resolve("debug/mergeDebugResources")
+        assertThat(resourcesFolder.resolve("navigation_nav_graph.xml.flat")).doesNotExist()
+        assertThat(resourcesFolder.resolve("layout_main.xml.flat")).exists()
     }
 
     // Regression test for http://issuetracker.google.com/65829618
@@ -534,21 +546,22 @@ class MergeResourcesTest {
                 }
             }
         }
+        val app = build.androidApplication()
 
         // Run a full build with shrinkResources enabled
-        this.project.build.executor
-            .runEnforceUniquePkg(":app:clean", ":app:assembleDebug")
+        build.executor
+            .run(":app:clean", ":app:assembleDebug")
             .apply {
                 assertTask(":app:mergeDebugResources").didWork()
             }
         val apkSizeWithShrinkResources = ApkContentSize.computeContent(
-            build.androidApplication().getApkLocationForCopy(ApkSelector.DEBUG)
+            app.getApkLocationForCopy(ApkSelector.DEBUG)
         )
 
 
         // Run an incremental build with shrinkResources disabled, the MergeResources task should
         // not be UP-TO-DATE and the apk size should be larger
-        build.androidApplication().reconfigure {
+        app.reconfigure {
             android {
                 android {
                     buildTypes {
@@ -559,17 +572,17 @@ class MergeResourcesTest {
                 }
             }
         }
-        build.executor.runEnforceUniquePkg(":app:assembleDebug").apply {
+        build.executor.run(":app:assembleDebug").apply {
             assertTask(":app:mergeDebugResources").didWork()
         }
         val apkSizeWithoutShrinkResources = ApkContentSize.computeContent(
-            build.androidApplication().getApkLocationForCopy(ApkSelector.DEBUG)
+            app.getApkLocationForCopy(ApkSelector.DEBUG)
         )
         assertThat(apkSizeWithoutShrinkResources).isGreaterThan(apkSizeWithShrinkResources)
 
         // Run an incremental build again with shrinkResources enabled, the MergeResources task
         // again should not be UP-TO-DATE and the apk size must be exactly the same as the first
-        build.androidApplication().reconfigure {
+        app.reconfigure {
             android {
                 android {
                     buildTypes {
@@ -580,11 +593,11 @@ class MergeResourcesTest {
                 }
             }
         }
-        build.executor.runEnforceUniquePkg(":app:assembleDebug").apply {
+        build.executor.run(":app:assembleDebug").apply {
             assertTask(":app:mergeDebugResources").didWork()
         }
         val sameApkSizeShrinkResources = ApkContentSize.computeContent(
-            build.androidApplication().getApkLocationForCopy(ApkSelector.DEBUG)
+            app.getApkLocationForCopy(ApkSelector.DEBUG)
         )
         assertThat(sameApkSizeShrinkResources).isEqualTo(apkSizeWithShrinkResources)
     }
@@ -604,23 +617,26 @@ class MergeResourcesTest {
                 }
             }
         }
+        val app = build.androidApplication()
 
-        build.executor
-            .with(BooleanOption.ENABLE_APP_COMPILE_TIME_R_CLASS, false)
-            .runEnforceUniquePkg("clean", ":app:assembleDebug")
+        build.executor.run("clean", ":app:assembleDebug")
 
-        val incrementalMergedValues = build.androidApplication().intermediatesDir
+        val incrementalMergedValues = app.intermediatesDir
             .resolve("incremental/debug/mergeDebugResources/merged.dir/values/values.xml")
 
-        val smallMerge = build.androidApplication()
+        val smallMerge = app
             .resolve(InternalArtifactType.PACKAGED_RES)
             .resolve("debug/packageDebugResources/values/values.xml").toFile()
 
         assertThat(incrementalMergedValues).contains("my_library_string")
 
-        build.executor
-            .with(BooleanOption.ENABLE_APP_COMPILE_TIME_R_CLASS, true)
-            .runEnforceUniquePkg("clean", ":app:generateDebugRFile")
+        // had to use this as `executor.with()` won't work if the property is already
+        // defined in the gradle.properties file.
+        build.reconfigureGradleProperties {
+            add(BooleanOption.ENABLE_APP_COMPILE_TIME_R_CLASS, true)
+        }
+
+        build.executor.run("clean", ":app:generateDebugRFile")
 
         assertThat(incrementalMergedValues).doesNotExist()
         assertThat(smallMerge).doesNotContain("my_library_string")
@@ -647,16 +663,19 @@ class MergeResourcesTest {
             build.androidApplication().generatedDir.resolve("res/pngs/debug")
 
         build.executor
-                .runEnforceUniquePkg(":app:processDebugResources")
+                .run(":app:processDebugResources")
 
-        assertThat(generatedPngs.resolve("drawable-anydpi-v21/icon.xml").toFile()
-                .readLines()).containsExactlyElementsIn(listOf("<vector>a</vector>"))
+        assertThat(
+            generatedPngs.resolve("drawable-anydpi-v21/icon.xml").readLines()
+        ).containsExactlyElementsIn(listOf("<vector>a</vector>"))
 
-        assertThat(generatedPngs.resolve("drawable-anydpi-v24/icon.xml").toFile()
-                .readLines()).containsExactlyElementsIn(listOf("<vector>b</vector>"))
+        assertThat(
+            generatedPngs.resolve("drawable-anydpi-v24/icon.xml").readLines()
+        ).containsExactlyElementsIn(listOf("<vector>b</vector>"))
 
-        assertThat(generatedPngs.resolve("drawable-anydpi-v28/icon.xml").toFile()
-                .readLines()).containsExactlyElementsIn(listOf("<vector>c</vector>"))
+        assertThat(
+            generatedPngs.resolve("drawable-anydpi-v28/icon.xml").readLines()
+        ).containsExactlyElementsIn(listOf("<vector>c</vector>"))
     }
 
     // Regression test for b/206674992
@@ -682,13 +701,13 @@ class MergeResourcesTest {
             }
         }
 
-        build.executor.runEnforceUniquePkg(":app:mergeReleaseResources")
+        build.executor.run(":app:mergeReleaseResources")
 
         build.androidApplication().files
             .update("src/main/res/layout/no_compile.xml")
             .append("<!-- Comment causing incremental run. -->")
 
-        build.executor.runEnforceUniquePkg(":app:mergeReleaseResources")
+        build.executor.run(":app:mergeReleaseResources")
     }
 
     // Regression test b/387371071
@@ -732,8 +751,8 @@ class MergeResourcesTest {
             .resolve(InternalArtifactType.COMPILE_AND_RUNTIME_R_CLASS_JAR)
             .resolve(
                 "debug/processDebugResources/${SdkConstants.FN_R_CLASS_JAR}"
-            ).toFile()
-        URLClassLoader.newInstance(arrayOf(rJar.toURI().toURL())).use { urlClassLoader ->
+            )
+        URLClassLoader.newInstance(arrayOf(rJar.toUri().toURL())).use { urlClassLoader ->
             val rClassStrings =
                 urlClassLoader.loadClass("com.example.android.multiproject.R\$string")?.fields
             val rClassIds =
@@ -744,17 +763,8 @@ class MergeResourcesTest {
         }
     }
 
-    // Due to b/332947919 the ENFORCE_UNIQUE_PACKAGE_NAMES option can not be specified as enabled
-    // in the gradle properties as it will enforce it in the manifest merger even if the option
-    // is disabled by the executor. Please call runEnforceUniquePkg rather than run if possible in
-    // these tests.
-    private fun GradleTaskExecutor.runEnforceUniquePkg(vararg tasks: String): GradleBuildResult {
-        return with(BooleanOption.ENFORCE_UNIQUE_PACKAGE_NAMES, true).run(*tasks)
-    }
-
-    private fun AndroidApplicationProject.getLinkedResourcesFile(): File =
+    private fun AndroidApplicationProject.getLinkedResourcesFile(): Path =
         resolve(InternalArtifactType.LINKED_RESOURCES_BINARY_FORMAT)
             .resolve("debug/processDebugResources/linked-resources-binary-format-debug.ap_")
-            .toFile()
 }
 

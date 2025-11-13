@@ -57,7 +57,7 @@ class GradlePropertiesTest {
         result.stdout.use {
             ScannerSubject.assertThat(it).contains(
                 "Calculating task graph as configuration cache cannot be reused because " +
-                        "the set of Gradle properties has changed")
+                        "Gradle property 'android.enableJetifier' has changed")
         }
     }
 
@@ -73,7 +73,7 @@ class GradlePropertiesTest {
         result.stdout.use {
             ScannerSubject.assertThat(it).contains(
                 "Calculating task graph as configuration cache cannot be reused because " +
-                        "the set of Gradle properties has changed")
+                        "Gradle property 'android.testInstrumentationRunnerArguments.size' has changed")
         }
         executor().run("clean")
         result = executor()
@@ -105,7 +105,7 @@ class GradlePropertiesTest {
         result.stdout.use {
             ScannerSubject.assertThat(it).contains(
                 "Calculating task graph as configuration cache cannot be reused because " +
-                        "the set of Gradle properties has changed")
+                        "Gradle property 'android.testInstrumentationRunnerArguments.foo' has changed")
         }
     }
 

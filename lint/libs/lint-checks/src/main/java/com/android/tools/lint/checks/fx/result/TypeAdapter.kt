@@ -28,6 +28,9 @@ import com.intellij.psi.PsiType
 import com.intellij.psi.PsiTypeParameter
 import com.intellij.psi.PsiTypes
 import com.intellij.psi.PsiWildcardType
+import kotlin.reflect.KClass
+import kotlin.reflect.KType
+import kotlin.reflect.KTypeParameter
 import kotlinx.collections.immutable.persistentSetOf
 import kotlinx.collections.immutable.plus
 import org.jetbrains.kotlin.psi.KtTypeReference
@@ -119,4 +122,32 @@ internal object KtTypeReferenceAdapter : TypeAdapter<KtTypeReference?> {
   override fun isFinal(repr: KtTypeReference?) =
     repr != null &&
       resolveProviderService.resolveToType(repr, null)?.let(PsiTypeAdapter::isFinal) == true
+}
+
+object KTypeAdapter : TypeAdapter<KType> {
+  override fun translate(env: Set<String>, repr: KType): Type<Nothing> =
+    when (val c = repr.classifier) {
+      Boolean::class -> Type.Boolean
+      Int::class -> Type.Int
+      Char::class -> Type.Char
+      Byte::class -> Type.Short
+      Long::class -> Type.Long
+      Float::class -> Type.Float
+      Double::class -> Type.Double
+      Unit::class -> Type.Unit
+      is KClass<*> ->
+        Type.Application(
+          ClassId.of(c),
+          repr.arguments.map { translate(env, it.type ?: return@map Type.WildCard) },
+        )
+      is KTypeParameter -> Type.Sym.Param(c.name)
+      else -> throw NotImplementedError("Translate $repr")
+    }
+
+  override fun isFinal(repr: KType): Boolean =
+    when (val c = repr.classifier) {
+      null -> false
+      is KClass<*> -> c.isFinal
+      else -> true
+    }
 }

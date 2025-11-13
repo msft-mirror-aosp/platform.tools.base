@@ -23,7 +23,6 @@ import com.android.build.gradle.integration.common.fixture.GradleTestProject.Apk
 import com.android.build.gradle.integration.common.fixture.GradleTestProject.ApkType.Companion.RELEASE
 import com.android.build.gradle.integration.common.fixture.GradleTestProject.Companion.builder
 import com.android.build.gradle.integration.common.utils.TestFileUtils
-import com.android.build.gradle.integration.common.utils.disableBuiltInKotlin
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.scope.getOutputDir
 import com.android.build.gradle.options.BooleanOption
@@ -49,32 +48,24 @@ import java.util.zip.ZipFile
 
 @RunWith(Parameterized::class)
 class ResourceShrinkerTest(
-    private val nonFinalResIds: Boolean,
     private val r8OptimizedShrinking: Boolean
 ) {
 
     companion object {
 
-        @Parameterized.Parameters(name = "nonFinalResIds_{0}__r8OptimizedShrinking_{1}")
+        @Parameterized.Parameters(name = "r8OptimizedShrinking_{0}")
         @JvmStatic
-        fun parameters() = listOf(
-            arrayOf(false, false),
-            arrayOf(true, false),
-            // r8OptimizedShrinking only takes effect when nonFinalResIds = true
-            arrayOf(true, true),
-        )
+        fun parameters() = listOf(false, true)
     }
 
     @get:Rule
     var project = builder().fromTestProject("shrink")
-        .addGradleProperty(BooleanOption.USE_NON_FINAL_RES_IDS, nonFinalResIds)
         .addGradleProperty(BooleanOption.R8_OPTIMIZED_RESOURCE_SHRINKING, r8OptimizedShrinking)
         .disableBuiltInKotlin()
         .create()
 
     @get:Rule
     var projectWithDynamicFeatureModules = builder().fromTestProject("shrinkDynamicFeatureModules")
-        .addGradleProperty(BooleanOption.USE_NON_FINAL_RES_IDS, nonFinalResIds)
         .addGradleProperty(BooleanOption.R8_OPTIMIZED_RESOURCE_SHRINKING, r8OptimizedShrinking)
         .create()
 
@@ -85,7 +76,7 @@ class ResourceShrinkerTest(
         for (project in listOf(project, projectWithDynamicFeatureModules.getSubproject("base"))) {
             TestFileUtils.searchAndReplace(
                 project.mainSrcDir.resolve("com/android/tests/shrink/RootActivity.java"),
-                "/* Use if android.nonFinalResIds=$nonFinalResIds */ // ",
+                "/* Use if android.nonFinalResIds=true */ // ",
                 ""
             )
         }

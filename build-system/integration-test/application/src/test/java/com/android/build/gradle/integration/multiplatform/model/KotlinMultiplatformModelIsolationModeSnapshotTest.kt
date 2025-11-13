@@ -25,9 +25,11 @@ import com.android.testutils.generateAarWithContent
 import com.android.utils.FileUtils
 import com.google.common.collect.ImmutableList
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 
+@Ignore("https://youtrack.jetbrains.com/issue/KT-82090")
 class KotlinMultiplatformModelIsolationModeSnapshotTest: BaseModelComparator {
     @get:Rule
     val project = GradleTestProjectBuilder()

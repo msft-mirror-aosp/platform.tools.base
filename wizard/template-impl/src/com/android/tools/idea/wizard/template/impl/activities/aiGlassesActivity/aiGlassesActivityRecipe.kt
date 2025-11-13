@@ -18,18 +18,23 @@ package com.android.tools.idea.wizard.template.impl.activities.aiGlassesActivity
 import com.android.tools.idea.wizard.template.ModuleTemplateData
 import com.android.tools.idea.wizard.template.RecipeExecutor
 import com.android.tools.idea.wizard.template.impl.activities.aiGlassesActivity.res.values.stringsXml
+import com.android.tools.idea.wizard.template.impl.activities.aiGlassesActivity.src.app_package.audioInterfaceKt
+import com.android.tools.idea.wizard.template.impl.activities.aiGlassesActivity.src.app_package.glassesActivityKt
 import com.android.tools.idea.wizard.template.impl.activities.aiGlassesActivity.src.app_package.mainActivityKt
 import com.android.tools.idea.wizard.template.impl.activities.common.addAllKotlinDependencies
 import com.android.tools.idea.wizard.template.impl.activities.common.addComposeDependencies
 import com.android.tools.idea.wizard.template.impl.activities.common.generateManifest
 import com.android.tools.idea.wizard.template.impl.activities.composeActivityMaterial3.res.values.themesXml
+import com.android.tools.idea.wizard.template.impl.activities.composeActivityMaterial3.src.app_package.ui.colorKt
+import com.android.tools.idea.wizard.template.impl.activities.composeActivityMaterial3.src.app_package.ui.themeKt
+import com.android.tools.idea.wizard.template.impl.activities.composeActivityMaterial3.src.app_package.ui.typeKt
 
 fun RecipeExecutor.aiGlassesActivityRecipe(
   moduleData: ModuleTemplateData,
   activityClass: String,
   packageName: String,
 ) {
-  val (_, srcOut, resOut, _, _, _, _, rootDir) = moduleData
+  val (_, srcOut, resOut, manifestOut, _, _, _, rootDir) = moduleData
   addAllKotlinDependencies(moduleData)
 
   addDependency(mavenCoordinate = "androidx.activity:activity-compose:+")
@@ -37,27 +42,58 @@ fun RecipeExecutor.aiGlassesActivityRecipe(
   // Add Compose dependencies, using the BOM to set versions
   addComposeDependencies(moduleData, composeBomVersion = "2025.07.00")
 
+  addDependency(mavenCoordinate = "androidx.compose.material3:material3")
+
   addDependency(mavenCoordinate = "androidx.compose.runtime:runtime")
 
-  addDependency(mavenCoordinate = "androidx.xr.glimmer:glimmer:1.0.0-SNAPSHOT")
+  addDependency(mavenCoordinate = "androidx.xr.glimmer:glimmer:1.0.0-alpha01")
+  addDependency(mavenCoordinate = "androidx.xr.projected:projected:1.0.0-alpha01")
 
+  val glassesActivityClass = "Glasses$activityClass"
   generateManifest(
     moduleData = moduleData,
     activityClass = activityClass,
     activityThemeName = moduleData.themesData.main.name,
     packageName = packageName,
     isLauncher = true,
-    hasNoActionBar = false,
-    generateActivityTitle = false,
+    hasNoActionBar = true,
+    generateActivityTitle = true,
   )
-
+  // It doesn't have to create separate themes.xml for light and night because the default
+  // status bar color is same between them at this moment
+  // TODO remove themes.xml once Compose library supports setting the status bar color in Composable
+  // this themes.xml exists just for settings the status bar color.
+  // Thus, themeName follows the non-Compose project convention.
+  // (E.g. Theme.MyApplication) as opposed to the themeName variable below (E.g. MyApplicationTheme)
+  mergeXml(
+    themesXml(themeName = moduleData.themesData.main.name),
+    resOut.resolve("values/themes.xml"),
+  )
+  mergeXml(
+    aiGlassesActivityManifestXml(activityClass = glassesActivityClass, packageName = packageName),
+    manifestOut.resolve("AndroidManifest.xml"),
+  )
   mergeXml(
     themesXml(themeName = moduleData.themesData.main.name),
     resOut.resolve("values/themes.xml"),
   )
   mergeXml(stringsXml(), resOut.resolve("values/strings.xml"))
 
-  save(mainActivityKt(activityClass, packageName), srcOut.resolve("${activityClass}.kt"))
+  val themeName = "${moduleData.themesData.appName}Theme"
+  save(
+    mainActivityKt(activityClass, glassesActivityClass, packageName, themeName),
+    srcOut.resolve("${activityClass}.kt"),
+  )
+  save(
+    glassesActivityKt(glassesActivityClass, packageName),
+    srcOut.resolve("${glassesActivityClass}.kt"),
+  )
+  save(audioInterfaceKt(packageName), srcOut.resolve("audioInterface.kt"))
+
+  val uiThemeFolder = "ui/theme"
+  save(colorKt(packageName), srcOut.resolve("$uiThemeFolder/Color.kt"))
+  save(themeKt(packageName, themeName), srcOut.resolve("$uiThemeFolder/Theme.kt"))
+  save(typeKt(packageName), srcOut.resolve("$uiThemeFolder/Type.kt"))
 
   setJavaKotlinCompileOptions(true)
   setBuildFeature("compose", true)

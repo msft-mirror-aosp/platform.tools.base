@@ -404,29 +404,6 @@ abstract class ProjectInputs {
         neverShrinking.setDisallowChanges(globalConfig.hasNoBuildTypeMinified)
     }
 
-    internal fun initialize(variantScope: PrivacySandboxSdkVariantScope, lintMode: LintMode) {
-
-        initializeFromProject(variantScope.services.projectInfo, lintMode)
-        projectType.setDisallowChanges(LintModelModuleType.PRIVACY_SANDBOX_SDK)
-
-        // This is always true for PrivacySandboxSdk module because it does not have any source and
-        // we should report lint issues from dependencies.
-        variantScope.lintOptions.checkDependencies = true
-
-        lintOptions.initialize(variantScope.lintOptions, lintMode)
-        resourcePrefix.setDisallowChanges("")
-
-        dynamicFeatures.setDisallowChanges(setOf())
-
-        bootClasspath.fromDisallowChanges(variantScope.bootClasspath)
-        // TODO: Change java version to something reasonable
-        javaSourceLevel.setDisallowChanges(JavaVersion.VERSION_HIGHER)
-
-        compileTarget.setDisallowChanges(variantScope.compileSdkVersion)
-
-        neverShrinking.setDisallowChanges(true)
-    }
-
     internal fun initializeForStandalone(
         project: Project,
         javaExtension: JavaPluginExtension,
@@ -2755,10 +2732,6 @@ abstract class UastInputs  {
             project,
             variant.useBuiltInKotlinSupport
         )
-    }
-
-    fun initialize(variantScope: PrivacySandboxSdkVariantScope) {
-        this.useK2UastManualSetting.setDisallowChanges(variantScope.lintUseK2UastManualSetting)
     }
 
     fun initializeForStandalone(

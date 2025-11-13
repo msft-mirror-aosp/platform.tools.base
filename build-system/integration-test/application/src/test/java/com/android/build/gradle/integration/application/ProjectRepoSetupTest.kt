@@ -16,8 +16,8 @@
 
 package com.android.build.gradle.integration.application
 
-import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.utils.TestFileUtils
+import com.android.build.gradle.integration.common.fixture.project.GradleRule
+import com.android.build.gradle.integration.common.fixture.project.prebuilts.BasicSpec
 import com.android.builder.model.v2.ide.SyncIssue
 import com.google.common.truth.Truth
 import org.junit.Rule
@@ -26,20 +26,22 @@ import org.junit.Test
 class ProjectRepoSetupTest {
 
     @get:Rule
-    val project = GradleTestProject.builder().fromTestProject("basic")
-            .withDependencyManagementBlock(false)
-            .create()
+    val rule = GradleRule.fromProject(BasicSpec()) {
+        androidApplication(":app") {
+            repositories {
+                flatDir {
+                    dirs += "libs"
+                }
+            }
+        }
+    }
 
     @Test
     fun testFlatDirWarning() {
-        TestFileUtils.appendToFile(
-                project.buildFile,
-                "repositories{ apply from: \"../commonLocalRepo.gradle\", to: it}"
-        )
-        TestFileUtils.appendToFile(
-                project.buildFile, "repositories { flatDir { dirs \"libs\" } }")
-        project.executor().run("clean", "assembleDebug")
-        val onlyModel = project.modelV2()
+        val build = rule.build
+
+        build.executor.run("clean", "assembleDebug")
+        val onlyModel = build.modelBuilder
                 .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
                 .fetchModels()
                 .container

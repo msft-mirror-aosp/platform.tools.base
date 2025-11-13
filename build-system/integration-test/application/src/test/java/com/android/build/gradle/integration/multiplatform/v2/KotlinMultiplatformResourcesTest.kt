@@ -64,7 +64,7 @@ class KotlinMultiplatformResourcesTest {
 
     @Test
     fun testKmpLibraryAarContents() {
-        val result = project.executor().run(":kmpFirstLib:bundleAndroidMainAar")
+        val result = executor().run(":kmpFirstLib:bundleAndroidMainAar")
         Truth.assertThat(result.didWorkTasks).containsAtLeastElementsIn(
             listOf(
                 ":kmpFirstLib:packageAndroidMainResources",
@@ -93,7 +93,7 @@ class KotlinMultiplatformResourcesTest {
 
     @Test
     fun checkResourcesArtifacts() {
-        project.executor().run(":kmpFirstLib:assemble")
+        executor().run(":kmpFirstLib:assemble")
 
         val lib = project.getSubproject(":kmpFirstLib")
 
@@ -110,7 +110,7 @@ class KotlinMultiplatformResourcesTest {
 
     @Test
     fun testRclassPackagedInCompileClassesJar() {
-        project.executor().run(":kmpFirstLib:bundleAndroidMainClassesToCompileJar")
+        executor().run(":kmpFirstLib:bundleAndroidMainClassesToCompileJar")
 
         val classesJar = project.getSubproject(":kmpFirstLib")
             .getIntermediateFile(
@@ -147,7 +147,7 @@ class KotlinMultiplatformResourcesTest {
             """.trimIndent()
         )
 
-        val result = project.executor().run(":app:assembleDebug")
+        val result = executor().run(":app:assembleDebug")
         project.getSubproject("app").assertApk(ApkSelector.DEBUG) {
             androidResources().containsExactly(
                 "drawable-nodpi-v4/image.png"
@@ -158,4 +158,6 @@ class KotlinMultiplatformResourcesTest {
             listOf(":kmpFirstLib:compileAndroidMainLibraryResources")
         )
     }
+
+    private fun executor() = project.executor().withFailOnWarning(false) // b/455891987
 }

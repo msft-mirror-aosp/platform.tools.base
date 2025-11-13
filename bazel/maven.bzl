@@ -1,6 +1,7 @@
 load("@rules_android//providers:providers.bzl", "AndroidIdeInfo", "AndroidLibraryResourceClassJarProvider", "AndroidNativeLibsInfo")
 load("@rules_android//rules:rules.bzl", "aar_import")
 load("@rules_java//java:defs.bzl", "JavaInfo", "java_common")
+load("@rules_license//rules:license.bzl", "license")
 load(":functions.bzl", "create_option_file")
 load(":jvm_import.bzl", "jvm_import")
 load(":kotlin.bzl", "kotlin_library")
@@ -189,21 +190,15 @@ def _maven_import_impl(ctx):
             aar_dep[AndroidLibraryResourceClassJarProvider],
             aar_dep[AndroidNativeLibsInfo],
         ]
-    return struct(
-        providers = [
-            DefaultInfo(files = depset(jars)),
-            MavenInfo(
-                pom = ctx.file.pom,
-                files = files,
-                transitive = depset(direct = files, transitive = [info.transitive for info in mavens]),
-            ),
-            java_common.merge(java_infos),
-        ] + aar_providers,
-        notice = struct(
-            file = ctx.attr.notice,
-            name = ",".join(names),
+    return [
+        DefaultInfo(files = depset(jars)),
+        MavenInfo(
+            pom = ctx.file.pom,
+            files = files,
+            transitive = depset(direct = files, transitive = [info.transitive for info in mavens]),
         ),
-    )
+        java_common.merge(java_infos),
+    ] + aar_providers
 
 _maven_import = rule(
     doc = """
@@ -239,7 +234,6 @@ Args:
         "repo_root_path": attr.string(),
         "parent": attr.label(),
         "pom": attr.label(allow_single_file = True),
-        "notice": attr.label(allow_single_file = True),
         "original_deps": attr.label_list(),
         "srcjar": attr.label(allow_files = True),
     },
@@ -321,6 +315,10 @@ def maven_import(
             )
 
     artifact_dir = _get_artifact_dir(repo_root_path, repo_path)
+    license(
+        name = name + "_license",
+        license_text = artifact_dir + "NOTICE",
+    )
     _maven_import(
         name = name,
         java_deps = [":" + java_import_name],
@@ -333,7 +331,7 @@ def maven_import(
             include = [artifact_dir + "**"],
             exclude = [artifact_dir + "**/" + exclude for exclude in _REPO_GLOB_EXCLUDES],
         ),
-        notice = artifact_dir + "NOTICE",
+        package_metadata = [":" + name + "_license"],
         tags = ["require_license"],
         exports = renamed_exports.values(),
         **kwargs
@@ -352,7 +350,7 @@ def maven_import(
                 include = [artifact_dir + "**"],
                 exclude = [artifact_dir + "**/" + exclude for exclude in _REPO_GLOB_EXCLUDES],
             ),
-            notice = artifact_dir + "NOTICE",
+            package_metadata = [":" + name + "_license"],
             tags = ["require_license"],
             exports = [renamed for (e, renamed) in renamed_exports.items() if e not in exclusions],
             **kwargs

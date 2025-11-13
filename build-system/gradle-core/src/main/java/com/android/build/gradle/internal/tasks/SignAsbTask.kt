@@ -80,36 +80,4 @@ abstract class SignAsbTask : NonIncrementalGlobalTask() {
             } ?: FileUtils.copyFile(inputAsb.get().asFile, outputSignedAsb.get().asFile)
         }
     }
-
-    class CreationActionPrivacySandboxSdk(val creationConfig: PrivacySandboxSdkVariantScope)
-        : GlobalTaskCreationAction<SignAsbTask>() {
-
-        override val name: String
-            get() = "bundle"
-        override val type: Class<SignAsbTask>
-            get() = SignAsbTask::class.java
-
-        override fun handleProvider(taskProvider: TaskProvider<SignAsbTask>) {
-            creationConfig.artifacts
-                    .use(taskProvider)
-                    .wiredWithFiles(SignAsbTask::inputAsb, SignAsbTask::outputSignedAsb)
-                    .toTransform(PrivacySandboxSdkInternalArtifactType.ASB)
-        }
-
-        override fun configure(task: SignAsbTask) {
-            task.analyticsService.set(getBuildService(creationConfig.services.buildServiceRegistry))
-            task.signingConfig.setDisallowChanges(
-                    SigningConfigDataProvider(
-                            signingConfigData = creationConfig.services.provider {
-                                if (creationConfig.signingConfig.isPresent())
-                                    SigningConfigData
-                                            .fromDslSigningConfig(creationConfig.signingConfig)
-                                else null
-                            },
-                            signingConfigFileCollection = null,
-                            signingConfigValidationResultDir = null
-                    )
-            )
-        }
-    }
 }

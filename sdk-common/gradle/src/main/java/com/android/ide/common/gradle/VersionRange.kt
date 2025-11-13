@@ -15,6 +15,7 @@
  */
 package com.android.ide.common.gradle
 
+import com.android.ide.common.gradle.VersionRange.Companion.MAVEN_STYLE_REGEX
 import com.google.common.collect.BoundType
 import com.google.common.collect.DiscreteDomain
 import com.google.common.collect.Range
@@ -32,7 +33,11 @@ import com.google.common.collect.Range
  * This is intended to support string specifiers of artifact versions in Gradle build files.  It
  * does not attempt to model directly the strictly/required/preferred hierarchy of specifications.
  */
-class VersionRange(private val range: Range<Version>) {
+class VersionRange private constructor(
+    private val range: Range<Version>,
+    private val identifier: String?,
+) {
+    constructor(range: Range<Version>): this(range, range.computeIdentifier())
     fun hasLowerBound() = range.hasLowerBound()
     fun lowerEndpoint() = range.lowerEndpoint()
     fun lowerBoundType() = range.lowerBoundType()
@@ -55,60 +60,16 @@ class VersionRange(private val range: Range<Version>) {
      * Return a string that will produce the same [VersionRange] when parsed, or `null`
      * if no such identifier exists.
      */
-    fun toIdentifier(): String? {
-        if (!hasLowerBound() && !hasUpperBound()) return "+"
-        if (isSingletonRange()) {
-            val id = "${lowerEndpoint()}"
-            return when {
-                id.endsWith('+') -> null
-                MAVEN_STYLE_REGEX.matches(id) -> null
-                else -> id
-            }
-        }
-        if (isPrefixRange()) {
-            return "${lowerEndpoint().prefixVersion()}.+"
-        }
-        if (isEmpty() || (validLowerBoundForMavenRange() && validUpperBoundForMavenRange())) {
-            val sb = StringBuilder()
-            if (!hasLowerBound()) {
-                sb.append("(")
-            }
-            else if (lowerEndpoint().toString().let { it.contains(',') || it.isEmpty() }) {
-                return null
-            }
-            else if (lowerBoundType() == BoundType.OPEN) {
-                sb.append("(${lowerEndpoint()}")
-            }
-            else {
-                sb.append("[${lowerEndpoint()}")
-            }
-            sb.append(",")
-            if (!hasUpperBound()) {
-                sb.append(")")
-            }
-            else if (upperEndpoint().toString().let { it.contains(',') || it.isEmpty() }) {
-                return null
-            }
-            else if (upperBoundType() == BoundType.OPEN) {
-                sb.append("${upperEndpoint().prefixVersion()})")
-            }
-            else {
-                sb.append("${upperEndpoint()}]")
-            }
-            return sb.toString()
-        }
-        // No way to represent this VersionRange as a String which we can later parse.
-        return null
-    }
+    fun toIdentifier(): String? = identifier
     override fun toString() = when(val id = toIdentifier()) {
         is String -> id
         else -> "VersionRange(range=$range)"
     }
 
     /** Is true if the range contains exactly one (non-prefixInfimum) version. */
-    val isSingleton get() = isSingletonRange()
+    val isSingleton get() = range.isSingletonRange()
     /** If the range contains exactly one (non-prefixInfimum) version, return it. */
-    val singletonVersion get() = if (isSingletonRange()) lowerEndpoint() else null
+    val singletonVersion get() = if (range.isSingletonRange()) lowerEndpoint() else null
 
     @Suppress("WHEN_ENUM_CAN_BE_NULL_IN_JAVA")
     internal fun withoutUpperBound(): VersionRange = when {
@@ -120,34 +81,12 @@ class VersionRange(private val range: Range<Version>) {
         }
     }
 
-    private fun isPrefixRange() =
-        hasLowerBound() && hasUpperBound() && let {
-            val lower = lowerEndpoint()
-            val upper = upperEndpoint()
-            lowerBoundType() == BoundType.CLOSED && lower.isPrefixInfimum &&
-                    upperBoundType() == BoundType.OPEN && upper.isPrefixInfimum &&
-                    lower.nextPrefix() == upper
-        }
-    private fun isSingletonRange() =
-        hasLowerBound() && hasUpperBound() && let {
-            val lower = lowerEndpoint()
-            val upper = upperEndpoint()
-            lowerBoundType() == BoundType.CLOSED && !lower.isPrefixInfimum &&
-                    upperBoundType() == BoundType.CLOSED && lower == upper
-        }
-    private fun validLowerBoundForMavenRange() =
-        !hasLowerBound() || !lowerEndpoint().isPrefixInfimum
-    private fun validUpperBoundForMavenRange() =
-        !hasUpperBound() ||
-                (upperBoundType() == BoundType.CLOSED && !upperEndpoint().isPrefixInfimum) ||
-                (upperBoundType() == BoundType.OPEN && upperEndpoint().isPrefixInfimum)
-
     companion object {
         /**
          * Matches a String consisting entirely an opening range indicator, followed by zero or
          * more non-commas, a comma, zero or more non-commas, and a closing range indicator.
          */
-        private val MAVEN_STYLE_REGEX = "^[\\[(\\]][^,]*,[^,]*[\\[)\\]]$".toRegex()
+        internal val MAVEN_STYLE_REGEX = "^[\\[(\\]][^,]*,[^,]*[\\[)\\]]$".toRegex()
         /**
          * Parse a string as a [VersionRange].  All strings are valid version ranges: they are
          * one of: the universal range `+`; a Maven-style range; a prefix range; or a range
@@ -157,13 +96,12 @@ class VersionRange(private val range: Range<Version>) {
          */
         @JvmStatic
         fun parse(string: String): VersionRange {
-            val range = when {
-                string == "+" -> Range.all()
-                string.matches(MAVEN_STYLE_REGEX) -> parseMavenRange(string)
-                string.endsWith("+") -> parsePrefixRange(string)
-                else -> parseSingletonRange(string)
+            return when {
+                string == "+" -> VersionRange(Range.all(), string)
+                string.matches(MAVEN_STYLE_REGEX) -> VersionRange(parseMavenRange(string), string)
+                string.endsWith("+") -> VersionRange(parsePrefixRange(string), string)
+                else -> VersionRange(parseSingletonRange(string), string)
             }
-            return VersionRange(range)
         }
         private fun parseMavenRange(string: String): Range<Version> {
             val commaIndex = string.indexOf(',')
@@ -214,4 +152,72 @@ class VersionRange(private val range: Range<Version>) {
             return Range.singleton(Version.parse(string))
         }
     }
+}
+
+private fun Range<Version>.isPrefixRange() =
+    hasLowerBound() && hasUpperBound() && let {
+        val lower = lowerEndpoint()
+        val upper = upperEndpoint()
+        lowerBoundType() == BoundType.CLOSED && lower.isPrefixInfimum &&
+                upperBoundType() == BoundType.OPEN && upper.isPrefixInfimum &&
+                lower.nextPrefix() == upper
+    }
+private fun Range<Version>.isSingletonRange() =
+    hasLowerBound() && hasUpperBound() && let {
+        val lower = lowerEndpoint()
+        val upper = upperEndpoint()
+        lowerBoundType() == BoundType.CLOSED && !lower.isPrefixInfimum &&
+                upperBoundType() == BoundType.CLOSED && lower == upper
+    }
+private fun Range<Version>.validLowerBoundForMavenRange() =
+    !hasLowerBound() || !lowerEndpoint().isPrefixInfimum
+private fun Range<Version>.validUpperBoundForMavenRange() =
+    !hasUpperBound() ||
+            (upperBoundType() == BoundType.CLOSED && !upperEndpoint().isPrefixInfimum) ||
+            (upperBoundType() == BoundType.OPEN && upperEndpoint().isPrefixInfimum)
+
+private fun Range<Version>.computeIdentifier(): String? {
+    if (!hasLowerBound() && !hasUpperBound()) return "+"
+    if (isSingletonRange()) {
+        val id = "${lowerEndpoint()}"
+        return when {
+            id.endsWith('+') -> null
+            MAVEN_STYLE_REGEX.matches(id) -> null
+            else -> id
+        }
+    }
+    if (isPrefixRange()) {
+        return "${lowerEndpoint().prefixVersion()}.+"
+    }
+    if (isEmpty() || (validLowerBoundForMavenRange() && validUpperBoundForMavenRange())) {
+        val sb = StringBuilder()
+        if (!hasLowerBound()) {
+            sb.append("(")
+        }
+        else if (lowerEndpoint().toString().let { it.contains(',') || it.isEmpty() }) {
+            return null
+        }
+        else if (lowerBoundType() == BoundType.OPEN) {
+            sb.append("(${lowerEndpoint()}")
+        }
+        else {
+            sb.append("[${lowerEndpoint()}")
+        }
+        sb.append(",")
+        if (!hasUpperBound()) {
+            sb.append(")")
+        }
+        else if (upperEndpoint().toString().let { it.contains(',') || it.isEmpty() }) {
+            return null
+        }
+        else if (upperBoundType() == BoundType.OPEN) {
+            sb.append("${upperEndpoint().prefixVersion()})")
+        }
+        else {
+            sb.append("${upperEndpoint()}]")
+        }
+        return sb.toString()
+    }
+    // No way to represent this VersionRange as a String which we can later parse.
+    return null
 }

@@ -44,7 +44,7 @@ interface LintModelArtifact {
 interface LintModelJavaArtifact : LintModelArtifact
 
 interface LintModelAndroidArtifact : LintModelArtifact {
-  val applicationId: String
+  val applicationId: String?
   val generatedResourceFolders: Collection<File>
   val generatedSourceFolders: Collection<File>
   // Files listing any D8 backported desugared methods or core library desugared methods.
@@ -64,7 +64,7 @@ class DefaultLintModelJavaArtifact(
 ) : DefaultLintModelArtifact(dependencies, classFolders, type), LintModelJavaArtifact
 
 class DefaultLintModelAndroidArtifact(
-  override val applicationId: String,
+  override val applicationId: String?,
   override val generatedResourceFolders: Collection<File>,
   override val generatedSourceFolders: Collection<File>,
   override val desugaredMethodsFiles: Collection<File>,

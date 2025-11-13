@@ -57,10 +57,8 @@ import com.android.build.gradle.internal.testing.StaticTestData;
 import com.android.build.gradle.internal.testing.TestData;
 import com.android.build.gradle.internal.testing.TestRunner;
 import com.android.build.gradle.internal.testing.androidtest.AndroidTestUtilsKt;
-import com.android.build.gradle.internal.testing.utp.UtpDependencies;
-import com.android.build.gradle.internal.testing.utp.UtpDependencyUtilsKt;
 import com.android.build.gradle.internal.testing.utp.UtpTestRunner;
-import com.android.build.gradle.internal.testing.utp.emulatorcontrol.EmulatorControlConfig;
+import com.android.build.gradle.internal.testing.utp.UtpTestUtilsKt;
 import com.android.build.gradle.options.BooleanOption;
 import com.android.build.gradle.options.IntegerOption;
 import com.android.build.gradle.options.ProjectOptions;
@@ -72,6 +70,8 @@ import com.android.builder.testing.api.DeviceException;
 import com.android.builder.testing.api.DeviceProvider;
 import com.android.ide.common.workers.ExecutorServiceAdapter;
 import com.android.sdklib.BuildToolInfo;
+import com.android.tools.utp.gradle.api.EmulatorControlConfig;
+import com.android.tools.utp.gradle.api.UtpDependencies;
 import com.android.utils.FileUtils;
 import com.android.utils.StringHelper;
 
@@ -810,7 +810,9 @@ public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTas
                     creationConfig.getTaskContainer().getProviderTestTaskList().add(taskProvider);
                 }
             }
-            UtpDependencyUtilsKt.maybeCreateUtpConfigurations(creationConfig);
+            UtpTestUtilsKt.maybeCreateUtpConfigurations(
+                creationConfig.getServices().getConfigurations(),
+                creationConfig.getServices().getDependencies());
         }
 
         @Override
@@ -914,7 +916,7 @@ public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTas
                                         + "useUnifiedTestPlatform=false "
                                         + "from your gradle.properties file.");
             }
-            UtpDependencyUtilsKt.resolveDependencies(
+            UtpTestUtilsKt.resolveDependencies(
                     task.getTestRunnerFactory().getUtpDependencies(),
                     task.getProject().getConfigurations());
 

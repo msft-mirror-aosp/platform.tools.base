@@ -17,10 +17,12 @@
 package com.android.build.gradle.internal.coverage;
 
 import static com.android.build.gradle.internal.coverage.CoverageUtilsKt.generateReport;
+import static com.android.testutils.truth.PathSubject.assertThat;
 
 import static com.google.common.truth.Truth.assertThat;
 
 import com.android.annotations.NonNull;
+import com.android.build.gradle.internal.coverage.report.ReportType;
 import com.android.utils.FileUtils;
 
 import com.google.common.base.Charsets;
@@ -43,6 +45,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.List;
 
 /**
  * Processes the coverage metadata file and makes sure that we display the information correctly.
@@ -116,11 +119,69 @@ public class GenerateCoverageReportTest {
         expect.that(document.text()).doesNotContain("BuildConfig");
         document = navigateTo(getLinkWithText(document, "MainActivity"));
         document = navigateTo(getLinkWithText(document, "doA()"));
+        File reportXml = new File(reportDir, "report.xml");
 
         // Check log statement is marked as covered.
         Elements covered = document.select("span.fc");
         assertThat(covered).isNotEmpty();
         assertThat(covered.get(0).text()).contains("Log.d(\"Test1\", \"Do a\");");
+        assertThat(reportXml.exists()).isTrue();
+    }
+
+    @Test
+    public void checkOnlyXMLReportGenerated() throws IOException, URISyntaxException {
+        // Coverage file generated from BasicTest project.
+        File coverageFile =
+                copyResourceToFolder(
+                        "jacocoReport/com/android/tools/build/tests/myapplication/coverage.ec",
+                        mTemporaryFolder.newFolder());
+        File sourceRoot = setUpSourceDirectory(mTemporaryFolder);
+        File classDir = setUpClassDirectory(mTemporaryFolder);
+        File reportDir = mTemporaryFolder.newFolder();
+
+        generateReport(
+                ImmutableList.of(coverageFile),
+                reportDir,
+                ImmutableList.of(classDir),
+                ImmutableList.of(sourceRoot),
+                4,
+                "debug",
+                Logging.getLogger(this.getClass()),
+                List.of(ReportType.XML));
+
+        File indexHtml = new File(reportDir, "index.html");
+        File reportXml = new File(reportDir, "report.xml");
+
+        assertThat(indexHtml).doesNotExist();
+        assertThat(reportXml).exists();
+    }
+
+    @Test
+    public void checkOnlyHtmlReportGenerated() throws IOException, URISyntaxException {
+        // Coverage file generated from BasicTest project.
+        File coverageFile =
+                copyResourceToFolder(
+                        "jacocoReport/com/android/tools/build/tests/myapplication/coverage.ec",
+                        mTemporaryFolder.newFolder());
+        File sourceRoot = setUpSourceDirectory(mTemporaryFolder);
+        File classDir = setUpClassDirectory(mTemporaryFolder);
+        File reportDir = mTemporaryFolder.newFolder();
+
+        generateReport(
+                ImmutableList.of(coverageFile),
+                reportDir,
+                ImmutableList.of(classDir),
+                ImmutableList.of(sourceRoot),
+                4,
+                "debug",
+                Logging.getLogger(this.getClass()),
+                List.of(ReportType.HTML));
+
+        File indexHtml = new File(reportDir, "index.html");
+        File reportXml = new File(reportDir, "report.xml");
+
+        assertThat(indexHtml).exists();
+        assertThat(reportXml).doesNotExist();
     }
 
     @NonNull

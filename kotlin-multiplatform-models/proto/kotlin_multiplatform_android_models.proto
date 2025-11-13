@@ -160,6 +160,8 @@ message AndroidCompilation {
     optional string assemble_task_name = 6;
     // The kotlin gradle compilation task name.
     optional string kotlin_compile_task_name = 7;
+    // Extra compiled bytecode output folders (for example javac output when java enabled)
+    repeated File extra_classes_folders = 8;
 
     enum CompilationType {
         MAIN = 0;

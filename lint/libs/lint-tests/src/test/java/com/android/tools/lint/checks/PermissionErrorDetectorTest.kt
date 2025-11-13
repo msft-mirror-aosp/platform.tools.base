@@ -125,11 +125,11 @@ class PermissionErrorDetectorTest : AbstractCheckTest() {
                   xmlns:tools="http://schemas.android.com/tools"
                   package="com.example.helloworld">
                   <application android:permission="true">
-                    <activity android:permission="TRUE" />
-                    <activity-alias android:permission="True" />
-                    <receiver android:permission="true" />
-                    <service android:permission="false" />
-                    <provider android:permission="false" />
+                    <activity android:name="name1" android:permission="TRUE" />
+                    <activity-alias android:name="name2" android:permission="True" />
+                    <receiver android:name="name3" android:permission="true" />
+                    <service android:name="name4" android:permission="false" />
+                    <provider android:name="name5" android:permission="false" />
                   </application>
                 </manifest>
                 """
@@ -140,26 +140,26 @@ class PermissionErrorDetectorTest : AbstractCheckTest() {
       .run()
       .expect(
         """
-                AndroidManifest.xml:4: Error: true is not a valid permission value [KnownPermissionError]
-                  <application android:permission="true">
-                                                   ~~~~
-                AndroidManifest.xml:5: Error: TRUE is not a valid permission value [KnownPermissionError]
-                    <activity android:permission="TRUE" />
-                                                  ~~~~
-                AndroidManifest.xml:6: Error: True is not a valid permission value [KnownPermissionError]
-                    <activity-alias android:permission="True" />
-                                                        ~~~~
-                AndroidManifest.xml:7: Error: true is not a valid permission value [KnownPermissionError]
-                    <receiver android:permission="true" />
-                                                  ~~~~
-                AndroidManifest.xml:8: Error: false is not a valid permission value [KnownPermissionError]
-                    <service android:permission="false" />
-                                                 ~~~~~
-                AndroidManifest.xml:9: Error: false is not a valid permission value [KnownPermissionError]
-                    <provider android:permission="false" />
-                                                  ~~~~~
-                6 errors, 0 warnings
-                """
+        AndroidManifest.xml:4: Error: true is not a valid permission value [KnownPermissionError]
+          <application android:permission="true">
+                                           ~~~~
+        AndroidManifest.xml:5: Error: TRUE is not a valid permission value [KnownPermissionError]
+            <activity android:name="name1" android:permission="TRUE" />
+                                                               ~~~~
+        AndroidManifest.xml:6: Error: True is not a valid permission value [KnownPermissionError]
+            <activity-alias android:name="name2" android:permission="True" />
+                                                                     ~~~~
+        AndroidManifest.xml:7: Error: true is not a valid permission value [KnownPermissionError]
+            <receiver android:name="name3" android:permission="true" />
+                                                               ~~~~
+        AndroidManifest.xml:8: Error: false is not a valid permission value [KnownPermissionError]
+            <service android:name="name4" android:permission="false" />
+                                                              ~~~~~
+        AndroidManifest.xml:9: Error: false is not a valid permission value [KnownPermissionError]
+            <provider android:name="name5" android:permission="false" />
+                                                               ~~~~~
+        6 errors
+        """
       )
       .expectFixDiffs("")
   }
@@ -174,7 +174,7 @@ class PermissionErrorDetectorTest : AbstractCheckTest() {
                   xmlns:tools="http://schemas.android.com/tools"
                   package="com.example.helloworld">
                   <application>
-                    <activity android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE" />
+                    <activity android:name="myactivity" android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE" />
                   </application>
                 </manifest>
                 """
@@ -198,7 +198,7 @@ class PermissionErrorDetectorTest : AbstractCheckTest() {
                   <permission android:name="android.permission.BIND_APPWIDGET" />
                   <permission android:name="android.permission.FOOBAR" />
                   <application>
-                    <service android:permission="android.permission.BIND_APPWIDGET" />
+                    <service android:name="myservice" android:permission="android.permission.BIND_APPWIDGET" />
                   </application>
                 </manifest>
                 """
@@ -231,7 +231,7 @@ class PermissionErrorDetectorTest : AbstractCheckTest() {
                   package="com.example.helloworld">
                   <permission android:name="com.example.BIND_APPWIDGET" />
                   <application>
-                    <service android:permission="android.permission.BIND_APPWIDGET" />
+                    <service android:name="myservice" android:permission="android.permission.BIND_APPWIDGET" />
                   </application>
                 </manifest>
                 """
@@ -255,13 +255,13 @@ class PermissionErrorDetectorTest : AbstractCheckTest() {
                   package="com.example.helloworld">
                   <uses-permission android:name="android.permission.BIND_NCF_SERVICE" />
                   <application android:name="App" android:permission="android.permission.BIND_NCF_SERVICE">
-                    <activity />
-                    <activity android:permission="android.permission.BIND_NFC_SERVICE" />
-                    <activity android:permission="android.permission.BIND_NCF_SERVICE" />
-                    <activity-alias android:permission="android.permission.BIND_NCF_SERVICE" />
-                    <receiver android:permission="android.permission.BIND_NCF_SERVICE" />
-                    <service android:permission="android.permission.BIND_NCF_SERVICE" />
-                    <provider android:permission="android.permission.BIND_NCF_SERVICE" />
+                    <activity android:name="name1" />
+                    <activity android:name="name2" android:permission="android.permission.BIND_NFC_SERVICE" />
+                    <activity android:name="name3" android:permission="android.permission.BIND_NCF_SERVICE" />
+                    <activity-alias android:name="name4" android:permission="android.permission.BIND_NCF_SERVICE" />
+                    <receiver android:name="name5" android:permission="android.permission.BIND_NCF_SERVICE" />
+                    <service android:name="name6" android:permission="android.permission.BIND_NCF_SERVICE" />
+                    <provider android:name="name7" android:permission="android.permission.BIND_NCF_SERVICE" />
                     </application>
                   </manifest>
                   """
@@ -272,61 +272,61 @@ class PermissionErrorDetectorTest : AbstractCheckTest() {
       .run()
       .expect(
         """
-                AndroidManifest.xml:5: Warning: Did you mean android.permission.BIND_NFC_SERVICE? [SystemPermissionTypo]
-                  <uses-permission android:name="android.permission.BIND_NCF_SERVICE" />
-                                                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                AndroidManifest.xml:6: Warning: Did you mean android.permission.BIND_NFC_SERVICE? [SystemPermissionTypo]
-                  <application android:name="App" android:permission="android.permission.BIND_NCF_SERVICE">
-                                                                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                AndroidManifest.xml:9: Warning: Did you mean android.permission.BIND_NFC_SERVICE? [SystemPermissionTypo]
-                    <activity android:permission="android.permission.BIND_NCF_SERVICE" />
-                                                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                AndroidManifest.xml:10: Warning: Did you mean android.permission.BIND_NFC_SERVICE? [SystemPermissionTypo]
-                    <activity-alias android:permission="android.permission.BIND_NCF_SERVICE" />
-                                                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                AndroidManifest.xml:11: Warning: Did you mean android.permission.BIND_NFC_SERVICE? [SystemPermissionTypo]
-                    <receiver android:permission="android.permission.BIND_NCF_SERVICE" />
-                                                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                AndroidManifest.xml:12: Warning: Did you mean android.permission.BIND_NFC_SERVICE? [SystemPermissionTypo]
-                    <service android:permission="android.permission.BIND_NCF_SERVICE" />
-                                                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                AndroidManifest.xml:13: Warning: Did you mean android.permission.BIND_NFC_SERVICE? [SystemPermissionTypo]
-                    <provider android:permission="android.permission.BIND_NCF_SERVICE" />
-                                                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                0 errors, 7 warnings
-                """
+        AndroidManifest.xml:5: Warning: Did you mean android.permission.BIND_NFC_SERVICE? [SystemPermissionTypo]
+          <uses-permission android:name="android.permission.BIND_NCF_SERVICE" />
+                                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        AndroidManifest.xml:6: Warning: Did you mean android.permission.BIND_NFC_SERVICE? [SystemPermissionTypo]
+          <application android:name="App" android:permission="android.permission.BIND_NCF_SERVICE">
+                                                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        AndroidManifest.xml:9: Warning: Did you mean android.permission.BIND_NFC_SERVICE? [SystemPermissionTypo]
+            <activity android:name="name3" android:permission="android.permission.BIND_NCF_SERVICE" />
+                                                               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        AndroidManifest.xml:10: Warning: Did you mean android.permission.BIND_NFC_SERVICE? [SystemPermissionTypo]
+            <activity-alias android:name="name4" android:permission="android.permission.BIND_NCF_SERVICE" />
+                                                                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        AndroidManifest.xml:11: Warning: Did you mean android.permission.BIND_NFC_SERVICE? [SystemPermissionTypo]
+            <receiver android:name="name5" android:permission="android.permission.BIND_NCF_SERVICE" />
+                                                               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        AndroidManifest.xml:12: Warning: Did you mean android.permission.BIND_NFC_SERVICE? [SystemPermissionTypo]
+            <service android:name="name6" android:permission="android.permission.BIND_NCF_SERVICE" />
+                                                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        AndroidManifest.xml:13: Warning: Did you mean android.permission.BIND_NFC_SERVICE? [SystemPermissionTypo]
+            <provider android:name="name7" android:permission="android.permission.BIND_NCF_SERVICE" />
+                                                               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        0 errors, 7 warnings
+        """
       )
       .expectFixDiffs(
         """
-                Fix for AndroidManifest.xml line 5: Replace with android.permission.BIND_NFC_SERVICE:
-                @@ -5 +5 @@
-                -  <uses-permission android:name="android.permission.BIND_NCF_SERVICE" />
-                +  <uses-permission android:name="android.permission.BIND_NFC_SERVICE" />
-                Fix for AndroidManifest.xml line 6: Replace with android.permission.BIND_NFC_SERVICE:
-                @@ -6 +6 @@
-                -  <application android:name="App" android:permission="android.permission.BIND_NCF_SERVICE">
-                +  <application android:name="App" android:permission="android.permission.BIND_NFC_SERVICE">
-                Fix for AndroidManifest.xml line 9: Replace with android.permission.BIND_NFC_SERVICE:
-                @@ -9 +9 @@
-                -    <activity android:permission="android.permission.BIND_NCF_SERVICE" />
-                +    <activity android:permission="android.permission.BIND_NFC_SERVICE" />
-                Fix for AndroidManifest.xml line 10: Replace with android.permission.BIND_NFC_SERVICE:
-                @@ -10 +10 @@
-                -    <activity-alias android:permission="android.permission.BIND_NCF_SERVICE" />
-                +    <activity-alias android:permission="android.permission.BIND_NFC_SERVICE" />
-                Fix for AndroidManifest.xml line 11: Replace with android.permission.BIND_NFC_SERVICE:
-                @@ -11 +11 @@
-                -    <receiver android:permission="android.permission.BIND_NCF_SERVICE" />
-                +    <receiver android:permission="android.permission.BIND_NFC_SERVICE" />
-                Fix for AndroidManifest.xml line 12: Replace with android.permission.BIND_NFC_SERVICE:
-                @@ -12 +12 @@
-                -    <service android:permission="android.permission.BIND_NCF_SERVICE" />
-                +    <service android:permission="android.permission.BIND_NFC_SERVICE" />
-                Fix for AndroidManifest.xml line 13: Replace with android.permission.BIND_NFC_SERVICE:
-                @@ -13 +13 @@
-                -    <provider android:permission="android.permission.BIND_NCF_SERVICE" />
-                +    <provider android:permission="android.permission.BIND_NFC_SERVICE" />
-                """
+        Fix for AndroidManifest.xml line 5: Replace with android.permission.BIND_NFC_SERVICE:
+        @@ -5 +5 @@
+        -  <uses-permission android:name="android.permission.BIND_NCF_SERVICE" />
+        +  <uses-permission android:name="android.permission.BIND_NFC_SERVICE" />
+        Fix for AndroidManifest.xml line 6: Replace with android.permission.BIND_NFC_SERVICE:
+        @@ -6 +6 @@
+        -  <application android:name="App" android:permission="android.permission.BIND_NCF_SERVICE">
+        +  <application android:name="App" android:permission="android.permission.BIND_NFC_SERVICE">
+        Fix for AndroidManifest.xml line 9: Replace with android.permission.BIND_NFC_SERVICE:
+        @@ -9 +9 @@
+        -    <activity android:name="name3" android:permission="android.permission.BIND_NCF_SERVICE" />
+        +    <activity android:name="name3" android:permission="android.permission.BIND_NFC_SERVICE" />
+        Fix for AndroidManifest.xml line 10: Replace with android.permission.BIND_NFC_SERVICE:
+        @@ -10 +10 @@
+        -    <activity-alias android:name="name4" android:permission="android.permission.BIND_NCF_SERVICE" />
+        +    <activity-alias android:name="name4" android:permission="android.permission.BIND_NFC_SERVICE" />
+        Fix for AndroidManifest.xml line 11: Replace with android.permission.BIND_NFC_SERVICE:
+        @@ -11 +11 @@
+        -    <receiver android:name="name5" android:permission="android.permission.BIND_NCF_SERVICE" />
+        +    <receiver android:name="name5" android:permission="android.permission.BIND_NFC_SERVICE" />
+        Fix for AndroidManifest.xml line 12: Replace with android.permission.BIND_NFC_SERVICE:
+        @@ -12 +12 @@
+        -    <service android:name="name6" android:permission="android.permission.BIND_NCF_SERVICE" />
+        +    <service android:name="name6" android:permission="android.permission.BIND_NFC_SERVICE" />
+        Fix for AndroidManifest.xml line 13: Replace with android.permission.BIND_NFC_SERVICE:
+        @@ -13 +13 @@
+        -    <provider android:name="name7" android:permission="android.permission.BIND_NCF_SERVICE" />
+        +    <provider android:name="name7" android:permission="android.permission.BIND_NFC_SERVICE" />
+        """
       )
   }
 
@@ -337,12 +337,11 @@ class PermissionErrorDetectorTest : AbstractCheckTest() {
         manifest(
             """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-                  xmlns:tools="http://schemas.android.com/tools"
                   package="com.example.helloworld">
                   <application>
-                    <activity />
-                    <service android:permission="android.Manifest.permission.BIND_NFC_SERVICE" />
-                    <service android:permission="android.permission.WAKE_LOCK" />
+                    <activity android:name="activity1" android:exported="true" />
+                    <service android:name="service1" android:permission="android.Manifest.permission.BIND_NFC_SERVICE" />
+                    <service android:name="service2" android:permission="android.permission.WAKE_LOCK" />
                   </application>
                 </manifest>
                 """
@@ -353,19 +352,19 @@ class PermissionErrorDetectorTest : AbstractCheckTest() {
       .run()
       .expect(
         """
-                AndroidManifest.xml:6: Warning: Did you mean android.permission.BIND_NFC_SERVICE? [SystemPermissionTypo]
-                    <service android:permission="android.Manifest.permission.BIND_NFC_SERVICE" />
-                                                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                0 errors, 1 warnings
-                """
+        AndroidManifest.xml:5: Warning: Did you mean android.permission.BIND_NFC_SERVICE? [SystemPermissionTypo]
+            <service android:name="service1" android:permission="android.Manifest.permission.BIND_NFC_SERVICE" />
+                                                                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        0 errors, 1 warning
+        """
       )
       .expectFixDiffs(
         """
-                Fix for AndroidManifest.xml line 6: Replace with android.permission.BIND_NFC_SERVICE:
-                @@ -6 +6 @@
-                -    <service android:permission="android.Manifest.permission.BIND_NFC_SERVICE" />
-                +    <service android:permission="android.permission.BIND_NFC_SERVICE" />
-                """
+        Fix for AndroidManifest.xml line 5: Replace with android.permission.BIND_NFC_SERVICE:
+        @@ -5 +5 @@
+        -    <service android:name="service1" android:permission="android.Manifest.permission.BIND_NFC_SERVICE" />
+        +    <service android:name="service1" android:permission="android.permission.BIND_NFC_SERVICE" />
+        """
       )
   }
 
@@ -379,8 +378,8 @@ class PermissionErrorDetectorTest : AbstractCheckTest() {
                   xmlns:tools="http://schemas.android.com/tools"
                   package="com.example.helloworld">
                   <application>
-                    <activity />
-                    <service android:permission="android.permission.ACCESS_AMBIENT_LIGHT_STATS" />
+                    <activity android:name="myactivity" />
+                    <service android:name="myservice" android:permission="android.permission.ACCESS_AMBIENT_LIGHT_STATS" />
                   </application>
                 </manifest>
                 """
@@ -508,11 +507,11 @@ class PermissionErrorDetectorTest : AbstractCheckTest() {
                   <permission android:name="my.custom.permission.BAZQUXX" />
                   <permission android:name="my.custom.permission.BAZQUZZ" />
                   <application>
-                    <service android:permission="my.custom.permission.FOOBOB" />
-                    <service android:permission="my.custom.permission.FOOBAB" />
-                    <activity android:permission="my.custom.permission.BAZQXX" />
-                    <activity android:permission="my.custom.permission.BAZQUZZ" />
-                    <activity android:permission="my.custom.permission.WAKE_LOCK" />
+                    <service android:name="service1" android:permission="my.custom.permission.FOOBOB" />
+                    <service android:name="service2" android:permission="my.custom.permission.FOOBAB" />
+                    <activity android:name="activity1" android:permission="my.custom.permission.BAZQXX" />
+                    <activity android:name="activity2" android:permission="my.custom.permission.BAZQUZZ" />
+                    <activity android:name="activity3" android:permission="my.custom.permission.WAKE_LOCK" />
                   </application>
                 </manifest>
                 """
@@ -523,26 +522,26 @@ class PermissionErrorDetectorTest : AbstractCheckTest() {
       .run()
       .expect(
         """
-                AndroidManifest.xml:9: Warning: Did you mean my.custom.permission.FOOBAR? [CustomPermissionTypo]
-                    <service android:permission="my.custom.permission.FOOBOB" />
-                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                AndroidManifest.xml:11: Warning: Did you mean my.custom.permission.BAZQUXX? [CustomPermissionTypo]
-                    <activity android:permission="my.custom.permission.BAZQXX" />
-                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                0 errors, 2 warnings
-                """
+        AndroidManifest.xml:9: Warning: Did you mean my.custom.permission.FOOBAR? [CustomPermissionTypo]
+            <service android:name="service1" android:permission="my.custom.permission.FOOBOB" />
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        AndroidManifest.xml:11: Warning: Did you mean my.custom.permission.BAZQUXX? [CustomPermissionTypo]
+            <activity android:name="activity1" android:permission="my.custom.permission.BAZQXX" />
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        0 errors, 2 warnings
+        """
       )
       .expectFixDiffs(
         """
-                Fix for AndroidManifest.xml line 9: Replace with my.custom.permission.FOOBAR:
-                @@ -9 +9 @@
-                -    <service android:permission="my.custom.permission.FOOBOB" />
-                +    <service android:permission="my.custom.permission.FOOBAR" />
-                Fix for AndroidManifest.xml line 11: Replace with my.custom.permission.BAZQUXX:
-                @@ -11 +11 @@
-                -    <activity android:permission="my.custom.permission.BAZQXX" />
-                +    <activity android:permission="my.custom.permission.BAZQUXX" />
-                """
+        Fix for AndroidManifest.xml line 9: Replace with my.custom.permission.FOOBAR:
+        @@ -9 +9 @@
+        -    <service android:name="service1" android:permission="my.custom.permission.FOOBOB" />
+        +    <service android:name="service1" android:permission="my.custom.permission.FOOBAR" />
+        Fix for AndroidManifest.xml line 11: Replace with my.custom.permission.BAZQUXX:
+        @@ -11 +11 @@
+        -    <activity android:name="activity1" android:permission="my.custom.permission.BAZQXX" />
+        +    <activity android:name="activity1" android:permission="my.custom.permission.BAZQUXX" />
+        """
       )
   }
 
@@ -553,13 +552,12 @@ class PermissionErrorDetectorTest : AbstractCheckTest() {
         manifest(
             """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-                  xmlns:tools="http://schemas.android.com/tools"
                   package="com.example.helloworld">
                   <permission android:name="my.custom.permission.FOOBAR" />
                   <permission android:name="my.custom.permission.BAZQUXX" />
                   <application>
-                    <service android:permission="my.custom.permission.FOOBAR" />
-                    <activity android:permission="my.custom.permission.BAZQUXX" />
+                    <service android:name="myservice" android:permission="my.custom.permission.FOOBAR" />
+                    <activity android:name="myactivity" android:permission="my.custom.permission.BAZQUXX" />
                   </application>
                 </manifest>
                 """
@@ -650,7 +648,7 @@ class PermissionErrorDetectorTest : AbstractCheckTest() {
                   package="com.example.helloworld">
                   <permission android:name="android.permission.BIND_APPWIDGET" />
                   <application>
-                    <service android:permission="android.permission.BINDAPPWIDGET" />
+                    <service android:name="myservice" android:permission="android.permission.BINDAPPWIDGET" />
                   </application>
                 </manifest>
                 """
@@ -662,20 +660,20 @@ class PermissionErrorDetectorTest : AbstractCheckTest() {
       .run()
       .expect(
         """
-                AndroidManifest.xml:6: Warning: Did you mean android.permission.BIND_APPWIDGET? [CustomPermissionTypo]
-                    <service android:permission="android.permission.BINDAPPWIDGET" />
-                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                AndroidManifest.xml:4: Warning: android.permission.BIND_APPWIDGET does not follow recommended naming convention [PermissionNamingConvention]
-                  <permission android:name="android.permission.BIND_APPWIDGET" />
-                                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                AndroidManifest.xml:4: Error: android.permission.BIND_APPWIDGET is a reserved permission [ReservedSystemPermission]
-                  <permission android:name="android.permission.BIND_APPWIDGET" />
-                                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                AndroidManifest.xml:6: Warning: Did you mean android.permission.BIND_APPWIDGET? [SystemPermissionTypo]
-                    <service android:permission="android.permission.BINDAPPWIDGET" />
-                                                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                1 errors, 3 warnings
-                """
+        AndroidManifest.xml:6: Warning: Did you mean android.permission.BIND_APPWIDGET? [CustomPermissionTypo]
+            <service android:name="myservice" android:permission="android.permission.BINDAPPWIDGET" />
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        AndroidManifest.xml:4: Warning: android.permission.BIND_APPWIDGET does not follow recommended naming convention [PermissionNamingConvention]
+          <permission android:name="android.permission.BIND_APPWIDGET" />
+                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        AndroidManifest.xml:4: Error: android.permission.BIND_APPWIDGET is a reserved permission [ReservedSystemPermission]
+          <permission android:name="android.permission.BIND_APPWIDGET" />
+                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        AndroidManifest.xml:6: Warning: Did you mean android.permission.BIND_APPWIDGET? [SystemPermissionTypo]
+            <service android:name="myservice" android:permission="android.permission.BINDAPPWIDGET" />
+                                                                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        1 error, 3 warnings
+        """
       )
   }
 

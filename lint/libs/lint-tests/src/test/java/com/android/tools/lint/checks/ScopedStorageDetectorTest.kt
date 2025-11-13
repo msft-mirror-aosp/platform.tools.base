@@ -37,6 +37,8 @@ class ScopedStorageDetectorTest : AbstractCheckTest() {
           )
           .indented()
       )
+      // Needed for uses-permission tag with no name.
+      .allowManifestMergerErrors(true)
       .run()
       .expect(
         """

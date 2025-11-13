@@ -56,28 +56,20 @@ class DataBindingCachingTest(private val withKotlin: Boolean) {
      */
     private val expectedTaskStates: Map<String, TaskStateList.ExecutionState> = mapOf(
         // Sort by alphabetical order for easier searching
-        ":checkDebugAarMetadata" to DID_WORK, /** Intentionally not cacheable. See [com.android.build.gradle.internal.tasks.CheckAarMetadataTask] */
         ":clean" to UP_TO_DATE,
         ":compileDebugJavaWithJavac" to FROM_CACHE,
-        ":createDebugCompatibleScreenManifests" to DID_WORK, /** Intentionally not cacheable. See [com.android.build.gradle.tasks.CompatibleScreensManifest] */
-        ":compileDebugNavigationResources" to FROM_CACHE,
         ":dataBindingGenBaseClassesDebug" to FROM_CACHE,
         ":dataBindingMergeDependencyArtifactsDebug" to DID_WORK, /** Intentionally not cacheable. See [com.android.build.gradle.internal.tasks.databinding.DataBindingMergeDependencyArtifactsTask] */
         ":dataBindingTriggerDebug" to DID_WORK, /** Intentionally not cacheable. See [com.android.build.gradle.internal.tasks.databinding.DataBindingTriggerTask] */
-        ":extractDeepLinksDebug" to FROM_CACHE,
         ":generateDebugResources" to FROM_CACHE,
+        ":generateDebugRFile" to FROM_CACHE,
         ":javaPreCompileDebug" to FROM_CACHE,
-        ":mapDebugSourceSetPaths" to DID_WORK, /* Intentionally not cacheable. */
         ":mergeDebugResources" to FROM_CACHE,
         ":packageDebugResources" to FROM_CACHE,
         ":parseDebugLocalResources" to FROM_CACHE,
         ":preBuild" to UP_TO_DATE,
         ":preDebugBuild" to UP_TO_DATE,
-        ":processDebugMainManifest" to FROM_CACHE,
-        ":processDebugManifest" to FROM_CACHE,
-        ":processDebugManifestForPackage" to FROM_CACHE,
         ":processDebugNavigationResources" to FROM_CACHE,
-        ":processDebugResources" to FROM_CACHE
     ).plus(
         if (withKotlin) {
             mapOf(

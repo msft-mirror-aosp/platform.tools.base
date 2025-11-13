@@ -73,14 +73,16 @@ public class UnitTestingModelTest {
                     (variant.getName().equals("release"))
                             ? "processReleaseResources"
                             : "processDebugResources";
+            String generateRFile =
+                    (variant.getName().equals("release"))
+                            ? "generateReleaseRFile"
+                            : "generateDebugRFile";
             expectedClassesFolders.add(
                     new File(
                             ArtifactTypeUtil.getOutputDir(
-                                    InternalArtifactType
-                                            .COMPILE_AND_RUNTIME_R_CLASS_JAR
-                                            .INSTANCE,
+                                    InternalArtifactType.COMPILE_R_CLASS_JAR.INSTANCE,
                                     project.getSubproject("app").getBuildDir()),
-                            variant.getName() + "/" + processResourcesTask + "/" + FN_R_CLASS_JAR));
+                            variant.getName() + "/" + generateRFile + "/" + FN_R_CLASS_JAR));
             expectedClassesFolders.add(project.file("app/build/tmp/kotlin-classes/"
                     + variant.getName()));
             if (variant.getName().equals("release")) {

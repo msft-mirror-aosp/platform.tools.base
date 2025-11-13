@@ -22,7 +22,6 @@ import com.android.build.gradle.integration.common.fixture.LoggingLevel
 import com.android.build.gradle.integration.common.fixture.project.GradleBuild
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
-import com.android.build.gradle.integration.common.utils.disableBuiltInKotlin
 import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.truth.PathSubject.assertThat
 import com.android.utils.usLocaleCapitalize
@@ -198,8 +197,9 @@ class WearTileScreenshotTest {
 
             gradleProperties {
                 add(BooleanOption.ENABLE_SCREENSHOT_TEST, true)
+                add(BooleanOption.BUILT_IN_KOTLIN, false)
+                add(BooleanOption.USE_NEW_DSL, false)
             }
-            disableBuiltInKotlin()
         }
 
     // custom executor configuration for screenshotTesting (sst)

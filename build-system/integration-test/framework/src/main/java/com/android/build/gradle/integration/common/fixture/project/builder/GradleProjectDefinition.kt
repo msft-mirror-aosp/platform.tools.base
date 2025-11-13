@@ -114,6 +114,13 @@ interface GradleProjectDefinition: ExtensionAwareDefinition {
     fun buildscript(action: BuildscriptBuilder.() -> Unit)
 
     /**
+     * Configures the repositories section for a subproject.
+     *
+     * This is normally not needed, but can be useful in some niche scenarios
+     */
+    fun repositories(action: RepositoriesBuilder.() -> Unit)
+
+    /**
      * returns a [File] that encodes the call to `project.file()`.
      *
      * This can be used to provide File instance into the DSL.
@@ -138,6 +145,24 @@ interface BuildscriptBuilder {
      * Creates a [LocalJarBuilder] to be passed to [classpath] or any other scope
      */
     fun localJar(name: String, action: JarBuilder.() -> Unit) : LocalJarDependency
+}
+
+@GradleDefinitionDsl
+interface RepositoriesBuilder {
+    /**
+     * Whether to include the default repositories setup by the fixture.
+     * This should generally be true.
+     * Default is true.
+     */
+    var includeDefault: Boolean
+    fun flatDir(action: FlatDirBuilder.() -> Unit)
+}
+
+@GradleDefinitionDsl
+interface FlatDirBuilder {
+    // the normal API uses Object but let's use Strings here to make it simpler
+    // as the tests will use a strings anyway.
+    val dirs: MutableList<String>
 }
 
 internal data class AppliedPlugin(
@@ -165,6 +190,7 @@ internal abstract class GradleProjectDefinitionImpl(
     private val pluginExtensions = mutableMapOf<PluginType, PluginExtensionData>()
 
     private val buildscriptBuilder = BuildscriptBuilderImpl()
+    internal val repositoriesBuilder = RepositoriesBuilderImpl()
 
     override val files: GradleProjectFiles = DelayedGradleProjectFiles()
 
@@ -236,6 +262,11 @@ internal abstract class GradleProjectDefinitionImpl(
 
     override fun buildscript(action: BuildscriptBuilder.() -> Unit) {
         action(buildscriptBuilder)
+    }
+
+    override fun repositories(action: RepositoriesBuilder.() -> Unit) {
+        action(repositoriesBuilder)
+        repositoriesBuilder.isUsed = true
     }
 
     override fun projectDotFile(relativePath: String): File {
@@ -403,6 +434,28 @@ internal abstract class GradleProjectDefinitionImpl(
 
             emptyLine()
 
+            if (repositoriesBuilder.isUsed) {
+                block("repositories") {
+                    for (repo in projectRepositories) {
+                        mavenSnippet(repo)
+                    }
+                    block("flatDir") {
+                        when (repositoriesBuilder.flatDirBuilder.dirs.size) {
+                            0 ->  {
+                                // do nothing
+                            }
+                            1 -> {
+                                method("dirs", repositoriesBuilder.flatDirBuilder.dirs[0])
+                            }
+                            else -> { // 2+
+                                method("dirs", repositoriesBuilder.flatDirBuilder.dirs, isVarArg = true)
+                            }
+                        }
+                    }
+                }
+                emptyLine()
+            }
+
             val pluginsToApply = customPluginMap[path]
             pluginsToApply?.let {
                 // If there is a plugin class, apply them
@@ -485,6 +538,23 @@ private class BuildscriptBuilderImpl: BuildscriptBuilder {
 
         return LocalJarDependencyImpl(name, builder.getContent())
     }
+}
+
+internal class RepositoriesBuilderImpl: RepositoriesBuilder {
+
+    override var includeDefault: Boolean = true
+    var isUsed = false
+
+    internal lateinit var flatDirBuilder: FlatDirBuilderImpl
+
+    override fun flatDir(action: FlatDirBuilder.() -> Unit) {
+        flatDirBuilder = FlatDirBuilderImpl()
+        action(flatDirBuilder)
+    }
+}
+
+internal class FlatDirBuilderImpl: FlatDirBuilder {
+    override val dirs: MutableList<String> = mutableListOf()
 }
 
 /**

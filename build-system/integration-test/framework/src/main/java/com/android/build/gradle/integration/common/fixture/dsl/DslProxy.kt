@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.integration.common.fixture.dsl
 
+import com.android.build.api.dsl.ApkSigningConfig
 import com.android.build.api.dsl.ApplicationProductFlavor
 import com.android.build.api.dsl.BuildType
 import com.android.build.api.dsl.CommonExtension
@@ -195,6 +196,15 @@ class DslProxy private constructor(
             MinSdkVersion::class.java,
             MaxSdkVersion::class.java -> {
                 // TODO: verify they are assigned to the right thing too.
+                dslRecorder.set(propName, value)
+            }
+
+            // Special handling for container items. This only works if the item is a proxy items.
+            ApkSigningConfig::class.java -> {
+                // make sure this is a proxy object.
+                if (value != null && !Proxy.isProxyClass(value.javaClass)) {
+                    throw IllegalArgumentException("Using a non-proxy instance of ApkSigningConfig in setter is not supported.")
+                }
                 dslRecorder.set(propName, value)
             }
 
@@ -383,7 +393,8 @@ class DslProxy private constructor(
             KotlinCommonCompilerOptions::class.java -> method.getChainedProxyForReturn(propName)
             NamedDomainObjectContainer::class.java -> NamedDomainObjectContainerProxy(
                 extractResolvedTypeParamFromReturn(method),
-                dslRecorder.createChainedRecorder(propName)
+                dslRecorder.createChainedRecorder(propName),
+                propName // this assumes that the containers are available everywhere (ie in the android block)
             )
             ExtensiblePolymorphicDomainObjectContainer::class.java -> ExtensiblePolymorphicDomainObjectContainerProxy(
                 extractResolvedTypeParamFromReturn(method),
@@ -470,8 +481,8 @@ class DslProxy private constructor(
     }
 
     private fun checkNestedBlock(method: Method, args: Array<out Any?>): Boolean {
-        if (args.size != 1) return false
-        val type = method.parameters[0]
+        // check the last parameters to see if it's a lambda
+        val type = method.parameters.last()
 
         if (type.type != Function1::class.java) {
             return false
@@ -517,6 +528,8 @@ class DslProxy private constructor(
                     val resolvedType = getTypeParameterByIndex(ownerClass.typeName, index)
 
                     ownerClass.classLoader.loadClass(resolvedType.typeName)
+                } else if (containerTypeParam is WildcardType) {
+                    method.declaringClass.classLoader.loadClass(containerTypeParam.upperBounds.first().typeName)
                 } else {
                     method.declaringClass.classLoader.loadClass(containerTypeParam.typeName)
                 }
@@ -531,7 +544,7 @@ class DslProxy private constructor(
         // Container blocks are handled on a case by case basis as the main action creates
         // objects based on the type parameter on the container.
         // Because of this we need custom support for each new container
-        if (blockTypeValue.typeName.startsWith("org.gradle.api.NamedDomainObjectContainer<")) {
+        if (args.size == 1 && blockTypeValue.typeName.startsWith("org.gradle.api.NamedDomainObjectContainer<")) {
             when (blockTypeClass.name) {
                 "com.android.build.api.dsl.ApplicationBuildType",
                 "com.android.build.api.dsl.LibraryBuildType",
@@ -552,6 +565,16 @@ class DslProxy private constructor(
                 "com.android.build.api.dsl.TestProductFlavor" -> {
                     @Suppress("UNCHECKED_CAST")
                     dslRecorder.productFlavors(blockTypeClass as Class<ProductFlavor>) {
+                        // calls into the function configuring the container.
+                        // `this` here is the nested block (container)
+                        @Suppress("UNCHECKED_CAST")
+                        (args[0] as Function1<Any, *>).invoke(this)
+                    }
+                }
+
+                "com.android.build.api.dsl.ApkSigningConfig" -> {
+                    @Suppress("UNCHECKED_CAST")
+                    dslRecorder.signingConfigs(blockTypeClass as Class<ApkSigningConfig>) {
                         // calls into the function configuring the container.
                         // `this` here is the nested block (container)
                         @Suppress("UNCHECKED_CAST")
@@ -588,13 +611,13 @@ class DslProxy private constructor(
             // Normal nested block. the provided type is the direct nested block type.
             dslRecorder.runNestedBlock(
                 name = method.name,
-                parameters = listOf(),
+                parameters = args.dropLast(1), // we don't include the lambda itself
                 instanceProvider = { createProxy(blockTypeClass, it) }
             ) {
                 // calls into the function configuring the nested block
                 // `this` here is the nested block
                 @Suppress("UNCHECKED_CAST")
-                (args[0] as Function1<Any,*>).invoke(this)
+                (args.last() as Function1<Any,*>).invoke(this)
             }
         }
 
@@ -674,6 +697,20 @@ class DslProxy private constructor(
         )
     }
 
+    private fun <T : ApkSigningConfig> DslRecorder.signingConfigs(
+        theInterface: Class<T>,
+        action: NamedDomainObjectContainerProxy<T>.() -> Unit
+    ) {
+        runNestedBlock(
+            name = "signingConfigs",
+            parameters = listOf(),
+            instanceProvider = {
+                NamedDomainObjectContainerProxy(theInterface, it)
+            },
+            action = action,
+        )
+    }
+
     private fun DslRecorder.executionProfiles(
         theInterface: Class<ExecutionProfile>,
         action: NamedDomainObjectContainerProxy<ExecutionProfile>.() -> Unit
@@ -735,8 +772,8 @@ private data class CompileSdkVersionImpl(
     override val addonName: String? = null,
     override val vendorName: String? = null,
 ): CompileSdkVersion, CustomObjectInstance {
-    override fun toString(handler: StringHandler): String = if (vendorName != null) {
-        """addon(${handler.quoteString(vendorName)}, "$addonName", $apiLevel)"""
+    override fun toString(handler: StringHandler): String = if (vendorName != null && addonName != null) {
+        """addon(${handler.quoteString(vendorName)}, ${handler.quoteString(addonName)}, $apiLevel)"""
     } else if (apiLevel != null) {
         if (minorApiLevel != null || sdkExtension != null) {
             buildString {

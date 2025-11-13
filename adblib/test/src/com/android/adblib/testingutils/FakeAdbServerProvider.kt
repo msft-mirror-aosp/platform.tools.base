@@ -21,25 +21,20 @@ import com.android.adblib.AdbSessionHost
 import com.android.adblib.impl.channels.AdbSocketChannelImpl
 import com.android.fakeadbserver.DeviceState
 import com.android.fakeadbserver.DeviceState.HostConnectionType
+import com.android.fakeadbserver.FAKE_ADB_SERVER_EXECUTOR_TIMEOUT_MS
 import com.android.fakeadbserver.FakeAdbServer
+import com.android.fakeadbserver.FakeDeviceCreator
 import com.android.fakeadbserver.MdnsService
 import com.android.fakeadbserver.devicecommandhandlers.DeviceCommandHandler
 import com.android.fakeadbserver.hostcommandhandlers.HostCommandHandler
 import com.android.fakeadbserver.hostcommandhandlers.ListDevicesCommandHandler.Companion.DEFAULT_SPEED
 import com.android.sdklib.AndroidApiLevel
-import kotlinx.coroutines.runInterruptible
 import java.net.InetAddress
 import java.net.InetSocketAddress
 import java.util.concurrent.TimeUnit
+import kotlinx.coroutines.runInterruptible
 
-/**
- * Timeout for fake adb server APIs that go through the server's internal
- * sequential executor. In most cases, API calls take only a few milliseconds,
- * but the time can dramatically increase under stress testing.
- */
-val FAKE_ADB_SERVER_EXECUTOR_TIMEOUT_MS = TimeUnit.MINUTES.toMillis(2)
-
-class FakeAdbServerProvider: AutoCloseable {
+class FakeAdbServerProvider : FakeDeviceCreator, AutoCloseable {
 
     val inetAddress: InetAddress
         get() = server?.inetAddress ?: throw IllegalStateException("Server not started")
@@ -111,15 +106,15 @@ class FakeAdbServerProvider: AutoCloseable {
         return this
     }
 
-    fun connectDevice(
+    override fun connectDevice(
         deviceId: String,
         manufacturer: String,
         deviceModel: String,
         release: String,
         sdk: AndroidApiLevel,
         hostConnectionType: HostConnectionType,
-        maxSpeedMbps: Long = DEFAULT_SPEED,
-        negotiatedSpeedMbps: Long = DEFAULT_SPEED,
+        maxSpeedMbps: Long,
+        negotiatedSpeedMbps: Long,
     ): DeviceState {
         return server?.connectDevice(
             deviceId,
@@ -194,8 +189,8 @@ class FakeAdbServerProvider: AutoCloseable {
         server?.awaitServerTermination()
     }
 
-    fun disconnectDevice(deviceSerial: String) {
-        server?.disconnectDevice(deviceSerial)
+    override fun disconnectDevice(deviceId: String) {
+        server?.disconnectDevice(deviceId)
     }
 
     class TestingChannelProvider(host: AdbSessionHost, portSupplier: suspend () -> Int) :

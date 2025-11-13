@@ -17,10 +17,9 @@
 package com.android.build.gradle.integration.api
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import  com.android.build.gradle.integration.common.fixture.app.KotlinHelloWorldApp
+import com.android.build.gradle.integration.common.fixture.app.KotlinHelloWorldApp
 import com.android.build.gradle.integration.common.truth.TruthHelper
 import com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
-import com.android.build.gradle.integration.common.utils.disableBuiltInKotlin
 import com.android.builder.model.v2.ide.BytecodeTransformation
 import com.google.common.truth.Truth
 import org.junit.Rule

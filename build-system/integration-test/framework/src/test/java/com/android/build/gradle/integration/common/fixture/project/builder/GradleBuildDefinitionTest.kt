@@ -283,7 +283,11 @@ class GradleBuildDefinitionTest {
     }
 
     private fun writeBuild(repositories: List<Path> = listOf(), action: GradleBuildDefinition.() -> Unit): Path {
-        val build = GradleBuildDefinitionImpl("root", "root").also {
+        val build = GradleBuildDefinitionImpl(
+            "root",
+            "root",
+            enableDefaultContentCreation = true
+        ).also {
             action(it)
         }
 
@@ -295,7 +299,9 @@ class GradleBuildDefinitionTest {
                 additionalProperties = listOf(),
                 repositories = repositories,
                 customPluginMap = mapOf()
-            )
+            ),
+            disableUnnecessaryBuiltInKotlinOptOutChecks = false,
+            disableUnnecessaryNewDslOptOutChecks = false,
         )
 
         return folder

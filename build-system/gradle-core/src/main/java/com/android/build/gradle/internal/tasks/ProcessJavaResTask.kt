@@ -16,11 +16,7 @@
 package com.android.build.gradle.internal.tasks
 
 import com.android.SdkConstants.DOT_JAR
-import com.android.build.api.artifact.ScopedArtifact
-import com.android.build.api.variant.ScopedArtifacts
-import com.android.build.gradle.internal.component.ApkCreationConfig
-import com.android.build.gradle.internal.component.ComponentCreationConfig
-import com.android.build.gradle.internal.component.KmpCreationConfig
+import com.android.build.gradle.internal.tasks.creationconfig.ProcessJavaResCreationConfig
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.tasks.factory.VariantTaskCreationAction
 import com.android.buildanalyzer.common.TaskCategory
@@ -53,53 +49,11 @@ abstract class ProcessJavaResTask @Inject constructor(
     override lateinit var variantName: String
 
     /**
-     * Configuration Action for kotlin multiplatform processAndroidMainJavaRes task.
-     */
-    class KotlinMultiplatformCreationAction(
-        creationConfig: KmpCreationConfig
-    ) : VariantTaskCreationAction<ProcessJavaResTask, KmpCreationConfig>(
-        creationConfig
-    ) {
-        override val name: String
-            get() = computeTaskName("process", "JavaRes")
-
-        override val type: Class<ProcessJavaResTask>
-            get() = ProcessJavaResTask::class.java
-
-        override fun handleProvider(
-            taskProvider: TaskProvider<ProcessJavaResTask>
-        ) {
-            super.handleProvider(taskProvider)
-            creationConfig.taskContainer.processJavaResourcesTask = taskProvider
-
-            creationConfig.artifacts.setInitialProvider(
-                taskProvider,
-                ProcessJavaResTask::outDirectory
-            ).withName("out").on(InternalArtifactType.JAVA_RES)
-        }
-
-        override fun configure(
-            task: ProcessJavaResTask
-        ) {
-            super.configure(task)
-
-            val projectClasses = creationConfig
-                    .artifacts
-                    .forScope(ScopedArtifacts.Scope.PROJECT)
-                    .getFinalArtifacts(ScopedArtifact.CLASSES)
-
-            task.from(getProjectJavaRes(creationConfig, task, listOf(projectClasses)))
-            task.duplicatesStrategy = DuplicatesStrategy.INCLUDE
-            task.into(task.outDirectory)
-        }
-    }
-
-    /**
      * Configuration Action for process*JavaRes tasks.
      */
     class CreationAction(
-        creationConfig: ComponentCreationConfig
-    ) : VariantTaskCreationAction<ProcessJavaResTask, ComponentCreationConfig>(
+        creationConfig: ProcessJavaResCreationConfig
+    ) : VariantTaskCreationAction<ProcessJavaResTask, ProcessJavaResCreationConfig>(
         creationConfig
     ) {
 
@@ -113,7 +67,7 @@ abstract class ProcessJavaResTask @Inject constructor(
             taskProvider: TaskProvider<ProcessJavaResTask>
         ) {
             super.handleProvider(taskProvider)
-            creationConfig.taskContainer.processJavaResourcesTask = taskProvider
+            creationConfig.setJavaResTask(taskProvider)
 
             creationConfig.artifacts.setInitialProvider(
                 taskProvider,
@@ -125,15 +79,7 @@ abstract class ProcessJavaResTask @Inject constructor(
             task: ProcessJavaResTask
         ) {
             super.configure(task)
-
-            task.from(
-                getProjectJavaRes(
-                    creationConfig, task, listOfNotNull(
-                        creationConfig.oldVariantApiLegacySupport?.variantData?.allPreJavacGeneratedBytecode,
-                        creationConfig.oldVariantApiLegacySupport?.variantData?.allPostJavacGeneratedBytecode
-                    )
-                )
-            )
+            task.from(getProjectJavaRes(creationConfig, task))
             task.duplicatesStrategy = DuplicatesStrategy.INCLUDE
             task.into(task.outDirectory)
         }
@@ -141,14 +87,11 @@ abstract class ProcessJavaResTask @Inject constructor(
 }
 
 private fun getProjectJavaRes(
-    creationConfig: ComponentCreationConfig,
+    creationConfig: ProcessJavaResCreationConfig,
     task: ProcessJavaResTask,
-    classes: List<FileCollection>
 ): FileCollection {
     val javaRes = creationConfig.services.fileCollection()
-    creationConfig.sources.resources {
-        javaRes.from(it.getAsFileTrees())
-    }
+    javaRes.from(creationConfig.sources?.getAsFileTrees())
     // use lazy file collection here in case an annotationProcessor dependency is add via
     // Configuration.defaultDependencies(), for example.
     javaRes.from(
@@ -161,7 +104,7 @@ private fun getProjectJavaRes(
         }
     )
 
-    classes.forEach {
+    creationConfig.extraClasses.forEach {
         javaRes.from(it.filter { file -> !file.name.endsWith(DOT_JAR) })
 
         javaRes.from(it.filter { file -> file.name.endsWith(DOT_JAR) }.elements.map { jars ->
@@ -176,7 +119,7 @@ private fun getProjectJavaRes(
         javaRes.from(creationConfig.artifacts.get(InternalArtifactType.BUILT_IN_KOTLINC))
     }
 
-    if ((creationConfig as? ApkCreationConfig)?.packageJacocoRuntime == true) {
+    if (creationConfig.packageJacocoRuntime) {
         javaRes.from(creationConfig.artifacts.get(InternalArtifactType.JACOCO_CONFIG_RESOURCES))
     }
     return javaRes.asFileTree.matching(MergeJavaResourceTask.patternSet)

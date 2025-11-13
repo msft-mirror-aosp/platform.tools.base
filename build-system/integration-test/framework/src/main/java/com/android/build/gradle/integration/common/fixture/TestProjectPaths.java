@@ -18,7 +18,9 @@ package com.android.build.gradle.integration.common.fixture;
 
 import com.android.annotations.NonNull;
 import com.android.testutils.TestUtils;
+
 import java.io.File;
+import java.nio.file.Path;
 
 public class TestProjectPaths {
 
@@ -28,6 +30,10 @@ public class TestProjectPaths {
 
     public static File getTestProjectDir(@NonNull String name) {
         return TestUtils.resolveWorkspacePath(TEST_PROJECT_PATH + "/" + name).toFile();
+    }
+
+    public static Path getTestProjectPath(@NonNull String name) {
+        return TestUtils.resolveWorkspacePath(TEST_PROJECT_PATH + "/" + name);
     }
 
     public static File getTestProjectDir() {

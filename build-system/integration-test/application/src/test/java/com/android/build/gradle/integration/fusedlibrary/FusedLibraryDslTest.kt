@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.integration.fusedlibrary
 
+import com.android.build.gradle.integration.common.fixture.project.AarSelector
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
 import com.android.build.gradle.integration.fusedlibrary.FusedLibraryTestConstants.FUSED_LIBRARY_ARTIFACT_NAME
@@ -29,7 +30,7 @@ import org.junit.Test
 class FusedLibraryDslTest {
 
     @get:Rule
-    val rule = GradleRule.configure().from {
+    val rule = GradleRule.from {
         fusedLibrary(":$FUSED_LIB_PROJECT_NAME") {
             androidFusedLibrary {
                 namespace = null
@@ -180,6 +181,44 @@ class FusedLibraryDslTest {
         build.executor.run("publishReleasePublicationToMyrepoRepository")
         build.executor.expectFailure().run(":app:processReleaseMainManifest")
             .assertErrorContains("uses-sdk:minSdkVersion 29 cannot be smaller than version 31 declared in library")
+    }
+
+    @Test
+    fun checkPackagingDsl() {
+        val build = rule.build {
+            fusedLibrary(":$FUSED_LIB_PROJECT_NAME") {
+                androidFusedLibrary {
+                    namespace = "com.example.myfusedlib"
+                    minSdk {
+                        version = release(34)
+                    }
+                    packaging {
+                        resources {
+                            excludes += "**/LICENSE.txt"
+                        }
+                    }
+                }
+                dependencies {
+                    include(project(":lib"))
+                }
+            }
+            androidLibrary {
+                android {
+                    namespace = "com.example.lib"
+                }
+                files {
+                    add("src/main/resources/LICENSE.txt", "This is a license file.")
+                }
+            }
+        }
+        build.executor.run(":$FUSED_LIB_PROJECT_NAME:assemble")
+
+        build.fusedLibrary(":$FUSED_LIB_PROJECT_NAME")
+            .assertAar(AarSelector.NO_BUILD_TYPE) {
+                javaResources {
+                    isEmpty()
+                }
+            }
     }
 
     companion object {

@@ -64,6 +64,7 @@ import com.android.tools.lint.checks.fx.utils.unionedWith
 import com.android.tools.lint.client.api.LintClient
 import com.android.tools.lint.detector.api.UastLintUtils.Companion.tryResolveUDeclaration
 import com.android.tools.lint.detector.api.asCall
+import com.android.tools.lint.detector.api.isImmutable
 import com.android.tools.lint.detector.api.nameFromSource
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiClassType
@@ -723,11 +724,21 @@ internal open class Analysis<FX : Any>(
               when (dec) {
                 is ULocalVariable -> {
                   val decPsi = dec.javaPsi as PsiLocalVariable
+                  val rhs = dec.uastInitializer?.let(::loop)
+                  val rhsType =
+                    // For immutable local bindings, we bypass even the user-declared type to use
+                    // the inferred more precise type.
+                    when {
+                      rhs != null &&
+                        rhs.value is Type.Lambda /* TODO generalize */ &&
+                        dec.isImmutable() -> rhs.value
+                      else -> translate(decPsi.type)
+                    }
                   // We update the local environment imperatively instead of accumulating it
-                  // functionally,
-                  // because later declarations need to see updates by earlier declarations.
-                  env = env.withVar(decPsi.name, translate(decPsi.type))
-                  loop(dec.uastInitializer ?: return@step emptyResult)
+                  // functionally, because later declarations need to see updates by earlier
+                  // declarations.
+                  env = env.withVar(decPsi.name, rhsType)
+                  rhs ?: emptyResult
                 }
                 is UVariable -> unitResult // already added to environment during indexing
                 else -> {
@@ -1077,7 +1088,8 @@ internal open class Analysis<FX : Any>(
         val (t, fx) = body
         // If the functional interface is something like `suspend () -> _`, `args` may have the
         // explicit one for the kontinuation
-        val truncatedArgs = (listOf(method) + args).subList(0, xs.size)
+        // The first argument is the `lambda` itself, which we don't need
+        val truncatedArgs = args.subList(1, 1 + xs.size)
         apply(rec, persistentMapOf(), xs, t, fx, truncatedArgs)
       }
     }
@@ -1216,7 +1228,11 @@ internal open class Analysis<FX : Any>(
             val (t, fx) = receiver.substAndInvoke(base)
             Result(copy(receiver = t), fx)
           }
-          is Type.Sym.Fix -> throw IllegalStateException("Nested inductive set not expected")
+          is Type.Sym.Fix ->
+            with(instantiationLattice) {
+              baseCases.joinedOver { it.substAndInvoke(base) } join
+                inductiveCases.joinedOver { it.substAndInvoke(base) }
+            }
         }
 
       val (baseCases, indCases) = fixed

@@ -16,9 +16,15 @@
 
 package com.android.build.gradle.integration.common.fixture.project.options
 
+import com.android.build.gradle.integration.common.fixture.project.GradleRuleImpl
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleDefinitionDsl
 import com.android.build.gradle.options.BooleanOption
+import com.android.build.gradle.options.BooleanOption.DEFAULT_TARGET_SDK_TO_COMPILE_SDK_IF_UNSET
+import com.android.build.gradle.options.BooleanOption.ENABLE_APP_COMPILE_TIME_R_CLASS
+import com.android.build.gradle.options.BooleanOption.ENABLE_LEGACY_VARIANT_API
+import com.android.build.gradle.options.BooleanOption.USE_NEW_DSL
 import com.android.build.gradle.options.StringOption
+import com.android.build.gradle.options.StringOption.SUPPRESS_UNSUPPORTED_OPTION_WARNINGS
 
 /**
  * Object to add Gradle Properties to a test project (via [GradleRule]
@@ -64,8 +70,8 @@ interface GradlePropertiesBuilder {
 
 internal class GradlePropertiesDelegate : GradlePropertiesBuilder {
 
-    private val mutableProperties = mutableMapOf<String, String>()
-    private val mutableBooleans = mutableMapOf<BooleanOption, Boolean>()
+    internal val mutableProperties = mutableMapOf<String, String>()
+    internal val mutableBooleans = mutableMapOf<BooleanOption, Boolean>()
     private val mutableStrings = mutableMapOf<StringOption, String>()
 
     override fun add(key: String, value: String) {

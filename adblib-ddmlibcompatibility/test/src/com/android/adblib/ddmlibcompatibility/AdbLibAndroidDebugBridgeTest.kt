@@ -165,7 +165,7 @@ class AdbLibAndroidDebugBridgeTest {
     fun getRawDeviceList_canParseProcessBuilderOutput() {
         val session = FakeAdbSession()
         val adbServerController = FakeAdbServerController(startDelayMs = 200)
-        config.update { it -> it.copy(adbPath = Paths.get("dir1", "adb")) }
+        config.update { it.copy(adbPath = Paths.get("dir1", "adb")) }
         val bridge =
             AdbLibAndroidDebugBridge(
                 session,
@@ -194,7 +194,7 @@ class AdbLibAndroidDebugBridgeTest {
     fun getRawDeviceList_transparentToExceptions() {
         val session = FakeAdbSession()
         val adbServerController = FakeAdbServerController(startDelayMs = 200)
-        config.update { it -> it.copy(adbPath = Paths.get("dir1", "adb")) }
+        config.update { it.copy(adbPath = Paths.get("dir1", "adb")) }
         val bridge =
             AdbLibAndroidDebugBridge(
                 session,
@@ -238,7 +238,7 @@ class AdbLibAndroidDebugBridgeTest {
             )
 
         // Act
-        val result = bridge.getAdbVersion(Paths.get("dir1", "adb"))
+        val result = bridge.getAdbVersionForTesting(Paths.get("dir1", "adb"))
 
         // Assert
         val adbVersion = result.get()
@@ -261,7 +261,7 @@ class AdbLibAndroidDebugBridgeTest {
             )
 
         // Act
-        val result = bridge.getAdbVersion(Paths.get("dir1", "adb"))
+        val result = bridge.getAdbVersionForTesting(Paths.get("dir1", "adb"))
 
         // Assert
         try {
@@ -291,7 +291,7 @@ class AdbLibAndroidDebugBridgeTest {
         session.host.processRunner.throwOnNextCommand = exception
 
         // Act
-        val result = bridge.getAdbVersion(Paths.get("dir1", "adb"))
+        val result = bridge.getAdbVersionForTesting(Paths.get("dir1", "adb"))
 
         // Assert
         try {
@@ -598,7 +598,7 @@ class AdbLibAndroidDebugBridgeTest {
 
                 // Matches the implementation of `AdbServerControllerImpl` where we wait for
                 // the controller to start up before attempting to create a channel.
-                yieldUntil { isStarted == true }
+                yieldUntil { isStarted }
 
                 return object : AdbChannel {
                     override suspend fun shutdownInput() {

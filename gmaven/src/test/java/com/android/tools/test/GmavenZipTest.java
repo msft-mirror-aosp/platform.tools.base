@@ -19,10 +19,22 @@ package com.android.tools.test;
 
 import com.android.testutils.TestUtils;
 import com.android.utils.FileUtils;
+
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.io.Resources;
 import com.google.common.truth.Expect;
+
+import org.junit.Rule;
+import org.junit.Test;
+import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.Opcodes;
+import org.w3c.dom.Document;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.xml.sax.SAXException;
+
 import java.io.BufferedInputStream;
 import java.io.FilterInputStream;
 import java.io.IOException;
@@ -41,6 +53,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
+
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -48,12 +61,6 @@ import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpression;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
-import org.junit.Rule;
-import org.junit.Test;
-import org.w3c.dom.Document;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-import org.xml.sax.SAXException;
 
 /**
  * Verifies what we distribute to the Google maven repository
@@ -383,6 +390,13 @@ public class GmavenZipTest {
                         .map(PomInfo::toString)
                         .collect(Collectors.joining("\n"));
         check("gmaven-poms.txt", pomContent);
+
+        for (Path jar : jars) {
+            checkClassFileVersion(jar);
+        }
+        for (Path aar : aars) {
+            checkClassFileVersion(aar);
+        }
     }
 
     private void check(String name, String actual) throws IOException {
@@ -533,6 +547,65 @@ public class GmavenZipTest {
         return FileSystems.newFileSystem(TestUtils.resolveWorkspacePath(GMAVEN_ZIP), (ClassLoader)null)
                 .getPath("/");
     }
+
+    private void checkClassFileVersion(Path file) throws IOException {
+        try (BufferedInputStream is = new BufferedInputStream(Files.newInputStream(file))) {
+            checkClassFileVersion(is, file.toString());
+        }
+    }
+
+    private final int parsingOptions =
+            ClassReader.SKIP_CODE | ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES;
+
+    private void checkClassFileVersion(InputStream stream, String name) throws IOException {
+        try (ZipInputStream zipInputStream = new ZipInputStream(stream)) {
+            ZipEntry entry;
+            while ((entry = zipInputStream.getNextEntry()) != null) {
+                if (entry.getName().endsWith(".class")) {
+                    CheckClassVisitor checkClassVisitor = new CheckClassVisitor(expect);
+                    try {
+                        new ClassReader(zipInputStream).accept(checkClassVisitor, parsingOptions);
+                    } catch (Exception e) {
+                        throw new IOException(
+                                "Failed to parse " + entry.getName() + " in " + name, e);
+                    }
+                } else if (entry.getName().endsWith(".jar")) {
+                    checkClassFileVersion(
+                            new NonClosingInputStream(zipInputStream),
+                            name + ":" + entry.getName());
+                }
+            }
+        }
+    }
+
+    public static class CheckClassVisitor extends ClassVisitor {
+
+        private final Expect expect;
+
+        protected CheckClassVisitor(Expect expect) {
+            super(Opcodes.ASM9);
+            this.expect = expect;
+        }
+
+        @Override
+        public void visit(
+                int version,
+                int access,
+                String name,
+                String signature,
+                String superName,
+                String[] interfaces) {
+            if (version > 61) {
+                expect.fail(
+                        "Class %s should have version <= 61, but has version %s", name, version);
+            }
+            super.visit(version, access, name, signature, superName, interfaces);
+        }
+    }
+
+    // public static class CheckVersionVisitor extends ClassVisitor {
+
+    // }
 
     private static class NonClosingInputStream extends FilterInputStream {
 

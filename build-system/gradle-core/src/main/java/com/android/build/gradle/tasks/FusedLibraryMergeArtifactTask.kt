@@ -22,15 +22,12 @@ import com.android.SdkConstants.FD_JNI
 import com.android.SdkConstants.FN_NAVIGATION_JSON
 import com.android.SdkConstants.FN_PROGUARD_TXT
 import com.android.build.api.artifact.Artifact
-import com.android.build.api.artifact.ArtifactKind
 import com.android.build.gradle.internal.fusedlibrary.FusedLibraryConstants
 import com.android.build.gradle.internal.fusedlibrary.FusedLibraryGlobalScope
 import com.android.build.gradle.internal.fusedlibrary.FusedLibraryInternalArtifactType.*
-import com.android.build.gradle.internal.privaysandboxsdk.PrivacySandboxSdkVariantScope
 import com.android.build.gradle.internal.profile.ProfileAwareWorkAction
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
 import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactType
-import com.android.build.gradle.internal.r8.ConsumerRuleGlobalGuardian
 import com.android.build.gradle.internal.tasks.AarMetadataTask.Companion.AAR_METADATA_FILE_NAME
 import com.android.build.gradle.internal.tasks.BuildAnalyzer
 import com.android.build.gradle.internal.tasks.MergeNativeLibsTask
@@ -40,6 +37,7 @@ import com.android.build.gradle.internal.tasks.mergeJavaNativeLibs
 import com.android.build.gradle.internal.utils.setDisallowChanges
 import com.android.buildanalyzer.common.TaskCategory
 import com.android.builder.packaging.JarFlinger
+import com.android.ide.common.r8.ConsumerRuleGlobalGuardian
 import com.android.utils.usLocaleCapitalize
 import org.gradle.api.attributes.DocsType
 import org.gradle.api.file.ConfigurableFileCollection
@@ -49,6 +47,7 @@ import org.gradle.api.file.FileSystemLocation
 import org.gradle.api.file.RegularFile
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.Property
+import org.gradle.api.provider.SetProperty
 import org.gradle.api.tasks.CacheableTask
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFiles
@@ -79,6 +78,21 @@ abstract class FusedLibraryMergeArtifactTask : NonIncrementalGlobalTask() {
     @get:PathSensitive(PathSensitivity.RELATIVE)
     abstract val artifactFiles: ConfigurableFileCollection
 
+    @get:Nested
+    abstract val aarMetadataInputs: AarMetadataInputs
+
+    @get:Optional
+    @get:Input
+    abstract val jniExcludes: SetProperty<String>
+
+    @get:Optional
+    @get:Input
+    abstract val jniKeepDebugSymbols: SetProperty<String>
+
+    @get:Optional
+    @get:Input
+    abstract val jniPickFirst: SetProperty<String>
+
     @get:OutputDirectory
     @get:Optional
     abstract val outputDir: DirectoryProperty
@@ -86,9 +100,6 @@ abstract class FusedLibraryMergeArtifactTask : NonIncrementalGlobalTask() {
     @get:OutputFile
     @get:Optional
     abstract val outputFile: RegularFileProperty
-
-    @get:Nested
-    abstract val aarMetadataInputs: AarMetadataInputs
 
     override fun doTaskAction() {
         workerExecutor.noIsolation().submit(FusedLibraryMergeArtifactWorkAction::class.java) {
@@ -103,10 +114,14 @@ abstract class FusedLibraryMergeArtifactTask : NonIncrementalGlobalTask() {
     }
 
     abstract class FusedLibraryMergeArtifactParams : ProfileAwareWorkAction.Parameters() {
-        abstract var aarMetadataInputs: AarMetadataInputs
         abstract val artifactType: Property<ArtifactType>
         abstract val input: ConfigurableFileCollection
         abstract val output: Property<FileSystemLocation>
+
+        abstract var aarMetadataInputs: AarMetadataInputs
+        abstract val jniExcludes: SetProperty<String>
+        abstract val jniKeepDebugSymbols: SetProperty<String>
+        abstract val jniPickFirst: SetProperty<String>
     }
 
     abstract class FusedLibraryMergeArtifactWorkAction
@@ -129,21 +144,25 @@ abstract class FusedLibraryMergeArtifactTask : NonIncrementalGlobalTask() {
                         }
                     }
                     ArtifactType.JNI -> {
+                        if (jniKeepDebugSymbols.get().any()) {
+                            error("keepDebugSymbols is not supported by Fused Library.")
+                        }
                         val aarOutputJniOutputDir = output.get().asFile.resolve(FD_JNI)
                         val relativeInputFiles = inputFiles
                             .flatMap { it.walkBottomUp() }
                             .filter { it.isFile }
                             .map {
-                                MergeNativeLibsTask.InputFile(it,
+                                MergeNativeLibsTask.InputFile(
+                                    it,
                                     it.toString()
                                         .substringAfter("$separator$FD_JNI$separator")
                                 )
                             }
                         mergeJavaNativeLibs(
                             inputFiles = relativeInputFiles,
-                            emptySet(),
-                            emptySet(),
-                            emptySet(),
+                            jniPickFirst.get(),
+                            exclude = jniExcludes.get(),
+                            testOnly = emptySet(),
                             testOnlyDir = null,
                             projectNativeLibs = emptySet(),
                             outputDir = aarOutputJniOutputDir
@@ -171,12 +190,17 @@ abstract class FusedLibraryMergeArtifactTask : NonIncrementalGlobalTask() {
                             .flatMap(File::walkBottomUp)
                             .asSequence()
                             .filter(File::isFile)
-                            .filterNot { it.readBytes().none() }
+                            .filterNot { it.length() == 0L }
                             .onEach {
                                 if (it.name != FN_PROGUARD_TXT) {
                                     error("Expected a file named '$FN_PROGUARD_TXT' but found file entry named '${it.name}'.")
                                 }
-                            }
+                                ConsumerRuleGlobalGuardian.validateConsumerRulesHasNoBannedGlobals(
+                                    it,
+                                    false,
+                                    { error(it.errorMessage) }
+                                )
+                            }.toList()
                         if (consumerProguardFiles.none()) {
                             return
                         }
@@ -189,11 +213,6 @@ abstract class FusedLibraryMergeArtifactTask : NonIncrementalGlobalTask() {
                             }
                             outputFile.writeText(toString())
                         }
-                        ConsumerRuleGlobalGuardian.validateConsumerRulesHasNoBannedGlobals(
-                            outputFile,
-                            false,
-                            ::error
-                        )
                     }
                     else -> {
                         val supportedArtifacts = mergeArtifactMap.map { it.first }
@@ -266,58 +285,34 @@ abstract class FusedLibraryMergeArtifactTask : NonIncrementalGlobalTask() {
 
             task.artifactType.setDisallowChanges(androidArtifactType)
 
-            creationConfig.aarMetadata.minAgpVersion?.let {
-                task.aarMetadataInputs.minAgpVersion.setDisallowChanges(it)
-            }
-            creationConfig.aarMetadata.minCompileSdk?.let {
-                task.aarMetadataInputs.minCompileSdk.setDisallowChanges(it)
-            }
-            creationConfig.aarMetadata.minCompileSdkExtension?.let {
-                task.aarMetadataInputs.minCompileSdkExtension.setDisallowChanges(it)
-            }
-        }
-
-    }
-
-    class CreateActionPrivacySandboxSdk(val creationConfig: PrivacySandboxSdkVariantScope,
-            private val androidArtifactType: ArtifactType,
-            private val internalArtifactType: Artifact.Single<*>) :
-            GlobalTaskCreationAction<FusedLibraryMergeArtifactTask>() {
-
-        override val name: String
-            get() = "mergingArtifact${androidArtifactType.name.usLocaleCapitalize()}"
-        override val type: Class<FusedLibraryMergeArtifactTask>
-            get() = FusedLibraryMergeArtifactTask::class.java
-
-        override fun handleProvider(taskProvider: TaskProvider<FusedLibraryMergeArtifactTask>) {
-            super.handleProvider(taskProvider)
-
-            when (internalArtifactType.kind) {
-                ArtifactKind.DIRECTORY ->
-                    creationConfig.artifacts.setInitialProvider(
-                            taskProvider,
-                            FusedLibraryMergeArtifactTask::outputDir
-                    ).withName(androidArtifactType.name.lowercase())
-                            .on(internalArtifactType as Artifact.Single<Directory>)
-                ArtifactKind.FILE ->
-                    creationConfig.artifacts.setInitialProvider(
-                            taskProvider,
-                            FusedLibraryMergeArtifactTask::outputFile
-                    ).withName(androidArtifactType.name.lowercase())
-                            .on(internalArtifactType as Artifact.Single<RegularFile>)
-            }
-        }
-
-        override fun configure(task: FusedLibraryMergeArtifactTask) {
-            super.configure(task)
-
-            task.artifactFiles.setFrom(
-                    creationConfig.dependencies.getArtifactFileCollection(
-                        AndroidArtifacts.ConsumedConfigType.RUNTIME_CLASSPATH,
-                        androidArtifactType
+            when (androidArtifactType) {
+                ArtifactType.AAR_METADATA -> {
+                    creationConfig.aarMetadata.minAgpVersion?.let {
+                        task.aarMetadataInputs.minAgpVersion.setDisallowChanges(it)
+                    }
+                    creationConfig.aarMetadata.minCompileSdk?.let {
+                        task.aarMetadataInputs.minCompileSdk.setDisallowChanges(it)
+                    }
+                    creationConfig.aarMetadata.minCompileSdkExtension?.let {
+                        task.aarMetadataInputs.minCompileSdkExtension.setDisallowChanges(it)
+                    }
+                }
+                ArtifactType.JNI -> {
+                    task.jniExcludes.setDisallowChanges(
+                        creationConfig.packaging.jniLibs.excludes
                     )
-            )
-            task.artifactType.setDisallowChanges(androidArtifactType)
+                    task.jniPickFirst.setDisallowChanges(
+                        creationConfig.packaging.jniLibs.pickFirsts
+                    )
+
+                    // Only added to the task for error messaging, as debug stripping
+                    // should be configured in the dependencies.
+                    task.jniKeepDebugSymbols.setDisallowChanges(
+                        creationConfig.packaging.jniLibs.keepDebugSymbols
+                    )
+                }
+                else -> {}
+            }
         }
 
     }
@@ -355,10 +350,6 @@ abstract class FusedLibraryMergeArtifactTask : NonIncrementalGlobalTask() {
         fun getCreationActions(creationConfig: FusedLibraryGlobalScope) :
                 List<CreateActionFusedLibrary> {
             return mergeArtifactMap.map { CreateActionFusedLibrary(creationConfig, it.first, it.second) }
-        }
-        fun getCreationActions(creationConfig: PrivacySandboxSdkVariantScope) :
-                List<CreateActionPrivacySandboxSdk> {
-            return mergeArtifactMap.map { CreateActionPrivacySandboxSdk(creationConfig, it.first, it.second.artifactType) }
         }
     }
 }

@@ -24,4 +24,18 @@ package com.android.sdklib.deviceprovisioner
  *   the same plugin ID). This is public only for the purpose of serialization; it should not be
  *   interpreted.
  */
-data class DeviceId(val pluginId: String, val isTemplate: Boolean, val identifier: String)
+data class DeviceId(val pluginId: String, val isTemplate: Boolean, val identifier: String) {
+  override fun toString(): String = "$pluginId:${if (isTemplate) "template" else ""}:$identifier"
+
+  companion object {
+    fun fromString(id: String): DeviceId? {
+      val parts = id.split(":", limit = 3)
+      if (parts.size < 3) return null
+      return DeviceId(
+        pluginId = parts[0],
+        isTemplate = parts[1] == "template",
+        identifier = parts[2],
+      )
+    }
+  }
+}

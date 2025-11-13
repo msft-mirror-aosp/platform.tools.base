@@ -24,7 +24,7 @@ import com.android.build.gradle.integration.common.fixture.project.builder.Plugi
 import com.android.build.gradle.integration.common.fixture.project.plugins.GenericCallback
 import com.android.build.gradle.integration.common.fixture.project.plugins.KotlinMultiplatformCallback
 import com.android.build.gradle.integration.common.truth.ScannerSubject
-import com.android.build.gradle.integration.common.utils.disableBuiltInKotlin
+import com.android.build.gradle.options.BooleanOption
 import org.gradle.api.Project
 import org.gradle.api.publish.PublishingExtension
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
@@ -74,8 +74,12 @@ class KotlinMultiplatformPublishingTest {
                 pluginCallbacks += AndroidDependencyCallback::class.java
             }
         }
-        build.executor.run(":producer:publish")
-        var buildResult = build.executor.run(
+        build.executor
+            .withFailOnWarning(false) // b/455891987
+            .run(":producer:publish")
+        var buildResult = build.executor
+            .withFailOnWarning(false) // b/455891987
+            .run(
             ":consumer:dependencyInsight",
             "--configuration", "androidCompileClasspath",
             "--dependency", "com.example.producer:producer:1.0"
@@ -83,7 +87,9 @@ class KotlinMultiplatformPublishingTest {
         ScannerSubject.assertThat(buildResult.stdout).contains("Variant androidApiElements-published")
 
         simulateDifferentProducerArtifact(build)
-        buildResult = build.executor.run(
+        buildResult = build.executor
+            .withFailOnWarning(false) // b/455891987
+            .run(
             ":consumer:dependencyInsight",
             "--configuration", "androidCompileClasspath",
             "--dependency", "com.example.producer:producer:1.0"
@@ -93,22 +99,33 @@ class KotlinMultiplatformPublishingTest {
 
     @Test
     fun `test kmp and com_android_library consumer`() {
-        val build = rule.build {
-            androidLibrary(":oldKmpConsumer") {
-                applyPlugin(PluginType.KOTLIN_MPP)
+        val build = rule
+            .configure()
+            .disableBrokenBuiltInKotlinOptOutChecks()
+            .disableBrokenNewDslOptOutChecks()
+            .build {
+                androidLibrary(":oldKmpConsumer") {
+                    applyPlugin(PluginType.KOTLIN_MPP)
 
-                android {
-                    namespace = "com.example.oldKmpConsumer"
-                    compileSdk = DEFAULT_COMPILE_SDK_VERSION
-                    defaultConfig.minSdk = 24
+                    android {
+                        namespace = "com.example.oldKmpConsumer"
+                        compileSdk = DEFAULT_COMPILE_SDK_VERSION
+                        defaultConfig.minSdk = 24
+                    }
+                    pluginCallbacks += AndroidDependencyCallback::class.java
+                    pluginCallbacks += EnableAndroidTargetCallback::class.java
                 }
-                pluginCallbacks += AndroidDependencyCallback::class.java
-                pluginCallbacks += EnableAndroidTargetCallback::class.java
+                gradleProperties {
+                    add(BooleanOption.BUILT_IN_KOTLIN, false)
+                    add(BooleanOption.USE_NEW_DSL, false)
+                }
             }
-            disableBuiltInKotlin()
-        }
-        build.executor.run(":producer:publish")
-        var buildResult = build.executor.run(
+        build.executor
+            .withFailOnWarning(false) // b/455891987
+            .run(":producer:publish")
+        var buildResult = build.executor
+            .withFailOnWarning(false) // b/455891987
+            .run(
             ":oldKmpConsumer:dependencyInsight",
             "--configuration", "androidDebugCompileClasspath",
             "--dependency", "com.example.producer:producer:1.0"
@@ -116,7 +133,9 @@ class KotlinMultiplatformPublishingTest {
         ScannerSubject.assertThat(buildResult.stdout).contains("Variant androidApiElements-published")
 
         simulateDifferentProducerArtifact(build)
-        buildResult = build.executor.run(
+        buildResult = build.executor
+            .withFailOnWarning(false) // b/455891987
+            .run(
             ":oldKmpConsumer:dependencyInsight",
             "--configuration", "androidDebugCompileClasspath",
             "--dependency", "com.example.producer:producer:1.0"
@@ -138,15 +157,21 @@ class KotlinMultiplatformPublishingTest {
                 }
             }
         }
-        build.executor.run(":producer:publish")
-        var buildResult = build.executor.run(
+        build.executor
+            .withFailOnWarning(false) // b/455891987
+            .run(":producer:publish")
+        var buildResult = build.executor
+            .withFailOnWarning(false) // b/455891987
+            .run(
             ":plainAndroidLibConsumer:dependencyInsight",
             "--configuration", "debugCompileClasspath",
             "--dependency", "com.example.producer:producer:1.0"
         )
         ScannerSubject.assertThat(buildResult.stdout).contains("Variant androidApiElements-published")
         simulateDifferentProducerArtifact(build)
-        buildResult = build.executor.run(
+        buildResult = build.executor
+            .withFailOnWarning(false) // b/455891987
+            .run(
             ":plainAndroidLibConsumer:dependencyInsight",
             "--configuration", "debugCompileClasspath",
             "--dependency", "com.example.producer:producer:1.0"
@@ -169,9 +194,13 @@ class KotlinMultiplatformPublishingTest {
                 pluginCallbacks += CommonDependencyCallback::class.java
             }
         }
-        build.executor.run(":producer:publish")
+        build.executor
+            .withFailOnWarning(false) // b/455891987
+            .run(":producer:publish")
         // the build succeeds but the Gradle resolution actually fails here
-        val buildResult = build.executor.run(
+        val buildResult = build.executor
+            .withFailOnWarning(false) // b/455891987
+            .run(
             ":kmpWithoutAndroidTargetConsumer:dependencyInsight",
             "--configuration", "jvmCompileClasspath",
             "--dependency", "com.example.producer:producer:1.0"
@@ -195,8 +224,12 @@ class KotlinMultiplatformPublishingTest {
                 pluginCallbacks += CommonDependencyCallback::class.java
             }
         }
-        build.executor.run(":producer:publish")
-        val buildResult = build.executor.run(
+        build.executor
+            .withFailOnWarning(false) // b/455891987
+            .run(":producer:publish")
+        val buildResult = build.executor
+            .withFailOnWarning(false) // b/455891987
+            .run(
             ":kmpWithJvmTargetConsumer:dependencyInsight",
             "--configuration", "jvmCompileClasspath",
             "--dependency", "com.example.producer:producer:1.0"

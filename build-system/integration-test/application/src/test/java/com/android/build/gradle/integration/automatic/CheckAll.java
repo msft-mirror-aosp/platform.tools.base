@@ -21,7 +21,6 @@ import static com.google.common.base.Preconditions.checkState;
 import com.android.annotations.NonNull;
 import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor.ConfigurationCaching;
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
-import com.android.build.gradle.integration.common.fixture.GradleTestProjectBuilder;
 import com.android.build.gradle.integration.common.fixture.TestProjectPaths;
 import com.android.build.gradle.integration.common.runner.FilterableParameterized;
 import com.android.build.gradle.options.BooleanOption;
@@ -87,17 +86,14 @@ public class CheckAll {
     @Rule public GradleTestProject project;
 
     public CheckAll(String projectName) {
-        GradleTestProjectBuilder builder =
+        project =
                 GradleTestProject.builder()
                         .fromTestProject(projectName)
                         .withConfigurationCaching(ConfigurationCaching.ON)
+                        .withHeap("2048M")
                         .addGradleProperties(
-                                BooleanOption.USE_ANDROID_X.getPropertyName() + "=true");
-        if (FLAKY_OOM_TESTS.contains(projectName)) {
-            this.project = builder.withHeap("2048m").create();
-        } else {
-            this.project = builder.create();
-        }
+                                BooleanOption.USE_ANDROID_X.getPropertyName() + "=true")
+                        .create();
     }
 
     @Test
@@ -109,6 +105,8 @@ public class CheckAll {
                 // namespacing.
                 .with(BooleanOption.ENFORCE_UNIQUE_PACKAGE_NAMES, false)
                 .with(BooleanOption.ENABLE_LEGACY_API, true)
+                // TODO(b/439843451) - Opt back into `android.enableAppCompileTimeRClass`
+                .with(BooleanOption.ENABLE_APP_COMPILE_TIME_R_CLASS, false)
                 .withEnableInfoLogging(false)
                 .run("assembleDebug", "assembleAndroidTest", "lint");
     }
@@ -168,19 +166,4 @@ public class CheckAll {
                     "kotlinMultiplatform" // kotlin multiplatform project has its own assemble
                     // tests.
                     );
-
-    // These tests have flaky OOM errors and need larger max heap (b/359524825)
-    private static final ImmutableSet<String> FLAKY_OOM_TESTS =
-            ImmutableSet.of(
-                    "lintDeps",
-                    "testFixturesKotlinApp",
-                    "composeHelloWorld",
-                    "lintLibrarySkipDeps",
-                    "testFixturesApp",
-                    "lintLibraryModel",
-                    "BasicRenderScript",
-                    "navigation",
-                    "compileRClasses",
-                    "kotlinApp",
-                    "sameNamedLibs");
 }

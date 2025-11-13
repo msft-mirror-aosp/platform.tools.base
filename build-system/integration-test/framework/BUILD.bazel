@@ -7,6 +7,8 @@ kotlin_library(
         "src/main/java/**/*.java",
     ]),
     lint_baseline = "lint_baseline.xml",
+    resource_strip_prefix = "tools/base/build-system/integration-test/framework/src/main/resources",
+    resources = glob(["src/main/resources/**"]),
     visibility = ["//tools/base/build-system/integration-test:__subpackages__"],
     deps = [
         "//tools/analytics-library/protos/src/main/proto",

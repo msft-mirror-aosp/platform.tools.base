@@ -24,7 +24,6 @@ import com.android.build.gradle.integration.common.truth.TaskStateList.Execution
 import com.android.build.gradle.integration.common.truth.TaskStateList.ExecutionState.UP_TO_DATE
 import com.android.build.gradle.integration.common.utils.CacheabilityTestHelper
 import com.android.build.gradle.integration.common.utils.TestFileUtils
-import com.android.build.gradle.integration.common.utils.disableBuiltInKotlin
 import com.android.build.gradle.options.BooleanOption
 import org.junit.Before
 import org.junit.Rule
@@ -60,6 +59,7 @@ class MinifyCacheabilityTest {
             ":extractDeepLinksMinified",
             ":generateMinifiedResources",
             ":generateMinifiedResValues",
+            ":generateMinifiedRFile",
             ":jacocoMinified",
             ":javaPreCompileMinified",
             ":mergeMinifiedResources",

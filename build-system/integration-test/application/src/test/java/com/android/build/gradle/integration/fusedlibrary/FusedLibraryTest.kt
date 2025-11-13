@@ -22,21 +22,23 @@ import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.plugins.GenericCallback
 import com.android.build.gradle.integration.common.output.JarSubject
 import com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
-import com.android.build.gradle.integration.common.utils.disableBuiltInKotlin
 import com.android.build.gradle.integration.fusedlibrary.FusedLibraryTestConstants.FUSED_LIBRARY_ARTIFACT_NAME
 import com.android.build.gradle.integration.fusedlibrary.FusedLibraryTestConstants.FUSED_LIBRARY_GROUP
 import com.android.build.gradle.integration.fusedlibrary.FusedLibraryTestConstants.FUSED_LIBRARY_REPO_NAME
 import com.android.build.gradle.integration.fusedlibrary.FusedLibraryTestConstants.FUSED_LIBRARY_VERSION
 import com.android.build.gradle.options.BooleanOption
 import com.google.common.truth.Truth
+import java.util.zip.ZipEntry
 import org.gradle.api.Project
 import org.gradle.api.publish.PublishingExtension
 import org.gradle.api.publish.maven.MavenPublication
 import org.junit.Rule
 import org.junit.Test
+import java.util.zip.ZipFile
 import kotlin.io.path.isRegularFile
 
 class FusedLibraryTest {
+
     @get:Rule
     val rule = GradleRule.configure()
         .withMavenRepository {
@@ -49,7 +51,8 @@ class FusedLibraryTest {
                         <resources>
                             <string name="remote_b_string">Remote String from remoteaar a</string>
                         </resources>
-                    """.trimIndent())
+                    """.trimIndent()
+                )
                 .withDependencies(listOf("com.remotedep.remoteaar.b:remoteaar-b:1.0"))
 
             aar("com.remotedep.remoteaar.b", "remoteaar-b", "1.0")
@@ -61,7 +64,8 @@ class FusedLibraryTest {
                         <resources>
                             <string name="remote_b_string">Remote String from remoteaar b</string>
                         </resources>
-                    """.trimIndent())
+                    """.trimIndent()
+                )
         }.from {
             androidLibrary(":androidLib1") {
                 android {
@@ -72,6 +76,7 @@ class FusedLibraryTest {
                             allVariants()
                         }
                     }
+                    enableKotlin = false
                 }
                 dependencies {
                     implementation("junit:junit:4.12")
@@ -111,6 +116,7 @@ class FusedLibraryTest {
                             allVariants()
                         }
                     }
+                    enableKotlin = false
                 }
                 files {
                     add(
@@ -131,6 +137,7 @@ class FusedLibraryTest {
             androidLibrary(":androidLib3") {
                 android {
                     namespace = "com.example.androidLib3"
+                    enableKotlin = false
                 }
                 group = "fusedlib"
                 version = "1.0.0"
@@ -151,7 +158,6 @@ class FusedLibraryTest {
             gradleProperties {
                 add(BooleanOption.FUSED_LIBRARY_SUPPORT, true)
             }
-            disableBuiltInKotlin()
         }
 
     @Test
@@ -195,13 +201,15 @@ class FusedLibraryTest {
             )
             assertThat(
                 publishedLibRepoDir.resolve(
-                    "$FUSED_LIBRARY_ARTIFACT_NAME-${FUSED_LIBRARY_VERSION}.aar")
+                    "$FUSED_LIBRARY_ARTIFACT_NAME-${FUSED_LIBRARY_VERSION}.aar"
+                )
                     .isRegularFile()
             ).isTrue()
 
             assertExpectedPomDependencies(
                 publishedLibRepoDir.resolve(
-                    "$FUSED_LIBRARY_ARTIFACT_NAME-${FUSED_LIBRARY_VERSION}.pom"),
+                    "$FUSED_LIBRARY_ARTIFACT_NAME-${FUSED_LIBRARY_VERSION}.pom"
+                ),
                 listOf(
                     "junit:junit:4.12 scope:runtime",
                     "org.hamcrest:hamcrest-core:1.3 scope:runtime",
@@ -239,8 +247,35 @@ class FusedLibraryTest {
         val failure = build.executor.expectFailure().run(":fusedLib1:assemble")
         failure.assertErrorContains(
             "Fused Library modules do not allow sources. Only dependencies are allowed.\n" +
-                "   Recommended Action: Ensure any sources added to `:fusedLib1` are moved to an " +
-                    "Android Library that is a dependency of `:fusedLib1`")
+                    "   Recommended Action: Ensure any sources added to `:fusedLib1` are moved to an " +
+                    "Android Library that is a dependency of `:fusedLib1`"
+        )
+    }
+
+    @Test
+    fun checkContentsOfEmptyFusedLibrary() {
+        val build = rule.build {
+            fusedLibrary(":empty-fused-library") {
+                androidFusedLibrary {
+                    namespace = "com.example.emptyFusedLibrary"
+                    minSdk {
+                        version = release(DEFAULT_MIN_SDK_VERSION)
+                    }
+                }
+            }
+        }
+        build.executor.run(":empty-fused-library:assemble")
+        val buildDir = build.fusedLibrary(":empty-fused-library").buildDir
+            .resolve("outputs/aar/empty-fused-library.aar")
+        ZipFile(buildDir.toFile()).use {
+            Truth.assertThat(it.entries().asSequence().map(ZipEntry::getName).toList()).containsExactly(
+                "META-INF/",
+                "META-INF/MANIFEST.MF",
+                "classes.jar", // Included as Java Resources merging always packages a 'base.jar'.
+                "AndroidManifest.xml",
+                "META-INF/com/android/build/gradle/aar-metadata.properties"
+            )
+        }
     }
 }
 

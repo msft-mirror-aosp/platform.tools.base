@@ -241,9 +241,13 @@ open class HostTestTaskManager(
             // compileDebugSources should be enough for running tests from AS, so add
             // dependencies on tasks that prepare necessary data files.
             val compileTask = taskContainer.compileTask
-            compileTask.dependsOn(taskContainer.processJavaResourcesTask,
-                testedVariant.taskContainer.processJavaResourcesTask)
+            compileTask.configure { task ->
+                task.dependsOn(
+                    hostTestCreationConfig.artifacts.get(InternalArtifactType.JAVA_RES),
+                    testedVariant.artifacts.get(InternalArtifactType.JAVA_RES)
+                )
 
+            }
             val javacTask = createJavacTask(hostTestCreationConfig)
             setJavaCompilerTask(javacTask, hostTestCreationConfig)
             initializeAllScope(hostTestCreationConfig.artifacts)
