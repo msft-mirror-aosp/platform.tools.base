@@ -88,7 +88,7 @@ open class FakeAdbServerRule(
         maxSpeedMbps: Long = DEFAULT_SPEED,
         negotiatedSpeedMbps: Long = DEFAULT_SPEED,
     ): DeviceState {
-        return adbServer.connectDevice(
+        val deviceState = adbServer.connectDevice(
             deviceId = deviceId,
             manufacturer = manufacturer,
             deviceModel = deviceModel,
@@ -102,6 +102,8 @@ open class FakeAdbServerRule(
             negotiatedSpeedMbps = negotiatedSpeedMbps,
         ).get(FAKE_ADB_SERVER_EXECUTOR_TIMEOUT_MS, TimeUnit.MILLISECONDS)
             ?: throw IllegalArgumentException()
+        deviceState.deviceStatus = DeviceState.DeviceStatus.ONLINE
+        return deviceState
     }
 
     override fun disconnectDevice(deviceId: String) {
