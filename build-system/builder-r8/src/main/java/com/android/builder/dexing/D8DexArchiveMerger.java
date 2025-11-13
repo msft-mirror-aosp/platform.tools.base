@@ -118,6 +118,7 @@ final class D8DexArchiveMerger implements DexArchiveMerger {
         D8DiagnosticsHandler d8DiagnosticsHandler = new InterceptingDiagnosticsHandler();
         D8Command.Builder builder = D8Command.builder(d8DiagnosticsHandler);
         builder.setDisableDesugaring(true);
+        builder.setEnableVerboseSyntheticNames(true);
         builder.setIncludeClassesChecksum(compilationMode == CompilationMode.DEBUG);
         if (d8Metadata != null) {
             builder.setBuildMetadataConsumer(

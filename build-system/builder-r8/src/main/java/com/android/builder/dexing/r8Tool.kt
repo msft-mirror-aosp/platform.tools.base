@@ -294,6 +294,7 @@ fun runR8(
         .setDisableTreeShaking(toolConfig.disableTreeShaking)
         .setDisableMinification(toolConfig.disableMinification)
         .setDisableDesugaring(toolConfig.disableDesugaring)
+        .setEnableVerboseSyntheticNames(true)
         .setProguardCompatibility(!toolConfig.fullMode)
         .enableLegacyFullModeForKeepRules(!toolConfig.strictFullModeForKeepRules)
         .apply { toolConfig.isolatedSplits?.let { setEnableIsolatedSplits(it) } }

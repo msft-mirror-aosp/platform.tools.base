@@ -282,11 +282,11 @@ class R8TaskTest {
         }
 
         val result = build.executor
-            .withArgument("-Dcom.android.tools.r8.desugar.minimizeSyntheticNames=invalid_value")
+            .withArgument("-Dcom.android.tools.r8.synthesis.restrictrenaming=invalid_value")
             .expectFailure()
             .run(":app:minifyReleaseWithR8")
         TruthHelper.assertThat(result.failureMessage).contains(
-            "Expected value of com.android.tools.r8.desugar.minimizeSyntheticNames to be a boolean, but was: invalid_value"
+            "Expected value of com.android.tools.r8.synthesis.restrictrenaming to be a boolean, but was: invalid_value"
         )
     }
 }
