@@ -298,6 +298,7 @@ class AppProcessTrackerTest {
                     AndroidApiLevel(31), // SDK >= 31 is required for track_app feature.
                     DeviceState.HostConnectionType.USB
                 )
+            fakeDevice.deviceStatus = DeviceState.DeviceStatus.OFFLINE
             val connectedDevice =
                 hostServices.session.connectedDevicesTracker.connectedDevices
                     .mapNotNull { connectedDevices ->
