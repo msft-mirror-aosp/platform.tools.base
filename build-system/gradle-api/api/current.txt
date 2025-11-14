@@ -226,7 +226,7 @@ package com.android.build.api.artifact {
     field public static final com.android.build.api.artifact.SingleArtifact.RUNTIME_SYMBOL_LIST INSTANCE;
   }
 
-  @org.gradle.api.Incubating public static final class SingleArtifact.VERSION_CONTROL_INFO_FILE extends com.android.build.api.artifact.SingleArtifact<org.gradle.api.file.RegularFile> {
+  public static final class SingleArtifact.VERSION_CONTROL_INFO_FILE extends com.android.build.api.artifact.SingleArtifact<org.gradle.api.file.RegularFile> {
     field public static final com.android.build.api.artifact.SingleArtifact.VERSION_CONTROL_INFO_FILE INSTANCE;
   }
 

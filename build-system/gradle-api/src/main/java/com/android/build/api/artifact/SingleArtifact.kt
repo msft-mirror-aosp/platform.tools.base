@@ -172,7 +172,6 @@ sealed class SingleArtifact<T : FileSystemLocation>(
      * Points to the Version control information when VCS tagging is enabled (which is by default
      * in release builds)
      */
-    @Incubating
     object VERSION_CONTROL_INFO_FILE : SingleArtifact<RegularFile>(
         FILE,
         fileName = "version-control-info.textproto"
