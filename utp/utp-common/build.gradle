@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 The Android Open Source Project
+ * Copyright (C) 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,30 +21,17 @@ apply plugin: 'com.android.tools.publish'
 group = 'com.android.tools.utp'
 version = rootProject.ext.baseVersion
 
-base {
-    archivesName.set("android-test-plugin-host-logcat")
-}
-
 dependencies {
-    implementation libs.com.android.tools.common
-    implementation project(":base:utp:utp-common")
-    implementation libs.com.android.tools.utp.androidTestPluginHostLogcatProto
-    implementation libs.kotlin_stdlib
-    implementation libs.protobuf
-    implementation libs.unified_test_platform_device_provider
     compileOnly libs.unified_test_platform_launcher
 
-    testImplementation libs.com.android.tools.testutils
     testImplementation libs.unified_test_platform_launcher
+    testImplementation libs.junit
+    testImplementation libs.truth
+    testImplementation libs.kotlin_test
     testImplementation libs.mockito_core
     testImplementation libs.mockito_kotlin
-    testImplementation libs.junit
+    testImplementation libs.com.android.tools.testutils
 }
 
-sourceSets {
-    main.resources.srcDir 'src/main/java'
-    test.resources.srcDir 'src/test/java'
-}
-
-project.ext.pomName = 'UTP plugins for Android Tools'
-project.ext.pomDesc = 'A UTP plugin to export logcat information'
+project.ext.pomName = 'UTP Plugin Common Libraries'
+project.ext.pomDesc = 'Foundational utility classes and helpers common to Android Gradle UTP plugins.'

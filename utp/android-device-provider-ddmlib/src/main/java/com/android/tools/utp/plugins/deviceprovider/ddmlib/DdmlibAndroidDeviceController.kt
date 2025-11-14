@@ -148,7 +148,7 @@ class DdmlibAndroidDeviceController(
     override fun executeAsync(args: List<String>, processor: (String) -> Unit): CommandHandle {
         var isCancelled = false
         val deferred = coroutineScope.async {
-            val command = args.first().toLowerCase()
+            val command = args.first().lowercase()
             val commandArgs = args.subList(1, args.size)
 
             // Setting max timeout to 0 (= indefinite) because we control

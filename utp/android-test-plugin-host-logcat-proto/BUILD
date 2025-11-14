@@ -11,7 +11,11 @@ maven_proto_library(
     resource_strip_prefix = "tools/base/utp/android-test-plugin-host-logcat-proto/src/main/proto",
     resources = glob(["src/main/proto/*.proto"]),
     version = BASE_VERSION,
-    visibility = ["//visibility:public"],
+    visibility = [
+        "//tools/base:__pkg__",
+        "//tools/base/build-system:__pkg__",
+        "//tools/base/utp:__subpackages__",
+    ],
 )
 
 android_java_proto_library(

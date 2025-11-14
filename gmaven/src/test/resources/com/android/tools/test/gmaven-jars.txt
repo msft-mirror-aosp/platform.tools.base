@@ -4568,7 +4568,7 @@ com/android/tools/utp/gradle-work-action-api
 com/android/tools/utp/utp-common
   META-INF/
   META-INF/MANIFEST.MF
-  META-INF/unnamed.kotlin_module
+  META-INF/utp-common.kotlin_module
   com/
   com/android/
   com/android/tools/

@@ -1,15 +1,11 @@
-load("//tools/base/bazel:kotlin.bzl", "kotlin_test")
-load("//tools/base/bazel:maven.bzl", "maven_library")
-load("//tools/base/common:version.bzl", "BASE_VERSION")
+load("//tools/base/bazel:kotlin.bzl", "kotlin_library", "kotlin_test")
 
-maven_library(
+kotlin_library(
     name = "android-device-provider-profile",
     srcs = glob([
         "src/main/java/**/*.kt",
     ]),
-    coordinates = "com.android.tools.utp:android-device-provider-profile",
-    version = BASE_VERSION,
-    visibility = ["//visibility:public"],
+    visibility = ["//tools/base/utp:__subpackages__"],
     deps = [
         "//tools/base/common:tools.common",
         "//tools/base/utp/android-device-provider-profile-proto",

@@ -14,7 +14,11 @@ maven_proto_library(
     protoc_version = UTP_PROTO_VERSION,
     resource_strip_prefix = "tools/base/utp/android-test-plugin-host-emulator-control-proto/src/main/proto",
     resources = glob(["src/main/proto/*.proto"]),
-    visibility = ["//visibility:public"],
+    visibility = [
+        "//tools/base:__pkg__",
+        "//tools/base/build-system:__pkg__",
+        "//tools/base/utp:__subpackages__",
+    ],
 )
 
 java_proto_library(

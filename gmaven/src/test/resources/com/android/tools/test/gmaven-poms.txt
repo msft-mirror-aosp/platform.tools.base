@@ -1024,8 +1024,6 @@ com.android.tools.utp:gradle-work-action-api
 
 com.android.tools.utp:utp-common
   pomName=com.android.tools.utp.utp-common
-  description=
+  description=Foundational utility classes and helpers common to Android Gradle UTP plugins.
   dependencies:
-    com.android.tools:common (runtime)
-    com.google.testing.platform:launcher (runtime)
-    org.jetbrains.kotlin:kotlin-stdlib-jdk8 (runtime)
+    org.jetbrains.kotlin:kotlin-stdlib (compile)
