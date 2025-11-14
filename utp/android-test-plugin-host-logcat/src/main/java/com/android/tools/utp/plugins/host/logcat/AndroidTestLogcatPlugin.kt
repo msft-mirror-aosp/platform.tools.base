@@ -54,6 +54,7 @@ class AndroidTestLogcatPlugin(
     companion object {
         private const val TEST_CRASH_INDICATOR = "E AndroidRuntime: "
         private const val LOGCAT_TIMEOUT_SECONDS = 10L
+        private val INVALID_FILE_NAME_CHARS = Regex("[^a-zA-Z0-9.\\-_]")
     }
 
     private lateinit var outputDir: String
@@ -173,7 +174,12 @@ class AndroidTestLogcatPlugin(
     private fun generateLogcatFileName(
             testPackageAndClass: String,
             testMethod: String
-    ) = File(outputDir, "logcat-$testPackageAndClass-$testMethod.txt").absolutePath
+    ): String {
+        return File(
+            outputDir,
+            "logcat-$testPackageAndClass-$testMethod.txt".replace(INVALID_FILE_NAME_CHARS, "_")
+        ).absolutePath
+    }
 
     /** Gets current date time on device. */
     private fun getDeviceCurrentTime(deviceController: DeviceController): String? {
