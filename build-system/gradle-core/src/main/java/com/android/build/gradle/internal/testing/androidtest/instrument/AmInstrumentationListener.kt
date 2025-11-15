@@ -16,7 +16,6 @@
 
 package com.android.build.gradle.internal.testing.androidtest.instrument
 
-import com.google.testing.platform.proto.api.core.TestStatusProto.TestStatus
 import java.time.Instant
 
 /**
@@ -85,26 +84,23 @@ data class TestIdentifier(
 )
 
 /**
- * The end result of an individual test case.
+ * Represents the final outcome of a single test case execution.
  *
- * A test result can be in one of the following final states:
+ * The [status] is a raw integer code mirroring the Android instrumentation output.
+ * Common state constants are defined in [AmInstrumentationParser]:
  *
- * * `status = PASSED` - The test completed successfully.
- * * `status = FAILED` - The test completed with a failure. `stackTrace` contains the stack trace
- *     where the failure occurred. E.g. this covers assertion failures or tests throwing exceptions.
- * * `status = IGNORED` - Two possible sub states:
- *     * `stackTrace` is set - The test completed with an assumption failure. E.g. JUnit `assume*()`
- *       methods.
- *     * `stackTrace` is not set - The test was ignored. E.g. JUnit `@Ignore` was present on the
- *       test method.
- * * `status = ERROR` - A fatal error occurred. E.g. the test case did not complete because the
- *     instrumentation crashed.
+ * - [AmInstrumentationParser.STATUS_CODE_OK]: The test completed successfully.
+ * - [AmInstrumentationParser.STATUS_CODE_FAILURE] or [AmInstrumentationParser.STATUS_CODE_ERROR]:
+ * The test failed. The [stackTrace] property will contain details of the assertion failure or exception.
+ * - [AmInstrumentationParser.STATUS_CODE_IGNORED]: The test was explicitly ignored (e.g., via JUnit's `@Ignore`).
+ * - [AmInstrumentationParser.STATUS_CODE_ASSUMPTION_FAILURE]: The test halted due to a failed assumption
+ * (e.g., via JUnit's `assume*()` methods).
  */
 data class TestResult(
   /** Test case this end result is for. */
   val testIdentifier: TestIdentifier,
-  /** Final status of the test. One of `PASSED`, `FAILED`, `IGNORED`, or `ERROR`. */
-  val status: TestStatus,
+  /** Final status of the test. */
+  val status: Int,
   /** Start time of the test execution. Recorded by the parser. */
   val startTime: Instant,
   /** End time of the test execution. Recorded by the parser. */
