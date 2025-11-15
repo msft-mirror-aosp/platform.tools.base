@@ -60,6 +60,9 @@ public class SystemImageTags {
     /** Tag to apply to system images for XR Headset devices. */
     public static final IdDisplay XR_HEADSET_TAG = IdDisplay.create("android-xr", "Android XR");
 
+    /** Tag to apply to system images for XR Glasses devices. */
+    public static final IdDisplay XR_GLASSES_TAG = IdDisplay.create("android-xr-ost", "Android XR");
+
     /** Tag to apply to system images for AI Glasses devices. */
     @Deprecated // This is only to support the released EAP images that use this tag.
     public static final IdDisplay DEPRECATED_AI_GLASSES_TAG =
@@ -202,6 +205,10 @@ public class SystemImageTags {
 
     public static boolean isAiGlassesCompatibleImage(Collection<IdDisplay> tags) {
         return tags.contains(AI_GLASSES_COMPATIBLE_TAG);
+    }
+
+    public static boolean isXrGlassesImage(Collection<IdDisplay> tags) {
+        return tags.contains(XR_GLASSES_TAG);
     }
 
     /** Indicates if the image is for an automated test device. */
