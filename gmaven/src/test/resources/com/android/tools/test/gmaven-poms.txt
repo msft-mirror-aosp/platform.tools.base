@@ -574,7 +574,6 @@ com.android.tools.build:gradle
     com.google.protobuf:protobuf-java-util (runtime)
     com.google.code.gson:gson (runtime)
     com.google.crypto.tink:tink (runtime)
-    com.google.testing.platform:core-proto (runtime)
     org.tensorflow:tensorflow-lite-metadata (runtime)
 
 com.android.tools.build:gradle-api

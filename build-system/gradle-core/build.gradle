@@ -178,7 +178,6 @@ dependencies {
     implementation libs.protobuf_util
     implementation libs.gson
     implementation libs.tink
-    implementation libs.unified_test_platform
     implementation libs.tensorflow_lite_metadata
 
     compileOnly libs.kotlin_gradle_plugin_idea
