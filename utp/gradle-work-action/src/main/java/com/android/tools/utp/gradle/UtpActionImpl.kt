@@ -104,6 +104,7 @@ class UtpActionImpl : UtpAction {
                 parameters.variantName.get(),
                 parameters.xmlTestReportOutputDirectory.asFile.get(),
                 parameters.mergedUtpResultProtoOutputFile.asFile.get(),
+                parameters.testResultExitCodeFile.asFile.get(),
                 utpRunConfigs.map { it.utpResultProtoOutputFile.get().asFile },
             )
         }

@@ -45,6 +45,8 @@ interface RunUtpWorkParameters : WorkParameters {
     val xmlTestReportOutputDirectory: DirectoryProperty
     /** The output file containing the merged binary test results from all [utpRunConfigs]. */
     val mergedUtpResultProtoOutputFile: RegularFileProperty
+    /** The output file containing the integer exit code (0 for success, non-zero for failure). */
+    val testResultExitCodeFile: RegularFileProperty
 
     /** The Android SDK root directory. */
     val androidSdkDirectory: DirectoryProperty

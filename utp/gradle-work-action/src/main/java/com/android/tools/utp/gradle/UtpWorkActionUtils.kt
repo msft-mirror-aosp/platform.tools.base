@@ -60,8 +60,7 @@ private const val UNKNOWN_PLATFORM_ERROR_MESSAGE =
 /**
  * Finds the root cause of the Platform Error and returns the error message.
  */
-fun getPlatformErrorMessage(resultsProto: TestSuiteResultProto.TestSuiteResult?): String {
-    resultsProto ?: return UNKNOWN_PLATFORM_ERROR_MESSAGE
+fun getPlatformErrorMessage(resultsProto: TestSuiteResultProto.TestSuiteResult): String {
     return resultsProto.platformError.errorsList.joinToString(
         "\n", transform = ::getPlatformErrorMessage)
 }

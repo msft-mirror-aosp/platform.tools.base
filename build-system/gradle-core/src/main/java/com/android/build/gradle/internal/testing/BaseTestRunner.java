@@ -35,6 +35,7 @@ import com.android.ide.common.workers.ExecutorServiceAdapter;
 import com.android.ide.common.workers.WorkerExecutorException;
 import com.android.utils.ILogger;
 import com.google.common.collect.ImmutableList;
+
 import java.io.File;
 import java.nio.file.Path;
 import java.util.Collection;
@@ -189,21 +190,20 @@ public abstract class BaseTestRunner implements TestRunner {
 
             PrivacySandboxSdkInstallBundle privacySandboxSdkInstallBundle =
                     new PrivacySandboxSdkInstallBundle(dependencyApks, dependencyApkMap);
-            List<TestResult> results =
-                    scheduleTests(
-                            projectName,
-                            variantName,
-                            testData,
-                            apksForDevice,
-                            privacySandboxSdkInstallBundle,
-                            helperApks,
-                            timeoutInMs,
-                            installOptions,
-                            resultsDir,
-                            additionalTestOutputEnabled,
-                            additionalTestOutputDir,
-                            coverageDir,
-                            logger);
+            boolean allTestsPassed = scheduleTests(
+                    projectName,
+                    variantName,
+                    testData,
+                    apksForDevice,
+                    privacySandboxSdkInstallBundle,
+                    helperApks,
+                    timeoutInMs,
+                    installOptions,
+                    resultsDir,
+                    additionalTestOutputEnabled,
+                    additionalTestOutputDir,
+                    coverageDir,
+                    logger);
 
             try {
                 executor.await();
@@ -212,20 +212,12 @@ public abstract class BaseTestRunner implements TestRunner {
                 return false;
             }
 
-            boolean success = unauthorizedDevices == 0;
-
-            // check if one test failed.
-            for (TestResult result : results) {
-                if (result.getTestResult() == TestResult.Result.FAILED) {
-                    success = false;
-                }
-            }
-            return success;
+            return unauthorizedDevices == 0 && allTestsPassed;
         }
     }
 
     @NonNull
-    protected abstract List<TestResult> scheduleTests(
+    protected abstract boolean scheduleTests(
             @NonNull String projectName,
             @NonNull String variantName,
             @NonNull StaticTestData testData,
@@ -239,21 +231,4 @@ public abstract class BaseTestRunner implements TestRunner {
             @Nullable File additionalTestOutputDir,
             @NonNull File coverageDir,
             @NonNull ILogger logger);
-
-    public static class TestResult {
-        public enum Result {
-            SUCCEEDED,
-            FAILED
-        }
-
-        Result testResult;
-
-        public void setTestResult(Result testResult) {
-            this.testResult = testResult;
-        }
-
-        public Result getTestResult() {
-            return testResult;
-        }
-    }
 }

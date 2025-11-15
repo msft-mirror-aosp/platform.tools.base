@@ -96,7 +96,7 @@ class ManagedDeviceTestRunner(
         val testedApks = getTestedApks(testData, utpManagedDevice, logger)
         val extractedSdkApks = getExtractedSdkApks(testData, utpManagedDevice)
 
-        val results = avdComponents.runWithAvds(
+        return avdComponents.runWithAvds(
             utpManagedDevice.avdName, numShards ?: 1) { deviceSerials ->
             val devicesAcquired = deviceSerials.size
             if (devicesAcquired != (numShards ?: 1)) {
@@ -159,22 +159,10 @@ class ManagedDeviceTestRunner(
                 projectPath,
                 variantName,
                 outputDirectory,
-                logger,
                 utpDependencies,
                 versionedSdkLoader,
             )
         }
-
-        results.forEach { result ->
-            if (result.resultsProto?.hasPlatformError() == true) {
-                logger.error(null, getPlatformErrorMessage(result.resultsProto))
-            }
-            result.resultsProto?.issueList?.forEach { issue ->
-                logger.error(null, issue.message)
-            }
-        }
-
-        return results.all(UtpTestRunResult::testPassed)
     }
 
     companion object {

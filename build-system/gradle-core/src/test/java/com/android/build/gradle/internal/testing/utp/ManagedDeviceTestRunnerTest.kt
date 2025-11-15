@@ -30,7 +30,6 @@ import com.android.tools.utp.gradle.api.ShardConfig
 import com.android.tools.utp.gradle.api.UtpDependencies
 import com.android.utils.Environment
 import com.google.common.truth.Truth.assertThat
-import com.google.testing.platform.proto.api.core.TestSuiteResultProto.TestSuiteResult
 import org.gradle.api.file.Directory
 import org.gradle.api.logging.Logger
 import org.gradle.api.model.ObjectFactory
@@ -109,10 +108,10 @@ class ManagedDeviceTestRunnerTest {
 
         whenever(mockAvdComponents.runWithAvds(
             any(), any(),
-            any<(List<String>) -> UtpTestRunResult>())).then {
+            any<(List<String>) -> Boolean>())).then {
             val desiredDeviceCount = it.getArgument<Int>(1)
             val deviceSerials = List(desiredDeviceCount) { "mockDeviceSerial_$it" }
-            val onDevicesReadyFunc = it.getArgument<(List<String>)->UtpTestRunResult>(2)
+            val onDevicesReadyFunc = it.getArgument<(List<String>)->Boolean>(2)
             onDevicesReadyFunc(deviceSerials)
         }
 
@@ -155,7 +154,7 @@ class ManagedDeviceTestRunnerTest {
     }
 
     private fun runUtp(
-        results: List<UtpTestRunResult>,
+        results: Boolean,
         numShards: Int? = null,
     ): Boolean {
         return runInLinuxEnvironment {
@@ -181,10 +180,9 @@ class ManagedDeviceTestRunnerTest {
             mockStatic(
                 ::runUtpTestSuiteAndWait.javaMethod!!.declaringClass,
                 Answers.CALLS_REAL_METHODS).use { mockedStatic ->
-                mockedStatic.whenever<List<UtpTestRunResult>> {
+                mockedStatic.whenever<Boolean> {
                     runUtpTestSuiteAndWait(
                         runnerConfigsCaptor.capture(),
-                        any(),
                         any(),
                         any(),
                         any(),
@@ -215,7 +213,7 @@ class ManagedDeviceTestRunnerTest {
 
     @Test
     fun runUtpAndPassed() {
-        val result = runUtp(results = listOf(UtpTestRunResult(testPassed = true, TestSuiteResult.getDefaultInstance())))
+        val result = runUtp(results = true)
 
         assertThat(runnerConfigsCaptor.allValues).hasSize(1)
         assertThat(runnerConfigsCaptor.firstValue).hasSize(1)
@@ -224,7 +222,7 @@ class ManagedDeviceTestRunnerTest {
 
     @Test
     fun runUtpAndFailed() {
-        val result = runUtp(results = listOf(UtpTestRunResult(testPassed = false, TestSuiteResult.getDefaultInstance())))
+        val result = runUtp(results = false)
 
         assertThat(runnerConfigsCaptor.allValues).hasSize(1)
         assertThat(runnerConfigsCaptor.firstValue).hasSize(1)
@@ -234,10 +232,7 @@ class ManagedDeviceTestRunnerTest {
     @Test
     fun runUtpWithShardsAndPassed() {
         val result = runUtp(
-            results = listOf(
-                UtpTestRunResult(testPassed = true, TestSuiteResult.getDefaultInstance()),
-                UtpTestRunResult(testPassed = true, TestSuiteResult.getDefaultInstance()),
-            ),
+            results = true,
             numShards = 2,
         )
 

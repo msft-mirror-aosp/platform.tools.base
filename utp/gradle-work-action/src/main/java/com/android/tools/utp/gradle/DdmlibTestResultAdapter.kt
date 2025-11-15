@@ -83,7 +83,7 @@ class DdmlibTestResultAdapter(
                 }
                 val testSuiteResult: TestSuiteResultProto.TestSuiteResult =
                     testResultEvent.testSuiteFinished.testSuiteResult.unpack()
-                if (testSuiteResult.hasPlatformError()) {
+                if (testSuiteResult.platformError.errorsCount > 0) {
                     ddmlibTestResultListener.addSystemError(
                         getPlatformErrorMessage(testSuiteResult) + "\n"
                     )

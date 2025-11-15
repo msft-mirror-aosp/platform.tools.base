@@ -20,10 +20,7 @@ import com.android.build.gradle.internal.SdkComponentsBuildService
 import com.android.build.gradle.internal.testing.utp.worker.RunUtpWorkAction
 import com.android.tools.utp.gradle.api.RunUtpWorkParameters
 import com.android.tools.utp.gradle.api.UtpDependencies
-import com.android.utils.ILogger
 import com.google.common.truth.Truth.assertThat
-import com.google.protobuf.TextFormat
-import com.google.testing.platform.proto.api.core.TestSuiteResultProto.TestSuiteResult
 import org.gradle.workers.WorkQueue
 import org.gradle.workers.WorkerExecutor
 import org.junit.Before
@@ -31,16 +28,13 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import org.mockito.Answers.RETURNS_DEEP_STUBS
-import org.mockito.Mockito.contains
 import org.mockito.kotlin.any
-import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
-import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import java.io.File
 
-private const val TEST_RESULT_PB_FILE_NAME = "test-result.pb"
+private const val TEST_RESULT_EXIT_CODE_FILE_NAME = "test-result-exit-code.txt"
 
 /**
  * Unit tests for UtpTestUtils.kt.
@@ -53,9 +47,7 @@ class UtpTestUtilsTest {
     private val mockWorkerExecutor: WorkerExecutor = mock()
     private val mockVersionedSdkLoader: SdkComponentsBuildService.VersionedSdkLoader = mock()
     private val mockWorkQueue: WorkQueue = mock()
-    private val mockLogger: ILogger = mock()
 
-    lateinit var utpResultDir: File
     lateinit var jvmExecutable: File
 
     @Before
@@ -66,19 +58,16 @@ class UtpTestUtilsTest {
     }
 
     private fun runUtp(
-        expectedResult: TestSuiteResult? = createStubResultProto(),
-    ): List<UtpTestRunResult> {
-        val utpOutputDir = temporaryFolderRule.newFolder()
-        utpResultDir = temporaryFolderRule.newFolder()
+        expectedResultCode: Int = 0,
+    ): Boolean {
+        val utpResultDir = temporaryFolderRule.newFolder()
 
         val config: RunUtpWorkParameters.UtpRunConfig = mock(defaultAnswer = RETURNS_DEEP_STUBS)
-        whenever(config.utpResultProtoOutputFile.asFile.get()).thenReturn(File(utpOutputDir, TEST_RESULT_PB_FILE_NAME))
+        whenever(config.utpResultProtoOutputFile.asFile.get()).thenReturn(File(utpResultDir, TEST_RESULT_EXIT_CODE_FILE_NAME))
 
-        if (expectedResult != null) {
-            whenever(mockWorkQueue.submit(eq(RunUtpWorkAction::class.java), any())).then {
-                File(utpOutputDir, TEST_RESULT_PB_FILE_NAME)
-                    .writeBytes(expectedResult.toByteArray())
-            }
+        whenever(mockWorkQueue.submit(eq(RunUtpWorkAction::class.java), any())).then {
+            File(utpResultDir, TEST_RESULT_EXIT_CODE_FILE_NAME)
+                .writeBytes(expectedResultCode.toString().toByteArray())
         }
 
         return runUtpTestSuiteAndWait(
@@ -88,138 +77,22 @@ class UtpTestUtilsTest {
             "projectName",
             "variantName",
             utpResultDir,
-            mockLogger,
             mockUtpDependencies,
             mockVersionedSdkLoader,
         )
-    }
-
-    private fun createStubResultProto(): TestSuiteResult {
-        return createResultProto("""
-            test_suite_meta_data {
-              scheduled_test_case_count: 1
-            }
-            test_status: PASSED
-            test_result {
-              test_case {
-                test_class: "ExampleInstrumentedTest"
-                test_package: "com.example.application"
-                test_method: "useAppContext"
-              }
-              test_status: PASSED
-            }
-        """)
-    }
-
-    private fun createFailedStubResultProto(): TestSuiteResult {
-        return createResultProto("""
-            test_status: FAILED
-            issue {
-              namespace {
-                namespace: "com.google.testing.platform.runtime.android.driver.AndroidInstrumentationDriver"
-              }
-              severity: SEVERE
-              code: 1
-              name: "INSTRUMENTATION_FAILED"
-              message: "Test run failed to complete. Instrumentation run failed due to Process crashed."
-            }
-        """)
-    }
-
-    private fun createResultProto(asciiProto: String): TestSuiteResult {
-        return TextFormat.parse(asciiProto, TestSuiteResult::class.java)
-    }
-
-    @Test
-    fun failedToReceiveUtpResults() {
-        val results = runUtp(expectedResult = null)
-
-        assertThat(results).containsExactly(UtpTestRunResult(false, null))
-        verify(mockLogger).error(
-            anyOrNull<Throwable>(),
-            contains("Failed to receive the UTP test results"))
     }
 
     @Test
     fun runSuccessfully() {
         val results = runUtp()
 
-        assertThat(results).containsExactly(UtpTestRunResult(true, createStubResultProto()))
+        assertThat(results).isTrue()
     }
 
     @Test
     fun runSuccessfullyButTestFailed() {
-        val expectedResult = createFailedStubResultProto()
+        val results = runUtp(expectedResultCode = 1)
 
-        val results = runUtp(expectedResult = expectedResult)
-
-        assertThat(results).containsExactly(UtpTestRunResult(false, expectedResult))
-    }
-
-    @Test
-    fun getPlatformErrorMessageShouldReturnErrorMessage() {
-        val resultProto = createResultProto("""
-            test_status: ERROR
-            platform_error {
-              errors {
-                summary {
-                  namespace {
-                    namespace: "com.google.testing.platform"
-                  }
-                  error_code: 3002
-                  error_name: "DEVICE_PROVISION_FAILED"
-                  error_classification: "UNDERLYING_TOOL"
-                  error_message: "Failed trying to provide device controller."
-                  stack_trace: "This stacktrace should not be included in the error message."
-                }
-                cause {
-                  summary {
-                    error_message: "Gradle was unable to attach one or more devices to the adb server."
-                    stack_trace: "stacktrace line1\nstacktrace line2"
-                  }
-                }
-              }
-            }
-        """)
-
-        assertThat(getPlatformErrorMessage(resultProto)).contains("""
-            Failed trying to provide device controller.
-            Gradle was unable to attach one or more devices to the adb server.
-            stacktrace line1
-            stacktrace line2
-            """.trimIndent())
-    }
-
-    @Test
-    fun getPlatformErrorMessageShouldReturnErrorMessageEvenIfErrorMessageIsMissingInProto() {
-        val resultProto = createResultProto("""
-            test_status: ERROR
-            platform_error {
-              errors {
-                summary {
-                  namespace {
-                    namespace: "com.google.testing.platform"
-                  }
-                  error_code: 3002
-                  error_name: "DEVICE_PROVISION_FAILED"
-                  error_classification: "UNDERLYING_TOOL"
-                  error_message: "Failed trying to provide device controller."
-                  stack_trace: "This stacktrace should not be included in the error message."
-                }
-                cause {
-                  summary {
-                    stack_trace: "stacktrace line1\nstacktrace line2"
-                  }
-                }
-              }
-            }
-        """)
-
-        assertThat(getPlatformErrorMessage(resultProto)).contains("""
-            Failed trying to provide device controller.
-            Unknown platform error occurred when running the UTP test suite. Please check logs for details.
-            stacktrace line1
-            stacktrace line2
-            """.trimIndent())
+        assertThat(results).isFalse()
     }
 }

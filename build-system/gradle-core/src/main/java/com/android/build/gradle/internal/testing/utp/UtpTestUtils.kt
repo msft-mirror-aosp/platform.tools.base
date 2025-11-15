@@ -31,10 +31,6 @@ import com.android.tools.utp.gradle.api.TargetApkConfigBundle
 import com.android.tools.utp.gradle.api.TestData
 import com.android.tools.utp.gradle.api.UtpDependencies
 import com.android.tools.utp.gradle.api.UtpDependency
-import com.android.utils.ILogger
-import com.google.testing.platform.proto.api.core.ErrorDetailProto
-import com.google.testing.platform.proto.api.core.TestStatusProto.TestStatus
-import com.google.testing.platform.proto.api.core.TestSuiteResultProto
 import org.gradle.api.artifacts.ConfigurationContainer
 import org.gradle.api.artifacts.dsl.DependencyHandler
 import org.gradle.api.model.ObjectFactory
@@ -43,10 +39,8 @@ import java.io.File
 import java.nio.file.Path
 import java.util.logging.Level
 
+private const val TEST_RESULT_EXIT_CODE_FILE_NAME = "test-result-exit-code.txt"
 private const val TEST_RESULT_PB_FILE_NAME = "test-result.pb"
-
-private const val UNKNOWN_PLATFORM_ERROR_MESSAGE =
-    "Unknown platform error occurred when running the UTP test suite. Please check logs for details."
 
 /**
  * @property sdkApkSet the privacy sandbox SDK APK
@@ -55,18 +49,6 @@ private const val UNKNOWN_PLATFORM_ERROR_MESSAGE =
 data class PrivacySandboxSdkInstallBundle(
     val sdkApkSet: Set<File>,
     val extractedApkMap: Map<DeviceConnector, List<List<Path>>>
-)
-
-/**
- * Encapsulates result of a UTP test run.
- *
- * @property testPassed true when all test cases in the test suite is passed.
- * @property resultsProto test suite result protobuf message. This can be null if
- *     UTP exits unexpectedly.
- */
-data class UtpTestRunResult(
-    val testPassed: Boolean,
-    val resultsProto: TestSuiteResultProto.TestSuiteResult?,
 )
 
 /**
@@ -79,11 +61,10 @@ fun runUtpTestSuiteAndWait(
     projectPath: String,
     variantName: String,
     resultsDir: File,
-    logger: ILogger,
     utpDependencies: UtpDependencies,
     versionedSdkLoader: SdkComponentsBuildService.VersionedSdkLoader,
-): List<UtpTestRunResult> {
-    val utpTestResultProtoFiles = runUtpTestSuiteAndWait(
+): Boolean {
+    return runUtpTestSuiteAndWait(
         workerExecutor,
         runnerConfigs,
         utpDependencies,
@@ -92,40 +73,9 @@ fun runUtpTestSuiteAndWait(
         variantName,
         resultsDir,
         File(resultsDir, TEST_RESULT_PB_FILE_NAME),
+        File(resultsDir, TEST_RESULT_EXIT_CODE_FILE_NAME),
         versionedSdkLoader,
     )
-
-    return utpTestResultProtoFiles.map { protoFile ->
-        if (protoFile.exists()) {
-            protoFile.inputStream().use {
-                TestSuiteResultProto.TestSuiteResult.parseFrom(it)
-            }
-        } else {
-            null
-        }
-    }.map { resultProto ->
-        val testPassed = if (resultProto != null) {
-            val testSuitePassed = resultProto.testStatus.isPassedOrSkipped()
-            val hasAnyFailedTestCase = resultProto.testResultList.any { testCaseResult ->
-                !testCaseResult.testStatus.isPassedOrSkipped()
-            }
-            testSuitePassed && !hasAnyFailedTestCase && resultProto.platformError.errorsCount == 0
-        } else {
-            logger.error(null, "Failed to receive the UTP test results")
-            false
-        }
-
-        UtpTestRunResult(testPassed, resultProto)
-    }
-}
-
-private fun TestStatus.isPassedOrSkipped(): Boolean {
-    return when (this) {
-        TestStatus.PASSED,
-        TestStatus.IGNORED,
-        TestStatus.SKIPPED -> true
-        else -> false
-    }
 }
 
 /**
@@ -140,8 +90,9 @@ private fun runUtpTestSuiteAndWait(
     variantName: String,
     xmlTestReportOutputDirectory: File,
     mergedUtpResultProtoOutputFile: File,
+    testResultExitCodeFile: File,
     versionedSdkLoader: SdkComponentsBuildService.VersionedSdkLoader,
-): List<File> {
+): Boolean {
     val workQueue = workerExecutor.classLoaderIsolation { spec ->
         spec.classpath.fromDisallowChanges(utpDependencies.gradleWorkAction)
     }
@@ -154,6 +105,7 @@ private fun runUtpTestSuiteAndWait(
         params.variantName.setDisallowChanges(variantName)
         params.xmlTestReportOutputDirectory.fileValue(xmlTestReportOutputDirectory).disallowChanges()
         params.mergedUtpResultProtoOutputFile.fileValue(mergedUtpResultProtoOutputFile).disallowChanges()
+        params.testResultExitCodeFile.fileValue(testResultExitCodeFile).disallowChanges()
         params.androidSdkDirectory.setDisallowChanges(versionedSdkLoader.sdkDirectoryProvider)
         params.adbExecutable.setDisallowChanges(versionedSdkLoader.adbExecutableProvider)
         params.aaptExecutable.fileValue(
@@ -166,40 +118,9 @@ private fun runUtpTestSuiteAndWait(
 
     workQueue.await()
 
-    return configs.map { it.utpResultProtoOutputFile.asFile.get() }
-}
-
-/**
- * Finds the root cause of the Platform Error and returns the error message.
- */
-fun getPlatformErrorMessage(resultsProto: TestSuiteResultProto.TestSuiteResult?): String {
-    resultsProto ?: return UNKNOWN_PLATFORM_ERROR_MESSAGE
-    return resultsProto.platformError.errorsList.joinToString(
-        "\n", transform = ::getPlatformErrorMessage)
-}
-
-/**
- * Finds the root cause of the Platform Error and returns the error message.
- *
- * @param error the top level error detail to be analyzed.
- */
-private fun getPlatformErrorMessage(
-    error : ErrorDetailProto.ErrorDetail,
-    errorMessageBuilder: StringBuilder = StringBuilder()) : StringBuilder {
-    if (error.hasCause()) {
-        if (error.summary.errorMessage.isNotBlank()) {
-            errorMessageBuilder.append("${error.summary.errorMessage}\n")
-        }
-        getPlatformErrorMessage(error.cause, errorMessageBuilder)
-    } else {
-        if (error.summary.errorMessage.isNotBlank()) {
-            errorMessageBuilder.append("${error.summary.errorMessage}\n")
-        } else {
-            errorMessageBuilder.append("$UNKNOWN_PLATFORM_ERROR_MESSAGE\n")
-        }
-        errorMessageBuilder.append(error.summary.stackTrace)
-    }
-    return errorMessageBuilder
+    return testResultExitCodeFile.exists() &&
+            testResultExitCodeFile.isFile &&
+            testResultExitCodeFile.readText().trim().toInt() == 0
 }
 
 /**

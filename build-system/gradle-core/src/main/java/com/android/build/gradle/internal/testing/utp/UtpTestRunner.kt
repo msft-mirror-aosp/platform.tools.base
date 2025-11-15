@@ -35,7 +35,7 @@ import java.util.logging.Level
 /**
  * Runs Android Instrumentation tests using UTP (Unified Test Platform).
  */
-class UtpTestRunner @JvmOverloads constructor(
+class UtpTestRunner(
         processExecutor: ProcessExecutor,
         private val workerExecutor: WorkerExecutor,
         private val objectFactory: ObjectFactory,
@@ -67,7 +67,7 @@ class UtpTestRunner @JvmOverloads constructor(
             additionalTestOutputEnabled: Boolean,
             additionalTestOutputDir: File?,
             coverageDir: File,
-            logger: ILogger): MutableList<TestResult> {
+            logger: ILogger): Boolean {
 
         val runnerConfigs = apksForDevice
             .filter { (device, _) ->
@@ -115,35 +115,15 @@ class UtpTestRunner @JvmOverloads constructor(
                 )
             }.toList()
 
-        val testSuiteResults = runUtpTestSuiteAndWait(
+        return runUtpTestSuiteAndWait(
             runnerConfigs,
             workerExecutor,
             utpJvmExecutable,
             projectName,
             variantName,
             resultsDir,
-            logger,
             utpDependencies,
             versionedSdkLoader,
         )
-
-        testSuiteResults.forEach { result ->
-            if (result.resultsProto?.platformError?.errorsList?.isNotEmpty() == true) {
-                logger.error(null, getPlatformErrorMessage(result.resultsProto))
-            }
-            result.resultsProto?.issueList?.forEach { issue ->
-                logger.error(null, issue.message)
-            }
-        }
-
-        return testSuiteResults.map { testRunResult ->
-            TestResult().apply {
-                testResult = if (testRunResult.testPassed) {
-                    TestResult.Result.SUCCEEDED
-                } else {
-                    TestResult.Result.FAILED
-                }
-            }
-        }.toMutableList()
     }
 }
