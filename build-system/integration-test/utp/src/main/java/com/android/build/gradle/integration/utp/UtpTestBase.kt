@@ -59,7 +59,6 @@ abstract class UtpTestBase(val runWithBuiltInPlatform: Boolean) {
     lateinit var testResultXmlPath: String
     lateinit var testReportPath: String
     lateinit var testResultPbPath: String
-    lateinit var aggTestResultPbPath: String
     lateinit var testCoverageXmlPath: String
     lateinit var testLogcatPath: String
     lateinit var testAdditionalOutputPath: String
@@ -382,8 +381,8 @@ abstract class UtpTestBase(val runWithBuiltInPlatform: Boolean) {
         android.dynamicFeatures.add(":$subProjectName")
     }
 
-    private fun getDeviceInfo(aggTestResultPb: File): AndroidTestDeviceInfo? {
-        val testSuiteResult = aggTestResultPb.inputStream().use {
+    private fun getDeviceInfo(testResultPb: File): AndroidTestDeviceInfo? {
+        val testSuiteResult = testResultPb.inputStream().use {
             TestSuiteResult.parseFrom(it)
         }
         return testSuiteResult.testResultList.asSequence()
@@ -793,9 +792,8 @@ abstract class UtpTestBase(val runWithBuiltInPlatform: Boolean) {
         assertThat(project.resolve(testResultXmlPath)).exists()
         assertThat(project.resolve(testReportPath)).exists()
         assertThat(project.resolve(testResultPbPath)).exists()
-        assertThat(project.resolve(aggTestResultPbPath)).exists()
 
-        val deviceInfo = getDeviceInfo(project.resolve(aggTestResultPbPath).toFile())
+        val deviceInfo = getDeviceInfo(project.resolve(testResultPbPath).toFile())
         assertThat(deviceInfo).isNotNull()
         assertThat(deviceInfo?.name).isNotEmpty()
 
@@ -806,14 +804,12 @@ abstract class UtpTestBase(val runWithBuiltInPlatform: Boolean) {
         assertThat(project.resolve(testResultXmlPath)).doesNotExist()
         assertThat(project.resolve(testReportPath)).doesNotExist()
         assertThat(project.resolve(testResultPbPath)).doesNotExist()
-        assertThat(project.resolve(aggTestResultPbPath)).doesNotExist()
 
         executor.run(testTaskName)
 
         assertThat(project.resolve(testResultXmlPath)).exists()
         assertThat(project.resolve(testReportPath)).exists()
         assertThat(project.resolve(testResultPbPath)).exists()
-        assertThat(project.resolve(aggTestResultPbPath)).exists()
     }
 
     @Test

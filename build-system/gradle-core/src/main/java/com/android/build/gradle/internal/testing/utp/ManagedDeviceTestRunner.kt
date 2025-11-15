@@ -174,22 +174,6 @@ class ManagedDeviceTestRunner(
             }
         }
 
-        val resultProtos = results.mapNotNull(UtpTestRunResult::resultsProto)
-        if (resultProtos.isNotEmpty()) {
-            // Create a merged result pb file in the outputDirectory. If it's a sharded
-            // test, a result pb file is generated in a subdirectory per shard. If it's a
-            // non-sharded test, a result pb is generated in the outputDirectory so we
-            // don't need to create a merged result here.
-            if (numShards != null) {
-                val resultsMerger = UtpTestSuiteResultMerger()
-                resultProtos.forEach(resultsMerger::merge)
-
-                val mergedTestResultPbFile = File(outputDirectory, TEST_RESULT_PB_FILE_NAME)
-                mergedTestResultPbFile.outputStream().use {
-                    resultsMerger.result.writeTo(it)
-                }
-            }
-        }
         return results.all(UtpTestRunResult::testPassed)
     }
 

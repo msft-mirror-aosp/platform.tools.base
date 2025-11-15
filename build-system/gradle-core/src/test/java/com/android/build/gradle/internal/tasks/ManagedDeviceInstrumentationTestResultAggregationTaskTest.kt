@@ -18,30 +18,25 @@ package com.android.build.gradle.internal.tasks
 
 import com.android.build.gradle.internal.component.InstrumentedTestCreationConfig
 import com.android.build.gradle.internal.fixtures.FakeConfigurableFileCollection
-import com.android.build.gradle.internal.testing.utp.TEST_RESULT_PB_FILE_NAME
-import org.mockito.kotlin.any
-import org.mockito.kotlin.eq
+import com.android.testutils.truth.PathSubject.assertThat
 import com.google.common.truth.Truth.assertThat
-import com.google.testing.platform.proto.api.core.TestSuiteResultProto.TestSuiteResult
-import java.io.File
 import org.gradle.api.file.DirectoryProperty
-import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.internal.TaskOutputsInternal
 import org.gradle.api.logging.Logger
 import org.gradle.api.services.BuildServiceRegistration
-import org.gradle.api.specs.Spec
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import org.mockito.Answers.RETURNS_DEEP_STUBS
 import org.mockito.Mockito.CALLS_REAL_METHODS
-import org.mockito.kotlin.UseConstructor
+import org.mockito.kotlin.any
 import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
-import org.mockito.junit.MockitoJUnit
+import java.io.File
 
 /**
  * Unit tests for [ManagedDeviceInstrumentationTestResultAggregationTask].
@@ -72,8 +67,7 @@ class ManagedDeviceInstrumentationTestResultAggregationTaskTest {
         val pixel3Dir = File(rootResultsDir, "Pixel3").apply { mkdirs() }
         val action = ManagedDeviceInstrumentationTestResultAggregationTask.CreationAction(
             creationConfig,
-            listOf(File(pixel3Dir, TEST_RESULT_PB_FILE_NAME)),
-            File(rootResultsDir, TEST_RESULT_PB_FILE_NAME),
+            listOf(pixel3Dir),
             temporaryFolderRule.newFolder("testReportOutputDir"),
         )
 
@@ -89,8 +83,7 @@ class ManagedDeviceInstrumentationTestResultAggregationTaskTest {
         val pixel3Dir = File(rootResultsDir, "Pixel3").apply { mkdirs() }
         val action = ManagedDeviceInstrumentationTestResultAggregationTask.CreationAction(
             creationConfig,
-            listOf(File(pixel3Dir, TEST_RESULT_PB_FILE_NAME)),
-            File(rootResultsDir, TEST_RESULT_PB_FILE_NAME),
+            listOf(pixel3Dir),
             temporaryFolderRule.newFolder("testReportOutputDir"),
         )
         val task = mock<ManagedDeviceInstrumentationTestResultAggregationTask>(defaultAnswer = RETURNS_DEEP_STUBS)
@@ -99,7 +92,7 @@ class ManagedDeviceInstrumentationTestResultAggregationTaskTest {
 
         action.configure(task)
 
-        verify(task.inputTestResultProtos).from(eq(listOf(File(pixel3Dir, "test-result.pb"))))
+        verify(task.deviceTestResultDirs).from(eq(listOf(pixel3Dir)))
     }
 
     @Test
@@ -111,38 +104,16 @@ class ManagedDeviceInstrumentationTestResultAggregationTaskTest {
             .whenever(task).outputs
         doReturn(mock<Logger>()).whenever(task).logger
 
-        val inputFiles = mock<FakeConfigurableFileCollection>(
-            defaultAnswer = CALLS_REAL_METHODS,
-            useConstructor = UseConstructor.withArguments(arrayOf(createResultProto(), createResultProto())),
-        )
-        doReturn(inputFiles).whenever(inputFiles).filter(any<Spec<File>>())
-        whenever(inputFiles.isEmpty).thenReturn(false)
-        doReturn(inputFiles).whenever(task).inputTestResultProtos
-
-        val outputFile = temporaryFolderRule.newFile()
-        val outputFileProperty = mock<RegularFileProperty>(defaultAnswer = RETURNS_DEEP_STUBS)
-        whenever(outputFileProperty.get().asFile).thenReturn(outputFile)
-        doReturn(outputFileProperty).whenever(task).outputTestResultProto
-
         val testReportOutputDir = temporaryFolderRule.newFolder()
         val testReportOutputDirProperty = mock<DirectoryProperty>(defaultAnswer = RETURNS_DEEP_STUBS)
         whenever(testReportOutputDirProperty.get().asFile).thenReturn(testReportOutputDir)
         doReturn(testReportOutputDirProperty).whenever(task).outputTestReportHtmlDir
 
+        val pixel3ResultDir = temporaryFolderRule.newFolder("Pixel3")
+        doReturn(FakeConfigurableFileCollection(pixel3ResultDir)).whenever(task).deviceTestResultDirs
+
         task.taskAction()
 
-        val mergedResult = TestSuiteResult.parseFrom(outputFile.inputStream())
-        assertThat(mergedResult.testSuiteMetaData.scheduledTestCaseCount)
-            .isEqualTo(2)
-    }
-
-    private fun createResultProto(): File {
-        val protoFile = temporaryFolderRule.newFile()
-        TestSuiteResult.newBuilder().apply {
-            testSuiteMetaDataBuilder.apply {
-                scheduledTestCaseCount = 1
-            }
-        }.build().writeTo(protoFile.outputStream())
-        return protoFile
+        assertThat(File(testReportOutputDir, "index.html")).exists()
     }
 }

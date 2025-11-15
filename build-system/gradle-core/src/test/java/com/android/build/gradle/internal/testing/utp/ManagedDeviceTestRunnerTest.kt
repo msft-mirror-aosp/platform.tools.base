@@ -24,7 +24,6 @@ import com.android.build.gradle.internal.testing.StaticTestData
 import com.android.build.gradle.internal.utils.setDisallowChanges
 import com.android.mockito.kotlin.whenever
 import com.android.testutils.SystemPropertyOverrides
-import com.android.testutils.truth.PathSubject.assertThat
 import com.android.tools.utp.gradle.api.EmulatorControlConfig
 import com.android.tools.utp.gradle.api.RunUtpWorkParameters.UtpRunConfig
 import com.android.tools.utp.gradle.api.ShardConfig
@@ -248,6 +247,5 @@ class ManagedDeviceTestRunnerTest {
         verify(runnerConfigsCaptor.firstValue[1].shardConfig).setDisallowChanges(eq(ShardConfig(2, 1)))
 
         assertThat(result).isTrue()
-        assertThat(File(outputDirectory, TEST_RESULT_PB_FILE_NAME)).exists()
     }
 }

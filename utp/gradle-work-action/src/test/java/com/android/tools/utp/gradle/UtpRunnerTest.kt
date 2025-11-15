@@ -96,6 +96,7 @@ class UtpRunnerTest {
     private lateinit var runnerConfig2: File
     private lateinit var resultProtoFile1: File
     private lateinit var resultProtoFile2: File
+    private lateinit var mergedResultProtoFile: File
 
     private lateinit var utpRunner: UtpRunner
 
@@ -111,6 +112,7 @@ class UtpRunnerTest {
         runnerConfig2 = tempDir.newFile("runner-config-2.pb")
         resultProtoFile1 = tempDir.newFile("result1.pb")
         resultProtoFile2 = tempDir.newFile("result2.pb")
+        mergedResultProtoFile = tempDir.newFile("mergedResult.pb")
 
         // Write empty proto data to the config files
         val emptyConfig = RunnerConfigProto.RunnerConfig.getDefaultInstance()
@@ -155,6 +157,7 @@ class UtpRunnerTest {
             projectPath = "myProject",
             variantName = "myVariant",
             xmlTestReportOutputDirectory = xmlTestReportOutputDirectory,
+            mergedUtpResultProtoOutputFile = mergedResultProtoFile,
             utpResultProtoOutputFileList = listOf(resultProtoFile1, resultProtoFile2)
         )
 
@@ -251,6 +254,7 @@ class UtpRunnerTest {
                 projectPath = "myProject",
                 variantName = "myVariant",
                 xmlTestReportOutputDirectory = xmlTestReportOutputDirectory,
+                mergedUtpResultProtoOutputFile = mergedResultProtoFile,
                 utpResultProtoOutputFileList = listOf(resultProtoFile1, resultProtoFile2)
             )
         }
@@ -280,6 +284,7 @@ class UtpRunnerTest {
                 projectPath = "myProject",
                 variantName = "myVariant",
                 xmlTestReportOutputDirectory = xmlTestReportOutputDirectory,
+                mergedUtpResultProtoOutputFile = mergedResultProtoFile,
                 utpResultProtoOutputFileList = listOf(resultProtoFile1)
             )
         }

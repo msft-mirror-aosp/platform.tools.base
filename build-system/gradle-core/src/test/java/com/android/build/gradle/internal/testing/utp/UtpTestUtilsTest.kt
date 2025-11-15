@@ -40,6 +40,8 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import java.io.File
 
+private const val TEST_RESULT_PB_FILE_NAME = "test-result.pb"
+
 /**
  * Unit tests for UtpTestUtils.kt.
  */

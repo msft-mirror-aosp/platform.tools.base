@@ -21,24 +21,20 @@ import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.tasks.factory.VariantTaskCreationAction
 import com.android.build.gradle.internal.test.report.ReportType
 import com.android.build.gradle.internal.test.report.TestReport
-import com.android.build.gradle.internal.testing.utp.UtpTestSuiteResultMerger
 import com.android.buildanalyzer.common.TaskCategory
-import com.google.testing.platform.proto.api.core.TestSuiteResultProto.TestSuiteResult
-import java.io.File
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.DirectoryProperty
-import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.OutputDirectory
-import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.internal.logging.ConsoleRenderer
 import org.gradle.work.DisableCachingByDefault
+import java.io.File
 
 /**
- * Aggregates UTP test result protos into one.
+ * Aggregates XML test results into one.
  */
 @DisableCachingByDefault
 @BuildAnalyzer(primaryTaskCategory = TaskCategory.TEST)
@@ -46,34 +42,15 @@ abstract class ManagedDeviceInstrumentationTestResultAggregationTask: NonIncreme
 
     @get:InputFiles
     @get:PathSensitive(PathSensitivity.NONE)
-    abstract val inputTestResultProtos: ConfigurableFileCollection
-
-    @get:OutputFile
-    abstract val outputTestResultProto: RegularFileProperty
+    abstract val deviceTestResultDirs: ConfigurableFileCollection
 
     @get:OutputDirectory
     abstract val outputTestReportHtmlDir: DirectoryProperty
 
     override fun doTaskAction() {
-        val resultProtos = inputTestResultProtos.filter(File::exists)
-        if (!resultProtos.isEmpty) {
-            val resultMerger = UtpTestSuiteResultMerger()
-            resultProtos.forEach { resultProtoFile ->
-                val proto = resultProtoFile.inputStream().use {
-                    TestSuiteResult.parseFrom(it)
-                }
-                resultMerger.merge(proto)
-            }
-
-            val mergedTestResultPbFile = outputTestResultProto.get().asFile
-            mergedTestResultPbFile.outputStream().use {
-                resultMerger.result.writeTo(it)
-            }
-        }
-
         TestReport(
             ReportType.SINGLE_FLAVOR,
-            inputTestResultProtos.mapNotNull(File::getParentFile).filter(File::exists).toList(),
+            deviceTestResultDirs.files.toList(),
             outputTestReportHtmlDir.get().asFile
         ).generateReport()
 
@@ -84,8 +61,7 @@ abstract class ManagedDeviceInstrumentationTestResultAggregationTask: NonIncreme
 
     class CreationAction(
         creationConfig: InstrumentedTestCreationConfig,
-        private val deviceTestResultFiles: List<File>,
-        private val testResultOutputFile: File,
+        private val deviceTestResultDirs: List<File>,
         private val testReportHtmlOutputDir: File,
     ) : VariantTaskCreationAction<
             ManagedDeviceInstrumentationTestResultAggregationTask,
@@ -101,14 +77,6 @@ abstract class ManagedDeviceInstrumentationTestResultAggregationTask: NonIncreme
             creationConfig.artifacts
                 .setInitialProvider(
                     taskProvider,
-                    ManagedDeviceInstrumentationTestResultAggregationTask::outputTestResultProto)
-                .withName(testResultOutputFile.name)
-                .atLocation(testResultOutputFile.parentFile.absolutePath)
-                .on(InternalArtifactType.MANAGED_DEVICE_ANDROID_TEST_MERGED_RESULTS_PROTO)
-
-            creationConfig.artifacts
-                .setInitialProvider(
-                    taskProvider,
                     ManagedDeviceInstrumentationTestResultAggregationTask::outputTestReportHtmlDir)
                 .withName("allDevices")
                 .atLocation(testReportHtmlOutputDir.absolutePath)
@@ -118,7 +86,7 @@ abstract class ManagedDeviceInstrumentationTestResultAggregationTask: NonIncreme
         override fun configure(task: ManagedDeviceInstrumentationTestResultAggregationTask) {
             super.configure(task)
 
-            task.inputTestResultProtos.from(deviceTestResultFiles)
+            task.deviceTestResultDirs.from(deviceTestResultDirs).disallowChanges()
         }
     }
 }

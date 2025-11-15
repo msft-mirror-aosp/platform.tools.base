@@ -43,7 +43,7 @@ import java.io.File
 import java.nio.file.Path
 import java.util.logging.Level
 
-const val TEST_RESULT_PB_FILE_NAME = "test-result.pb"
+private const val TEST_RESULT_PB_FILE_NAME = "test-result.pb"
 
 private const val UNKNOWN_PLATFORM_ERROR_MESSAGE =
     "Unknown platform error occurred when running the UTP test suite. Please check logs for details."
@@ -91,6 +91,7 @@ fun runUtpTestSuiteAndWait(
         projectPath,
         variantName,
         resultsDir,
+        File(resultsDir, TEST_RESULT_PB_FILE_NAME),
         versionedSdkLoader,
     )
 
@@ -108,7 +109,7 @@ fun runUtpTestSuiteAndWait(
             val hasAnyFailedTestCase = resultProto.testResultList.any { testCaseResult ->
                 !testCaseResult.testStatus.isPassedOrSkipped()
             }
-            testSuitePassed && !hasAnyFailedTestCase && !resultProto.hasPlatformError()
+            testSuitePassed && !hasAnyFailedTestCase && resultProto.platformError.errorsCount == 0
         } else {
             logger.error(null, "Failed to receive the UTP test results")
             false
@@ -138,6 +139,7 @@ private fun runUtpTestSuiteAndWait(
     projectPath: String,
     variantName: String,
     xmlTestReportOutputDirectory: File,
+    mergedUtpResultProtoOutputFile: File,
     versionedSdkLoader: SdkComponentsBuildService.VersionedSdkLoader,
 ): List<File> {
     val workQueue = workerExecutor.classLoaderIsolation { spec ->
@@ -151,6 +153,7 @@ private fun runUtpTestSuiteAndWait(
         params.projectPath.setDisallowChanges(projectPath)
         params.variantName.setDisallowChanges(variantName)
         params.xmlTestReportOutputDirectory.fileValue(xmlTestReportOutputDirectory).disallowChanges()
+        params.mergedUtpResultProtoOutputFile.fileValue(mergedUtpResultProtoOutputFile).disallowChanges()
         params.androidSdkDirectory.setDisallowChanges(versionedSdkLoader.sdkDirectoryProvider)
         params.adbExecutable.setDisallowChanges(versionedSdkLoader.adbExecutableProvider)
         params.aaptExecutable.fileValue(

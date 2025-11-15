@@ -49,7 +49,6 @@ class UtpManagedDeviceTest(runWithBuiltInPlatform: Boolean) : UtpTestBase(runWit
         private const val LOGCAT = "$TEST_RESULTS/$DSL_DEVICE_NAME/logcat-com.example.android.kotlin.ExampleInstrumentedTest-useAppContext.txt"
         private const val LOGCAT_FOR_DYNAMIC_FEATURE = "$TEST_RESULTS/$DSL_DEVICE_NAME/logcat-com.example.android.kotlin.feature.ExampleInstrumentedTest-useAppContext.txt"
         private const val TEST_RESULT_PB = "$TEST_RESULTS/$DSL_DEVICE_NAME/test-result.pb"
-        private const val AGGREGATED_TEST_RESULT_PB = "$TEST_RESULTS/test-result.pb"
 
         private const val REPORTS = "build/reports"
         private const val TEST_REPORT = "$REPORTS/androidTests/managedDevice/debug/$DSL_DEVICE_NAME/com.example.android.kotlin.html"
@@ -79,7 +78,6 @@ class UtpManagedDeviceTest(runWithBuiltInPlatform: Boolean) : UtpTestBase(runWit
             testLogcatPath = "${moduleName}/$LOGCAT"
         }
         testResultPbPath = "${moduleName}/$TEST_RESULT_PB"
-        aggTestResultPbPath = "${moduleName}/$AGGREGATED_TEST_RESULT_PB"
         testCoverageXmlPath = "${moduleName}/$TEST_COV_XML"
         testAdditionalOutputPath = "${moduleName}/${TEST_ADDITIONAL_OUTPUT}"
     }

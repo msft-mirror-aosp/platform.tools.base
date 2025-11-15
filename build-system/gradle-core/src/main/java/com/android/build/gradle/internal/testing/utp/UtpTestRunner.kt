@@ -128,21 +128,11 @@ class UtpTestRunner @JvmOverloads constructor(
         )
 
         testSuiteResults.forEach { result ->
-            if (result.resultsProto?.hasPlatformError() == true) {
+            if (result.resultsProto?.platformError?.errorsList?.isNotEmpty() == true) {
                 logger.error(null, getPlatformErrorMessage(result.resultsProto))
             }
             result.resultsProto?.issueList?.forEach { issue ->
                 logger.error(null, issue.message)
-            }
-        }
-
-        val resultProtos = testSuiteResults.mapNotNull(UtpTestRunResult::resultsProto)
-        if (resultProtos.isNotEmpty()) {
-            val mergedTestResultPbFile = File(resultsDir, TEST_RESULT_PB_FILE_NAME)
-            val resultsMerger = UtpTestSuiteResultMerger()
-            resultProtos.forEach(resultsMerger::merge)
-            mergedTestResultPbFile.outputStream().use {
-                resultsMerger.result.writeTo(it)
             }
         }
 

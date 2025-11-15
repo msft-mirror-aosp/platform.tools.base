@@ -43,6 +43,8 @@ interface RunUtpWorkParameters : WorkParameters {
     val variantName: Property<String>
     /** The directory where XML test reports should be generated. */
     val xmlTestReportOutputDirectory: DirectoryProperty
+    /** The output file containing the merged binary test results from all [utpRunConfigs]. */
+    val mergedUtpResultProtoOutputFile: RegularFileProperty
 
     /** The Android SDK root directory. */
     val androidSdkDirectory: DirectoryProperty

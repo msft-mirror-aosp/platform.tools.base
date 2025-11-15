@@ -156,8 +156,6 @@ InternalArtifactType<T : FileSystemLocation>(
     // The automatically generated jacoco config file
     object JACOCO_CONFIG_RESOURCES: InternalArtifactType<Directory>(DIRECTORY)
 
-    // The android test results proto merged test results from all devices.
-    object MANAGED_DEVICE_ANDROID_TEST_MERGED_RESULTS_PROTO: InternalArtifactType<RegularFile>(FILE, Category.OUTPUTS)
     // The android test results report HTML whose data are merged from all devices.
     object MANAGED_DEVICE_ANDROID_TEST_MERGED_RESULTS_REPORT: InternalArtifactType<Directory>(DIRECTORY, Category.OUTPUTS)
 

@@ -22,7 +22,6 @@ import com.android.build.gradle.internal.testing.AdbHelper
 import com.android.build.gradle.internal.testing.StaticTestData
 import com.android.builder.testing.api.DeviceConnector
 import com.android.mockito.kotlin.whenever
-import com.android.testutils.truth.PathSubject.assertThat
 import com.android.tools.utp.gradle.api.RunUtpWorkParameters
 import com.google.common.truth.Truth.assertThat
 import com.google.testing.platform.proto.api.core.TestSuiteResultProto.TestSuiteResult
@@ -133,7 +132,6 @@ class UtpTestRunnerTest {
 
         assertThat(runnerConfigsCaptor.firstValue).hasSize(1)
         assertThat(result).isTrue()
-        assertThat(File(resultsDirectory, TEST_RESULT_PB_FILE_NAME)).exists()
     }
 
     @Test

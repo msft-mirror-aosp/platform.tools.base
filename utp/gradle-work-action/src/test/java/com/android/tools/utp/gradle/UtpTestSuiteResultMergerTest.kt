@@ -14,15 +14,13 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.internal.testing.utp
+package com.android.tools.utp.gradle
 
-import com.google.testing.platform.proto.api.core.TestSuiteResultProto
-import com.google.testing.platform.proto.api.core.TestSuiteResultProto.TestSuiteResult
-import org.junit.Test
 import com.google.common.truth.Truth.assertThat
 import com.google.protobuf.TextFormat
-import com.google.testing.platform.proto.api.core.TestStatusProto
 import com.google.testing.platform.proto.api.core.TestStatusProto.TestStatus
+import com.google.testing.platform.proto.api.core.TestSuiteResultProto.TestSuiteResult
+import org.junit.Test
 
 /**
  * Unit tests for [UtpTestSuiteResultMerger].
@@ -47,7 +45,7 @@ class UtpTestSuiteResultMergerTest {
               }
               test_status: PASSED
             }
-        """.trimIndent(), TestSuiteResultProto.TestSuiteResult::class.java)
+        """.trimIndent(), TestSuiteResult::class.java)
 
     private val skippedResult = TextFormat.parse("""
             test_suite_meta_data {
@@ -62,7 +60,7 @@ class UtpTestSuiteResultMergerTest {
               }
               test_status: SKIPPED
             }
-        """.trimIndent(), TestSuiteResultProto.TestSuiteResult::class.java)
+        """.trimIndent(), TestSuiteResult::class.java)
 
     private val failedResult = TextFormat.parse("""
             test_suite_meta_data {
@@ -77,7 +75,7 @@ class UtpTestSuiteResultMergerTest {
               }
               test_status: FAILED
             }
-        """.trimIndent(), TestSuiteResultProto.TestSuiteResult::class.java)
+        """.trimIndent(), TestSuiteResult::class.java)
 
     @Test
     fun mergeZeroResults() {

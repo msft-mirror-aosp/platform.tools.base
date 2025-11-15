@@ -50,7 +50,6 @@ class UtpConnectedTest(runWithBuiltInPlatform: Boolean) : UtpTestBase(runWithBui
         private const val TEST_REPORT_FOR_DYNAMIC_FEATURE = "build/reports/androidTests/connected/debug/com.example.android.kotlin.feature.html"
         private const val TEST_RESULT_PB = "build/outputs/androidTest-results/connected/debug/$DEVICE_NAME/test-result.pb"
         private const val UTP_LOG = "build/outputs/androidTest-results/connected/debug/$DEVICE_NAME/utp.0.log"
-        private const val AGGREGATED_TEST_RESULT_PB = "build/outputs/androidTest-results/connected/debug/test-result.pb"
         private const val TEST_COV_XML = "build/reports/coverage/androidTest/debug/connected/report.xml"
         private const val ENABLE_UTP_TEST_REPORT_PROPERTY = "com.android.tools.utp.GradleAndroidProjectResolverExtension.enable"
         private const val TEST_ADDITIONAL_OUTPUT = "build/outputs/connected_android_test_additional_output/debugAndroidTest/connected/$DEVICE_NAME"
@@ -67,7 +66,6 @@ class UtpConnectedTest(runWithBuiltInPlatform: Boolean) : UtpTestBase(runWithBui
             testLogcatPath = "${moduleName}/$LOGCAT"
         }
         testResultPbPath = "${moduleName}/$TEST_RESULT_PB"
-        aggTestResultPbPath = "${moduleName}/$AGGREGATED_TEST_RESULT_PB"
         testCoverageXmlPath = "${moduleName}/$TEST_COV_XML"
         testAdditionalOutputPath = "${moduleName}/${TEST_ADDITIONAL_OUTPUT}"
     }
