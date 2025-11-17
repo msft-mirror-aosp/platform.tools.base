@@ -272,14 +272,14 @@ public class AndroidDebugBridge {
 
     @VisibleForTesting
     public static void disableFakeAdbServerMode() {
-        delegateIsUsed = true;
         delegate.disableFakeAdbServerMode();
     }
 
     /** Terminates the ddm library. This must be called upon application termination. */
     public static void terminate() {
-        delegateIsUsed = true;
         delegate.terminate();
+        // Set `delegateIsUsed` to false so that `preInit` could be used without triggering warnings
+        delegateIsUsed = false;
     }
 
     /**
