@@ -94,8 +94,7 @@ import com.android.build.gradle.internal.tasks.factory.TaskManagerConfigImpl
 import com.android.build.gradle.internal.testing.ManagedDeviceRegistry
 import com.android.build.gradle.internal.utils.getKotlinAndroidPluginVersion
 import com.android.build.gradle.internal.utils.handleKotlinStdlibDependency
-import com.android.build.gradle.internal.utils.syncAgpAndKgpSources
-import com.android.build.gradle.internal.utils.toImmutableMap
+import com.android.build.gradle.internal.utils.syncAgpAndKgpSourceSets
 import com.android.build.gradle.internal.variant.ComponentInfo
 import com.android.build.gradle.internal.variant.LegacyVariantInputManager
 import com.android.build.gradle.internal.variant.VariantFactory
@@ -123,7 +122,6 @@ import org.gradle.api.plugins.JavaBasePlugin
 import org.gradle.api.plugins.JavaPlugin
 import org.gradle.api.provider.Provider
 import org.gradle.build.event.BuildEventsListenerRegistry
-import org.gradle.internal.extensions.stdlib.filterKeysByPrefix
 import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry
 import java.io.File
 import java.util.Arrays
@@ -791,7 +789,7 @@ To learn more, go to https://d.android.com/r/tools/java-8-support-message.html
 
         // Built-in Kotlin
         val useBuiltInKotlinSupport = variantManager.mainComponents.any { it.variant.useBuiltInKotlinSupport }
-        syncAgpAndKgpSources(project, projectServices, extension.sourceSets, useBuiltInKotlinSupport)
+        syncAgpAndKgpSourceSets(project, projectServices, extension.sourceSets, useBuiltInKotlinSupport)
         if (useBuiltInKotlinSupport) {
             handleKotlinStdlibDependency(project, projectServices, extension.sourceSets)
         }

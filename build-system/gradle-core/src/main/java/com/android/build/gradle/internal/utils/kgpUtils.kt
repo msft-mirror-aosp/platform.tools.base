@@ -35,9 +35,11 @@ import org.gradle.api.file.FileCollection
 import org.gradle.api.file.SourceDirectorySet
 import org.gradle.api.logging.Logger
 import org.gradle.api.tasks.SourceSet
+import org.jetbrains.kotlin.gradle.dsl.KotlinAndroidProjectExtension
 import org.jetbrains.kotlin.gradle.plugin.CompilerPluginConfig
 import org.jetbrains.kotlin.gradle.plugin.KotlinBaseApiPlugin
 import org.jetbrains.kotlin.gradle.plugin.KotlinBasePluginWrapper
+import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSet
 import org.jetbrains.kotlin.gradle.plugin.SubpluginOption
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import java.util.Locale
@@ -49,7 +51,6 @@ const val ANDROID_BUILT_IN_KAPT_PLUGIN_ID = "com.android.legacy-kapt"
 const val COMPOSE_COMPILER_PLUGIN_ID = "org.jetbrains.kotlin.plugin.compose"
 const val KSP_PLUGIN_ID = "com.google.devtools.ksp"
 const val KOTLIN_MPP_PLUGIN_ID = "org.jetbrains.kotlin.multiplatform"
-private val KOTLIN_MPP_PLUGIN_IDS = listOf("kotlin-multiplatform", KOTLIN_MPP_PLUGIN_ID)
 internal const val ANDROID_KOTLIN_MPP_LIBRARY_PLUGIN_ID = "com.android.kotlin.multiplatform.library"
 
 /**
@@ -285,72 +286,36 @@ private fun KotlinCompile.maybeAddSourceInformationOption(kotlinVersion: KotlinV
     )
 }
 
-/**
- * Get information about Kotlin sources from KGP, until there is a KGP version that can work
- * with AGP which supports Kotlin source directories.
- */
-@Suppress("UNCHECKED_CAST")
-fun syncAgpAndKgpSources(
+/** Syncs Kotlin source sets between AGP and KGP. */
+fun syncAgpAndKgpSourceSets(
     project: Project,
     projectServices: ProjectServices,
     androidSourceSets: NamedDomainObjectContainer<out AndroidSourceSet>,
     useBuiltInKotlinSupport: Boolean
 ) {
-    // Create Kotlin source sets if built-in Kotlin support is available
-    // (similar to what `kotlin-android` plugin does at
-    // org.jetbrains.kotlin.gradle.plugin.sources.android.KotlinAndroidSourceSetFactory)
-    if (useBuiltInKotlinSupport) {
-        val kotlinSourceSetContainer =
-            projectServices.builtInKotlinServices.kotlinAndroidProjectExtension.sourceSets
-        androidSourceSets.forEach {
-            // The source set may have been created by the user, so we call `maybeCreate` instead of
-            // `create`
-            kotlinSourceSetContainer.maybeCreate(it.name)
-        }
-    }
+    // Skip this work if the `kotlin-multiplatform` plugin is applied
+    if (project.pluginManager.hasPlugin(KOTLIN_MPP_PLUGIN_ID)) return
 
-    val hasMpp = KOTLIN_MPP_PLUGIN_IDS.any { project.pluginManager.hasPlugin(it) }
-    // TODO(b/246910305): Remove once it is gone from Gradle
-    val hasConventionSupport = try {
-        Class.forName("org.gradle.api.internal.HasConvention")
-        true
-    } catch (ignored: Throwable) {
-        false
-    }
-
-    val kotlinSourceSets by lazy {
-        val kotlinExtension = project.extensions.findByName("kotlin") ?: return@lazy null
-
-        kotlinExtension::class.java.getMethod("getSourceSets")
-            .invoke(kotlinExtension) as NamedDomainObjectContainer<Any>
+    val kotlinSourceSets: NamedDomainObjectContainer<KotlinSourceSet>? by lazy {
+        project.extensions.findByType(KotlinAndroidProjectExtension::class.java)?.sourceSets
     }
 
     fun AndroidSourceSet.findKotlinSourceSet(): SourceDirectorySet? {
-        if (hasMpp) {
-            if (!hasConventionSupport) {
-                // Newer versions of MPP will invoke AGP APIs to add the kotlin src dirs,
-                // so we can skip doing that.
-                return null
-            }
-            val extensions = this::class.java.getMethod("getExtensions").invoke(this)
-            val plugins = extensions::class.java.getMethod("getAsMap").invoke(extensions) as Map<String, Any>
-            val kotlinConvention = plugins["kotlin"] ?: return null
-
-            return kotlinConvention as SourceDirectorySet
-        } else {
-            val kotlinSourceSet: Any = kotlinSourceSets?.findByName(this.name) ?: return null
-
-            return kotlinSourceSet::class.java.getMethod("getKotlin")
-                .invoke(kotlinSourceSet) as SourceDirectorySet
-        }
+        return kotlinSourceSets?.findByName(this.name)?.kotlin
     }
 
-    androidSourceSets.configureEach {
-        val kotlinSourceSet = it.findKotlinSourceSet() ?: return@configureEach
-        if (hasMpp) {
-            it.kotlin.setSrcDirs(kotlinSourceSet.srcDirs)
-        } else if (!useBuiltInKotlinSupport) {
-            // Only sync AGP and KGP source sets if built-in Kotlin is disabled (b/386221070)
+    if (useBuiltInKotlinSupport) {
+        // TODO(b/461767350): Stop creating Kotlin source sets for each Android source set
+        androidSourceSets.forEach {
+            // Note: The source set may have been created by the user, so we call `maybeCreate`
+            // instead of `create`
+            kotlinSourceSets!!.maybeCreate(it.name)
+        }
+    } else {
+        // Only sync Kotlin source sets when built-in Kotlin is disabled (b/386221070)
+        androidSourceSets.configureEach {
+            val kotlinSourceSet = it.findKotlinSourceSet() ?: return@configureEach
+
             kotlinSourceSet.srcDirs((it.java as DefaultAndroidSourceDirectorySet).srcDirs)
             kotlinSourceSet.srcDirs((it.kotlin as DefaultAndroidSourceDirectorySet).srcDirs)
             it.kotlin.setSrcDirs(kotlinSourceSet.srcDirs)
@@ -421,9 +386,6 @@ private fun handleKotlinStdlibWithoutVersion(
  * This is similar to the `kotlin-android` plugin's behavior:
  *   - https://youtrack.jetbrains.com/issue/KT-38221
      - https://github.com/JetBrains/kotlin/blob/fd1d3d967df9eab306bdc9707229bd22a2d5d1c2/libraries/tools/kotlin-gradle-plugin/src/common/kotlin/org/jetbrains/kotlin/gradle/internal/stdlibDependencyManagement.kt#L105-L111
- *
- * Note: When KGP provides an API to do this (https://youtrack.jetbrains.com/issue/KT-73997), we can
- * remove this method.
  */
 private fun maybeAddKotlinStdlib(
     project: Project,
