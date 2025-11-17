@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-@file:Suppress("INVISIBLE_REFERENCE", "UastImplementation")
+@file:Suppress("INVISIBLE_REFERENCE", "INFERRED_INVISIBLE_WHEN_TYPE_WARNING", "UastImplementation")
 
 package com.android.tools.lint.uast.klib
 
@@ -25,11 +25,11 @@ import com.intellij.psi.PsiManager
 import com.intellij.psi.impl.PsiParameterizedCachedValue
 import com.intellij.psi.util.CachedValueProvider
 import com.intellij.psi.util.PsiModificationTracker
+import com.intellij.util.asSafely
 import org.jetbrains.kotlin.analysis.api.KaSession
 import org.jetbrains.kotlin.analysis.api.projectStructure.KaModule
 import org.jetbrains.kotlin.analysis.api.symbols.KaAnonymousObjectSymbol
 import org.jetbrains.kotlin.analysis.api.symbols.KaCallableSymbol
-import org.jetbrains.kotlin.analysis.api.symbols.KaClassKind
 import org.jetbrains.kotlin.analysis.api.symbols.KaClassLikeSymbol
 import org.jetbrains.kotlin.analysis.api.symbols.KaEnumEntrySymbol
 import org.jetbrains.kotlin.analysis.api.symbols.KaFunctionSymbol
@@ -50,11 +50,12 @@ import org.jetbrains.kotlin.light.classes.symbol.classes.SymbolLightClassForClas
 import org.jetbrains.kotlin.light.classes.symbol.classes.SymbolLightClassForClassOrObject
 import org.jetbrains.kotlin.light.classes.symbol.classes.createLightClassNoCache
 import org.jetbrains.kotlin.light.classes.symbol.fields.SymbolLightField
-import org.jetbrains.kotlin.light.classes.symbol.fields.SymbolLightFieldForProperty
 import org.jetbrains.kotlin.light.classes.symbol.methods.SymbolLightMethodBase
 import org.jetbrains.kotlin.platform.jvm.JvmPlatform
 import org.jetbrains.kotlin.psi.KtElement
+import org.jetbrains.kotlin.psi.KtExpression
 import org.jetbrains.uast.kotlin.internal.FirKotlinUastLibraryPsiProviderService
+import org.jetbrains.uast.kotlin.readWriteAccess
 
 /**
  * An experimental light element provider that tries to provide light elements (Java-like PSI) for
@@ -115,7 +116,7 @@ internal object KlibLightElementProvider : FirKotlinUastLibraryPsiProviderServic
     val result =
       when (symbol) {
         is KaFunctionSymbol -> provideForFunctionSymbol(symbol, module)
-        is KaKotlinPropertySymbol -> provideForPropertySymbol(symbol, module)
+        is KaPropertySymbol -> provideForPropertySymbol(symbol, module, context)
         is KaEnumEntrySymbol -> provideForEnumEntrySymbol(symbol, module)
         is KaClassLikeSymbol -> provideForClassLikeSymbol(symbol, module)
         else -> null
@@ -130,152 +131,171 @@ internal object KlibLightElementProvider : FirKotlinUastLibraryPsiProviderServic
     symbol: KaFunctionSymbol,
     module: KaModule,
   ): PsiElement? {
-    if (symbol.isTopLevel) {
-      // TODO(b/461753685): Consider creating a facade class per package, .nm file, or similar.
-      // We create our own fake facade class per top-level function since .containingFile,
-      // .containingSymbol, .containingJvmClassName, and KaScopes don't currently work with klibs.
-      if (symbol !is KaNamedFunctionSymbol) {
-        log { "ERROR: Can only create facade class for top-level _named_ functions" }
-        return null
-      }
-      val psiManager = PsiManager.getInstance(module.project)
-      val facade =
-        createFacadeForTopLevelCallable(symbol, module, psiManager, getPsiFile(symbol, psiManager))
-      if (facade == null) {
-        log { "RETURN Did not create facade class, but that can be OK." }
-        return null
-      }
-      val pointer = symbol.createPointer()
-      val lightMethod =
-        facade.ownMethods.firstOrNull {
-          (it as? SymbolLightMethodBase)?.extractSymbolPointer?.pointsToTheSameSymbolAs(pointer) ==
-            true
-        }
-
-      if (lightMethod == null) {
-        log { "WARNING RETURN Could not find method in facade class, but that can be OK." }
-        return null
-      }
-      log { "RETURN light method from facade class" }
-      return lightMethod
-    }
-
-    when (val containingDeclaration = symbol.containingDeclaration) {
-      is KaNamedClassSymbol -> {
-        val lightClass = provide(containingDeclaration) as? SymbolLightClassBase
-        if (lightClass == null) {
-          log { "ERROR Expected to get a light class from the containing KaNamedClassSymbol" }
-          return null
-        }
-        val pointer = symbol.createPointer()
-        val lightMethod =
-          lightClass.ownMethods.firstOrNull {
-            (it as? SymbolLightMethodBase)
-              ?.extractSymbolPointer
-              ?.pointsToTheSameSymbolAs(pointer) == true
+    // symbol can be a property accessor contained within a property symbol.
+    val functionOrPropertySymbol = symbol.containingDeclaration as? KaPropertySymbol ?: symbol
+    val psiManager = PsiManager.getInstance(module.project)
+    // Get the containing light class (a facade class, or otherwise).
+    val lightClass =
+      when {
+        functionOrPropertySymbol.isTopLevel -> {
+          if (
+            functionOrPropertySymbol !is KaNamedFunctionSymbol &&
+              functionOrPropertySymbol !is KaPropertySymbol
+          ) {
+            log {
+              "RETURN ERROR: Can only create a facade class for top-level named function or property symbol"
+            }
+            return null
           }
-        if (lightMethod == null) {
-          log { "WARNING RETURN Could not find method in containing class" }
-          return null
-        }
-        return lightMethod
-      }
-      is KaPropertySymbol -> {
-        // symbol is a getter/setter function contained by property symbol
-        // containingDeclaration.
-        // The containing class gets a field and a method.
-        val lightProperty = provide(containingDeclaration) as? SymbolLightFieldForProperty
-        if (lightProperty == null) {
-          log { "ERROR Expected to get a light field from the containing KaPropertySymbol" }
-          return null
-        }
-        val lightClass = lightProperty.getContainingClass()
-        val pointer = symbol.createPointer()
-        val lightMethod =
-          lightClass.ownMethods.firstOrNull {
-            (it as? SymbolLightMethodBase)
-              ?.extractSymbolPointer
-              ?.pointsToTheSameSymbolAs(pointer) == true
+          // TODO(b/461753685): Consider creating a facade class per package, .nm file, or similar.
+          // We create our own fake facade class per top-level function since .containingFile,
+          // .containingSymbol, .containingJvmClassName, and KaScopes don't currently work with
+          // klibs.
+          val facade =
+            createFacadeForTopLevelCallable(
+              functionOrPropertySymbol,
+              module,
+              psiManager,
+              getPsiFile(functionOrPropertySymbol, psiManager),
+            )
+          if (facade == null) {
+            log { "RETURN Did not create facade class, but that can be OK." }
+            return null
           }
-        if (lightMethod == null) {
-          log { "WARNING RETURN Could not find method in containing class" }
-          return null
+          facade
         }
-        return lightMethod
+        else -> {
+          val containingClass =
+            functionOrPropertySymbol.containingDeclaration as? KaNamedClassSymbol
+          if (containingClass == null) {
+            log {
+              "ERROR expected containing declaration to be a KaNamedClassSymbol, but is: ${functionOrPropertySymbol.containingDeclaration}"
+            }
+            return null
+          }
+          val lightClass = provide(containingClass) as? SymbolLightClassBase
+          if (lightClass == null) {
+            log { "ERROR Expected to get a light class from the containing KaNamedClassSymbol" }
+            return null
+          }
+          lightClass
+        }
       }
-      else -> {
-        log { "ERROR: Unexpected containing declaration type: $containingDeclaration" }
-        return null
+    val pointer = symbol.createPointer()
+    val lightMethod =
+      lightClass.ownMethods.firstOrNull {
+        (it as? SymbolLightMethodBase)?.extractSymbolPointer?.pointsToTheSameSymbolAs(pointer) ==
+          true
       }
+    if (lightMethod == null) {
+      log { "WARNING RETURN Could not find method in light class, but that can be OK." }
+      return null
     }
+    return lightMethod
   }
 
+  @Suppress("UnstableApiUsage")
   private fun KaSession.provideForPropertySymbol(
-    symbol: KaKotlinPropertySymbol,
+    symbol: KaPropertySymbol,
     module: KaModule,
+    context: KtElement?,
   ): PsiElement? {
-    // TODO: we need to return the getter/setter in some cases.
-
     // TODO: fields are incorrectly added, even for properties without a backing field.
     //  We might be able to fix in SLC, but we might be blocked by:
     //  https://youtrack.jetbrains.com/issue/KT-77281
 
-    if (symbol.isTopLevel) {
-      // We create our own fake facade class per top-level property since .containingFile,
-      // .containingSymbol, .containingJvmClassName, and KaScopes don't currently work with klibs.
-      val psiManager = PsiManager.getInstance(module.project)
-      val facade =
-        createFacadeForTopLevelCallable(symbol, module, psiManager, getPsiFile(symbol, psiManager))
-      if (facade == null) {
-        log { "RETURN Did not create facade class, but that can be OK." }
-        return null
+    // Note: UAST behaves differently depending on whether the resolved property is in Kotlin source
+    // code or in a jar. For source code, a property access resolves to the getter/setter PsiMethod.
+    // For a jar, the property access (often) resolves to a PsiField. In hindsight, resolving to a
+    // PsiField is strange: (a) the PsiField corresponds to a backing field, which may or may not be
+    // present, depending on how the property is defined. Synthetic properties derived from Java
+    // code will also not have backing fields. (b) Even if there is a backing field, it is not being
+    // referenced by the property access expression. Below, we follow the source code approach: we
+    // prefer to resolve to getter/setter methods.
+
+    // We don't need to consider synthetic properties derived from Java code.
+    if (symbol !is KaKotlinPropertySymbol) {
+      log { "ERROR RETURN Expected Kotlin property, but found: $symbol" }
+      return null
+    }
+
+    // For a compound access like `a.propInt += 1`, the left operand resolves (using AA) to a read
+    // access call. And yet, UAST (when the property is in source code) resolves it to the setter
+    // method (I think this is only because we find the setter method first; if the getter was
+    // declared first, we would return the getter). We try to match this convention.
+    val accessorSymbol =
+      when {
+        context?.asSafely<KtExpression>()?.readWriteAccess()?.isWrite == true -> symbol.setter
+        else -> symbol.getter
       }
-      val pointer = symbol.createPointer()
-      val lightField =
-        facade.ownFields.firstOrNull {
-          (it as? SymbolLightField)?.extractSymbolPointer?.pointsToTheSameSymbolAs(pointer) == true
+
+    val psiManager = PsiManager.getInstance(module.project)
+
+    // Get the containing light class (a facade class, or otherwise).
+    val lightClass: SymbolLightClassBase =
+      when {
+        symbol.isTopLevel -> {
+          // We create our own fake facade class per top-level property since .containingFile,
+          // .containingSymbol, .containingJvmClassName, and KaScopes don't currently work with
+          // klibs.
+          val facade =
+            createFacadeForTopLevelCallable(
+              symbol,
+              module,
+              psiManager,
+              getPsiFile(symbol, psiManager),
+            )
+          if (facade == null) {
+            log { "RETURN Did not create facade class, but that can be OK." }
+            return null
+          }
+          facade
         }
-      if (lightField == null) {
-        log { "WARNING RETURN Could not find field in facade class" }
-        return null
+        else -> {
+          val containingClass = symbol.containingDeclaration as? KaNamedClassSymbol
+          if (containingClass == null) {
+            log {
+              "ERROR expected containing declaration to be a KaNamedClassSymbol, but is: ${symbol.containingDeclaration}"
+            }
+            return null
+          }
+          val lightClass = provide(containingClass) as? SymbolLightClassBase
+          if (lightClass == null) {
+            log { "ERROR Expected to get a light class from the containing KaNamedClassSymbol" }
+            return null
+          }
+          lightClass
+        }
       }
+
+    val propertySymbolPointer = symbol.createPointer()
+
+    if (accessorSymbol != null) {
+      val accessorSymbolPointer = accessorSymbol.createPointer()
+      val lightMethod =
+        lightClass.ownMethods.firstOrNull {
+          (it as? SymbolLightMethodBase)
+            ?.extractSymbolPointer
+            ?.pointsToTheSameSymbolAs(accessorSymbolPointer) == true
+        }
+      if (lightMethod != null) {
+        return lightMethod
+      }
+      log { "WARNING Could not find accessor method for $accessorSymbol, but that can be OK." }
+    }
+
+    val lightField =
+      lightClass.ownFields.firstOrNull {
+        (it as? SymbolLightField)
+          ?.extractSymbolPointer
+          ?.pointsToTheSameSymbolAs(propertySymbolPointer) == true
+      }
+    if (lightField != null) {
       return lightField
     }
 
-    var containingClass = symbol.containingDeclaration as? KaNamedClassSymbol
-    if (containingClass == null) {
-      log {
-        "ERROR expected containing declaration to be a KaNamedClassSymbol, but is: ${symbol.containingDeclaration}"
-      }
-      return null
-    }
-    if (containingClass.classKind == KaClassKind.COMPANION_OBJECT) {
-      // The containing class of a companion object gets the fields, so we want that.
-      // TODO: Check if we should return the getter on the companion object.
-      containingClass = containingClass.containingDeclaration as? KaNamedClassSymbol
-      if (containingClass == null) {
-        log {
-          "ERROR expected containing declaration of this companion object " +
-            "to be a KaNamedClassSymbol, but is: ${symbol.containingDeclaration?.containingDeclaration}"
-        }
-        return null
-      }
-    }
-    val lightClass = provide(containingClass) as? SymbolLightClassBase
-    if (lightClass == null) {
-      log { "ERROR Expected to get a light class from the containing KaNamedClassSymbol" }
-      return null
-    }
-    val pointer = symbol.createPointer()
-    val lightField =
-      lightClass.ownFields.firstOrNull {
-        (it as? SymbolLightField)?.extractSymbolPointer?.pointsToTheSameSymbolAs(pointer) == true
-      }
-    if (lightField == null) {
-      log { "WARNING RETURN Could not find field in containing class, but that can be OK." }
-      return null
-    }
-    return lightField
+    log { "WARNING RETURN Could not find field in containing class, but that can be OK." }
+    return null
   }
 
   private fun KaSession.provideForEnumEntrySymbol(
