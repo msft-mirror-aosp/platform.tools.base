@@ -683,7 +683,11 @@ abstract class SystemPropertyInputs {
             providerFactory.systemProperty("android.lint.log-jar-problems")
         )
         javaHome.setDisallowChanges(providerFactory.systemProperty("java.home"))
-        javaVersion.setDisallowChanges(providerFactory.systemProperty("java.version"))
+        // Normalize the java.version to only capture the major version, because different JDK
+        // vendors and minor versions can cause cache misses
+        javaVersion.setDisallowChanges(providerFactory.systemProperty("java.version")
+            .map { JavaVersion.toVersion(it).majorVersion }
+        )
         lintApiDatabase.fileProvider(
             providerFactory.systemProperty("LINT_API_DATABASE").map {
                 File(it)

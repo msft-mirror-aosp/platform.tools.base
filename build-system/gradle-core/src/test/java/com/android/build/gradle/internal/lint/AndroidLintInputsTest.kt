@@ -17,10 +17,19 @@
 package com.android.build.gradle.internal.lint
 
 import com.android.build.gradle.internal.fixtures.FakeSyncIssueReporter
+import com.android.testutils.SystemPropertyOverrides
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
+import org.gradle.api.Project
+import org.gradle.testfixtures.ProjectBuilder
+import org.junit.Rule
+import org.junit.rules.TemporaryFolder
 
 class AndroidLintInputsTest {
+
+    @get:Rule
+    val temporaryFolder = TemporaryFolder()
+    private val project: Project by lazy { ProjectBuilder.builder().withProjectDir(temporaryFolder.newFolder()).build() }
 
     @Test
     fun `check default when override is not set`() {
@@ -90,5 +99,23 @@ class AndroidLintInputsTest {
             """.trimIndent()
         )
     }
-}
 
+    @Test
+    fun `check java version normalization`() {
+        SystemPropertyOverrides().use { systemPropertyOverrides ->
+            fun check(javaVersion: String, expectedMajorVersion: String) {
+                val systemPropertyInputs =
+                    project.objects.newInstance(SystemPropertyInputs::class.java)
+                systemPropertyOverrides.setProperty("java.version", javaVersion)
+                systemPropertyInputs.initialize(project.providers, LintMode.ANALYSIS)
+                assertThat(systemPropertyInputs.javaVersion.get()).isEqualTo(expectedMajorVersion)
+            }
+
+            check("1.8.0_292", "8")
+            check("11.0.1", "11")
+            check("17", "17")
+            check("17.0.17+10-LTS", "17")
+            check("17+35-LTS-2724", "17")
+        }
+    }
+}
