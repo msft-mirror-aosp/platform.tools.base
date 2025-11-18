@@ -26,9 +26,13 @@ import com.android.sdklib.internal.avd.AvdManager
 import com.android.sdklib.internal.avd.BootMode
 import com.android.testutils.file.createInMemoryFileSystemAndFolder
 import com.google.common.truth.Truth.assertThat
+import com.google.common.truth.Truth.assertWithMessage
 import java.awt.Component
 import java.nio.file.Path
 import java.time.Duration
+import kotlin.reflect.KClass
+import kotlin.reflect.full.isSubclassOf
+import kotlin.reflect.full.memberProperties
 import kotlin.time.Duration.Companion.minutes
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -51,6 +55,36 @@ import kotlinx.datetime.Instant
 import org.junit.Test
 
 class LocalEmulatorDeviceHandleTest {
+
+  /** Verify that DeviceActions are implemented as fields rather than via getters. */
+  @Test
+  fun actionPresentationIdentity() = runTest {
+    val handle =
+      LocalEmulatorDeviceHandle(
+        testContext(this, StubAvdManager()),
+        {},
+        MutableStateFlow(emptyList()),
+        this.createChildScope(),
+        emptyList(),
+        makeAvdInfo(createInMemoryFileSystemAndFolder("avds"), 1),
+      )
+
+    for (property in LocalEmulatorDeviceHandle::class.memberProperties) {
+      val classType = property.returnType.classifier as? KClass<*> ?: continue
+      if (classType.isSubclassOf(DeviceAction::class)) {
+        val action = property.getter.call(handle) as? DeviceAction
+        assertWithMessage(property.name).that(action).isSameAs(property.getter.call(handle))
+        if (action != null) {
+          assertWithMessage("${property.name}.presentation")
+            .that(action.presentation)
+            .isSameAs(action.presentation)
+        }
+      }
+    }
+
+    handle.scope.cancel()
+  }
+
   @OptIn(ExperimentalCoroutinesApi::class)
   @Test
   fun activationTimeout() = runTest {

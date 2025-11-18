@@ -749,12 +749,11 @@ internal constructor(
         avdManager.pairGlasses(parent, this@LocalEmulatorDeviceHandle, deviceHandleFlow)
       }
 
-      override val presentation: StateFlow<DeviceAction.Presentation>
-        get() =
-          defaultPresentation.fromContext().enabledIf {
-            it.properties.deviceType == DeviceType.AI_GLASSES &&
-              (it.properties as LocalEmulatorProperties).pairedPhoneId == null
-          }
+      override val presentation: StateFlow<DeviceAction.Presentation> =
+        defaultPresentation.fromContext().enabledIf {
+          it.properties.deviceType == DeviceType.AI_GLASSES &&
+            (it.properties as LocalEmulatorProperties).pairedPhoneId == null
+        }
     }
 
   override val unpairGlassesAction =
@@ -763,11 +762,10 @@ internal constructor(
         avdManager.unpairGlasses(this@LocalEmulatorDeviceHandle)
       }
 
-      override val presentation: StateFlow<DeviceAction.Presentation>
-        get() =
-          defaultPresentation.fromContext().enabledIf {
-            it.properties.pairedPhoneId != null || it.properties.pairedGlassesId != null
-          }
+      override val presentation: StateFlow<DeviceAction.Presentation> =
+        defaultPresentation.fromContext().enabledIf {
+          it.properties.pairedPhoneId != null || it.properties.pairedGlassesId != null
+        }
     }
 
   /**
