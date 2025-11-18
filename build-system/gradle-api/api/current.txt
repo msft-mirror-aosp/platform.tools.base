@@ -175,6 +175,10 @@ package com.android.build.api.artifact {
     field public static final com.android.build.api.artifact.ScopedArtifact.JAVA_RES INSTANCE;
   }
 
+  @org.gradle.api.Incubating public static final class ScopedArtifact.POST_COMPILATION_CLASSES extends com.android.build.api.artifact.ScopedArtifact {
+    field public static final com.android.build.api.artifact.ScopedArtifact.POST_COMPILATION_CLASSES INSTANCE;
+  }
+
   public abstract sealed class SingleArtifact<T extends org.gradle.api.file.FileSystemLocation> extends com.android.build.api.artifact.Artifact.Single<T> {
   }
 
