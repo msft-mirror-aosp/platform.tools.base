@@ -41,14 +41,13 @@ class AppWithKmpDependency : ModelComparator() {
                 }
             }
             gradleProperties {
-                add(BooleanOption.BUILT_IN_KOTLIN, false)
+                add(BooleanOption.USE_ANDROID_X, true)
             }
         }
 
     @Test
     fun `test VariantDependencies model with kotlin attribute`() {
         val result = rule.build.modelBuilder
-            .with(BooleanOption.USE_ANDROID_X, true)
             .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
             .fetchModels(variantName = "debug")
 
@@ -62,7 +61,7 @@ class AppWithKmpDependency : ModelComparator() {
     fun `test VariantDependencies model without kotlin attribute`() {
         val result = rule.build.modelBuilder
             .with(BooleanOption.DISABLE_KOTLIN_ATTRIBUTE_SETUP, true)
-            .with(BooleanOption.USE_ANDROID_X, true)
+            .with(BooleanOption.BUILT_IN_KOTLIN, false)
             .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
             .fetchModels(variantName = "debug")
 
@@ -75,9 +74,7 @@ class AppWithKmpDependency : ModelComparator() {
     @Test
     fun checkPackagedClassesContainAndroidSpecificClass() {
         val build = rule.build
-        build.executor
-            .with(BooleanOption.USE_ANDROID_X, true)
-            .run(":app:assembleDebug")
+        build.executor.run(":app:assembleDebug")
 
         build.androidApplication().assertApk(ApkSelector.DEBUG) {
             classes().contains("androidx/lifecycle/ReportFragment")
@@ -86,10 +83,11 @@ class AppWithKmpDependency : ModelComparator() {
 
     @Test
     fun checkPackagedClassesDoesntContainAndroidSpecificClass() {
+        // should resolve desktopApiElements-published variant
         val build = rule.build
         build.executor
-            .with(BooleanOption.USE_ANDROID_X, true)
             .with(BooleanOption.DISABLE_KOTLIN_ATTRIBUTE_SETUP, true)
+            .with(BooleanOption.BUILT_IN_KOTLIN, false)
             .run(":app:assembleDebug")
 
         build.androidApplication().assertApk(ApkSelector.DEBUG) {
