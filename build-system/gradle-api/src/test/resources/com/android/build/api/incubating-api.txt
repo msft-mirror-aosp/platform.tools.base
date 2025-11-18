@@ -688,6 +688,8 @@ https://issuetracker.google.com/443174826
   * com.android.build.api.variant.TestSuiteTargetBuilder.setEnable: void (boolean)
 https://issuetracker.google.com/443715703
   * com.android.build.api.variant.Component.configureJavaCompileTask: void (kotlin.jvm.functions.Function1<? super org.gradle.api.tasks.compile.JavaCompile, kotlin.Unit>)
+https://issuetracker.google.com/444641424
+  * com.android.build.api.artifact.ScopedArtifact$POST_COMPILATION_CLASSES extends com.android.build.api.artifact.ScopedArtifact
 https://issuetracker.google.com/444699160
   * com.android.build.api.dsl.TestSuiteHostJarSpec.getEnableAndroidResources: boolean ()
   * com.android.build.api.dsl.TestSuiteHostJarSpec.setEnableAndroidResources: void (boolean)
