@@ -73414,6 +73414,17 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "org.apache.lucene.lucene-analysis-common_9.12.0",
+    pom = "repository/org/apache/lucene/lucene-analysis-common/9.12.0/lucene-analysis-common-9.12.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/apache/lucene/lucene-analysis-common/9.12.0",
+    deps = [
+        "org.apache.lucene.lucene-core_9.12.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "org.apache.lucene.lucene-core_9.12.0",
     pom = "repository/org/apache/lucene/lucene-core/9.12.0/lucene-core-9.12.0.pom",
     repo_root_path = "repository",
