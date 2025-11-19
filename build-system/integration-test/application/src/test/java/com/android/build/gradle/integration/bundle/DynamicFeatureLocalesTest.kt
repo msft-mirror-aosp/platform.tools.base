@@ -96,15 +96,26 @@ class DynamicFeatureLocalesTest {
             // defaults
             "base-master.apk",
             "base-master_2.apk",
+            "base-master_3.apk",
             "feature1-master.apk",
             "feature1-master_2.apk",
+            "feature1-master_3.apk",
             "feature2-master.apk",
             "feature2-master_2.apk",
+            "feature2-master_3.apk",
             // these are the locales specified in the localeFilters DSL
             "base-es.apk",
+            "base-es_2.apk",
+            "base-es_3.apk",
             "feature1-de.apk",
+            "feature1-de_2.apk",
+            "feature1-de_3.apk",
             "feature1-es.apk",
-            "feature1-zh.apk"
+            "feature1-es_2.apk",
+            "feature1-es_3.apk",
+            "feature1-zh.apk",
+            "feature1-zh_2.apk",
+            "feature1-zh_3.apk"
         )
 
         TestFileUtils.searchAndReplace(
