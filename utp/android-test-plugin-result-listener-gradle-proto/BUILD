@@ -18,6 +18,7 @@ maven_proto_library(
         "@maven//:io.grpc.grpc-stub",
     ],
     notice = "NOTICE",
+    proto_java_runtime_library = ["//tools/base/utp:utp.protobuf-java"],
     protoc_version = UTP_PROTO_VERSION,
     resource_strip_prefix = "tools/base/utp/android-test-plugin-result-listener-gradle-proto/src/main/proto",
     resources = glob(["src/main/proto/*.proto"]),

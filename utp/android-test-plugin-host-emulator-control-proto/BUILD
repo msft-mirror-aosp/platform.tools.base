@@ -11,6 +11,7 @@ maven_proto_library(
         "@maven//:org.jetbrains.kotlin.kotlin-stdlib-jdk8",
     ],
     notice = "NOTICE",
+    proto_java_runtime_library = ["//tools/base/utp:utp.protobuf-java"],
     protoc_version = UTP_PROTO_VERSION,
     resource_strip_prefix = "tools/base/utp/android-test-plugin-host-emulator-control-proto/src/main/proto",
     resources = glob(["src/main/proto/*.proto"]),

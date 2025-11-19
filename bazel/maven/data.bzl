@@ -843,6 +843,7 @@ DATA = [
     "com.google.code.findbugs:jsr305:3.0.2",
     "com.google.code.gson:gson:2.2.4",
     "com.google.code.gson:gson:2.6.2",
+    "com.google.crypto.tink:tink:1.18.0",  # Dependency for UTP.
     "com.google.crypto.tink:tink:1.3.0-rc2",
     "com.google.dagger:dagger-compiler:2.28.3",
     "com.google.dagger:dagger-compiler:2.52",
@@ -901,6 +902,7 @@ DATA = [
     "com.google.protobuf:protobuf-bom:pom:3.22.3",
     "com.google.protobuf:protobuf-bom:pom:3.24.4",
     "com.google.protobuf:protobuf-bom:pom:3.25.5",
+    "com.google.protobuf:protobuf-bom:pom:4.28.3",  # Dependency for UTP.
     "com.google.protobuf:protobuf-java:3.19.3",
     "com.google.protobuf:protobuf-java:3.22.3",
     "com.google.protobuf:protobuf-java:3.24.4",
@@ -916,6 +918,7 @@ DATA = [
     "com.google.protobuf:protobuf-java-util:4.33.2",
     "com.google.protobuf:protobuf-javalite:4.28.2",  # XR template
     "com.google.protobuf:protobuf-kotlin:3.24.4",
+    "com.google.protobuf:protobuf-kotlin:4.28.3",  # Dependency for UTP.
     "com.google.protobuf:protobuf-parent:pom:3.19.3",
     "com.google.protobuf:protobuf-parent:pom:3.22.3",
     "com.google.protobuf:protobuf-parent:pom:3.24.4",
@@ -924,29 +927,38 @@ DATA = [
     "com.google.protobuf:protoc:exe:linux-x86_64:3.19.6",
     "com.google.protobuf:protoc:exe:linux-x86_64:3.22.3",
     "com.google.protobuf:protoc:exe:linux-x86_64:3.24.4",
+    "com.google.protobuf:protoc:exe:linux-x86_64:4.28.3",  # Dependency for UTP.
     "com.google.protobuf:protoc:exe:osx-aarch_64:3.19.6",
     "com.google.protobuf:protoc:exe:osx-aarch_64:3.22.3",
     "com.google.protobuf:protoc:exe:osx-aarch_64:3.24.4",
+    "com.google.protobuf:protoc:exe:osx-aarch_64:4.28.3",  # Dependency for UTP.
     "com.google.protobuf:protoc:exe:osx-x86_64:3.19.6",
     "com.google.protobuf:protoc:exe:osx-x86_64:3.22.3",
     "com.google.protobuf:protoc:exe:osx-x86_64:3.24.4",
+    "com.google.protobuf:protoc:exe:osx-x86_64:4.28.3",  # Dependency for UTP.
     "com.google.protobuf:protoc:exe:windows-x86_64:3.19.6",
     "com.google.protobuf:protoc:exe:windows-x86_64:3.22.3",
     "com.google.protobuf:protoc:exe:windows-x86_64:3.24.4",
+    "com.google.protobuf:protoc:exe:windows-x86_64:4.28.3",  # Dependency for UTP.
     "com.google.testing.platform:android-device-provider-local:0.0.8-alpha07",
     "com.google.testing.platform:android-device-provider-local:0.0.8-alpha08",
-    "com.google.testing.platform:android-device-provider-local:jar:0.0.8-alpha07",
+    "com.google.testing.platform:android-device-provider-local:0.0.9-alpha04",
     "com.google.testing.platform:android-driver-instrumentation:0.0.8-alpha07",
     "com.google.testing.platform:android-driver-instrumentation:0.0.8-alpha08",
     "com.google.testing.platform:android-driver-instrumentation:0.0.9-alpha03",
+    "com.google.testing.platform:android-driver-instrumentation:0.0.9-alpha04",
     "com.google.testing.platform:android-test-plugin:0.0.8-alpha07",
     "com.google.testing.platform:android-test-plugin:0.0.8-alpha08",
     "com.google.testing.platform:android-test-plugin:0.0.9-alpha03",
+    "com.google.testing.platform:android-test-plugin:0.0.9-alpha04",
     "com.google.testing.platform:core:0.0.8-alpha07",
     "com.google.testing.platform:core:0.0.8-alpha08",
     "com.google.testing.platform:core:0.0.9-alpha03",
+    "com.google.testing.platform:core:0.0.9-alpha04",
+    "com.google.testing.platform:core-proto:0.0.9-alpha04",
     "com.google.testing.platform:launcher:0.0.8-alpha07",
     "com.google.testing.platform:launcher:0.0.8-alpha08",
+    "com.google.testing.platform:launcher:0.0.9-alpha04",
     "com.google.truth:truth:0.42",
     "com.google.truth:truth:0.44",
     "com.google.truth:truth:1.1.2",

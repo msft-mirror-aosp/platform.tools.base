@@ -10,10 +10,9 @@ kotlin_library(
     deps = [
         "//tools/base/common:tools.common",
         "//tools/base/ddmlib:tools.ddmlib",
+        "//tools/base/utp:com.google.testing.platform.android-device-provider-local",
+        "//tools/base/utp:com.google.testing.platform.launcher",
         "//tools/base/utp/android-device-provider-ddmlib-proto",
-        "@maven//:com.google.protobuf.protobuf-java",
-        "@maven//:com.google.testing.platform.android-device-provider-local",
-        "@maven//:com.google.testing.platform.launcher",
         "@maven//:org.jetbrains.kotlin.kotlin-stdlib-jdk8",
         "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-core",
     ],
@@ -28,21 +27,22 @@ kotlin_test(
     resources = glob(["src/test/resources/**"]),
     test_class = "com.android.testutils.JarTestSuite",
     deps = [
-        # Don't change dependency order or the test fails. This launcher jar
-        # should be loaded first.
-        "@maven//:com.google.testing.platform.launcher",
-        # Test dependencies.
-        ":android-device-provider-ddmlib",
+        # Put UTP protobuf-java runtime first in the list to ignore other versions in the deps.
+        "//tools/base/utp:utp.protobuf-java",
+        # Other dependencies.
         "//tools/base/common:tools.common",
         "//tools/base/ddmlib:tools.ddmlib",
         "//tools/base/sdk-common:tools.sdk-common",
         "//tools/base/sdklib:tools.sdklib",
         "//tools/base/testutils:tools.testutils",
         "//tools/base/utp/android-device-provider-ddmlib-proto",
-        "@maven//:com.google.protobuf.protobuf-java",
-        "@maven//:com.google.testing.platform.android-device-provider-local",
+        "//tools/base/utp:com.google.testing.platform.android-device-provider-local",
+        "//tools/base/utp:com.google.testing.platform.launcher",
+        "//tools/base/utp:utp.dagger",
+        ":android-device-provider-ddmlib",
         "@maven//:com.google.truth.truth",
         "@maven//:junit.junit",
+        "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-core",
         "@maven//:org.mockito.kotlin.mockito-kotlin",
         "@maven//:org.mockito.mockito-core",
     ],

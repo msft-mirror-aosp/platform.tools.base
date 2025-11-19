@@ -554,8 +554,6 @@ maven_repository(
         "@maven//:com.google.jimfs.jimfs",
         "@maven//:com.google.protobuf.protobuf-gradle-plugin",
         "@maven//:com.google.protobuf.protoc_3.22.3",
-        "@maven//:com.google.testing.platform.android-driver-instrumentation",
-        "@maven//:com.google.testing.platform.core-proto",
         "@maven//:com.google.truth.extensions.truth-java8-extension",
         "@maven//:com.googlecode.jarjar.jarjar",
         "@maven//:com.googlecode.juniversalchardet.juniversalchardet",
