@@ -44,7 +44,7 @@
             </d:sensors>
             <d:mic>true</d:mic>
             <d:camera>
-                <d:location>front</d:location>
+                <d:location>back</d:location>
                 <d:autofocus>false</d:autofocus>
                 <d:flash>false</d:flash>
             </d:camera>
