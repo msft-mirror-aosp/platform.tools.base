@@ -191,8 +191,9 @@ class AiGlassesPairing(val session: AdbSession) {
 
     val TERMINAL_STATES =
       setOf(
-        "PAIRED",
         "ERROR",
+        "PAIRED",
+        "POLLING_FAILED",
         "UI_CDM_FAILED",
         "WORKER_BOND_FAILED",
         "WORKER_CONNECTION_FAILED",
