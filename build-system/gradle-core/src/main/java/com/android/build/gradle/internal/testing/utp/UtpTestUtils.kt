@@ -44,7 +44,7 @@ private const val TEST_RESULT_PB_FILE_NAME = "test-result.pb"
 
 /**
  * @property sdkApkSet the privacy sandbox SDK APK
- * @property extractedApks extracted APks from the privacy sandbox SDK APK to install during test
+ * @property extractedApkMap extracted APks from the privacy sandbox SDK APK to install during test
  */
 data class PrivacySandboxSdkInstallBundle(
     val sdkApkSet: Set<File>,
@@ -64,46 +64,20 @@ fun runUtpTestSuiteAndWait(
     utpDependencies: UtpDependencies,
     versionedSdkLoader: SdkComponentsBuildService.VersionedSdkLoader,
 ): Boolean {
-    return runUtpTestSuiteAndWait(
-        workerExecutor,
-        runnerConfigs,
-        utpDependencies,
-        jvmExecutable,
-        projectPath,
-        variantName,
-        resultsDir,
-        File(resultsDir, TEST_RESULT_PB_FILE_NAME),
-        File(resultsDir, TEST_RESULT_EXIT_CODE_FILE_NAME),
-        versionedSdkLoader,
-    )
-}
+    val mergedUtpResultProtoOutputFile = File(resultsDir, TEST_RESULT_PB_FILE_NAME)
+    val testResultExitCodeFile = File(resultsDir, TEST_RESULT_EXIT_CODE_FILE_NAME)
 
-/**
- * Runs the given runner config using Unified Test Platform.
- */
-private fun runUtpTestSuiteAndWait(
-    workerExecutor: WorkerExecutor,
-    configs: List<RunUtpWorkParameters.UtpRunConfig>,
-    utpDependencies: UtpDependencies,
-    jvmExecutable: File,
-    projectPath: String,
-    variantName: String,
-    xmlTestReportOutputDirectory: File,
-    mergedUtpResultProtoOutputFile: File,
-    testResultExitCodeFile: File,
-    versionedSdkLoader: SdkComponentsBuildService.VersionedSdkLoader,
-): Boolean {
     val workQueue = workerExecutor.classLoaderIsolation { spec ->
         spec.classpath.fromDisallowChanges(utpDependencies.gradleWorkAction)
     }
 
     workQueue.submit(RunUtpWorkAction::class.java) { params ->
         params.jvm.set(jvmExecutable)
-        params.utpRunConfigs.setDisallowChanges(configs)
+        params.utpRunConfigs.setDisallowChanges(runnerConfigs)
         params.utpDependencies.setDisallowChanges(utpDependencies)
         params.projectPath.setDisallowChanges(projectPath)
         params.variantName.setDisallowChanges(variantName)
-        params.xmlTestReportOutputDirectory.fileValue(xmlTestReportOutputDirectory).disallowChanges()
+        params.xmlTestReportOutputDirectory.fileValue(resultsDir).disallowChanges()
         params.mergedUtpResultProtoOutputFile.fileValue(mergedUtpResultProtoOutputFile).disallowChanges()
         params.testResultExitCodeFile.fileValue(testResultExitCodeFile).disallowChanges()
         params.androidSdkDirectory.setDisallowChanges(versionedSdkLoader.sdkDirectoryProvider)
