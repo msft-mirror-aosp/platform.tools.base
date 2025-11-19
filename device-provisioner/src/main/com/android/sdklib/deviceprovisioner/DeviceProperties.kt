@@ -251,6 +251,9 @@ interface DeviceProperties {
       val characteristics = (properties[RO_BUILD_CHARACTERISTICS] ?: "").split(",")
       deviceType =
         when {
+          // Some builds of microxr might present themselves with the "watch" characteristic
+          // so this check needs to be ahead of the WEAR one.
+          properties.contains("vendor.microxr.mcu.firmware.name") -> DeviceType.AI_GLASSES
           characteristics.contains("watch") -> DeviceType.WEAR
           characteristics.contains("tv") -> DeviceType.TV
           characteristics.contains("automotive") -> DeviceType.AUTOMOTIVE
