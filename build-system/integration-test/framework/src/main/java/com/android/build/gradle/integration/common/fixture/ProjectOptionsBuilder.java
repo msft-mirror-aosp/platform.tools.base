@@ -31,7 +31,6 @@ import java.util.EnumMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -110,9 +109,7 @@ public class ProjectOptionsBuilder {
             @NonNull ImmutableList.Builder<String> args, @NonNull Map<OptionT, ValueT> values) {
         values.forEach(
                 (option, value) -> {
-                    if (!Objects.equals(option.getDefaultValue(), value)) {
                         args.add(propertyArg(option, value));
-                    }
                 });
     }
 
