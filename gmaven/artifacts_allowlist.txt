@@ -72,8 +72,6 @@
   com/android/tools/pixelprobe:pixelprobe
   com/android/tools/utp:android-device-provider-ddmlib
   com/android/tools/utp:android-device-provider-ddmlib-proto
-  com/android/tools/utp:android-device-provider-profile
-  com/android/tools/utp:android-device-provider-profile-proto
   com/android/tools/utp:android-test-plugin-host-additional-test-output
   com/android/tools/utp:android-test-plugin-host-additional-test-output-proto
   com/android/tools/utp:android-test-plugin-host-apk-installer

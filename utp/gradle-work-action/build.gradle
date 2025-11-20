@@ -37,7 +37,6 @@ dependencies {
     implementation libs.apache_commons_io
     implementation libs.unified_test_platform
     implementation libs.com.android.tools.utp.androidDeviceProviderDdmlibProto
-    implementation libs.com.android.tools.utp.androidDeviceProviderProfileProto
     implementation libs.com.android.tools.utp.androidTestPluginHostAdditionalTestOutputProto
     implementation libs.com.android.tools.utp.androidTestPluginHostApkInstallerProto
     implementation libs.com.android.tools.utp.androidTestPluginHostCoverageProto
