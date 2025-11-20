@@ -88,9 +88,11 @@ class WrongGradleMethodDetector : Detector(), GradleScanner {
     analyze(ktCall) {
       val symbol = ktCall.resolveToCall()?.singleFunctionCallOrNull()?.symbol ?: return
       val parentType = getReceiverType(symbol) as? KaClassType ?: return
-      val thisType = getTypeReceiverType(ktCall) as? KaClassType ?: return
+      val thisType = getTypeReceiverType(ktCall) ?: return
       if (!thisType.isSubtypeOf(parentType)) {
-        val thisTypeString = thisType.classId.asSingleFqName().asString()
+        // Unwrap flexible types to their lower bound to get the underlying class name.
+        val thisTypeClassifier = thisType.lowerBoundIfFlexible() as? KaClassType ?: return
+        val thisTypeString = thisTypeClassifier.classId.asSingleFqName().asString()
 
         if (statement == FIREBASE_APP_DISTRIBUTION_NAME) {
           reportFirebaseAppDistributionMistake(context, ktCall)
