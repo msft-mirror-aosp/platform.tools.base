@@ -868,7 +868,7 @@ abstract class TaskManager(
                 .artifacts
                 .forScope(ScopedArtifacts.Scope.PROJECT)
                 .setInitialContent(
-                    ScopedArtifact.CLASSES,
+                    ScopedArtifact.POST_COMPILATION_CLASSES,
                     variantData.allPreJavacGeneratedBytecode
                 )
 
@@ -876,7 +876,7 @@ abstract class TaskManager(
                 .artifacts
                 .forScope(ScopedArtifacts.Scope.PROJECT)
                 .setInitialContent(
-                    ScopedArtifact.CLASSES,
+                    ScopedArtifact.POST_COMPILATION_CLASSES,
                     variantData.allPostJavacGeneratedBytecode
                 )
         }
@@ -886,7 +886,7 @@ abstract class TaskManager(
                 .artifacts
                 .forScope(ScopedArtifacts.Scope.PROJECT)
                 .setInitialContent(
-                    ScopedArtifact.CLASSES,
+                    ScopedArtifact.POST_COMPILATION_CLASSES,
                     creationConfig.artifacts,
                     InternalArtifactType.BUILT_IN_KOTLINC
                 )
@@ -897,7 +897,7 @@ abstract class TaskManager(
                 .artifacts
                 .forScope(ScopedArtifacts.Scope.PROJECT)
                 .setInitialContent(
-                    ScopedArtifact.CLASSES,
+                    ScopedArtifact.POST_COMPILATION_CLASSES,
                     creationConfig.artifacts,
                     InternalArtifactType.BUILT_IN_KAPT_CLASSES_DIR
                 )
@@ -907,7 +907,7 @@ abstract class TaskManager(
             .artifacts
             .forScope(ScopedArtifacts.Scope.PROJECT)
             .setInitialContent(
-                ScopedArtifact.CLASSES,
+                ScopedArtifact.POST_COMPILATION_CLASSES,
                 creationConfig.services.fileCollection().from(
                     creationConfig.artifacts.getAll(MultipleArtifact.PRE_COMPILATION_CLASSES)
                 )
@@ -917,10 +917,19 @@ abstract class TaskManager(
            .artifacts
            .forScope(ScopedArtifacts.Scope.PROJECT)
            .setInitialContent(
-               ScopedArtifact.CLASSES,
+               ScopedArtifact.POST_COMPILATION_CLASSES,
                creationConfig.artifacts,
                JAVAC
            )
+
+        creationConfig
+            .artifacts
+            .forScope(ScopedArtifacts.Scope.PROJECT)
+            .setInitialContent(
+                ScopedArtifact.CLASSES,
+                creationConfig.artifacts.forScope(ScopedArtifacts.Scope.PROJECT)
+                    .getFinalArtifacts(ScopedArtifact.POST_COMPILATION_CLASSES)
+            )
     }
 
     /**
@@ -1414,7 +1423,27 @@ abstract class TaskManager(
      * libraries.
      */
     internal fun initializeAllScope(artifacts: ArtifactsImpl) {
-        // initialize the all classes scope
+        // initialize the all scoped post_compilation_classes, which still uses classes from
+        // external libraries and sub projects.
+        artifacts.forScope(ScopedArtifacts.Scope.ALL)
+            .getScopedArtifactsContainer(ScopedArtifact.POST_COMPILATION_CLASSES)
+            .initialScopedContent
+            .run {
+                from(
+                    artifacts.forScope(ScopedArtifacts.Scope.PROJECT)
+                        .getFinalArtifacts(ScopedArtifact.POST_COMPILATION_CLASSES)
+                )
+                from(
+                    artifacts.forScope(InternalScopedArtifacts.InternalScope.SUB_PROJECTS)
+                        .getFinalArtifacts(ScopedArtifact.CLASSES)
+                )
+                from(
+                    artifacts.forScope(InternalScopedArtifacts.InternalScope.EXTERNAL_LIBS)
+                        .getFinalArtifacts(ScopedArtifact.CLASSES)
+                )
+            }
+
+        // initialize the all scoped classes
         artifacts.forScope(ScopedArtifacts.Scope.ALL)
             .getScopedArtifactsContainer(ScopedArtifact.CLASSES)
             .initialScopedContent

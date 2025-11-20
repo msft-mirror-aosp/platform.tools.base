@@ -42,6 +42,7 @@ class ScopedArtifactsImpl(
     private val variantIdentifier: String,
     private val projectLayout: ProjectLayout,
     private val fileCollectionCreator: () -> ConfigurableFileCollection,
+    private val lookupProjectScopedArtifactsContainer:() -> ScopedArtifactsImpl?
 ): ScopedArtifacts {
 
     /**
@@ -145,19 +146,6 @@ class ScopedArtifactsImpl(
             .from(getFinalArtifacts(type))
     }
 
-    /**
-     * Publish the current version of [type] under a different internal [into] type. This is useful
-     * when some code path requires to have access to an artifact [type] before certain internal
-     * transforms are potentially applied.
-     */
-    internal fun publishCurrent(type: ScopedArtifact, into: InternalScopedArtifact) {
-        getScopedArtifactsContainer(into)
-            .initialScopedContent
-            .from(
-                getScopedArtifactsContainer(type).currentScopedContent
-            )
-    }
-
     internal fun getFinalArtifacts(type: ScopedArtifact): FileCollection =
         getScopedArtifactsContainer(type).finalScopedContent
 
@@ -175,8 +163,22 @@ class ScopedArtifactsImpl(
             to: ArtifactT,
             with: (T) -> Property<out FileSystemLocation>
         ) where ArtifactT : ScopedArtifact, ArtifactT : Artifact.Appendable {
-            scopedArtifacts.getScopedArtifactsContainer(to).currentScopedContent
-                .from(taskProvider.flatMap(with))
+
+            // In case the user is trying the append to the ALL scope, we automatically redirect to
+            // the PROJECT scope to avoid unnecessary processing.
+            if (scopedArtifacts.scopeName == ScopedArtifacts.Scope.ALL.name) {
+                scopedArtifacts.lookupProjectScopedArtifactsContainer()?.let {
+                    return it.use(taskProvider).toAppend(to, with)
+                }
+            }
+
+            // since something is added, make sure the new content is registered so this scope
+            // content is tagged as `altered`.
+            val newContent = fileCollectionCreator.invoke()
+            newContent.from(scopedArtifacts.getScopedArtifactsContainer(to).currentScopedContent)
+            newContent.from(taskProvider.flatMap(with))
+            scopedArtifacts.getScopedArtifactsContainer(to).setNewContent(newContent)
+
             // and sets the output path.
             taskProvider.configure {
                 when (val provider = with(it)) {

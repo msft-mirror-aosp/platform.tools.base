@@ -29,7 +29,6 @@ import com.android.build.api.variant.BuiltArtifactsLoader
 import com.android.build.api.variant.ScopedArtifacts
 import com.android.build.api.variant.impl.BuiltArtifactsLoaderImpl
 import com.android.build.api.variant.impl.DeferredActionManager
-import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.scope.getIntermediateOutputPath
 import com.android.build.gradle.internal.scope.getOutputPath
 import com.android.build.gradle.internal.utils.setDisallowChanges
@@ -78,13 +77,21 @@ class ArtifactsImpl(
     private val internalScopedArtifacts : Map<InternalScopedArtifacts.InternalScope, ScopedArtifactsImpl>
 
     init {
+        // some operation on the ALL scope do not make sense, like appendTo which should
+        // really add the PROJECT scope since we are in the variant API. Therefore we need a
+        // lookup function to find the [ArtifactsImpl] container for scope PROJECT so we can
+        // automatically redirect those undesirable operations to the PROJECT scope.
+        // This will be used lazily by the ALL [ScopedArtifactsImpl] to look up the PROJECT
+        // instance.
+        val lookupProjectScopedArtifactsContainer = { publicScopedArtifacts[ScopedArtifacts.Scope.PROJECT] }
         val scopeValues = ScopedArtifacts.Scope.values().toSet().map { mappingScopePolicy(it) }
         publicScopedArtifacts = scopeValues.associateWith {
             ScopedArtifactsImpl(
                 it.name,
                 identifier,
                 project.layout,
-                project::files
+                project::files,
+                lookupProjectScopedArtifactsContainer
             )
         }
 
@@ -93,7 +100,8 @@ class ArtifactsImpl(
                 it.name,
                 identifier,
                 project.layout,
-                project::files
+                project::files,
+                lookupProjectScopedArtifactsContainer,
             )
         }
     }
