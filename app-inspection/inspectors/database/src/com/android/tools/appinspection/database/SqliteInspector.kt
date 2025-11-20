@@ -1193,12 +1193,9 @@ internal class SqliteInspector(
   private fun AdditionalDriver.toClasses(): AdditionalDriverClasses? {
     val connectionClassName =
       connectionClass.ifEmpty { driverClass.replace("Driver", "Connection") }
-    val driverClass = loadClass<SQLiteDriver>(driverClass)
-    val connectionClass = loadClass<SQLiteConnection>(connectionClassName)
-    return when (driverClass != null && connectionClass != null) {
-      true -> AdditionalDriverClasses(driverClass, connectionClass)
-      false -> null
-    }
+    val driverClass = loadClass<SQLiteDriver>(driverClass) ?: return null
+    val connectionClass = loadClass<SQLiteConnection>(connectionClassName) ?: return null
+    return AdditionalDriverClasses(driverClass, connectionClass)
   }
 }
 
