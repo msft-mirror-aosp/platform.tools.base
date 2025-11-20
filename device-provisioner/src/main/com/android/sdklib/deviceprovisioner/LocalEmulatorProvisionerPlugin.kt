@@ -751,8 +751,7 @@ internal constructor(
 
       override val presentation: StateFlow<DeviceAction.Presentation> =
         defaultPresentation.fromContext().enabledIf {
-          it.properties.deviceType == DeviceType.AI_GLASSES &&
-            (it.properties as LocalEmulatorProperties).pairedPhoneId == null
+          it.properties.deviceType == DeviceType.AI_GLASSES
         }
     }
 
