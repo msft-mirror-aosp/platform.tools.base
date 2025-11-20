@@ -245,12 +245,12 @@ internal class SqliteInspector(
               .toByteArray()
           )
       }
-    } catch (exception: Throwable) {
-      Log.w(TAG, "Unexpected error initializing database inspector", exception)
+    } catch (e: Throwable) {
+      Log.w(TAG, "Unexpected error initializing database inspector", e)
       callback.reply(
         createErrorOccurredResponse(
-            "Unhandled Exception while processing the command: " + exception.message,
-            stackTraceFromException(exception),
+            "Unhandled Exception while processing the command: ${e.message}",
+            stackTraceFromException(e),
             null,
             ERROR_UNKNOWN,
           )
@@ -459,13 +459,12 @@ internal class SqliteInspector(
       ExitHook<SQLiteDatabase> { database ->
         try {
           onDatabaseOpened(FrameworkDatabase(database))
-        } catch (exception: Throwable) {
+        } catch (e: Throwable) {
+          Log.w("SqliteInspector", "Error in onDatabaseAdded event", e)
           connection.sendEvent(
             createErrorOccurredEvent(
-                "Unhandled Exception while processing an onDatabaseAdded " +
-                  "event: " +
-                  exception.message,
-                stackTraceFromException(exception),
+                "Unhandled Exception while processing an onDatabaseAdded event: ${e.message}",
+                stackTraceFromException(e),
                 null,
                 ErrorCode.ERROR_ISSUE_WITH_PROCESSING_NEW_DATABASE_CONNECTION,
               )
@@ -510,13 +509,12 @@ internal class SqliteInspector(
 
         try {
           onDatabaseOpened(AndroidXDatabase(sqliteConnection, path, flags))
-        } catch (exception: Throwable) {
+        } catch (e: Throwable) {
+          Log.w("SqliteInspector", "Error in onDatabaseAdded event", e)
           connection.sendEvent(
             createErrorOccurredEvent(
-                "Unhandled Exception while processing an onDatabaseAdded " +
-                  "event: " +
-                  exception.message,
-                stackTraceFromException(exception),
+                "Unhandled Exception while processing an onDatabaseAdded event: ${e.message}",
+                stackTraceFromException(e),
                 null,
                 ErrorCode.ERROR_ISSUE_WITH_PROCESSING_NEW_DATABASE_CONNECTION,
               )
@@ -994,13 +992,12 @@ internal class SqliteInspector(
     try {
       roomInvalidationRegistry.invalidateCache()
       databaseRegistry.notifyDatabaseOpened(database)
-    } catch (exception: Throwable) {
+    } catch (e: Throwable) {
+      Log.w("SqliteInspector", "Error in onDatabaseAdded event", e)
       connection.sendEvent(
         createErrorOccurredEvent(
-            "Unhandled Exception while processing an onDatabaseAdded " +
-              "event: " +
-              exception.message,
-            stackTraceFromException(exception),
+            "Unhandled Exception while processing an onDatabaseAdded event: ${e.message}",
+            stackTraceFromException(e),
             null,
             ErrorCode.ERROR_ISSUE_WITH_PROCESSING_NEW_DATABASE_CONNECTION,
           )
