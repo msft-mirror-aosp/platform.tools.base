@@ -29,7 +29,6 @@ class VariantApiLibraryWithNameTest {
     val project =
         GradleTestProject.builder()
             .fromTestApp(KotlinHelloWorldApp.forPlugin("com.android.library"))
-            .disableBuiltInKotlin()
             .create()
 
     @Test

@@ -26,7 +26,6 @@ class VariantApiUseTest {
     val project =
         GradleTestProject.builder()
             .fromTestApp(KotlinHelloWorldApp.forPlugin("com.android.application"))
-            .disableBuiltInKotlin()
             .create()
 
     @Test

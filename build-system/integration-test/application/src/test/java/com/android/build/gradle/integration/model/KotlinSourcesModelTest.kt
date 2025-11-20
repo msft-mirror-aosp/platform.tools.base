@@ -18,7 +18,9 @@ package com.android.build.gradle.integration.model
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject.Companion.builder
 import com.android.build.gradle.integration.common.fixture.app.KotlinHelloWorldApp
+import com.android.build.gradle.options.BooleanOption
 import com.google.common.truth.Truth.assertThat
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 
@@ -27,13 +29,18 @@ class KotlinSourcesModelTest {
     @get:Rule
     val project = builder()
             .fromTestApp(KotlinHelloWorldApp.forPlugin("com.android.application"))
-            .disableBuiltInKotlin()
+            .addGradleProperty(BooleanOption.BUILT_IN_KOTLIN, false)
             .create()
 
     @Test
     fun kotlinSourcesLocationInAndroidBlock() {
         project.buildFile.appendText("""
-
+            buildscript {
+                dependencies {
+                    classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${'$'}{libs.versions.kotlinVersion.get()}"
+                }
+            }
+            apply plugin: 'kotlin-android'
             android {
                 sourceSets {
                     main {
@@ -56,7 +63,12 @@ class KotlinSourcesModelTest {
     @Test
     fun kotlinSourcesLocation() {
         project.buildFile.appendText("""
-
+            buildscript {
+                dependencies {
+                    classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${'$'}{libs.versions.kotlinVersion.get()}"
+                }
+            }
+            apply plugin: 'kotlin-android'
             kotlin {
                 sourceSets {
                     main {
@@ -80,13 +92,14 @@ class KotlinSourcesModelTest {
 
     @Test
     fun testKotlinMultiplatform() {
-        val updatedBuildFileContents = project.buildFile.readText()
-            .replace("kotlin-android", "kotlin-multiplatform")
-            .replace("    kotlinOptions {\n" + "        jvmTarget = JavaVersion.VERSION_1_8\n" + "    }\n", "")
-        project.buildFile.writeText(updatedBuildFileContents)
         project.buildFile.appendText(
             """
-
+            buildscript {
+                dependencies {
+                    classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${'$'}{libs.versions.kotlinVersion.get()}"
+                }
+            }
+            apply plugin: 'kotlin-multiplatform'
             kotlin {
                 androidTarget()
 
