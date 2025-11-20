@@ -136,6 +136,13 @@ class DevicePropertiesTest {
     } catch (expected: Exception) {}
   }
 
+  @Test
+  fun testMicroxrNotIdentifiedAsWatch() {
+    val props =
+      props("ro.build.characteristics" to "watch", "vendor.microxr.mcu.firmware.name" to "microxr")
+    assertThat(props.deviceType).isEqualTo(DeviceType.AI_GLASSES)
+  }
+
   private fun props(vararg pairs: Pair<String, String>) =
     DeviceProperties.buildForTest {
       readCommonProperties(mapOf(*pairs))

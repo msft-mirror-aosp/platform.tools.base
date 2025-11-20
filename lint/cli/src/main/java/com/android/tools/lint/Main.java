@@ -1509,6 +1509,8 @@ public class Main {
                 flags.setUseK2Uast(false);
             } else if (arg.equals("--XuseK2Uast")) {
                 flags.setUseK2Uast(true);
+            } else if (arg.equals("--XuseKlibLightElementProvider")) {
+                flags.setUseKlibLightElementProvider(true);
             } else if (arg.equals(ARG_PRINT_INTERNAL_ERROR_STACKTRACE)) {
                 flags.setPrintInternalErrorStackTrace(true);
             } else if (arg.equals(ARG_ANALYZE_ONLY)) {

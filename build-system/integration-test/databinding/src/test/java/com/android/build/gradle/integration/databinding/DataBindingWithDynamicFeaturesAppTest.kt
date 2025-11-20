@@ -32,30 +32,14 @@ import org.junit.runners.Parameterized
  * This is a smoke test that ensures that the integration tests of DataBinding with Dynamic Features
  * compiles fine. The actual test is run as a post-submit step.
  */
-@RunWith(FilterableParameterized::class)
-class DataBindingWithDynamicFeaturesAppTest(useAndroidX: Boolean) {
+class DataBindingWithDynamicFeaturesAppTest {
     @Rule
     @JvmField
     val project: GradleTestProject = GradleTestProject.builder()
-        .fromDataBindingIntegrationTest("DynamicApp", useAndroidX)
-        .addGradleProperties(
-            BooleanOption.USE_ANDROID_X.propertyName
-                    + "=" + useAndroidX
-        )
-
+        .fromDataBindingIntegrationTest("DynamicApp", true)
         .addGradleProperties( // TODO(b/439806981): Remove this
             "${BooleanOption.USE_DEPENDENCY_CONSTRAINTS.propertyName}=true"
         )
-        // b/116109681 - Enforce unique package names disabled in this test due to test project
-        // containing violation.
-        .addGradleProperties(
-            BooleanOption.ENFORCE_UNIQUE_PACKAGE_NAMES.propertyName
-                    + "=false"
-        ).also {
-            if (SdkVersionInfo.HIGHEST_KNOWN_STABLE_API < 28 && useAndroidX) {
-                it.withCompileSdkVersion("28")
-            }
-        }
         .create()
 
     @Before

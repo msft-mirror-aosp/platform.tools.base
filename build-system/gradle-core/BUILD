@@ -102,7 +102,6 @@ kotlin_library(
         "@maven//:com.google.flatbuffers.flatbuffers-java",  # For mlkit-common
         "@maven//:com.google.protobuf.protobuf-java",
         "@maven//:com.google.protobuf.protobuf-java-util",
-        "@maven//:com.google.testing.platform.core-proto",  # For TestSuiteResultProto
         "@maven//:com.squareup.javapoet",
         "@maven//:commons-io.commons-io",  # TODO: remove?
         "@maven//:net.sf.jopt-simple.jopt-simple",
@@ -137,6 +136,10 @@ java_library(
 fileset(
     name = "TestData",
     srcs = glob(["src/test/data/**"]),
+    visibility = [
+        ":__pkg__",
+        "//tools/vendor/google/android-ndk:__pkg__",
+    ],
 )
 
 maven_repository(
@@ -227,7 +230,6 @@ kotlin_test(
         "@maven//:com.google.jimfs.jimfs",
         "@maven//:com.google.protobuf.protobuf-java",
         "@maven//:com.google.protobuf.protobuf-java-util",
-        "@maven//:com.google.testing.platform.core-proto",
         "@maven//:com.google.truth.extensions.truth-java8-extension",
         "@maven//:com.google.truth.truth",
         "@maven//:commons-io.commons-io",  # TODO: remove?

@@ -26,12 +26,15 @@ class CompileRClassTest {
     @get:Rule
     val project = GradleTestProjectBuilder()
         .fromTestProject("compileRClasses")
-        .addGradleProperties("android.enableAppCompileTimeRClass=true")
-        .addGradleProperties("android.nonTransitiveRClass=true")
         .create()
 
     @Test
-    fun cannotAccessTransitiveResource() {
+    fun cannotAccessTransitiveResourceWhenImplementationDependency() {
+        TestFileUtils.searchAndReplace(
+            project.getSubproject("dependencyLib").ktsBuildFile,
+            """api(project(":transitiveDependencyLib"))""",
+            """implementation(project(":transitiveDependencyLib"))""",
+        )
         val result = project.executor()
             .expectFailure()
             .run(":lib:compileDebugAndroidTestKotlin")
@@ -42,26 +45,7 @@ class CompileRClassTest {
     }
 
     @Test
-    fun transitiveResourceAccessWhenFlagDisabled() {
-        TestFileUtils.searchAndReplace(
-            project.gradlePropertiesFile,
-            "android.enableAppCompileTimeRClass=true",
-            "android.enableAppCompileTimeRClass=false"
-        )
-
-        project.executor()
-            .run(":lib:compileDebugAndroidTestKotlin")
-    }
-
-    @Test
     fun transitiveResourceAccessWhenApiDependency() {
-        // lib -> (impl) dependencyLib -> (api) transitiveDependencyLib
-        TestFileUtils.searchAndReplace(
-            project.getSubproject("dependencyLib").ktsBuildFile,
-            """implementation(project(":transitiveDependencyLib"))""",
-            """api(project(":transitiveDependencyLib"))""",
-        )
-
         project.executor()
             .run(":lib:compileDebugAndroidTestKotlin")
     }

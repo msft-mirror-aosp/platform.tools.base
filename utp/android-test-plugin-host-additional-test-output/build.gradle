@@ -23,7 +23,7 @@ version = rootProject.ext.baseVersion
 
 dependencies {
     implementation libs.com.android.tools.common
-    implementation libs.com.android.tools.utp.common
+    implementation project(":base:utp:utp-common")
     implementation libs.com.android.tools.utp.androidTestPluginHostAdditionalTestOutputProto
     implementation libs.kotlin_stdlib
     implementation libs.protobuf

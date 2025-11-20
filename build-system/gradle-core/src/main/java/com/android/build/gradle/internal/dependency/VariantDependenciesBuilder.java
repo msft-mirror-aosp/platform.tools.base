@@ -365,7 +365,7 @@ public class VariantDependenciesBuilder {
         lintChecksClasspathAttributes.attribute(
                 CATEGORY_ATTRIBUTE, factory.named(Category.class, Category.LIBRARY));
 
-        if (shouldConfigureKotlinPlatformAttribute(projectOptions, componentType)) {
+        if (shouldConfigureKotlinPlatformAttribute(projectOptions)) {
             configureKotlinPlatformAttribute(
                     List.of(compileClasspath, runtimeClasspath, lintChecksClasspath), project);
         }
@@ -748,8 +748,7 @@ public class VariantDependenciesBuilder {
                         + "=false to gradle.properties");
     }
 
-    private boolean shouldConfigureKotlinPlatformAttribute(
-            ProjectOptions projectOptions, ComponentType componentType) {
+    private boolean shouldConfigureKotlinPlatformAttribute(ProjectOptions projectOptions) {
         if (projectOptions.get(BooleanOption.DISABLE_KOTLIN_ATTRIBUTE_SETUP)) {
             return false;
         }

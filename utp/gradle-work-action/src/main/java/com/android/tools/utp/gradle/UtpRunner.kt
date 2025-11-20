@@ -20,6 +20,7 @@ import com.android.tools.utp.gradle.api.UtpDependencies
 import com.android.tools.utp.gradle.api.UtpDependency
 import com.android.tools.utp.plugins.result.listener.gradle.proto.GradleAndroidTestResultListenerProto
 import com.android.utils.GrabProcessOutput
+import com.google.testing.platform.proto.api.core.TestStatusProto.TestStatus
 import com.google.testing.platform.proto.api.core.TestSuiteResultProto
 import org.gradle.api.GradleException
 import org.gradle.api.logging.Logger
@@ -60,6 +61,11 @@ class UtpRunner(
     private val processBuilderFactory: (List<String>) -> ProcessBuilder = { ProcessBuilder(it) },
     private val executorServiceFactory: () -> ExecutorService = Executors::newCachedThreadPool,
 ) {
+    companion object {
+        private const val TEST_RESULT_EXIT_CODE_SUCCESS = 0
+        private const val TEST_RESULT_EXIT_CODE_FAILURE = 1
+    }
+
     /**
      * Executes all UTP test runs.
      *
@@ -75,8 +81,9 @@ class UtpRunner(
      * @param projectPath The Gradle project path, passed to the XML report listener.
      * @param variantName The Gradle variant name, passed to the XML report listener.
      * @param xmlTestReportOutputDirectory The final directory for the `TEST-*.xml` reports.
-     * @param utpResultProtoOutputFileList List of file paths where the final
-     * `test-result.pb` for each run should be written.
+     * @param testResultExitCodeFile The output file containing the integer exit code.
+     * @param utpResultProtoOutputFileList List of file paths where the utp result proto for each
+     * run should be written.
      */
     fun execute(
         utpRunnerConfigFileList: List<File>,
@@ -87,6 +94,8 @@ class UtpRunner(
         projectPath: String,
         variantName: String,
         xmlTestReportOutputDirectory: File,
+        mergedUtpResultProtoOutputFile: File,
+        testResultExitCodeFile: File,
         utpResultProtoOutputFileList: List<File>,
     ) {
         val xmlReportCreators = deviceIDs.withIndex().associate { (i, deviceID) ->
@@ -102,6 +111,7 @@ class UtpRunner(
             deviceID to ddmlibTestResultAdapter
         }
 
+        val resultsMerger = UtpTestSuiteResultMerger()
         val utpProtoFileMap = deviceIDs.zip(utpResultProtoOutputFileList).toMap()
 
         utpTestResultListenerServer.setListener(object: UtpTestResultListener {
@@ -110,6 +120,7 @@ class UtpRunner(
                 if (testResultEvent.hasTestSuiteFinished()) {
                     val resultProto = testResultEvent.testSuiteFinished.testSuiteResult
                         .unpack(TestSuiteResultProto.TestSuiteResult::class.java)
+                    resultsMerger.merge(resultProto)
                     utpProtoFileMap[testResultEvent.deviceId]?.let { outputFile ->
                         outputFile.outputStream().use { outputFileStream ->
                             resultProto.writeTo(outputFileStream)
@@ -127,7 +138,36 @@ class UtpRunner(
             }
         })
 
-        execute(utpRunnerConfigFileList, loggingPropertiesFileList)
+        try {
+            execute(utpRunnerConfigFileList, loggingPropertiesFileList)
+        } finally {
+            val result = resultsMerger.result
+            if (result.platformError.errorsCount > 0) {
+                logger.error(getPlatformErrorMessage(result))
+            }
+            result.issueList.forEach { issue ->
+                logger.error(issue.message)
+            }
+            mergedUtpResultProtoOutputFile.outputStream().use {
+                result.writeTo(it)
+            }
+
+            val testResultExitCode: Int = if (result.testStatus.isPassedOrSkipped()) {
+                TEST_RESULT_EXIT_CODE_SUCCESS
+            } else {
+                TEST_RESULT_EXIT_CODE_FAILURE
+            }
+            testResultExitCodeFile.writeText(testResultExitCode.toString())
+        }
+    }
+
+    private fun TestStatus.isPassedOrSkipped(): Boolean {
+        return when (this) {
+            TestStatus.PASSED,
+            TestStatus.IGNORED,
+            TestStatus.SKIPPED -> true
+            else -> false
+        }
     }
 
     /**

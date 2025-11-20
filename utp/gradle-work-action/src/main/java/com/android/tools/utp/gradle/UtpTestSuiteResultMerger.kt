@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 The Android Open Source Project
+ * Copyright (C) 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,11 +14,9 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.internal.testing.utp
+package com.android.tools.utp.gradle
 
 import com.google.testing.platform.proto.api.core.PlatformErrorProto
-import com.google.testing.platform.proto.api.core.TestCaseProto
-import com.google.testing.platform.proto.api.core.TestStatusProto
 import com.google.testing.platform.proto.api.core.TestStatusProto.TestStatus
 import com.google.testing.platform.proto.api.core.TestSuiteResultProto
 import com.google.testing.platform.proto.api.core.TestSuiteResultProto.TestSuiteResult
@@ -48,7 +46,9 @@ class UtpTestSuiteResultMerger {
     }
 
     private fun mergePlatformError(platformError: PlatformErrorProto.PlatformError) {
-        builder.platformErrorBuilder.addAllErrors(platformError.errorsList)
+        if (platformError.errorsCount > 0) {
+           builder.platformErrorBuilder.addAllErrors(platformError.errorsList)
+        }
     }
 
     private fun mergeTestSuiteMetaData(metadata: TestSuiteResultProto.TestSuiteMetaData) {

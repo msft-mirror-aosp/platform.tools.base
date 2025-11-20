@@ -105,8 +105,6 @@ public class CheckAll {
                 // namespacing.
                 .with(BooleanOption.ENFORCE_UNIQUE_PACKAGE_NAMES, false)
                 .with(BooleanOption.ENABLE_LEGACY_API, true)
-                // TODO(b/439843451) - Opt back into `android.enableAppCompileTimeRClass`
-                .with(BooleanOption.ENABLE_APP_COMPILE_TIME_R_CLASS, false)
                 .withEnableInfoLogging(false)
                 .run("assembleDebug", "assembleAndroidTest", "lint");
     }

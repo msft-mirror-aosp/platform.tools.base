@@ -27,7 +27,9 @@ import com.android.tools.lint.LintCliFlags.ERRNO_SUCCESS
 import com.android.tools.lint.checks.AbstractCheckTest.SUPPORT_ANNOTATIONS_JAR
 import com.android.tools.lint.checks.AbstractCheckTest.base64gzip
 import com.android.tools.lint.checks.AbstractCheckTest.jar
+import com.android.tools.lint.checks.infrastructure.KlibTestFile
 import com.android.tools.lint.checks.infrastructure.LintDetectorTest.bytes
+import com.android.tools.lint.checks.infrastructure.LintDetectorTest.compiled
 import com.android.tools.lint.checks.infrastructure.ProjectDescription
 import com.android.tools.lint.checks.infrastructure.ProjectDescription.Type.LIBRARY
 import com.android.tools.lint.checks.infrastructure.TestFile
@@ -59,7 +61,10 @@ import com.android.utils.XmlUtils.getFirstSubTagByName
 import com.google.common.io.Files
 import com.google.common.truth.Truth.assertThat
 import com.intellij.openapi.project.Project
+import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiField
+import com.intellij.psi.PsiMethod
+import com.intellij.util.asSafely
 import java.io.File
 import kotlin.io.path.isRegularFile
 import kotlin.io.path.readText
@@ -75,7 +80,15 @@ import org.jetbrains.kotlin.config.LanguageFeature
 import org.jetbrains.kotlin.psi.KtClass
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.psi.KtNamedFunction
+import org.jetbrains.uast.UBinaryExpression
+import org.jetbrains.uast.UBlockExpression
+import org.jetbrains.uast.UCallExpression
 import org.jetbrains.uast.UClass
+import org.jetbrains.uast.UDeclarationsExpression
+import org.jetbrains.uast.UFile
+import org.jetbrains.uast.ULocalVariable
+import org.jetbrains.uast.UUnaryExpression
+import org.jetbrains.uast.tryResolve
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -2693,6 +2706,1091 @@ class ProjectInitializerTest {
         }
       },
     )
+  }
+
+  @Test
+  fun testKmpNativeUastPsi() {
+    assumeTrue(useFirUast())
+    // Tests the new KlibLightElementProvider.
+    // kotlinSourceFile references various symbols from klibSourceFile. We consider different
+    // scenarios for where the code in klibSourceFile ends up:
+    //  - just a Kotlin source file
+    //  - compiled into a klib
+    //  - compiled into a jar
+    // We access the UAST of kotlinSourceFile to follow the references (yielding Java PSI).
+    // We only test the klib case, but provide the option (uncomment) to cross-check with the source
+    // and jar case, when developing.
+
+    @Language("kotlin")
+    val klibSourceFile =
+      """
+package com.klib
+
+annotation class LibAnnotation
+
+fun libGlobalMethod(): Int {
+  return 2
+}
+
+fun libGlobalMethod(a: Int): Int {
+  return 3
+}
+
+fun libGlobalMethod2(a: Int): Int {
+  return 2
+}
+
+val Int.globalProperty
+  get() = ""
+
+val String.globalProperty
+  get() = 2
+
+val globalProperty = 2
+
+val globalProperty2 = 3
+
+const val LIB_CONST = ""
+
+open class LibClass {
+
+  val Int.valProp
+    get() = 0
+
+  val String.valProp
+    get() = 0
+
+  val valProp = 0
+
+  var varProp = 1
+
+  val propWithGetter
+    get() = 1
+
+  fun libMethod(arg: Int): Int = 1
+  fun libMethod(arg: Long): Long = 1
+
+  fun libMethod2(arg: Long): Long = 1
+
+  fun libMethod3(arg: Array<Long>): Array<Long> = arrayOf(1L)
+
+  fun <T> libGenericMethod(arg: T): Array<T>? = null
+
+  operator fun unaryPlus(): LibClass = this
+
+  companion object {
+    fun companionFunc(): Int = 2
+    val companionProp: Int = 3
+  }
+
+  object LibClassObject {
+    fun func(): Int = 1
+    val prop: Int = 2
+  }
+}
+
+object MyFirstObject {
+
+  fun bar(): Long = 2L
+
+  object MySecondObject {
+    val prop: Int = 1
+    fun foo(): Int = 2
+  }
+}
+
+enum class ProtocolState {
+  WAITING {
+    override fun signal() = TALKING
+  },
+
+  TALKING {
+    override fun signal() = WAITING
+  };
+
+  abstract fun signal(): ProtocolState
+}
+"""
+        .trimIndent()
+
+    @Language("kotlin")
+    val kotlinSourceFile =
+      """
+package com.example
+
+import com.klib.LibClass
+import com.klib.MyFirstObject
+import com.klib.LibAnnotation
+import com.klib.globalProperty
+import com.klib.globalProperty2
+import com.klib.libGlobalMethod
+import com.klib.libGlobalMethod2
+import com.klib.LIB_CONST
+import com.klib.ProtocolState
+
+@LibAnnotation
+class Code {
+  fun hello() {
+    libGlobalMethod()
+    libGlobalMethod(1)
+    libGlobalMethod2(1)
+
+    globalProperty
+    1.globalProperty
+    "".globalProperty
+    globalProperty2
+
+    LIB_CONST
+
+    val c = LibClass()
+    +c
+
+    LibClass.companionFunc()
+    LibClass.companionProp
+    LibClass.Companion
+    LibClass.Companion.companionFunc()
+    LibClass.Companion.companionProp
+
+    LibClass.LibClassObject
+    LibClass.LibClassObject.func()
+    LibClass.LibClassObject.prop
+
+    MyFirstObject
+    MyFirstObject.bar()
+    MyFirstObject.MySecondObject
+    MyFirstObject.MySecondObject.prop
+    MyFirstObject.MySecondObject.foo()
+
+    ProtocolState.WAITING
+  }
+
+  fun LibClass.hello2() {
+    1.valProp
+    "".valProp
+    valProp
+    varProp = 2
+    varProp
+    propWithGetter
+
+    libMethod(1)
+    libMethod(1L)
+    libMethod2(1L)
+    libMethod3(arrayOf(1L))
+
+    libGenericMethod(1)
+  }
+}
+
+@LibAnnotation
+class OtherClass : LibClass()
+"""
+        .trimIndent()
+
+    val jarFile =
+      compiled(
+        "/mylib.jar",
+        kotlin(klibSourceFile),
+        0x765c188f,
+        """
+        META-INF/main.kotlin_module:
+        H4sIAAAAAAAA/2NgYGBmYGBgAmJGBijgkubiSM7P1cvOyUwS4vfJTHLMy8sv
+        SSzJzM/zLlFi0GIAAN24MXQ1AAAA
+        """,
+        """
+        com/klib/LibAnnotation.class:
+        H4sIAAAAAAAA/4VQu07DQBCcvRASzMvhERxSQJUSh4gOGpBAsuQACo8m1dk5
+        oYsdW8LnCLpUfBQFiij5KMSagoAUiWZ3dm52bnc/Pl/fAByhSaiH6ciNYh24
+        vg5OkyQ10ug0qYAI9lCOpRvL5MG9CoYqNBWUCHszVv7o3d+tZcK+P1fVU0Yl
+        BTomlMcyzhWh9Y/0Oo11+MwNld7d5a3XPSfU/Cg1sU7crjJyII3kVzEal3gp
+        UQQqAggUMf+ki6rNaHBIaEwnVUs4whJ2s/r+IpzppCPadDadFIIOwfHnX4S/
+        YEf7D3cQGYJ1k+aPobrQMS/T6OU89Ejd60wHsZpJsxb7Y4EtFovZGDe+o4Nd
+        zieM+OSoKizBwjLKWOmj5GHVw5qHddicUfOwgc0+KMMWtvsQGeoZdr4AQXqC
+        Bs8BAAA=
+        """,
+        """
+        com/klib/LibAnnotationKt.class:
+        H4sIAAAAAAAA/21TQW/TSBT+xk4cx00TN7QLSaEsJUDpLrgEdhcEQmKLWFmE
+        gmgVIfWAJqmVTuPYK8+k2r31xA/hzIFdhIT2gCqO/CjEG8fbpkkPnvfmve/7
+        3sx746/f/vsM4A7uMZzrxgOvH4qO1xKdR1EUK65EHD1VBTAGd4/vcy/kUc97
+        3tkLuhQ1GSoE/yOMOzx8FqjdeIfBXLnuM+RWfG0Yp4+sOwFrMsz1AjUKvUji
+        P4NE/c2wQKzWcZ1NlYiod5/hcitOet5eoDoJF5H0+NHhpLcRq41hGBIKNsoM
+        8w21K2SjNyU9LaxPaD3Q8Ic2qgxL/ViFIvL29geeiFSQRDz0/EiDpejKAuZJ
+        p7sbdPtZ0Rc84YOAgAzXxvVHDbp/SsV2CT/grIMFnGOonnbX8smTl7CIYhEG
+        zhN+qmXUx8pJfLOEiyPCjwz2gy7dR6iH6VjaDMWW//vr9ecbm1s0gFZ2XRoJ
+        3+GKU3FjsG/SczD0wvQCml+f4n8JvVsjb+cWw8fDg6pzeOAYru0Ytkm2TLZQ
+        t9zDg7qxxurlzGlarpEFzPH98oKbI5tfJf/uky9vLauesy23kMUZxfNjcXt5
+        fhR/9eXNY4raVDxNFCnhTCdmKFF2S7oCJbYoYVBCH54a5p543Tf7imF2nV6S
+        4pFq83AYMCy+HEZKDAI/2hdSdMLgGC/pba/HOwSqtEQUbAwHnSDZ4oTR84y7
+        PGzzROh9FmxMah09mhOizmY8TLrBE6E5tYzTnqqOWzTZHI3CRF2/DPLqeuBk
+        a2iQbxCCBogKmmQtmt8s9J9RQz7d3U4ZTI8WRv5dOuE7GVKvGlfIcD/r6Wuc
+        9S7VPMY5+IXW0ihL6qP6zjQzP8ksn8qcoYiRMm9kTLNaeT9BrY5RTbgpdfyS
+        WmYuk2mS1Th7tXrmE2oTx7Do/zvWskmrTvZX+gpsTOz/fp3P+pX7FxcmO3aW
+        kEunIS9NImtUaBmXM+SVDFnMf8AF6wMu/XMEd+ikWjhHFAO/pSdfw12yLwlx
+        hQZ0dRumj2s+Vnxcxyq5+Mmnpt/YBpO4CW8bsxJ5ibKELeFILKb+jERJYk7C
+        krgosSTR+A40EcXyAQYAAA==
+        """,
+        """
+        com/klib/LibClass＄Companion.class:
+        H4sIAAAAAAAA/5VSXU8TQRQ9M7vdbpciy4cKRfysCogsEBM1GBOFkNQUJWga
+        Ex7MdFlx6O4s2d0SH/vED/HZF540PpiGR3+U8c62FIKJiS/349w5986cO79+
+        //gJ4BEWGKb9OPJaoWx6ddlcC0WaVtfi6EAoGasiGIO7Lw6FFwq1571p7gd+
+        VoTBYD2TSmbPGYzZuUYZBVgOTBQZzOyTTBlm6v/ou8ow7J8mG23l521qNGsv
+        yAantpL4gGH0rz5FXGKoCN8PqOdFQtU/KMNF2cEIRhmWZ+utOAul8vYPI0+q
+        LEiUCL314KNoh8RUaZa0/SxONkXSCpLVuYYDrp8xXvXPih+ivMqw+H/d6Pan
+        hM0gE7siE4Tx6NAg9bk2TBswsBbhn6XOlijaXWbY6nYmHD7JHe52Ow63DQps
+        7e2TI2Oy21nhS+xlyeYnXyzT5q7xynLNCl8qbE+4lvbvT47WqWY73U7FtIuu
+        rfuuMD3tTPyexqWBhLQCkvmFUnEmMsoXWxmtdC3eDRhG6lIFr9tRM0jeiWZI
+        yFg99kXYEInUeR8s15QKknxTAX0E523cTvxgQ+ra1HZbZTIKGjKVdPhsTopl
+        0t3UYpDl+j/RPe9R5ml1yBfmv8E+1rrhPlkrBx9jlmy5dwAlOORHMZQjmrzQ
+        J/PC1wvMJ+eYfMAcHjAX+0zzO8Yucp+e45o9rsto/nif+5A871954jjfryZc
+        6YH9YTq6TBh9fcxR5uSkEVQxhfl84F08IL9B+FU6O7kDo4apGio1TOMaeczU
+        cB03dsBS3MStHZRSOClupyiksFIM5fGdFMMpyn8A+KmAbPMDAAA=
+        """,
+        """
+        com/klib/LibClass＄LibClassObject.class:
+        H4sIAAAAAAAA/4VSz08TURD+3tvtdrsUukVUKP5AQPmhskC8iSSIkqyplQAh
+        Gk6v7Vof3e6S3S3x2BN/iGcvyIFEE9PgzT/KOG8tFeHgHt7MfDPffO/N7M9f
+        X78DeAKHYaIWtpymL6tOWVbXfRHH0+fOm+q+V0uyYAz2vjgUji+ChnOOagzG
+        igxkssqgzc7t5pGBYUFHlkFPPsiYYbL8v+ZPqfZ9O6ilLVyGbMNLNqPwgOCD
+        1DA3jyEUcuCwGcyVmp9KWhSTjulWtnfWKusv8xiBpYquM0yVw6jh7HtJNRIy
+        iB0RBGEiEhmSXwmTStv3SbZYboYJNXNee4moi0QQxluHGs2Fq4OpA3SBJuEf
+        pYoWyasvMWx2OyMWH+UWt7sdi5saOaay5o8jPtrtLPNF9jxn8rNPhm5yW3tl
+        2HqJL2a2RmxD2bdnRy8oZ1rdTkk3s7ap+i4zpVa8MrAsphmG/p0a7YOAtf67
+        FpoEjW+1g0S2PDc4lLGs+t7fPK1CXw/rHkOhLAOv0m5VvWhHUA3DcDmsCX9X
+        RFLFPTDvBoEXpYoeka3tsB3VvA2pcmM9nd0rKliiBehqgBhT+6D3zFJkkL1J
+        tqQWSVanfCZF5yhy1IzJZuZPYR6n5PkeCVjBQzrzfwqQo5ZAEQMposiPemSu
+        f77EfHaByfvMwT5zocfUv6B4mbt6gav3uCaG+1eeoWr1Fb6BvzvFtRPcyJyg
+        eJz+L+dtLGqj0QWRzoHjPh7QVB6nUjMkD2wQPkrPGtuD5qLkYtzFLdwmizsu
+        7mJiDyzGPUzuIRfDijEVIxPDiDGQ+kMxBmPkfwOW6Y8PzQMAAA==
+        """,
+        """
+        com/klib/LibClass.class:
+        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
+        """,
+        """
+        com/klib/MyFirstObject＄MySecondObject.class:
+        H4sIAAAAAAAA/41Sz0/UUBD+3mu32y0LdBERFn8D8kOlQLxJTBBFa5aVACEa
+        Tt3dio/ttqSvS+S2J/4Qz16QA4kmZoM3/yjjvLKsiB7s4c3MN++bb95Mf/z8
+        8g3AIzgME9Wo4dQDUXFWD1ZELJPXlV2/moyvHmz41SisnYVZMAZ719v3nMAL
+        d5xzVGMwFkUokicM2tT0Vh4ZGBZ0ZBn05L2QDJOl/1J4zJDd8ZO1ONpLS7lU
+        YC8NmJtHL/py4Oin1LsoYjAXq0EqaxFKWqZb3thcKi8/z2MQlrp6lWGsFMU7
+        zq6fVGJPhNLxwjBKvERE5JejpNwMAlItlOpRQsWcVT/xal7iEcYb+xoNiKuD
+        qQPURp3wD0JFc+TV5hnW2q1Biw9zi9vtlsVNjRxTWfP7IR9utxb4HHuaM/np
+        R0M3ua29MmyzyOcy64O2ruyb08NnlDOtdquom4adVXUXmFIb+vfQshhn6Ptz
+        crSYkqgsdR83WydodL0ZJqLhu+G+kKIS+L/ztBN9Oar5DP0lEfrlZqPix5se
+        3WEYKEVVL9jyYqHiDph3w9CPlwNPSp/I1kbUjKv+ilC5kY7O1l8qmKct6GqK
+        GFFLoUdNUWSQvUa2qHZKVqd8JkWnKXLUoMlmZk5gHqXkmQ4JWMF9OvNnF5Cj
+        kkABPSmiyLMdsv4Z9qdL3BcXuHqXW+hyH3S4PHOZ+fICk3eYJga6LU8Sqr7+
+        r+BvT3DlGEP6Meyj9Kc5L2NRAxqJIJ0DxwTu0VQepiUnqXH1OIZhetbINjQX
+        RRejLq7jBlncdHELt7fBJO7g7jZyEpbEmERGwpDoTf0eibxE4RfbjWwF2wMA
+        AA==
+        """,
+        """
+        com/klib/MyFirstObject.class:
+        H4sIAAAAAAAA/21RTU8TURQ9781Hp0OVUhEKqIiAAhoGiBuVGAElGVJqIoTE
+        dPVmOsHXTmeSmWkju678Ie5dEBckmphGd/4o431DxS9mcT/OO+fc9+58//Hp
+        C4CHeMAw4ccdpx1Kz9k/2ZVJmr30WoGfFcAYyi3RE04oomPnF6oxmJsyktlT
+        Bm1p+agEA6YNHQUGPXsjU4Zq7XLLJ6TwRJLr9gycf5zB2vTD3NEGVzaWWz84
+        3KrvvChhDHaRwArDfC1Ojp1WkHmJkFHqiCiKM5HJmOp6nNW7YUj+Y7V2nJGZ
+        sx9koikyQRjv9DQ1SAWmAhhYm/C3UnVrVDXXGR4N+hWbV7nNy4O+zS2NiqI9
+        6Fvf3vHqoL/B19hjZm4XLf71valbvKztmWV9mq8ZymCDKdur+ycHgR9HzfMH
+        MyxevomFv3kF3KFd16S3dfGo1TapZ151o0x2AjfqyVR6YfD7nNas78TNgGG0
+        JqOg3u14QXIoiMNQqcW+CI9EIlU/BEtuFAXJTijSNCCxfRB3Ez/Ylepsajjn
+        6L8pWKft6/nKptTPoLxInUl5nLJGp0be3aXOUYulbKycwTpVK8e9IRnYxhLF
+        0jkBRbICGY7kiBKvElud6eO48uEf7fM/tPpQa2H0YvAksdU38hn89RnKH3Ht
+        NAc0LFNUt54nyhy9YSW3XsB9ys8Iv06XmWhAczHpouoSY5oyZlzcwM0GWIpb
+        mG2gkMJOcTuFkcJMMZLXcz8BYFli6EcDAAA=
+        """,
+        """
+        com/klib/ProtocolState＄TALKING.class:
+        H4sIAAAAAAAA/31TS2/TQBD+1ukjdVP6gJb0ARQaStJCXCpuRUhVq4LBjaCp
+        wqGnTbKEbexdab2OOObMrwEuSBxQJG78KMTYDUWiLZY8j52ZzzPfeH/++vYd
+        wBNUGW63dOR1Q9n0XhttdUuHdcutKB3vBq/82vNxMIaFy3PGkWMYeyqVtM8o
+        qRyc8h73Qq46Xt0aqTo7fqXBkCuncv+ycNDVNpTKO+1FnlRWGMVDb1+840lo
+        97SKrUlaVptDbrrC7FQaBYwi72IEEwwj9r2MGVaD/w+ww+CWhEqikuKRYJi7
+        2AbD1FmGNm1JHTAwnwaLZSdzlsqVK75BlWuBNh3vVNim4VLFHldKU0hS815N
+        21oShpQ1/nbXP6ZmGIpXQRVwA/MTNNoCw+wfXg6F5W1uOUE4US9HO3NSwVIB
+        arNL5x9k6m2R1X7MsD7oT7qDvusUHVIbbNDP//jIioP+trPFXuZnnCXSLxbS
+        7O0rl18dckeNn1szgWzung9X7VrawJ5uE6PTgVSilkRNYY55M8w41i0eNriR
+        qT88nKinfNrEkL18lCgrI+Grnowlhf8i00oLvlLC7IU8jgW5bl0npiUOZIqy
+        OKxsXKjDFhyiL30cekcxRnqdrAM6TSnKb2yusK9wP2cZD0iOEYfAG5RJrp7l
+        YBKFDCOPKVzL4nlMY4YqKlkdXQjMYm6IXU23QHrkC25++gf3KMMtnMWHuBvD
+        6HXSOWySdMlL+y6hiIcZwn08yi4n/Sw0xeIJcj6WfCz7WMEt0rjt4w5WT8Bi
+        3MU9isdYizEfY/Y3BZtxPNkDAAA=
+        """,
+        """
+        com/klib/ProtocolState＄WAITING.class:
+        H4sIAAAAAAAA/31TS2/TQBD+1ukjdVP6gJb0QSk0lKSFuFTcipCqVgVTN0Kk
+        CoeeNskStrF3pfU64pgzvwa4IHFAkbjxoxBjNxSJtljyPHZmPs984/3569t3
+        AE9RZVht6cjrhrLpvTba6pYO65ZbUXq755/4tRfjYAwLV+eMI8cw9kwqaZ9T
+        Ujk44z3uhVx1vLo1UnV2/UqDIVdO5cFV4aCrbSiVd9aLPKmsMIqH3oF4x5PQ
+        7msVW5O0rDbH3HSF2a00ChhF3sUIJhhG7HsZM6wF/x9gl8EtCZVEJcUjwTB3
+        uQ2GqfMMbdqSOmBgPg0Wy07mLJUr13yDKtcDbTrembBNw6WKPa6UppCk5r2a
+        trUkDClr/GQvOKJmGIrXQRVwC/MTNNoCw+wfXo6F5W1uOUE4US9HO3NSwVIB
+        arNL5x9k6m2T1X7CsDHoT7qDvusUHVKbbNDP//jIioP+jrPNXuVnnCXSLxfS
+        7J1rl18dckeNX1gzgWzuXQxX7VrawL5uE6PTgVSilkRNYU54M8w41i0eNriR
+        qT88nKinfNrEkL38JlFWRsJXPRlLCv9FppUWfKWE2Q95HAty3bpOTEscyhRl
+        cVjZuFSHbThEX/o49I5ijPQGWYd0mlKU39xaYV/hfs4yHpIcIw6BY5RJrp3n
+        YBKFDCOPKdzI4nlMY4YqKlkdXQjMYm6IXU23QHrkC25/+ge3luEWzuND3M1h
+        9CbpHLZIuuSlfZdQxKMM4QEeZ5eTfhaaYvEUOR9LPpZ9rOAOaaz6uIu1U7AY
+        93Cf4jHWY8zHmP0NpahZFtkDAAA=
+        """,
+        """
+        com/klib/ProtocolState.class:
+        H4sIAAAAAAAA/5VVWVPbVhT+rrxIVpTEmCxmaRIaN7WdgMAl6WIaVidRMCbB
+        xCl121Q2ChXI0owkM32kL/0h/QUBZgqTTDseHvujOj1XNlvAzPRB916d+53v
+        rDr659/3fwMYh85wo+401A3LrKkvXMd36o5V9nXfEMEYssV1fVNXLd1eUwt2
+        szFRPB+cf5xnuHIaKyLMEJ0wbdN/TFbSJ6jKvmvaa3ktU2EIpTMVBVGIMiKI
+        MYT9X0yPIdnNEoOcMog+ZesNgyFxlpbhchvhuKumrVsMTCNPPHMteOlPZ7pz
+        3y067pq6bvg1VzdtT9Vt26Er06FzyfFLTcsiVHRTt5oGeTmQzlS7k4mpynTx
+        VaHM0NcVpeAGbsYgIMkQPw5lsbZu1H0R/QyRuuXYFOk18vtjAKkP4hMZA7gl
+        4iZZDBxbfMvw4Jx8XxD3w5PwWUv3vPx5+qcrTNaHcJfXLUVuBqapOmuGX7BJ
+        gednkHzecHzLtFVeES9Q69yS1UcXXF/YalKqUFpe0nhq+7sbUJDFfZ7bB7wW
+        hzUTX09ry1rpqQIVCr8dJdnydHE+kOXasi8Y5s7r2ENj65sN1bR9w6WWUueM
+        t3rT8mepSXy3Wfcdd0F3Nww3n6nIxEVN3ZuqH1++aQS3DCP/j43Cnqhbne/p
+        1vnZSXWCE/GNBFVGnlvvhu0ELeKxhJyMScQUjOA693mGoaf6cblFzFG+u6V7
+        ntr1CcMl41jEMJw+w3JBRyh4Bk3GUzwn84ewBcPXV3Vfp/iFxmaIxpbAF8YX
+        0Le9QfJfTf5GhRRWxxhmWluKLCQFWYjHZUGKSAe/H/wmJFtbOSkRTgijra1R
+        NhOThIM/omFJiIeeS/FoPxc/u7cuSGF6Ipwpxzh/vGjWpo+mwMiGTyNq1lml
+        Tr9aNG2j1GzUDHdZr1nBMHLqulXRXZO/d4SxMh88ftOl88BS0/bNhqHZm6Zn
+        0vUxMyVL0WzbcIOvj+dOLjtNt248MTlLX0ezckZvbojqFaHww1N9vKUB2nN8
+        j/fz4RLs9CEQQiIkTVpaV+itgBB42sTs/cE9yNs8s/ie1iiFDRRRpfVOG4JL
+        nDA4XcaV4F7EVcRJ44dAT6Jh34ME3fzYYeilPYZruE5nbu7TQAuQd9D3J263
+        cOddUMBDi1FUCD8U4FaCn5MQaMgJIbuPz1oQ3p3ykOO5h0obhXvkF7f4OdLk
+        M2cY7FgM72D4tK0Q6bb9zpz0lxI1cuTvbUJx/d7IXxDms6EdjJWzRDVeznIy
+        xLkLDzvgWQKHj3L5aDuwxr3LtsUX5I+fvsRXRCDha3rahFqgBwx/QH4lMRHa
+        w7e7GPuAyZXEVHgP07sY38fsLvoomy0U9jG/i+HtoyDlgHiBjL0kop/onCDJ
+        JD05JGkqCNQpyU4KQngT7N/hZ9qniKFI/bRQRUhDScOihhd4STuWNJSxXAXz
+        8AqVKkQPiofXHv1b+Vn1kPPQ8x915UKfXAgAAA==
+        """,
+      )
+
+    val klibFile =
+      KlibTestFile(
+        "/myklib.klib",
+        "" +
+          "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",
+        -0x733ca108,
+        kotlin(klibSourceFile),
+      )
+
+    fun getUastInfo(uFile: UFile): String {
+      val sb = StringBuilder()
+      val expressions =
+        uFile.classes[0].methods[0].uastBody.asSafely<UBlockExpression>()!!.expressions
+
+      fun appendInfo(name: String, method: PsiMethod?) {
+        with(sb) {
+          appendLine("")
+          appendLine("Info for: ${name}")
+          appendLine("method?.name: ${method?.name}")
+          appendLine("method?.isConstructor: ${method?.isConstructor}")
+          appendLine(
+            "method?.containingClass?.qualifiedName: ${method?.containingClass?.qualifiedName}"
+          )
+          appendLine("method?.returnType?.canonicalText: ${method?.returnType?.canonicalText}")
+          val params =
+            method
+              ?.parameterList
+              ?.parameters
+              ?.asSequence()
+              ?.map { "${it.name}: ${it.type.canonicalText}" }
+              ?.joinToString()
+          appendLine("params: ${params}")
+        }
+      }
+
+      fun appendInfo(name: String, cls: PsiClass?) {
+        with(sb) {
+          appendLine("")
+          appendLine("Info for: ${name}:")
+          appendLine("cls?.supers?.joinToString(): ${cls?.supers?.joinToString()}")
+          appendLine("cls?.superTypes?.joinToString(): ${cls?.superTypes?.joinToString()}")
+          appendLine("cls?.superClass: ${cls?.superClass}")
+          appendLine("cls?.superClassType: ${cls?.superClassType}")
+        }
+      }
+
+      fun appendInfo(name: String, field: PsiField?) {
+        with(sb) {
+          appendLine("")
+          appendLine("Info for: ${name}")
+          appendLine(
+            "field?.containingClass?.qualifiedName: ${field?.containingClass?.qualifiedName}"
+          )
+          appendLine("field?.type?.canonicalText: ${field?.type?.canonicalText}")
+          appendLine(
+            "field?.hasModifierProperty(\"private\"): ${field?.hasModifierProperty("private")}"
+          )
+          appendLine(
+            "field?.hasModifierProperty(\"public\"): ${field?.hasModifierProperty("public")}"
+          )
+        }
+      }
+
+      appendInfo("libGlobalMethod()", expressions[0].tryResolve().asSafely<PsiMethod>())
+
+      appendInfo("libGlobalMethod(1)", expressions[1].tryResolve().asSafely<PsiMethod>())
+
+      appendInfo("libGlobalMethod2(1)", expressions[2].tryResolve().asSafely<PsiMethod>())
+
+      appendInfo("globalProperty", expressions[3].tryResolve().asSafely<PsiField>())
+      appendInfo("1.globalProperty", expressions[4].tryResolve().asSafely<PsiField>())
+      appendInfo("\"\".globalProperty", expressions[5].tryResolve().asSafely<PsiField>())
+      appendInfo("globalProperty2", expressions[6].tryResolve().asSafely<PsiField>())
+
+      appendInfo("LIB_CONST", expressions[7].tryResolve().asSafely<PsiField>())
+
+      val constructor =
+        expressions[8]
+          .asSafely<UDeclarationsExpression>()!!
+          .declarations[0]
+          .asSafely<ULocalVariable>()!!
+          .uastInitializer
+          .asSafely<UCallExpression>()!!
+      appendInfo("LibClass()", constructor.resolve().asSafely<PsiMethod>())
+
+      // Yields null on KMP native because of b/458272425.
+      sb.appendLine(
+        "UCallExpression.classReference: ${constructor.classReference?.resolve()?.asSafely<PsiClass>()?.qualifiedName}"
+      )
+
+      appendInfo("containingClass", constructor.resolve().asSafely<PsiMethod>()?.containingClass)
+
+      appendInfo(
+        "+c",
+        expressions[9].asSafely<UUnaryExpression>()!!.resolveOperator()?.asSafely<PsiMethod>(),
+      )
+
+      appendInfo("LibClass.companionFunc()", expressions[10].tryResolve().asSafely<PsiMethod>())
+
+      appendInfo("LibClass.companionProp", expressions[11].tryResolve().asSafely<PsiField>())
+
+      appendInfo("LibClass.Companion", expressions[12].tryResolve().asSafely<PsiClass>())
+
+      appendInfo(
+        "LibClass.Companion.companionFunc()",
+        expressions[13].tryResolve().asSafely<PsiMethod>(),
+      )
+
+      appendInfo(
+        "LibClass.Companion.companionProp",
+        expressions[14].tryResolve().asSafely<PsiField>(),
+      )
+
+      appendInfo("LibClass.LibClassObject", expressions[15].tryResolve().asSafely<PsiClass>())
+
+      appendInfo(
+        "LibClass.LibClassObject.func()",
+        expressions[16].tryResolve().asSafely<PsiMethod>(),
+      )
+
+      appendInfo("LibClass.LibClassObject.prop", expressions[17].tryResolve().asSafely<PsiField>())
+
+      appendInfo("MyFirstObject", expressions[18].tryResolve().asSafely<PsiClass>())
+
+      appendInfo("MyFirstObject.bar()", expressions[19].tryResolve().asSafely<PsiMethod>())
+
+      appendInfo("MyFirstObject.MySecondObject", expressions[20].tryResolve().asSafely<PsiClass>())
+
+      appendInfo(
+        "MyFirstObject.MySecondObject.prop",
+        expressions[21].tryResolve().asSafely<PsiField>(),
+      )
+
+      appendInfo(
+        "MyFirstObject.MySecondObject.foo()",
+        expressions[22].tryResolve().asSafely<PsiMethod>(),
+      )
+
+      appendInfo("ProtocolState.WAITING", expressions[23].tryResolve().asSafely<PsiField>())
+
+      val expressions2 =
+        uFile.classes[0].methods[1].uastBody.asSafely<UBlockExpression>()!!.expressions
+
+      appendInfo("1.valProp", expressions2[0].tryResolve().asSafely<PsiField>())
+
+      appendInfo("\"\".valProp", expressions2[1].tryResolve().asSafely<PsiField>())
+
+      appendInfo("valProp", expressions2[2].tryResolve().asSafely<PsiField>())
+
+      appendInfo(
+        "varProp = 2",
+        expressions2[3]
+          .asSafely<UBinaryExpression>()!!
+          .leftOperand
+          .tryResolve()
+          ?.asSafely<PsiField>(),
+      )
+
+      appendInfo("varProp", expressions2[4].tryResolve().asSafely<PsiField>())
+
+      appendInfo("propWithGetter", expressions2[5].tryResolve().asSafely<PsiField>())
+
+      appendInfo(
+        "propWithGetter (as a PsiMethod)",
+        expressions2[5].tryResolve().asSafely<PsiMethod>(),
+      )
+
+      appendInfo("libMethod(1)", expressions2[6].tryResolve().asSafely<PsiMethod>())
+
+      appendInfo("libMethod(1L)", expressions2[7].tryResolve().asSafely<PsiMethod>())
+
+      appendInfo("libMethod2(1L)", expressions2[8].tryResolve().asSafely<PsiMethod>())
+
+      appendInfo("libMethod3(arrayOf(1L))", expressions2[9].tryResolve().asSafely<PsiMethod>())
+
+      appendInfo("libGenericMethod(1)", expressions2[10].tryResolve().asSafely<PsiMethod>())
+      return sb.toString()
+    }
+
+    fun getUastInfo(descriptorFile: File): String? {
+      var result: String? = null
+      MainTest.checkDriver(
+        "No issues found.",
+        "",
+        // Expected exit code
+        ERRNO_SUCCESS,
+        // Args
+        arrayOf("--project", descriptorFile.path, "--XuseKlibLightElementProvider"),
+        null,
+        { driver, type, project, context ->
+          when (type) {
+            SCANNING_FILE -> {
+              context!!
+              when (context.file.name) {
+                "Code.kt" -> {
+                  context as JavaContext
+                  val uFile = context.uastParser.parse(context)!!
+                  result = getUastInfo(uFile)
+                }
+              }
+            }
+            else -> {}
+          }
+        },
+      )
+      return result?.lineSequence()?.joinToString("\n") { it.trim() }?.trim()
+    }
+
+    val sourceWithKlibProject =
+      lint()
+        .files(
+          xml(
+              "project.xml",
+              """
+              <project>
+                <module name="mycode" library="true" android="false" compute_source_roots="false" kotlinPlatforms="Native [general]">
+                  <src file="com/example/Code.kt"/>
+                  <klib file="myklib.klib" />
+                </module>
+                <!--<module name="fake_module" library="true" android="false" compute_source_roots="false" kotlinPlatforms="JVM [1.8]">
+                </module>-->
+              </project>
+              """,
+            )
+            .indented(),
+          kotlin("com/example/Code.kt", kotlinSourceFile).indented(),
+          klibFile,
+        )
+        .createProjects(temp.newFolder().canonicalFile.absoluteFile)
+    val sourceWithKlibInfo = getUastInfo(File(sourceWithKlibProject[0], "project.xml"))
+
+    // TODO(b/450898213): The following lines can be fixed by adding a fake Java module to the
+    //  project structure, but this leads to nondeterministic failures, possibly because the native
+    //  module ends up (nondeterministically) being treated like a Java module, and the klibs no
+    //  longer resolve.
+    //  cls?.supers?.joinToString(): [empty] (should be PsiClass:Object)
+    //  cls?.superClass: null (should be PsiClass:Object)
+
+    assertEquals(
+      """
+Info for: libGlobalMethod()
+method?.name: libGlobalMethod
+method?.isConstructor: false
+method?.containingClass?.qualifiedName: com.klib.Facade${'$'}libGlobalMethod
+method?.returnType?.canonicalText: int
+params:
+
+Info for: libGlobalMethod(1)
+method?.name: libGlobalMethod
+method?.isConstructor: false
+method?.containingClass?.qualifiedName: com.klib.Facade${'$'}libGlobalMethod
+method?.returnType?.canonicalText: int
+params: a: int
+
+Info for: libGlobalMethod2(1)
+method?.name: libGlobalMethod2
+method?.isConstructor: false
+method?.containingClass?.qualifiedName: com.klib.Facade${'$'}libGlobalMethod2
+method?.returnType?.canonicalText: int
+params: a: int
+
+Info for: globalProperty
+field?.containingClass?.qualifiedName: com.klib.Facade${'$'}globalProperty
+field?.type?.canonicalText: int
+field?.hasModifierProperty("private"): true
+field?.hasModifierProperty("public"): false
+
+Info for: 1.globalProperty
+field?.containingClass?.qualifiedName: com.klib.Facade${'$'}globalProperty
+field?.type?.canonicalText: java.lang.String
+field?.hasModifierProperty("private"): true
+field?.hasModifierProperty("public"): false
+
+Info for: "".globalProperty
+field?.containingClass?.qualifiedName: com.klib.Facade${'$'}globalProperty
+field?.type?.canonicalText: int
+field?.hasModifierProperty("private"): true
+field?.hasModifierProperty("public"): false
+
+Info for: globalProperty2
+field?.containingClass?.qualifiedName: com.klib.Facade${'$'}globalProperty2
+field?.type?.canonicalText: int
+field?.hasModifierProperty("private"): true
+field?.hasModifierProperty("public"): false
+
+Info for: LIB_CONST
+field?.containingClass?.qualifiedName: com.klib.Facade${'$'}LIB_CONST
+field?.type?.canonicalText: java.lang.String
+field?.hasModifierProperty("private"): false
+field?.hasModifierProperty("public"): true
+
+Info for: LibClass()
+method?.name: LibClass
+method?.isConstructor: true
+method?.containingClass?.qualifiedName: com.klib.LibClass
+method?.returnType?.canonicalText: null
+params:
+UCallExpression.classReference: null
+
+Info for: containingClass:
+cls?.supers?.joinToString():
+cls?.superTypes?.joinToString(): PsiType:Object
+cls?.superClass: null
+cls?.superClassType: PsiType:Object
+
+Info for: +c
+method?.name: unaryPlus
+method?.isConstructor: false
+method?.containingClass?.qualifiedName: com.klib.LibClass
+method?.returnType?.canonicalText: com.klib.LibClass
+params:
+
+Info for: LibClass.companionFunc()
+method?.name: companionFunc
+method?.isConstructor: false
+method?.containingClass?.qualifiedName: com.klib.LibClass.Companion
+method?.returnType?.canonicalText: int
+params:
+
+Info for: LibClass.companionProp
+field?.containingClass?.qualifiedName: com.klib.LibClass
+field?.type?.canonicalText: int
+field?.hasModifierProperty("private"): true
+field?.hasModifierProperty("public"): false
+
+Info for: LibClass.Companion:
+cls?.supers?.joinToString():
+cls?.superTypes?.joinToString(): PsiType:Object
+cls?.superClass: null
+cls?.superClassType: PsiType:Object
+
+Info for: LibClass.Companion.companionFunc()
+method?.name: companionFunc
+method?.isConstructor: false
+method?.containingClass?.qualifiedName: com.klib.LibClass.Companion
+method?.returnType?.canonicalText: int
+params:
+
+Info for: LibClass.Companion.companionProp
+field?.containingClass?.qualifiedName: com.klib.LibClass
+field?.type?.canonicalText: int
+field?.hasModifierProperty("private"): true
+field?.hasModifierProperty("public"): false
+
+Info for: LibClass.LibClassObject:
+cls?.supers?.joinToString():
+cls?.superTypes?.joinToString(): PsiType:Object
+cls?.superClass: null
+cls?.superClassType: PsiType:Object
+
+Info for: LibClass.LibClassObject.func()
+method?.name: func
+method?.isConstructor: false
+method?.containingClass?.qualifiedName: com.klib.LibClass.LibClassObject
+method?.returnType?.canonicalText: int
+params:
+
+Info for: LibClass.LibClassObject.prop
+field?.containingClass?.qualifiedName: com.klib.LibClass.LibClassObject
+field?.type?.canonicalText: int
+field?.hasModifierProperty("private"): true
+field?.hasModifierProperty("public"): false
+
+Info for: MyFirstObject:
+cls?.supers?.joinToString():
+cls?.superTypes?.joinToString(): PsiType:Object
+cls?.superClass: null
+cls?.superClassType: PsiType:Object
+
+Info for: MyFirstObject.bar()
+method?.name: bar
+method?.isConstructor: false
+method?.containingClass?.qualifiedName: com.klib.MyFirstObject
+method?.returnType?.canonicalText: long
+params:
+
+Info for: MyFirstObject.MySecondObject:
+cls?.supers?.joinToString():
+cls?.superTypes?.joinToString(): PsiType:Object
+cls?.superClass: null
+cls?.superClassType: PsiType:Object
+
+Info for: MyFirstObject.MySecondObject.prop
+field?.containingClass?.qualifiedName: com.klib.MyFirstObject.MySecondObject
+field?.type?.canonicalText: int
+field?.hasModifierProperty("private"): true
+field?.hasModifierProperty("public"): false
+
+Info for: MyFirstObject.MySecondObject.foo()
+method?.name: foo
+method?.isConstructor: false
+method?.containingClass?.qualifiedName: com.klib.MyFirstObject.MySecondObject
+method?.returnType?.canonicalText: int
+params:
+
+Info for: ProtocolState.WAITING
+field?.containingClass?.qualifiedName: com.klib.ProtocolState
+field?.type?.canonicalText: com.klib.ProtocolState
+field?.hasModifierProperty("private"): false
+field?.hasModifierProperty("public"): true
+
+Info for: 1.valProp
+field?.containingClass?.qualifiedName: com.klib.LibClass
+field?.type?.canonicalText: int
+field?.hasModifierProperty("private"): true
+field?.hasModifierProperty("public"): false
+
+Info for: "".valProp
+field?.containingClass?.qualifiedName: com.klib.LibClass
+field?.type?.canonicalText: int
+field?.hasModifierProperty("private"): true
+field?.hasModifierProperty("public"): false
+
+Info for: valProp
+field?.containingClass?.qualifiedName: com.klib.LibClass
+field?.type?.canonicalText: int
+field?.hasModifierProperty("private"): true
+field?.hasModifierProperty("public"): false
+
+Info for: varProp = 2
+field?.containingClass?.qualifiedName: com.klib.LibClass
+field?.type?.canonicalText: int
+field?.hasModifierProperty("private"): true
+field?.hasModifierProperty("public"): false
+
+Info for: varProp
+field?.containingClass?.qualifiedName: com.klib.LibClass
+field?.type?.canonicalText: int
+field?.hasModifierProperty("private"): true
+field?.hasModifierProperty("public"): false
+
+Info for: propWithGetter
+field?.containingClass?.qualifiedName: com.klib.LibClass
+field?.type?.canonicalText: int
+field?.hasModifierProperty("private"): true
+field?.hasModifierProperty("public"): false
+
+Info for: propWithGetter (as a PsiMethod)
+method?.name: null
+method?.isConstructor: null
+method?.containingClass?.qualifiedName: null
+method?.returnType?.canonicalText: null
+params: null
+
+Info for: libMethod(1)
+method?.name: libMethod
+method?.isConstructor: false
+method?.containingClass?.qualifiedName: com.klib.LibClass
+method?.returnType?.canonicalText: int
+params: arg: int
+
+Info for: libMethod(1L)
+method?.name: libMethod
+method?.isConstructor: false
+method?.containingClass?.qualifiedName: com.klib.LibClass
+method?.returnType?.canonicalText: long
+params: arg: long
+
+Info for: libMethod2(1L)
+method?.name: libMethod2
+method?.isConstructor: false
+method?.containingClass?.qualifiedName: com.klib.LibClass
+method?.returnType?.canonicalText: long
+params: arg: long
+
+Info for: libMethod3(arrayOf(1L))
+method?.name: libMethod3
+method?.isConstructor: false
+method?.containingClass?.qualifiedName: com.klib.LibClass
+method?.returnType?.canonicalText: java.lang.Long[]
+params: arg: java.lang.Long[]
+
+Info for: libGenericMethod(1)
+method?.name: libGenericMethod
+method?.isConstructor: false
+method?.containingClass?.qualifiedName: com.klib.LibClass
+method?.returnType?.canonicalText: T[]
+params: arg: T
+"""
+        .trimIndent(),
+      sourceWithKlibInfo,
+    )
+
+    // Uncomment to compare against source.
+    //    val sourceWithSourceProject =
+    //      lint()
+    //        .files(
+    //          xml(
+    //            "project.xml",
+    //            """
+    //              <project>
+    //                <module name="mycode" library="true" android="false"
+    // compute_source_roots="false" kotlinPlatforms="JVM [1.8]">
+    //                  <src file="com/example/Code.kt"/>
+    //                  <src file="com/klib/Code.kt" generated="true" />
+    //                </module>
+    //              </project>
+    //              """,
+    //          )
+    //            .indented(),
+    //          kotlin(
+    //            "com/example/Code.kt",
+    //            kotlinSourceFile,
+    //          )
+    //            .indented(),
+    //          kotlin(
+    //            "com/klib/Code.kt",
+    //            klibSourceFile,
+    //          )
+    //            .indented(),
+    //        )
+    //        .createProjects(temp.newFolder().canonicalFile.absoluteFile)
+    //    val sourceWithSourceInfo = getUastInfo(File(sourceWithSourceProject[0], "project.xml"))
+    //    assertEquals(sourceWithSourceInfo, sourceWithKlibInfo)
+
+    // Uncomment to compare against jar.
+    //    val sourceWithJarProject =
+    //      lint()
+    //        .files(
+    //          xml(
+    //            "project.xml",
+    //            """
+    //              <project>
+    //                <module name="mycode" library="true" android="false"
+    // compute_source_roots="false" kotlinPlatforms="JVM [1.8]">
+    //                  <src file="com/example/Code.kt"/>
+    //                  <jar file="mylib.jar" />
+    //                </module>
+    //              </project>
+    //              """,
+    //          )
+    //            .indented(),
+    //          kotlin(
+    //            "com/example/Code.kt",
+    //            kotlinSourceFile,
+    //          )
+    //            .indented(),
+    //          jarFile,
+    //        )
+    //        .createProjects(temp.newFolder().canonicalFile.absoluteFile)
+    //    val sourceWithJarInfo = getUastInfo(File(sourceWithJarProject[0], "project.xml"))
+    //    assertEquals(sourceWithJarInfo, sourceWithKlibInfo)
   }
 
   @Test

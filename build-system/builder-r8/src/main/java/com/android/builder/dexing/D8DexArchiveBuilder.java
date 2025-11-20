@@ -90,7 +90,8 @@ final class D8DexArchiveBuilder extends DexArchiveBuilder {
                                             ? DexFilePerClassFile.INSTANCE
                                             : DexIndexed.INSTANCE)
                                     .getOutputMode())
-                    .setIncludeClassesChecksum(dexParams.getDebuggable());
+                    .setIncludeClassesChecksum(dexParams.getDebuggable())
+                    .setEnableVerboseSyntheticNames(true);
 
             if (dexParams.getDebuggable()) {
                 builder.addAssertionsConfiguration(

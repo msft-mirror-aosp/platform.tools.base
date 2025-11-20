@@ -374,6 +374,14 @@ internal abstract class GradleProjectDefinitionImpl(
                     for (plugin in plugins) {
                         applyPluginByName(plugin.plugin.id)
                     }
+
+                    val customPluginsToApply = customPluginMap[path]
+                    customPluginsToApply?.let {
+                        // If there is a plugin class, apply them
+                        it.forEach { plugin ->
+                            applyPluginByName(plugin)
+                        }
+                    }
                 }
             } else {
 
@@ -429,6 +437,14 @@ internal abstract class GradleProjectDefinitionImpl(
                             pluginId(plugin.id, version, apply = false)
                         }
                     }
+
+                    val customPluginsToApply = customPluginMap[path]
+                    customPluginsToApply?.let {
+                        // If there is a plugin class, apply them
+                        it.forEach { plugin ->
+                            pluginId(plugin, null)
+                        }
+                    }
                 }
             }
 
@@ -452,15 +468,6 @@ internal abstract class GradleProjectDefinitionImpl(
                             }
                         }
                     }
-                }
-                emptyLine()
-            }
-
-            val pluginsToApply = customPluginMap[path]
-            pluginsToApply?.let {
-                // If there is a plugin class, apply them
-                it.forEach { plugin ->
-                    applyPluginFromClass(plugin)
                 }
                 emptyLine()
             }

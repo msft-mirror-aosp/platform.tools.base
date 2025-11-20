@@ -401,5 +401,10 @@ fun assertRunnerConfigProto(
           }
           ${"\n" + shardingConfigProto.trimIndent().prependIndent(" ".repeat(10))}
         }
+        cancellation_config {
+          plugin_cleanup_timeout_ms: 1000
+          executor_cancellation_timeout_ms: 1000
+          executor_cancellation_abort_ms: 1000
+        }
         """.trimIndent().lines().filter(String::isNotBlank).joinToString("\n"))
 }

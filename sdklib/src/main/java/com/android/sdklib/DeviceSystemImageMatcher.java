@@ -68,6 +68,10 @@ public final class DeviceSystemImageMatcher {
             return SystemImageTags.isAiGlassesImage(tags);
         }
 
+        if (Device.isXrGlasses(device)) {
+            return SystemImageTags.isXrGlassesImage(tags);
+        }
+
         return tags.stream().map(IdDisplay::getId).anyMatch(i -> i.equals(id));
     }
 }

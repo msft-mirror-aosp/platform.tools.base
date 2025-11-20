@@ -92,9 +92,28 @@ class AiGlassesPairing(val session: AdbSession) {
     }
   }
 
-  private suspend fun ConnectedDevice.monkey() {
+  suspend fun ConnectedDevice.launchCompanionApp() {
     val command = "monkey -p $COMPANION_PKG -c android.intent.category.LAUNCHER 1"
     session.deviceServices.shellCommand(selector, command).withTextCollector().execute().single()
+  }
+
+  private suspend fun ConnectedDevice.clearPackage(pkg: String) {
+    val command = "pm clear $pkg"
+    logger.info { "Executing on $serialNumber: $command" }
+    val output =
+      session.deviceServices.shellCommand(selector, command).withTextCollector().execute().single()
+    if (output.exitCode != 0) {
+      throw ShellCommandException("Failed to execute \"$command\": ${output.stderr}")
+    }
+  }
+
+  /**
+   * Clears the state of the Glasses companion app and GlassesCore. This ensures that any polling of
+   * the pairing process does not return the state of a prior pairing operation.
+   */
+  suspend fun ConnectedDevice.clearGlassesPackages() {
+    clearPackage(COMPANION_PKG)
+    clearPackage(CORE_PKG)
   }
 
   /**
@@ -152,6 +171,20 @@ class AiGlassesPairing(val session: AdbSession) {
     }
   }
 
+  suspend fun ConnectedDevice.sendUnpairCommand() {
+    val command = "am broadcast -a $COMPANION_PKG.UNPAIR -p $COMPANION_PKG"
+    val output =
+      session.deviceServices.shellCommand(selector, command).withTextCollector().execute().single()
+    logger.debug { output.stdout }
+    if (output.stderr.isNotEmpty()) {
+      logger.warn("Unpair command error output: ${output.stderr}")
+    }
+
+    if (output.exitCode != 0) {
+      throw ShellCommandException("Failed to unpair. Exit code: ${output.exitCode}")
+    }
+  }
+
   fun ConnectedDevice.pairToGlasses(
     glassesBluetoothAddress: String,
     useCdm: Boolean,
@@ -160,7 +193,7 @@ class AiGlassesPairing(val session: AdbSession) {
     grantPermission(COMPANION_PKG, "android.permission.BLUETOOTH_CONNECT")
     grantPermission(CORE_PKG, "android.permission.ACCESS_FINE_LOCATION")
 
-    monkey()
+    launchCompanionApp()
 
     emit("POLLING")
     while (true) {
@@ -191,8 +224,9 @@ class AiGlassesPairing(val session: AdbSession) {
 
     val TERMINAL_STATES =
       setOf(
-        "PAIRED",
         "ERROR",
+        "PAIRED",
+        "POLLING_FAILED",
         "UI_CDM_FAILED",
         "WORKER_BOND_FAILED",
         "WORKER_CONNECTION_FAILED",

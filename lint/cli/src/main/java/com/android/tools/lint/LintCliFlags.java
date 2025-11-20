@@ -91,6 +91,7 @@ public class LintCliFlags {
     private boolean allowBaselineSuppress;
     private boolean offline;
     private boolean useK2Uast = true;
+    private boolean useKlibLightElementProvider = false;
     private File cacheDir;
 
     public static final int ERRNO_SUCCESS = 0;
@@ -915,6 +916,20 @@ public class LintCliFlags {
      */
     public void setUseK2Uast(boolean useK2Uast) {
         this.useK2Uast = useK2Uast;
+    }
+
+    /**
+     * Returns whether to use the new light provider for klibs (for UAST).
+     */
+    public boolean useKlibLightElementProvider() {
+      return useKlibLightElementProvider;
+    }
+
+    /**
+     * Sets whether to use the new light provider for klibs (for UAST).
+     */
+    public void setUseKlibLightElementProvider(boolean useKlibLightElementProvider) {
+      this.useKlibLightElementProvider = useKlibLightElementProvider;
     }
 
     /**

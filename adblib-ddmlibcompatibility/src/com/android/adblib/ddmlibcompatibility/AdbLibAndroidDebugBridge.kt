@@ -960,9 +960,7 @@ class AdbLibAndroidDebugBridge(
     }
 
     override fun hasInitialDeviceList(): Boolean {
-        return logUsage(AdbDelegateUsageTracker.Method.HAS_INITIAL_DEVICE_LIST) {
-            adblibCompatDeviceManager?.hasInitialDeviceList() == true
-        }
+        unsupportedMethod()
     }
 
     override fun getDevices(): Array<IDevice> {

@@ -66,9 +66,9 @@ class TestApkOutput(variant: TestVariantCreationConfig, val deviceSpec: DeviceSp
 
         return ApkSources(
             mainApkArtifacts = variant.allTestedApks,
-            privacySandboxSdksApksFiles =  privacySandboxSdksApksFiles,
             additionalSupportedSdkApkSplits = variant.usesSdkLibrarySplitForLocalDeployment,
-            privacySandboxSdkSplitApksForLegacy = variant.privacySandboxCompatApks)
+            privacySandboxSdkSplitApksForLegacy = variant.privacySandboxCompatApks
+        )
     }
 
 }

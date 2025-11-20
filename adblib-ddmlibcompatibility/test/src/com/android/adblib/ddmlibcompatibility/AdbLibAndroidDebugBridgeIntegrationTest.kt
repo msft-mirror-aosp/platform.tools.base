@@ -25,10 +25,8 @@ import com.android.fakeadbserver.DeviceState
 import com.android.sdklib.AndroidApiLevel
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNull
-import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.RuleChain
@@ -79,13 +77,11 @@ class AdbLibAndroidDebugBridgeIntegrationTest {
         // Assert
         assertEquals(bridgeInstance, AndroidDebugBridge.getBridge())
         assertEquals("device1", bridgeInstance.devices[0].serialNumber)
-        assertTrue(bridgeInstance.hasInitialDeviceList())
 
         // Act: disconnect bridge
         AndroidDebugBridge.disconnectBridge(Long.MAX_VALUE, TimeUnit.MILLISECONDS)
         yieldUntil { bridgeInstance.devices.isEmpty() }
 
-        assertFalse(bridgeInstance.hasInitialDeviceList())
         assertNull(AndroidDebugBridge.getBridge())
 
         // Act: recreate bridge
@@ -97,7 +93,6 @@ class AdbLibAndroidDebugBridgeIntegrationTest {
         assertNotEquals(bridgeInstance, recreatedBridgeInstance)
         assertEquals(recreatedBridgeInstance, AndroidDebugBridge.getBridge())
         assertEquals("device1", recreatedBridgeInstance.devices[0].serialNumber)
-        assertTrue(recreatedBridgeInstance.hasInitialDeviceList())
 
         // Act: terminate bridge
         AndroidDebugBridge.terminate()

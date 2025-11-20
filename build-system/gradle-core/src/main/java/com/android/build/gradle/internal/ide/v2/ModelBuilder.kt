@@ -392,8 +392,9 @@ class ModelBuilder<ExtensionT : CommonExtension>(
                             hostJarSources.add(
                                 HostJarTestSuiteSourceImpl(
                                     name = suiteSourceContainer.name,
-                                    java = sourceSet.get().all.get().map { it.asFile },
-                                    kotlin = sourceSet.get().all.get().map { it.asFile }
+                                    java = sourceSet.java()?.all?.get()?.map { it.asFile } ?: emptyList(),
+                                    kotlin = sourceSet.kotlin()?.all?.get()?.map { it.asFile } ?: emptyList(),
+                                    resources = sourceSet.resources().all.get().map { it.asFile },
                                 )
                             )
                         }

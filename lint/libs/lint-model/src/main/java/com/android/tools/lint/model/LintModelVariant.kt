@@ -137,7 +137,7 @@ class DefaultLintModelVariant(
     return@lazy mainArtifactOrNull
       ?: artifact as? LintModelAndroidArtifact
       ?: DefaultLintModelAndroidArtifact(
-        applicationId = "",
+        applicationId = null,
         generatedResourceFolders = listOf(),
         generatedSourceFolders = listOf(),
         desugaredMethodsFiles = listOf(),

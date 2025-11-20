@@ -243,8 +243,14 @@ class ApkFlinger(
 
     @Throws(IOException::class)
     override fun close() {
-        subTasks.forEach { it.join() }
-        archive.close()
+        try {
+            subTasks.forEach { it.join() }
+        } catch (e: RuntimeException) {
+            subTasks.forEach { it.cancel(/*mayInterruptIfRunning=*/true) }
+            throw e
+        } finally {
+            archive.close()
+        }
     }
 
     companion object {

@@ -30,7 +30,6 @@ import com.android.build.gradle.internal.component.VariantCreationConfig
 import com.android.build.gradle.internal.dependency.AarToRClassTransform
 import com.android.build.gradle.internal.dsl.ModulePropertyKey
 import com.android.build.gradle.internal.fusedlibrary.FusedLibraryInternalArtifactType
-import com.android.build.gradle.internal.privaysandboxsdk.PrivacySandboxSdkInternalArtifactType
 import com.android.build.gradle.internal.privaysandboxsdk.PrivacySandboxSdkVariantScope
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
 import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactScope.ALL
@@ -377,10 +376,6 @@ abstract class ProguardConfigurableTask(
             task.configurationFiles.apply {
                 from(creationConfig.optimization.keepRules.files)
                 from(task.libraryKeepRulesFileCollection)
-                from(Callable {
-                    creationConfig.artifacts.get(PrivacySandboxSdkInternalArtifactType.GENERATED_PROGUARD_FILE)
-                        .takeIf { it.isPresent }
-                })
                 disallowChanges()
             }
 

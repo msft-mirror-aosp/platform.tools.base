@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.integration.common.fixture.project.builder
 
+import com.android.build.gradle.integration.common.fixture.dsl.DefaultDslRecorder.CustomBlockData
 import com.android.build.gradle.integration.common.fixture.project.Substitution
 import com.android.build.gradle.integration.common.fixture.project.SubstitutionImpl
 import org.gradle.api.JavaVersion
@@ -75,6 +76,8 @@ interface BuildWriter: BooleanNameHandler {
 
     fun emptyLine(): BuildWriter
 
+    fun getCustomBlockName(data: CustomBlockInfo): String
+
     /** Returns the file name of the build file for this writer */
     val buildFileName: String
     /** Returns the file name of the settings file for this writer */
@@ -103,6 +106,11 @@ interface StringHandler {
  */
 interface CustomObjectInstance {
     fun toString(handler: StringHandler): String
+}
+
+interface CustomBlockInfo {
+    val name: String
+    val blockClass: Class<*>
 }
 
 /**
@@ -480,6 +488,10 @@ internal class KtsBuildWriter(indentLevel: Int = 0): BaseBuildWriter(indentLevel
         val using = rawMethod("using", coordinates(using)).value
         indent().put("$substitute.$using").endLine()
     }
+
+    override fun getCustomBlockName(data: CustomBlockInfo): String {
+        return "configure<${data.blockClass.typeName}>"
+    }
 }
 
 internal class DeclarativeBuildWriter(indentLevel: Int = 0): BaseBuildWriter(indentLevel) {
@@ -529,6 +541,10 @@ internal class DeclarativeBuildWriter(indentLevel: Int = 0): BaseBuildWriter(ind
 
     override fun dependencySubstitution(substitute: Substitution, using: Substitution) =
         error("Not supported yet")
+
+    override fun getCustomBlockName(data: CustomBlockInfo): String {
+        error("Not supported yet")
+    }
 }
 
 internal class GroovyBuildWriter(indentLevel: Int = 0): BaseBuildWriter(indentLevel) {
@@ -589,5 +605,9 @@ internal class GroovyBuildWriter(indentLevel: Int = 0): BaseBuildWriter(indentLe
         val substitute = rawMethod("substitute", coordinates(substitute)).value
         val using = rawMethod("using", coordinates(using)).value
         indent().put("$substitute $using").endLine()
+    }
+
+    override fun getCustomBlockName(data: CustomBlockInfo): String {
+        return data.name
     }
 }

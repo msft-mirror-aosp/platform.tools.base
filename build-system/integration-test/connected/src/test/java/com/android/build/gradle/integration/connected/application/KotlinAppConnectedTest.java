@@ -58,8 +58,6 @@ public class KotlinAppConnectedTest {
         project.executor()
                 .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
                 .withArgument("-Dorg.gradle.unsafe.configuration-cache.max-problems=10000")
-                // TODO(b/439843451) - Opt back into `android.enableAppCompileTimeRClass`
-                .with(BooleanOption.ENABLE_APP_COMPILE_TIME_R_CLASS, false)
                 .run("connectedAndroidTest");
 
         String testReportPath =

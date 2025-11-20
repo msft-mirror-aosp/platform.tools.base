@@ -22,10 +22,8 @@ import com.android.build.gradle.internal.testing.AdbHelper
 import com.android.build.gradle.internal.testing.StaticTestData
 import com.android.builder.testing.api.DeviceConnector
 import com.android.mockito.kotlin.whenever
-import com.android.testutils.truth.PathSubject.assertThat
 import com.android.tools.utp.gradle.api.RunUtpWorkParameters
 import com.google.common.truth.Truth.assertThat
-import com.google.testing.platform.proto.api.core.TestSuiteResultProto.TestSuiteResult
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.Provider
 import org.gradle.workers.WorkerExecutor
@@ -83,7 +81,7 @@ class UtpTestRunnerTest {
         whenever(mockVersionedSdkLoader.adbHelper).thenReturn(adbHelperProvider)
     }
 
-    private fun runUtp(result: UtpTestRunResult): Boolean {
+    private fun runUtp(result: Boolean): Boolean {
         val runner = UtpTestRunner(
             mock(),
             mockWorkerExecutor,
@@ -105,9 +103,9 @@ class UtpTestRunnerTest {
         resultsDirectory = temporaryFolderRule.newFolder("results")
 
         mockStatic(::runUtpTestSuiteAndWait.javaMethod!!.declaringClass).use { mockedStatic ->
-            mockedStatic.whenever<List<UtpTestRunResult>> {
-                runUtpTestSuiteAndWait(runnerConfigsCaptor.capture(), any(), any(), any(), any(), any(), any(), any(), any())
-            }.thenReturn(listOf(result))
+            mockedStatic.whenever<Boolean> {
+                runUtpTestSuiteAndWait(runnerConfigsCaptor.capture(), any(), any(), any(), any(), any(), any(), any())
+            }.thenReturn(result)
 
             return runner.runTests(
                 "projectName",
@@ -129,16 +127,15 @@ class UtpTestRunnerTest {
 
     @Test
     fun runUtpAndPassed() {
-        val result = runUtp(UtpTestRunResult(testPassed = true, TestSuiteResult.getDefaultInstance()))
+        val result = runUtp(result = true)
 
         assertThat(runnerConfigsCaptor.firstValue).hasSize(1)
         assertThat(result).isTrue()
-        assertThat(File(resultsDirectory, TEST_RESULT_PB_FILE_NAME)).exists()
     }
 
     @Test
     fun runUtpAndFailed() {
-        val result = runUtp(UtpTestRunResult(testPassed = false, null))
+        val result = runUtp(result = false)
 
         assertThat(runnerConfigsCaptor.firstValue).hasSize(1)
         assertThat(result).isFalse()
@@ -149,7 +146,7 @@ class UtpTestRunnerTest {
         // Ensure all devices are determined to be managed devices.
         whenever(mockAdbHelper.isManagedDevice(any(), any())).thenReturn(true)
 
-        val result = runUtp(UtpTestRunResult(testPassed = true, TestSuiteResult.getDefaultInstance()))
+        val result = runUtp(result = true)
 
         // Since the only available devices will only be managed devices, we expect no tests to
         // be run.

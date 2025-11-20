@@ -16,8 +16,12 @@
 
 package com.android.build.gradle.internal.testing.androidtest.instrument
 
+import com.android.build.gradle.internal.testing.androidtest.instrument.AmInstrumentationParser.Companion.STATUS_CODE_ASSUMPTION_FAILURE
+import com.android.build.gradle.internal.testing.androidtest.instrument.AmInstrumentationParser.Companion.STATUS_CODE_ERROR
+import com.android.build.gradle.internal.testing.androidtest.instrument.AmInstrumentationParser.Companion.STATUS_CODE_FAILURE
+import com.android.build.gradle.internal.testing.androidtest.instrument.AmInstrumentationParser.Companion.STATUS_CODE_IGNORED
+import com.android.build.gradle.internal.testing.androidtest.instrument.AmInstrumentationParser.Companion.STATUS_CODE_OK
 import com.google.common.truth.Truth.assertThat
-import com.google.testing.platform.proto.api.core.TestStatusProto.TestStatus
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -155,7 +159,7 @@ class AmInstrumentationParserTest {
     verify(listener).testEnded(testResultCaptor.capture())
 
     var actualTestResult = testResultCaptor.firstValue
-    assertThat(actualTestResult.status).isEqualTo(TestStatus.PASSED)
+    assertThat(actualTestResult.status).isEqualTo(STATUS_CODE_OK)
     assertThat(actualTestResult.statusBundle)
       .isEqualTo(mapOf("multi" to " multi \n  line \n   output "))
   }
@@ -296,7 +300,7 @@ class AmInstrumentationParserTest {
     inOrder(listener) {
       verify(listener).instrumentationStarted(1)
       verify(listener).testStarted(TEST_IDENTIFIER)
-      verify(listener).testEnded(expectedTestResult(TestStatus.PASSED))
+      verify(listener).testEnded(expectedTestResult(STATUS_CODE_OK))
       verify(listener).instrumentationEnded(InstrumentationResult(-1))
     }
     verifyNoMoreInteractions(listener)
@@ -314,7 +318,7 @@ class AmInstrumentationParserTest {
     inOrder(listener) {
       verify(listener).instrumentationStarted(1)
       verify(listener).testStarted(TEST_IDENTIFIER)
-      verify(listener).testEnded(expectedTestResult(TestStatus.FAILED, STACK_TRACE))
+      verify(listener).testEnded(expectedTestResult(STATUS_CODE_FAILURE, STACK_TRACE))
       verify(listener).instrumentationEnded(InstrumentationResult(-1))
     }
     verifyNoMoreInteractions(listener)
@@ -332,7 +336,7 @@ class AmInstrumentationParserTest {
     inOrder(listener) {
       verify(listener).instrumentationStarted(1)
       verify(listener).testStarted(TEST_IDENTIFIER)
-      verify(listener).testEnded(expectedTestResult(TestStatus.IGNORED, stackTrace = STACK_TRACE))
+      verify(listener).testEnded(expectedTestResult(STATUS_CODE_ASSUMPTION_FAILURE, stackTrace = STACK_TRACE))
       verify(listener).instrumentationEnded(InstrumentationResult(-1))
     }
     verifyNoMoreInteractions(listener)
@@ -349,7 +353,7 @@ class AmInstrumentationParserTest {
     inOrder(listener) {
       verify(listener).instrumentationStarted(1)
       verify(listener).testStarted(TEST_IDENTIFIER)
-      verify(listener).testEnded(expectedTestResult(TestStatus.IGNORED))
+      verify(listener).testEnded(expectedTestResult(STATUS_CODE_IGNORED))
       verify(listener).instrumentationEnded(InstrumentationResult(-1))
     }
     verifyNoMoreInteractions(listener)
@@ -383,7 +387,7 @@ class AmInstrumentationParserTest {
     inOrder(listener) {
       verify(listener).instrumentationStarted(1)
       verify(listener).testStarted(TEST_IDENTIFIER)
-      verify(listener).testEnded(expectedTestResult(TestStatus.FAILED))
+      verify(listener).testEnded(expectedTestResult(STATUS_CODE_ERROR))
       verify(listener).instrumentationFailed(matches("Test run failed to complete."))
       verify(listener).instrumentationEnded(InstrumentationResult())
     }
@@ -404,7 +408,7 @@ class AmInstrumentationParserTest {
     verify(listener).testEnded(testResultCaptor.capture())
 
     var actualTestResult = testResultCaptor.firstValue
-    assertThat(actualTestResult.status).isEqualTo(TestStatus.PASSED)
+    assertThat(actualTestResult.status).isEqualTo(STATUS_CODE_OK)
     assertThat(actualTestResult.statusBundle)
       .isEqualTo(mapOf("iteration" to "2", "multi" to "multi\nline\noutput"))
   }
@@ -419,7 +423,7 @@ class AmInstrumentationParserTest {
     inOrder(listener) {
       verify(listener).instrumentationStarted(1)
       verify(listener).testStarted(TEST_IDENTIFIER)
-      verify(listener).testEnded(expectedTestResult(TestStatus.FAILED))
+      verify(listener).testEnded(expectedTestResult(STATUS_CODE_ERROR))
       verify(listener).instrumentationFailed(matches("Process crashed"))
       verify(listener).instrumentationEnded(InstrumentationResult(0))
     }
@@ -438,7 +442,7 @@ class AmInstrumentationParserTest {
     inOrder(listener) {
       verify(listener).instrumentationStarted(1)
       verify(listener).testStarted(TEST_IDENTIFIER)
-      verify(listener).testEnded(expectedTestResult(TestStatus.FAILED))
+      verify(listener).testEnded(expectedTestResult(STATUS_CODE_FAILURE))
       verify(listener).instrumentationFailed(matches("Process crashed."))
       verify(listener).instrumentationEnded(InstrumentationResult(0))
     }
@@ -621,7 +625,7 @@ class AmInstrumentationParserTest {
       .testEnded(
         TestResult(
           testIdentifier = expectedTestIdentifier,
-          status = TestStatus.PASSED,
+          status = STATUS_CODE_OK,
           startTime = incAndGet(),
           endTime = incAndGet(),
         )
@@ -641,7 +645,7 @@ class AmInstrumentationParserTest {
       .testEnded(
         TestResult(
           testIdentifier = expectedTestIdentifier,
-          status = TestStatus.FAILED,
+          status = STATUS_CODE_FAILURE,
           startTime = incAndGet(),
           endTime = incAndGet(),
         )
@@ -985,7 +989,7 @@ class AmInstrumentationParserTest {
         .testEnded(
           TestResult(
             testIdentifier = testIdentifier,
-            status = TestStatus.PASSED,
+            status = STATUS_CODE_OK,
             startTime = FIRST_TEST_START_TIME,
             endTime = FIRST_TEST_END_TIME,
           )
@@ -1069,7 +1073,7 @@ class AmInstrumentationParserTest {
         .testEnded(
           TestResult(
             testIdentifier = testId1,
-            status = TestStatus.PASSED,
+            status = STATUS_CODE_OK,
             startTime = FIRST_TEST_START_TIME,
             endTime = FIRST_TEST_END_TIME,
             statusBundle = bundle
@@ -1080,7 +1084,7 @@ class AmInstrumentationParserTest {
         .testEnded(
           TestResult(
             testIdentifier = testId2,
-            status = TestStatus.PASSED,
+            status = STATUS_CODE_OK,
             startTime = SECOND_TEST_START_TIME,
             endTime = SECOND_TEST_END_TIME,
             statusBundle = bundle
@@ -1205,7 +1209,7 @@ class AmInstrumentationParserTest {
         .trimMargin()
 
     fun expectedTestResult(
-      status: TestStatus,
+      status: Int,
       stackTrace: String? = null,
       statusBundle: Map<String, String> = mapOf()
     ): TestResult {

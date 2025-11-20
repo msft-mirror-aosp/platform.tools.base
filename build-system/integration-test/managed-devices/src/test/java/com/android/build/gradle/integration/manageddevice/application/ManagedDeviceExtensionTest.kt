@@ -225,8 +225,6 @@ class ManagedDeviceExtensionTest {
         val project = rule.build.androidApplication(":emptyAppProject")
 
         val result = executor
-            // TODO(b/439843451) - Opt back into `android.enableAppCompileTimeRClass`
-            .with(BooleanOption.ENABLE_APP_COMPILE_TIME_R_CLASS, false)
             .run(":emptyAppProject:myCustomDeviceCheck")
 
         result.stdout.use {

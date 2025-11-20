@@ -38,6 +38,7 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.logging.Logger
+import kotlin.coroutines.cancellation.CancellationException
 
 /**
  * This plugin updates [TestSuiteResult] proto with logcat artifacts
@@ -53,6 +54,7 @@ class AndroidTestLogcatPlugin(
     companion object {
         private const val TEST_CRASH_INDICATOR = "E AndroidRuntime: "
         private const val LOGCAT_TIMEOUT_SECONDS = 10L
+        private val INVALID_FILE_NAME_CHARS = Regex("[^a-zA-Z0-9.\\-_]")
     }
 
     private lateinit var outputDir: String
@@ -172,7 +174,12 @@ class AndroidTestLogcatPlugin(
     private fun generateLogcatFileName(
             testPackageAndClass: String,
             testMethod: String
-    ) = File(outputDir, "logcat-$testPackageAndClass-$testMethod.txt").absolutePath
+    ): String {
+        return File(
+            outputDir,
+            "logcat-$testPackageAndClass-$testMethod.txt".replace(INVALID_FILE_NAME_CHARS, "_")
+        ).absolutePath
+    }
 
     /** Gets current date time on device. */
     private fun getDeviceCurrentTime(deviceController: DeviceController): String? {
@@ -259,6 +266,8 @@ class AndroidTestLogcatPlugin(
                 logcatCommandHandle.stop()
                 logcatCommandHandle.waitFor() // Wait for the command to exit gracefully.
             }
+        } catch (_: CancellationException) {
+            /* logcatCommandHandle may throw CancellationException after calling stop(). */
         } catch (t: Throwable) {
             logger.warning("Stopping logcat failed with the following error: $t")
         } finally {

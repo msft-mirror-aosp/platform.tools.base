@@ -16,13 +16,30 @@
 
 package com.android.build.gradle.internal.api
 
+import com.android.build.api.variant.SourceDirectories
+import com.android.build.api.variant.impl.FileBasedDirectoryEntryImpl
+import com.android.build.api.variant.impl.FlatSourceDirectoriesImpl
 import com.android.build.gradle.internal.services.VariantServices
+import java.io.File
 
 internal class AssetsTestSuiteSourceSet(
     sourceSetName: String,
     variantServices: VariantServices,
-): AssetsOrHostJarTestSuiteSourceSet(
-    sourceSetName,
-    variantServices
-), TestSuiteSourceSet.Assets {
+): TestSuiteSourceSet.Assets {
+
+    private val assetsSourcesFolder = FlatSourceDirectoriesImpl(
+        sourceSetName,
+        variantServices,
+        null,
+    ).also {
+        it.addSource(FileBasedDirectoryEntryImpl(
+            name = sourceSetName,
+            directory = File(variantServices.projectInfo.projectDirectory.asFile, "src/$sourceSetName"),
+            filter = null,
+            isUserAdded = false,
+            shouldBeAddedToIdeModel = true
+        ))
+    }
+
+    override fun get(): SourceDirectories.Flat = assetsSourcesFolder
 }

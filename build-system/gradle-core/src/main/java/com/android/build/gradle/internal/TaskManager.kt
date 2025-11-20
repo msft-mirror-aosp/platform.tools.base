@@ -139,7 +139,6 @@ import com.android.build.gradle.internal.tasks.featuresplit.getFeatureName
 import com.android.build.gradle.internal.tasks.mlkit.GenerateMlModelClass
 import com.android.build.gradle.internal.tasks.runResourceShrinking
 import com.android.build.gradle.internal.test.AbstractTestDataImpl
-import com.android.build.gradle.internal.testing.utp.TEST_RESULT_PB_FILE_NAME
 import com.android.build.gradle.internal.transforms.ShrinkAppBundleResourcesTask
 import com.android.build.gradle.internal.transforms.ShrinkResourcesNewShrinkerTask
 import com.android.build.gradle.internal.utils.COMPOSE_COMPILER_PLUGIN_ID
@@ -1254,12 +1253,11 @@ abstract class TaskManager(
             deviceToProvider[managedDevice.name] = managedDeviceTestTask
         }
 
-        // Register a task to aggregate test suite result protos.
+        // Register a task to aggregate test suite results.
         val testResultAggregationTask = taskFactory.register(
             ManagedDeviceInstrumentationTestResultAggregationTask.CreationAction(
                 creationConfig,
-                managedDevices.map { File(File(resultsDir, it.name), TEST_RESULT_PB_FILE_NAME) },
-                File(resultsDir, TEST_RESULT_PB_FILE_NAME),
+                managedDevices.map { File(resultsDir, it.name) },
                 reportDir,
             )
         )

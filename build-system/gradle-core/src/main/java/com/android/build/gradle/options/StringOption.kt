@@ -16,7 +16,6 @@
 
 package com.android.build.gradle.options
 
-import com.android.builder.model.AndroidProject
 import com.android.builder.model.PROPERTY_APK_LOCATION
 import com.android.builder.model.PROPERTY_APK_SELECT_CONFIG
 import com.android.builder.model.PROPERTY_APK_SELECT_MULTIPLE_DEVICE_SPECS
@@ -67,9 +66,6 @@ enum class StringOption(
 
     // Profiler plugin
     IDE_ANDROID_CUSTOM_CLASS_TRANSFORMS("android.advanced.profiling.transforms", ApiStage.Stable),
-
-    // The exact version of Android Support plugin used, e.g. 2.4.0.6
-    IDE_ANDROID_STUDIO_VERSION(AndroidProject.PROPERTY_ANDROID_SUPPORT_VERSION, ApiStage.Stable),
 
     // The version of Android Game Development Extension used to orchestrate the build
     IDE_AGDE_VERSION("agde.version", ApiStage.Stable),

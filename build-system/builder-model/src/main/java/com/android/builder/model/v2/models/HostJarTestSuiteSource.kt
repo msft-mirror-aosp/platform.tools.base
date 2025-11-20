@@ -26,4 +26,6 @@ interface HostJarTestSuiteSource: TestSuiteSource {
     val java: Collection<File>
 
     val kotlin: Collection<File>
+
+    val resources: Collection<File>
 }

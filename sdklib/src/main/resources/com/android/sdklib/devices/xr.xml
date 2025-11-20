@@ -44,7 +44,7 @@
             </d:sensors>
             <d:mic>true</d:mic>
             <d:camera>
-                <d:location>front</d:location>
+                <d:location>back</d:location>
                 <d:autofocus>false</d:autofocus>
                 <d:flash>false</d:flash>
             </d:camera>
@@ -239,7 +239,7 @@
         <d:boot-props>
             <d:boot-prop>
                 <d:prop-name>emulator.dev.xr.left_fov</d:prop-name>
-                <d:prop-value>0.5236,0.5236,0.5236,0.5236</d:prop-value>
+                <d:prop-value>0.5236,0.5236,0.2618,0.3491</d:prop-value>
             </d:boot-prop>
             <d:boot-prop>
                 <d:prop-name>emulator.dev.xr.mm_to_dp</d:prop-name>
@@ -250,7 +250,7 @@
                 <d:prop-value>1200</d:prop-value>
             </d:boot-prop>
             <d:boot-prop>
-                <d:prop-name>emulator.dev.xr.display_modality</d:prop-name>
+                <d:prop-name>emulator.dev.xr.disp_modality</d:prop-name>
                 <d:prop-value>ost</d:prop-value>
             </d:boot-prop>
         </d:boot-props>

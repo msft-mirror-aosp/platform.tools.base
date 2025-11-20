@@ -60,7 +60,7 @@ import kotlin.reflect.KClass
 /**
  * Handles custom build logic for [GradleRule] projects.
  *
- * This will create a single `builg-logic.jar` with all the necessary classes to run
+ * This will create a single `build-logic.jar` with all the necessary classes to run
  * the callbacks set in the projects.
  */
 class CustomBuildLogicHandler(path: Path): AutoCloseable {
@@ -82,7 +82,7 @@ class CustomBuildLogicHandler(path: Path): AutoCloseable {
         /**
          * Data linking plugin callbacks, plugin classes, and extension types.
          */
-        private val pluginMapping: List<PluginData> = listOf(
+        private val PLUGGING_MAPPING: List<PluginData> = listOf(
             // component extension callbacks
             PluginData(ApplicationComponentCallback::class, ApplicationCallbackPlugin::class, "com/android/build/api/variant/ApplicationAndroidComponentsExtension"),
             PluginData(LibraryComponentCallback::class, LibraryCallbackPlugin::class, "com/android/build/api/variant/LibraryAndroidComponentsExtension"),
@@ -104,12 +104,15 @@ class CustomBuildLogicHandler(path: Path): AutoCloseable {
     }
 
     /**
-     * adds a new callback to the jar
+     * Adds a new callback to the jar
+     *
+     * returns the name of the plugin that needs to be applied
      */
     fun addCallback(callbackClass: Class<out PluginCallback>): String {
-        // write this class
+        // write the callback class
         zipOutputStream.writeWithReferences(callbackClass)
 
+        // get the information about the required classes (Plugin class, parent callback class, etc...)
         val pluginData = getPluginData(callbackClass)
 
         val callbackBinaryName = callbackClass.binaryName
@@ -136,11 +139,14 @@ class CustomBuildLogicHandler(path: Path): AutoCloseable {
 
         zipOutputStream.write(newPluginBinaryName, newPluginClass)
 
+        // write the property file so that the plugin can be applied with the plugin block
+        val pluginId= zipOutputStream.writePluginProperties(newPluginClassName)
+
         // need to record the plugin class as the custom plugin is written manually
         // and we don't inspect its references.
         basePluginClasses += pluginData.pluginClass.java
 
-        return newPluginClassName
+        return pluginId
     }
 
     override fun close() {
@@ -155,7 +161,7 @@ class CustomBuildLogicHandler(path: Path): AutoCloseable {
      * Returns information about the plugin as a [PluginData] based on the type of the callback
      */
     private fun getPluginData(callbackClass: Class<out PluginCallback>): PluginData  {
-        for (pluginData in pluginMapping) {
+        for (pluginData in PLUGGING_MAPPING) {
             if (pluginData.callbackClass.java.isAssignableFrom(callbackClass)) {
                 return pluginData
             }
@@ -404,4 +410,14 @@ class CustomBuildLogicHandler(path: Path): AutoCloseable {
 
     private val Class<*>.binaryName: String
         get() = typeName.replace('.', '/')
+
+    private fun ZipOutputStream.writePluginProperties(pluginClassName: String): String {
+        val pluginId=  pluginClassName.replace('$', '_')
+        val entry = ZipEntry("META-INF/gradle-plugins/$pluginId.properties")
+        putNextEntry(entry)
+        write("implementation-class=$pluginClassName".toByteArray())
+        closeEntry()
+
+        return pluginId
+    }
 }

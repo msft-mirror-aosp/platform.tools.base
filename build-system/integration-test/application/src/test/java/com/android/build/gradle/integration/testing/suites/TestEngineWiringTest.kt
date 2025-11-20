@@ -178,7 +178,13 @@ class TestEngineWiringTest(
             SourceType.HOST_JAR
         )
         Truth.assertThat(firstTestSuiteSources.kotlin).containsExactly(
-            project.subProject(modulePath).resolve("src/first").toFile()
+            project.subProject(modulePath).resolve("src/first/kotlin").toFile()
+        )
+        Truth.assertThat(firstTestSuiteSources.resources).containsExactly(
+            project.subProject(modulePath).resolve("src/first/resources").toFile()
+        )
+        Truth.assertThat(firstTestSuiteSources.java).containsExactly(
+            project.subProject(modulePath).resolve("src/first/java").toFile()
         )
 
         // verify the variant specific model

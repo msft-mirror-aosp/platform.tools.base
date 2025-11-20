@@ -28,6 +28,11 @@ import com.google.testing.platform.api.device.CommandHandle
 import com.google.testing.platform.core.error.UtpException
 import com.google.testing.platform.proto.api.core.PathProto
 import com.google.testing.platform.proto.api.core.TestArtifactProto
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.newSingleThreadContext
+import org.junit.After
 import org.junit.Assert.assertThrows
 import org.junit.Before
 import org.junit.Rule
@@ -79,10 +84,14 @@ class DdmlibAndroidDeviceControllerTest {
     private val SPLIT_APK_INSTALL_ARG =
             listOf("install-multiple", "-r", "-t", "base.apk", "feature1.apk")
 
+    private val testDispatcher = newSingleThreadContext("MyTestThread")
+    private val testScope = CoroutineScope(testDispatcher)
+
     private val controller: DdmlibAndroidDeviceController by lazy {
         DdmlibAndroidDeviceController(
             mockApkPackageNameResolver,
-            uninstallIncompatibleApks
+            uninstallIncompatibleApks,
+            testScope,
         ).apply {
             setDevice(DdmlibAndroidDevice(mockDevice))
         }
@@ -129,6 +138,12 @@ class DdmlibAndroidDeviceControllerTest {
             destinationPath = destinationPathProto
             type = TestArtifactProto.ArtifactType.ANDROID_APK
         }.build()
+    }
+
+    @After
+    fun tearDown() {
+        testScope.cancel()
+        testDispatcher.close()
     }
 
     @Test
@@ -414,8 +429,10 @@ class DdmlibAndroidDeviceControllerTest {
             handler.stop()
         }
         handler = controller.executeAsync(listOf("shell", "am", "instrument")) {}
-        handlerInitialized.countDown()
-        handler.waitFor()
+        try {
+            handlerInitialized.countDown()
+            handler.waitFor()
+        } catch (_: CancellationException) {}
         assertThat(handler.exitCode()).isEqualTo(-1)
         verify(mockDevice).executeShellCommand(
                 eq("am instrument ${EXIT_CODE_REPORT}"), any(), eq(0L), eq(0L), any())

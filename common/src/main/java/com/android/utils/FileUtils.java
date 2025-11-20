@@ -45,6 +45,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URI;
+import java.nio.ByteBuffer;
+import java.nio.channels.SeekableByteChannel;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.CopyOption;
 import java.nio.file.FileSystem;
@@ -54,6 +56,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.StandardCopyOption;
+import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Collections;
 import java.util.List;
@@ -707,5 +710,62 @@ public final class FileUtils {
     public static FileSystem createZipFilesystem(@NonNull Path archive) throws IOException {
         URI uri = URI.create("jar:" + archive.toUri().toString());
         return FileSystems.newFileSystem(uri, Collections.emptyMap());
+    }
+
+    /**
+     * Appends a line to a file, followed by a newline. If the file exists and is not empty, a
+     * newline will be prepended if the file does not already end with one.
+     */
+    public static void appendLine(@NonNull File file, @NonNull String line) throws IOException {
+        appendLine(file.toPath(), line);
+    }
+
+    /**
+     * Appends a line to a file, followed by a newline. If the file exists and is not empty, a
+     * newline will be prepended if the file does not already end with one.
+     *
+     * <p><b>Warning:</b> This method is not atomic. In a multithreaded environment, concurrent
+     * calls to this method for the same file may result in incorrect behavior (e.g., extra or
+     * missing newlines). External synchronization is required for safe concurrent access.
+     */
+    public static void appendLine(@NonNull Path path, @NonNull String line) throws IOException {
+        final String newline = System.lineSeparator();
+        String content;
+        if (Files.exists(path) && isNotEmpty(path) && !endsWithNewline(path)) {
+            content = newline + line + newline;
+        } else {
+            content = line + newline;
+        }
+        final byte[] bytes = content.getBytes(StandardCharsets.UTF_8);
+        Files.write(path, bytes, StandardOpenOption.CREATE, StandardOpenOption.APPEND);
+    }
+
+    /** Checks if a file ends with the system-specific newline character. */
+    public static boolean endsWithNewline(@NonNull Path path) throws IOException {
+        byte[] newlineBytes = System.lineSeparator().getBytes(StandardCharsets.UTF_8);
+        if (Files.size(path) < newlineBytes.length) {
+            return false;
+        }
+        return readLastBytesAsString(path, newlineBytes.length).equals(System.lineSeparator());
+    }
+
+    private static boolean isNotEmpty(@NonNull Path path) throws IOException {
+        return Files.size(path) > 0;
+    }
+
+    /**
+     * Reads the last {@code byteCount} bytes from the given file and returns them as a UTF-8
+     * string.
+     */
+    @NotNull
+    private static String readLastBytesAsString(@NonNull Path path, int byteCount)
+            throws IOException {
+        try (SeekableByteChannel sbc = Files.newByteChannel(path, StandardOpenOption.READ)) {
+            sbc.position(sbc.size() - byteCount);
+            final ByteBuffer buffer = ByteBuffer.allocate(byteCount);
+            sbc.read(buffer);
+            buffer.flip();
+            return StandardCharsets.UTF_8.decode(buffer).toString();
+        }
     }
 }

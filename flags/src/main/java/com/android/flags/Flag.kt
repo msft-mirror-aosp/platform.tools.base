@@ -34,7 +34,8 @@ sealed class Flag<T>(
     /** Returns a user-friendly description for what feature this flag gates. */
     val description: String,
     val default: FlagDefault<T>,
-    private val valueConverter: ValueConverter<T>
+    private val valueConverter: ValueConverter<T>,
+    private val examples: List<T> = emptyList(),
 ) {
 
     /**
@@ -52,7 +53,10 @@ sealed class Flag<T>(
     /** Verifies that this flag has valid information */
     fun validate() {
         group.validate()
-        verifyDefaultValue(defaultValue, valueConverter)
+        verifyRoundTrip("Default", defaultValue, valueConverter)
+        for (t in examples) {
+            verifyRoundTrip("Example", defaultValue, valueConverter)
+        }
         verifyFlagIdFormat(id)
         verifyDisplayTextFormat(displayName)
         verifyDisplayTextFormat(description)
@@ -122,19 +126,20 @@ sealed class Flag<T>(
             }
         }
 
-        private fun <T> verifyDefaultValue(
-            defaultValue: T,
+        private fun <T> verifyRoundTrip(
+            descriptiveName: String,
+            value: T,
             converter: ValueConverter<T>
         ) {
-            val serialized = try { converter.serialize(defaultValue) } catch (e: Exception) { throw IllegalArgumentException("Default value cannot be serialized", e) }
+            val serialized = try { converter.serialize(value) } catch (e: Exception) { throw IllegalArgumentException("$descriptiveName value '$value' cannot be serialized", e) }
             val deserialized =
                 try {
                     converter.deserialize(serialized)
                 } catch (e: Exception) {
-                    throw IllegalArgumentException("Default value cannot be deserialized.")
+                    throw IllegalArgumentException("$descriptiveName value '$value' cannot be deserialized.")
                 }
 
-            require(deserialized == defaultValue) { "Deserialized value does not match default value." }
+            require(deserialized == value) { "Deserialized value '$deserialized' does not match original ${descriptiveName.lowercase(Locale.US)} value '$value'." }
         }
     }
 }
@@ -297,6 +302,28 @@ class EnumFlag<T : Enum<T>>(
             java.lang.Enum.valueOf(enumClass, strValue.uppercase(Locale.US))
     }
 }
+
+abstract class CustomTypeFlag<T> protected constructor(
+    type: Class<T>,
+    group: FlagGroup,
+    name: String,
+    displayName: String,
+    description: String,
+    defaultValue: T,
+    private val valueConverter: ValueConverter<T>,
+    val examples: List<T>,
+)  : Flag<T> (group, name, displayName, description, StaticFlagDefault(defaultValue), valueConverter) {
+    init {
+        check(!type.isEnum) { "Use EnumFlag instead" }
+        check(!DISALLOWED_CUSTOM_TYPES.contains(type as Class<*>)) { "Use specialized Flag implementation for $type" }
+    }
+
+    fun fromString(string: String): T = valueConverter.deserialize(string)
+    fun toString(value: T): String = valueConverter.serialize(value)
+}
+
+private val DISALLOWED_CUSTOM_TYPES = listOf<Class<*>>(
+    Int::class.java, Long::class.java, String::class.java, Boolean::class.java)
 
 object DEFAULT_DEBUG_FLAG_VALUE: FlagDefault<Boolean>("DebugFlags are only programmatically set") {
     override fun get(): Boolean = java.lang.Boolean.getBoolean("flags.debug.enabled")

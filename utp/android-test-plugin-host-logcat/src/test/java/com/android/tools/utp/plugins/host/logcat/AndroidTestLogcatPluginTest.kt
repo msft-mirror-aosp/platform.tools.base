@@ -31,6 +31,7 @@ import com.google.testing.platform.api.event.Events
 import com.google.testing.platform.api.plugin.sendIssue
 import com.google.testing.platform.api.plugin.sendTestResultUpdate
 import com.google.testing.platform.proto.api.core.IssueProto
+import com.google.testing.platform.proto.api.core.TestCaseProto
 import com.google.testing.platform.proto.api.core.TestResultProto.TestResult
 import com.google.testing.platform.proto.api.core.TestStatusProto
 import com.google.testing.platform.proto.api.core.TestSuiteResultProto.TestSuiteResult
@@ -48,6 +49,7 @@ import org.mockito.junit.MockitoJUnit
 import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
 import org.mockito.quality.Strictness
+import java.io.File
 import java.util.logging.Logger
 
 /**
@@ -92,7 +94,13 @@ class AndroidTestLogcatPluginTest {
     @Before
     fun setUp() {
         environment = Environment(tempFolder.root.path, "", "", "", "", null)
-        emptyTestResult = TestResult.newBuilder().build()
+        emptyTestResult = TestResult.newBuilder().apply {
+            testCaseBuilder.apply {
+                testPackage = "package"
+                testClass = "class"
+                testMethod = "method"
+            }
+        }.build()
         passedTestSuiteResult = TestSuiteResult.newBuilder().apply {
             testStatus = TestStatusProto.TestStatus.PASSED
         }.build()
@@ -147,7 +155,33 @@ class AndroidTestLogcatPluginTest {
         testResult.outputArtifactList.forEach {
             assertThat(it.label.namespace).isEqualTo("android")
             assertThat(it.label.label).isEqualTo("logcat")
-            assertThat(it.sourcePath.path).endsWith("logcat-.-.txt")
+            assertThat(it.sourcePath.path).endsWith("${File.separator}logcat-package.class-method.txt")
+        }
+        verify(mockEvents).sendTestResultUpdate(testResult)
+    }
+
+    @Test
+    fun afterEach_addsLogcatArtifacts_escapeInvalidFileName() {
+        val testCaseWithInvalidCharacter = TestCaseProto.TestCase.newBuilder().apply {
+            testPackage = "com.package:name"
+            testClass = "MyClass\$Inner"
+            testMethod = "testMethod(with emoji: 🧪)"
+        }.build()
+        val testResult = androidTestLogcatPlugin.run {
+            configure(mockContext)
+            beforeAll(mockDeviceController)
+            beforeEach(testCaseWithInvalidCharacter, mockDeviceController)
+            afterEachWithReturn(TestResult.newBuilder().apply {
+                testCase = testCaseWithInvalidCharacter
+            }.build(), mockDeviceController)
+        }
+
+        assertThat(testResult.outputArtifactList).isNotEmpty()
+        testResult.outputArtifactList.forEach {
+            assertThat(it.label.namespace).isEqualTo("android")
+            assertThat(it.label.label).isEqualTo("logcat")
+            assertThat(it.sourcePath.path).endsWith(
+                "${File.separator}logcat-com.package_name.MyClass_Inner-testMethod_with_emoji____.txt")
         }
         verify(mockEvents).sendTestResultUpdate(testResult)
     }

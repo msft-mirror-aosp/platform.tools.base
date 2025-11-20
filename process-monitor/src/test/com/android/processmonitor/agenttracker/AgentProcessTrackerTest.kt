@@ -46,7 +46,6 @@ internal class AgentProcessTrackerTest {
 
     @get:Rule
     val fakeAdbRule = FakeAdbServerProviderRule {
-        installDefaultCommandHandlers()
         installDeviceHandler(agentHandler)
         installDeviceHandler(makeAgentDirHandler)
     }

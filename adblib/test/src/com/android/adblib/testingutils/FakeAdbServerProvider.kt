@@ -116,7 +116,7 @@ class FakeAdbServerProvider : FakeDeviceCreator, AutoCloseable {
         maxSpeedMbps: Long,
         negotiatedSpeedMbps: Long,
     ): DeviceState {
-        return server?.connectDevice(
+        val deviceState = server?.connectDevice(
             deviceId,
             manufacturer,
             deviceModel,
@@ -126,6 +126,8 @@ class FakeAdbServerProvider : FakeDeviceCreator, AutoCloseable {
             maxSpeedMbps = maxSpeedMbps,
             negotiatedSpeedMbps = negotiatedSpeedMbps,
         )?.get(FAKE_ADB_SERVER_EXECUTOR_TIMEOUT_MS, TimeUnit.MILLISECONDS) ?: throw IllegalArgumentException()
+        deviceState.deviceStatus = DeviceState.DeviceStatus.ONLINE
+        return deviceState
     }
 
     fun registerNetworkDevice(

@@ -18,9 +18,13 @@ package com.android.flags;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import com.google.common.collect.ImmutableList;
+
+import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class FlagTest {
@@ -67,6 +71,12 @@ public class FlagTest {
         assertThat(GameFeatures.PAINT_COLOR.getDisplayName()).isEqualTo("Paint color");
         assertThat(GameFeatures.PAINT_COLOR.getDescription())
                 .isEqualTo("<colors.paint.color description>");
+
+        assertThat(GameFeatures.CUSTOM.get()).isEqualTo(GameFeatures.customValue("foo"));
+        assertThat(GameFeatures.CUSTOM.getGroup()).isEqualTo(GameFeatures.CUSTOM_GROUP);
+        assertThat(GameFeatures.CUSTOM.getId()).isEqualTo("custom.custom");
+        assertThat(GameFeatures.CUSTOM.getDisplayName()).isEqualTo("Custom");
+        assertThat(GameFeatures.CUSTOM.getDescription()).isEqualTo("<custom.custom description>");
     }
 
     @Test
@@ -350,6 +360,53 @@ public class FlagTest {
                         "Paint color",
                         "<colors.paint.color description>",
                         Colors.RED);
+
+        private static final FlagGroup CUSTOM_GROUP = new FlagGroup(FLAGS, "custom", "Custom");
+
+        private record CustomValue(String content) {}
+
+        static CustomValue customValue(String content) {
+            return new CustomValue(content);
+        }
+
+        private static class CustomValueFlag extends CustomTypeFlag<CustomValue> {
+            CustomValueFlag(
+                    FlagGroup group,
+                    String name,
+                    String displayName,
+                    String description,
+                    CustomValue defaultValue,
+                    List<CustomValue> examples) {
+                super(
+                        CustomValue.class,
+                        group,
+                        name,
+                        displayName,
+                        description,
+                        defaultValue,
+                        new Flag.ValueConverter<>() {
+                            @Override
+                            public @NotNull String serialize(CustomValue value) {
+                                return value.content;
+                            }
+
+                            @Override
+                            public CustomValue deserialize(@NotNull String strValue) {
+                                return new CustomValue(strValue);
+                            }
+                        },
+                        examples);
+            }
+        }
+
+        private static Flag<CustomValue> CUSTOM =
+                new CustomValueFlag(
+                        CUSTOM_GROUP,
+                        "custom",
+                        "Custom",
+                        "<custom.custom description>",
+                        customValue("foo"),
+                        ImmutableList.of(customValue("bar")));
     }
 
     private enum Colors {

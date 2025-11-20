@@ -24,6 +24,7 @@ UTP_SOURCE_FILES = [
     "//tools/base/utp/android-test-plugin-result-listener-gradle:agp_gradle_build_files",
     "//tools/base/utp/gradle-work-action:agp_gradle_build_files",
     "//tools/base/utp/gradle-work-action-api:agp_gradle_build_files",
+    "//tools/base/utp/utp-common:agp_gradle_build_files",
     "//tools/buildSrc:agp_gradle_build_files",
     "//tools/buildSrc/base:agp_gradle_build_files",
 ]
@@ -46,7 +47,6 @@ maven_repository(
         "//tools/base/utp/android-test-plugin-host-emulator-control-proto",
         "//tools/base/utp/android-test-plugin-host-logcat-proto",
         "//tools/base/utp/android-test-plugin-result-listener-gradle-proto",
-        "//tools/base/utp/utp-common",
         "@maven//:com.google.testing.compile.compile-testing",
         "@maven//:com.google.testing.platform.android-device-provider-local",
         "@maven//:com.google.testing.platform.android-driver-instrumentation",
@@ -83,5 +83,7 @@ merged_zip(
     ],
     visibility = [
         "//tools/base/build-system/integration-test:__subpackages__",
+        "//tools/vendor/google/android-ndk:__subpackages__",
+        "//tools/vendor/google/lldb-integration-tests:__subpackages__",
     ],
 )

@@ -15,11 +15,14 @@
  */
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import com.android.tools.bazel.avd.Emulator;
 
+import org.junit.Before;
 import org.junit.Test;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -54,6 +57,21 @@ public class MultipleEmulatorTest {
      * emulators.
      */
     private static final int PORT = 5554;
+
+    @Before
+    public void createAndroidUserHomeDirectory() {
+        // Workaround for concurrency issue in adb b/461509099
+        File androidUserHome = new File(System.getenv("TEST_TMPDIR"), ".android");
+        if (!androidUserHome.exists()) {
+            System.out.println("Creating " + androidUserHome.getAbsolutePath());
+            androidUserHome.mkdirs();
+        }
+        assertTrue(
+                androidUserHome.getAbsolutePath() + " does not exist.", androidUserHome.exists());
+        assertTrue(
+                androidUserHome.getAbsolutePath() + " exists but is not a directory.",
+                androidUserHome.isDirectory());
+    }
 
     /**
      * Launches several emulators in parallel to test for race conditions in the launcher script.
