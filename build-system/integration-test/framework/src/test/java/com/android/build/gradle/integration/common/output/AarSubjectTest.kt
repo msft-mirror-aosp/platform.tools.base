@@ -375,7 +375,7 @@ class AarSubjectTest: BaseZipSubjectTest() {
                 factValue("value of").isEqualTo("aar.androidResources().entries()")
                 factValue("expected to contain").isEqualTo("values/missing.xml")
                 // we want to make sure that the list only contains the /res folder. This
-                // should not contains any other files (e.g. manifest, classes.jar, etc...)
+                // should not contain any other files (e.g. manifest, classes.jar, etc...)
                 factValue("but was").isEqualTo("[drawable/foo.png, values/values.xml]")
                 factValue("aar was").isEqualTo("Zip(name='valid.aar', status=EXISTS)")
             }
@@ -414,7 +414,7 @@ class AarSubjectTest: BaseZipSubjectTest() {
                 factValue("value of").isEqualTo("aar.androidResources().entries()")
                 factValue("expected to contain").isEqualTo("drawable/missing.png")
                 // we want to make sure that the list only contains the /res folder. This
-                // should not contains any other files (e.g. manifest, classes.jar, etc...)
+                // should not contain any other files (e.g. manifest, classes.jar, etc...)
                 factValue("but was").isEqualTo("[drawable/foo.png, values/values.xml]")
                 factValue("aar was").isEqualTo("Zip(name='valid.aar', status=EXISTS)")
             }

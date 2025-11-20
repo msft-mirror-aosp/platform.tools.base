@@ -47,7 +47,7 @@ class GradlePropertiesDelegateTest {
     }
 
     @Test
-    fun testConficts() {
+    fun testConflicts() {
         val delegate = GradlePropertiesDelegate()
 
         delegate.add(BooleanOption.ENABLE_TEST_FIXTURES, true)

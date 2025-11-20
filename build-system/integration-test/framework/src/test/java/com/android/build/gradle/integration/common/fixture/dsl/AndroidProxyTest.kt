@@ -225,7 +225,7 @@ class AndroidProxyTest: ExtensionAwareDefinition {
     }
 
     @Test
-    fun testCompileEmptylease_Kts() {
+    fun testCompileEmptyRelease_Kts() {
         val content = generateKtsContent {
             compileSdk {
                 version = release(36) { }
