@@ -7321,10 +7321,7 @@ public object ProtoObjectKt {
           override fun visitMethod(node: UMethod): Boolean {
             if (node.isConstructor) return super.visitMethod(node)
 
-            val anno =
-              node.findAnnotation("org.junit.Test")
-                // TODO: remove this workaround after KTIJ-34026
-                ?: node.uAnnotations.find { it.javaPsi?.qualifiedName == "org.junit.Test" }
+            val anno = node.findAnnotation("org.junit.Test")
             assertNotNull(anno)
 
             val expected = anno!!.findDeclaredAttributeValue("expected") as? UClassLiteralExpression
