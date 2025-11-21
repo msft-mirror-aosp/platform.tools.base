@@ -291,7 +291,7 @@ fun syncAgpAndKgpSourceSets(
     project: Project,
     projectServices: ProjectServices,
     androidSourceSets: NamedDomainObjectContainer<out AndroidSourceSet>,
-    useBuiltInKotlinSupport: Boolean
+    builtInKotlin: Boolean
 ) {
     // Skip this work if the `kotlin-multiplatform` plugin is applied
     if (project.pluginManager.hasPlugin(KOTLIN_MPP_PLUGIN_ID)) return
@@ -304,7 +304,7 @@ fun syncAgpAndKgpSourceSets(
         return kotlinSourceSets?.findByName(this.name)?.kotlin
     }
 
-    if (useBuiltInKotlinSupport) {
+    if (builtInKotlin) {
         // TODO(b/461767350): Stop creating Kotlin source sets for each Android source set
         androidSourceSets.forEach {
             // Note: The source set may have been created by the user, so we call `maybeCreate`

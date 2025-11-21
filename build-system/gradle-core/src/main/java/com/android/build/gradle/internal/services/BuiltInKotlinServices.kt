@@ -21,6 +21,7 @@ import com.android.build.api.component.impl.DeviceTestImpl
 import com.android.build.api.component.impl.HostTestImpl
 import com.android.build.api.component.impl.KmpComponentImpl
 import com.android.build.api.component.impl.TestFixturesImpl
+import com.android.build.api.dsl.CommonExtension
 import com.android.build.api.variant.impl.ApplicationVariantImpl
 import com.android.build.api.variant.impl.DynamicFeatureVariantImpl
 import com.android.build.api.variant.impl.LibraryVariantImpl
@@ -40,7 +41,6 @@ import com.android.build.gradle.internal.utils.KgpVersion.Companion.MINIMUM_BUIL
 import com.android.build.gradle.internal.utils.getKotlinPluginVersionFromPlugin
 import com.android.build.gradle.internal.utils.requirePlugin
 import com.android.build.gradle.options.BooleanOption
-import com.android.builder.errors.IssueReporter.Type
 import org.gradle.api.NamedDomainObjectContainer
 import org.gradle.api.Project
 import org.gradle.api.tasks.TaskProvider
@@ -51,11 +51,14 @@ import org.jetbrains.kotlin.gradle.plugin.KotlinBaseApiPlugin
 import org.jetbrains.kotlin.gradle.plugin.KotlinCompilation
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinJvmAndroidCompilation
 import org.jetbrains.kotlin.gradle.plugin.sources.android.AndroidVariantType
-import com.android.build.api.dsl.CommonExtension
 
 /**
- * Services related to the built-in Kotlin support, to be used when
- * [com.android.build.gradle.internal.component.ComponentCreationConfig.useBuiltInKotlinSupport] == true.
+ * Services related to built-in Kotlin support.
+ *
+ * They are used when
+ *   - built-in Kotlin is enabled
+ *   - or built-in Kotlin is disabled, but we want to provide Kotlin support for
+ *     test-fixture / screenshot-test components
  */
 class BuiltInKotlinServices(
 
@@ -121,14 +124,24 @@ class BuiltInKotlinServices(
     }
 }
 
+/** Determines whether built-in Kotlin is enabled for this project. */
+internal fun builtInKotlinEnabledForProject(
+    projectServices: ProjectServices,
+    extension: CommonExtension
+): Boolean {
+    return (projectServices.projectOptions.get(BooleanOption.BUILT_IN_KOTLIN) ||
+            projectServices.projectInfo.hasPlugin(ANDROID_BUILT_IN_KOTLIN_PLUGIN_ID))
+            && extension.enableKotlin
+}
+
 /** Indicates whether built-in Kotlin support is available and why. */
 sealed class BuiltInKotlinSupportMode {
 
     sealed class Supported : BuiltInKotlinSupportMode() {
 
         /**
-         * Built-in Kotlin support is available because [BooleanOption.BUILT_IN_KOTLIN] and
-         * [CommonExtension.enableKotlin] are enabled.
+         * Built-in Kotlin support is available because [BooleanOption.BUILT_IN_KOTLIN] is enabled
+         * and [CommonExtension.enableKotlin] is enabled.
          */
         object BuiltInKotlinBooleanOptionEnabled : Supported()
 
@@ -137,17 +150,20 @@ sealed class BuiltInKotlinSupportMode {
          * and [CommonExtension.enableKotlin] is enabled.
          */
         object BuiltInKotlinPluginApplied : Supported()
+    }
+
+    sealed class SupportedForTestFixturesAndScreenshotTest : BuiltInKotlinSupportMode() {
 
         /**
          * Built-in Kotlin support is available because this is a screenshot test component and
-         * the `kotlin-android` plugin is applied and [CommonExtension.enableKotlin] is enabled.
+         * the `kotlin-android` plugin is applied.
          */
         object ScreenshotTestAndKgpApplied : Supported()
 
         /**
          * Built-in Kotlin support is available because this is a test-fixtures component and
          * [BooleanOption.ENABLE_TEST_FIXTURES_KOTLIN_SUPPORT] is enabled and the `kotlin-android`
-         * plugin is applied and [CommonExtension.enableKotlin] is enabled.
+         * plugin is applied.
          */
         object TestFixturesSupportEnabledAndKgpApplied : Supported()
     }
@@ -162,6 +178,9 @@ sealed class BuiltInKaptSupportMode {
 
         /** Built-in Kapt support is available because the built-in Kapt plugin is applied. */
         object BuiltInKaptPluginApplied : Supported()
+    }
+
+    sealed class SupportedForTestFixturesAndScreenshotTest : BuiltInKaptSupportMode() {
 
         /**
          * Built-in Kapt support is available because this is a screenshot test component and the
@@ -182,15 +201,22 @@ sealed class BuiltInKaptSupportMode {
 
 /** Performs preliminary actions required for built-in Kotlin support. */
 fun initBuiltInKotlinSupportIfRequired(project: Project, projectServices: ProjectServices) {
-    // Provide built-in Kotlin support when the BooleanOption is enabled or the built-in Kotlin
-    // plugin is applied
+    // Provide built-in Kotlin support when built-in Kotlin is enabled
     if (projectServices.projectOptions.get(BooleanOption.BUILT_IN_KOTLIN)) {
-        initBuiltInKotlinSupport(project)
-        projectServices.initBuiltInKotlinServices(BuiltInKotlinBooleanOptionEnabled)
+        initBuiltInKotlinSupport(project, projectServices, BuiltInKotlinBooleanOptionEnabled)
     } else {
         project.pluginManager.withPlugin(ANDROID_BUILT_IN_KOTLIN_PLUGIN_ID) {
-            initBuiltInKotlinSupport(project)
-            projectServices.initBuiltInKotlinServices(BuiltInKotlinPluginApplied)
+            initBuiltInKotlinSupport(project, projectServices, BuiltInKotlinPluginApplied)
+        }
+    }
+
+    // Also provide Kotlin support for test-fixture / screenshot-test components even when built-in
+    // Kotlin is disabled
+    if (projectServices.projectOptions.get(BooleanOption.ENABLE_TEST_FIXTURES_KOTLIN_SUPPORT)
+        || projectServices.projectOptions.get(BooleanOption.ENABLE_SCREENSHOT_TEST)
+    ) {
+        project.pluginManager.withPlugin(KOTLIN_ANDROID_PLUGIN_ID) {
+            initKotlinSupportForTestFixturesOrScreenshotTest(project, projectServices)
         }
     }
 
@@ -200,45 +226,19 @@ fun initBuiltInKotlinSupportIfRequired(project: Project, projectServices: Projec
             project.requirePlugin(ANDROID_BUILT_IN_KAPT_PLUGIN_ID, ANDROID_BUILT_IN_KOTLIN_PLUGIN_ID)
         }
     }
-
-    // Handle the case when test-fixtures/screenshot-test feature is enabled
-    if (projectServices.projectOptions.get(BooleanOption.ENABLE_TEST_FIXTURES_KOTLIN_SUPPORT)
-        || projectServices.projectOptions.get(BooleanOption.ENABLE_SCREENSHOT_TEST)
-    ) {
-        // If `kotlin-android` plugin is applied, we will provide built-in Kotlin support
-        // TODO: Once KGP is always available on the build script classpath (b/431147146),
-        //  we can provide built-in Kotlin support even if `kotlin-android` plugin is not applied.
-        project.pluginManager.withPlugin(KOTLIN_ANDROID_PLUGIN_ID) {
-            project.plugins.apply(KotlinBaseApiPlugin::class.java)
-            projectServices.initBuiltInKotlinServices(KotlinAndroidPluginAppliedAndTestFixturesOrScreenshotTestEnabled)
-        }
-
-        // TODO: Remove this check once KGP is always available on the build script classpath
-        //  (b/431147146),
-        try {
-            Class.forName(KotlinBaseApiPlugin::class.java.name)
-        } catch (e: Throwable) {
-            if (e is ClassNotFoundException || e is NoClassDefFoundError) {
-                val message =
-                    """
-                    The Kotlin Gradle plugin was not found on the project's buildscript
-                    classpath. Add "org.jetbrains.kotlin:kotlin-gradle-plugin:$MINIMUM_BUILT_IN_KOTLIN_VERSION" to the
-                    buildscript classpath in order to use any of the following Gradle
-                    properties:
-
-                    ${BooleanOption.ENABLE_SCREENSHOT_TEST.propertyName},
-                    ${BooleanOption.ENABLE_TEST_FIXTURES_KOTLIN_SUPPORT.propertyName}
-
-                    """.trimIndent()
-                projectServices.issueReporter.reportError(Type.GENERIC, message)
-            } else {
-                throw e
-            }
-        }
-    }
 }
 
-private fun initBuiltInKotlinSupport(project: Project) {
+/**
+ * Initializes built-in Kotlin support.
+ *
+ * Note: This support may not be used later if the user disables built-in Kotlin by setting
+ * [CommonExtension.enableKotlin]=false in the DSL.
+ */
+private fun initBuiltInKotlinSupport(
+    project: Project,
+    projectServices: ProjectServices,
+    reason: BuiltInKotlinServices.AvailabilityReason
+) {
     failIfIncompatiblePluginsArePresent(project)
 
     // Apply KotlinBaseApiPlugin
@@ -249,8 +249,24 @@ private fun initBuiltInKotlinSupport(project: Project) {
     kotlinAndroidExtension.setDefaults(project.name, kotlinBaseApiPlugin.pluginVersion)
     project.extensions.add("kotlin", kotlinAndroidExtension)
 
+    // Create `BuiltInKotlinServices`
+    projectServices.initBuiltInKotlinServices(reason)
+
     // Also provide built-in Kapt support
     initBuiltInKaptSupportIfRequired(project)
+}
+
+/**
+ * Initializes Kotlin support for test-fixture / screenshot-test components.
+ *
+ * Note: This support may be not used later if those components are not created.
+ */
+private fun initKotlinSupportForTestFixturesOrScreenshotTest(
+    project: Project,
+    projectServices: ProjectServices
+) {
+    project.plugins.apply(KotlinBaseApiPlugin::class.java)
+    projectServices.initBuiltInKotlinServices(KotlinAndroidPluginAppliedAndTestFixturesOrScreenshotTestEnabled)
 }
 
 private fun failIfIncompatiblePluginsArePresent(project: Project) {

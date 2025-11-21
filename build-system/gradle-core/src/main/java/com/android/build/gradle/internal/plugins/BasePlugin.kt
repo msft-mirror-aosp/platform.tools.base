@@ -83,6 +83,7 @@ import com.android.build.gradle.internal.services.LintClassLoaderBuildService
 import com.android.build.gradle.internal.services.StringCachingBuildService
 import com.android.build.gradle.internal.services.SymbolTableBuildService
 import com.android.build.gradle.internal.services.VersionedSdkLoaderService
+import com.android.build.gradle.internal.services.builtInKotlinEnabledForProject
 import com.android.build.gradle.internal.services.getBuildService
 import com.android.build.gradle.internal.services.initBuiltInKotlinSupportIfRequired
 import com.android.build.gradle.internal.tasks.factory.BootClasspathConfig
@@ -788,9 +789,9 @@ To learn more, go to https://d.android.com/r/tools/java-8-support-message.html
         variantInputModel.sourceSetManager.checkForUnconfiguredSourceSets()
 
         // Built-in Kotlin
-        val useBuiltInKotlinSupport = variantManager.mainComponents.any { it.variant.useBuiltInKotlinSupport }
-        syncAgpAndKgpSourceSets(project, projectServices, extension.sourceSets, useBuiltInKotlinSupport)
-        if (useBuiltInKotlinSupport) {
+        val builtInKotlin = builtInKotlinEnabledForProject(projectServices, newExtension)
+        syncAgpAndKgpSourceSets(project, projectServices, extension.sourceSets, builtInKotlin)
+        if (builtInKotlin) {
             handleKotlinStdlibDependency(project, projectServices, extension.sourceSets)
         }
 
