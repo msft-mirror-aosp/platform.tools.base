@@ -59,6 +59,7 @@ import com.android.tools.lint.checks.GradleDetector.Companion.PLAY_SDK_INDEX_GEN
 import com.android.tools.lint.checks.GradleDetector.Companion.PLAY_SDK_INDEX_NON_COMPLIANT
 import com.android.tools.lint.checks.GradleDetector.Companion.PLAY_SDK_INDEX_VULNERABILITY
 import com.android.tools.lint.checks.GradleDetector.Companion.PLUS
+import com.android.tools.lint.checks.GradleDetector.Companion.R8_GRADUAL_API
 import com.android.tools.lint.checks.GradleDetector.Companion.REMOTE_VERSION
 import com.android.tools.lint.checks.GradleDetector.Companion.RISKY_LIBRARY
 import com.android.tools.lint.checks.GradleDetector.Companion.STRING_INTEGER
@@ -3462,6 +3463,93 @@ class GradleDetectorTest : AbstractCheckTest() {
             +testRunner2 = { module = "com.android.support.test:runner", version = { strictly ="0.5" } }
             """
       )
+  }
+
+  fun testR8NewApiWithFalseFlag() {
+    lint()
+      .files(
+        propertyFile(
+          "gradle.properties",
+          """
+          android.r8.gradual.support=false
+          """
+        ),
+        gradle("""
+         android {
+             buildTypes {
+                 release {
+                     optimization {
+                         enable = true
+                     }
+                 }
+             }
+         }""").indented(),
+      )
+      .issues(R8_GRADUAL_API)
+      .run()
+      .expect(
+        """
+        build.gradle:5: Warning: Cannot use optimization.enable=true without setting android.r8.gradual.support=true flag. [R8GradualApi]
+                        enable = true
+                        ~~~~~~
+        0 errors, 1 warning
+        """
+      )
+  }
+
+  fun testR8NewApiWithNoFlag() {
+    lint()
+      .files(
+        gradle("""
+         android {
+             buildTypes {
+                 release {
+                     optimization {
+                         enable = true
+                     }
+                 }
+             }
+         }"""
+        ).indented()
+      )
+      .issues(R8_GRADUAL_API)
+      .run()
+      .expect(
+        """
+        build.gradle:5: Warning: Cannot use optimization.enable=true without setting android.r8.gradual.support=true flag. [R8GradualApi]
+                        enable = true
+                        ~~~~~~
+        0 errors, 1 warning
+        """
+      )
+  }
+
+  fun testR8NewApiWithFlag() {
+    lint()
+      .files(
+        gradle(
+            """
+         android {
+             buildTypes {
+                 release {
+                     optimization {
+                         enable = true
+                     }
+                 }
+             }
+         }"""
+          )
+          .indented(),
+        propertyFile(
+          "gradle.properties",
+          """
+          android.r8.gradual.support=true
+          """,
+        ),
+      )
+      .issues(R8_GRADUAL_API)
+      .run()
+      .expectClean()
   }
 
   fun testLongHandDependencies() {
