@@ -22,6 +22,7 @@ import com.android.adblib.flowWhenOnline
 import com.android.adblib.property
 import com.android.adblib.scope
 import com.android.adblib.tools.AdbLibToolsProperties.JDWP_PROCESS_TRACKER_RETRY_DELAY
+import com.android.adblib.tools.AdbLibToolsProperties.JDWP_PROCESS_TRACKER_SHOULD_USE_TRACK_APP_IF_AVAILABLE
 import com.android.adblib.tools.debugging.impl.JdwpProcessTrackerImpl
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
@@ -62,12 +63,22 @@ interface JdwpProcessTracker {
     companion object {
 
         /**
-         * Returns a [JdwpProcessTracker] instance that actively tracks JDWP processes
+         * Creates a [JdwpProcessTracker] instance that actively tracks JDWP processes
          * of a given [device]. Use the [JdwpProcessTracker.processesFlow] property to access
          * or collect the list of active [JdwpProcess].
+         *
+         * @param device The [ConnectedDevice] to track processes on.
+         * @param useTrackAppIfAvailable If `true`, the implementation will use the `track-app`
+         *   device service if available. This is generally more efficient, and allows reusing
+         *   an existing `track-app` service connection if one is already active.
          */
-        fun create(device: ConnectedDevice): JdwpProcessTracker {
-            return JdwpProcessTrackerImpl(device)
+        fun create(
+            device: ConnectedDevice,
+            useTrackAppIfAvailable: Boolean = device.session.property(
+                JDWP_PROCESS_TRACKER_SHOULD_USE_TRACK_APP_IF_AVAILABLE
+            )
+        ): JdwpProcessTracker {
+            return JdwpProcessTrackerImpl(device, useTrackAppIfAvailable)
         }
     }
 }

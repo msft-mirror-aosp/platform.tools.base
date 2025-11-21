@@ -38,6 +38,7 @@ class TrackJdwpCommandHandler : DeviceCommandHandler("track-jdwp") {
         device: DeviceState,
         args: String
     ) {
+        device.addTrackJdwpInvocation()
         val stream: OutputStream = socket.getOutputStream()
         val queue = device.clientChangeHub
             .subscribe(

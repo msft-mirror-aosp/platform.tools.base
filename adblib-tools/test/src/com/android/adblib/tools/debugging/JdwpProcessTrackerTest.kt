@@ -44,6 +44,7 @@ import org.junit.Assert.fail
 import org.junit.Rule
 import org.junit.Test
 import java.util.concurrent.CopyOnWriteArrayList
+import kotlinx.coroutines.CoroutineScope
 
 class JdwpProcessTrackerTest {
 
@@ -56,14 +57,53 @@ class JdwpProcessTrackerTest {
 
     @Test
     fun testJdwpProcessTrackerWorks(): Unit = runBlockingWithTimeout {
+        val deviceState = runJdwpProcessTrackerTest(createDeviceSupportingTrackApp = false, useTrackAppIfAvailable = true)
+
+        // Verify that track-jdwp was used
+        assertEquals(1, deviceState.trackJdwpInvocations)
+        assertEquals(0, deviceState.trackAppInvocations)
+    }
+
+    @Test
+    fun testJdwpProcessTrackerSwitchesToTrackApp_whenTrackAppIsSupported(): Unit =
+        runBlockingWithTimeout {
+            val deviceState = runJdwpProcessTrackerTest(createDeviceSupportingTrackApp = true, useTrackAppIfAvailable = true)
+
+            // Verify that track-app was used
+            assertEquals(1, deviceState.trackAppInvocations)
+            assertEquals(0, deviceState.trackJdwpInvocations)
+        }
+
+    @Test
+    fun testJdwpProcessTrackerUsedTrackJdwp_whenTrackAppIsSupportedButUseTrackAppIfAvailableIsSetToFalse(): Unit =
+        runBlockingWithTimeout {
+            val deviceState =
+                runJdwpProcessTrackerTest(
+                    createDeviceSupportingTrackApp = true,
+                    useTrackAppIfAvailable = false
+                )
+
+            // Verify that track-jdwp was used
+            assertEquals(1, deviceState.trackJdwpInvocations)
+            // TODO: Currently trackApp is started from `JdwpProcessManagerImpl` unconditionally
+            //  when `track-app` is supported. We should make the use of `track-app` for process
+            //  tracking consistent.
+            assertEquals(1, deviceState.trackAppInvocations)
+        }
+
+    private suspend fun CoroutineScope.runJdwpProcessTrackerTest(
+        createDeviceSupportingTrackApp: Boolean,
+        useTrackAppIfAvailable: Boolean
+    ): DeviceState {
         val deviceID = "1234"
+        val apiLevel = if (createDeviceSupportingTrackApp) 31 else 30
         val fakeDevice =
             fakeAdb.connectDevice(
                 deviceID,
                 "test1",
                 "test2",
                 "model",
-                AndroidApiLevel(30), // SDK >= 30 is required for abb_exec feature.
+                AndroidApiLevel(apiLevel),
                 DeviceState.HostConnectionType.USB
             )
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
@@ -95,7 +135,7 @@ class JdwpProcessTrackerTest {
             assertNull(fakeDevice.getClient(pid11))
         }
 
-        val jdwpTracker = JdwpProcessTracker.create(connectedDevice)
+        val jdwpTracker = JdwpProcessTracker.create(connectedDevice, useTrackAppIfAvailable)
         // Collecting the flow deterministically is a little tricky, as the list of events
         // in the flow depend on how fast FakeAdbServer emits events from the "track-jdwp"
         // event and how fast adblib collects and emits these events in the jdwp tracker
@@ -163,14 +203,17 @@ class JdwpProcessTrackerTest {
         assertEquals(0, listOfProcessList[2].size)
 
         // Ensure JdwpProcess instances are re-used across flow changes
-        assertSame(listOfProcessList[0].first { it.pid == pid10 },
-                          listOfProcessList[1].first { it.pid == pid10 })
+        assertSame(
+            listOfProcessList[0].first { it.pid == pid10 },
+            listOfProcessList[1].first { it.pid == pid10 })
 
         val process10 = listOfProcessList[0].first { it.pid == pid10 }
         assertEquals(connectedDevice, process10.device)
         assertEquals(pid10, process10.pid)
         yieldUntil { !process10.scope.isActive }
         assertFalse(process10.scope.isActive)
+
+        return fakeDevice
     }
 
     @Test
