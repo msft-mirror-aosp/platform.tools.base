@@ -3471,36 +3471,13 @@ class GradleDetectorTest : AbstractCheckTest() {
         propertyFile(
           "gradle.properties",
           """
-          android.r8.gradual.support=false
-          """
+            # comments
+            android.r8.gradual.support=false
+            android.r8.optimizedResourceShrinking=true"""
+            .trimIndent(),
         ),
-        gradle("""
-         android {
-             buildTypes {
-                 release {
-                     optimization {
-                         enable = true
-                     }
-                 }
-             }
-         }""").indented(),
-      )
-      .issues(R8_GRADUAL_API)
-      .run()
-      .expect(
-        """
-        build.gradle:5: Warning: Cannot use optimization.enable=true without setting android.r8.gradual.support=true flag. [R8GradualApi]
-                        enable = true
-                        ~~~~~~
-        0 errors, 1 warning
-        """
-      )
-  }
-
-  fun testR8NewApiWithNoFlag() {
-    lint()
-      .files(
-        gradle("""
+        gradle(
+            """
          android {
              buildTypes {
                  release {
@@ -3510,7 +3487,8 @@ class GradleDetectorTest : AbstractCheckTest() {
                  }
              }
          }"""
-        ).indented()
+          )
+          .indented(),
       )
       .issues(R8_GRADUAL_API)
       .run()
@@ -3521,6 +3499,60 @@ class GradleDetectorTest : AbstractCheckTest() {
                         ~~~~~~
         0 errors, 1 warning
         """
+      )
+      .expectFixDiffs(
+        """
+          Autofix for build.gradle line 5: Replace flag value with true:
+          gradle.properties:
+          @@ -2 +2 @@
+          -android.r8.gradual.support=false
+          +android.r8.gradual.support=true"""
+      )
+  }
+
+  fun testR8NewApiWithNoFlag() {
+    lint()
+      .files(
+        propertyFile(
+          "gradle.properties",
+          """
+          # comments
+          """
+            .trimIndent(),
+        ),
+        gradle(
+            """
+         android {
+             buildTypes {
+                 release {
+                     optimization {
+                         enable = true
+                     }
+                 }
+             }
+         }"""
+          )
+          .indented(),
+      )
+      .issues(R8_GRADUAL_API)
+      .run()
+      .expect(
+        """
+        build.gradle:5: Warning: Cannot use optimization.enable=true without setting android.r8.gradual.support=true flag. [R8GradualApi]
+                        enable = true
+                        ~~~~~~
+        0 errors, 1 warning
+        """
+      )
+      .expectFixDiffs(
+        """
+          Autofix for build.gradle line 5: Add android.r8.gradual.support=true flag:
+          gradle.properties:
+          @@ -1 +1,2 @@
+          -# comments
+          +# comments
+          +android.r8.gradual.support=true
+          """
       )
   }
 
@@ -8631,6 +8663,51 @@ class GradleDetectorTest : AbstractCheckTest() {
                 +   implementation("com.android.support:multidex:1.0.1@aar")
                 """
       )
+  }
+
+  fun testGradleDetectorFindPropertyValue() {
+    val str =
+      """
+         # comments
+      some.property = true
+    """
+        .trimIndent()
+    assertEquals(ValueOffset(29, 34), findPropertyValue(str, "some.property"))
+
+    val str2 =
+      """
+         ! comments
+      prop = \
+        some some.property = true \
+        some
+      some.property = true
+    """
+        .trimIndent()
+    assertEquals(ValueOffset(75, 80), findPropertyValue(str2, "some.property"))
+
+    val str3 =
+      """
+         ! comments
+      prop = \
+        some some.property = true \
+        some
+      some.property = multi \
+        line
+    """
+        .trimIndent()
+    assertEquals(ValueOffset(75, 90), findPropertyValue(str3, "some.property"))
+
+    // where multiline property has #symbol
+    val str4 =
+      """
+         ! comments
+      prop = \
+        #some some.property = true
+      some.property = multi \
+        line
+    """
+        .trimIndent()
+    assertEquals(ValueOffset(67, 82), findPropertyValue(str4, "some.property"))
   }
 
   fun testCachedFilter() {
