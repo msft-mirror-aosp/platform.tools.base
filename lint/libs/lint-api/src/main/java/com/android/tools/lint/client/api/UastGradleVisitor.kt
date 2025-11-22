@@ -151,7 +151,11 @@ class UastGradleVisitor(override val javaContext: JavaContext) : GradleVisitor()
           node,
         )
       }
-      if (valueArguments.size == 1 && valueArguments[0] !is ULambdaExpression) {
+      if (
+        namedArguments.isEmpty() &&
+          valueArguments.size == 1 &&
+          valueArguments[0] !is ULambdaExpression
+      ) {
         // Some sort of DSL property?
         // Parent should be block, its parent lambda, its parent a call -
         // the name is the parent

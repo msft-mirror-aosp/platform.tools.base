@@ -238,6 +238,25 @@ class UastGradleVisitorTest {
     )
   }
 
+  @Test
+  fun testOneNamedArg() {
+    check(
+      """
+      dependencies {
+          testImplementation(libs.kotlin.test.junit) {
+              exclude(group = "junit")
+         }
+      }
+      """,
+      """
+      checkMethodCall(statement="dependencies", unnamedArguments="{ testImplementation(libs.kotlin.test.junit) { exclude(group = "junit") } }")
+      checkMethodCall(statement="exclude", parent="testImplementation", parentParent="dependencies", namedArguments="group="junit"")
+      checkMethodCall(statement="testImplementation", parent="dependencies", unnamedArguments="libs.kotlin.test.junit, { exclude(group = "junit") }")
+      """
+        .trimIndent(),
+    )
+  }
+
   // Test infrastructure only below
 
   private fun check(@Language("kotlin-script") gradleSource: String, expected: String) {
