@@ -17,18 +17,20 @@ package com.android.tools.apk.analyzer;
 
 import static com.android.tools.apk.analyzer.ZipEntryInfo.Alignment.ALIGNMENT_NONE;
 
+import com.android.ide.common.pagealign.AlignmentProblem;
+
 import org.jetbrains.annotations.NotNull;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 
 public class ArchivePathEntry extends ArchiveEntry {
     private long rawFileSize = -1;
     private long downloadFileSize = -1;
     private ZipEntryInfo.Alignment zipAlignment = ALIGNMENT_NONE;
-    private long loadAlignment = -1;
+    private List<AlignmentProblem> elfAlignmentProblems = null;
     private boolean isCompressed = false;
-    private boolean isElf = false;
     private boolean isSelfOrChild16kbIncompatible = false;
 
     public ArchivePathEntry(
@@ -52,13 +54,13 @@ public class ArchivePathEntry extends ArchiveEntry {
     }
 
     @Override
-    public void setElfMinimumLoadSectionAlignment(long loadAlignment) {
-        this.loadAlignment = loadAlignment;
+    public void setElfAlignmentProblems(List<AlignmentProblem> loadAlignment) {
+        this.elfAlignmentProblems = loadAlignment;
     }
 
     @Override
-    public long getElfMinimumLoadSectionAlignment() {
-        return loadAlignment;
+    public List<AlignmentProblem> getElfAlignmentProblems() {
+        return elfAlignmentProblems;
     }
 
     @Override
@@ -69,16 +71,6 @@ public class ArchivePathEntry extends ArchiveEntry {
     @Override
     public void setSelfOrChild16kbIncompatible(Boolean value) {
         isSelfOrChild16kbIncompatible = value;
-    }
-
-    @Override
-    public void setIsElf(boolean isElf) {
-        this.isElf = isElf;
-    }
-
-    @Override
-    public boolean getIsElf() {
-        return this.isElf;
     }
 
     @Override
