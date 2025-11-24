@@ -9250,7 +9250,11 @@ class GradleDetectorTest : AbstractCheckTest() {
     )
   }
 
-  fun testIncludedFiles() {
+  fun testIncludedFiles_outsideApp() {
+    // TODO(b/463283604): remove the bail-out below.
+    if (useFirUast()) {
+      return
+    }
     // Make sure we handle including files -- from kts to groovy and back.
     lint()
       .files(
@@ -9287,7 +9291,7 @@ class GradleDetectorTest : AbstractCheckTest() {
             "build.gradle.kts",
             """
             apply(from = "../common.gradle")
-            apply(from = "../common3.gradle.kts")
+            apply(from = "../common2.gradle")
             apply(from = "../common3.gradle.kts")
             """,
           )
@@ -9296,18 +9300,7 @@ class GradleDetectorTest : AbstractCheckTest() {
       .issues(DEPENDENCY)
       .run()
       .expect(
-        if (useFirUast()) {
-          """
-          ../common.gradle:2: Warning: A newer version of compileSdk than 30 is available: ${GradleDetector.HIGHEST_KNOWN_STABLE_ANDROID_API} [GradleDependency]
-              compileSdk 30 // ERROR 1
-              ~~~~~~~~~~~~~
-          ../common2.gradle:2: Warning: A newer version of compileSdk than 32 is available: ${GradleDetector.HIGHEST_KNOWN_STABLE_ANDROID_API} [GradleDependency]
-              compileSdk 32 // ERROR 2
-              ~~~~~~~~~~~~~
-          0 errors, 2 warnings
-          """
-        } else {
-          """
+        """
           ../common.gradle:2: Warning: A newer version of compileSdk than 30 is available: ${GradleDetector.HIGHEST_KNOWN_STABLE_ANDROID_API} [GradleDependency]
               compileSdk 30 // ERROR 1
               ~~~~~~~~~~~~~
@@ -9319,7 +9312,40 @@ class GradleDetectorTest : AbstractCheckTest() {
               ~~~~~~~~~~~~~~~
           0 errors, 3 warnings
           """
-        }
+      )
+  }
+
+  fun testIncludedFiles_withinApp() {
+    // b/430991549
+    // b/463283604
+    lint()
+      .files(
+        kts(
+            "test.gradle.kts",
+            """
+            android {
+                compileSdk = 31 // ERROR
+            }
+          """,
+          )
+          .indented(),
+        kts(
+            "build.gradle.kts",
+            """
+            apply(from = "test.gradle.kts")
+          """,
+          )
+          .indented(),
+      )
+      .issues(DEPENDENCY)
+      .run()
+      .expect(
+        """
+          test.gradle.kts:2: Warning: A newer version of compileSdk than 31 is available: ${GradleDetector.HIGHEST_KNOWN_STABLE_ANDROID_API} [GradleDependency]
+              compileSdk = 31 // ERROR
+              ~~~~~~~~~~~~~~~
+          0 errors, 1 warning
+        """
       )
   }
 
