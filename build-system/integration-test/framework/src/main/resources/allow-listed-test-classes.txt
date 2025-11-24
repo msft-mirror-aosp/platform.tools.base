@@ -51,7 +51,6 @@ com.android.build.gradle.integration.application.BasicKotlinDslTest
 com.android.build.gradle.integration.application.BasicMultiFlavorTest
 com.android.build.gradle.integration.application.BootClasspathTest
 com.android.build.gradle.integration.application.BuildConfigBytecodeCompilationTest
-com.android.build.gradle.integration.application.BuildConfigTest
 com.android.build.gradle.integration.application.BuildDirRelocationTest
 com.android.build.gradle.integration.application.BuildDirTest
 com.android.build.gradle.integration.application.BuildToolsTest
