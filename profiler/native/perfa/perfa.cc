@@ -22,6 +22,7 @@
 #include "jvmti/jvmti_helper.h"
 #include "jvmti/scoped_local_ref.h"
 #include "memory/memory_tracking_env.h"
+#include "proto/internal_event.grpc.pb.h"
 #include "proto/transport.grpc.pb.h"
 #include "slicer/reader.h"
 #include "slicer/writer.h"
@@ -30,15 +31,22 @@
 #include "transform/android_user_counter_transform.h"
 #include "transform/androidx_fragment_transform.h"
 #include "transform/transform.h"
+#include "utils/clock.h"
 #include "utils/device_info.h"
 #include "utils/log.h"
 
+using grpc::ClientContext;
 using profiler::Agent;
 using profiler::Log;
 using profiler::MemoryTrackingEnv;
 using profiler::ScopedLocalRef;
+using profiler::SteadyClock;
 using profiler::proto::AgentConfig;
+using profiler::proto::AgentService;
 using profiler::proto::Command;
+using profiler::proto::Event;
+using profiler::proto::InternalEventService;
+using profiler::proto::SendEventRequest;
 
 namespace profiler {
 
@@ -260,6 +268,54 @@ void InitializeProfiler(JavaVM* vm, jvmtiEnv* jvmti_env,
             ->HandleStopAllocTracking(*command);
       });
 
+  Agent::Instance().RegisterCommandHandler(
+      Command::CHECK_LEAKCANARY_PRESENT, [vm](const Command* command) -> void {
+        JNIEnv* jni_env = GetThreadLocalJNI(vm);
+        jclass support_class_raw = jni_env->FindClass(
+            "com/android/tools/profiler/support/profilers/"
+            "LeakCanaryPresenceChecker");
+
+        if (support_class_raw == nullptr) {
+          Log::E(Log::Tag::PROFILER,
+                 "LeakCanaryPresenceChecker class not found.");
+          jni_env->ExceptionClear();
+          return;
+        }
+
+        ScopedLocalRef<jclass> support_class(jni_env, support_class_raw);
+
+        jmethodID check_method =
+            jni_env->GetStaticMethodID(support_class.get(), "isPresent", "()Z");
+
+        if (check_method == nullptr) {
+          Log::E(Log::Tag::PROFILER,
+                 "LeakCanaryPresenceChecker.isPresent method not found.");
+          jni_env->ExceptionClear();
+          return;
+        }
+
+        jboolean is_present =
+            jni_env->CallStaticBooleanMethod(support_class.get(), check_method);
+
+        Event event;
+        event.set_pid(getpid());
+        event.set_timestamp(SteadyClock().GetCurrentTime());
+        event.set_command_id(command->command_id());
+        event.set_kind(Event::LEAKCANARY_PRESENCE_CHECK);
+        event.mutable_leakcanary_presence_check()->set_is_present(is_present);
+
+        SendEventRequest request;
+        *request.mutable_event() = event;
+        Agent::Instance().SubmitAgentTasks(
+            {[request](AgentService::Stub& stub,
+                       ClientContext& context) mutable {
+              profiler::proto::EmptyResponse response;
+              grpc::Status status =
+                  stub.SendEvent(&context, request, &response);
+              return status;
+            }});
+      });
+
   // Perf-test currently waits on this message to determine that agent
   // has finished profiler initialization.
   Log::V(Log::Tag::PROFILER, "Profiler initialization complete on agent.");
@@ -276,10 +332,11 @@ void SetupPerfa(JavaVM* vm, jvmtiEnv* jvmti_env,
     if (agent_config.attach_method() == AgentConfig::ON_COMMAND) {
       command = agent_config.attach_command();
     }
-    // We delay performing the agent initiailization (e.g. BCI, memory tracking)
-    // until we receive the |BEGIN_SESSION| command (default). Or a specified
-    // command defined in the config. Attaching the agent could interfear with
-    // other features and we don't want to always enable profiling right away.
+    // We delay performing the agent initiailization (e.g. BCI, memory
+    // tracking) until we receive the |BEGIN_SESSION| command (default). Or a
+    // specified command defined in the config. Attaching the agent could
+    // interfear with other features and we don't want to always enable
+    // profiling right away.
     Agent::Instance().RegisterCommandHandler(
         command, [vm, jvmti_env, agent_config](const Command* command) -> void {
           if (!Agent::Instance().IsProfilerInitalized()) {
