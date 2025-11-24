@@ -61,7 +61,7 @@ class SpecialCharactersBasicTest(projectName: String) {
         @Parameterized.Parameters
         fun projectNames(): Collection<String> {
             return listOf(
-                "1b@s %i péà`e eã~e=.{}\$#!&^()¡²³¤€¼½¾‘’¥×βα基本осಮೂ基本どきコラપા기본आधមូលั้นਬੁਨਿਆძიমৌƏՀիመሠ",
+                "1b@s %i péà`e eã~e=.{}\$#!&^()¡²³¤€¼½¾‘’¥×βαосಮೂ基本どきコラપા기본आधមូលั้นਬੁਨਿਆძიমৌƏՀիመሠ",
                 "בסיסיالأساسيةיקערדיק"
 
                 /* TODO lint fails when ";" is part of the project name b/458128469
@@ -69,7 +69,6 @@ class SpecialCharactersBasicTest(projectName: String) {
 
                 /* Add these for individual language tests
                 "βασικός",
-                "基本",
                 "основной",
                 "ಮೂಲಭೂತ",
                 "基本的な",
