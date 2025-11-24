@@ -174,7 +174,6 @@ com.android.build.gradle.integration.application.RenderscriptTest
 com.android.build.gradle.integration.application.RepoTest
 com.android.build.gradle.integration.application.ResourceShrinkerTest
 com.android.build.gradle.integration.application.ResourceValidationTest
-com.android.build.gradle.integration.application.ResValueTest
 com.android.build.gradle.integration.application.ResValueTypeTest
 com.android.build.gradle.integration.application.RulesExtractionDynamicAppTest
 com.android.build.gradle.integration.application.SigningTest
