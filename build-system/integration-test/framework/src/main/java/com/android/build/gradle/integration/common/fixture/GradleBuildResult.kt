@@ -30,12 +30,22 @@ import org.gradle.internal.serialize.PlaceholderException
 import org.gradle.tooling.BuildException
 import org.gradle.tooling.GradleConnectionException
 import org.gradle.tooling.events.ProgressEvent
-import org.gradle.tooling.events.problems.ProblemAggregationEvent
-import org.gradle.tooling.events.problems.SingleProblemEvent
-import org.junit.Assert
 import java.io.File
 import java.util.Scanner
-import java.util.function.Consumer
+
+/**
+ * An enum to represent which files mentioned in the build output should be copied.
+ */
+enum class CopyFilesMode(val extensions: Set<String>) {
+    ALL(emptySet()),
+
+    TEXT_ONLY(setOf("csv", "htm", "html", "json", "log", "md", "properties", "txt", "xml"));
+
+    /** Returns true if the given [file] should be included in this mode. */
+    fun includes(file: File): Boolean {
+        return extensions.isEmpty() || extensions.any { file.extension.equals(it, ignoreCase = true) }
+    }
+}
 
 /**
  * The result from running a build.
@@ -242,6 +252,87 @@ class GradleBuildResult(
     fun assertConfigurationCacheMiss() {
         assertOutputContains("Calculating task graph")
         assertOutputDoesNotContain("Reusing configuration cache")
+    }
+
+    /**
+     * Finds file paths mentioned in stdout and stderr and copies them to the given [outputDir].
+     *
+     * If any of the mentioned files are HTML reports, this method will also perform simple text
+     * matching to find linked local CSS, JavaScript, and other HTML files, copying them as well
+     * to preserve the report's structure and functionality. Remote files are ignored.
+     *
+     * - For files located under the parent of [outputDir], the path relative to that parent is
+     *   preserved within [outputDir].
+     * - For all other files, their full absolute path (minus the root) is recreated inside
+     *   [outputDir].
+     *
+     * @param outputDir the directory to copy files to.
+     * @param mode which category of files to copy.
+     */
+    fun copyMentionedFilesTo(outputDir: File, mode: CopyFilesMode = CopyFilesMode.TEXT_ONLY) {
+        val filesToCopy = mutableSetOf<File>()
+        val processedFiles = mutableSetOf<File>()
+
+        val fileMentionRegex = Regex("""file:(?://)?((?:[a-zA-Z]:)?[^'"\s]+)""")
+        val linkRegex = Regex("""<link[^>]+href=["'](?!https?://)([^"']+\.(css))["']""")
+        val scriptRegex = Regex("""<script[^>]+src=["'](?!https?://)([^"']+\.(js))["']""")
+        val hyperlinkRegex = Regex("""<a[^>]+href=["'](?!https?://)([^"']+\.html?)["']""")
+
+        fun findAndProcessFiles(file: File) {
+            if (!file.exists() || file in processedFiles) return
+            processedFiles.add(file)
+
+            val extension = file.extension.lowercase()
+            if (extension == "html" || extension == "htm") {
+                file.useLines { lines ->
+                    lines.forEach { line ->
+                        (linkRegex.findAll(line) +
+                                scriptRegex.findAll(line) +
+                                hyperlinkRegex.findAll(line)).forEach { matchResult ->
+                            val relativePath = matchResult.groupValues[1]
+                            val referencedFile = file.resolveSibling(relativePath).normalize()
+                            if (referencedFile !in filesToCopy) {
+                                filesToCopy.add(referencedFile)
+                                findAndProcessFiles(referencedFile)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        val initialFiles = mutableListOf<File>()
+        val collectInitialFiles = { lines: Sequence<String> ->
+            lines.forEach { line ->
+                fileMentionRegex.findAll(line).forEach { matchResult ->
+                    val filePath = matchResult.groupValues.last()
+                    val sourceFile = File(filePath)
+                    if (sourceFile.exists() && mode.includes(sourceFile)) {
+                        if (sourceFile !in filesToCopy) {
+                            filesToCopy.add(sourceFile)
+                            initialFiles.add(sourceFile)
+                        }
+                    }
+                }
+            }
+        }
+
+        stdoutFile.useLines(block = collectInitialFiles)
+        stderrFile.useLines(block = collectInitialFiles)
+
+        initialFiles.forEach(::findAndProcessFiles)
+
+        filesToCopy.forEach { sourceFile ->
+            val sourcePath = sourceFile.toPath()
+            val outputDirPath = outputDir.toPath()
+            val destinationFile = if (sourcePath.startsWith(outputDirPath.parent)) {
+                outputDirPath.resolve(sourcePath.subpath(outputDirPath.parent.nameCount, sourcePath.nameCount).toString()).toFile()
+            } else {
+                outputDir.resolve(sourceFile.toPath().root.relativize(sourceFile.toPath()).toString()).absoluteFile
+            }
+            destinationFile.parentFile.mkdirs()
+            sourceFile.copyTo(destinationFile, overwrite = true)
+        }
     }
 
     private fun Scanner.asText(): String = use {
