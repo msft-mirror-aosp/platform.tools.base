@@ -20,6 +20,7 @@ import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
 import com.android.build.gradle.integration.common.utils.TestFileUtils
+import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.options.StringOption
 import com.android.buildanalyzer.common.AndroidGradlePluginAttributionData
 import com.android.utils.FileUtils
@@ -34,8 +35,9 @@ class BuildAttributionDataTest {
 
     @get:Rule
     var project = GradleTestProject.builder()
-            .fromTestApp(HelloWorldApp.forPlugin("com.android.application"))
-            .create()
+        .fromTestApp(HelloWorldApp.forPlugin("com.android.application"))
+        .addGradleProperty(BooleanOption.USE_NEW_DSL, false)
+        .create()
 
     private fun setUpProject() {
         TestFileUtils.appendToFile(project.buildFile, """
