@@ -18,9 +18,10 @@ package com.android.build.gradle.integration.model
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject.Companion.builder
 import com.android.build.gradle.integration.common.fixture.app.KotlinHelloWorldApp
+import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.build.gradle.options.BooleanOption
+import com.android.builder.core.ComponentTypeImpl
 import com.google.common.truth.Truth.assertThat
-import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 
@@ -29,7 +30,6 @@ class KotlinSourcesModelTest {
     @get:Rule
     val project = builder()
             .fromTestApp(KotlinHelloWorldApp.forPlugin("com.android.application"))
-            .addGradleProperty(BooleanOption.BUILT_IN_KOTLIN, false)
             .create()
 
     @Test
@@ -40,11 +40,11 @@ class KotlinSourcesModelTest {
                     classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${'$'}{libs.versions.kotlinVersion.get()}"
                 }
             }
-            apply plugin: 'kotlin-android'
+
             android {
                 sourceSets {
                     main {
-                         kotlin.srcDirs = ["src/main/kotlinDir"]
+                         kotlin.directories.add("src/main/kotlinDir")
                     }
                 }
             }
@@ -61,14 +61,14 @@ class KotlinSourcesModelTest {
     }
 
     @Test
-    fun kotlinSourcesLocation() {
+    fun kotlinSourcesLocationHasNoEffectWhenBuiltInKotlinEnabled() {
         project.buildFile.appendText("""
             buildscript {
                 dependencies {
                     classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${'$'}{libs.versions.kotlinVersion.get()}"
                 }
             }
-            apply plugin: 'kotlin-android'
+
             kotlin {
                 sourceSets {
                     main {
@@ -84,10 +84,44 @@ class KotlinSourcesModelTest {
             project.modelV2().fetchModels().container.singleProjectInfo.basicAndroidProject
         assertThat(basicProject?.mainSourceSet?.sourceProvider?.kotlinDirectories)
                 .containsExactly(
-                        project.file("src/main/kotlinDir"),
                         project.file("src/main/java"),
                         project.file("src/main/kotlin"),
                 )
+    }
+
+    @Test
+    fun kotlinSourcesLocationUsingKotlinAndroid() {
+        project.buildFile.appendText("""
+            buildscript {
+                dependencies {
+                    classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${'$'}{libs.versions.kotlinVersion.get()}"
+                }
+            }
+
+            apply plugin: 'kotlin-android'
+            kotlin {
+                sourceSets {
+                    main {
+                         kotlin {
+                             srcDir "src/main/kotlinDir"
+                         }
+                    }
+                }
+            }
+        """.trimIndent())
+
+        TestFileUtils.appendToFile(
+            project.gradlePropertiesFile,
+            "${BooleanOption.BUILT_IN_KOTLIN.propertyName}=false"
+        )
+        val basicProject =
+            project.modelV2().fetchModels().container.singleProjectInfo.basicAndroidProject
+        assertThat(basicProject?.mainSourceSet?.sourceProvider?.kotlinDirectories)
+            .containsExactly(
+                project.file("src/main/kotlinDir"),
+                project.file("src/main/java"),
+                project.file("src/main/kotlin"),
+            )
     }
 
     @Test
@@ -116,28 +150,29 @@ class KotlinSourcesModelTest {
                     }
                 }
             }
-
-            // TODO workaround for https://youtrack.jetbrains.com/issue/KT-43944 is fixed
-            configurations.create("testApi")
-            configurations.create("testDebugApi")
-            configurations.create("testReleaseApi")
             """.trimIndent()
         )
 
+        TestFileUtils.appendToFile(
+            project.gradlePropertiesFile,
+            "${BooleanOption.BUILT_IN_KOTLIN.propertyName}=false"
+        )
         val basicProject =
             project.modelV2()
                 .withFailOnWarning(false) // b/455891987
                 .fetchModels().container.singleProjectInfo.basicAndroidProject!!
-        val deviceTestsKotlinDirs =
-                basicProject.mainSourceSet!!.androidTestSourceProvider!!.kotlinDirectories
+        val deviceTestsKotlinDirs = basicProject.mainSourceSet!!
+            .deviceTestSourceProviders[ComponentTypeImpl.ANDROID_TEST.artifactName]!!
+            .kotlinDirectories
         assertThat(deviceTestsKotlinDirs)
                 .containsExactly(
                         project.file("src/androidTest/java"),
                         project.file("src/androidTest/kotlin"),
                         project.file("src/androidInstrumentedTest/kotlin"),
                 )
-        val unitTestsKotlinDirs =
-            basicProject.mainSourceSet!!.unitTestSourceProvider!!.kotlinDirectories
+        val unitTestsKotlinDirs = basicProject.mainSourceSet!!
+            .hostTestSourceProviders[ComponentTypeImpl.UNIT_TEST.artifactName]!!
+            .kotlinDirectories
         assertThat(unitTestsKotlinDirs)
                 .containsExactly(
                         project.file("src/test/java"),
