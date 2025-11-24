@@ -2,11 +2,15 @@ apply plugin: 'com.android.library'
 
 android {
     namespace = "com.android.tests.libstest.libapp"
-    resourcePrefix 'libapp_'
-    compileSdkVersion libs.versions.latestCompileSdk.get().toInteger()
+    resourcePrefix = 'libapp_'
+    compileSdk{
+        version = release(libs.versions.latestCompileSdk.get().toInteger())
+    }
     buildToolsVersion = libs.versions.buildToolsVersion.get()
     defaultConfig {
-        minSdkVersion libs.versions.supportLibMinSdk.get()
+        minSdk {
+            version = release(libs.versions.supportLibMinSdk.get().toInteger())
+        }
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
 }

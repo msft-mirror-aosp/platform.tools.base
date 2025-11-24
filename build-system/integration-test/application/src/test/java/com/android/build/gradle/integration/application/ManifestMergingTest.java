@@ -24,7 +24,6 @@ import com.android.SdkConstants;
 import com.android.build.api.artifact.SingleArtifact;
 import com.android.build.gradle.integration.common.fixture.GradleBuildResult;
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
-import com.android.build.gradle.integration.common.truth.ScannerSubject;
 import com.android.build.gradle.integration.common.utils.TestFileUtils;
 import com.android.build.gradle.options.BooleanOption;
 import com.android.build.gradle.options.IntegerOption;
@@ -315,9 +314,17 @@ public class ManifestMergingTest {
         FileUtils.deleteRecursivelyIfExists(new File(srcFolder, "debug"));
         FileUtils.deleteRecursivelyIfExists(new File(srcFolder, "f1"));
         FileUtils.deleteRecursivelyIfExists(new File(srcFolder, "f1Debug"));
-        for (int i = 31; i <= 37; ++i) {
-            TestFileUtils.replaceLine(navigation.getSubproject("app").getBuildFile(), i, "");
-        }
+
+        File buildFile = navigation.getSubproject("app").getBuildFile();
+        TestFileUtils.searchAndReplace(buildFile, "flavorDimensions   \"group1\"", "");
+        TestFileUtils.searchAndReplace(
+                buildFile,
+                "    productFlavors {\n"
+                        + "        f1 {\n"
+                        + "            dimension   \"group1\"\n"
+                        + "        }\n"
+                        + "    }",
+                "");
 
         navigation.executor().run("clean", ":app:processDebugManifest");
 
@@ -450,7 +457,7 @@ public class ManifestMergingTest {
                 flavors.getBuildFile(), "namespace = \"com.android.tests.flavors\"", "");
         GradleBuildResult buildResult =
                 flavors.executor().expectFailure().run("clean", "assembleF1FaDebug");
-        ScannerSubject.assertThat(buildResult.getStderr()).contains("Namespace not specified");
+        buildResult.assertErrorContains("Namespace not specified");
     }
 
     // an integration test to make sure using tool:ignore_warning doesn't cause any failures
@@ -478,20 +485,16 @@ public class ManifestMergingTest {
                 "<manifest",
                 "<manifest package=\"com.android.tests.flavors\"");
         GradleBuildResult buildResult = flavors.executor().run("clean", "assembleF1FaDebug");
-        ScannerSubject.assertThat(buildResult.getStdout())
-                .contains(
-                        "package=\"com.android.tests.flavors\" found in source"
-                                + " AndroidManifest.xml");
+        buildResult.assertOutputContains(
+                "package=\"com.android.tests.flavors\" found in source" + " AndroidManifest.xml");
 
         // Validate that the warning is not present with SUPPRESS_MANIFEST_PACKAGE_WARNING flag
         buildResult =
                 flavors.executor()
                         .with(BooleanOption.SUPPRESS_MANIFEST_PACKAGE_WARNING, true)
                         .run("clean", "assembleF1FaDebug");
-        ScannerSubject.assertThat(buildResult.getStdout())
-                .doesNotContain(
-                        "package=\"com.android.tests.flavors\" found in source"
-                                + " AndroidManifest.xml");
+        buildResult.assertOutputDoesNotContain(
+                "package=\"com.android.tests.flavors\" found in source" + " AndroidManifest.xml");
     }
 
     @Test
@@ -502,7 +505,8 @@ public class ManifestMergingTest {
                 "<manifest package=\"com.wrong\"");
         GradleBuildResult buildResult =
                 flavors.executor().expectFailure().run("clean", "assembleF1FaDebug");
-        ScannerSubject.assertThat(buildResult.getStderr())
+        buildResult
+                .assertFailureMessage()
                 .contains("Incorrect package=\"com.wrong\" found in source AndroidManifest.xml");
     }
 
@@ -514,7 +518,8 @@ public class ManifestMergingTest {
         Files.write(overlayManifest, List.of("<manifest package=\"wrong.package\"/>"));
         GradleBuildResult buildResult =
                 flavors.executor().expectFailure().run("clean", "assembleF1FaDebug");
-        ScannerSubject.assertThat(buildResult.getStderr())
+        buildResult
+                .assertFailureMessage()
                 .contains(
                         "Suggestion: remove the package=\"wrong.package\" declaration at "
                                 + overlayManifest);

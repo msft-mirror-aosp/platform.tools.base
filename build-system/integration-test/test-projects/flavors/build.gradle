@@ -5,10 +5,14 @@ apply plugin: 'com.android.application'
 
 android {
     namespace = "com.android.tests.flavors"
-    compileSdkVersion libs.versions.latestCompileSdk.get().toInteger()
+    compileSdk{
+        version = release(libs.versions.latestCompileSdk.get().toInteger())
+    }
     buildToolsVersion = libs.versions.buildToolsVersion.get()
     defaultConfig {
-        minSdkVersion libs.versions.supportLibMinSdk.get()
+        minSdk{
+            version = release(libs.versions.supportLibMinSdk.get().toInteger())
+        }
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
 

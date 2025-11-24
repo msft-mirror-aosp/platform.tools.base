@@ -9,7 +9,8 @@
         android:label="@string/lib1_name" tools:replace="label, icon" >
         <activity
             android:name="MainActivity"
-            android:label="@string/lib1_name" >
+            android:label="@string/lib1_name"
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
