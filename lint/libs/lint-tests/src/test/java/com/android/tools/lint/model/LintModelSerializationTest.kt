@@ -55,7 +55,7 @@ class LintModelSerializationTest {
   fun testFlavors() {
     val mocker: GradleModelMocker =
       GradleModelMockerTest.createMocker(
-        """
+          """
             buildscript {
                 repositories {
                     mavenCentral()
@@ -144,9 +144,10 @@ class LintModelSerializationTest {
                 implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.3.0"
             }
             """
-          .trimIndent(),
-        temporaryFolder,
-      )
+            .trimIndent(),
+          temporaryFolder,
+        )
+        .withHighlightGradualR8Api(false)
 
     checkSerialization(
       mocker,
@@ -163,7 +164,8 @@ class LintModelSerializationTest {
                     buildFolder="build"
                     javaSourceLevel="1.7"
                     compileTarget="android-25"
-                    neverShrinking="true">
+                    neverShrinking="true"
+                    highlightGradualR8Api="false">
                   <lintOptions
                       lintConfig="default-lint.xml"
                       baselineFile="baseline.xml"

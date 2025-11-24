@@ -78,7 +78,11 @@ import com.android.tools.lint.checks.infrastructure.platformPath
 import com.android.tools.lint.client.api.LintClient
 import com.android.tools.lint.detector.api.Detector
 import com.android.tools.lint.detector.api.Implementation
+import com.android.tools.lint.detector.api.Project
 import com.android.tools.lint.detector.api.Scope
+import com.android.tools.lint.model.DefaultLintModelLintOptions
+import com.android.tools.lint.model.LintModelLintOptions
+import com.android.tools.lint.model.LintModelModule
 import com.android.tools.lint.useFirUast
 import com.android.utils.FileUtils
 import java.io.ByteArrayOutputStream
@@ -86,10 +90,11 @@ import java.io.File
 import java.io.IOException
 import java.net.URL
 import java.net.URLConnection
-import java.util.Calendar
+import java.util.*
 import java.util.zip.GZIPOutputStream
 import junit.framework.TestCase
 import org.junit.rules.TemporaryFolder
+import org.mockito.Mockito
 
 /**
  * NOTE: Many of these tests are duplicated in the Android Studio plugin to test the custom
@@ -3491,6 +3496,7 @@ class GradleDetectorTest : AbstractCheckTest() {
           .indented(),
       )
       .issues(R8_GRADUAL_API)
+      .clientFactory { clientFactoryWithR8FalseProject.create() }
       .run()
       .expect(
         """
@@ -3535,6 +3541,7 @@ class GradleDetectorTest : AbstractCheckTest() {
           .indented(),
       )
       .issues(R8_GRADUAL_API)
+      .clientFactory { clientFactoryWithR8FalseProject.create() }
       .run()
       .expect(
         """
@@ -10683,3 +10690,22 @@ class GradleDetectorTest : AbstractCheckTest() {
     }
   }
 }
+
+val clientFactoryWithR8FalseProject: TestLintTask.ClientFactory =
+  object : TestLintTask.ClientFactory {
+    override fun create(): com.android.tools.lint.checks.infrastructure.TestLintClient {
+      return object : com.android.tools.lint.checks.infrastructure.TestLintClient() {
+        override fun createProject(dir: File, referenceDir: File): Project {
+          return object : Project(this, dir, referenceDir) {
+            override fun getBuildModule(): LintModelModule {
+              val model = Mockito.mock(LintModelModule::class.java)
+              Mockito.`when`<Boolean?>(model.highlightGradualR8Api).thenReturn(true)
+              Mockito.`when`<LintModelLintOptions>(model.lintOptions)
+                .thenReturn(DefaultLintModelLintOptions())
+              return model
+            }
+          }
+        }
+      }
+    }
+  }

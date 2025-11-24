@@ -110,6 +110,9 @@ interface AndroidGradlePluginProjectFlags {
 
         /** Whether the legacy variant API is used in this project */
         OLD_VARIANT_API_IN_USE(false),
+
+        /** Whether the Gradual API is enabled  */
+        R8_GRADUAL_API(false),
         ;
 
         /**

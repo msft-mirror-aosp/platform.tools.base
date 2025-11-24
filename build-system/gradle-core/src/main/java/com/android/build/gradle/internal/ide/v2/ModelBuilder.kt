@@ -28,7 +28,6 @@ import com.android.build.api.dsl.TestExtension
 import com.android.build.api.variant.ScopedArtifacts.Scope.ALL
 import com.android.build.api.variant.ScopedArtifacts.Scope.PROJECT
 import com.android.build.api.variant.TestSuiteSourceType
-import com.android.build.api.variant.impl.BuiltArtifactsImpl
 import com.android.build.api.variant.impl.HasDeviceTestsCreationConfig
 import com.android.build.api.variant.impl.HasHostTestsCreationConfig
 import com.android.build.api.variant.impl.HasTestFixtures
@@ -43,7 +42,6 @@ import com.android.build.gradle.internal.api.DefaultAndroidSourceSet
 import com.android.build.gradle.internal.api.TestSuiteSourceSet
 import com.android.build.gradle.internal.attributes.VariantAttr
 import com.android.build.gradle.internal.component.ApkCreationConfig
-import com.android.build.gradle.internal.component.ApplicationCreationConfig
 import com.android.build.gradle.internal.component.ComponentCreationConfig
 import com.android.build.gradle.internal.component.ConsumableCreationConfig
 import com.android.build.gradle.internal.component.DeviceTestCreationConfig
@@ -1677,6 +1675,10 @@ class ModelBuilder<ExtensionT : CommonExtension>(
             flags.put(
                 BooleanFlag.OLD_VARIANT_API_IN_USE,
                 oldVariantApiInUse
+            )
+            flags.put(
+                BooleanFlag.R8_GRADUAL_API,
+                projectOptions[BooleanOption.R8_GRADUAL_API]
             )
 
             return AndroidGradlePluginProjectFlagsImpl(flags.build())

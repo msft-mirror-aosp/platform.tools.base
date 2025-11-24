@@ -468,7 +468,10 @@ abstract class ProjectInputs {
             javaSourceLevel = javaSourceLevel.get().toString(),
             compileTarget = compileTarget.get(),
             variants = listOf(),
-            neverShrinking = neverShrinking.get()
+            // lint needs to check gradualR8 API only in studio
+            // as AGP will fail build by itself requiring flag
+            highlightGradualR8Api = false,
+            neverShrinking = neverShrinking.get(),
         )
     }
 

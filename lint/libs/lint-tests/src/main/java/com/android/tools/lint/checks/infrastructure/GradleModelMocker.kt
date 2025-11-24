@@ -182,6 +182,11 @@ constructor(
     return this
   }
 
+  fun withHighlightGradualR8Api(flag: Boolean): GradleModelMocker {
+    updateModule { it.copy(highlightGradualR8Api = flag) }
+    return this
+  }
+
   fun withLibraryLintJar(library: String, lintJarPath: String): GradleModelMocker {
     ensureNotInitialized()
     libraryLintJars[library] = lintJarPath
@@ -2373,6 +2378,7 @@ private data class TestLintModelModule(
   override val bootClassPath: List<File> = emptyList(),
   override val javaSourceLevel: String = "",
   override val compileTarget: String = "",
+  override val highlightGradualR8Api: Boolean = false,
   override val variants: List<LintModelVariant> = emptyList(),
   val neverShrinking: Boolean = false,
 ) : LintModelModule {

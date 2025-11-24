@@ -85,7 +85,6 @@ import com.intellij.pom.java.LanguageLevel.JDK_1_7
 import com.intellij.pom.java.LanguageLevel.JDK_1_8
 import java.io.ByteArrayInputStream
 import java.io.File
-import java.io.FileInputStream
 import java.io.IOException
 import java.io.InputStream
 import java.nio.charset.StandardCharsets
@@ -93,7 +92,6 @@ import java.nio.file.Path
 import java.util.Calendar
 import java.util.Collections
 import java.util.EnumSet
-import java.util.Properties
 import java.util.concurrent.TimeUnit
 import java.util.function.Predicate
 import org.jetbrains.kotlin.psi.KtCallExpression
@@ -692,8 +690,8 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
       mDeclaredSourceCompatibility = true
       mDeclaredTargetCompatibility = true
     } else if (parent == "optimization" && property == "enable" && value == "true") {
-      val flag = getProperties(context.project).get("android.r8.gradual.support") ?: "false"
-      if (flag.toBoolean() != true) {
+      val flag = context.project.getBuildModule()?.highlightGradualR8Api
+      if (flag == true) {
         val message =
           "Cannot use optimization.enable=true without setting android.r8.gradual.support=true flag."
         val fix = createR8FlagFix(context.project)
@@ -2539,25 +2537,6 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
     }
 
     return false
-  }
-
-  private fun getProperties(project: Project): Map<String, String> {
-    val properties = Properties()
-    val map = mutableMapOf<String, String>()
-
-    try {
-      FileInputStream(File(project.dir, "gradle.properties")).use { input ->
-        properties.load(input)
-      }
-
-      for (propertyName in properties.stringPropertyNames()) {
-        val value = properties.getProperty(propertyName)
-        map[propertyName] = value
-      }
-    } catch (e: Exception) {
-      // ignore
-    }
-    return map
   }
 
   private fun getUpdateDependencyFix(
