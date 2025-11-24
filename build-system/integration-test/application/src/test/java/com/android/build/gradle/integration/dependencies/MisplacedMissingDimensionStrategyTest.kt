@@ -18,6 +18,7 @@ package com.android.build.gradle.integration.dependencies
 
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_LIB_PATH
+import com.google.common.truth.Truth
 import org.gradle.api.internal.tasks.TaskDependencyResolveException
 import org.gradle.tooling.BuildException
 import org.junit.Rule
@@ -62,6 +63,65 @@ class MisplacedMissingDimensionStrategyTest {
         exception.checkCause(TaskDependencyResolveException::class.java)
     }
 }
+
+/**
+ * Context: b/460094802.
+ * This test is verifying the current wrong behavior of variant attributes matching when using
+ * ProductFlavors' MissingDimensionStrategy.
+ * When there is a dimension mismatch between ":app" and ":lib", and ":app" specifies missingDimensionStrategy
+ * we end up prioritizing matching a ProductFlavor with same name as the consumer's.
+ */
+class MisplacedMissingDimensionStrategyWrongBehaviorTest {
+
+    @get:Rule
+    val rule = GradleRule.from {
+        androidApplication {
+            android {
+                    flavorDimensions += "color"
+
+                    productFlavors {
+                        create("foo") {
+                            it.dimension = "color"
+                            it.isDefault = true
+                            // This here should (in theory) fail build. Because the
+                            // missingDimensionStrategy doesn't list any of the flavors that exist
+                            // in the library, the build should fail as there is an
+                            // ambiguous match of variant in the dependency on the library.
+                            it.missingDimensionStrategy("colorLib", "wrong")
+                        }
+                        create("loo") {}
+                    }
+            }
+            dependencies {
+                implementation(project(DEFAULT_LIB_PATH))
+            }
+        }
+        androidLibrary {
+            android {
+                    flavorDimensions += "colorLib"
+
+                    productFlavors {
+                        create("foo") {
+                            it.isDefault = true
+                        }
+                        create("bar") {
+                            it.dimension = "colorLib"
+                        }
+                    }
+            }
+        }
+    }
+
+    @Test
+    fun checkCorrectError() {
+        val build = rule.build
+        //val exception = assertFailsWith(BuildException::class) {
+            build.executor.run(":app:assembleFooDebug")
+       // }
+        //exception.checkCause(TaskDependencyResolveException::class.java)
+    }
+}
+
 
 fun <T : Throwable> Exception.checkCause(causeClass: Class<T>) {
     val eName = causeClass.name
