@@ -210,7 +210,8 @@ class MinifyFeaturesTest {
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
                     <application android:label="app_name">
                         <activity android:name=".Main"
-                                  android:label="app_name">
+                                  android:label="app_name"
+                                  android:exported="true">
                             <intent-filter>
                                 <action android:name="android.intent.action.MAIN" />
                                 <category android:name="android.intent.category.LAUNCHER" />
@@ -343,7 +344,8 @@ class MinifyFeaturesTest {
 
                     <application android:label="app_name">
                         <activity android:name=".Main"
-                                  android:label="app_name">
+                                  android:label="app_name"
+                                  android:exported="true">
                             <intent-filter>
                                 <action android:name="android.intent.action.MAIN" />
                                 <category android:name="android.intent.category.LAUNCHER" />
@@ -457,7 +459,8 @@ class MinifyFeaturesTest {
 
                     <application android:label="app_name">
                         <activity android:name=".Main"
-                                  android:label="app_name">
+                                  android:label="app_name"
+                                  android:exported="true">
                             <intent-filter>
                                 <action android:name="android.intent.action.MAIN" />
                                 <category android:name="android.intent.category.LAUNCHER" />
