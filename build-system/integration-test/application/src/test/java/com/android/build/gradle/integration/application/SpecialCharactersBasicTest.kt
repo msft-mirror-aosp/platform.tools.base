@@ -38,13 +38,12 @@ class SpecialCharactersBasicTest(projectName: String) {
 
     @Test
     fun testProjectsWithSpecialCharacters() {
-        // windows won't work with the weird characters and we throw an exception already
+        // Windows won't work with the weird characters, and we throw an exception already
         AssumeUtil.assumeNotWindows()
 
         val build = rule.build
 
-        // TODO lint seems to fail so only run debug for now. b/458128469
-        build.executor.run("assembleDebug")
+        build.executor.run("assemble")
 
         val container = build.modelBuilder.ignoreSyncIssues().fetchModels().container
         val issues = container.getProject().issues!!.syncIssues
@@ -62,8 +61,11 @@ class SpecialCharactersBasicTest(projectName: String) {
         @Parameterized.Parameters
         fun projectNames(): Collection<String> {
             return listOf(
-                "1b@s %i péà`e eã~e=.;{}\$#!&^()¡²³¤€¼½¾‘’¥×βα基本осಮೂ基本どきコラપા기본आधមូលั้นਬੁਨਿਆძიমৌƏՀիመሠ",
+                "1b@s %i péà`e eã~e=.{}\$#!&^()¡²³¤€¼½¾‘’¥×βα基本осಮೂ基本どきコラપા기본आधមូលั้นਬੁਨਿਆძიমৌƏՀիመሠ",
                 "בסיסיالأساسيةיקערדיק"
+
+                /* TODO lint fails when ";" is part of the project name b/458128469
+                "test;project" */
 
                 /* Add these for individual language tests
                 "βασικός",
