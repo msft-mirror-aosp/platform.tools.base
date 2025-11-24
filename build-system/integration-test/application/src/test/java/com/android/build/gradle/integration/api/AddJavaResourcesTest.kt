@@ -28,6 +28,7 @@ class AddJavaResourcesTest {
     val project =
         GradleTestProject.builder()
             .fromTestApp(HelloWorldApp.forPlugin("com.android.application"))
+            .addGradleProperty(BooleanOption.USE_NEW_DSL, false)
             .create()
 
     /** Regression test for http://b/263469991.*/
