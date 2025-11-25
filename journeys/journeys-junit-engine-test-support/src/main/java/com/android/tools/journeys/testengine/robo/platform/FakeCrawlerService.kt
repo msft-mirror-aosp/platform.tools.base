@@ -180,11 +180,14 @@ class FakeCrawlerService(
                         )
                     }
 
+                    val crawlResult =
+                        if (actionIndex == masterCrawl.actionsList.indices.last) masterCrawl.crawlResult
+                        else Crawl.CrawlResult.UNDEFINED_CRAWL_RESULT
                     val actionPartialCrawl = Crawl.newBuilder()
                         .setCrawlIdentifier(masterCrawl.crawlIdentifier)
                         .setAppPackageId(masterCrawl.appPackageId)
                         .addActions(currentAction)
-                        .setCrawlResult(Crawl.CrawlResult.UNDEFINED_CRAWL_RESULT)
+                        .setCrawlResult(crawlResult)
                         .build()
                         .toByteString()
 
