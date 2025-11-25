@@ -6,7 +6,10 @@
     </dist:module>
 
     <application>
-        <activity android:name=".FeatureActivity" android:label="Feature Activity 2">
+        <activity
+                android:name=".FeatureActivity"
+                android:label="Feature Activity 2"
+                android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />

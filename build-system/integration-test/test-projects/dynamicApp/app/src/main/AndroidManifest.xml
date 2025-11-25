@@ -2,7 +2,10 @@
     android:versionCode="11">
 
     <application>
-        <activity android:name=".BaseActivity" android:label="Base Activity" >
+        <activity
+                android:name=".BaseActivity"
+                android:label="Base Activity"
+                android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
