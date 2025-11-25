@@ -209,22 +209,6 @@ enum class BooleanOption(
         FeatureStage.Supported
     ),
 
-/**
-     * When enabled, R8 will perform resource shrinking in a more optimal way.
-     *
-     * Note: This flag takes effect only if resource shrinking is enabled AND
-     * [R8_INTEGRATED_RESOURCE_SHRINKING] is enabled AND [USE_NON_FINAL_RES_IDS] is enabled.
-     */
-    R8_OPTIMIZED_RESOURCE_SHRINKING(
-        "android.r8.optimizedResourceShrinking",
-        true,
-        FeatureStage.Supported,
-        FutureStage(
-            true,
-            FeatureStage.Enforced(Version.VERSION_10_0),
-            Version.VERSION_10_0
-        )
-    ),
     /* -----------------
      * EXPERIMENTAL APIs
      */
@@ -704,6 +688,16 @@ enum class BooleanOption(
         FeatureStage.SoftlyEnforced(VERSION_10_0)
     ),
 
+    /**
+     * When enabled, R8 will perform resource shrinking in a more optimal way.
+     *
+     * Note: This flag takes effect only if [USE_NON_FINAL_RES_IDS] is enabled.
+     */
+    R8_OPTIMIZED_RESOURCE_SHRINKING(
+        "android.r8.optimizedResourceShrinking",
+        true,
+        FeatureStage.SoftlyEnforced(VERSION_10_0)
+    ),
 
     /* -------------------
      * DEPRECATED API
