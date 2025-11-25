@@ -151,6 +151,18 @@ class RoboResultAdapter(
      */
     private fun processActions(crawl: Crawl) {
         for (action in crawl.actionsList) {
+            if (action.details.detailsCase == ActionDetails.DetailsCase.LAUNCH_ACTION && action.executionResult == Action.ExecutionResult.ACTION_FAILED) {
+                val errorMessage = if (action.resultDetails.hasLaunchResult()) {
+                    "Failed to launch app - ${action.resultDetails.launchResult.resultType}"
+                } else {
+                    "Failed to launch app"
+                }
+                throw JourneyExecutionException(
+                    message = errorMessage,
+                    reason = JourneyFailureReason.LAUNCH_APP_FAILED
+                )
+            }
+
             // If an action has no RoboScriptDetails, we skip showing such actions.
             // This typically happens for setup actions like LAUNCH_ACTION before the first prompt.
             if (action.roboScriptDetailsList.isEmpty()) {

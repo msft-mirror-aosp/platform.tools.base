@@ -1,0 +1,82 @@
+actions: {
+    action_seq: 0
+    screen_state_id: 0
+    start_time: {
+        seconds: 1750247037
+        nanos  : 165000000
+    }
+    end_time: {
+        seconds: 1750247047
+        nanos  : 344000000
+    }
+    execution_result   : ACTION_FAILED
+    details: {
+        launch_action: {
+            app_package_name: "com.google.samples.apps.nowinandroid.demo.debug"
+            starting_intent: {
+                type  : MAIN_ACTIVITY
+            }
+        }
+    }
+    result_details: {
+        launch_result: {
+            result_type: LAUNCH_INTENT_MISSING
+            result_detail: {
+            }
+        }
+    }
+    display_state_id   : 0
+}
+actions: {
+    action_seq: 1
+    screen_state_id    : 1
+    start_time: {
+        seconds: 1750247052
+        nanos  : 405000000
+    }
+    end_time: {
+        seconds: 1750247058
+        nanos  : 848000000
+    }
+    execution_result   : ACTION_SUCCESS
+    details: {
+        terminate_crawl_action: {
+        }
+    }
+    display_state_id   : 1
+}
+display_states: {
+    screenshot: "\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\n\x00\x00\x00\n\x08\x02\x00\x00\x00\x02PX\xea\x00\x00\x00\x14IDATx\x9ccd`\xf8\xcf\x80\x1b0\xe1\x91\x1b\xc1\xd2\x00?.\x01\x13\\`\xf1\x97\x00\x00\x00\x00IEND\xaeB`\x82"
+    display_state_id : 0
+    start_time: {
+        seconds: 1750247034
+        nanos  : 747000000
+    }
+    end_time: {
+        seconds: 1750247037
+        nanos  : 165000000
+    }
+    width   : 1080
+    height  : 2400
+}
+display_states: {
+    screenshot: "\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\n\x00\x00\x00\n\x08\x02\x00\x00\x00\x02PX\xea\x00\x00\x00\x14IDATx\x9ccd`\xf8\xcf\x80\x1b0\xe1\x91\x1b\xc1\xd2\x00?.\x01\x13\\`\xf1\x97\x00\x00\x00\x00IEND\xaeB`\x82"
+    display_state_id : 1
+    start_time: {
+        seconds: 1750247052
+        nanos  : 40000000
+    }
+    end_time: {
+        seconds: 1750247052
+        nanos  : 405000000
+    }
+    width   : 1080
+    height  : 2400
+}
+crawl_identifier  : "success-robo-result-id"
+app_package_id    : "com.google.samples.apps.nowinandroid.demo.debug"
+crawl_result      : COMPLETED
+enabled_modes     : [ EVO ]
+num_actions       : 2
+num_screen_states : 2
+num_display_states: 2
