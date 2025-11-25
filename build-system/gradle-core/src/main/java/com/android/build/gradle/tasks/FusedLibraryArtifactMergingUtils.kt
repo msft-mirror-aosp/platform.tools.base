@@ -23,6 +23,7 @@ import com.android.build.gradle.internal.tasks.AarMetadataTask.Companion.DEFAULT
 import com.android.build.gradle.internal.tasks.AarMetadataTask.Companion.DEFAULT_MIN_COMPILE_SDK_VERSION
 import com.android.build.gradle.internal.tasks.writeAarMetadataFile
 import com.android.ide.common.repository.AgpVersion
+import com.android.utils.associateWithNotNull
 import java.io.File
 import kotlin.math.max
 
@@ -74,6 +75,13 @@ internal fun writeMergedMetadata(
 
         mergedMetadata.coreLibraryDesugaringEnabled = mergedMetadata.coreLibraryDesugaringEnabled.or(
             metadataFile.coreLibraryDesugaringEnabled?.toBooleanStrictOrNull() ?: mergedMetadata.coreLibraryDesugaringEnabled)
+        mergedMetadata.desugarJdkLib =
+            findLatestMavenVersion(
+                listOfNotNull(
+                    mergedMetadata.desugarJdkLib,
+                    metadataFile.desugarJdkLibId
+                )
+            )
     }
 
     overrideMinAgp?.let {
@@ -93,7 +101,38 @@ internal fun writeMergedMetadata(
         mergedMetadata.minCompileSdkExtension,
         mergedMetadata.minAgpVersion,
         mergedMetadata.forceCompileSdkPreview,
-         mergedMetadata.coreLibraryDesugaringEnabled,
+        mergedMetadata.coreLibraryDesugaringEnabled,
         mergedMetadata.desugarJdkLib
     )
+}
+
+private fun findLatestMavenVersion(mavenCoordinates: List<String>): String? {
+    if (mavenCoordinates.isEmpty()) return null
+    return mavenCoordinates
+        .maxOf {  ComparableMavenCoordinate(it) }
+        .coordinate
+}
+
+private data class ComparableMavenCoordinate(val coordinate: String) : Comparable<ComparableMavenCoordinate> {
+
+    override fun compareTo(other: ComparableMavenCoordinate): Int {
+        val thisVersionParts = extractVersionParts(getVersion(coordinate) ?: "")
+        val otherVersionParts = extractVersionParts(getVersion(other.coordinate) ?: "")
+        val maxLen = maxOf(thisVersionParts.size, otherVersionParts.size)
+
+        for (i in 0 until maxLen) {
+            val thisVersionPart = thisVersionParts.getOrNull(i) ?: 0
+            val otherVersionPart = otherVersionParts.getOrNull(i) ?: 0
+            if (thisVersionPart != otherVersionPart) {
+                return thisVersionPart.compareTo(otherVersionPart)
+            }
+        }
+        return 0
+    }
+
+    private fun getVersion(mavenCoordinate: String): String? =
+        mavenCoordinate.split(":").getOrNull(2)
+    private fun extractVersionParts(mavenVersion: String): List<Int> =
+        mavenVersion.split(':', '-')
+            .mapNotNull { it.toIntOrNull() }
 }

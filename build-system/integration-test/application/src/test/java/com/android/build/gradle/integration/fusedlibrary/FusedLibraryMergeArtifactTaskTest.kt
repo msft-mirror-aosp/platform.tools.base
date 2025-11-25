@@ -18,6 +18,7 @@ package com.android.build.gradle.integration.fusedlibrary
 
 import com.android.build.gradle.integration.common.fixture.DESUGAR_DEPENDENCY_VERSION
 import com.android.SdkConstants.FN_PROGUARD_TXT
+import com.android.build.gradle.integration.common.fixture.DESUGAR_NIO_DEPENDENCY_VERSION
 import com.android.build.gradle.integration.common.fixture.project.AarSelector
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.JavaLibraryProjectDefinition
@@ -379,7 +380,8 @@ internal class FusedLibraryMergeArtifactsTest {
                 // Value from androidLib1
                 coreLibraryDesugaringEnabled().isEqualTo("true")
                 // desugarJdkLib is not yet used by consumption
-                desugarJdkLibId().isEqualTo(null)
+                desugarJdkLibId()
+                    .isEqualTo("com.android.tools:desugar_jdk_libs:$DESUGAR_DEPENDENCY_VERSION")
             }
         }
 
@@ -387,6 +389,19 @@ internal class FusedLibraryMergeArtifactsTest {
             androidFusedLibrary {
                 aarMetadata.minAgpVersion = "8.4-alpha02"
                 aarMetadata.minCompileSdk = 9
+            }
+        }
+        build.androidLibrary(":androidLib2").reconfigure {
+            android {
+                defaultConfig {
+                    multiDexEnabled = true
+                }
+                compileOptions {
+                    isCoreLibraryDesugaringEnabled = true
+                }
+            }
+            dependencies {
+                coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:$DESUGAR_NIO_DEPENDENCY_VERSION")
             }
         }
         build.executor.run(":fusedLib1:assemble")
@@ -403,6 +418,11 @@ internal class FusedLibraryMergeArtifactsTest {
                 minCompileSdk().isEqualTo("9")
                 // Default value
                 minCompileSdkExtension().isEqualTo("0")
+
+                // Value from androidLib1
+                coreLibraryDesugaringEnabled().isEqualTo("true")
+                // desugarJdkLib is not yet used by consumption
+                desugarJdkLibId().isEqualTo("com.android.tools:desugar_jdk_libs:$DESUGAR_NIO_DEPENDENCY_VERSION")
             }
         }
     }
