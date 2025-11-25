@@ -181,7 +181,7 @@ abstract class LibraryExtension @Inject constructor(
      * The following sample iterates through all `libraryVariants` elements to
      * [inject a build variable into the manifest](https://developer.android.com/studio/build/manifest-build-variables.html):
      *
-     * ```
+     * ```groovy
      * android.libraryVariants.all { variant ->
      *     def mergedFlavor = variant.getMergedFlavor()
      *     // Defines the value of a build variable you can use in the manifest.
