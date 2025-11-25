@@ -44,7 +44,7 @@ class $activityClass : ComponentActivity() {
         super.onCreate(savedInstanceState)
         audioInterface = AudioInterface(
             this,
-            getString(R.string.hello_android_xr_ai_glasses))
+            getString(R.string.hello_ai_glasses))
         lifecycle.addObserver(audioInterface)
         setContent {
             GlimmerTheme {
@@ -82,7 +82,7 @@ fun HomeScreen(modifier: Modifier = Modifier, onClose: () -> Unit ) {
                 }
             }
         ) {
-            Text(stringResource(id = R.string.hello_android_xr_ai_glasses))
+            Text(stringResource(id = R.string.hello_ai_glasses))
         }
     }
 }
