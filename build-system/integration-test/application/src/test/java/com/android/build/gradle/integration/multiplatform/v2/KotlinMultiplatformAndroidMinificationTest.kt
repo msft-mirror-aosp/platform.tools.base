@@ -131,6 +131,7 @@ class KotlinMultiplatformAndroidMinificationTest {
             project.getSubproject("app").file("proguard-rules.pro"),
             """
                 -keep public class com.example.app.AndroidApp { *; }
+                -processkotlinnullchecks keep
             """.trimIndent()
         )
 
