@@ -4,7 +4,8 @@
     <application >
         <activity
             android:name=".flavor2.MainActivity"
-            android:label="@string/lib_name" >
+            android:label="@string/lib_name"
+	    android:exported="true" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />

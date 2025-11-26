@@ -10,19 +10,19 @@ android {
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
 
-    defaultPublishConfig "flavor1Release"
-    publishNonDefault = true
-
     flavorDimensions 'foo'
     productFlavors {
         flavor1 { }
         flavor2 { }
     }
-
-    libraryVariants.all { variant ->
-        assert variant.productFlavors.size() != 0
-    }
 }
+
+androidComponents {
+    beforeVariants(selector().all(), { variant ->
+        assert variant.productFlavors.size() != 0
+    })
+}
+
 
 dependencies {
     testImplementation 'junit:junit:4.12'
