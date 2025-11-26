@@ -478,7 +478,7 @@ class ProcessTestManifestTest {
     }
 
     @Test
-    fun testLibraryUnitTestManifestDefaultsToCompileSdkValueIfTargetSdkIsUnset() {
+    fun testUnitTestManifestTargetSdkDefaultsToCompileSdk() {
         project.buildFile.appendText("""
             android {
                 testBuildType = "release"
@@ -490,20 +490,21 @@ class ProcessTestManifestTest {
                 }
             }
         """.trimIndent())
-
-        val result = project.executor().run("processReleaseUnitTestManifest")
-        assertTrue { result.failedTasks.isEmpty()}
         val manifestFile = project.file("build/intermediates/packaged_manifests/releaseUnitTest/processReleaseUnitTestManifest/AndroidManifest.xml")
-        assertThat(manifestFile).exists()
-        assertThat(manifestFile).contains("android:targetSdkVersion=\"14\"")
 
-        val result2 = project.executor()
+        val result = project.executor()
             .with(BooleanOption.DEFAULT_TARGET_SDK_TO_COMPILE_SDK_IF_UNSET, true)
             .run("processReleaseUnitTestManifest")
-        assertTrue { result2.failedTasks.isEmpty()}
-        val manifestFile2 = project.file("build/intermediates/packaged_manifests/releaseUnitTest/processReleaseUnitTestManifest/AndroidManifest.xml")
-        assertThat(manifestFile2).exists()
-        assertThat(manifestFile2).contains("android:targetSdkVersion=\"36\"")
+        assertTrue { result.failedTasks.isEmpty()}
+        assertThat(manifestFile).exists()
+        assertThat(manifestFile).contains("android:targetSdkVersion=\"36\"")
+
+        val resultWithLegacyTargetSdkDefault = project.executor()
+            .with(BooleanOption.DEFAULT_TARGET_SDK_TO_COMPILE_SDK_IF_UNSET, false)
+            .run("processReleaseUnitTestManifest")
+        assertTrue { resultWithLegacyTargetSdkDefault.failedTasks.isEmpty()}
+        assertThat(manifestFile).exists()
+        assertThat(manifestFile).contains("android:targetSdkVersion=\"14\"")
     }
 
     @Test
@@ -523,24 +524,25 @@ class ProcessTestManifestTest {
                 }
             }
         """.trimIndent())
-
-        val result = project.executor().run("processReleaseUnitTestManifest")
-        assertTrue { result.failedTasks.isEmpty()}
         val manifestFile = project.file("build/intermediates/packaged_manifests/releaseUnitTest/processReleaseUnitTestManifest/AndroidManifest.xml")
-        assertThat(manifestFile).exists()
-        assertThat(manifestFile).contains("android:targetSdkVersion=\"14\"")
 
         val result2 = project.executor()
             .with(BooleanOption.DEFAULT_TARGET_SDK_TO_COMPILE_SDK_IF_UNSET, true)
             .run("processReleaseUnitTestManifest")
         assertTrue { result2.failedTasks.isEmpty()}
-        val manifestFile2 = project.file("build/intermediates/packaged_manifests/releaseUnitTest/processReleaseUnitTestManifest/AndroidManifest.xml")
-        assertThat(manifestFile2).exists()
-        assertThat(manifestFile2).contains("android:targetSdkVersion=\"36\"")
+        assertThat(manifestFile).exists()
+        assertThat(manifestFile).contains("android:targetSdkVersion=\"36\"")
+
+        val resultWithLegacyTargetSdkDefault = project.executor()
+            .with(BooleanOption.DEFAULT_TARGET_SDK_TO_COMPILE_SDK_IF_UNSET, false)
+            .run("processReleaseUnitTestManifest")
+        assertTrue { resultWithLegacyTargetSdkDefault.failedTasks.isEmpty()}
+        assertThat(manifestFile).exists()
+        assertThat(manifestFile).contains("android:targetSdkVersion=\"14\"")
     }
 
     @Test
-    fun testLibraryUnitTestManifestDefaultsToCompileSdkPreviewValueIfTargetSdkIsUnset() {
+    fun testUnitTestManifestTargetSdkDefaultsToCompileSdkPreview() {
         project.buildFile.appendText("""
             android {
                 testBuildType = "release"
@@ -552,20 +554,21 @@ class ProcessTestManifestTest {
                 }
             }
         """.trimIndent())
-
-        val result = project.executor().run("processReleaseUnitTestManifest")
-        assertTrue { result.failedTasks.isEmpty()}
         val manifestFile = project.file("build/intermediates/packaged_manifests/releaseUnitTest/processReleaseUnitTestManifest/AndroidManifest.xml")
-        assertThat(manifestFile).exists()
-        assertThat(manifestFile).contains("android:targetSdkVersion=\"14\"")
 
-        val result2 = project.executor()
+        val result = project.executor()
             .with(BooleanOption.DEFAULT_TARGET_SDK_TO_COMPILE_SDK_IF_UNSET, true)
             .run("processReleaseUnitTestManifest")
-        assertTrue { result2.failedTasks.isEmpty()}
-        val manifestFile2 = project.file("build/intermediates/packaged_manifests/releaseUnitTest/processReleaseUnitTestManifest/AndroidManifest.xml")
-        assertThat(manifestFile2).exists()
-        assertThat(manifestFile2).contains("android:targetSdkVersion=\"Baklava\"")
+        assertTrue { result.failedTasks.isEmpty()}
+        assertThat(manifestFile).exists()
+        assertThat(manifestFile).contains("android:targetSdkVersion=\"Baklava\"")
+
+        val resultWithLegacyTargetSdkDefault = project.executor()
+            .with(BooleanOption.DEFAULT_TARGET_SDK_TO_COMPILE_SDK_IF_UNSET, false)
+            .run("processReleaseUnitTestManifest")
+        assertTrue { resultWithLegacyTargetSdkDefault.failedTasks.isEmpty()}
+        assertThat(manifestFile).exists()
+        assertThat(manifestFile).contains("android:targetSdkVersion=\"14\"")
     }
 
     /**
