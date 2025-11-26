@@ -22,8 +22,8 @@ import com.android.build.gradle.internal.tasks.AarMetadataTask.Companion.DEFAULT
 import com.android.build.gradle.internal.tasks.AarMetadataTask.Companion.DEFAULT_MIN_COMPILE_SDK_EXTENSION
 import com.android.build.gradle.internal.tasks.AarMetadataTask.Companion.DEFAULT_MIN_COMPILE_SDK_VERSION
 import com.android.build.gradle.internal.tasks.writeAarMetadataFile
+import com.android.build.gradle.internal.utils.parseDesugarJdkVariant
 import com.android.ide.common.repository.AgpVersion
-import com.android.utils.associateWithNotNull
 import java.io.File
 import kotlin.math.max
 
@@ -75,14 +75,12 @@ internal fun writeMergedMetadata(
 
         mergedMetadata.coreLibraryDesugaringEnabled = mergedMetadata.coreLibraryDesugaringEnabled.or(
             metadataFile.coreLibraryDesugaringEnabled?.toBooleanStrictOrNull() ?: mergedMetadata.coreLibraryDesugaringEnabled)
-        mergedMetadata.desugarJdkLib =
-            findLatestMavenVersion(
-                listOfNotNull(
-                    mergedMetadata.desugarJdkLib,
-                    metadataFile.desugarJdkLibId
-                )
-            )
     }
+
+    mergedMetadata.desugarJdkLib =
+        buildDesugaredJdkLibCoordinate(
+            parsedAarsMetadata.mapNotNull { it.desugarJdkLibId }
+        )
 
     overrideMinAgp?.let {
         mergedMetadata.minAgpVersion = it
@@ -106,11 +104,39 @@ internal fun writeMergedMetadata(
     )
 }
 
-private fun findLatestMavenVersion(mavenCoordinates: List<String>): String? {
+/**
+ * Builds a coordinate for the desugared jdk lib from a list of maven coordinates.
+ *
+ * Based on https://issuetracker.google.com/203113147#comment20, the coordinate with the highest
+ * priority is chosen. The priority is determined
+ */
+internal fun buildDesugaredJdkLibCoordinate(mavenCoordinates: List<String>): String? {
     if (mavenCoordinates.isEmpty()) return null
-    return mavenCoordinates
-        .maxOf {  ComparableMavenCoordinate(it) }
+    var preferredArtifactId: String? = null
+    val latestArtifact = mavenCoordinates
+        .onEach {
+            val (_, artifactId, _) = it.split(':')
+            if (preferredArtifactId == null) {
+                preferredArtifactId = artifactId
+            } else if (parseDesugarJdkVariant(artifactId).priority >
+                parseDesugarJdkVariant(preferredArtifactId).priority
+            ) {
+                preferredArtifactId = artifactId
+            }
+        }
+        .maxOf { ComparableMavenCoordinate(it) }
         .coordinate
+
+    return if (preferredArtifactId != null) {
+        val splitLatestArtifact = latestArtifact.split(':')
+        if (splitLatestArtifact.size == 3) {
+            "${splitLatestArtifact[0]}:$preferredArtifactId:${splitLatestArtifact[2]}"
+        } else {
+            null
+        }
+    } else {
+        latestArtifact
+    }
 }
 
 private data class ComparableMavenCoordinate(val coordinate: String) : Comparable<ComparableMavenCoordinate> {
@@ -133,6 +159,6 @@ private data class ComparableMavenCoordinate(val coordinate: String) : Comparabl
     private fun getVersion(mavenCoordinate: String): String? =
         mavenCoordinate.split(":").getOrNull(2)
     private fun extractVersionParts(mavenVersion: String): List<Int> =
-        mavenVersion.split(':', '-')
+        mavenVersion.split('.', '-')
             .mapNotNull { it.toIntOrNull() }
 }

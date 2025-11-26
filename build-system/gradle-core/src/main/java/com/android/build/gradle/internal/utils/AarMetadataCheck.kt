@@ -16,7 +16,6 @@
 
 package com.android.build.gradle.internal.utils
 
-import com.android.build.gradle.internal.tasks.CheckAarMetadataWorkAction
 import com.android.repository.Revision
 
 /**
@@ -32,7 +31,7 @@ fun checkDesugarJdkVariant(
 ) {
     val parsedVariantFromAar = parseDesugarJdkVariant(variantFromAar)
     val parsedVariantFromConsumer = parseDesugarJdkVariant(variantFromConsumer)
-    if (parsedVariantFromAar.size > parsedVariantFromConsumer.size) {
+    if (parsedVariantFromAar.priority > parsedVariantFromConsumer.priority) {
         errorMessages.add(
             """
                         Dependency '$dependency' requires desugar_jdk_libs flavor to be at least
@@ -66,17 +65,3 @@ fun checkDesugarJdkVersion(
         )
     }
 }
-
-private fun parseDesugarJdkVariant(variant: String): CheckAarMetadataWorkAction.DesugarJdkVariant {
-    return when(variant) {
-        DESUGAR_JDK_LIBS_MINIMAL -> CheckAarMetadataWorkAction.DesugarJdkVariant.MINIMAL
-        DESUGAR_JDK_LIBS -> CheckAarMetadataWorkAction.DesugarJdkVariant.BASIC
-        DESUGAR_JDK_LIBS_NIO -> CheckAarMetadataWorkAction.DesugarJdkVariant.NIO
-        else -> throw RuntimeException("Failed to parse desugar_jdk_libs variant from" +
-                " desugarJdkLib property of AAR metadata: unknown variant")
-    }
-}
-
-const val DESUGAR_JDK_LIBS_MINIMAL = "desugar_jdk_libs_minimal"
-const val DESUGAR_JDK_LIBS = "desugar_jdk_libs"
-const val DESUGAR_JDK_LIBS_NIO = "desugar_jdk_libs_nio"

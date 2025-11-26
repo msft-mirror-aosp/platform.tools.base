@@ -401,7 +401,7 @@ internal class FusedLibraryMergeArtifactsTest {
                 }
             }
             dependencies {
-                coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:$DESUGAR_NIO_DEPENDENCY_VERSION")
+                coreLibraryDesugaring("com.android.tools:desugar_jdk_libs_nio:$DESUGAR_NIO_DEPENDENCY_VERSION")
             }
         }
         build.executor.run(":fusedLib1:assemble")
@@ -422,7 +422,7 @@ internal class FusedLibraryMergeArtifactsTest {
                 // Value from androidLib1
                 coreLibraryDesugaringEnabled().isEqualTo("true")
                 // desugarJdkLib is not yet used by consumption
-                desugarJdkLibId().isEqualTo("com.android.tools:desugar_jdk_libs:$DESUGAR_NIO_DEPENDENCY_VERSION")
+                desugarJdkLibId().isEqualTo("com.android.tools:desugar_jdk_libs_nio:$DESUGAR_NIO_DEPENDENCY_VERSION")
             }
         }
     }
