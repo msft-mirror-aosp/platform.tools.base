@@ -76,7 +76,6 @@ TEST_DATA = [
     "//tools/base/build-system/integration-test:test-projects/api",
     "//tools/base/build-system/integration-test:test-projects/apiBinaryCompatibility",
     "//tools/base/build-system/integration-test:test-projects/applibtest",
-    "//tools/base/build-system/integration-test:test-projects/applicationIdInLibsTest",
     "//tools/base/build-system/integration-test:test-projects/artifactApi",
     "//tools/base/build-system/integration-test:test-projects/asmTransformApi",
     "//tools/base/build-system/integration-test:test-projects/assets",

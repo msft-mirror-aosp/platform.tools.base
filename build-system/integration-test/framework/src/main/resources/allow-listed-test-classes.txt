@@ -40,7 +40,6 @@ com.android.build.gradle.integration.application.AndroidManifestInTestTest
 com.android.build.gradle.integration.application.AndroidTestResourcesTest
 com.android.build.gradle.integration.application.AnnotationProcessorTest
 com.android.build.gradle.integration.application.AppAndLibNoBuildConfigTest
-com.android.build.gradle.integration.application.ApplicationIdInLibsTest
 com.android.build.gradle.integration.application.ApplicationIdReset
 com.android.build.gradle.integration.application.ApplicationIdTest
 com.android.build.gradle.integration.application.AppMetadataTaskTest
