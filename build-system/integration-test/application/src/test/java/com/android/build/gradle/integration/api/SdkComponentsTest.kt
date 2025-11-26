@@ -27,7 +27,6 @@ class SdkComponentsTest {
     val project =
         GradleTestProject.builder()
             .fromTestApp(HelloWorldAppKts.forPlugin("com.android.application"))
-            .disableBuiltInKotlin()
             .create()
 
     /**
