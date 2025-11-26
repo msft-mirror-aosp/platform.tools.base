@@ -536,7 +536,6 @@ com.android.build.gradle.integration.nativebuild.NdkBuildTargetsTest
 com.android.build.gradle.integration.nativebuild.NdkBuildTest
 com.android.build.gradle.integration.nativebuild.NdkBuildVariantApiTest
 com.android.build.gradle.integration.nativebuild.NdkRiscvBuildTest
-com.android.build.gradle.integration.nativebuild.Pre21SplitTest
 com.android.build.gradle.integration.nativebuild.RenderscriptNdkTest
 com.android.build.gradle.integration.nativebuild.RsEnabledAnnotationTest
 com.android.build.gradle.integration.nativebuild.RsSupportModeTest

@@ -306,15 +306,6 @@ single_gradle_integration_test(
 )
 
 single_gradle_integration_test(
-    name = "Pre21SplitTest",
-    srcs = "src/test/java/com/android/build/gradle/integration/nativebuild/",
-    data = DATA + NDK,
-    maven_repo_zips = MAVEN_REPO_ZIPS,
-    maven_repos = MAVEN_REPOS,
-    deps = DEPS,
-)
-
-single_gradle_integration_test(
     name = "PrefabTest",
     srcs = "src/test/java/com/android/build/gradle/integration/ndk/",
     data = DATA + CMAKE + NDK + [
