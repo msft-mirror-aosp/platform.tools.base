@@ -18,6 +18,7 @@ package com.android.build.gradle.integration.application
 
 import com.android.SdkConstants
 import com.android.build.gradle.integration.common.fixture.DEFAULT_COMPILE_SDK_VERSION
+import com.android.build.gradle.integration.common.fixture.DEFAULT_MIN_SDK_VERSION
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.GradleTestProject.Companion.builder
 import com.android.build.gradle.integration.common.fixture.app.MinimalSubProject
@@ -551,7 +552,8 @@ class LocaleConfigGenerationTest {
             androidResources().containsExactly(
                 "xml/user_locale_config.xml",
                 "xml/$LOCALE_CONFIG_FILE_NAME.xml",
-                "xml-v22/$LOCALE_CONFIG_FILE_NAME.xml"
+                "xml-v22/$LOCALE_CONFIG_FILE_NAME.xml",
+                "xml-v35/$LOCALE_CONFIG_FILE_NAME.xml"
             )
         }
     }
@@ -723,6 +725,50 @@ class LocaleConfigGenerationTest {
         }
         project.execute("assembleDebug")
         Truth.assertThat(localeConfig.readText()).doesNotContain("android:defaultLocale")
+
+        // The default locale is problematic on API 35 causing application language changes after a
+        // UI refresh and should not be present in the API 35 specific locale config.
+        val localeConfigV35 = project.getSubproject("app").file(
+            "$localeConfigPath/debug/xml-v35/$LOCALE_CONFIG_FILE_NAME.xml"
+        )
+
+        listOf("app", "lib1", "lib2").forEach {
+            TestFileUtils.searchAndReplace(
+                project.getSubproject(it).buildFile,
+                "compileSdkVersion 34",
+                "compileSdkVersion 35"
+            )
+        }
+
+        project.execute("assembleDebug")
+        Truth.assertThat(localeConfigV35.readText()).doesNotContain("android:defaultLocale")
+    }
+
+    @Test
+    fun `Test API 35 specific locale config is only included when necessary`() {
+        buildDsl(generateLocaleConfig = true)
+        project.withLocales(
+            appLocales = listOf(DEFAULT),
+            lib1Locales = listOf(),
+            lib2Locales = listOf())
+
+        val localeConfigV35 = project.getSubproject("app").file(
+            "$localeConfigPath/debug/xml-v35/$LOCALE_CONFIG_FILE_NAME.xml"
+        )
+
+        project.execute("assembleDebug")
+        PathSubject.assertThat(localeConfigV35).exists()
+
+        // The API 35 platform workaround is not required when the minSdkVersion is 36 or higher,
+        // as the app will not run on API 35 devices.
+        TestFileUtils.searchAndReplace(
+            project.getSubproject("app").buildFile,
+            "minSdkVersion ${DEFAULT_MIN_SDK_VERSION}",
+            "minSdkVersion 36"
+        )
+
+        project.execute("assembleDebug")
+        PathSubject.assertThat(localeConfigV35).doesNotExist()
     }
 
     @Test

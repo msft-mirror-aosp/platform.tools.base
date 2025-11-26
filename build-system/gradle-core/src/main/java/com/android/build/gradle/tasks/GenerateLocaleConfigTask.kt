@@ -126,6 +126,10 @@ abstract class GenerateLocaleConfigTask : NonIncrementalTask() {
     abstract val compileSdk: Property<Int>
 
     @get:Input
+    @get:Optional
+    abstract val minSdk: Property<Int>
+
+    @get:Input
     abstract val pseudoLocalesEnabled: Property<Boolean>
 
     // These properties are only used with res configs as well, but they cannot be optional because
@@ -154,6 +158,7 @@ abstract class GenerateLocaleConfigTask : NonIncrementalTask() {
             it.tempProjectDir.set(tempProjectDir)
             it.androidJarInput.set(androidJarInput)
             it.compileSdk.set(compileSdk)
+            it.minSdk.set(minSdk)
             it.pseudoLocalesEnabled.set(pseudoLocalesEnabled)
         }
     }
@@ -172,6 +177,7 @@ abstract class GenerateLocaleConfigTask : NonIncrementalTask() {
         abstract val tempProjectDir: DirectoryProperty
         abstract val androidJarInput: Property<AndroidJarInput>
         abstract val compileSdk: Property<Int>
+        abstract val minSdk: Property<Int>
         abstract val pseudoLocalesEnabled: Property<Boolean>
     }
 
@@ -232,8 +238,20 @@ abstract class GenerateLocaleConfigTask : NonIncrementalTask() {
 
             // Starting with API 35, add the default locale in the config
             val compileSdk = parameters.compileSdk.orNull
+            val minSdk = parameters.minSdk.orNull
             if (compileSdk != null && compileSdk >= 35) {
                 writeLocaleConfig(output = localeConfigFile, finalLocales, appLocales.defaultLocale)
+
+                if (minSdk <= 35) {
+                    // The default locale is problematic on API 35, causing application language changes
+                    // after a UI refresh. To work around this, we generate an API level 35 specific
+                    // locale config without the default locale.
+                    val xmlV35Folder = File(localeConfigFolder, "xml-v35")
+                    val localeConfigV35 = File(xmlV35Folder, "$LOCALE_CONFIG_FILE_NAME.xml")
+                    localeConfigV35.parentFile.mkdirs()
+
+                    writeLocaleConfig(output = localeConfigV35, finalLocales)
+                }
             } else {
                 writeLocaleConfig(output = localeConfigFile, finalLocales)
             }
@@ -372,6 +390,10 @@ abstract class GenerateLocaleConfigTask : NonIncrementalTask() {
 
             task.compileSdk.setDisallowChanges(
                 parseTargetHash(creationConfig.global.compileSdkHashString).apiLevel
+            )
+
+            task.minSdk.setDisallowChanges(
+                creationConfig.minSdk.apiLevel
             )
 
             val applicationAndroidResources =
