@@ -77,6 +77,8 @@ class CMakeBuildSettingsTest(
                     ndkVersion = "${GradleTestProject.DEFAULT_NDK_SIDE_BY_SIDE_VERSION}"
                     defaultConfig {
                       minSdk = ${GradleTestProject.DEFAULT_MIN_SDK_VERSION}
+                      //noinspection ExpiredTargetSdkVersion
+                      targetSdk = ${GradleTestProject.DEFAULT_MIN_SDK_VERSION}
                       externalNativeBuild {
                           cmake {
                             abiFilters.addAll("armeabi-v7a", "x86_64");

@@ -112,6 +112,10 @@ public class NdkBuildAndroidMkLibraryTest {
                         + "                minSdk = "
                         + GradleTestProject.DEFAULT_MIN_SDK_VERSION
                         + "\n"
+                        + "                //noinspection ExpiredTargetSdkVersion\n"
+                        + "                targetSdk = "
+                        + GradleTestProject.DEFAULT_MIN_SDK_VERSION
+                        + "\n"
                         + "                externalNativeBuild {\n"
                         + "                    ndkBuild {\n"
                         + "                        abiFilters.addAll(\"armeabi-v7a\", \"x86\")\n"

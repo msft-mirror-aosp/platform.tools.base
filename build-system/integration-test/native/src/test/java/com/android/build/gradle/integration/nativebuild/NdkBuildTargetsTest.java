@@ -79,6 +79,10 @@ public class NdkBuildTargetsTest {
                         + "      minSdk = "
                         + GradleTestProject.DEFAULT_MIN_SDK_VERSION
                         + "\n"
+                        + "      //noinspection ExpiredTargetSdkVersion\n"
+                        + "      targetSdk = "
+                        + GradleTestProject.DEFAULT_MIN_SDK_VERSION
+                        + "\n"
                         + "      externalNativeBuild {\n"
                         + "        ndkBuild {\n"
                         + "          arguments.addAll(\"NDK_TOOLCHAIN_VERSION:=clang\")\n"

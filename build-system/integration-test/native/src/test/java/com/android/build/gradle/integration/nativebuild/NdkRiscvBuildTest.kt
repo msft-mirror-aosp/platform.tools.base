@@ -50,6 +50,8 @@ class NdkRiscvBuildTest {
                     buildToolsVersion '${GradleTestProject.DEFAULT_BUILD_TOOL_VERSION}'
                     defaultConfig {
                         minSdk = 21
+                        //noinspection ExpiredTargetSdkVersion
+                        targetSdk 21
                         ndk {
                             abiFilters 'x86', 'riscv64'
                         }
