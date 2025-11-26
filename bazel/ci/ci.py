@@ -7,6 +7,9 @@ import pathlib
 import platform
 import subprocess
 import sys
+from typing import Callable, List
+import uuid
+
 from tools.base.bazel.ci import bazel
 from tools.base.bazel.ci import errors
 from tools.base.bazel.ci import query_checks
@@ -14,8 +17,11 @@ from tools.base.bazel.ci import owners_checks
 from tools.base.bazel.ci import studio_linux
 from tools.base.bazel.ci import studio_mac
 from tools.base.bazel.ci import studio_win
-from typing import Callable, List
-import uuid
+
+_ARCH_ALIAS = {
+    'amd64': 'x86_64',
+    'aarch64': 'arm64',
+}
 
 
 class CI:
@@ -98,6 +104,21 @@ def studio_build_checks(ci: CI):
       f.write(str(e))
 
 
+def _get_bazel_path() -> str:
+  host_os = platform.system().lower()
+  host_arch = platform.machine().lower()
+  host_arch = _ARCH_ALIAS.get(host_arch, host_arch)
+  bazel_path = os.path.join(
+      find_workspace(),
+      'prebuilts',
+      'tools',
+      f'{host_os}-{host_arch}',
+      'bazel',
+      'bazelisk.exe' if host_os == 'windows' else 'bazelisk',
+  )
+  return bazel_path
+
+
 def main():
   """Runs the CI target command.
 
@@ -108,9 +129,7 @@ def main():
   parser.add_argument('target', help='The name of the CI target')
   args = parser.parse_args()
 
-  bazel_name = 'bazel.cmd' if platform.system() == 'Windows' else 'bazel'
-  bazel_path = os.path.join(find_workspace(), f'tools/base/bazel/{bazel_name}')
-  build_env = bazel.make_build_env(bazel_path=bazel_path)
+  build_env = bazel.make_build_env(bazel_path=_get_bazel_path())
   ci = CI(build_env=build_env)
 
   if build_env.dist_dir:
@@ -120,7 +139,7 @@ def main():
         filename=os.path.join(logs_dir, 'ci.log'),
         format='%(asctime)s %(levelname)s:%(message)s',
         level=logging.INFO,
-      )
+    )
   else:
     logging.basicConfig(level=logging.INFO)
 

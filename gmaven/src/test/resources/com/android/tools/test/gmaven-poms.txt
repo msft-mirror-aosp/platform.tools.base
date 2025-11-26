@@ -821,7 +821,6 @@ com.android.tools.utp:android-device-provider-ddmlib
     com.android.tools.ddms:ddmlib (runtime)
     com.google.protobuf:protobuf-java (runtime)
     com.android.tools.utp:android-device-provider-ddmlib-proto (runtime)
-    com.android.tools.utp:android-device-provider-profile (runtime)
     org.jetbrains.kotlin:kotlin-stdlib (runtime)
     org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm (runtime)
     com.google.testing.platform:core-proto (runtime)
@@ -830,21 +829,6 @@ com.android.tools.utp:android-device-provider-ddmlib
 com.android.tools.utp:android-device-provider-ddmlib-proto
   pomName=com.android.tools.utp.android-device-provider-ddmlib-proto
   description=A protobuf messages used in a UTP plugin to provide Android device using ddmlib
-  dependencies:
-    com.google.protobuf:protobuf-java (runtime)
-
-com.android.tools.utp:android-device-provider-profile
-  pomName=com.android.tools.utp.android-device-provider-profile
-  description=Library providing UTP plugins to talk to AGP
-  dependencies:
-    org.jetbrains.kotlin:kotlin-stdlib (compile)
-    com.android.tools:common (runtime)
-    com.google.protobuf:protobuf-java (runtime)
-    com.android.tools.utp:android-device-provider-profile-proto (runtime)
-
-com.android.tools.utp:android-device-provider-profile-proto
-  pomName=com.android.tools.utp.android-device-provider-profile-proto
-  description=A protobuf messages used by device providers to give detailed profiling messages
   dependencies:
     com.google.protobuf:protobuf-java (runtime)
 
@@ -1007,7 +991,6 @@ com.android.tools.utp:gradle-work-action
     commons-io:commons-io (runtime)
     com.google.testing.platform:core-proto (runtime)
     com.android.tools.utp:android-device-provider-ddmlib-proto (runtime)
-    com.android.tools.utp:android-device-provider-profile-proto (runtime)
     com.android.tools.utp:android-test-plugin-host-additional-test-output-proto (runtime)
     com.android.tools.utp:android-test-plugin-host-apk-installer-proto (runtime)
     com.android.tools.utp:android-test-plugin-host-coverage-proto (runtime)

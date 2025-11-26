@@ -16,7 +16,6 @@
 
 plugins {
     id 'com.android.dynamic-feature'
-    id 'kotlin-android'
     id 'instrumentation-plugin'
 }
 
@@ -26,9 +25,6 @@ android {
 
     defaultConfig {
         minSdkVersion libs.versions.supportLibMinSdk.get()
-    }
-    kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_11
     }
 }
 

@@ -77,11 +77,21 @@ interface ComponentCreationConfig : ComponentIdentity, TaskCreationConfig {
     val builtInKotlinSupportMode: BuiltInKotlinSupportMode
     val builtInKaptSupportMode: BuiltInKaptSupportMode
 
+    /**
+      * Whether we should provide Kotlin support for this component.
+      *
+      * The value is `true` when
+      *   - built-in Kotlin is enabled
+      *   - or built-in Kotlin is disabled, but we want to provide Kotlin support for
+      *     test-fixture / screenshot-test components
+      */
     val useBuiltInKotlinSupport: Boolean
         get() = builtInKotlinSupportMode is BuiltInKotlinSupportMode.Supported
+                || builtInKotlinSupportMode is BuiltInKotlinSupportMode.SupportedForTestFixturesAndScreenshotTest
 
     val useBuiltInKaptSupport: Boolean
         get() = builtInKaptSupportMode is BuiltInKaptSupportMode.Supported
+                || builtInKaptSupportMode is BuiltInKaptSupportMode.SupportedForTestFixturesAndScreenshotTest
 
     /**
      * Attaches all the registered callbacks on the java compilation task once it's registered

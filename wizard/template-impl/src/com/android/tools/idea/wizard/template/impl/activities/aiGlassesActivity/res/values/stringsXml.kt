@@ -19,7 +19,7 @@ fun stringsXml() =
   """
 <resources>
     <string name="app_name">Basic AI Glasses Activity</string>
-    <string name="hello_android_xr_ai_glasses">Hello, AI Glasses!</string>
+    <string name="hello_ai_glasses">Hello, AI Glasses!</string>
     <string name="launch">Launch</string>
     <string name="status_prefix">Status: </string>
     <string name="status_connected">Connected</string>

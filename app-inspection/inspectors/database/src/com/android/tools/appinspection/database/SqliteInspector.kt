@@ -42,8 +42,6 @@ import androidx.inspection.Inspector
 import androidx.inspection.InspectorEnvironment
 import androidx.sqlite.SQLiteConnection
 import androidx.sqlite.SQLiteDriver
-import androidx.sqlite.driver.bundled.BundledSQLiteConnection
-import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import androidx.sqlite.inspection.SqliteInspectorProtocol.AcquireDatabaseLockCommand
 import androidx.sqlite.inspection.SqliteInspectorProtocol.AcquireDatabaseLockResponse
 import androidx.sqlite.inspection.SqliteInspectorProtocol.AdditionalDriver
@@ -189,6 +187,8 @@ private val HIDDEN_TABLES = setOf("android_metadata", "sqlite_sequence")
 
 private val REGEX_WITHOUT_ROWID = "\\s*without\\s+rowid".toRegex(IGNORE_CASE)
 
+private const val BUNDLED_DRIVER = "androidx.sqlite.driver.bundled.BundledSQLiteDriver"
+
 /**
  * Inspector to work with SQLite databases
  *
@@ -245,12 +245,12 @@ internal class SqliteInspector(
               .toByteArray()
           )
       }
-    } catch (exception: Throwable) {
-      Log.w(TAG, "Unexpected error initializing database inspector", exception)
+    } catch (e: Throwable) {
+      Log.w(TAG, "Unexpected error initializing database inspector", e)
       callback.reply(
         createErrorOccurredResponse(
-            "Unhandled Exception while processing the command: " + exception.message,
-            stackTraceFromException(exception),
+            "Unhandled Exception while processing the command: ${e.message}",
+            stackTraceFromException(e),
             null,
             ERROR_UNKNOWN,
           )
@@ -289,12 +289,14 @@ internal class SqliteInspector(
       registerFrameworkHooks(hookRegistry)
     }
 
+    val bundledDriver = AdditionalDriver.newBuilder().setDriverClass(BUNDLED_DRIVER).build()
+    val bundledClasses = bundledDriver.toClasses()
+    if (bundledClasses != null) {
+      registerAndroidXHooks(hookRegistry, bundledClasses)
+    }
+
     val classes = command.additionalDriversList.mapNotNull { it.toClasses() }
-    registerAndroidXHooks(
-      hookRegistry,
-      classes.map { it.driverClass },
-      classes.map { it.connectionClass },
-    )
+    registerAndroidXHooks(hookRegistry, *classes.toTypedArray())
 
     callback.replyTrackDatabasesCommand(classes)
 
@@ -311,17 +313,19 @@ internal class SqliteInspector(
         }
       }
     }
-    (classes.map { it.connectionClass } + BundledSQLiteConnection::class.java).forEach {
-      Log.i(TAG, "Finding instances of ${it.name}")
-      artTooling.findInstances(it).forEach { sqlConnection ->
-        val file = sqlConnection.getDatabasePath()
+    classes
+      .map { it.connectionClass }
+      .forEach {
+        Log.i(TAG, "Finding instances of ${it.name}")
+        artTooling.findInstances(it).forEach { sqlConnection ->
+          val file = sqlConnection.getDatabasePath()
 
-        val database = AndroidXDatabase(sqlConnection, file)
-        if (database.isOpen()) {
-          onDatabaseOpened(database)
+          val database = AndroidXDatabase(sqlConnection, file)
+          if (database.isOpen()) {
+            onDatabaseOpened(database)
+          }
         }
       }
-    }
 
     if (command.forceOpen) {
       databaseRegistry.enableForceOpen()
@@ -349,15 +353,15 @@ internal class SqliteInspector(
 
   private fun registerAndroidXHooks(
     hookRegistry: EntryExitMatchingHookRegistry,
-    driverClasses: List<Class<SQLiteDriver>>,
-    connectionClasses: List<Class<SQLiteConnection>>,
+    vararg drivers: AdditionalDriverClasses,
   ) {
     try {
-      registerAndroidXOpenHooks(hookRegistry, driverClasses)
+      registerAndroidXOpenHooks(hookRegistry, drivers.map { it.driverClass })
+      val connectionClasses = drivers.map { it.connectionClass }
       registerAndroidXCloseHooks(hookRegistry, connectionClasses)
       registerAndroidXInvalidationHooks(hookRegistry, connectionClasses)
     } catch (_: NoClassDefFoundError) {
-      Log.i(TAG, "App does not use AndroidX Sqlite APIs")
+      Log.w(TAG, "Unexpected error instrumenting AndroidX hooks")
     }
   }
 
@@ -455,13 +459,12 @@ internal class SqliteInspector(
       ExitHook<SQLiteDatabase> { database ->
         try {
           onDatabaseOpened(FrameworkDatabase(database))
-        } catch (exception: Throwable) {
+        } catch (e: Throwable) {
+          Log.w("SqliteInspector", "Error in onDatabaseAdded event", e)
           connection.sendEvent(
             createErrorOccurredEvent(
-                "Unhandled Exception while processing an onDatabaseAdded " +
-                  "event: " +
-                  exception.message,
-                stackTraceFromException(exception),
+                "Unhandled Exception while processing an onDatabaseAdded event: ${e.message}",
+                stackTraceFromException(e),
                 null,
                 ErrorCode.ERROR_ISSUE_WITH_PROCESSING_NEW_DATABASE_CONNECTION,
               )
@@ -486,16 +489,15 @@ internal class SqliteInspector(
     hookRegistry: EntryExitMatchingHookRegistry,
     driverClasses: List<Class<SQLiteDriver>>,
   ) {
-    registerAndroidXOpenHooks(hookRegistry, BundledSQLiteDriver::class.java, hasFlags = true)
-    driverClasses.forEach { registerAndroidXOpenHooks(hookRegistry, it, hasFlags = false) }
+    driverClasses.forEach { registerAndroidXOpenHooks(hookRegistry, it) }
   }
 
   private fun registerAndroidXOpenHooks(
     hookRegistry: EntryExitMatchingHookRegistry,
     cls: Class<out SQLiteDriver>,
-    hasFlags: Boolean,
   ) {
     Log.i(TAG, "registerAndroidXOpenHooks: ${cls.name}")
+    val hasFlags = cls.name == BUNDLED_DRIVER
     val entryHook = EntryHook { _, args ->
       databaseLockRegistry.waitForUnlockedDatabase(args[0].toString())
     }
@@ -507,13 +509,12 @@ internal class SqliteInspector(
 
         try {
           onDatabaseOpened(AndroidXDatabase(sqliteConnection, path, flags))
-        } catch (exception: Throwable) {
+        } catch (e: Throwable) {
+          Log.w("SqliteInspector", "Error in onDatabaseAdded event", e)
           connection.sendEvent(
             createErrorOccurredEvent(
-                "Unhandled Exception while processing an onDatabaseAdded " +
-                  "event: " +
-                  exception.message,
-                stackTraceFromException(exception),
+                "Unhandled Exception while processing an onDatabaseAdded event: ${e.message}",
+                stackTraceFromException(e),
                 null,
                 ErrorCode.ERROR_ISSUE_WITH_PROCESSING_NEW_DATABASE_CONNECTION,
               )
@@ -640,7 +641,6 @@ internal class SqliteInspector(
     hookRegistry: EntryExitMatchingHookRegistry,
     connectionClasses: List<Class<SQLiteConnection>>,
   ) {
-    registerAndroidXCloseHooks(hookRegistry, BundledSQLiteConnection::class.java)
     connectionClasses.forEach { registerAndroidXCloseHooks(hookRegistry, it) }
   }
 
@@ -673,7 +673,6 @@ internal class SqliteInspector(
     hookRegistry: EntryExitMatchingHookRegistry,
     connectionClasses: List<Class<SQLiteConnection>>,
   ) {
-    registerAndroidXInvalidationHooks(hookRegistry, BundledSQLiteConnection::class.java)
     connectionClasses.forEach { registerAndroidXInvalidationHooks(hookRegistry, it) }
   }
 
@@ -993,13 +992,12 @@ internal class SqliteInspector(
     try {
       roomInvalidationRegistry.invalidateCache()
       databaseRegistry.notifyDatabaseOpened(database)
-    } catch (exception: Throwable) {
+    } catch (e: Throwable) {
+      Log.w("SqliteInspector", "Error in onDatabaseAdded event", e)
       connection.sendEvent(
         createErrorOccurredEvent(
-            "Unhandled Exception while processing an onDatabaseAdded " +
-              "event: " +
-              exception.message,
-            stackTraceFromException(exception),
+            "Unhandled Exception while processing an onDatabaseAdded event: ${e.message}",
+            stackTraceFromException(e),
             null,
             ErrorCode.ERROR_ISSUE_WITH_PROCESSING_NEW_DATABASE_CONNECTION,
           )
@@ -1192,12 +1190,9 @@ internal class SqliteInspector(
   private fun AdditionalDriver.toClasses(): AdditionalDriverClasses? {
     val connectionClassName =
       connectionClass.ifEmpty { driverClass.replace("Driver", "Connection") }
-    val driverClass = loadClass<SQLiteDriver>(driverClass)
-    val connectionClass = loadClass<SQLiteConnection>(connectionClassName)
-    return when (driverClass != null && connectionClass != null) {
-      true -> AdditionalDriverClasses(driverClass, connectionClass)
-      false -> null
-    }
+    val driverClass = loadClass<SQLiteDriver>(driverClass) ?: return null
+    val connectionClass = loadClass<SQLiteConnection>(connectionClassName) ?: return null
+    return AdditionalDriverClasses(driverClass, connectionClass)
   }
 }
 
@@ -1209,6 +1204,11 @@ private inline fun <reified T> loadClass(className: String): Class<T>? {
     }
     @Suppress("UNCHECKED_CAST")
     cls as Class<T>
+  } catch (e: ClassNotFoundException) {
+    if (className != BUNDLED_DRIVER) {
+      Log.w("SqliteInspector", "Can't load class '$className'", e)
+    }
+    null
   } catch (e: Throwable) {
     Log.w("SqliteInspector", "Can't load class '$className'", e)
     null

@@ -28,7 +28,6 @@ class DexArchivesKotlinTest {
     @get:Rule
     val project = GradleTestProject.builder()
         .fromTestApp(KotlinHelloWorldApp.forPlugin("com.android.application"))
-        .disableBuiltInKotlin()
         .create()
 
     /** Regression test for http://b/65363841.  */

@@ -21,14 +21,17 @@ import static com.android.manifmerger.XmlNode.NodeKey;
 import com.android.annotations.concurrency.GuardedBy;
 import com.android.ide.common.blame.SourceFilePosition;
 import com.android.ide.common.blame.SourcePosition;
+
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
+
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 /**
  * Records all the actions taken by the merging tool.
@@ -302,18 +305,26 @@ public class ActionRecorder {
     }
 
     /**
-     * Returns the record for an attribute creation event. The attribute is "created" when it is
-     * added for the first time into the resulting merged xml document.
+     * Returns the record for the event that set the final value of an attribute in the merged XML.
+     *
+     * <p>This is determined by finding the *last* record with type {@link Actions.ActionType#ADDED}
+     * associated with the attribute. In a merge process with priorities, the last "ADDED" action
+     * represents the value from the highest-priority source that was not overridden.
+     *
+     * @param attribute The XML attribute to query. Must not be null.
+     * @return The {@link Actions.AttributeRecord} from the winning source, or {@code null} if not
+     *     found.
      */
     @Nullable
     synchronized Actions.AttributeRecord getAttributeCreationRecord(
             @NotNull XmlAttribute attribute) {
+        Actions.AttributeRecord selectedRecord = null;
         for (Actions.AttributeRecord attributeRecord : getAttributeRecords(attribute)) {
             if (attributeRecord.getActionType() == Actions.ActionType.ADDED) {
-                return attributeRecord;
+                selectedRecord = attributeRecord;
             }
         }
-        return null;
+        return selectedRecord;
     }
 
     @NotNull

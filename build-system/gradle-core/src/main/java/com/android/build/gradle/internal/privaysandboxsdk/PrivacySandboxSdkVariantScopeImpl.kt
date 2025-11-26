@@ -56,8 +56,6 @@ class PrivacySandboxSdkVariantScopeImpl(
     override val layout: ProjectLayout = project.layout
     override val artifacts: ArtifactsImpl = ArtifactsImpl(project, "single")
     override val name: String = PrivacySandboxSdkConstants.DEFAULT_VARIANT_NAME
-    override val dependencies: PrivacySandboxSdkDependencies = PrivacySandboxSdkDependencies()
-    override val incomingConfigurations: PluginConfigurations = dependencies.configurations
 
     override val extension: PrivacySandboxSdkExtension by lazy {
         extensionProvider.invoke()

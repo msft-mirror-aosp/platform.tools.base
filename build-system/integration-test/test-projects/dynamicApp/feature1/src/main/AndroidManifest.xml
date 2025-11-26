@@ -7,7 +7,10 @@
     </dist:module>
 
     <application>
-        <activity android:name=".FeatureActivity" android:label="Feature Activity">
+        <activity
+                android:name=".FeatureActivity"
+                android:label="Feature Activity"
+                android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />

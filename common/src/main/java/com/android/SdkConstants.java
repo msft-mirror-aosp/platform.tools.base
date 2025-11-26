@@ -1135,6 +1135,7 @@ public final class SdkConstants {
     public static final String TAG_GENERAL_PURPOSE = "general-purpose";
     public static final String TAG_VALID_SPECIFIC_PURPOSE = "valid-specific-purpose";
     public static final String TAG_VALID_GENERAL_PURPOSE = "valid-general-purpose";
+    public static final String TAG_VALID_PURPOSE = "valid-purpose";
     public static final String TAG_GRANT_PERMISSION = "grant-uri-permission";
     public static final String TAG_PATH_PERMISSION = "path-permission";
     public static final String TAG_ACTION = "action";

@@ -114,7 +114,7 @@ internal class ConstantEvaluatorImpl(private val evaluator: ConstantEvaluator) {
             UastPrefixOperator.UNARY_MINUS -> operand.tryUnaryMinus()
             else -> null
           }
-        }
+        } ?: node.evaluate()
       node is UIfExpression ->
         when (node.getExpressionType()) {
           null -> null
@@ -165,7 +165,7 @@ internal class ConstantEvaluatorImpl(private val evaluator: ConstantEvaluator) {
                 else -> null
               }
           }
-        }
+        } ?: node.evaluate()
       node is UBinaryExpressionWithType ->
         when (node.operationKind) {
           UastBinaryExpressionWithTypeKind.TypeCast.INSTANCE ->

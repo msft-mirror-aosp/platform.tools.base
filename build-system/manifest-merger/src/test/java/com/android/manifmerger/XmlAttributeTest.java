@@ -20,17 +20,24 @@ import static org.mockito.Mockito.when;
 
 import com.android.SdkConstants;
 import com.android.ide.common.blame.SourceFile;
+import com.android.manifmerger.MergingReport.Record;
+import com.android.manifmerger.MergingReport.Record.Severity;
 import com.android.utils.StdLogger;
-import java.io.IOException;
-import java.util.List;
-import java.util.Optional;
-import javax.xml.parsers.ParserConfigurationException;
+
 import junit.framework.TestCase;
+
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.w3c.dom.Attr;
 import org.xml.sax.SAXException;
+
+import java.io.IOException;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+import javax.xml.parsers.ParserConfigurationException;
 
 /** Tests for {@link XmlAttribute} class */
 public class XmlAttributeTest extends TestCase {
@@ -495,5 +502,240 @@ public class XmlAttributeTest extends TestCase {
     private XmlDocument loadXmlLib(SourceFile location, String input)
             throws ParserConfigurationException, SAXException, IOException {
         return TestUtils.xmlLibraryFromString(location, input, mModel);
+    }
+
+    public void testConflictErrorProvenance()
+            throws ParserConfigurationException, SAXException, IOException {
+        String highPriority =
+                "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\""
+                    + " package=\"com.example.app\">\n"
+                    + "    <activity android:name=\".HighActivity\" android:exported=\"true\"/>\n"
+                    + "</manifest>";
+
+        String lowPriority =
+                "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\""
+                        + " package=\"com.example.app\">\n"
+                        + "    <activity android:name=\".HighActivity\""
+                        + " android:exported=\"false\"/>\n" // CONFLICT
+                        + "</manifest>";
+
+        XmlDocument highDocument =
+                loadXmlDoc(TestUtils.sourceFile(getClass(), "HighSource"), highPriority);
+        XmlDocument lowDocument =
+                loadXmlLib(TestUtils.sourceFile(getClass(), "LowSource"), lowPriority);
+
+        MergingReport.Builder mergingReportBuilder =
+                new MergingReport.Builder(new StdLogger(StdLogger.Level.VERBOSE));
+
+        highDocument.merge(lowDocument, mergingReportBuilder, () -> {});
+
+        List<Record> allRecords = mergingReportBuilder.build().getLoggingRecords();
+        List<Record> errorRecords =
+                allRecords.stream()
+                        .filter(r -> r.getSeverity() == Severity.ERROR)
+                        .collect(Collectors.toList());
+
+        assertEquals("Expected one conflict ERROR to be generated.", 1, errorRecords.size());
+
+        String errorMessage = errorRecords.get(0).getMessage();
+        assertTrue(
+                "Error message must contain the short name of the high-priority manifest.",
+                errorMessage.contains("XmlAttributeTest#HighSource"));
+        assertTrue(
+                "Error message must include the conflicting value (false) from the low-priority"
+                        + " manifest.",
+                errorMessage.contains("value=(false)"));
+    }
+
+    public void testAutomaticallyRejectedWarningProvenance()
+            throws ParserConfigurationException, SAXException, IOException {
+        String highPriority =
+                "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\""
+                    + " package=\"com.example.app\">\n"
+                    + "    <activity android:name=\".ActivityOne\" android:exported=\"true\"/>\n"
+                    + "</manifest>";
+
+        String lowPriority =
+                "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\""
+                        + " package=\"com.example.app\">\n"
+                        + "    <activity android:name=\".ActivityOne\""
+                        + " android:exported=\"false\"/>\n" // CONFLICT
+                        + "</manifest>";
+
+        ManifestModel autoRejectModel = new ManifestModel(/* autoReject= */ true);
+
+        XmlDocument highDocument =
+                TestUtils.xmlDocumentFromString(
+                        TestUtils.sourceFile(getClass(), "HighSource"),
+                        highPriority,
+                        autoRejectModel);
+
+        XmlDocument lowDocument =
+                TestUtils.xmlLibraryFromString(
+                        TestUtils.sourceFile(getClass(), "LowSource"),
+                        lowPriority,
+                        autoRejectModel);
+
+        MergingReport.Builder mergingReportBuilder =
+                new MergingReport.Builder(new StdLogger(StdLogger.Level.VERBOSE));
+
+        Optional<XmlDocument> result =
+                highDocument.merge(lowDocument, mergingReportBuilder, () -> {});
+        assertTrue(result.isPresent());
+
+        List<Record> allRecords = mergingReportBuilder.build().getLoggingRecords();
+        List<Record> warningRecords =
+                allRecords.stream()
+                        .filter(r -> r.getSeverity() == Severity.WARNING)
+                        .collect(Collectors.toList());
+
+        assertEquals(
+                "Expected one auto-rejected WARNING to be generated.", 1, warningRecords.size());
+
+        String warningMessage = warningRecords.get(0).getMessage();
+        assertTrue(
+                "Warning message should point to the higher-priority file's value. Actual: "
+                        + warningMessage,
+                warningMessage.contains("value=(true) from XmlAttributeTest#HighSource"));
+    }
+
+    public void testDeepConflictErrorProvenance()
+            throws ParserConfigurationException, SAXException, IOException {
+        String activityName = "com.example.common.MainActivity";
+
+        String libA =
+                ""
+                        + "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\""
+                        + " package=\"com.example.libA\">\n"
+                        + "    <activity android:name=\""
+                        + activityName
+                        + "\" android:exported=\"true\"/>\n"
+                        + "</manifest>";
+
+        String libB =
+                ""
+                        + "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                        + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
+                        + "    package=\"com.example.libB\">\n"
+                        + "    <activity android:name=\""
+                        + activityName
+                        + "\" "
+                        + "              android:exported=\"false\" "
+                        + "              tools:replace=\"android:exported\"/>\n"
+                        + "</manifest>";
+
+        String app =
+                ""
+                        + "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\""
+                        + " package=\"com.example.app\">\n"
+                        + "    <activity android:name=\""
+                        + activityName
+                        + "\" android:exported=\"true\"/>\n"
+                        + "</manifest>";
+
+        XmlDocument xmlLibA = loadXmlLib(TestUtils.sourceFile(getClass(), "LibA"), libA);
+        XmlDocument xmlLibB = loadXmlLib(TestUtils.sourceFile(getClass(), "LibB"), libB);
+        XmlDocument xmlApp = loadXmlDoc(TestUtils.sourceFile(getClass(), "App"), app);
+
+        MergingReport.Builder mergingReportBuilder =
+                new MergingReport.Builder(new StdLogger(StdLogger.Level.VERBOSE));
+
+        Optional<XmlDocument> intermediate = xmlLibB.merge(xmlLibA, mergingReportBuilder, () -> {});
+        assertTrue("Step 1 (LibA -> LibB) should succeed", intermediate.isPresent());
+        XmlDocument mergedLib = intermediate.get();
+
+        xmlApp.merge(mergedLib, mergingReportBuilder, () -> {});
+
+        List<Record> allRecords = mergingReportBuilder.build().getLoggingRecords();
+        List<Record> errorRecords =
+                allRecords.stream()
+                        .filter(r -> r.getSeverity() == Severity.ERROR)
+                        .collect(Collectors.toList());
+
+        assertEquals("Expected exactly one conflict ERROR.", 1, errorRecords.size());
+
+        String errorMessage = errorRecords.get(0).getMessage();
+
+        assertTrue(
+                "Error message should blame the intermediate override (LibB), not the original"
+                        + " source (LibA). Actual message: "
+                        + errorMessage,
+                errorMessage.contains("XmlAttributeTest#LibB"));
+
+        assertTrue(
+                "Error message must include the conflicting value (false) from LibB.",
+                errorMessage.contains("value=(false)"));
+    }
+
+    public void testDeepConflictWarningProvenance()
+            throws ParserConfigurationException, SAXException, IOException {
+        String activityName = "com.example.common.MainActivity";
+
+        String libA =
+                ""
+                        + "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\""
+                        + " package=\"com.example.libA\">\n"
+                        + "    <activity android:name=\""
+                        + activityName
+                        + "\" android:exported=\"true\"/>\n"
+                        + "</manifest>";
+
+        String libB =
+                ""
+                        + "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                        + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
+                        + "    package=\"com.example.libB\">\n"
+                        + "    <activity android:name=\""
+                        + activityName
+                        + "\" "
+                        + "              android:exported=\"false\" "
+                        + "              tools:replace=\"android:exported\"/>\n"
+                        + "</manifest>";
+
+        String app =
+                ""
+                        + "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\""
+                        + " package=\"com.example.app\">\n"
+                        + "    <activity android:name=\""
+                        + activityName
+                        + "\" android:exported=\"true\"/>\n"
+                        + "</manifest>";
+
+        ManifestModel autoRejectModel = new ManifestModel(/* autoReject= */ true);
+
+        XmlDocument xmlLibA =
+                TestUtils.xmlLibraryFromString(
+                        TestUtils.sourceFile(getClass(), "LibA"), libA, autoRejectModel);
+        XmlDocument xmlLibB =
+                TestUtils.xmlLibraryFromString(
+                        TestUtils.sourceFile(getClass(), "LibB"), libB, autoRejectModel);
+        XmlDocument xmlApp =
+                TestUtils.xmlDocumentFromString(
+                        TestUtils.sourceFile(getClass(), "App"), app, autoRejectModel);
+
+        MergingReport.Builder mergingReportBuilder =
+                new MergingReport.Builder(new StdLogger(StdLogger.Level.VERBOSE));
+
+        Optional<XmlDocument> intermediate = xmlLibB.merge(xmlLibA, mergingReportBuilder, () -> {});
+        assertTrue(intermediate.isPresent());
+        XmlDocument mergedLib = intermediate.get();
+
+        Optional<XmlDocument> result = xmlApp.merge(mergedLib, mergingReportBuilder, () -> {});
+        assertTrue("Auto-reject merge should succeed", result.isPresent());
+
+        List<Record> allRecords = mergingReportBuilder.build().getLoggingRecords();
+        List<Record> warningRecords =
+                allRecords.stream()
+                        .filter(r -> r.getSeverity() == Severity.WARNING)
+                        .collect(Collectors.toList());
+
+        assertEquals("Expected exactly one conflict WARNING.", 1, warningRecords.size());
+
+        String warningMessage = warningRecords.get(0).getMessage();
+
+        assertTrue(
+                "Warning message should blame the intermediate override (LibB). Actual: "
+                        + warningMessage,
+                warningMessage.contains("XmlAttributeTest#LibB"));
     }
 }

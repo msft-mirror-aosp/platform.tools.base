@@ -24,7 +24,10 @@ import com.android.tools.lint.detector.api.GradleContext
 import com.android.tools.lint.detector.api.GradleScanner
 import com.android.tools.lint.detector.api.JavaContext
 import com.android.tools.lint.detector.api.Location
+import com.intellij.util.asSafely
 import java.io.File
+import org.jetbrains.kotlin.analysis.api.analyze
+import org.jetbrains.kotlin.psi.KtFile
 
 /**
  * Visitor which can traverse a Gradle file and invoke the various methods on a [GradleScanner].
@@ -91,14 +94,17 @@ open class GradleVisitor {
           // to report them from. This project is not it.
           return
         }
-        if (
-          relative.endsWith(DOT_KTS) &&
-            System.getProperty("lint.use.fir.uast", "false").toBoolean() &&
-            !context.project.dir.path.startsWith(includedFile.path)
-        ) {
-          // We currently can't access kts files outside the project root from the
-          // CLI setup when using K2
-          return
+        // TODO(b/463283604): Better not to have this exemption
+        val isK2 = System.getProperty("lint.use.fir.uast", "true").toBoolean()
+        if (relative.endsWith(DOT_KTS) && isK2) {
+          val file = context.asSafely<GradleContext>()?.ktsContext?.psiFile?.asSafely<KtFile>()
+          val withinProject =
+            file?.let { analyze(file) { analysisScope.contains(file.virtualFile) } } ?: false
+          if (!withinProject) {
+            // We currently can't access kts files outside the project root from the
+            // CLI setup when using K2
+            return
+          }
         }
         if (!includedFile.isFile) {
           includedFile = File(relative)

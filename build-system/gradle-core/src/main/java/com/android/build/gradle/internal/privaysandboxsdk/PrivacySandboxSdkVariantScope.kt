@@ -36,8 +36,6 @@ import org.gradle.api.provider.Provider
 interface PrivacySandboxSdkVariantScope {
     val layout: ProjectLayout
     val artifacts: ArtifactsImpl
-    val incomingConfigurations: PluginConfigurations
-    val dependencies: PrivacySandboxSdkDependencies
     val extension: PrivacySandboxSdkExtension
     val compileSdkVersion: String
     val minSdkVersion: AndroidVersion

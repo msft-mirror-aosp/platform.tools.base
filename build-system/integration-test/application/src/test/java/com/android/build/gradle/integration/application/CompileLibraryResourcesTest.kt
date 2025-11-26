@@ -122,7 +122,8 @@ class CompileLibraryResourcesTest {
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
                     <application android:label="app_name" android:icon="@mipmap/ic_launcher">
                         <activity android:name="MainActivity"
-                                  android:label="app_name">
+                                  android:label="app_name"
+                                  android:exported="true">
                             <intent-filter>
                                 <action android:name="android.intent.action.MAIN" />
                                 <category android:name="android.intent.category.LAUNCHER" />

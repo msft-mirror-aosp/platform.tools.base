@@ -17,6 +17,7 @@
 package com.android.build.gradle.integration.fusedlibrary
 
 import com.android.build.gradle.integration.common.fixture.DEFAULT_MIN_SDK_VERSION
+import com.android.build.gradle.integration.common.fixture.DESUGAR_NIO_DEPENDENCY_VERSION
 import com.android.build.gradle.integration.common.fixture.project.AarSelector
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.plugins.GenericCallback
@@ -275,6 +276,25 @@ class FusedLibraryTest {
                 "AndroidManifest.xml",
                 "META-INF/com/android/build/gradle/aar-metadata.properties"
             )
+        }
+        build.fusedLibrary(":empty-fused-library").assertAar(AarSelector.NO_BUILD_TYPE) {
+            aarMetadata {
+                // Value constant from AGP
+                formatVersion().isEqualTo("1.0")
+                // Value constant from AGP
+                metadataVersion().isEqualTo("1.0")
+                // Value from aarMetadata DSL
+                minAgpVersion().isEqualTo("1.0.0")
+                // Value from aarMetadata DSL
+                minCompileSdk().isEqualTo("1")
+                // Default value
+                minCompileSdkExtension().isEqualTo("0")
+
+                // Value from androidLib1
+                coreLibraryDesugaringEnabled().isEqualTo("false")
+                // desugarJdkLib is not yet used by consumption
+                desugarJdkLibId().isEqualTo(null)
+            }
         }
     }
 }

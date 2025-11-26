@@ -33,7 +33,6 @@ import com.android.build.api.variant.ScopedArtifacts
 import com.android.build.api.variant.impl.FlatSourceDirectoriesImpl
 import com.android.build.api.variant.impl.TaskProviderBasedDirectoryEntryImpl
 import com.android.build.gradle.api.AndroidSourceSet
-import com.android.builder.errors.IssueReporter
 import com.android.build.gradle.internal.component.ApkCreationConfig
 import com.android.build.gradle.internal.component.ApplicationCreationConfig
 import com.android.build.gradle.internal.component.ComponentCreationConfig
@@ -41,7 +40,6 @@ import com.android.build.gradle.internal.component.ConsumableCreationConfig
 import com.android.build.gradle.internal.component.DeviceTestCreationConfig
 import com.android.build.gradle.internal.component.HostTestCreationConfig
 import com.android.build.gradle.internal.component.InstrumentedTestCreationConfig
-import com.android.build.gradle.internal.tasks.creationconfig.ProcessJavaResCreationConfig
 import com.android.build.gradle.internal.component.KmpComponentCreationConfig
 import com.android.build.gradle.internal.component.TaskCreationConfig
 import com.android.build.gradle.internal.component.TestComponentCreationConfig
@@ -124,6 +122,7 @@ import com.android.build.gradle.internal.tasks.ValidateResourcesTask
 import com.android.build.gradle.internal.tasks.ValidateSigningTask
 import com.android.build.gradle.internal.tasks.VerifyLibraryClassesTask
 import com.android.build.gradle.internal.tasks.checkIfR8VersionMatches
+import com.android.build.gradle.internal.tasks.creationconfig.ProcessJavaResCreationConfig
 import com.android.build.gradle.internal.tasks.databinding.DataBindingCompilerArguments.Companion.createArguments
 import com.android.build.gradle.internal.tasks.databinding.DataBindingGenBaseClassesTask
 import com.android.build.gradle.internal.tasks.databinding.DataBindingMergeDependencyArtifactsTask
@@ -183,6 +182,7 @@ import com.android.builder.core.BuilderConstants
 import com.android.builder.core.ComponentType
 import com.android.builder.core.ComponentTypeImpl
 import com.android.builder.dexing.DexingType
+import com.android.builder.errors.IssueReporter
 import com.android.utils.appendCapitalized
 import com.google.common.base.Preconditions
 import com.google.common.base.Strings
@@ -953,10 +953,13 @@ abstract class TaskManager(
             )
         creationConfig.attachRegisteredActionsToJavaCompileTask(javacTask)
         postJavacCreation(creationConfig)
+
+        maybeCreateKotlinTasks(creationConfig)
+
         return javacTask
     }
 
-    protected fun maybeCreateKotlinTasks(creationConfig: ComponentCreationConfig) {
+    private fun maybeCreateKotlinTasks(creationConfig: ComponentCreationConfig) {
         if (!creationConfig.useBuiltInKotlinSupport) {
             return
         }

@@ -111,9 +111,10 @@ message Event {
     USER_COUNTERS = 701;
 
     // LeakCanary Prefix = 800
-    LEAKCANARY_LOGCAT = 801;
-    LEAKCANARY_LOGCAT_STATUS = 802;
+    LEAKCANARY_ANALYSIS = 801;
+    LEAKCANARY_ANALYSIS_STATUS = 802;
     LEAKCANARY_HOST_ANALYSIS_TRIGGER = 803;
+    LEAKCANARY_PRESENCE_CHECK = 804;
 
     // group_id: session id
     LIVE_VIEW_STATUS = 901;
@@ -229,8 +230,9 @@ message Event {
     UserCounterData user_counters = 701;
 
     // LeakCanary Prefix = 800
-    LeakCanaryLogcatData leakcanary_logcat = 801;
-    LeakCanaryLogcatStatus leakCanary_logcat_status = 802;
+    LeakCanaryAnalysisData leakcanary_analysis = 801;
+    LeakCanaryAnalysisStatus leakCanary_analysis_status = 802;
+    LeakCanaryPresenceCheck leakcanary_presence_check = 804;
 
     // Echo Event Prefix = 1000
     echo.EchoData echo = 1000;
@@ -499,4 +501,8 @@ message CommonConfig {
   bool profiler_keyboard_event = 7;
   // equivalent ot StudioFlags.PROFILER_TASK_BASED_UX
   bool profiler_task_based_ux = 8;
+}
+
+message LeakCanaryPresenceCheck {
+    bool is_present = 1;
 }

@@ -20,6 +20,7 @@ import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
 import com.android.build.gradle.integration.common.fixture.app.KotlinHelloWorldApp
 import com.android.build.gradle.integration.common.utils.TestFileUtils
+import com.android.build.gradle.options.BooleanOption
 import com.android.builder.model.SyncIssue
 import com.google.common.truth.Truth.assertThat
 import org.junit.Rule
@@ -49,6 +50,20 @@ class DataBindingKtxTest(
     } else {
         HelloWorldApp.forPlugin("com.android.application")
     }.apply {
+        if (useKotlin) {
+            replaceFile(getFile("build.gradle").appendContent(
+                    """
+                buildscript {
+                    dependencies {
+                        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${'$'}{'$'}{libs.versions.kotlinVersion.get()}"
+                    }
+                }
+                apply plugin: 'kotlin-android'
+
+                    """.trimIndent()
+                )
+            )
+        }
         replaceFile(
             getFile("build.gradle").appendContent(
                 """
@@ -70,7 +85,7 @@ class DataBindingKtxTest(
         GradleTestProject
             .builder()
             .fromTestApp(app)
-            .disableBuiltInKotlin()
+            .addGradleProperty(BooleanOption.BUILT_IN_KOTLIN, false)
             .create()
 
     @Test

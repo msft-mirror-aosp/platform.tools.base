@@ -1,5 +1,5 @@
-load("//tools/base/bazel:kotlin.bzl", "kotlin_library")
 load("//tools/base/bazel:coverage.bzl", "coverage_java_test")
+load("//tools/base/bazel:kotlin.bzl", "kotlin_library")
 load("//tools/base/bazel/validations:timeout.bzl", "APPROVED_ETERNAL_TESTS")
 
 # A gradle integration test
@@ -20,6 +20,7 @@ def gradle_integration_test(
         srcs,
         deps,
         data,
+        friends = [],
         maven_repos = [],
         maven_repo_zips = [],
         resources = [],
@@ -35,6 +36,7 @@ def gradle_integration_test(
         name = lib_name,
         srcs = srcs,
         deps = deps,
+        friends = friends,
         testonly = True,
         lint_baseline = lint_baseline,
         lint_enabled = lint_enabled,
@@ -98,6 +100,7 @@ def single_gradle_integration_test_per_source(
         maven_repos,
         package_name,
         srcs,
+        friends = [],
         non_target_srcs = [],
         runtime_deps = [],
         flaky_targets = [],
@@ -144,6 +147,7 @@ def single_gradle_integration_test_per_source(
             name = target_name,
             srcs = [src] + non_target_srcs,
             deps = deps,
+            friends = friends,
             flaky = is_flaky,
             data = data,
             shard_count = None,

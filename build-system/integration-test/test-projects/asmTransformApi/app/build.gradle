@@ -1,6 +1,5 @@
 plugins {
     id 'com.android.application'
-    id 'kotlin-android'
     id 'instrumentation-plugin'
     id 'jacoco'
 }
@@ -24,10 +23,6 @@ android {
 
     lintOptions {
         checkReleaseBuilds = false
-    }
-
-    kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_11
     }
 }
 

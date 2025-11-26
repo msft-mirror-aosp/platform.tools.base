@@ -11,7 +11,6 @@ kotlin_library(
         "//tools/base/common:tools.common",
         "//tools/base/ddmlib:tools.ddmlib",
         "//tools/base/utp/android-device-provider-ddmlib-proto",
-        "//tools/base/utp/android-device-provider-profile",
         "@maven//:com.google.protobuf.protobuf-java",
         "@maven//:com.google.testing.platform.android-device-provider-local",
         "@maven//:com.google.testing.platform.launcher",

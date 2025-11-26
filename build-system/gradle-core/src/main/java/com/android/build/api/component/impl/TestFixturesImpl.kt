@@ -179,9 +179,8 @@ open class TestFixturesImpl @Inject constructor(
         if (support is BuiltInKotlinSupportMode.NotSupported
             && internalServices.projectOptions.get(ENABLE_TEST_FIXTURES_KOTLIN_SUPPORT)
             && internalServices.projectInfo.hasPlugin(KOTLIN_ANDROID_PLUGIN_ID)
-            && dslInfo.enableKotlin
         ) {
-            BuiltInKotlinSupportMode.Supported.TestFixturesSupportEnabledAndKgpApplied
+            BuiltInKotlinSupportMode.SupportedForTestFixturesAndScreenshotTest.TestFixturesSupportEnabledAndKgpApplied
         } else {
             support
         }
@@ -193,7 +192,7 @@ open class TestFixturesImpl @Inject constructor(
             && internalServices.projectOptions.get(ENABLE_TEST_FIXTURES_KOTLIN_SUPPORT)
             && internalServices.projectInfo.hasPlugin(KOTLIN_KAPT_PLUGIN_ID)
         ) {
-            BuiltInKaptSupportMode.Supported.TestFixturesSupportEnabledAndKaptApplied
+            BuiltInKaptSupportMode.SupportedForTestFixturesAndScreenshotTest.TestFixturesSupportEnabledAndKaptApplied
         } else {
             support
         }

@@ -222,7 +222,7 @@ class ExtractApksTaskTest {
             .toFile()
 
         assertThat(extractedApks.resolve("0/base-mdpi.apk").exists()).isTrue()
-        assertThat(extractedApks.resolve("1/base-hdpi.apk").exists()).isTrue()
+        assertThat(extractedApks.resolve("1/base-hdpi_3.apk").exists()).isTrue()
         assertThat(deviceMap.resolve("device_spec_path_map.txt").readLines()).containsExactly(
             "${apkSelectConfig1.invariantSeparatorsPath} 0",
             "${apkSelectConfig2.invariantSeparatorsPath} 1"
@@ -276,7 +276,7 @@ class ExtractApksTaskTest {
             .toFile()
 
         assertThat(extractedApks.exists()).isTrue()
-        assertThat(extractedApks.resolve("0/base-mdpi.apk").exists()).isTrue()
+        assertThat(extractedApks.resolve("0/base-mdpi_2.apk").exists()).isTrue()
         assertThat(deviceMap.resolve("device_spec_path_map.txt").exists()).isTrue()
         assertThat(deviceMap.resolve("device_spec_path_map.txt").readLines()).containsExactly(
             "${apkSelectConfig1.invariantSeparatorsPath} 0",

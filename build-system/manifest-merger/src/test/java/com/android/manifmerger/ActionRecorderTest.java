@@ -17,14 +17,21 @@
 package com.android.manifmerger;
 
 import com.android.ide.common.blame.SourceFile;
+import com.android.ide.common.blame.SourceFilePosition;
+import com.android.ide.common.blame.SourcePosition;
 import com.android.utils.ILogger;
-import java.io.IOException;
-import javax.xml.parsers.ParserConfigurationException;
+
 import junit.framework.TestCase;
+
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.xml.sax.SAXException;
+
+import java.io.File;
+import java.io.IOException;
+
+import javax.xml.parsers.ParserConfigurationException;
 
 /**
  * Tests for the {@link ActionRecorder} class
@@ -401,5 +408,61 @@ public class ActionRecorderTest extends TestCase {
     private XmlDocument loadXmlDoc(SourceFile location, String input)
             throws ParserConfigurationException, SAXException, IOException {
         return TestUtils.xmlDocumentFromString(location, input, mModel);
+    }
+
+    public void testAttributeReplacement_returnsLastAddedRecord() throws Exception {
+        // Create a dummy document to generate valid XmlElement/XmlAttribute objects
+        String xml =
+                "<manifest package=\"com.example\""
+                        + " xmlns:android=\"http://schemas.android.com/apk/res/android\"><activity"
+                        + " android:name=\".MainActivity\" /></manifest>";
+
+        SourceFile dummySource = new SourceFile(new File("src/main/AndroidManifest.xml"), "main");
+        XmlDocument document = loadXmlDoc(dummySource, xml);
+
+        XmlElement activityElement =
+                document.getRootNode()
+                        .getNodeByTypeAndKey(
+                                ManifestModel.NodeTypes.ACTIVITY, "com.example.MainActivity")
+                        .get();
+        XmlAttribute nameAttribute =
+                activityElement.getAttribute(XmlNode.fromXmlName("android:name")).get();
+
+        // Initialize the recorder with the node
+        mActionRecorderBuilder.recordNodeAction(activityElement, Actions.ActionType.ADDED);
+
+        // Simulate "Main" manifest adding the attribute (Lower Priority)
+        SourceFile mainSourceFile =
+                new SourceFile(new File("src/main/AndroidManifest.xml"), "main");
+        Actions.AttributeRecord mainRecord =
+                new Actions.AttributeRecord(
+                        Actions.ActionType.ADDED,
+                        new SourceFilePosition(mainSourceFile, SourcePosition.UNKNOWN),
+                        nameAttribute.getId(),
+                        null,
+                        null);
+        mActionRecorderBuilder.recordAttributeAction(nameAttribute, mainRecord);
+
+        // Simulate "Flavor" manifest replacing it (Higher Priority)
+        SourceFile flavorSourceFile =
+                new SourceFile(new File("src/vanilla/AndroidManifest.xml"), "vanilla");
+        Actions.AttributeRecord flavorRecord =
+                new Actions.AttributeRecord(
+                        Actions.ActionType.ADDED,
+                        new SourceFilePosition(flavorSourceFile, SourcePosition.UNKNOWN),
+                        nameAttribute.getId(),
+                        null,
+                        null);
+        mActionRecorderBuilder.recordAttributeAction(nameAttribute, flavorRecord);
+
+        // Verify that the recorder reports the source of the *last* added record (the override)
+        Actions.AttributeRecord result =
+                mActionRecorderBuilder.getAttributeCreationRecord(nameAttribute);
+
+        assertNotNull(result);
+        assertEquals(
+                "The recorder should report the source of the replacing manifest (vanilla).",
+                flavorSourceFile,
+                result.getActionLocation().getFile());
     }
 }

@@ -40,7 +40,6 @@ class AllClassesAccessTest(val minified: Boolean) {
     val project =
         GradleTestProject.builder()
             .fromTestApp(KotlinHelloWorldApp.forPlugin("com.android.application"))
-            .disableBuiltInKotlin()
             .create()
 
     companion object {

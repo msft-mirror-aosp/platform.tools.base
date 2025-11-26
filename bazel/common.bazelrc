@@ -264,5 +264,5 @@ build:dynamic --strategy=PythonZipper=dynamic
 # dynamic scheduling.
 build:dynamic --noexperimental_worker_multiplex
 
-build:without_vendor --repo_env=SETUP_VENDOR=0
+common:without_vendor --repo_env=SETUP_VENDOR=0
 build:without_vendor --//tools/base/bazel:without-vendor

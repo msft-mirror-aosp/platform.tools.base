@@ -7,6 +7,10 @@ configurations {
     compileOnlyForJavadoc {
         extendsFrom(configurations.compileOnly)
     }
+    dependencyScope("runtimeElementsOnly")
+    runtimeElements {
+        extendsFrom runtimeElementsOnly
+    }
 }
 
 dependencies {
@@ -25,7 +29,7 @@ dependencies {
     // for use in various partial builds modeled in the Android Studio
     // bazel build
     if (file('../gradle-core/build.gradle').isFile()) {
-        runtimeOnly project(':base:build-system:gradle-core')
+        runtimeElementsOnly project(':base:build-system:gradle-core')
     }
     metalavaTestImplementation libs.com.android.tools.testutils
     metalavaTestImplementation libs.guava

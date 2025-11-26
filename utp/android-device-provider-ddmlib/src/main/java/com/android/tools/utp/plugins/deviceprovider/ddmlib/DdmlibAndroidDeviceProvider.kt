@@ -18,7 +18,6 @@ package com.android.tools.utp.plugins.deviceprovider.ddmlib
 
 import com.android.ddmlib.AndroidDebugBridge
 import com.android.tools.utp.plugins.deviceprovider.ddmlib.proto.AndroidDeviceProviderDdmlibConfigProto
-import com.android.tools.utp.plugins.deviceprovider.profile.DeviceProviderProfileManager
 import com.google.testing.platform.api.config.AndroidSdk
 import com.google.testing.platform.api.config.Config
 import com.google.testing.platform.api.config.Environment
@@ -56,7 +55,6 @@ class DdmlibAndroidDeviceProvider() : AndroidDeviceProvider {
     private lateinit var apkPackageNameResolver: ApkPackageNameResolver
     private lateinit var ddmlibAndroidDeviceProviderConfig: AndroidDeviceProviderDdmlibConfigProto.DdmlibAndroidDeviceProviderConfig
     private lateinit var deviceProviderConfig: LocalAndroidDeviceProviderProto.LocalAndroidDeviceProvider
-    private lateinit var profileManager: DeviceProviderProfileManager
     private lateinit var coroutineScope: CoroutineScope
 
     constructor(deviceFinder: DdmlibAndroidDeviceFinder) : this() {
@@ -102,10 +100,6 @@ class DdmlibAndroidDeviceProvider() : AndroidDeviceProvider {
             }
             deviceFinder = DdmlibAndroidDeviceFinder(adb)
         }
-        profileManager = DeviceProviderProfileManager.forOutputDirectory(
-            environment.outputDirectory,
-            deviceProviderConfig.serial
-        )
     }
 
     /**
@@ -122,25 +116,21 @@ class DdmlibAndroidDeviceProvider() : AndroidDeviceProvider {
     }
 
     override fun provideDevice(): DeviceController {
-        return profileManager.recordDeviceProvision {
-            val deviceController = DdmlibAndroidDeviceController(
-                apkPackageNameResolver,
-                ddmlibAndroidDeviceProviderConfig.uninstallIncompatibleApks,
-                coroutineScope,
+        val deviceController = DdmlibAndroidDeviceController(
+            apkPackageNameResolver,
+            ddmlibAndroidDeviceProviderConfig.uninstallIncompatibleApks,
+            coroutineScope,
+        )
+        val device = deviceFinder.findDevice(deviceProviderConfig.serial)
+            ?: throw DeviceProviderException(
+                "Android device (${deviceProviderConfig.serial}) is not found."
             )
-            val device = deviceFinder.findDevice(deviceProviderConfig.serial)
-                ?: throw DeviceProviderException(
-                    "Android device (${deviceProviderConfig.serial}) is not found."
-                )
 
-            deviceController.setDevice(DdmlibAndroidDevice(device))
-            deviceController
-        }
+        deviceController.setDevice(DdmlibAndroidDevice(device))
+        return deviceController
     }
 
     override fun releaseDevice() {
-        // No need to release the local device after usage since we didn't start it.
-        profileManager.recordDeviceRelease {}
     }
 
     override fun cancel(aborted: Boolean): Boolean = false

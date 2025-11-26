@@ -51,7 +51,6 @@ com.android.build.gradle.integration.application.BasicKotlinDslTest
 com.android.build.gradle.integration.application.BasicMultiFlavorTest
 com.android.build.gradle.integration.application.BootClasspathTest
 com.android.build.gradle.integration.application.BuildConfigBytecodeCompilationTest
-com.android.build.gradle.integration.application.BuildConfigTest
 com.android.build.gradle.integration.application.BuildDirRelocationTest
 com.android.build.gradle.integration.application.BuildDirTest
 com.android.build.gradle.integration.application.BuildToolsTest
@@ -175,7 +174,6 @@ com.android.build.gradle.integration.application.RenderscriptTest
 com.android.build.gradle.integration.application.RepoTest
 com.android.build.gradle.integration.application.ResourceShrinkerTest
 com.android.build.gradle.integration.application.ResourceValidationTest
-com.android.build.gradle.integration.application.ResValueTest
 com.android.build.gradle.integration.application.ResValueTypeTest
 com.android.build.gradle.integration.application.RulesExtractionDynamicAppTest
 com.android.build.gradle.integration.application.SigningTest
@@ -382,7 +380,6 @@ com.android.build.gradle.integration.dexing.IncrementalDexMergingTest
 com.android.build.gradle.integration.dexing.IncrementalGlobalSyntheticsTest
 com.android.build.gradle.integration.dsl.AllDslMethodsTest
 com.android.build.gradle.integration.dsl.BuildTypeDslTest
-com.android.build.gradle.integration.dsl.DslTest
 com.android.build.gradle.integration.feature.FeatureOnFeatureDependencyTest
 com.android.build.gradle.integration.instrumentation.AsmTransformApiConfigurationCachingTest
 com.android.build.gradle.integration.instrumentation.AsmTransformApiFixFramesTest

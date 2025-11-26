@@ -41,22 +41,24 @@ abstract class AbstractAppExtension(
      * the app project includes.
      *
      *
-     * To process elements in this collection, you should use the [
- * `all`](https://docs.gradle.org/current/javadoc/org/gradle/api/DomainObjectCollection.html#all(org.gradle.api.Action)) iterator. That's because the plugin populates this collection only after
+     * To process elements in this collection, you should use the
+     * [`all`](https://docs.gradle.org/current/javadoc/org/gradle/api/DomainObjectCollection.html#all(org.gradle.api.Action))
+     * iterator. That's because the plugin populates this collection only after
      * the project is evaluated. Unlike the `each` iterator, using `all`
      * processes future elements as the plugin creates them.
      *
      *
-     * The following sample iterates through all `applicationVariants` elements to [inject a
- * build variable into the manifest](https://developer.android.com/studio/build/manifest-build-variables.html):
+     * The following sample iterates through all `applicationVariants` elements to [
+     * inject a build variable into the manifest
+     * ](https://developer.android.com/studio/build/manifest-build-variables.html):
      *
-     * <pre>
-     * android.applicationVariants.all { variant -&gt;
-     * def mergedFlavor = variant.getMergedFlavor()
-     * // Defines the value of a build variable you can use in the manifest.
-     * mergedFlavor.manifestPlaceholders = [hostName:"www.example.com/${variant.versionName}"]
+     * ```groovy
+     * android.applicationVariants.all { variant ->
+     *     def mergedFlavor = variant.getMergedFlavor()
+     *     // Defines the value of a build variable you can use in the manifest.
+     *     mergedFlavor.manifestPlaceholders = [hostName:"www.example.com/${variant.versionName}"]
      * }
-    </pre> *
+     * ```
      */
     val applicationVariants: DomainObjectSet<ApplicationVariant>
         get() {

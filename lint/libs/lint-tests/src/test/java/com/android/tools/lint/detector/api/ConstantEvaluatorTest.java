@@ -16,6 +16,8 @@
 
 package com.android.tools.lint.detector.api;
 
+import static kotlin.math.MathKt.PI;
+
 import com.android.tools.lint.UastEnvironment;
 import com.android.tools.lint.checks.infrastructure.TestFile;
 import com.android.tools.lint.checks.infrastructure.TestFiles;
@@ -33,10 +35,13 @@ import junit.framework.TestCase;
 import org.intellij.lang.annotations.Language;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.kotlin.psi.KtProperty;
+import org.jetbrains.uast.UAnnotation;
+import org.jetbrains.uast.UClass;
 import org.jetbrains.uast.UExpression;
 import org.jetbrains.uast.UFile;
 import org.jetbrains.uast.UQualifiedReferenceExpression;
 import org.jetbrains.uast.UReferenceExpression;
+import org.jetbrains.uast.USimpleNameReferenceExpression;
 import org.jetbrains.uast.UVariable;
 import org.jetbrains.uast.visitor.AbstractUastVisitor;
 
@@ -685,6 +690,61 @@ public class ConstantEvaluatorTest extends TestCase {
                                         assertEquals(3500001, constant);
                                     }
                                     return super.visitQualifiedReferenceExpression(node);
+                                }
+                            });
+        } finally {
+            Disposer.dispose(disposable);
+        }
+    }
+
+    public void testMathPi() {
+        TestFile file =
+                TestFiles.kotlin(
+                        "package test.pkg\n"
+                                + "import kotlin.math.PI\n"
+                                + "annotation class Anno(val x: Double)\n"
+                                + "@Anno(x = -PI)\n"
+                                + "class Foo\n"
+                                + "@Anno(x = 2 * PI)\n"
+                                + "class Bar");
+        Pair<List<JavaContext>, Disposable> parsed = LintUtilsTest.parseAll(file);
+        List<JavaContext> contexts = parsed.getFirst();
+        Disposable disposable = parsed.getSecond();
+        try {
+            JavaContext kotlinFile = contexts.get(0);
+            kotlinFile
+                    .getUastFile()
+                    .accept(
+                            new AbstractUastVisitor() {
+                                @Override
+                                public boolean visitSimpleNameReferenceExpression(
+                                        @NotNull USimpleNameReferenceExpression node) {
+                                    // TODO(b/462211504): uncomment assertions after the fix for
+                                    //  https://youtrack.jetbrains.com/issue/KTIJ-36583 is available
+                                    Object constant = ConstantEvaluator.evaluate(kotlinFile, node);
+                                    // assertEquals(PI, constant);
+                                    Object eval = node.evaluate();
+                                    // assertEquals(constant, eval);
+                                    return super.visitSimpleNameReferenceExpression(node);
+                                }
+
+                                @Override
+                                public boolean visitClass(@NotNull UClass node) {
+                                    if (node.isAnnotationType()) {
+                                        return super.visitClass(node);
+                                    }
+                                    String className = node.getName();
+                                    UAnnotation anno = node.getUAnnotations().get(0);
+                                    UExpression expr = anno.findAttributeValue("x");
+                                    Object constant = ConstantEvaluator.evaluate(kotlinFile, expr);
+                                    if (className.equals("Foo")) {
+                                        assertEquals(className, -PI, constant);
+                                    } else {
+                                        assertEquals(className, 2 * PI, constant);
+                                    }
+                                    Object eval = expr.evaluate();
+                                    assertEquals(className, constant, eval);
+                                    return super.visitClass(node);
                                 }
                             });
         } finally {

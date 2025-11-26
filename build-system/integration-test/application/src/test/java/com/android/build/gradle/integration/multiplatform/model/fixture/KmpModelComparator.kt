@@ -14,19 +14,20 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.integration.multiplatform.model
+package com.android.build.gradle.integration.multiplatform.model.fixture
 
+import com.android.SdkConstants
 import com.android.SdkConstants.DOT_JSON
 import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
 import com.android.build.gradle.integration.common.fixture.FileNormalizerImpl
 import com.android.build.gradle.integration.common.fixture.GradleTaskExecutor
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
+import com.android.build.gradle.integration.common.fixture.ModelContainerV2
 import com.android.build.gradle.integration.common.fixture.model.BaseModelComparator
 import com.android.build.gradle.integration.common.fixture.model.BasicComparator
 import com.android.build.gradle.integration.common.fixture.model.normaliseCompileTarget
 import com.android.build.gradle.integration.common.fixture.model.normalizeBuildToolsVersion
 import com.android.build.gradle.integration.common.fixture.model.normalizeVersionsOfCommonDependencies
-import com.android.build.gradle.integration.multiplatform.v2.getBuildMap
 import com.google.gson.GsonBuilder
 import com.google.gson.JsonParser
 import java.io.File
@@ -39,6 +40,18 @@ class KmpModelComparator(
     private val configCacheMode: BaseGradleExecutor.ConfigurationCaching
     = BaseGradleExecutor.ConfigurationCaching.OFF
 ): BasicComparator(testClass) {
+
+    private fun GradleTestProject.getBuildMap() =
+        mapOf(
+            ModelContainerV2.ROOT_BUILD_ID to ModelContainerV2.BuildInfo(
+                name = ":kotlinMultiplatform",
+                rootDir = projectDir,
+                projects = settingsFile.readText().split("\n").mapNotNull {
+                    it.takeIf { it.startsWith("include ") }?.substringAfter("include ")
+                        ?.trim('\'', ':')?.let { it to getSubproject(it).projectDir }
+                }
+            )
+        )
 
     private val buildMap = project.getBuildMap()
 

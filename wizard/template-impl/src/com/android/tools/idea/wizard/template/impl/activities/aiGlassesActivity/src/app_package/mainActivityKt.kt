@@ -81,7 +81,7 @@ fun ConnectionScreen() {
             verticalArrangement = Arrangement.Center
         ) {
             Text(
-                text = stringResource(id = R.string.hello_android_xr_ai_glasses),
+                text = stringResource(id = R.string.hello_ai_glasses),
                 style = MaterialTheme.typography.titleLarge
             )
             Spacer(modifier = Modifier.height(32.dp))

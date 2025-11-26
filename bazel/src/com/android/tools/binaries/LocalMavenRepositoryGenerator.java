@@ -140,7 +140,7 @@ public class LocalMavenRepositoryGenerator {
         // Add the nodes in the conflict-resolved graph into the |dependencies| section of
         // |result|.
         for (DependencyNode node : resolvedNodes) {
-            processNode(node, true, result);
+            processResolvedNode(node, result);
         }
 
         // Add the nodes in the conflict-unresolved graph, but not in the conflict-resolved
@@ -154,7 +154,7 @@ public class LocalMavenRepositoryGenerator {
                         .filter(d -> !resolvedNodeCoords.contains(d.getArtifact().toString()))
                         .collect(Collectors.toSet());
         for (DependencyNode node : unresolvedDependencies) {
-            processNode(node, false, result);
+            processUnresolvedNode(node, result);
         }
 
         // Add the transitive parents of all nodes in the conflict-unresolved graph into the
@@ -264,7 +264,8 @@ public class LocalMavenRepositoryGenerator {
      * Processes the given node, converts it into a {@link ResolutionResult.Dependency} object, and
      * adds it into result.
      */
-    private void processNode(DependencyNode node, boolean isResolved, ResolutionResult result) {
+    private void processResolvedNode(DependencyNode node, ResolutionResult result) {
+
         // node does not contain any information about parent or pom file.
         // To obtain those, we use the maven-model-builder plugin.
         Model model = repo.getMavenModel(node.getArtifact());
@@ -292,87 +293,87 @@ public class LocalMavenRepositoryGenerator {
         Map<String, String> conflictResolution = new HashMap<>();
         // The dependencies after resolution grouped by scope.
         Map<String, List<String>> resolvedDeps = new TreeMap<>();
-        // The dependencies that were involved in a conflict and got upgraded.
+        Map<String, List<String>> exclusions = new HashMap<>();
+
+        for (DependencyNode child : node.getChildren()) {
+            // If there are exclusions, save a map of dependency -> exclusions to be included
+            // in the BUILD targets for this node and the dependencies.
+            // TODO: exclusion of indirect dependencies (e.g. A->B->C->D, A excludes D in the
+            // context of B) are not currently supported.
+            if (!child.getDependency().getExclusions().isEmpty()) {
+                String generalChild =
+                        child.getArtifact().getGroupId()
+                                + "."
+                                + child.getArtifact().getArtifactId();
+                for (Exclusion excludedArtifact : child.getDependency().getExclusions()) {
+                    List<String> excluded =
+                            exclusions.computeIfAbsent(generalChild, (n) -> new ArrayList<>());
+                    excluded.add(
+                            excludedArtifact.getGroupId() + "." + excludedArtifact.getArtifactId());
+                }
+            }
+            DependencyNode winnerChildNode = getWinner(child);
+            if (winnerChildNode == null
+                    || winnerChildNode.getArtifact() == null
+                    || winnerChildNode
+                            .getArtifact()
+                            .toString()
+                            .equals(child.getArtifact().toString())) {
+                // Winner doesn't exist, does not have an artifact, or is identical
+                // to the child node. This is a dependency that was not upgraded.
+                String scope = child.getDependency().getScope();
+                resolvedDeps.putIfAbsent(scope, new ArrayList<>());
+                resolvedDeps.get(scope).add(child.getArtifact().toString());
+            } else {
+                // This dependency was in a conflict, and got upgraded.
+                conflictResolution.put(
+                        child.getArtifact().toString(), winnerChildNode.getArtifact().toString());
+                // We still maintain the original dependency scope.
+                String scope = child.getDependency().getScope();
+                resolvedDeps.putIfAbsent(scope, new ArrayList<>());
+                resolvedDeps.get(scope).add(winnerChildNode.getArtifact().toString());
+            }
+        }
+
+        result.addDependency(
+                new ResolutionResult.Dependency(
+                        node.getArtifact().toString(),
+                        repoPath.relativize(node.getArtifact().getFile().toPath()).toString(),
+                        repoPath.relativize(model.getPomFile().toPath()).toString(),
+                        parentCoord,
+                        sourcesJarPath,
+                        originalDeps(node).toArray(String[]::new),
+                        resolvedDeps,
+                        conflictResolution,
+                        exclusions));
+    }
+
+    private void processUnresolvedNode(DependencyNode node, ResolutionResult result) {
+        // node does not contain any information about parent or pom file.
+        // To obtain those, we use the maven-model-builder plugin.
+        Model model = repo.getMavenModel(node.getArtifact());
+        String parentCoord = model.getParent() != null ? model.getParent().toString() : null;
+
+        result.addUnresolvedDependency(
+                new ResolutionResult.Dependency(
+                        node.getArtifact().toString(),
+                        repoPath.relativize(node.getArtifact().getFile().toPath()).toString(),
+                        repoPath.relativize(model.getPomFile().toPath()).toString(),
+                        parentCoord,
+                        null,
+                        originalDeps(node).toArray(String[]::new),
+                        null,
+                        null,
+                        null));
+    }
+
+    private static List<String> originalDeps(DependencyNode node) {
         List<String> originalDeps = new ArrayList<>();
 
         for (DependencyNode child : node.getChildren()) {
             originalDeps.add(child.getArtifact().toString());
         }
-
-        Map<String, List<String>> exclusions = new HashMap<>();
-
-        if (isResolved) {
-            for (DependencyNode child : node.getChildren()) {
-                // If there are exclusions, save a map of dependency -> exclusions to be included
-                // in the BUILD targets for this node and the dependencies.
-                // TODO: exclusion of indirect dependencies (e.g. A->B->C->D, A excludes D in the
-                // context of B) are not currently supported.
-                if (!child.getDependency().getExclusions().isEmpty()) {
-                    String generalChild =
-                            child.getArtifact().getGroupId()
-                                    + "."
-                                    + child.getArtifact().getArtifactId();
-                    for (Exclusion excludedArtifact : child.getDependency().getExclusions()) {
-                        List<String> excluded =
-                                exclusions.computeIfAbsent(generalChild, (n) -> new ArrayList<>());
-                        excluded.add(
-                                excludedArtifact.getGroupId()
-                                        + "."
-                                        + excludedArtifact.getArtifactId());
-                    }
-                }
-                DependencyNode winnerChildNode = getWinner(child);
-                if (winnerChildNode == null
-                        || winnerChildNode.getArtifact() == null
-                        || winnerChildNode
-                                .getArtifact()
-                                .toString()
-                                .equals(child.getArtifact().toString())) {
-                    // Winner doesn't exist, does not have an artifact, or is identical
-                    // to the child node. This is a dependency that was not upgraded.
-                    String scope = child.getDependency().getScope();
-                    resolvedDeps.putIfAbsent(scope, new ArrayList<>());
-                    resolvedDeps.get(scope).add(child.getArtifact().toString());
-                } else {
-                    // This dependency was in a conflict, and got upgraded.
-                    conflictResolution.put(
-                            child.getArtifact().toString(),
-                            winnerChildNode.getArtifact().toString());
-                    // We still maintain the original dependency scope.
-                    String scope = child.getDependency().getScope();
-                    resolvedDeps.putIfAbsent(scope, new ArrayList<>());
-                    resolvedDeps.get(scope).add(winnerChildNode.getArtifact().toString());
-                }
-            }
-        }
-
-        if (!isResolved) {
-            result.addUnresolvedDependency(
-                    new ResolutionResult.Dependency(
-                            node.getArtifact().toString(),
-                            repoPath.relativize(node.getArtifact().getFile().toPath()).toString(),
-                            repoPath.relativize(model.getPomFile().toPath()).toString(),
-                            parentCoord,
-                            null,
-                            node.getChildren().stream()
-                                    .map(d -> d.getArtifact().toString())
-                                    .toArray(String[]::new),
-                            null,
-                            null,
-                            null));
-        } else {
-            result.addDependency(
-                    new ResolutionResult.Dependency(
-                            node.getArtifact().toString(),
-                            repoPath.relativize(node.getArtifact().getFile().toPath()).toString(),
-                            repoPath.relativize(model.getPomFile().toPath()).toString(),
-                            parentCoord,
-                            sourcesJarPath,
-                            originalDeps.toArray(new String[0]),
-                            resolvedDeps,
-                            conflictResolution,
-                            exclusions));
-        }
+        return originalDeps;
     }
 
     /**

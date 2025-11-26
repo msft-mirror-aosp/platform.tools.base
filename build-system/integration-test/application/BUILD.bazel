@@ -1,3 +1,4 @@
+load("//tools/base/bazel:kotlin.bzl", "kotlin_library")
 load("//tools/base/bazel:maven.bzl", "maven_repository")
 load("//tools/base/build-system/integration-test:common-dependencies.bzl", "KGP_1_8_10", "KGP_1_9_22", "KGP_VERSION_FOR_TESTS")
 load("//tools/base/build-system/integration-test:integration-test.bzl", "gradle_integration_test", "single_gradle_integration_test", "single_gradle_integration_test_per_source")
@@ -259,6 +260,7 @@ single_gradle_integration_test_per_source(
             "src/test/java/com/android/build/gradle/integration/resources/**",
             "src/test/java/com/android/build/gradle/integration/dependencies/**",
             "src/test/java/com/android/build/gradle/integration/fusedlibrary/**",
+            "src/test/java/com/android/build/gradle/integration/multiplatform/fixture/**",
             "src/test/java/com/android/build/gradle/integration/multiplatform/v2/**",
             "src/test/java/com/android/build/gradle/integration/multiplatform/model/**",
             "src/test/java/com/android/build/gradle/integration/r8/**",
@@ -741,8 +743,9 @@ gradle_integration_test(
     deps = TEST_DEPS,
 )
 
-gradle_integration_test(
+single_gradle_integration_test_per_source(
     name = "testing-tests",
+    package_name = "tools/base/build-system/integration-test/application",
     timeout = "long",
     srcs = glob(
         [
@@ -763,12 +766,12 @@ gradle_integration_test(
         "//tools/base/build-system/integration-test/application:prebuilts",
     ],
     resources = glob(["src/test/resources/**"]),
-    shard_count = 2,
     deps = TEST_DEPS,
 )
 
-gradle_integration_test(
+single_gradle_integration_test_per_source(
     name = "screenshot-tests",
+    package_name = "tools/base/build-system/integration-test/application",
     timeout = "long",
     srcs = [
         "src/test/java/com/android/build/gradle/integration/testing/screenshot/ScreenshotTest.kt",
@@ -786,21 +789,35 @@ gradle_integration_test(
         "//tools/base/build-system/integration-test:kotlin_gradle_plugin_prebuilts",
     ],
     resources = glob(["src/test/resources/fonts/**"]),
-    shard_count = 2,
     tags = [
         "noci:studio-win",  # b/374358308
     ],
     deps = TEST_DEPS,
 )
 
-gradle_integration_test(
+SUITES_FIXTURE = [
+    "src/test/java/com/android/build/gradle/integration/testing/suites/TestEngineLogger.kt",
+    "src/test/java/com/android/build/gradle/integration/testing/suites/ToyJunitEngineForTesting.kt",
+]
+
+kotlin_library(
+    name = "suites_fixture",
+    srcs = SUITES_FIXTURE,
+    deps = TEST_DEPS + [
+        "@maven//:org.junit.platform.junit-platform-engine",
+    ],
+)
+
+single_gradle_integration_test_per_source(
     name = "suites-tests",
+    package_name = "tools/base/build-system/integration-test/application",
     timeout = "long",
     srcs = glob(
         [
             "src/test/java/com/android/build/gradle/integration/testing/suites/*.java",
             "src/test/java/com/android/build/gradle/integration/testing/suites/*.kt",
         ],
+        exclude = SUITES_FIXTURE,
     ),
     data = TEST_DATA,
     maven_repo_zips = [
@@ -815,12 +832,14 @@ gradle_integration_test(
     ],
     resources = glob(["src/test/resources/**"]),
     deps = TEST_DEPS + [
+        ":suites_fixture",
         "@maven//:org.junit.platform.junit-platform-engine",
     ],
 )
 
-gradle_integration_test(
+single_gradle_integration_test_per_source(
     name = "mlkit-tests",
+    package_name = "tools/base/build-system/integration-test/application",
     timeout = "long",
     srcs = glob(
         [
@@ -920,16 +939,32 @@ gradle_integration_test(
     deps = TEST_DEPS,
 )
 
+kotlin_library(
+    name = "kmp-snapshots_fixture",
+    srcs = glob(
+        [
+            "src/test/java/com/android/build/gradle/integration/multiplatform/model/fixture/*.kt",
+        ],
+    ),
+    friends = [":kmp_fixture"],
+    deps = TEST_DEPS + [":kmp_fixture"],
+)
+
 # Test for kotlin multiplatform android snapshots
-gradle_integration_test(
-    name = "kotlin-multiplatform-android-snapshots",
+single_gradle_integration_test_per_source(
+    name = "kmp-snapshots",
+    package_name = "tools/base/build-system/integration-test/application",
     timeout = "long",
     srcs = glob(
         [
             "src/test/java/com/android/build/gradle/integration/multiplatform/model/**/*.kt",
         ],
-    ) + ["src/test/java/com/android/build/gradle/integration/multiplatform/v2/KotlinMultiplatformTestUtils.kt"],
+        exclude = [
+            "src/test/java/com/android/build/gradle/integration/multiplatform/model/fixture/*.kt",
+        ],
+    ),
     data = TEST_DATA,
+    friends = [":kmp_fixture"],
     lint_baseline = "lint_baseline_kotlin_multiplatform_android_tests.xml",
     #keep sorted
     maven_repo_zips = [
@@ -945,12 +980,26 @@ gradle_integration_test(
     ],
     resources = glob(["src/test/resources/**"]),
     tags = ["noci:studio-win"],
+    deps = TEST_DEPS + [
+        ":kmp-snapshots_fixture",
+        ":kmp_fixture",
+    ],
+)
+
+kotlin_library(
+    name = "kmp_fixture",
+    srcs = glob(
+        [
+            "src/test/java/com/android/build/gradle/integration/multiplatform/fixture/*.kt",
+        ],
+    ),
     deps = TEST_DEPS,
 )
 
 # Test for kotlin multiplatform android plugin
-gradle_integration_test(
-    name = "kotlin-multiplatform-android-tests",
+single_gradle_integration_test_per_source(
+    name = "kmp-tests",
+    package_name = "tools/base/build-system/integration-test/application",
     timeout = "long",
     srcs = glob(
         [
@@ -958,6 +1007,7 @@ gradle_integration_test(
         ],
     ),
     data = TEST_DATA,
+    friends = [":kmp_fixture"],
     lint_baseline = "lint_baseline_kotlin_multiplatform_android_tests.xml",
     #keep sorted
     maven_repo_zips = [
@@ -972,8 +1022,9 @@ gradle_integration_test(
         "//tools/base/build-system/integration-test/application:prebuilts",
     ],
     resources = glob(["src/test/resources/**"]),
-    shard_count = 4,
-    deps = TEST_DEPS,
+    deps = TEST_DEPS + [
+        ":kmp_fixture",
+    ],
 )
 
 single_gradle_integration_test(

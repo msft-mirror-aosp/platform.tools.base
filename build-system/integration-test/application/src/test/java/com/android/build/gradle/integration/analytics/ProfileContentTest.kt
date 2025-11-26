@@ -41,7 +41,6 @@ class ProfileContentTest {
     var project = GradleTestProject.builder()
             .fromTestApp(KotlinHelloWorldApp.forPlugin("com.android.application"))
             .enableProfileOutput()
-            .disableBuiltInKotlin()
             .create()
 
     @Test
@@ -74,11 +73,9 @@ class ProfileContentTest {
             assertThat(profile.gradleVersion).isNotEmpty()
             val gbp = profile.getProject(0)
             assertThat(gbp.compileSdk).isEqualTo(GradleTestProject.compileSdkHash)
-            assertThat(gbp.kotlinPluginVersion).isEqualTo(project.kotlinVersion)
             assertThat<GradleBuildProject.GradlePlugin,
                     Iterable<GradleBuildProject.GradlePlugin>>(gbp.pluginList)
-                .containsAtLeast(
-                        ORG_JETBRAINS_KOTLIN_GRADLE_PLUGIN_KOTLINANDROIDPLUGINWRAPPER,
+                .contains(
                         COM_ANDROID_BUILD_GRADLE_APPPLUGIN
                 )
             assertThat(gbp.variantCount).isGreaterThan(0)
@@ -90,10 +87,6 @@ class ProfileContentTest {
             assertThat(gbp.appliedPluginsList.any {
                 it.className == "com.android.build.gradle.AppPlugin" &&
                         it.jarName == "gradle-api-${Version.ANDROID_GRADLE_PLUGIN_VERSION}"
-            }).isTrue()
-            assertThat(gbp.appliedPluginsList.any {
-                it.className == "org.jetbrains.kotlin.gradle.plugin.KotlinAndroidPluginWrapper" &&
-                        it.jarName.startsWith("kotlin-gradle-plugin-${TestUtils.KOTLIN_VERSION_FOR_TESTS}")
             }).isTrue()
         }
         for (profile in listOf(cleanBuild, noOpBuild)) {

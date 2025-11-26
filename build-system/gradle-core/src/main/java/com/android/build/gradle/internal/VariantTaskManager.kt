@@ -23,16 +23,15 @@ import com.android.build.api.dsl.DataBinding
 import com.android.build.api.variant.HostTest
 import com.android.build.api.variant.VariantBuilder
 import com.android.build.gradle.internal.attribution.CheckJetifierBuildService
-import com.android.build.gradle.internal.component.DeviceTestCreationConfig
 import com.android.build.gradle.internal.component.ApkCreationConfig
 import com.android.build.gradle.internal.component.ComponentCreationConfig
+import com.android.build.gradle.internal.component.DeviceTestCreationConfig
 import com.android.build.gradle.internal.component.HostTestCreationConfig
 import com.android.build.gradle.internal.component.NestedComponentCreationConfig
 import com.android.build.gradle.internal.component.TestComponentCreationConfig
 import com.android.build.gradle.internal.component.TestFixturesCreationConfig
 import com.android.build.gradle.internal.component.VariantCreationConfig
 import com.android.build.gradle.internal.cxx.configure.createCxxTasks
-import com.android.build.gradle.internal.dependency.AndroidXDependencySubstitution
 import com.android.build.gradle.internal.dsl.DataBindingOptions
 import com.android.build.gradle.internal.lint.LintTaskManager
 import com.android.build.gradle.internal.profile.AnalyticsConfiguratorService
@@ -40,7 +39,6 @@ import com.android.build.gradle.internal.services.AndroidLocationsBuildService
 import com.android.build.gradle.internal.services.getBuildService
 import com.android.build.gradle.internal.tasks.CheckJetifierTask
 import com.android.build.gradle.internal.tasks.SigningReportTask
-import com.android.build.gradle.internal.tasks.ValidateSigningTask
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfig
 import com.android.build.gradle.internal.tasks.factory.TaskManagerConfig
 import com.android.build.gradle.internal.utils.ANDROID_BUILT_IN_KOTLIN_PLUGIN_ID
@@ -144,14 +142,6 @@ abstract class VariantTaskManager<VariantBuilderT : VariantBuilder, VariantT : V
     }
 
     fun createPostApiTasks() {
-        // Create Kotlin tasks after the variant API runs because Kotlin tasks currently need access
-        // to the old variant API (KT-77300).
-        // Once KT-77300 is fixed, we should move this call to earlier where
-        // `TaskManager.createJavacTask` is called.
-        (variants.map { it.variant } + testComponents + testFixturesComponents).forEach {
-            maybeCreateKotlinTasks(it)
-        }
-
         val anyHostTestUsingAndroidResources = testComponents.filterIsInstance<HostTest>()
             .any {
                 it.androidResourcesIncluded

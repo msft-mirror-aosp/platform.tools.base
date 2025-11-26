@@ -44,7 +44,7 @@
             </d:sensors>
             <d:mic>true</d:mic>
             <d:camera>
-                <d:location>back</d:location>
+                <d:location>front</d:location>
                 <d:autofocus>false</d:autofocus>
                 <d:flash>false</d:flash>
             </d:camera>
@@ -84,6 +84,7 @@
         </d:state>
         <d:tag-id>android-xr</d:tag-id>
     </d:device>
+
     <d:device>
         <d:name>AI Glasses</d:name>
         <d:id>ai_glasses_device</d:id>
@@ -119,7 +120,7 @@
             </d:sensors>
             <d:mic>true</d:mic>
             <d:camera>
-                <d:location>front</d:location>
+                <d:location>back</d:location>
                 <d:autofocus>false</d:autofocus>
                 <d:flash>false</d:flash>
             </d:camera>

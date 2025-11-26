@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 The Android Open Source Project
+ * Copyright (C) 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,23 +14,11 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.integration.multiplatform.v2
+package com.android.build.gradle.integration.multiplatform.fixture
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.ModelContainerV2
 import com.android.build.gradle.integration.common.utils.TestFileUtils
-
-internal fun GradleTestProject.getBuildMap() =
-    mapOf(
-        ModelContainerV2.ROOT_BUILD_ID to ModelContainerV2.BuildInfo(
-            name = ":kotlinMultiplatform",
-            rootDir = projectDir,
-            projects = settingsFile.readText().split("\n").mapNotNull {
-                it.takeIf { it.startsWith("include ") }?.substringAfter("include ")
-                    ?.trim('\'', ':')?.let { it to getSubproject(it).projectDir }
-            }
-        )
-    )
 
 
 internal fun GradleTestProject.publishLibs(

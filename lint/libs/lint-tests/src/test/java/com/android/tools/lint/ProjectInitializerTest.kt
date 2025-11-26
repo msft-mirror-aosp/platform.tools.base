@@ -69,6 +69,7 @@ import java.io.File
 import kotlin.io.path.isRegularFile
 import kotlin.io.path.readText
 import kotlin.streams.toList
+import kotlin.test.fail
 import kotlin.text.Charsets
 import org.intellij.lang.annotations.Language
 import org.jetbrains.kotlin.analysis.api.KaExperimentalApi
@@ -3873,7 +3874,7 @@ params: arg: T
       // Args
       arrayOf(
         "--check",
-        "IgnoreWithoutReason",
+        "SetAndClearCommunicationDevice",
         "--project",
         descriptorFile.path,
         "--config",
@@ -3916,6 +3917,250 @@ params: arg: T
       },
     )
     assertEquals(4, numFilesVisited)
+  }
+
+  @Test
+  fun testGeneratedAndTestFile2() {
+    // Test/generated sources cannot be in the same root as non-test/non-generated sources with
+    // Lint's K1 project structure, so we can only test on K2.
+    assumeTrue(useFirUast())
+
+    // Similar to testGeneratedAndTestFile (above), except we are not checking generated files.
+    // In particular, file C (both test and gen) should not be visited.
+    val root = temp.newFolder().canonicalFile.absoluteFile
+    val projects =
+      lint()
+        .files(
+          xml(
+              "lint.xml",
+              """
+              <lint checkTestSources="true" checkGeneratedSources="false">
+              </lint>
+              """,
+            )
+            .indented(),
+          xml(
+              "project.xml",
+              """
+              <project>
+                <module name="test" android="true" library="false" compute_source_roots="false">
+                  <src file="com/example/A.java" test="true"/>
+                  <src file="com/example/B.java" generated="true"/>
+                  <src file="com/example/C.java" test="true" generated="true"/>
+                  <src file="com/example/D.java"/>
+                </module>
+              </project>
+              """,
+            )
+            .indented(),
+          java(
+              "com/example/A.java",
+              """
+              package com.example;
+              class A {}
+              """,
+            )
+            .indented(),
+          java(
+              "com/example/B.java",
+              """
+              package com.example;
+              class B {}
+              """,
+            )
+            .indented(),
+          java(
+              "com/example/C.java",
+              """
+              package com.example;
+              class C {}
+              """,
+            )
+            .indented(),
+          java(
+              "com/example/D.java",
+              """
+              package com.example;
+              class D {}
+              """,
+            )
+            .indented(),
+        )
+        .createProjects(root)
+    val descriptorFile = File(projects[0], "project.xml")
+    val configFile = File(projects[0], "lint.xml")
+
+    var numFilesVisited = 0
+
+    MainTest.checkDriver(
+      "No issues found.",
+      "",
+
+      // Expected exit code
+      ERRNO_SUCCESS,
+
+      // Args
+      arrayOf(
+        "--check",
+        "SetAndClearCommunicationDevice",
+        "--project",
+        descriptorFile.path,
+        "--config",
+        configFile.path,
+      ),
+      null,
+      { driver, type, project, context ->
+        when (type) {
+          SCANNING_FILE -> {
+            context!!
+            when (context.file.name) {
+              "A.java" -> {
+                context as JavaContext
+                assertTrue(context.isTestSource)
+                assertFalse(context.isGeneratedSource)
+                ++numFilesVisited
+              }
+              "B.java" -> {
+                fail("B.java should not be visited")
+              }
+              "C.java" -> {
+                fail("C.java should not be visited")
+              }
+              "D.java" -> {
+                context as JavaContext
+                assertFalse(context.isTestSource)
+                assertFalse(context.isGeneratedSource)
+                ++numFilesVisited
+              }
+            }
+          }
+          else -> {}
+        }
+      },
+    )
+    assertEquals(2, numFilesVisited)
+  }
+
+  @Test
+  fun testGeneratedAndTestFile3() {
+    // Test/generated sources cannot be in the same root as non-test/non-generated sources with
+    // Lint's K1 project structure, so we can only test on K2.
+    assumeTrue(useFirUast())
+
+    // Similar to testGeneratedAndTestFile2 (above), except we are not checking test files.
+    // So we only visit normal and generated files (not test files, and not gen+test).
+    val root = temp.newFolder().canonicalFile.absoluteFile
+    val projects =
+      lint()
+        .files(
+          xml(
+              "lint.xml",
+              """
+              <lint checkTestSources="false" checkGeneratedSources="true">
+              </lint>
+              """,
+            )
+            .indented(),
+          xml(
+              "project.xml",
+              """
+              <project>
+                <module name="test" android="true" library="false" compute_source_roots="false">
+                  <src file="com/example/A.java" test="true"/>
+                  <src file="com/example/B.java" generated="true"/>
+                  <src file="com/example/C.java" test="true" generated="true"/>
+                  <src file="com/example/D.java"/>
+                </module>
+              </project>
+              """,
+            )
+            .indented(),
+          java(
+              "com/example/A.java",
+              """
+              package com.example;
+              class A {}
+              """,
+            )
+            .indented(),
+          java(
+              "com/example/B.java",
+              """
+              package com.example;
+              class B {}
+              """,
+            )
+            .indented(),
+          java(
+              "com/example/C.java",
+              """
+              package com.example;
+              class C {}
+              """,
+            )
+            .indented(),
+          java(
+              "com/example/D.java",
+              """
+              package com.example;
+              class D {}
+              """,
+            )
+            .indented(),
+        )
+        .createProjects(root)
+    val descriptorFile = File(projects[0], "project.xml")
+    val configFile = File(projects[0], "lint.xml")
+
+    var numFilesVisited = 0
+
+    MainTest.checkDriver(
+      "No issues found.",
+      "",
+
+      // Expected exit code
+      ERRNO_SUCCESS,
+
+      // Args
+      arrayOf(
+        "--check",
+        "SetAndClearCommunicationDevice",
+        "--project",
+        descriptorFile.path,
+        "--config",
+        configFile.path,
+      ),
+      null,
+      { driver, type, project, context ->
+        when (type) {
+          SCANNING_FILE -> {
+            context!!
+            when (context.file.name) {
+              "A.java" -> {
+                fail("A.java should not be visited")
+              }
+              "B.java" -> {
+                context as JavaContext
+                assertFalse(context.isTestSource)
+                assertTrue(context.isGeneratedSource)
+                ++numFilesVisited
+              }
+              "C.java" -> {
+                fail("C.java should not be visited")
+              }
+              "D.java" -> {
+                context as JavaContext
+                assertFalse(context.isTestSource)
+                assertFalse(context.isGeneratedSource)
+                ++numFilesVisited
+              }
+            }
+          }
+          else -> {}
+        }
+      },
+    )
+    assertEquals(2, numFilesVisited)
   }
 
   @Test

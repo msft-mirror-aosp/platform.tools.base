@@ -39,7 +39,6 @@ public class JacocoWithKotlinTest {
     public GradleTestProject project =
             GradleTestProject.builder()
                     .fromTestApp(KotlinHelloWorldApp.forPlugin("com.android.application"))
-                    .disableBuiltInKotlin()
                     .create();
 
     @Before
@@ -70,12 +69,12 @@ public class JacocoWithKotlinTest {
         File kotlinModuleFile =
                 FileUtils.join(
                         project.getIntermediatesDir(),
-                       "classes",
+                        "classes",
                         "debug",
                         "jacocoDebug",
                         "dirs",
                         "META-INF",
-                        "project_debug.kotlin_module");
+                        "project.kotlin_module");
         assertThat(kotlinModuleFile).isFile();
     }
 }
