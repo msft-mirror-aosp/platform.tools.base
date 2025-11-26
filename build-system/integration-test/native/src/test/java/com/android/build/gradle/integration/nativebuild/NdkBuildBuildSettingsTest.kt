@@ -31,6 +31,7 @@ import com.android.build.gradle.internal.core.Abi
 import com.android.build.gradle.internal.cxx.model.ndkMinPlatform
 import com.android.build.gradle.internal.cxx.settings.BuildSettingsConfiguration
 import com.android.build.gradle.internal.cxx.settings.EnvironmentVariable
+import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.AssumeUtil
 import com.android.utils.FileUtils
 import com.android.utils.FileUtils.join
@@ -44,10 +45,11 @@ class NdkBuildBuildSettingsTest {
     @Rule
     @JvmField
     val project = GradleTestProject.builder()
-      .fromTestApp(HelloWorldJniApp.builder().build())
-      .setSideBySideNdkVersion(DEFAULT_NDK_SIDE_BY_SIDE_VERSION)
-      .addFile(HelloWorldJniApp.androidMkC("src/main/jni"))
-      .create()
+        .fromTestApp(HelloWorldJniApp.builder().build())
+        .setSideBySideNdkVersion(DEFAULT_NDK_SIDE_BY_SIDE_VERSION)
+        .addGradleProperty(BooleanOption.USE_NEW_DSL, false)
+        .addFile(HelloWorldJniApp.androidMkC("src/main/jni"))
+        .create()
 
     @Before
     @Throws(IOException::class)
@@ -62,6 +64,8 @@ class NdkBuildBuildSettingsTest {
                     ndkPath = "${project.ndkPath}"
                     defaultConfig {
                       minSdk = $DEFAULT_MIN_SDK_VERSION
+                      //noinspection ExpiredTargetSdkVersion
+                      targetSdk = $DEFAULT_MIN_SDK_VERSION
                       externalNativeBuild {
                           ndkBuild {
                             abiFilters.addAll("armeabi-v7a", "arm64-v8a")

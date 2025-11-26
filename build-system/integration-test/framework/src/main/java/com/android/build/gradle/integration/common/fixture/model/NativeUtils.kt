@@ -55,6 +55,7 @@ import com.android.build.gradle.internal.cxx.configure.decodeConfigureInvalidati
 import com.android.build.gradle.internal.cxx.configure.shouldConfigure
 import com.android.build.gradle.internal.cxx.model.name
 import com.android.build.gradle.internal.cxx.process.decodeExecuteProcess
+import com.android.build.gradle.options.BooleanOption
 import com.android.builder.model.v2.ide.SyncIssue
 import com.android.utils.SdkUtils.escapePropertyValue
 import com.google.common.truth.Truth.assertThat
@@ -107,7 +108,9 @@ fun File.dumpCompileCommandsJsonBin(normalizer: FileNormalizer): String =
  * Return a report of build outputs (*.so, *.o, *.a).
  */
 fun GradleTestProject.goldenBuildProducts() : String {
-    val fetchResult = modelV2().fetchNativeModules(NativeModuleParams(listOf(), listOf()))
+    val fetchResult = modelV2()
+        .allowOptionWarning(BooleanOption.USE_NEW_DSL)
+        .fetchNativeModules(NativeModuleParams(listOf(), listOf()))
     val hashToKey = fetchResult.cxxFileVariantSegmentTranslator()
     val projectFolder = recoverExistingCxxAbiModels().first().variant.module.project.rootBuildGradleFolder
     return projectFolder.walk()

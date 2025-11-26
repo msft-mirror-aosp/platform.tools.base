@@ -120,6 +120,7 @@ class CmakeBasicProjectTest(
     @JvmField
     val project = GradleTestProject.builder()
         .fromTestApp(HelloWorldJniApp.builder().withNativeDir("cxx").withCmake().build())
+        .addGradleProperty(BooleanOption.USE_NEW_DSL, false)
         .setSideBySideNdkVersion(DEFAULT_NDK_SIDE_BY_SIDE_VERSION)
         .create()
 
@@ -187,6 +188,8 @@ class CmakeBasicProjectTest(
                 ndkPath = "${project.ndkPath}"
                 defaultConfig {
                   minSdk = ${GradleTestProject.DEFAULT_MIN_SDK_VERSION}
+                  //noinspection ExpiredTargetSdkVersion
+                  targetSdk = ${GradleTestProject.DEFAULT_MIN_SDK_VERSION}
                   externalNativeBuild {
                       cmake {
                         abiFilters.addAll("armeabi-v7a", "x86_64");
@@ -234,6 +237,8 @@ class CmakeBasicProjectTest(
                 ndkPath = "${project.ndkPath}"
                 defaultConfig {
                     minSdk = ${GradleTestProject.DEFAULT_MIN_SDK_VERSION}
+                    //noinspection ExpiredTargetSdkVersion
+                    targetSdk = ${GradleTestProject.DEFAULT_MIN_SDK_VERSION}
                     externalNativeBuild {
                       experimentalProperties["ninja.path"] = "$cmakeListsPath"
                       experimentalProperties["ninja.configure"] = "${cmakeExe.replace("\\", "\\\\")}"
@@ -327,6 +332,8 @@ class CmakeBasicProjectTest(
                 ndkPath = "${project.ndkPath}"
                 defaultConfig {
                     minSdk = ${GradleTestProject.DEFAULT_MIN_SDK_VERSION}
+                    //noinspection ExpiredTargetSdkVersion
+                    targetSdk = ${GradleTestProject.DEFAULT_MIN_SDK_VERSION}
                     externalNativeBuild {
                       experimentalProperties["ninja.abiFilters"] = ["armeabi-v7a", "x86_64"];
                       experimentalProperties["ninja.cFlags"] = ["-DTEST_C_FLAG", "-DTEST_C_FLAG_2"];
@@ -880,6 +887,7 @@ class CmakeBasicProjectTest(
         // Request build details for debug-x86_64
         val fetchResult =
           project.modelV2()
+              .allowOptionWarning(BooleanOption.USE_NEW_DSL)
               .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING) // CMake cannot detect compiler attributes
               .fetchNativeModules(NativeModuleParams(listOf("debug"), listOf("x86_64")))
 
@@ -928,7 +936,9 @@ class CmakeBasicProjectTest(
 
     @Test
     fun checkModel() {
-        val fetchResult = project.modelV2().fetchNativeModules(NativeModuleParams(emptyList(), emptyList()))
+        val fetchResult = project.modelV2()
+            .allowOptionWarning(BooleanOption.USE_NEW_DSL)
+            .fetchNativeModules(NativeModuleParams(emptyList(), emptyList()))
         Truth.assertThat(fetchResult.dump()).isEqualTo(
           """[:]
 > NativeModule:
@@ -978,7 +988,9 @@ class CmakeBasicProjectTest(
         executorWithLegacyApi().run("clean", "assembleDebug", "assembleRelease")
 
         // We specify to not generate the build information for any variants or ABIs here.
-        val result = project.modelV2().fetchNativeModules(NativeModuleParams(emptyList(), emptyList()))
+        val result = project.modelV2()
+            .allowOptionWarning(BooleanOption.USE_NEW_DSL)
+            .fetchNativeModules(NativeModuleParams(emptyList(), emptyList()))
 
         val additionalProjectFileStatus =  "F"
 
@@ -1044,7 +1056,9 @@ class CmakeBasicProjectTest(
     fun checkCleanAfterAbiSubset() {
         executorWithLegacyApi().run("clean", "assembleDebug", "assembleRelease")
         val buildOutputs = run {
-            val result = project.modelV2().fetchNativeModules(NativeModuleParams(emptyList(), emptyList()))
+            val result = project.modelV2()
+                .allowOptionWarning(BooleanOption.USE_NEW_DSL)
+                .fetchNativeModules(NativeModuleParams(emptyList(), emptyList()))
             val nativeModule = result.container.singleNativeModule
             val buildOutputFolders = nativeModule.variants.flatMap { variant ->
                 variant.abis.flatMap { abi ->
@@ -1239,6 +1253,7 @@ apply plugin: 'com.android.application'
     @Test
     fun `ensure compile_commands json bin is created for each native ABI in model`() {
         val nativeModules = project.modelV2()
+            .allowOptionWarning(BooleanOption.USE_NEW_DSL)
             .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING) // CMake cannot detect compiler attributes
             .fetchNativeModules(NativeModuleParams())
         val nativeModule = nativeModules.container.singleNativeModule
@@ -1255,6 +1270,7 @@ apply plugin: 'com.android.application'
         Assume.assumeTrue(mode != Mode.NinjaRedirect) // Only creates compile_commands.json.bin
         Assume.assumeTrue(mode != Mode.CMake || cmakeVersionInDsl != "3.6.0") // Only creates compile_commands.json.bin
         project.modelV2()
+            .allowOptionWarning(BooleanOption.USE_NEW_DSL)
             .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING) // CMake cannot detect compiler attributes
             .fetchNativeModules(NativeModuleParams())
         val abis = project.recoverExistingCxxAbiModels()
