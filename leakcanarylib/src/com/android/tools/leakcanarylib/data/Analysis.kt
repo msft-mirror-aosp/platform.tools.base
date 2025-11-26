@@ -31,8 +31,10 @@ sealed class Analysis {
         fun fromString(heapAnalysis: String): Analysis? {
             return if (heapAnalysis.contains("HEAP ANALYSIS RESULT")) {
                 AnalysisParser.analysisSuccessFromString(heapAnalysis)
-            } else if (heapAnalysis.contains("HEAP ANALYSIS FAILED")){
+            } else if (heapAnalysis.contains("HEAP ANALYSIS FAILED")) {
                 AnalysisParser.analysisFailureFromString(heapAnalysis)
+            } else if (heapAnalysis.isNotEmpty()){
+                AnalysisParser.analysisUpdateFromString(heapAnalysis)
             } else {
                 return null
             }
@@ -143,5 +145,16 @@ Analysis duration: $analysisDurationMillis ms
 Heap dump file path: ${heapDumpFile.absolutePath}
 Heap dump timestamp: $createdAtTimeMillis
 ===================================="""
+    }
+}
+
+/**
+ * Represents an analysis update, which is not a final result.
+ *
+ * @property message The logcat message indicating the progress (e.g., "Found 5 objects retained").
+ */
+data class AnalysisUpdate(val message: String) : Analysis() {
+    override fun toString(): String {
+        return message
     }
 }
