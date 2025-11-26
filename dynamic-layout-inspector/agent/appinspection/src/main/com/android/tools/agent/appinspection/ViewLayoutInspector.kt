@@ -410,8 +410,12 @@ class ViewLayoutInspector(connection: Connection, private val environment: Inspe
         // Starting rendering captures must be called on the View thread or else it throws
         ThreadUtils.runOnMainThread {
             synchronized(state.lock) {
-                var screenshotType = if (state.snapshotRequests.isNotEmpty()) {
-                    // snapshots only support SKP. If there is a snapshot request, use SKP.
+                var screenshotType = if (state.snapshotRequests.any { it.value.screenshotType == Screenshot.Type.BITMAP }) {
+                    // If at least one snapshot request is for bitmap, use bitmap for all
+                    Screenshot.Type.BITMAP
+                }
+                else if (state.snapshotRequests.any { it.value.screenshotType == Screenshot.Type.SKP }) {
+                    // If at least one snapshot request is for skp, use skp for all
                     Screenshot.Type.SKP
                 }
                 else {
@@ -714,7 +718,6 @@ class ViewLayoutInspector(connection: Connection, private val environment: Inspe
     }
 
     private fun handleCaptureSnapshotCommand(
-        @Suppress("UNUSED_PARAMETER") // TODO: support bitmap
         captureSnapshotCommand: LayoutInspectorViewProtocol.CaptureSnapshotCommand,
         callback: CommandCallback
     ) {
@@ -723,22 +726,29 @@ class ViewLayoutInspector(connection: Connection, private val environment: Inspe
 
         scope.launch {
             val roots = ThreadUtils.runOnMainThreadAsync { getRootViews(xrHelper) }.await()
-            val windowSnapshots = roots.map { root ->
-                SnapshotRequest().also {
-                    state.snapshotRequests[root.view.uniqueDrawingId] = it
-                }.result
+            val windowSnapshotRequests = roots.map { root ->
+                val snapshotRequest = SnapshotRequest(captureSnapshotCommand.screenshotType)
+                state.snapshotRequests[root.view.uniqueDrawingId] = snapshotRequest
+                snapshotRequest.result
             }
-            // At this point we need to switch to capturing SKPs if we aren't already.
+
+            // Update capturing image type according to snapshot request
             updateAllCapturingCallbacks()
             ThreadUtils.runOnMainThread { roots.forEach { it.view.invalidate() } }
+
+            val windowSnapshotResults = windowSnapshotRequests.awaitAll()
+            val rootIds = roots.map { it.view.uniqueDrawingId }
+
             val reply = LayoutInspectorViewProtocol.CaptureSnapshotResponse.newBuilder().apply {
                 windowRoots = WindowRootsEvent.newBuilder().apply {
-                    addAllIds(roots.map { it.view.uniqueDrawingId })
+                    addAllIds(rootIds)
                 }.build()
-                addAllWindowSnapshots(windowSnapshots.awaitAll())
+                addAllWindowSnapshots(windowSnapshotResults)
             }.build()
-            // And now we need to switch back to bitmaps, if we were before.
+
+            // Update capturing image type to whatever was used before
             updateAllCapturingCallbacks()
+
             callback.reply {
                 captureSnapshotResponse = reply
             }
