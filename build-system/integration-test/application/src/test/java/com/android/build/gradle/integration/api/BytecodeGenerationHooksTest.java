@@ -28,6 +28,7 @@ import com.android.build.gradle.integration.common.fixture.project.AarSelector;
 import com.android.build.gradle.integration.common.truth.ScannerSubjectUtils;
 import com.android.build.gradle.integration.common.truth.TruthHelper;
 import com.android.build.gradle.internal.scope.InternalArtifactType;
+import com.android.build.gradle.options.BooleanOption;
 import com.android.testutils.apk.Apk;
 import com.android.testutils.apk.Dex;
 import com.android.utils.FileUtils;
@@ -54,7 +55,10 @@ import java.util.stream.Collectors;
 public class BytecodeGenerationHooksTest {
     @ClassRule
     public static GradleTestProject project =
-            GradleTestProject.builder().fromTestProject("bytecodeGenerationHooks").create();
+            GradleTestProject.builder()
+                    .fromTestProject("bytecodeGenerationHooks")
+                    .addGradleProperty(BooleanOption.USE_NEW_DSL, false)
+                    .create();
 
     @AfterClass
     public static void cleanUp() {
