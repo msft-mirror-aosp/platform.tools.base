@@ -30,10 +30,6 @@ android {
         }
     }
 
-    dexOptions {
-        incremental = false
-    }
-
     // Included in both hamcrest-core and hamcrest-library.
     packagingOptions.exclude 'LICENSE.txt'
 }
