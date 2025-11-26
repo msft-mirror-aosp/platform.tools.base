@@ -29,7 +29,7 @@ class LeakCanaryParser {
      * @return An `Analysis` object representing the parsed analysis result, which can be either an `AnalysisSuccess` or an
      * `AnalysisFailure`.
      */
-    fun parseLogcatMessage(message: String): Analysis {
+    fun parseLogcatMessage(message: String): Analysis? {
         return Analysis.fromString(message)
     }
 }

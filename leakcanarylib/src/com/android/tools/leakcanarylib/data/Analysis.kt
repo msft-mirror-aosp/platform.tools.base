@@ -28,11 +28,13 @@ import java.io.File
 sealed class Analysis {
     companion object {
         const val DUMP_DURATION_UNKNOWN: Long = -1
-        fun fromString(heapAnalysis: String): Analysis {
+        fun fromString(heapAnalysis: String): Analysis? {
             return if (heapAnalysis.contains("HEAP ANALYSIS RESULT")) {
                 AnalysisParser.analysisSuccessFromString(heapAnalysis)
-            } else {
+            } else if (heapAnalysis.contains("HEAP ANALYSIS FAILED")){
                 AnalysisParser.analysisFailureFromString(heapAnalysis)
+            } else {
+                return null
             }
         }
     }
