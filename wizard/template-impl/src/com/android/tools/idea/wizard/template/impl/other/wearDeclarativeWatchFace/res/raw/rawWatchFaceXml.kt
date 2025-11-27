@@ -22,20 +22,20 @@ fun rawWatchFaceXml() =
   <Metadata key="CLOCK_TYPE" value="DIGITAL"/>
     <Scene>
     <DigitalClock x="0" y="0" width="450" height="450">
-        <TimeText align="CENTER" format="hh:mm" x="0" y="175" width="450" height="100">
+      <TimeText format="hh:mm" x="0" y="175" width="450" height="100">
         <Variant mode="AMBIENT" target="alpha" value="0"/>
-            <Font color="#ffffffff" family="SYNC_TO_DEVICE" size="128" />
+        <Font color="#ffffffff" family="SYNC_TO_DEVICE" size="128" />
       </TimeText>
-        <TimeText align="CENTER" alpha="0" format="hh:mm" x="0" y="175" width="450" height="100">
+      <TimeText alpha="0" format="hh:mm" x="0" y="175" width="450" height="100">
         <Variant mode="AMBIENT" target="alpha" value="255"/>
-            <Font color="#ffffffff" family="SYNC_TO_DEVICE" size="128" weight="THIN" />
+        <Font color="#ffffffff" family="SYNC_TO_DEVICE" size="128" weight="THIN" />
       </TimeText>
     </DigitalClock>
     <Group x="0" y="0" width="450" height="450" name="hello_world">
       <PartText x="0" y="285" width="450" height="50">
         <Variant mode="AMBIENT" target="alpha" value="0"/>
-        <Text align="CENTER">
-        <Font color="#ffffffff" family="SYNC_TO_DEVICE" size="36">
+        <Text>
+          <Font color="#ffffffff" family="SYNC_TO_DEVICE" size="36">
             <Template>%s<Parameter expression="greeting"/></Template>
           </Font>
         </Text>
