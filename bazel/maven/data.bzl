@@ -947,6 +947,7 @@ DATA = [
     "org.eclipse.lsp4j:org.eclipse.lsp4j:0.21.1",
     "org.eclipse.lsp4j:org.eclipse.lsp4j.debug:0.21.1",
     "org.gradle:gradle-core:4.2.1",
+    "org.gradle:gradle-tooling-api:9.2.1",
     "org.gradle.toolchains.foojay-resolver-convention:org.gradle.toolchains.foojay-resolver-convention.gradle.plugin:pom:1.0.0",
     "org.hamcrest:hamcrest-core:2.2",
     "org.jacoco:org.jacoco.agent:0.7.4.201502262128",  # Keep old Jacoco version for testing.
@@ -1141,6 +1142,7 @@ DATA = [
     "org.jetbrains.kotlin:kotlin-reflect:2.0.21",
     "org.jetbrains.kotlin:kotlin-reflect:2.1.20",
     "org.jetbrains.kotlin:kotlin-reflect:2.2.0",  # AGP dependencies (AGP depends on kotlin-reflect:2.2.10, but Gradle downgrades it to kotlin-reflect:2.2.0)
+    "org.jetbrains.kotlin:kotlin-reflect:2.2.20",
     "org.jetbrains.kotlin:kotlin-reflect:2.3.0-Beta2",  # Used by AGP tests
     "org.jetbrains.kotlin:kotlin-script-runtime:1.5.21",
     "org.jetbrains.kotlin:kotlin-script-runtime:1.6.10",
@@ -1161,6 +1163,7 @@ DATA = [
     "org.jetbrains.kotlin:kotlin-stdlib:2.0.21",
     "org.jetbrains.kotlin:kotlin-stdlib:2.1.20",
     "org.jetbrains.kotlin:kotlin-stdlib:2.2.0",  # AGP dependencies (AGP depends on kotlin-stdlib:2.2.10, but Gradle downgrades it to kotlin-stdlib:2.2.0)
+    "org.jetbrains.kotlin:kotlin-stdlib:2.2.20",
     "org.jetbrains.kotlin:kotlin-stdlib:2.3.0-Beta2",  # Used by AGP tests
     "org.jetbrains.kotlin:kotlin-stdlib:2.3.20-dev-825",
     "org.jetbrains.kotlin:kotlin-stdlib-common:1.9.20",
@@ -1171,6 +1174,7 @@ DATA = [
     "org.jetbrains.kotlin:kotlin-stdlib-common:pom:2.1.0",
     "org.jetbrains.kotlin:kotlin-stdlib-common:pom:2.2.0",  # Used by com.android.tools.idea.benchmarks.tests.JetNewsBenchmarkTest
     "org.jetbrains.kotlin:kotlin-stdlib-common:pom:2.2.10",  # AGP dependencies + Used by AGP privacy-sandbox tests
+    "org.jetbrains.kotlin:kotlin-stdlib-common:pom:2.2.20",
     "org.jetbrains.kotlin:kotlin-stdlib-common:pom:2.3.0-Beta2",  # Used by AGP tests
     "org.jetbrains.kotlin:kotlin-stdlib-common:pom:2.3.20-dev-825",
     "org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.4.32",
