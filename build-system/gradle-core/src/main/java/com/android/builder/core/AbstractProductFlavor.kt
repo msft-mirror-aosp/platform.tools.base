@@ -462,7 +462,7 @@ abstract class AbstractProductFlavor(
      * @param requestedValues the values provided in the DSL
      * @return a DimensionRequest with the main requested value and the fallbacks.
      */
-    protected open fun computeRequestedAndFallBacks(requestedValues: List<String>): DimensionRequest { // default implementation is that the fallback's first item is the requested item.
+    private fun computeRequestedAndFallBacks(requestedValues: List<String>): DimensionRequest { // default implementation is that the fallback's first item is the requested item.
         return DimensionRequest(
             requestedValues[0],
             requestedValues.subList(1, requestedValues.size)

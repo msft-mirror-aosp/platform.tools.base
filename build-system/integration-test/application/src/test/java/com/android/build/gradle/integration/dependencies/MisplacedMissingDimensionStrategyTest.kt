@@ -66,7 +66,7 @@ class MisplacedMissingDimensionStrategyTest {
 
 /**
  * Context: b/460094802.
- * This test is verifying the current wrong behavior of variant attributes matching when using
+ * This test is verifying the fix of the wrong behavior of variant attributes matching when using
  * ProductFlavors' MissingDimensionStrategy.
  * When there is a dimension mismatch between ":app" and ":lib", and ":app" specifies missingDimensionStrategy
  * we end up prioritizing matching a ProductFlavor with same name as the consumer's.
@@ -83,7 +83,7 @@ class MisplacedMissingDimensionStrategyWrongBehaviorTest {
                         create("foo") {
                             it.dimension = "color"
                             it.isDefault = true
-                            // This here should (in theory) fail build. Because the
+                            // This here will fail build (as expected). Because the
                             // missingDimensionStrategy doesn't list any of the flavors that exist
                             // in the library, the build should fail as there is an
                             // ambiguous match of variant in the dependency on the library.
@@ -104,7 +104,7 @@ class MisplacedMissingDimensionStrategyWrongBehaviorTest {
                         create("foo") {
                             it.isDefault = true
                         }
-                        create("bar") {
+                        create("loo") {
                             it.dimension = "colorLib"
                         }
                     }
@@ -115,10 +115,8 @@ class MisplacedMissingDimensionStrategyWrongBehaviorTest {
     @Test
     fun checkCorrectError() {
         val build = rule.build
-        //val exception = assertFailsWith(BuildException::class) {
-            build.executor.run(":app:assembleFooDebug")
-       // }
-        //exception.checkCause(TaskDependencyResolveException::class.java)
+        val exception = build.executor.expectFailure().run(":app:assembleFooDebug").exception
+        exception?.checkCause(TaskDependencyResolveException::class.java)
     }
 }
 
