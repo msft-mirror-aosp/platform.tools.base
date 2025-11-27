@@ -31,7 +31,6 @@ import com.android.build.gradle.internal.core.Abi
 import com.android.build.gradle.internal.cxx.model.ndkMinPlatform
 import com.android.build.gradle.internal.cxx.settings.BuildSettingsConfiguration
 import com.android.build.gradle.internal.cxx.settings.EnvironmentVariable
-import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.AssumeUtil
 import com.android.utils.FileUtils
 import com.android.utils.FileUtils.join
@@ -47,7 +46,6 @@ class NdkBuildBuildSettingsTest {
     val project = GradleTestProject.builder()
         .fromTestApp(HelloWorldJniApp.builder().build())
         .setSideBySideNdkVersion(DEFAULT_NDK_SIDE_BY_SIDE_VERSION)
-        .addGradleProperty(BooleanOption.USE_NEW_DSL, false)
         .addFile(HelloWorldJniApp.androidMkC("src/main/jni"))
         .create()
 
@@ -82,14 +80,6 @@ class NdkBuildBuildSettingsTest {
                 android.packagingOptions {
                     doNotStrip "*/armeabi-v7a/libhello-jni.so"
                 }
-            android {
-                applicationVariants.all { variant ->
-                    assert !variant.getExternalNativeBuildTasks().isEmpty()
-                    for (def task : variant.getExternalNativeBuildTasks()) {
-                        assert task.getName() == "externalNativeBuild" + variant.getName().capitalize()
-                    }
-                }
-            }
            """.trimIndent()
         )
     }
@@ -104,6 +94,11 @@ class NdkBuildBuildSettingsTest {
             .forEach {
                 assertThat(it).isEqualTo(BuildSettingsConfiguration())
             }
+    }
+
+    @Test
+    fun `externalNativeBuild task exists`() {
+        project.execute("externalNativeBuildDebug")
     }
 
     @Test

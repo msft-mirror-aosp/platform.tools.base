@@ -109,7 +109,6 @@ fun File.dumpCompileCommandsJsonBin(normalizer: FileNormalizer): String =
  */
 fun GradleTestProject.goldenBuildProducts() : String {
     val fetchResult = modelV2()
-        .allowOptionWarning(BooleanOption.USE_NEW_DSL)
         .fetchNativeModules(NativeModuleParams(listOf(), listOf()))
     val hashToKey = fetchResult.cxxFileVariantSegmentTranslator()
     val projectFolder = recoverExistingCxxAbiModels().first().variant.module.project.rootBuildGradleFolder

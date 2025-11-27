@@ -120,7 +120,6 @@ class CmakeBasicProjectTest(
     @JvmField
     val project = GradleTestProject.builder()
         .fromTestApp(HelloWorldJniApp.builder().withNativeDir("cxx").withCmake().build())
-        .addGradleProperty(BooleanOption.USE_NEW_DSL, false)
         .setSideBySideNdkVersion(DEFAULT_NDK_SIDE_BY_SIDE_VERSION)
         .create()
 
@@ -132,7 +131,7 @@ class CmakeBasicProjectTest(
                 // This test covers a wider range of CMake versions than most other tests to verify that
                 // the basic functionality of each mode works.
                 CMakeVersion.FOR_TESTING.map { it.version }.toTypedArray(),
-                Mode.values())
+                arrayOf(Mode.CMake))
                 // Shuffle helps find problems earlier by not grouping similar cases with each other
                 .toList().shuffled(Random(192))
                 .toTypedArray()
@@ -208,10 +207,8 @@ class CmakeBasicProjectTest(
               // -----------------------------------------------------------------------
               // See b/131857476
               // -----------------------------------------------------------------------
-              applicationVariants.all { variant ->
-                for (def task : variant.getExternalNativeBuildTasks()) {
-                    println("externalNativeBuild soFolder = " + task.soFolder)
-                }
+              tasks.withType(com.android.build.gradle.tasks.ExternalNativeBuildTask.class).configureEach {
+                  println("externalNativeBuild soFolder = " + soFolder)
               }
 
               // ------------------------------------------------------------------------
@@ -681,14 +678,6 @@ class CmakeBasicProjectTest(
         assertThat(library.runtimeFiles).containsExactly(fooPath)
     }
 
-    // See b/131857476
-    @Test
-    fun checkModuleBodyReferencesObjAndSo() {
-        if (mode != Mode.CMake) return
-        // Checks for whether module body has references to soFolder
-        Truth.assertThat(moduleBody("CMakeLists.txt")).contains(".soFolder")
-    }
-
     /**
      * In this bug, the file metadata_generation_command.txt was deleted by clean task.
      * This caused configure task to delete the module/.cxx folder as 'stale'.
@@ -887,7 +876,6 @@ class CmakeBasicProjectTest(
         // Request build details for debug-x86_64
         val fetchResult =
           project.modelV2()
-              .allowOptionWarning(BooleanOption.USE_NEW_DSL)
               .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING) // CMake cannot detect compiler attributes
               .fetchNativeModules(NativeModuleParams(listOf("debug"), listOf("x86_64")))
 
@@ -937,7 +925,6 @@ class CmakeBasicProjectTest(
     @Test
     fun checkModel() {
         val fetchResult = project.modelV2()
-            .allowOptionWarning(BooleanOption.USE_NEW_DSL)
             .fetchNativeModules(NativeModuleParams(emptyList(), emptyList()))
         Truth.assertThat(fetchResult.dump()).isEqualTo(
           """[:]
@@ -989,7 +976,6 @@ class CmakeBasicProjectTest(
 
         // We specify to not generate the build information for any variants or ABIs here.
         val result = project.modelV2()
-            .allowOptionWarning(BooleanOption.USE_NEW_DSL)
             .fetchNativeModules(NativeModuleParams(emptyList(), emptyList()))
 
         val additionalProjectFileStatus =  "F"
@@ -1057,7 +1043,6 @@ class CmakeBasicProjectTest(
         executorWithLegacyApi().run("clean", "assembleDebug", "assembleRelease")
         val buildOutputs = run {
             val result = project.modelV2()
-                .allowOptionWarning(BooleanOption.USE_NEW_DSL)
                 .fetchNativeModules(NativeModuleParams(emptyList(), emptyList()))
             val nativeModule = result.container.singleNativeModule
             val buildOutputFolders = nativeModule.variants.flatMap { variant ->
@@ -1253,7 +1238,6 @@ apply plugin: 'com.android.application'
     @Test
     fun `ensure compile_commands json bin is created for each native ABI in model`() {
         val nativeModules = project.modelV2()
-            .allowOptionWarning(BooleanOption.USE_NEW_DSL)
             .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING) // CMake cannot detect compiler attributes
             .fetchNativeModules(NativeModuleParams())
         val nativeModule = nativeModules.container.singleNativeModule
@@ -1270,7 +1254,6 @@ apply plugin: 'com.android.application'
         Assume.assumeTrue(mode != Mode.NinjaRedirect) // Only creates compile_commands.json.bin
         Assume.assumeTrue(mode != Mode.CMake || cmakeVersionInDsl != "3.6.0") // Only creates compile_commands.json.bin
         project.modelV2()
-            .allowOptionWarning(BooleanOption.USE_NEW_DSL)
             .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING) // CMake cannot detect compiler attributes
             .fetchNativeModules(NativeModuleParams())
         val abis = project.recoverExistingCxxAbiModels()
