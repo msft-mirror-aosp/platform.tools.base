@@ -7,6 +7,11 @@ dependencies {
 }
 
 task copyGradleApiJars(type: Copy) {
-    from configurations.apiJars
+    // Get the whole gradle distribution
+    from configurations.apiJars.incoming.artifacts.resolvedArtifacts
+        .map { it.find { it.file.name.startsWith('gradle-installation-beacon')  }.file.parentFile.parentFile }
+    // And the gradle-api jar itself, which is generated
+    from configurations.apiJars.incoming.artifacts.resolvedArtifacts
+        .map { it.find { it.file.name.startsWith('gradle-api')  }.file }
     into System.env["BUILD_DIR"]
 }

@@ -295,37 +295,60 @@ java_library(
     runtime_deps = ["@maven//:org.slf4j.slf4j-api"],
 )
 
+GRADLE_API_JARS = {
+    "gradle-api-" + GRADLE_VERSION + ".jar": "build/gradle-api-" + GRADLE_VERSION + ".jar",
+    "gradle-installation-beacon-" + GRADLE_VERSION + ".jar": "build/lib/gradle-installation-beacon-" + GRADLE_VERSION + ".jar",
+    "gradle-runtime-api-info-" + GRADLE_VERSION + ".jar": "build/lib/gradle-runtime-api-info-" + GRADLE_VERSION + ".jar",
+}
+
 gradle_build(
     name = "gradle_api_jar",
     build_file = "extract-gradle-api/build.gradle",
     data = [":gradle-distrib"],
-    output_file = "gradle-api.jar",
     # Note that the Gradle API (the output of this Gradle build) consists of multiple jars:
     #   - gradle-api-<version>.jar
     #   - gradle-installation-beacon-<version>.jar
     #   - groovy jars
     #   - kotlin-stdlib jars
     #   - etc.
-    # Currently, we extract only the "thin" gradle-api-<version>.jar, and therefore we'll have to
-    # add the other jars manually as needed.
-    # Fixing this properly requires further work (there was a failed attempt to create a fat jar at
-    # change Ia6c40546).
-    output_file_source = "gradle-api-" + GRADLE_VERSION + ".jar",
+    # Currently, we extract only some of the jars that Gradle exposes as gradleApi:
+    #    - gradle-api-<version>.jar and
+    #    - gradle-installation-beacon-<version>.jar.
+    # But we also extract
+    #    - gradle-runtime-api-info-<version>.jar
+    # which is not typically on the classpath for Gradle plugin tests, but Gradle's test infra
+    # locates it by locating the installation beacon jar, and from that finding the
+    # surrounding Gradle installation, and then finding that jar by name for Gradle 9.2.x
+    #
+    # Supporting that codepath requires preserving the extracted directory structure, which
+    # isn't straightforward to model in Bazel. However, Gradle's internals will also work if
+    # the runtime-info jar is on the classpath, so extract it here so it can be included on
+    # the test runtime classpath.
+    #
+    # Below we expose the gradle-api jar for compilation only as gradle-api_neverlink
+    # and all the jars together as runtime only for running the gradle-core unit tests.
+    output_files = GRADLE_API_JARS,
     tasks = [":copyGradleApiJars"],
 )
 
 java_import(
     name = "gradle-api_neverlink",
-    jars = [":gradle-api.jar"],
+    jars = [":gradle-api-" + GRADLE_VERSION + ".jar"],
     neverlink = 1,
     visibility = ["//visibility:public"],
 )
 
-# Used for tests only.
 java_import(
+    name = "gradle-api_for_test_runtime",
+    jars = [":" + f for f in GRADLE_API_JARS],
+)
+
+# Used for tests only.
+java_library(
     name = "gradle-api",
-    jars = [":gradle-api.jar"],
     visibility = ["//visibility:public"],
+    exports = [":gradle-api_neverlink"],  # only expose the gradle-api jar for compilation...
+    runtime_deps = [":gradle-api_for_test_runtime"],  # ...but include the extra jars at runtime.
 )
 
 # Kotlin Gradle plugin dependencies for projects using Compose (these are typically used when the
