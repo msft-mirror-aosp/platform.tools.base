@@ -732,8 +732,10 @@ class ViewLayoutInspector(connection: Connection, private val environment: Inspe
                 snapshotRequest.result
             }
 
-            // Update capturing image type according to snapshot request
+            // Update screenshot settings according to snapshot request
+            val previousScreenshotSettings = state.screenshotSettings
             updateAllCapturingCallbacks()
+
             ThreadUtils.runOnMainThread { roots.forEach { it.view.invalidate() } }
 
             val windowSnapshotResults = windowSnapshotRequests.awaitAll()
@@ -746,7 +748,8 @@ class ViewLayoutInspector(connection: Connection, private val environment: Inspe
                 addAllWindowSnapshots(windowSnapshotResults)
             }.build()
 
-            // Update capturing image type to whatever was used before
+            // Update screenshot settings to whatever was used before
+            state.screenshotSettings = previousScreenshotSettings
             updateAllCapturingCallbacks()
 
             callback.reply {

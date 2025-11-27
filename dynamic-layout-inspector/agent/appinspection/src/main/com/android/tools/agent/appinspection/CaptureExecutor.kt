@@ -107,6 +107,12 @@ class CaptureExecutor(
                 LayoutInspectorViewProtocol.Screenshot.Type.BITMAP -> ScreenshotSettings(LayoutInspectorViewProtocol.Screenshot.Type.BITMAP)
                 else -> state.screenshotSettings
             }
+
+            if (screenshotSettings != state.screenshotSettings) {
+                // Update screenshot settings before running `doCapture`
+                state.screenshotSettings = screenshotSettings
+            }
+
             // We might get some lingering captures even though we already finished
             // listening earlier (this would be indicated by no context). Just abort
             // early in that case.
