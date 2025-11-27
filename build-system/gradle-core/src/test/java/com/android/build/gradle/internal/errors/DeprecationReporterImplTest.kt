@@ -62,9 +62,9 @@ class DeprecationReporterImplTest {
             false,
             Option.Status.EXPERIMENTAL,
             FutureStage(
+                Version.VERSION_9_0,
                 false,
                 FeatureStage.Deprecated(DeprecationReporter.DeprecationTarget.VERSION_10_0),
-                Version.VERSION_9_0
             )
         )
         ;

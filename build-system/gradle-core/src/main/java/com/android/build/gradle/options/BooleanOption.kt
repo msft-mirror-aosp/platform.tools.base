@@ -162,9 +162,9 @@ enum class BooleanOption(
         true,
         FeatureStage.Supported,
         FutureStage(
+            Version.VERSION_10_0,
             true,
             FeatureStage.Enforced(Version.VERSION_10_0),
-            Version.VERSION_10_0
         )),
 
     // Flag added to work around b/130596259.
@@ -180,9 +180,9 @@ enum class BooleanOption(
         defaultValue = true,
         FeatureStage.Supported,
         FutureStage(
+            Version.VERSION_10_0,
             true,
             FeatureStage.SoftlyEnforced(VERSION_11_0),
-            Version.VERSION_10_0
         )
     ),
 
@@ -429,9 +429,9 @@ enum class BooleanOption(
         false,
         FeatureStage.Experimental,
         FutureStage(
+            Version.VERSION_10_0,
             true,
             FeatureStage.Experimental,
-            Version.VERSION_10_0
         )
     ),
 
@@ -440,9 +440,9 @@ enum class BooleanOption(
         false,
         FeatureStage.Experimental,
         FutureStage(
+            Version.VERSION_9_0,
             true,
             FeatureStage.Enforced(Version.VERSION_9_0),
-            Version.VERSION_9_0
         )
     ),
 
@@ -469,9 +469,9 @@ enum class BooleanOption(
         false,
         FeatureStage.Experimental,
         futureStage = FutureStage(
+            Version.VERSION_10_0,
             true,
             FeatureStage.Experimental,
-            Version.VERSION_10_0
         )
     ),
 
@@ -483,9 +483,9 @@ enum class BooleanOption(
         true,
         FeatureStage.Experimental,
         FutureStage(
+            Version.VERSION_10_0,
             true,
             FeatureStage.Enforced(Version.VERSION_10_0),
-            Version.VERSION_10_0
         )
     ),
 
