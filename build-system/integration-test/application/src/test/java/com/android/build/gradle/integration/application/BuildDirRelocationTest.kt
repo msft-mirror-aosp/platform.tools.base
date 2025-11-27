@@ -18,7 +18,6 @@ package com.android.build.gradle.integration.application
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
 import com.android.build.gradle.integration.common.utils.TestFileUtils
-import com.android.build.gradle.options.BooleanOption
 import com.android.utils.PathUtils
 import com.google.common.truth.Truth.assertThat
 import org.junit.Rule
@@ -31,7 +30,6 @@ class BuildDirRelocationTest {
     @get:Rule
     var project: GradleTestProject = GradleTestProject.builder()
         .fromTestApp(HelloWorldApp.forPlugin("com.android.library"))
-        .addGradleProperties("${BooleanOption.USE_ANDROID_X.propertyName}=true")
         .addGradleProperties("org.gradle.caching=true")
         .create()
 
@@ -43,7 +41,7 @@ class BuildDirRelocationTest {
             """
             dependencies {
                 testImplementation 'junit:junit:4.12'
-                testImplementation 'androidx.test:core:1.3.0'
+                testImplementation 'androidx.test:core:1.6.1'
             }
             """.trimIndent()
         )
