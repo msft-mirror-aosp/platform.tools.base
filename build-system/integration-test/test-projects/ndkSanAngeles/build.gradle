@@ -42,19 +42,20 @@ android {
 // map for the version code.
 ext.versionCodes = ['armeabi-v7a':1, x86:2]
 
-android.applicationVariants.all { variant ->
-    // assign different version code for each output
-    variant.outputs.all { output ->
-        // set the versionCode on the output.
-        println("Customizing " + output)
-        def value
-        if (output.getFilter(com.android.build.OutputFile.ABI)== null) {
-            value = 3
-        } else {
-            value = project.ext.versionCodes.get(
-                    output.getFilter(com.android.build.OutputFile.ABI))
+androidComponents {
+    onVariants(selector().all()) { variant ->
+        variant.outputs.forEach { output ->
+            println("Customizing " + output)
+	    def value
+	    def filter = output.getFilter(com.android.build.api.variant.FilterConfiguration.FilterType.ABI)
+	    if (filter == null) {
+	        value = 3
+	    }
+	    else {
+	        value = project.ext.versionCodes.get(filter.identifier)
+	    }
+	    output.versionCode.set(output.versionCode.get() + (value * 1000000))
         }
-        output.versionCodeOverride = variant.versionCode + (value * 1000000)
     }
 }
 
