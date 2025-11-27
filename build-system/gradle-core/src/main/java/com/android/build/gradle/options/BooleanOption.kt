@@ -16,7 +16,6 @@
 
 package com.android.build.gradle.options
 
-import com.android.build.gradle.internal.errors.DeprecationReporter.DeprecationTarget
 import com.android.build.gradle.internal.errors.DeprecationReporter.DeprecationTarget.EXCLUDE_LIBRARIES_FROM_CONSTRAINTS
 import com.android.build.gradle.internal.errors.DeprecationReporter.DeprecationTarget.VERSION_10_0
 import com.android.build.gradle.internal.errors.DeprecationReporter.DeprecationTarget.VERSION_11_0
@@ -84,19 +83,6 @@ enum class BooleanOption(
 
     // DSLs default values
     ENABLE_DATABINDING_KTX("android.defaults.databinding.addKtx", true, ApiStage.Stable),
-
-    // AndroidX & Jetifier
-    USE_ANDROID_X(
-        "android.useAndroidX",
-        true,
-        ApiStage.Stable,
-        FutureStage(
-            true,
-            ApiStage.Deprecated(DeprecationTarget.VERSION_11_0),
-            Version.VERSION_10_0
-        )
-    ),
-    ENABLE_JETIFIER("android.enableJetifier", false, ApiStage.Stable),
 
     DEBUG_OBSOLETE_API("android.debug.obsoleteApi", false, ApiStage.Stable),
 
@@ -728,6 +714,10 @@ enum class BooleanOption(
         false,
         ApiStage.Deprecated(EXCLUDE_LIBRARIES_FROM_CONSTRAINTS),
     ),
+
+    USE_ANDROID_X("android.useAndroidX", true, ApiStage.Deprecated(removalTarget = VERSION_10_0)),
+
+    ENABLE_JETIFIER("android.enableJetifier", false, ApiStage.Deprecated(removalTarget = VERSION_10_0)),
 
     /* -------------------
      * DEPRECATED FEATURES

@@ -24,6 +24,8 @@ import com.android.build.gradle.integration.common.fixture.project.ApkSelector
 import com.android.build.gradle.integration.common.output.ApkSubject
 import com.android.build.gradle.integration.common.truth.AabSubject.Companion.assertThat
 import com.android.build.gradle.integration.common.utils.TestFileUtils
+import com.android.build.gradle.integration.common.utils.getBundleLocation
+import com.android.build.gradle.integration.common.utils.getVariantByName
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.options.StringOption
@@ -74,7 +76,6 @@ class DynamicAppTest {
     @get:Rule
     val project: GradleTestProject = GradleTestProject.builder()
         .fromTestProject("dynamicApp")
-        .addGradleProperty(BooleanOption.USE_ANDROID_X, false)
         .disableBuiltInKotlin()
         .create()
 
@@ -212,10 +213,12 @@ class DynamicAppTest {
 
     @Test
     fun `test bundleDebug task`() {
-        val bundleTaskName = project.getBundleTaskName("debug", ":app")
+        project.disableUseAndroidX()
+
+        val bundleTaskName = getBundleTaskName("debug", ":app")
         project.execute("app:$bundleTaskName")
 
-        val bundleFile = project.locateBundleFileViaModel("debug", ":app")
+        val bundleFile = locateBundleFileViaModel("debug", ":app")
         assertThat(bundleFile).exists()
 
         Aab(bundleFile).use { aab ->
@@ -308,10 +311,12 @@ class DynamicAppTest {
 
     @Test
     fun `test unsigned bundleRelease task with r8`() {
-        val bundleTaskName = project.getBundleTaskName("release", ":app")
+        project.disableUseAndroidX()
+
+        val bundleTaskName = getBundleTaskName("release", ":app")
         project.executor().run("app:$bundleTaskName")
 
-        val bundleFile = project.locateBundleFileViaModel("release", ":app")
+        val bundleFile = locateBundleFileViaModel("release", ":app")
         assertThat(bundleFile).exists()
 
         Zip(bundleFile).use {
@@ -323,12 +328,14 @@ class DynamicAppTest {
 
     @Test
     fun `test unsigned bundleRelease task with r8 dontminify`() {
+        project.disableUseAndroidX()
+
         project.getSubproject("app").projectDir.resolve("proguard-rules.pro")
             .writeText("-dontobfuscate\n-dontoptimize")
-        val bundleTaskName = project.getBundleTaskName("release", ":app")
+        val bundleTaskName = getBundleTaskName("release", ":app")
         project.executor().run("app:$bundleTaskName")
 
-        val bundleFile = project.locateBundleFileViaModel("release", ":app")
+        val bundleFile = locateBundleFileViaModel("release", ":app")
         assertThat(bundleFile).exists()
 
         Zip(bundleFile).use {
@@ -344,6 +351,8 @@ class DynamicAppTest {
 
     @Test
     fun `test packagingOptions`() {
+        project.disableUseAndroidX()
+
         // add a new res file and exclude.
         val appProject = project.getSubproject(":app")
         TestFileUtils.appendToFile(appProject.buildFile, "\nandroid.packagingOptions {\n" +
@@ -353,10 +362,10 @@ class DynamicAppTest {
         FileUtils.mkdirs(fooTxt.parentFile)
         Files.write(fooTxt.toPath(), "foo".toByteArray(Charsets.UTF_8))
 
-        val bundleTaskName = project.getBundleTaskName("debug", ":app")
+        val bundleTaskName = getBundleTaskName("debug", ":app")
         project.execute("app:$bundleTaskName")
 
-        val bundleFile = project.locateBundleFileViaModel("debug", ":app")
+        val bundleFile = locateBundleFileViaModel("debug", ":app")
         assertThat(bundleFile).exists()
 
         Zip(bundleFile).use {
@@ -366,6 +375,8 @@ class DynamicAppTest {
 
     @Test
     fun `test abiFilters when building bundle`() {
+        project.disableUseAndroidX()
+
         val appProject = project.getSubproject(":app")
         createAbiFile(appProject, SdkConstants.ABI_ARMEABI_V7A, "libbase.so")
         createAbiFile(appProject, SdkConstants.ABI_INTEL_ATOM, "libbase.so")
@@ -384,10 +395,10 @@ class DynamicAppTest {
         createAbiFile(featureProject, SdkConstants.ABI_INTEL_ATOM, "libfeature1.so")
         createAbiFile(featureProject, SdkConstants.ABI_INTEL_ATOM64, "libfeature1.so")
 
-        val bundleTaskName = project.getBundleTaskName("debug", ":app")
+        val bundleTaskName = getBundleTaskName("debug", ":app")
         project.execute("app:$bundleTaskName")
 
-        val bundleFile = project.locateBundleFileViaModel("debug", ":app")
+        val bundleFile = locateBundleFileViaModel("debug", ":app")
         assertThat(bundleFile).exists()
 
         val bundleContentWithAbis = debugUnsignedContent.plus(
@@ -1283,6 +1294,44 @@ class DynamicAppTest {
            .expectFailure()
            .run(":app:installDebugAndroidTest")
         assertThat(result.failureMessage).isEqualTo("No connected devices!")
+    }
+
+    @Deprecated("Migrate this test to android.useAndroidX=true and remove this method")
+    private fun GradleTestProject.disableUseAndroidX() {
+        gradlePropertiesFile.appendText("\n${BooleanOption.USE_ANDROID_X.propertyName}=false")
+    }
+
+    /**
+     * Modified implementation of [GradleTestProject.getBundleTaskName] so we can suppress warnings
+     * about `[BooleanOption.USE_ANDROID_X]=false`
+     */
+    @Deprecated("Migrate this test to android.useAndroidX=true and remove this method")
+    fun getBundleTaskName(variantName: String, projectPath: String?): String {
+        val appModel = project.modelV2()
+            .suppressOptionWarning(BooleanOption.USE_ANDROID_X)
+            .fetchModels().container.getProject(projectPath).androidProject
+            ?: throw RuntimeException("Failed to get sync model for $projectPath module")
+
+        val variantMainArtifact = appModel.getVariantByName(variantName).mainArtifact
+        return variantMainArtifact.bundleInfo?.bundleTaskName
+            ?: throw RuntimeException("Module $projectPath does not have bundle task name")
+    }
+
+    /**
+     * Modified implementation of [GradleTestProject.locateBundleFileViaModel] so we can suppress
+     * warnings about `[BooleanOption.USE_ANDROID_X]=false`
+     */
+    @Deprecated("Migrate this test to android.useAndroidX=true and remove this method")
+    fun locateBundleFileViaModel(variantName: String, projectPath: String?): File {
+        val bundleFile = project.modelV2()
+            .suppressOptionWarning(BooleanOption.USE_ANDROID_X)
+            .fetchModels()
+            .container.getProject(projectPath).androidProject
+            ?.getVariantByName(variantName)
+            ?.getBundleLocation()
+
+        return bundleFile
+            ?: throw RuntimeException("Failed to get bundle file for $projectPath module")
     }
 
     private fun getJsonFile(api: Int): Path {
