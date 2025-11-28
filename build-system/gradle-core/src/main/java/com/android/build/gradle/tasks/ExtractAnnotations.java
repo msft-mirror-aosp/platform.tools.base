@@ -390,6 +390,13 @@ public abstract class ExtractAnnotations extends NonIncrementalTask {
                                 files.from(javaSources.getAll());
                                 return Unit.INSTANCE;
                             });
+            creationConfig
+                    .getSources()
+                    .kotlin(
+                            kotlinSources -> {
+                                files.from(kotlinSources.getStatic());
+                                return Unit.INSTANCE;
+                            });
             task.sourcesFileTree = files.getAsFileTree();
 
             if (creationConfig instanceof VariantCreationConfig) {

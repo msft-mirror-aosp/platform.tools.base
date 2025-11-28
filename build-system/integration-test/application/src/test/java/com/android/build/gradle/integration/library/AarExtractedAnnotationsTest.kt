@@ -64,7 +64,7 @@ class AarExtractedAnnotationsTest {
                         """.trimIndent())
                 }
                 files {
-                    add("src/main/java/com/example/lib/DisplayOptions.kt",
+                    add("src/main/kotlin/com/example/lib/DisplayOptions.kt",
                         """
                             package com.example.lib
 
