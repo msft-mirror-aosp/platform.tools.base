@@ -38,8 +38,4 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'dont-optimize.pro'
         }
     }
-
-    dexOptions {
-        incremental = false
-    }
 }
