@@ -17,6 +17,7 @@
 package com.android.build.gradle.integration.application
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
+import com.android.build.gradle.options.BooleanOption
 import com.google.common.truth.Truth
 import org.junit.Before
 import org.junit.Rule
@@ -74,6 +75,7 @@ class OldVariantApiGenTaskVisibility {
         )
         project.executor()
             .withArgument("-P" + "inject_enable_generate_values_res=true")
+            .with(BooleanOption.USE_NEW_DSL, false)
             .run("debugValidateResFolders")
 
         val sep = File.separatorChar
