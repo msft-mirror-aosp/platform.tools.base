@@ -40,7 +40,6 @@ public class KotlinAppTest {
     public GradleTestProject project =
             GradleTestProject.builder()
                     .fromTestProject("kotlinApp")
-                    .disableBuiltInKotlin()
                     .create();
 
     @After
@@ -82,8 +81,7 @@ public class KotlinAppTest {
                 .assertAar(
                         AarSelector.DEBUG,
                         aar -> {
-                            aar.javaResources()
-                                    .containsExactly("META-INF/library_debug.kotlin_module");
+                            aar.javaResources().containsExactly("META-INF/library.kotlin_module");
                         });
     }
 }

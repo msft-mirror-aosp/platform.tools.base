@@ -1,10 +1,8 @@
 apply from: "../commonHeader.gradle"
 
 buildscript {
-    apply from: "../commonHeader.gradle"  // for $kotlinVersion
     apply from: "../commonBuildScript.gradle"
 
     dependencies {
-        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${libs.versions.kotlinVersion.get()}"
     }
 }

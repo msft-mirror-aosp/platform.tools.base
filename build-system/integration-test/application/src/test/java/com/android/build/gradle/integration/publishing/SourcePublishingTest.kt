@@ -64,11 +64,20 @@ class SourcePublishingTest {
             class SomeService @Inject constructor(val message: String)
         """.trimIndent())
 
+        TestFileUtils.searchAndReplace(
+            project.buildFile,
+            "dependencies {",
+            """
+                dependencies {
+                    classpath "com.android.tools.build:gradle-kotlin:\$\{libs.versions.buildVersion.get()}"
+            """.trimIndent()
+        )
+
         TestFileUtils.appendToFile(
             library.buildFile,
             """
                 apply plugin: 'maven-publish'
-                apply plugin: 'kotlin-kapt'
+                apply plugin: 'com.android.legacy-kapt'
 
                 android {
                     buildFeatures {

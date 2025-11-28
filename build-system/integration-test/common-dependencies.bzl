@@ -7,6 +7,9 @@ and can be combined together
 # when editing this consider making a copy below so that our recipe tests can use any versions of Kotlin
 KGP_VERSION_FOR_TESTS = "2.3.0-Beta2"
 
+# Kotlin Gradle plugin version that AGP depends on
+BUILT_IN_KOTLIN_VERSION = "2.2.10"
+
 # KSP version used in AGP tests
 KSP_VERSION_FOR_TESTS = "2.2.20-RC-2.0.2"
 
