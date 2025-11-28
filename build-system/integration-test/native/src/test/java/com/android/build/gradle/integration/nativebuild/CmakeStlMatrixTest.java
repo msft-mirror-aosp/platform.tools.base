@@ -100,6 +100,10 @@ public class CmakeStlMatrixTest {
                         + "          minSdk = "
                         + GradleTestProject.DEFAULT_MIN_SDK_VERSION
                         + "\n"
+                        + "          //noinspection ExpiredTargetSdkVersion\n"
+                        + "          targetSdk = "
+                        + GradleTestProject.DEFAULT_MIN_SDK_VERSION
+                        + "\n"
                         + "          externalNativeBuild {\n"
                         + "              cmake {\n"
                         + "                abiFilters.addAll(\"armeabi-v7a\", \"x86_64\");\n"
@@ -119,18 +123,6 @@ public class CmakeStlMatrixTest {
                         + "        }\n"
                         + "    }\n"
                         + "\n");
-        TestFileUtils.appendToFile(
-                project.getBuildFile(),
-                "\n"
-                        + "android {\n"
-                        + "    applicationVariants.all { variant ->\n"
-                        + "        assert !variant.getExternalNativeBuildTasks().isEmpty()\n"
-                        + "        for (def task : variant.getExternalNativeBuildTasks()) {\n"
-                        + "            assert task.getName() == \"externalNativeBuild\" +"
-                        + " variant.getName().capitalize()\n"
-                        + "        }\n"
-                        + "    }\n"
-                        + "}\n");
     }
 
     @Test

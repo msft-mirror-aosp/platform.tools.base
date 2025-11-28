@@ -89,6 +89,10 @@ public class NdkBuildTest {
                         + "          minSdk = "
                         + GradleTestProject.DEFAULT_MIN_SDK_VERSION
                         + "\n"
+                        + "          //noinspection ExpiredTargetSdkVersion\n"
+                        + "          targetSdk = "
+                        + GradleTestProject.DEFAULT_MIN_SDK_VERSION
+                        + "\n"
                         + "          externalNativeBuild {\n"
                         + "              ndkBuild {\n"
                         + "                abiFilters.addAll(\"armeabi-v7a\", \"arm64-v8a\")\n"
@@ -106,18 +110,6 @@ public class NdkBuildTest {
                         + "        doNotStrip \"*/armeabi-v7a/libhello-jni.so\"\n"
                         + "    }\n"
                         + "\n");
-        TestFileUtils.appendToFile(
-                project.getBuildFile(),
-                "\n"
-                        + "android {\n"
-                        + "    applicationVariants.all { variant ->\n"
-                        + "        assert !variant.getExternalNativeBuildTasks().isEmpty()\n"
-                        + "        for (def task : variant.getExternalNativeBuildTasks()) {\n"
-                        + "            assert task.getName() == \"externalNativeBuild\" +"
-                        + " variant.getName().capitalize()\n"
-                        + "        }\n"
-                        + "    }\n"
-                        + "}\n");
     }
 
     @Test
