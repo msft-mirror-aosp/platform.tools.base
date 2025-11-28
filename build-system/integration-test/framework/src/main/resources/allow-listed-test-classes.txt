@@ -151,6 +151,7 @@ com.android.build.gradle.integration.application.NoCruncherTest
 com.android.build.gradle.integration.application.NoManifestTest
 com.android.build.gradle.integration.application.NoMappingTest
 com.android.build.gradle.integration.application.OldAndNewVariantAPIInteractionTest
+com.android.build.gradle.integration.application.OldAndNewVariantAPIMisuseTest
 com.android.build.gradle.integration.application.OldVariantApiCompatibility
 com.android.build.gradle.integration.application.OldVariantApiGenTaskVisibility
 com.android.build.gradle.integration.application.OptionalLibraryTest
