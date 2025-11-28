@@ -492,6 +492,26 @@ enum class BooleanOption(
     /** Enables R8 gradual support */
     R8_GRADUAL_API("android.r8.gradual.support", false, FeatureStage.Experimental),
 
+    /**
+     * Whether to disallow the use of Kotlin source sets
+     * ([org.jetbrains.kotlin.gradle.plugin.KotlinSourceSet]) when built-in Kotlin is enabled
+     * (b/386221070).
+     *   - When the value is `true`, report an error if Kotlin source sets are used.
+     *   - When the value is `false, just silently ignore Kotlin source sets.
+     *
+     * Note: The flag takes effect only when built-in Kotlin is enabled.
+     */
+    DISALLOW_KOTLIN_SOURCE_SETS(
+        propertyName = "android.disallowKotlinSourceSets",
+        defaultValue = false,
+        stage = FeatureStage.Experimental,
+        FutureStage(
+            version = Version.VERSION_9_0,
+            defaultValue = true,
+            stage = FeatureStage.Experimental
+        )
+    ),
+
     /* ------------------------
      * SOFTLY-ENFORCED FEATURES
      */

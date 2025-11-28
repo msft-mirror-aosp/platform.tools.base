@@ -51,6 +51,7 @@ import org.jetbrains.kotlin.gradle.plugin.KotlinBaseApiPlugin
 import org.jetbrains.kotlin.gradle.plugin.KotlinCompilation
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinJvmAndroidCompilation
 import org.jetbrains.kotlin.gradle.plugin.sources.android.AndroidVariantType
+import java.io.File
 
 /**
  * Services related to built-in Kotlin support.
@@ -334,6 +335,7 @@ private fun initBuiltInKaptSupport(project: Project) {
 internal fun ComponentCreationConfig.createKotlinCompilation(): KotlinCompilation<Any> {
     val kotlinServices = services.builtInKotlinServices
 
+    @Suppress("UNCHECKED_CAST")
     val kotlinCompilation: KotlinJvmAndroidCompilation =
         kotlinServices.kotlinBaseApiPlugin.createKotlinAndroidCompilation(
             name = name,
@@ -342,13 +344,26 @@ internal fun ComponentCreationConfig.createKotlinCompilation(): KotlinCompilatio
             androidVariantType = toAndroidVariantType()
         )
 
-    // Set Kotlin source directories. Note that we're setting instead of adding the directories
-    // because we want to overwrite any directories that were previously set and make it consistent
-    // with the Kotlin source directories managed by AGP. For example, for compilation
-    // `debugUnitTest`, KGP automatically adds a source directory named `src/debugUnitTest/kotlin`,
-    // but this directory is not intended by AGP. The directories should be `src/test/kotlin`,
-    // `src/test/java`, `src/testDebug/kotlin`, `src/testDebug/java`.
-    kotlinCompilation.defaultSourceSet.kotlin.setSrcDirs(listOf(sources.kotlin!!.all))
+    fun setDefaultKotlinSourceSet() {
+        // Note that we're setting instead of adding the directories because we want to overwrite
+        // any directories that KGP previously set (e.g., KGP adds `src/debugUnitTest/kotlin`
+        // for compilation `debugUnitTest`).
+        kotlinCompilation.defaultSourceSet.kotlin.setSrcDirs(listOf(sources.kotlin!!.all))
+    }
+
+    if (builtInKotlinSupportMode is BuiltInKotlinSupportMode.Supported) {
+        // When built-in Kotlin is enabled, Kotlin source sets should not be used (b/386221070).
+        // However, to give plugins time to migrate, we still partially allow it when the user sets
+        // `android.disallowKotlinSourceSets=false`.
+        if (services.projectOptions.get(BooleanOption.DISALLOW_KOTLIN_SOURCE_SETS)) {
+            // Clear the default source set to indicate that it should not be used
+            kotlinCompilation.defaultSourceSet.kotlin.setSrcDirs(emptySet<File>())
+        } else {
+            setDefaultKotlinSourceSet()
+        }
+    } else {
+        setDefaultKotlinSourceSet()
+    }
 
     // Also add kotlinCompilation to KotlinAndroidTarget.compilations (the IDE requires this info to
     // configure Kotlin).

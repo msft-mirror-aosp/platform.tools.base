@@ -94,8 +94,8 @@ import com.android.build.gradle.internal.tasks.factory.TaskManagerConfig
 import com.android.build.gradle.internal.tasks.factory.TaskManagerConfigImpl
 import com.android.build.gradle.internal.testing.ManagedDeviceRegistry
 import com.android.build.gradle.internal.utils.getKotlinAndroidPluginVersion
+import com.android.build.gradle.internal.utils.handleKotlinSourceSets
 import com.android.build.gradle.internal.utils.handleKotlinStdlibDependency
-import com.android.build.gradle.internal.utils.syncAgpAndKgpSourceSets
 import com.android.build.gradle.internal.variant.ComponentInfo
 import com.android.build.gradle.internal.variant.LegacyVariantInputManager
 import com.android.build.gradle.internal.variant.VariantFactory
@@ -790,7 +790,7 @@ To learn more, go to https://d.android.com/r/tools/java-8-support-message.html
 
         // Built-in Kotlin
         val builtInKotlin = builtInKotlinEnabledForProject(projectServices, newExtension)
-        syncAgpAndKgpSourceSets(project, projectServices, extension.sourceSets, builtInKotlin)
+        handleKotlinSourceSets(project, projectServices, extension.sourceSets, builtInKotlin)
         if (builtInKotlin) {
             handleKotlinStdlibDependency(project, projectServices, extension.sourceSets)
         }
