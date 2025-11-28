@@ -122,7 +122,6 @@ com.android.build.gradle.integration.application.ManifestMergingTest
 com.android.build.gradle.integration.application.MapSourceSetPathsTaskTest
 com.android.build.gradle.integration.application.MaxSdkVersionTest
 com.android.build.gradle.integration.application.MergeGeneratedProguardFilesTest
-com.android.build.gradle.integration.application.MessageRewrite2Test
 com.android.build.gradle.integration.application.MessageRewriteTest
 com.android.build.gradle.integration.application.MessageRewriteWithJvmResCompilerTest
 com.android.build.gradle.integration.application.MigratedTest
