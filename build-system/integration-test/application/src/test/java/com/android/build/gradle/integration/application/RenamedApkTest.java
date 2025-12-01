@@ -40,8 +40,10 @@ import java.util.Collection;
 /** Assemble tests for renamedApk. */
 public class RenamedApkTest {
     @ClassRule
-    public static GradleTestProject project =
-            GradleTestProject.builder().fromTestProject("renamedApk").create();
+    public static GradleTestProject project = GradleTestProject.builder()
+            .fromTestProject("renamedApk")
+            .addGradleProperty(BooleanOption.USE_NEW_DSL, false)
+            .create();
 
     @AfterClass
     public static void cleanUp() {
