@@ -19,6 +19,7 @@ package com.android.build.gradle.integration.application
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.KotlinHelloWorldApp
 import com.android.build.gradle.integration.common.fixture.project.AarSelector
+import com.android.build.gradle.options.BooleanOption
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -64,7 +65,7 @@ class GenFolderKotlinOnlyApiTest {
 
     @Test
     fun testBuildSucceeds() {
-        project.executor().run("assembleDebug")
+        project.executor().with(BooleanOption.USE_NEW_DSL, false).run("assembleDebug")
         project.assertAar(AarSelector.DEBUG) {
             classes().containsExactly(
                 "com/example/helloworld/HelloWorld",

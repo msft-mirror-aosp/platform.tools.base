@@ -22,6 +22,7 @@ import static org.junit.Assert.assertNotNull;
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.utils.TestFileUtils;
+import com.android.build.gradle.options.BooleanOption;
 import com.android.builder.model.v2.ide.AndroidArtifact;
 import com.android.builder.model.v2.ide.JavaArtifact;
 import com.android.builder.model.v2.ide.Variant;
@@ -44,7 +45,9 @@ public class GenFolderApi2Test {
     @Test
     public void checkJavaFolderInModel() {
         AndroidProject androidProject =
-                project.modelV2().fetchModels().getContainer().getProject().getAndroidProject();
+                project.modelV2()
+                        .with(BooleanOption.USE_NEW_DSL, false)
+                        .fetchModels().getContainer().getProject().getAndroidProject();
 
         File projectDir = project.getProjectDir();
         File buildDir = new File(projectDir, "build");
