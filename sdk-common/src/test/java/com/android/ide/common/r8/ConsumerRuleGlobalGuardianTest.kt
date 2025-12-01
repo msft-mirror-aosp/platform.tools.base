@@ -93,6 +93,16 @@ internal class ConsumerRuleGlobalGuardianTest {
         ).contains("should not be used in a consumer configuration file without specifying a package.")
     }
 
+    @Test
+    fun `exceptions for new global options in AGP 9`() {
+        assertThat(getExceptionsFromConsumerContent("-dontrepackage").single())
+            .contains("Global keep option -dontrepackage was specified")
+        assertThat(getExceptionsFromConsumerContent("-printblastradius").single())
+            .contains("Global keep option -printblastradius was specified")
+        assertThat(getExceptionsFromConsumerContent("-processkotlinnullchecks").single())
+            .contains("Global keep option -processkotlinnullchecks was specified")
+    }
+
     private fun getExceptionsFromConsumerContent(
         content: String,
         isDynamicFeature: Boolean = false
