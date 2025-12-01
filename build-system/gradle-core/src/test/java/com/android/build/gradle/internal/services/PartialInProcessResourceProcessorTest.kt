@@ -23,6 +23,7 @@ import com.android.builder.internal.aapt.AaptPackageConfig
 import com.android.builder.internal.aapt.v2.Aapt2
 import com.android.builder.internal.aapt.v2.Aapt2RenamingConventions
 import com.android.ide.common.resources.CompileResourceRequest
+import com.android.ide.common.resources.ResourcePathEncoding
 import com.android.testutils.NoErrorsOrWarningsLogger
 import com.android.testutils.truth.PathSubject.assertThat
 import org.junit.Rule
@@ -51,7 +52,13 @@ class PartialInProcessResourceProcessorTest {
                 aapt2
             )
         val logger = NoErrorsOrWarningsLogger()
-        processor.compile(CompileResourceRequest(inputFile = from, outputDirectory = to), logger)
+        processor.compile(
+            CompileResourceRequest(
+                inputFile = from,
+                outputDirectory = to,
+                resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable
+            ), logger
+        )
 
         verifyNoMoreInteractions(aapt2)
         assertThat(to.resolve(
@@ -71,7 +78,12 @@ class PartialInProcessResourceProcessorTest {
                 aapt2
             )
         val logger = NoErrorsOrWarningsLogger()
-        val request = CompileResourceRequest(inputFile = from, outputDirectory = to, isPngCrunching = true)
+        val request = CompileResourceRequest(
+            inputFile = from,
+            outputDirectory = to,
+            isPngCrunching = true,
+            resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable
+        )
         processor.compile(request, logger)
         verify(aapt2).compile(eq(request), eq(logger))
     }

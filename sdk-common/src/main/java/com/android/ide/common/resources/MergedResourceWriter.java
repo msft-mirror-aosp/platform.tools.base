@@ -151,8 +151,9 @@ public class MergedResourceWriter
             @Nullable File blameLogFolder,
             @NonNull ResourcePreprocessor preprocessor,
             @NonNull File temporaryDirectory,
-            @NonNull Map<String, String> moduleSourceSet,
-            @NonNull String packageName) {
+            @NonNull String packageName,
+            @NonNull ResourcePathEncoding resourcePathEncoding
+            ) {
         return createWriterWithoutPngCruncher(
                 null,
                 rootFolder,
@@ -160,7 +161,7 @@ public class MergedResourceWriter
                 blameLogFolder,
                 preprocessor,
                 temporaryDirectory,
-                moduleSourceSet);
+                resourcePathEncoding);
     }
 
     /** Used in tests */
@@ -171,7 +172,15 @@ public class MergedResourceWriter
             @Nullable File blameLogFolder,
             @NonNull ResourcePreprocessor preprocessor,
             @NonNull File temporaryDirectory,
-            @NonNull Map<String, String> moduleSourceSet) {
+            @NonNull ResourcePathEncoding resourcePathEncoding) {
+        Map<String, String> maybeResSourceSets;
+        if (resourcePathEncoding instanceof ResourcePathEncoding.Relative) {
+            maybeResSourceSets
+                    = ((ResourcePathEncoding.Relative) resourcePathEncoding).getIdentifiedSourceSetMap();
+        }
+        else {
+            maybeResSourceSets = ImmutableMap.of();
+        }
         return new MergedResourceWriter(
                 new MergedResourceWriterRequest(
                         // no need for multi-threading in tests.
@@ -179,8 +188,8 @@ public class MergedResourceWriter
                         rootFolder,
                         publicFile,
                         blameLogFolder != null
-                                ? new MergingLog(blameLogFolder, moduleSourceSet)
-                                : null,
+                        ? new MergingLog(blameLogFolder, maybeResSourceSets)
+                        : null,
                         preprocessor,
                         CopyToOutputDirectoryResourceCompilationService.INSTANCE,
                         temporaryDirectory,
@@ -188,7 +197,7 @@ public class MergedResourceWriter
                         null,
                         false,
                         false,
-                        moduleSourceSet));
+                        resourcePathEncoding));
     }
 
     @Override
@@ -287,11 +296,8 @@ public class MergedResourceWriter
                                     mergeWriterRequest.getPseudoLocalesEnabled(),
                                     mergeWriterRequest.getCrunchPng(),
                                     ImmutableMap.of(),
-                                    request.getInputFile());
-                    if (!mergeWriterRequest.getModuleSourceSets().isEmpty()) {
-                        compileResourceRequest.useRelativeSourcePath(
-                                mergeWriterRequest.getModuleSourceSets());
-                    }
+                                    request.getInputFile(),
+                                    mergeWriterRequest.getRelativePathEncoding());
 
                     mergeWriterRequest
                             .getResourceCompilationService()
@@ -334,10 +340,11 @@ public class MergedResourceWriter
     }
 
     private String getSourceFilePath(File inputFile) {
-        return mergeWriterRequest.getModuleSourceSets().isEmpty()
-                ? inputFile.getAbsolutePath()
-                : RelativeResourceUtils.getRelativeSourceSetPath(
-                        inputFile, mergeWriterRequest.getModuleSourceSets());
+        return mergeWriterRequest.getRelativePathEncoding() instanceof ResourcePathEncoding.AbsoluteNotRelocatable
+               ? inputFile.getAbsolutePath()
+               : RelativeResourceUtils.getRelativeSourceSetPath(
+                       inputFile,
+                       ((ResourcePathEncoding.Relative)mergeWriterRequest.getRelativePathEncoding()).getIdentifiedSourceSetMap());
     }
 
     @Override
@@ -380,10 +387,12 @@ public class MergedResourceWriter
                 // enlist a new crunching request.
                 CompileResourceRequest crunchRequest =
                         new CompileResourceRequest(
-                                file, getRootFolder(), folderName, item.mIsFromDependency);
-                if (!mergeWriterRequest.getModuleSourceSets().isEmpty()) {
-                    crunchRequest.useRelativeSourcePath(mergeWriterRequest.getModuleSourceSets());
-                }
+                                file,
+                                getRootFolder(),
+                                folderName,
+                                item.mIsFromDependency,
+                                mergeWriterRequest.getRelativePathEncoding());
+
                 mCompileResourceRequests.add(crunchRequest);
             }
         }
@@ -590,10 +599,8 @@ public class MergedResourceWriter
                                     mergeWriterRequest.getPseudoLocalesEnabled(),
                                     mergeWriterRequest.getCrunchPng(),
                                     blame != null ? blame : ImmutableMap.of(),
-                                    outFile);
-                    if (!mergeWriterRequest.getModuleSourceSets().isEmpty()) {
-                        request.useRelativeSourcePath(mergeWriterRequest.getModuleSourceSets());
-                    }
+                                    outFile,
+                                    mergeWriterRequest.getRelativePathEncoding());
 
                     // If we are going to shrink resources, the resource shrinker needs to have the
                     // final merged uncompiled file.
@@ -671,11 +678,9 @@ public class MergedResourceWriter
                     new CompileResourceRequest(
                             FileUtils.join(getRootFolder(), folderName, folderName + DOT_XML),
                             getRootFolder(),
-                            folderName);
-            if (!mergeWriterRequest.getModuleSourceSets().isEmpty()) {
-                compileResourceRequest.useRelativeSourcePath(
-                        mergeWriterRequest.getModuleSourceSets());
-            }
+                            folderName,
+                            mergeWriterRequest.getRelativePathEncoding());
+
             removeOutFile(
                     mergeWriterRequest
                             .getResourceCompilationService()
@@ -684,10 +689,12 @@ public class MergedResourceWriter
     }
 
     private String getSourcePath(File file) {
-        return mergeWriterRequest.getModuleSourceSets().isEmpty()
-                ? file.getAbsolutePath()
-                : RelativeResourceUtils.getRelativeSourceSetPath(
-                        file, mergeWriterRequest.getModuleSourceSets());
+        if (mergeWriterRequest.getRelativePathEncoding() instanceof ResourcePathEncoding.Relative) {
+            return RelativeResourceUtils.getRelativeSourceSetPath(
+                    file,
+                    ((ResourcePathEncoding.Relative)mergeWriterRequest.getRelativePathEncoding()).getIdentifiedSourceSetMap());
+        }
+        return file.getAbsolutePath();
     }
 
     /**
@@ -710,7 +717,8 @@ public class MergedResourceWriter
                                     file,
                                     getRootFolder(),
                                     getFolderName(resourceItem),
-                                    resourceItem.mIsFromDependency));
+                                    resourceItem.mIsFromDependency,
+                                    mergeWriterRequest.getRelativePathEncoding()));
         }
     }
 

@@ -21,6 +21,7 @@ import com.android.builder.core.ComponentTypeImpl
 import com.android.builder.internal.aapt.AaptOptions
 import com.android.builder.internal.aapt.AaptPackageConfig
 import com.android.ide.common.resources.CompileResourceRequest
+import com.android.ide.common.resources.ResourcePathEncoding
 import com.android.testutils.MockLog
 import com.android.utils.FileUtils
 import com.google.common.base.Throwables
@@ -63,7 +64,9 @@ class Aapt2DaemonImplInternalErrorHandlingTest {
             daemon.compile(
                     CompileResourceRequest(
                             inputFile = File("values/does_not_matter.xml"),
-                            outputDirectory = compiledDir),
+                            outputDirectory = compiledDir,
+                            resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable
+                    ),
                     logger)
         }
         assertThat(exception.message).contains("Daemon startup failed")
@@ -94,7 +97,9 @@ class Aapt2DaemonImplInternalErrorHandlingTest {
             daemon.compile(
                 CompileResourceRequest(
                     inputFile = File("values/does_not_matter.xml"),
-                    outputDirectory = compiledDir),
+                    outputDirectory = compiledDir,
+                    resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable
+                ),
                 logger)
         }
         assertThat(daemon.state).isEqualTo(Aapt2Daemon.State.SHUTDOWN)
@@ -131,7 +136,9 @@ class Aapt2DaemonImplInternalErrorHandlingTest {
             daemon.compile(
                 CompileResourceRequest(
                     inputFile = File("values/does_not_matter.xml"),
-                    outputDirectory = compiledDir),
+                    outputDirectory = compiledDir,
+                    resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable
+                ),
                 logger)
         }
         assertThat(daemon.state).isEqualTo(Aapt2Daemon.State.SHUTDOWN)
@@ -164,7 +171,9 @@ class Aapt2DaemonImplInternalErrorHandlingTest {
             daemon.compile(
                     CompileResourceRequest(
                             inputFile = File("values/does_not_matter.xml"),
-                            outputDirectory = compiledDir),
+                            outputDirectory = compiledDir,
+                            resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable
+                    ),
                     logger)
         }
         assertThat(daemon.state).isEqualTo(Aapt2Daemon.State.SHUTDOWN)
@@ -191,7 +200,8 @@ class Aapt2DaemonImplInternalErrorHandlingTest {
             val outputFile = temporaryFolder.newFolder()
             val request = CompileResourceRequest(
                 inputFile = inputFile,
-                outputDirectory =  outputFile
+                outputDirectory =  outputFile,
+                resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable
             )
             daemon.compile(request, logger)
         }

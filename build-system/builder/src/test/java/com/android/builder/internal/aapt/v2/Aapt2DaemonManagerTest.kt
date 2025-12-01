@@ -21,6 +21,7 @@ import com.android.builder.internal.aapt.AaptConvertConfig
 import com.android.builder.internal.aapt.AaptOptions
 import com.android.builder.internal.aapt.AaptPackageConfig
 import com.android.ide.common.resources.CompileResourceRequest
+import com.android.ide.common.resources.ResourcePathEncoding
 import com.android.testutils.NoErrorsOrWarningsLogger
 import com.android.utils.ILogger
 import com.google.common.base.Ticker
@@ -72,7 +73,9 @@ class Aapt2DaemonManagerTest {
                     CompileResourceRequest(
                             inputFile = File("in1"),
                             outputDirectory = File("out1"),
-                            inputDirectoryName = "values"),
+                            inputDirectoryName = "values",
+                            resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable
+                    ),
                     NoErrorsOrWarningsLogger())
             manager.maintain()
         }
@@ -163,7 +166,9 @@ class Aapt2DaemonManagerTest {
                             CompileResourceRequest(
                                     inputFile = File("in1"),
                                     outputDirectory = File("out1"),
-                                    inputDirectoryName = "values"),
+                                    inputDirectoryName = "values",
+                                    resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable
+                            ),
                             logger)
                     daemonsReady.release()
                     daemonsWait.acquire()
@@ -171,7 +176,9 @@ class Aapt2DaemonManagerTest {
                             CompileResourceRequest(
                                     inputFile = File("in2"),
                                     outputDirectory = File("out1"),
-                                    inputDirectoryName = "values"),
+                                    inputDirectoryName = "values",
+                                    resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable
+                            ),
                             logger)
                 }
             })
@@ -227,7 +234,9 @@ class Aapt2DaemonManagerTest {
                 daemon.compile(CompileResourceRequest(
                         inputFile = File("in1"),
                         outputDirectory = File("out1"),
-                        inputDirectoryName = "values"), NoErrorsOrWarningsLogger())
+                        inputDirectoryName = "values",
+                        resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable
+                ), NoErrorsOrWarningsLogger())
             }
             assertThat(exception.message).contains("Compile")
             assertThat(exception.message).contains("timed out, attempting to stop daemon")

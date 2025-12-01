@@ -22,6 +22,7 @@ import com.android.builder.files.SerializableInputChanges
 import com.android.ide.common.resources.CompileResourceRequest
 import com.android.ide.common.resources.CopyToOutputDirectoryResourceCompilationService
 import com.android.ide.common.resources.FileStatus
+import com.android.ide.common.resources.ResourcePathEncoding
 import com.android.utils.FileUtils
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -72,11 +73,24 @@ class VerifyLibraryResourcesTaskTest {
             compilationService = compilationService
         )
 
-        val fileOut = compilationService.compileOutputFor(CompileResourceRequest(file, outputDir, "values"))
+        val fileOut = compilationService.compileOutputFor(
+            CompileResourceRequest(
+                file,
+                outputDir,
+                "values",
+                resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable
+            )
+        )
         assertTrue(fileOut.exists())
 
         val dirOut = compilationService.compileOutputFor(
-                CompileResourceRequest(invalidFile, outputDir, mergedDir.name))
+            CompileResourceRequest(
+                invalidFile,
+                outputDir,
+                mergedDir.name,
+                resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable
+            )
+        )
         assertFalse(dirOut.exists())
     }
 

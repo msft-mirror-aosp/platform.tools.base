@@ -21,9 +21,9 @@ import com.android.SdkConstants.FD_RES
 import com.android.SdkConstants.FD_RES_VALUES
 import com.android.build.gradle.internal.res.runAapt2Compile
 import com.android.build.gradle.internal.services.Aapt2Input
-import com.android.build.gradle.internal.services.getErrorFormatMode
 import com.android.build.gradle.internal.services.registerAaptService
 import com.android.ide.common.resources.CompileResourceRequest
+import com.android.ide.common.resources.ResourcePathEncoding
 import com.android.ide.common.xml.AndroidManifestParser
 import org.gradle.api.artifacts.transform.CacheableTransform
 import org.gradle.api.artifacts.transform.InputArtifact
@@ -66,7 +66,13 @@ abstract class AarResourcesCompilerTransform :
         resourceFolders?.forEach { folder ->
             folder?.listFiles()?.forEach {
                 // TODO(b/130160921): Add compile options
-                requestList.add(CompileResourceRequest(it, outputDir))
+                requestList.add(
+                    CompileResourceRequest(
+                        it,
+                        outputDir,
+                        resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable
+                    )
+                )
             }
         }
 

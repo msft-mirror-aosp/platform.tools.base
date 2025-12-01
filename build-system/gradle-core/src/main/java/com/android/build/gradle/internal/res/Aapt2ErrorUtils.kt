@@ -32,6 +32,7 @@ import com.android.ide.common.blame.parser.ToolOutputParser
 import com.android.ide.common.blame.parser.aapt.Aapt2OutputParser
 import com.android.ide.common.blame.parser.aapt.AbstractAaptOutputParser
 import com.android.ide.common.resources.CompileResourceRequest
+import com.android.ide.common.resources.ResourcePathEncoding
 import com.android.ide.common.resources.relativeResourcePathToAbsolutePath
 import com.android.tools.build.bundletool.model.utils.files.FileUtils
 import com.android.utils.StdLogger
@@ -156,11 +157,12 @@ fun rewriteLinkException(
  * @return A Blame Logger that can rewrite sources, to their correct locations pre-merge.
  */
 fun blameLoggerFor(
-    request: CompileResourceRequest, logger: LoggerWrapper
+    request: CompileResourceRequest, logger: LoggerWrapper,
 ): BlameLogger {
-    val sourcePathFunc = if (request.identifiedSourceSetMap.any()) {
+    val sourcePathFunc = if (request.usesRelativePaths) {
         relativeResourcePathToAbsolutePath(
-            request.identifiedSourceSetMap,
+            request.resEncodingSourceSetMap
+                ?: error("No resource source sets provided when compiling ${request.inputFile.absolutePath}"),
             FileSystems.getDefault()
         )
     } else {

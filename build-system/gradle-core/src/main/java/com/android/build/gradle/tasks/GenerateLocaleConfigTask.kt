@@ -44,6 +44,7 @@ import com.android.builder.internal.aapt.AaptOptions
 import com.android.builder.internal.aapt.AaptPackageConfig
 import com.android.builder.internal.aapt.AaptUtils
 import com.android.ide.common.resources.CompileResourceRequest
+import com.android.ide.common.resources.ResourcePathEncoding
 import com.android.ide.common.resources.configuration.FolderConfiguration
 import com.android.ide.common.resources.generateLocaleString
 import com.android.ide.common.resources.readSupportedLocales
@@ -286,7 +287,8 @@ abstract class GenerateLocaleConfigTask : NonIncrementalTask() {
             tempStringFile.writeText(tempStringFileContent)
             val request = CompileResourceRequest(
                 tempStringFile,
-                parameters.compiledResOutput.get().asFile
+                parameters.compiledResOutput.get().asFile,
+                resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable
             )
             compilationService.submitCompile(request)
         }

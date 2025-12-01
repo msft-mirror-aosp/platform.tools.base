@@ -44,18 +44,46 @@ class CompileResourceRequest @JvmOverloads constructor(
      * use [blameMap]
      */
     val mergeBlameFolder: File? = null,
-    /** Map of source set identifier to absolute path Used for determining relative sourcePath. */
-    var identifiedSourceSetMap: Map<String, String> = emptyMap()
+    /** Map of source set identifier to absolute path Used for determining relative sourcePath.
+     *
+     * Not a property due to serialization of sealed interface.
+     */
+    resourcePathEncoding: ResourcePathEncoding
 ) : Serializable {
-    val sourcePath : String by lazy {
-         if (identifiedSourceSetMap.any()) {
-             getRelativeSourceSetPath(inputFile, identifiedSourceSetMap)
-         } else {
-             inputFile.absolutePath
-         }
+
+    /* If true, resourcePathEncoding property is an instance of ResourcePathEncoding.Relative */
+    val usesRelativePaths: Boolean = resourcePathEncoding is ResourcePathEncoding.Relative
+
+    /* Provides the source set map used for resource encoding the sourceSetProperty */
+    val resEncodingSourceSetMap: Map<String, String>? by lazy {
+        when (resourcePathEncoding) {
+            is ResourcePathEncoding.Relative -> resourcePathEncoding.identifiedSourceSetMap
+            is ResourcePathEncoding.AbsoluteNotRelocatable -> null
+        }
     }
 
-    fun useRelativeSourcePath(moduleIdentifiedSourceSets: Map<String, String>) {
-        identifiedSourceSetMap = moduleIdentifiedSourceSets
+    val sourcePath : String by lazy {
+        when (resourcePathEncoding) {
+            is ResourcePathEncoding.Relative -> {
+                if (resourcePathEncoding.identifiedSourceSetMap.isEmpty()) {
+                    error("No resource source set identifiers found. " +
+                                  "Unable to encode relative path in compiled resource ${inputFile.absolutePath}")
+                }
+                getRelativeSourceSetPath(inputFile, resourcePathEncoding.identifiedSourceSetMap)
+            }
+            is ResourcePathEncoding.AbsoluteNotRelocatable -> inputFile.absolutePath
+        }
     }
+}
+
+sealed interface ResourcePathEncoding {
+    /* Provides a map of resource source sets to encode a safe relative resource path into the
+     * compiled resource that is independent of path changes. This allows for relatability.
+    */
+    data class Relative(val identifiedSourceSetMap: Map<String, String>) : ResourcePathEncoding
+
+    /* Writes absolute path to the compiled resource. This is problematic for relocatability and caching.
+     * Only use for testing.
+    */
+    object AbsoluteNotRelocatable : ResourcePathEncoding
 }
