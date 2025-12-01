@@ -1,88 +1,9 @@
 load("@rules_java//java:defs.bzl", "java_import", "java_library")
-load("//tools/base/bazel:bazel.bzl", "iml_module")
 load("//tools/base/bazel:gradle.bzl", "gradle_build", "gradle_test")
-load("//tools/base/bazel:kotlin.bzl", "kotlin_test")
 load("//tools/base/bazel:maven.bzl", "maven_library", "maven_repository")
 load("//tools/base/build-system/integration-test:common-dependencies.bzl", "KGP_FOR_TESTS", "KGP_VERSION_FOR_TESTS")
-load("//tools/base/common:version.bzl", "BASE_VERSION", "BUILD_VERSION", "IS_AGP_RELEASE_BRANCH")
+load("//tools/base/common:version.bzl", "BUILD_VERSION", "IS_AGP_RELEASE_BRANCH")
 load("hybrid_build.bzl", "GRADLE_PROPERTIES")
-
-# managed by go/iml_to_build
-iml_module(
-    name = "studio.android.sdktools.manifest-merger",
-    srcs = ["manifest-merger/src/main/java"],
-    iml_files = ["manifest-merger/android.sdktools.manifest-merger.iml"],
-    lint_baseline = "lint_baseline.xml",
-    # do not sort: must match IML order
-    test_deps = [
-        "//tools/adt/idea/.idea/libraries:junit4",
-        "//tools/adt/idea/.idea/libraries:mockito",
-        "//tools/base/testutils:studio.android.sdktools.testutils",
-        "//tools/adt/idea/.idea/libraries:truth",
-        "//tools/adt/idea/.idea/libraries:mockito-kotlin",
-    ],
-    test_resources = ["manifest-merger/src/test/resources"],
-    test_srcs = ["manifest-merger/src/test/java"],
-    visibility = ["//visibility:public"],
-    exports = ["//tools/base/sdklib:studio.android.sdktools.sdklib"],
-    # do not sort: must match IML order
-    deps = [
-        "@intellij//:intellij-sdk",
-        "@intellij//:com.intellij.java",
-        "//tools/base/sdklib:studio.android.sdktools.sdklib",
-        "//tools/base/sdk-common:studio.android.sdktools.sdk-common",
-    ],
-)
-
-maven_library(
-    name = "tools.manifest-merger",
-    srcs = glob([
-        "manifest-merger/src/main/java/com/android/manifmerger/*.java",
-        "manifest-merger/src/main/java/com/android/manifmerger/*.kt",
-    ]),
-    coordinates = "com.android.tools.build:manifest-merger",
-    notice = "manifest-merger/NOTICE",
-    resource_strip_prefix = "tools/base/build-system/manifest-merger",
-    version = BASE_VERSION,
-    visibility = ["//visibility:public"],
-    deps = [
-        "//tools/base/common:tools.common",
-        "//tools/base/sdk-common:tools.sdk-common",
-        "//tools/base/sdklib:tools.sdklib",
-        "@maven//:com.google.code.gson.gson",
-        "@maven//:org.jetbrains.kotlin.kotlin-stdlib-jdk8",
-    ],
-)
-
-kotlin_test(
-    name = "tools.manifest-merger_tests",
-    srcs = glob([
-        "manifest-merger/src/test/java/com/android/manifmerger/*.java",
-        "manifest-merger/src/test/java/com/android/manifmerger/testutils/*.kt",
-        "manifest-merger/src/test/java/com/android/manifmerger/unit/*.kt",
-        "manifest-merger/src/test/java/com/android/manifmerger/*.kt",
-    ]),
-    jvm_flags = ["-Dtest.suite.jar=tools.manifest-merger_tests.jar"],
-    lint_baseline = "lint_baseline_manifest_merger_tests.xml",
-    resources = glob(["manifest-merger/src/test/resources/**"]),
-    tags = ["noci:studio-win"],  # b/77288863
-    test_class = "com.android.testutils.JarTestSuite",
-    runtime_deps = ["//tools/base/testutils:tools.testutils"],
-    deps = [
-        ":tools.manifest-merger",
-        "//tools/base/annotations",
-        "//tools/base/common:tools.common",
-        "//tools/base/sdk-common:tools.sdk-common",
-        "//tools/base/sdklib:tools.sdklib",
-        "//tools/base/testutils:tools.testutils",
-        "@maven//:com.google.code.gson.gson",
-        "@maven//:com.google.guava.guava",
-        "@maven//:com.google.truth.truth",
-        "@maven//:junit.junit",
-        "@maven//:org.mockito.kotlin.mockito-kotlin",
-        "@maven//:org.mockito.mockito-core",
-    ],
-)
 
 maven_library(
     name = "tools.apksig",
@@ -455,13 +376,8 @@ maven_repository(
 
 filegroup(
     name = "agp_gradle_build_files",
-    srcs = glob([
-        "manifest-merger/src/main/java/com/android/manifmerger/*.java",
-        "manifest-merger/src/main/java/com/android/manifmerger/*.kt",
-    ]) + [
+    srcs = [
         "docs/build.gradle",
-        "manifest-merger/NOTICE",
-        "manifest-merger/build.gradle",
     ],
     visibility = ["//tools/base/build-system:__pkg__"],
 )
@@ -485,6 +401,7 @@ ANDROID_GRADLE_PLUGIN_SOURCE_FILES = [
     "//tools/base/build-system/gradle-kotlin:agp_gradle_build_files",
     "//tools/base/build-system/gradle-settings:agp_gradle_build_files",
     "//tools/base/build-system/gradle-settings-api:agp_gradle_build_files",
+    "//tools/base/build-system/manifest-merger:agp_gradle_build_files",
     "//tools/base/build-system/profile:agp_gradle_build_files",
     "//tools/base/build-system/shrinker:agp_gradle_build_files",
     "//tools/base/common:agp_gradle_build_files",

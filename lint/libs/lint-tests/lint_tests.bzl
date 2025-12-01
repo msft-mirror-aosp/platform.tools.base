@@ -49,7 +49,7 @@ def lint_test(name, useK2):
             "//tools/base/apkparser:tools.binary-resources",
             "//tools/base/apkparser/analyzer:tools.analyzer",
             "//tools/base/bazel:langtools",
-            "//tools/base/build-system:tools.manifest-merger",
+            "//tools/base/build-system/manifest-merger:tools.manifest-merger",
             "//tools/base/build-system/builder-model",
             "//tools/base/common:tools.common",
             "//tools/base/common:tools.fixtures",
