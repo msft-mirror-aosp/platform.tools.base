@@ -44,6 +44,7 @@ enum class FormFactor(val displayName: String) {
   Tv("Television"),
   Car("Car"),
   XR("XR"),
+  AiGlasses("AI Glasses"),
   Generic("Generic");
 
   /** Whether to include a "No Activity" template as the first option in the gallery */

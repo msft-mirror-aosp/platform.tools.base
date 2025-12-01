@@ -46,7 +46,7 @@ val aiGlassesActivityTemplate
       )
 
     category = Category.Activity
-    formFactor = FormFactor.XR
+    formFactor = FormFactor.AiGlasses
     screens = listOf(WizardUiContext.NewProject)
 
     val activityClass = stringParameter {
