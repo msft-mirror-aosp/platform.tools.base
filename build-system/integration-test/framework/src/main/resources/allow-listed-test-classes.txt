@@ -1,7 +1,6 @@
 com.android.build.gradle.integration.analytics.AnalyticsCompositeBuildTest
 com.android.build.gradle.integration.analytics.AnalyticsConfigurationCachingTest
 com.android.build.gradle.integration.analytics.AnalyticsConfigureOnDemandTest
-com.android.build.gradle.integration.analytics.LibraryProfileContentTest
 com.android.build.gradle.integration.analytics.ProfileContentTest
 com.android.build.gradle.integration.analytics.ProjectIdAnonymizationTest
 com.android.build.gradle.integration.annotationprocessor.AutoServiceTest
