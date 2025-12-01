@@ -167,7 +167,6 @@ com.android.build.gradle.integration.application.PrivateResourceTest
 com.android.build.gradle.integration.application.ProfileableTest
 com.android.build.gradle.integration.application.ProjectNoJavaSourcesTest
 com.android.build.gradle.integration.application.PseudoLocalizationTest
-com.android.build.gradle.integration.application.RegisterExternalAptJavaOutputTest
 com.android.build.gradle.integration.application.RenamedApkTest
 com.android.build.gradle.integration.application.RenderscriptDeprecationTest
 com.android.build.gradle.integration.application.RenderscriptTest
