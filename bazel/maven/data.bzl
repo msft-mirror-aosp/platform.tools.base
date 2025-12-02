@@ -636,6 +636,7 @@ DATA = [
     "com.android.tools:desugar_jdk_libs_configuration_nio:2.0.4",
     "com.android.tools:desugar_jdk_libs_minimal:2.0.4",
     "com.android.tools:desugar_jdk_libs_nio:2.0.4",
+    "com.android.tools.journeys:journeys-junit-engine:0.2.0",
     "com.android.tools.layoutlib:layoutlib:16.1.0",
     "com.android.tools.layoutlib:layoutlib-api:30.1.3",
     "com.android.tools.layoutlib:layoutlib-resources:16.1.0",
