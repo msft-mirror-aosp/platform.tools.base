@@ -20,23 +20,17 @@ import com.android.build.api.artifact.SingleArtifact
 import com.android.build.api.variant.BuiltArtifacts
 import com.android.build.api.variant.impl.BuiltArtifactImpl
 import com.android.build.api.variant.impl.BuiltArtifactsImpl
-import com.android.build.api.variant.impl.getApiString
 import com.android.build.gradle.internal.LoggerWrapper
 import com.android.build.gradle.internal.component.ComponentCreationConfig
-import com.android.build.gradle.internal.component.DeviceTestCreationConfig
-import com.android.build.gradle.internal.component.HostTestCreationConfig
-import com.android.build.gradle.internal.component.InstrumentedTestCreationConfig
-import com.android.build.gradle.internal.component.TestCreationConfig
-import com.android.build.gradle.internal.component.TestVariantCreationConfig
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
 import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactScope
 import com.android.build.gradle.internal.publishing.AndroidArtifacts.ConsumedConfigType
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.scope.InternalArtifactType.PACKAGED_MANIFESTS
 import com.android.build.gradle.internal.tasks.BuildAnalyzer
+import com.android.build.gradle.internal.tasks.creationconfig.ProceedTestManifestCreationConfig
 import com.android.build.gradle.internal.tasks.factory.VariantTaskCreationAction
 import com.android.build.gradle.internal.tasks.manifest.ManifestProviderImpl
-import com.android.build.gradle.internal.utils.parseTargetHash
 import com.android.build.gradle.internal.utils.setDisallowChanges
 import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.tasks.ProcessApplicationManifest.Companion.getArtifactName
@@ -465,9 +459,6 @@ abstract class ProcessTestManifest : ManifestProcessorTask() {
     @get:Optional
     abstract val functionalTest: Property<Boolean>
 
-    @get:Input
-    abstract val componentType: Property<String>
-
     @get:Optional
     @get:Input
     abstract val testLabel: Property<String>
@@ -505,8 +496,8 @@ abstract class ProcessTestManifest : ManifestProcessorTask() {
     }
 
     class CreationAction(
-        creationConfig: TestCreationConfig
-    ) : VariantTaskCreationAction<ProcessTestManifest, TestCreationConfig>(creationConfig) {
+        creationConfig: ProceedTestManifestCreationConfig
+    ) : VariantTaskCreationAction<ProcessTestManifest, ProceedTestManifestCreationConfig>(creationConfig) {
         override val name = computeTaskName("process", "Manifest")
         override val type = ProcessTestManifest::class.java
 
@@ -540,34 +531,23 @@ abstract class ProcessTestManifest : ManifestProcessorTask() {
             task: ProcessTestManifest
         ) {
             super.configure(task)
-            val project = task.project
 
-            if (creationConfig is HostTestCreationConfig &&
-                creationConfig.mainVariant.componentType.isApk) {
-                // Configuring ProcessTestManifest task for unit tests.
-                creationConfig
-                    .mainVariant
-                    .artifacts
-                    .setTaskInputToFinalProduct(
-                        SingleArtifact.MERGED_MANIFEST,
-                        task.testedAppManifestFile
-                    )
-                task.testApplicationId.setDisallowChanges(creationConfig.mainVariant.applicationId)
-                task.testedApplicationId.setDisallowChanges(creationConfig.mainVariant.applicationId)
-                task.namespace.setDisallowChanges(creationConfig.mainVariant.namespace)
-            } else {
-                // Configuring ProcessTestManifest task for device tests and host tests for libraries.
-                task.testApplicationId.setDisallowChanges(creationConfig.applicationId)
-                task.testedApplicationId.setDisallowChanges(creationConfig.testedApplicationId)
-                task.namespace.setDisallowChanges(creationConfig.namespace)
+            creationConfig
+                .testedApkVariantArtifacts
+                ?.setTaskInputToFinalProduct(
+                    SingleArtifact.MERGED_MANIFEST,
+                    task.testedAppManifestFile
+                )
 
-                task.instrumentationRunner.setDisallowChanges(creationConfig.instrumentationRunner)
-            }
+            task.testApplicationId.setDisallowChanges(creationConfig.applicationId)
+            task.testedApplicationId.setDisallowChanges(creationConfig.testedApplicationId)
+            task.namespace.setDisallowChanges(creationConfig.namespace)
 
-            task.testManifestFile.set(creationConfig.sources.manifestFile)
+            task.instrumentationRunner.setDisallowChanges(creationConfig.instrumentationRunner)
+
+            task.testManifestFile.set(creationConfig.manifestFile)
             task.testManifestFile.disallowChanges()
-            task.manifestOverlayFilePaths.setDisallowChanges(creationConfig.sources.manifestOverlayFiles)
-            task.componentType.setDisallowChanges(creationConfig.componentType.toString())
+            task.manifestOverlayFilePaths.setDisallowChanges(creationConfig.manifestOverlayFiles)
             task.tmpDir.setDisallowChanges(
                 creationConfig.paths.intermediatesDir(
                     "tmp",
@@ -575,17 +555,12 @@ abstract class ProcessTestManifest : ManifestProcessorTask() {
                     creationConfig.dirName
                 )
             )
-            task.minSdkVersion.setDisallowChanges(creationConfig.minSdk.getApiString())
-            task.targetSdkVersion.setDisallowChanges(creationConfig.targetSdkVersion.getApiString())
+            task.minSdkVersion.setDisallowChanges(creationConfig.minSdk)
+            task.targetSdkVersion.setDisallowChanges(creationConfig.targetSdkVersion)
 
-            if (creationConfig is InstrumentedTestCreationConfig) {
-                task.handleProfiling.set(creationConfig.handleProfiling)
-                task.functionalTest.set(creationConfig.functionalTest)
-                task.testLabel.set(creationConfig.testLabel)
-            }
-            task.handleProfiling.disallowChanges()
-            task.functionalTest.disallowChanges()
-            task.testLabel.disallowChanges()
+            task.handleProfiling.setDisallowChanges(creationConfig.handleProfiling)
+            task.functionalTest.setDisallowChanges(creationConfig.functionalTest)
+            task.testLabel.setDisallowChanges(creationConfig.testLabel)
 
             task.manifests = creationConfig
                 .variantDependencies
@@ -594,13 +569,8 @@ abstract class ProcessTestManifest : ManifestProcessorTask() {
                     ArtifactScope.ALL,
                     AndroidArtifacts.ArtifactType.MANIFEST
                 )
-            task.placeholdersValues.setDisallowChanges(
-                creationConfig.manifestPlaceholdersCreationConfig?.placeholders,
-                handleNullable = {
-                    empty()
-                }
-            )
-            task.navigationJsons = project.files(
+            task.placeholdersValues.setDisallowChanges(creationConfig.placeholderValues)
+            task.navigationJsons = task.project.files(
                     creationConfig
                         .variantDependencies
                         .getArtifactFileCollection(
@@ -610,26 +580,9 @@ abstract class ProcessTestManifest : ManifestProcessorTask() {
                         )
                 )
 
-            when (creationConfig) {
-                is DeviceTestCreationConfig -> {
-                    task.extractNativeLibs.setDisallowChanges(
-                        creationConfig.packaging.jniLibs.useLegacyPackaging
-                    )
-                }
-                is TestVariantCreationConfig -> {
-                    task.extractNativeLibs.setDisallowChanges(
-                        creationConfig.packaging.jniLibs.useLegacyPackaging
-                    )
-                }
-                else -> {
-                    task.extractNativeLibs.disallowChanges()
-                }
-            }
+            task.extractNativeLibs.setDisallowChanges(creationConfig.useLegacyPackaging)
             task.debuggable.setDisallowChanges(creationConfig.debuggable)
-            task.compileSdk
-                .setDisallowChanges(
-                    parseTargetHash(creationConfig.global.compileSdkHashString).apiLevel
-                )
+            task.compileSdk.setDisallowChanges(creationConfig.compileSdk)
             task.disallowSdkVersionsInUsesSdkInManifest.setDisallowChanges(
                 creationConfig.services.projectOptions[BooleanOption.DISALLOW_USES_SDK_IN_MANIFEST]
             )
