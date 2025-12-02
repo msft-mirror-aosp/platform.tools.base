@@ -322,6 +322,8 @@ abstract class UtpTestBase(val runWithBuiltInPlatform: Boolean) {
             }
         }
 
+        androidApplication(":emptyAppProject") {}
+
         gradleProperties {
             add(BooleanOption.ANDROID_BUILTIN_TEST_PLATFORM, runWithBuiltInPlatform)
             add(BooleanOption.BUILT_IN_KOTLIN, false)
@@ -988,5 +990,19 @@ abstract class UtpTestBase(val runWithBuiltInPlatform: Boolean) {
         assertThat(project.resolve(testCoverageXmlPath)).contains(
                 """<counter type="INSTRUCTION" missed="3" covered="5"/>"""
         )
+    }
+
+    @Test
+    fun runAndroidTestWithNoTestClasses() {
+        // TODO(b/434015775): Implement built-in test platform.
+        Assume.assumeFalse(runWithBuiltInPlatform)
+
+        selectModule("emptyAppProject")
+
+        val result = executor
+            .withEnableInfoLogging(true)  // "No tests found" message is info level.
+            .run(testTaskName)
+
+        result.assertOutputContains("No tests found, nothing to do.")
     }
 }
