@@ -47,7 +47,7 @@ import java.util.Scanner;
  *
  * <pre>
  *     $ cd tools
- *     $ ./gradlew :base:build-system:integration-test:application:test -D:base:build-system:integration-test:application:test.single=ExtractAnnotationTest
+ *     $ ./gradlew :base:build-system:integration-test:application:test --tests "ExtractAnnotationsTest"
  * </pre>
  */
 @RunWith(FilterableParameterized.class)
