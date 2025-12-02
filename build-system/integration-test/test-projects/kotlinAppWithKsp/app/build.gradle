@@ -16,7 +16,6 @@
 
 
 apply plugin: 'com.android.application'
-apply plugin: 'kotlin-android'
 apply plugin: 'com.google.devtools.ksp'
 
 android {
@@ -30,12 +29,8 @@ android {
         targetSdkVersion libs.versions.latestCompileSdk.get()
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
-    kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_11
-    }
 }
 
 dependencies {
-    implementation "org.jetbrains.kotlin:kotlin-stdlib:${libs.versions.kotlinVersion.get()}"
     ksp project(':mock-processor')
 }

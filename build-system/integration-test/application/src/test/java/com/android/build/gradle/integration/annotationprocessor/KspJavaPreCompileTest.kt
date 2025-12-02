@@ -17,20 +17,79 @@
 package com.android.build.gradle.integration.annotationprocessor
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
+import com.android.build.gradle.integration.common.runner.FilterableParameterized
+import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.scope.getOutputDir
 import com.android.build.gradle.tasks.ANNOTATION_PROCESSOR_LIST_FILE_NAME
 import com.android.testutils.TestInputsGenerator.writeJarWithEmptyEntries
 import com.google.common.truth.Truth
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.junit.runners.Parameterized
 
 /** Integration test to ensure that plugin binary compatibility of AGP APIs is preserved. */
-class KspJavaPreCompileTest {
+@RunWith(FilterableParameterized::class)
+class KspJavaPreCompileTest(private val useKagp: Boolean) {
+
+    companion object {
+
+        @Parameterized.Parameters(name = "useKagp_{0}")
+        @JvmStatic
+        fun parameters() = listOf(true, false)
+    }
 
     @get:Rule
     val project = GradleTestProject.builder().fromTestProject("kotlinAppWithKsp")
         .create()
+
+    @Before
+    fun setup() {
+        if (useKagp) {
+            TestFileUtils.appendToFile(
+                project.gradlePropertiesFile, """
+                android.builtInKotlin=false
+                android.newDsl=false
+            """.trimIndent()
+            )
+
+            TestFileUtils.searchAndReplace(
+                project.buildFile, "dependencies {", """
+                dependencies {
+                    classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:\$\{libs.versions.kotlinVersion.get()}"
+            """.trimIndent()
+            )
+
+            TestFileUtils.searchAndReplace(
+                project.getSubproject("app").buildFile,
+                "apply plugin: 'com.android.application'", """
+                apply plugin: 'com.android.application'
+                apply plugin: 'kotlin-android'
+            """.trimIndent()
+            )
+
+            TestFileUtils.searchAndReplace(
+                project.getSubproject("app").buildFile,
+                "buildToolsVersion = libs.versions.buildToolsVersion.get()",
+                """
+                    buildToolsVersion = libs.versions.buildToolsVersion.get()
+
+                    kotlinOptions {
+                        jvmTarget = JavaVersion.VERSION_11
+                    }
+            """.trimIndent()
+            )
+
+            TestFileUtils.searchAndReplace(
+                project.getSubproject("app").buildFile, "dependencies {", """
+                dependencies {
+                    implementation "org.jetbrains.kotlin:kotlin-stdlib:\$\{libs.versions.kotlinVersion.get()}"
+            """.trimIndent()
+            )
+        }
+    }
 
     @Test
     fun kspJavaPreCompileTest() {
