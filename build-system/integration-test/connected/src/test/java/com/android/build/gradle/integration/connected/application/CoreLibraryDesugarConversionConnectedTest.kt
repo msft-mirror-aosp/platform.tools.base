@@ -36,7 +36,7 @@ import java.nio.file.Files
 
 /** Connected test for core library desugaring API conversion. */
 @RunWith(FilterableParameterized::class)
-class CoreLibraryDesugarConversionConnectedTest(minSdkVersion: Int) {
+class CoreLibraryDesugarConversionConnectedTest(val minSdkVersion: Int) {
 
     companion object {
         @ClassRule
@@ -73,6 +73,8 @@ class CoreLibraryDesugarConversionConnectedTest(minSdkVersion: Int) {
                     }
 
                     defaultConfig {
+                        //noinspection ExpiredTargetSdkVersion
+                        targetSdkVersion $minSdkVersion
                         multiDexEnabled = true
                     }
                 }

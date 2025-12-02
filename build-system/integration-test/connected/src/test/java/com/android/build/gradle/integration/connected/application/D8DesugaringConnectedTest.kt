@@ -69,6 +69,8 @@ class D8DesugaringConnectedTest {
                     defaultConfig {
                         applicationId "com.example.d8desugartest"
                         minSdkVersion 20
+                        //noinspection ExpiredTargetSdkVersion
+                        targetSdkVersion 20
                         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
                     }
 

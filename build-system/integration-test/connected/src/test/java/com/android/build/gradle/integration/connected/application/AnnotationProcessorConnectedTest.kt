@@ -72,6 +72,8 @@ class AnnotationProcessorConnectedTest {
                             }
                         }
                         minSdkVersion libs.versions.supportLibMinSdk.get()
+                        //noinspect ExpiredTargetSdkVersion
+                        targetSdkVersion libs.versions.supportLibMinSdk.get()
                         testInstrumentationRunner 'android.support.test.runner.AndroidJUnitRunner'
                     }
                 }

@@ -61,8 +61,8 @@ public class ApiTest {
         // ATTENTION Author and Reviewers - please make sure required changes to the build file
         // are backwards compatible before updating this test.
         assertThat(TestFileUtils.sha1NormalizedLineEndings(project.file("app/build.gradle")))
-                .isEqualTo("ab64fe556adbe864467b2c37856739d63cb2f7c6");
+                .isEqualTo("829479294ce7dc9039c4737a46d70beda12da1c9");
         assertThat(TestFileUtils.sha1NormalizedLineEndings(project.file("lib/build.gradle")))
-                .isEqualTo("f30f95f36ce0720a820f48b26d908a1498c99ab2");
+                .isEqualTo("74bd901e834a2804bf709512f89d64adf08b91a7");
     }
 }

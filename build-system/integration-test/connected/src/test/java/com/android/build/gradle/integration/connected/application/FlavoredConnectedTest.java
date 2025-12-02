@@ -18,12 +18,15 @@ package com.android.build.gradle.integration.connected.application;
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.connected.utils.EmulatorUtils;
-import java.io.IOException;
+import com.android.build.gradle.options.BooleanOption;
+
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExternalResource;
+
+import java.io.IOException;
 
 /** Connected tests for flavored. */
 public class FlavoredConnectedTest {
@@ -34,6 +37,7 @@ public class FlavoredConnectedTest {
     public GradleTestProject project =
             GradleTestProject.builder()
                     .fromTestProject("flavored")
+                    .addGradleProperty(BooleanOption.USE_NEW_DSL, false)
                     .create();
 
     @Before

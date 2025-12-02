@@ -13,6 +13,9 @@ android {
         minSdk{
             version = release(libs.versions.supportLibMinSdk.get().toInteger())
         }
+	targetSdk {
+            version = release(libs.versions.supportLibMinSdk.get().toInteger())
+	}
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
 
