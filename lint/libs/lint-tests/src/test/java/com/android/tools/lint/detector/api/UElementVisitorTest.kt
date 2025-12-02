@@ -18,6 +18,7 @@ package com.android.tools.lint.detector.api
 import com.android.tools.lint.checks.AbstractCheckTest
 import com.android.tools.lint.checks.infrastructure.TestMode
 import com.android.tools.lint.client.api.UElementHandler
+import com.intellij.util.asSafely
 import org.jetbrains.uast.UAnnotation
 import org.jetbrains.uast.UBinaryExpressionWithPattern
 import org.jetbrains.uast.UClass
@@ -176,16 +177,25 @@ class UElementVisitorTest : AbstractCheckTest() {
       .run()
       .expect(
         """
+src/test/pkg/Anno.kt:6: Warning: Visited annotation (again, via visitElement) test.pkg.Anno [_TestIssueId]
+  @get:Anno
+  ~~~~~~~~~
 src/test/pkg/Anno.kt:6: Warning: Visited annotation test.pkg.Anno [_TestIssueId]
   @get:Anno
+  ~~~~~~~~~
+src/test/pkg/Anno.kt:8: Warning: Visited annotation (again, via visitElement) test.pkg.Anno [_TestIssueId]
+  @set:Anno
   ~~~~~~~~~
 src/test/pkg/Anno.kt:8: Warning: Visited annotation test.pkg.Anno [_TestIssueId]
   @set:Anno
   ~~~~~~~~~
+src/test/pkg/Anno.kt:12: Warning: Visited annotation (again, via visitElement) test.pkg.Anno [_TestIssueId]
+  @Anno
+  ~~~~~
 src/test/pkg/Anno.kt:12: Warning: Visited annotation test.pkg.Anno [_TestIssueId]
   @Anno
   ~~~~~
-0 errors, 3 warnings
+0 errors, 6 warnings
         """
       )
   }
@@ -220,16 +230,25 @@ src/test/pkg/Anno.kt:12: Warning: Visited annotation test.pkg.Anno [_TestIssueId
       .run()
       .expect(
         """
+src/test/pkg/Anno.kt:6: Warning: Visited annotation (again, via visitElement) test.pkg.Anno [_TestIssueId]
+  @get:Anno
+  ~~~~~~~~~
 src/test/pkg/Anno.kt:6: Warning: Visited annotation test.pkg.Anno [_TestIssueId]
   @get:Anno
+  ~~~~~~~~~
+src/test/pkg/Anno.kt:8: Warning: Visited annotation (again, via visitElement) test.pkg.Anno [_TestIssueId]
+  @set:Anno
   ~~~~~~~~~
 src/test/pkg/Anno.kt:8: Warning: Visited annotation test.pkg.Anno [_TestIssueId]
   @set:Anno
   ~~~~~~~~~
+src/test/pkg/Anno.kt:12: Warning: Visited annotation (again, via visitElement) test.pkg.Anno [_TestIssueId]
+  @Anno
+  ~~~~~
 src/test/pkg/Anno.kt:12: Warning: Visited annotation test.pkg.Anno [_TestIssueId]
   @Anno
   ~~~~~
-0 errors, 3 warnings
+0 errors, 6 warnings
         """
       )
   }
@@ -264,19 +283,31 @@ src/test/pkg/Anno.kt:12: Warning: Visited annotation test.pkg.Anno [_TestIssueId
       .run()
       .expect(
         """
+src/test/pkg/Anno.kt:6: Warning: Visited annotation (again, via visitElement) test.pkg.Anno [_TestIssueId]
+  @get:Anno
+  ~~~~~~~~~
 src/test/pkg/Anno.kt:6: Warning: Visited annotation test.pkg.Anno [_TestIssueId]
   @get:Anno
+  ~~~~~~~~~
+src/test/pkg/Anno.kt:8: Warning: Visited annotation (again, via visitElement) test.pkg.Anno [_TestIssueId]
+  @set:Anno
   ~~~~~~~~~
 src/test/pkg/Anno.kt:8: Warning: Visited annotation test.pkg.Anno [_TestIssueId]
   @set:Anno
   ~~~~~~~~~
+src/test/pkg/Anno.kt:10: Warning: Visited annotation (again, via visitElement) test.pkg.Anno [_TestIssueId]
+  @property:Anno
+  ~~~~~~~~~~~~~~
 src/test/pkg/Anno.kt:10: Warning: Visited annotation test.pkg.Anno [_TestIssueId]
   @property:Anno
   ~~~~~~~~~~~~~~
+src/test/pkg/Anno.kt:12: Warning: Visited annotation (again, via visitElement) test.pkg.Anno [_TestIssueId]
+  @Anno
+  ~~~~~
 src/test/pkg/Anno.kt:12: Warning: Visited annotation test.pkg.Anno [_TestIssueId]
   @Anno
   ~~~~~
-0 errors, 4 warnings
+0 errors, 8 warnings
         """
       )
   }
@@ -305,6 +336,7 @@ src/test/pkg/Anno.kt:12: Warning: Visited annotation test.pkg.Anno [_TestIssueId
         UNamedExpression::class.java,
         UPatternExpression::class.java,
         UBinaryExpressionWithPattern::class.java,
+        UElement::class.java,
       )
     }
 
@@ -339,6 +371,16 @@ src/test/pkg/Anno.kt:12: Warning: Visited annotation test.pkg.Anno [_TestIssueId
             node,
             context.getNameLocation(node),
             "Visited annotation `${node.qualifiedName}`",
+          )
+        }
+
+        override fun visitElement(node: UElement) {
+          if (node.asSafely<UAnnotation>()?.qualifiedName?.contains("Anno") != true) return
+          context.report(
+            TEST_ISSUE,
+            node,
+            context.getNameLocation(node),
+            "Visited annotation (again, via visitElement) `${node.qualifiedName}`",
           )
         }
       }
