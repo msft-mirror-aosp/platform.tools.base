@@ -5,8 +5,8 @@ dependencies {
     api fileTree(dir: 'libs', include: '*.jar')
 
     testImplementation 'junit:junit:4.12'
-    androidTestImplementation "com.android.support.test:runner:${libs.versions.testSupportLibVersion.get()}"
-    androidTestImplementation "com.android.support.test:rules:${libs.versions.testSupportLibVersion.get()}"
+    androidTestImplementation "androidx.test:runner:1.4.0-alpha06"
+    androidTestImplementation "androidx.test:rules:1.4.0-alpha06"
 }
 
 android {
@@ -22,7 +22,7 @@ android {
         targetSdkVersion 16
         proguardFile 'config.pro'
         consumerProguardFiles 'config.pro'
-        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
     buildTypes {
         debug {

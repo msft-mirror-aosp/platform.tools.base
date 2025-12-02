@@ -6,64 +6,74 @@
       - unresolvedDependencies = []
    > androidTestArtifact:
       > compileDependencies:
-         > com.android.support.test|runner|1.0.2|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|com.android.support.test:runner:1.0.2:
+         > androidx.test|runner|1.4.0-alpha06|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.test:runner:1.4.0-alpha06:
             - requestedCoordinates = (null)
             > dependencies:
-               - com.android.support|support-annotations|27.1.1|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|com.android.support:support-annotations:27.1.1:
+               - androidx.annotation|annotation|1.0.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.annotation:annotation:1.0.0:
                   - requestedCoordinates = (null)
                   - dependencies         = []
-               - com.android.support.test|monitor|1.0.2|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|com.android.support.test:monitor:1.0.2:
+               - androidx.test|monitor|1.4.0-alpha06|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.test:monitor:1.4.0-alpha06:
                   - requestedCoordinates = (null)
                   - dependencies:
-                     - com.android.support|support-annotations|27.1.1|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|com.android.support:support-annotations:27.1.1:
+                     - androidx.annotation|annotation|1.0.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.annotation:annotation:1.0.0:
                         - dependencies = "*visited*"
+               - androidx.test.services|storage|1.4.0-alpha06|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.test.services:storage:1.4.0-alpha06:
+                  - requestedCoordinates = (null)
+                  - dependencies:
+                     - androidx.test|monitor|1.4.0-alpha06|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.test:monitor:1.4.0-alpha06:
+                        - dependencies = "*visited*"
+                     - com.google.code.findbugs|jsr305|2.0.1|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|com.google.code.findbugs:jsr305:2.0.1:
+                        - requestedCoordinates = (null)
+                        - dependencies         = []
                - junit|junit|4.12|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|junit:junit:4.12:
                   - requestedCoordinates = (null)
                   - dependencies:
                      - org.hamcrest|hamcrest-core|1.3|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|org.hamcrest:hamcrest-core:1.3:
                         - requestedCoordinates = (null)
                         - dependencies         = []
-               - net.sf.kxml|kxml2|2.3.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|net.sf.kxml:kxml2:2.3.0:
-                  - requestedCoordinates = (null)
-                  - dependencies         = []
             < dependencies
-         < com.android.support.test|runner|1.0.2|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|com.android.support.test:runner:1.0.2
-         - com.android.support.test|rules|1.0.2|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|com.android.support.test:rules:1.0.2:
+         < androidx.test|runner|1.4.0-alpha06|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.test:runner:1.4.0-alpha06
+         - androidx.test|rules|1.4.0-alpha06|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.test:rules:1.4.0-alpha06:
             - requestedCoordinates = (null)
             - dependencies:
-               - com.android.support.test|runner|1.0.2|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|com.android.support.test:runner:1.0.2:
+               - androidx.test|runner|1.4.0-alpha06|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.test:runner:1.4.0-alpha06:
                   - dependencies = "*visited*"
          - :|:lib1|debug|com.android.build.api.attributes.AgpVersionAttr>{AGP_Version}, com.android.build.gradle.internal.attributes.VariantAttr>debug, org.gradle.usage>java-api|flavorlib:lib1:unspecified:
             - requestedCoordinates = (null)
             - dependencies         = []
       < compileDependencies
       > runtimeDependencies:
-         > com.android.support.test|runner|1.0.2|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|com.android.support.test:runner:1.0.2:
+         > androidx.test|runner|1.4.0-alpha06|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|androidx.test:runner:1.4.0-alpha06:
             - requestedCoordinates = (null)
             > dependencies:
-               - com.android.support|support-annotations|27.1.1|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|com.android.support:support-annotations:27.1.1:
+               - androidx.annotation|annotation|1.0.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|androidx.annotation:annotation:1.0.0:
                   - requestedCoordinates = (null)
                   - dependencies         = []
-               - com.android.support.test|monitor|1.0.2|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|com.android.support.test:monitor:1.0.2:
+               - androidx.test|monitor|1.4.0-alpha06|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|androidx.test:monitor:1.4.0-alpha06:
                   - requestedCoordinates = (null)
                   - dependencies:
-                     - com.android.support|support-annotations|27.1.1|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|com.android.support:support-annotations:27.1.1:
+                     - androidx.annotation|annotation|1.0.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|androidx.annotation:annotation:1.0.0:
                         - dependencies = "*visited*"
+               - androidx.test.services|storage|1.4.0-alpha06|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|androidx.test.services:storage:1.4.0-alpha06:
+                  - requestedCoordinates = (null)
+                  - dependencies:
+                     - androidx.test|monitor|1.4.0-alpha06|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|androidx.test:monitor:1.4.0-alpha06:
+                        - dependencies = "*visited*"
+                     - com.google.code.findbugs|jsr305|2.0.1|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|com.google.code.findbugs:jsr305:2.0.1:
+                        - requestedCoordinates = (null)
+                        - dependencies         = []
                - junit|junit|4.12|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|junit:junit:4.12:
                   - requestedCoordinates = (null)
                   - dependencies:
                      - org.hamcrest|hamcrest-core|1.3|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|org.hamcrest:hamcrest-core:1.3:
                         - requestedCoordinates = (null)
                         - dependencies         = []
-               - net.sf.kxml|kxml2|2.3.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|net.sf.kxml:kxml2:2.3.0:
-                  - requestedCoordinates = (null)
-                  - dependencies         = []
             < dependencies
-         < com.android.support.test|runner|1.0.2|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|com.android.support.test:runner:1.0.2
-         - com.android.support.test|rules|1.0.2|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|com.android.support.test:rules:1.0.2:
+         < androidx.test|runner|1.4.0-alpha06|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|androidx.test:runner:1.4.0-alpha06
+         - androidx.test|rules|1.4.0-alpha06|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|androidx.test:rules:1.4.0-alpha06:
             - requestedCoordinates = (null)
             - dependencies:
-               - com.android.support.test|runner|1.0.2|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|com.android.support.test:runner:1.0.2:
+               - androidx.test|runner|1.4.0-alpha06|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|androidx.test:runner:1.4.0-alpha06:
                   - dependencies = "*visited*"
          - :|:lib1|debug|com.android.build.api.attributes.AgpVersionAttr>{AGP_Version}, com.android.build.gradle.internal.attributes.VariantAttr>debug, org.gradle.usage>java-runtime|flavorlib:lib1:unspecified:
             - requestedCoordinates = (null)
@@ -138,230 +148,14 @@
          - lintJar            = (null)
          - androidLibraryData = (null)
       < :|:lib1|debug|com.android.build.api.attributes.AgpVersionAttr>{AGP_Version}, com.android.build.gradle.internal.attributes.VariantAttr>debug, org.gradle.usage>java-runtime|flavorlib:lib1:unspecified
-      > com.android.support.test|monitor|1.0.2|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|com.android.support.test:monitor:1.0.2:
-         - type        = ANDROID_LIBRARY
-         - artifact    = {LOCAL_REPO}/com/android/support/test/monitor/1.0.2/monitor-1.0.2.aar{F}
-         - projectInfo = (null)
-         > libraryInfo:
-            - group          = "com.android.support.test"
-            - name           = "monitor"
-            - version        = "1.0.2"
-            - isTestFixtures = false
-            - buildType      = (null)
-            - productFlavors = []
-            - attributes:
-               * "org.gradle.category -> library"
-               * "org.gradle.libraryelements -> jar"
-               * "org.gradle.status -> release"
-               * "org.gradle.usage -> java-api"
-            - capabilities:
-               * "com.android.support.test:monitor:1.0.2"
-         < libraryInfo
-         - lintJar     = (null)
-         > androidLibraryData:
-            - compileJarFiles     = [{GRADLE_CACHE}/{CHECKSUM}/transformed/monitor-1.0.2/jars/classes.jar{F}]
-            - runtimeJarFiles     = [{GRADLE_CACHE}/{CHECKSUM}/transformed/monitor-1.0.2/jars/classes.jar{F}]
-            - manifest            = {GRADLE_CACHE}/{CHECKSUM}/transformed/monitor-1.0.2/AndroidManifest.xml{F}
-            - resFolder           = {GRADLE_CACHE}/{CHECKSUM}/transformed/monitor-1.0.2/res{!}
-            - resStaticLibrary    = {GRADLE_CACHE}/{CHECKSUM}/transformed/monitor-1.0.2/res.apk{!}
-            - assetsFolder        = {GRADLE_CACHE}/{CHECKSUM}/transformed/monitor-1.0.2/assets{!}
-            - jniFolder           = {GRADLE_CACHE}/{CHECKSUM}/transformed/monitor-1.0.2/jni{!}
-            - aidlFolder          = {GRADLE_CACHE}/{CHECKSUM}/transformed/monitor-1.0.2/aidl{!}
-            - renderscriptFolder  = {GRADLE_CACHE}/{CHECKSUM}/transformed/monitor-1.0.2/rs{!}
-            - proguardRules       = {GRADLE_CACHE}/{CHECKSUM}/transformed/monitor-1.0.2/proguard.txt{F}
-            - externalAnnotations = {GRADLE_CACHE}/{CHECKSUM}/transformed/monitor-1.0.2/annotations.zip{!}
-            - publicResources     = {GRADLE_CACHE}/{CHECKSUM}/transformed/monitor-1.0.2/public.txt{!}
-            - symbolFile          = {GRADLE_CACHE}/{CHECKSUM}/transformed/monitor-1.0.2/R.txt{F}
-         < androidLibraryData
-      < com.android.support.test|monitor|1.0.2|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|com.android.support.test:monitor:1.0.2
-      > com.android.support.test|monitor|1.0.2|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|com.android.support.test:monitor:1.0.2:
-         - type        = ANDROID_LIBRARY
-         - artifact    = {LOCAL_REPO}/com/android/support/test/monitor/1.0.2/monitor-1.0.2.aar{F}
-         - projectInfo = (null)
-         > libraryInfo:
-            - group          = "com.android.support.test"
-            - name           = "monitor"
-            - version        = "1.0.2"
-            - isTestFixtures = false
-            - buildType      = (null)
-            - productFlavors = []
-            - attributes:
-               * "org.gradle.category -> library"
-               * "org.gradle.libraryelements -> jar"
-               * "org.gradle.status -> release"
-               * "org.gradle.usage -> java-runtime"
-            - capabilities:
-               * "com.android.support.test:monitor:1.0.2"
-         < libraryInfo
-         - lintJar     = (null)
-         > androidLibraryData:
-            - compileJarFiles     = [{GRADLE_CACHE}/{CHECKSUM}/transformed/monitor-1.0.2/jars/classes.jar{F}]
-            - runtimeJarFiles     = [{GRADLE_CACHE}/{CHECKSUM}/transformed/monitor-1.0.2/jars/classes.jar{F}]
-            - manifest            = {GRADLE_CACHE}/{CHECKSUM}/transformed/monitor-1.0.2/AndroidManifest.xml{F}
-            - resFolder           = {GRADLE_CACHE}/{CHECKSUM}/transformed/monitor-1.0.2/res{!}
-            - resStaticLibrary    = {GRADLE_CACHE}/{CHECKSUM}/transformed/monitor-1.0.2/res.apk{!}
-            - assetsFolder        = {GRADLE_CACHE}/{CHECKSUM}/transformed/monitor-1.0.2/assets{!}
-            - jniFolder           = {GRADLE_CACHE}/{CHECKSUM}/transformed/monitor-1.0.2/jni{!}
-            - aidlFolder          = {GRADLE_CACHE}/{CHECKSUM}/transformed/monitor-1.0.2/aidl{!}
-            - renderscriptFolder  = {GRADLE_CACHE}/{CHECKSUM}/transformed/monitor-1.0.2/rs{!}
-            - proguardRules       = {GRADLE_CACHE}/{CHECKSUM}/transformed/monitor-1.0.2/proguard.txt{F}
-            - externalAnnotations = {GRADLE_CACHE}/{CHECKSUM}/transformed/monitor-1.0.2/annotations.zip{!}
-            - publicResources     = {GRADLE_CACHE}/{CHECKSUM}/transformed/monitor-1.0.2/public.txt{!}
-            - symbolFile          = {GRADLE_CACHE}/{CHECKSUM}/transformed/monitor-1.0.2/R.txt{F}
-         < androidLibraryData
-      < com.android.support.test|monitor|1.0.2|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|com.android.support.test:monitor:1.0.2
-      > com.android.support.test|rules|1.0.2|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|com.android.support.test:rules:1.0.2:
-         - type        = ANDROID_LIBRARY
-         - artifact    = {LOCAL_REPO}/com/android/support/test/rules/1.0.2/rules-1.0.2.aar{F}
-         - projectInfo = (null)
-         > libraryInfo:
-            - group          = "com.android.support.test"
-            - name           = "rules"
-            - version        = "1.0.2"
-            - isTestFixtures = false
-            - buildType      = (null)
-            - productFlavors = []
-            - attributes:
-               * "org.gradle.category -> library"
-               * "org.gradle.libraryelements -> jar"
-               * "org.gradle.status -> release"
-               * "org.gradle.usage -> java-api"
-            - capabilities:
-               * "com.android.support.test:rules:1.0.2"
-         < libraryInfo
-         - lintJar     = (null)
-         > androidLibraryData:
-            - compileJarFiles     = [{GRADLE_CACHE}/{CHECKSUM}/transformed/rules-1.0.2/jars/classes.jar{F}]
-            - runtimeJarFiles     = [{GRADLE_CACHE}/{CHECKSUM}/transformed/rules-1.0.2/jars/classes.jar{F}]
-            - manifest            = {GRADLE_CACHE}/{CHECKSUM}/transformed/rules-1.0.2/AndroidManifest.xml{F}
-            - resFolder           = {GRADLE_CACHE}/{CHECKSUM}/transformed/rules-1.0.2/res{!}
-            - resStaticLibrary    = {GRADLE_CACHE}/{CHECKSUM}/transformed/rules-1.0.2/res.apk{!}
-            - assetsFolder        = {GRADLE_CACHE}/{CHECKSUM}/transformed/rules-1.0.2/assets{!}
-            - jniFolder           = {GRADLE_CACHE}/{CHECKSUM}/transformed/rules-1.0.2/jni{!}
-            - aidlFolder          = {GRADLE_CACHE}/{CHECKSUM}/transformed/rules-1.0.2/aidl{!}
-            - renderscriptFolder  = {GRADLE_CACHE}/{CHECKSUM}/transformed/rules-1.0.2/rs{!}
-            - proguardRules       = {GRADLE_CACHE}/{CHECKSUM}/transformed/rules-1.0.2/proguard.txt{F}
-            - externalAnnotations = {GRADLE_CACHE}/{CHECKSUM}/transformed/rules-1.0.2/annotations.zip{!}
-            - publicResources     = {GRADLE_CACHE}/{CHECKSUM}/transformed/rules-1.0.2/public.txt{!}
-            - symbolFile          = {GRADLE_CACHE}/{CHECKSUM}/transformed/rules-1.0.2/R.txt{F}
-         < androidLibraryData
-      < com.android.support.test|rules|1.0.2|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|com.android.support.test:rules:1.0.2
-      > com.android.support.test|rules|1.0.2|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|com.android.support.test:rules:1.0.2:
-         - type        = ANDROID_LIBRARY
-         - artifact    = {LOCAL_REPO}/com/android/support/test/rules/1.0.2/rules-1.0.2.aar{F}
-         - projectInfo = (null)
-         > libraryInfo:
-            - group          = "com.android.support.test"
-            - name           = "rules"
-            - version        = "1.0.2"
-            - isTestFixtures = false
-            - buildType      = (null)
-            - productFlavors = []
-            - attributes:
-               * "org.gradle.category -> library"
-               * "org.gradle.libraryelements -> jar"
-               * "org.gradle.status -> release"
-               * "org.gradle.usage -> java-runtime"
-            - capabilities:
-               * "com.android.support.test:rules:1.0.2"
-         < libraryInfo
-         - lintJar     = (null)
-         > androidLibraryData:
-            - compileJarFiles     = [{GRADLE_CACHE}/{CHECKSUM}/transformed/rules-1.0.2/jars/classes.jar{F}]
-            - runtimeJarFiles     = [{GRADLE_CACHE}/{CHECKSUM}/transformed/rules-1.0.2/jars/classes.jar{F}]
-            - manifest            = {GRADLE_CACHE}/{CHECKSUM}/transformed/rules-1.0.2/AndroidManifest.xml{F}
-            - resFolder           = {GRADLE_CACHE}/{CHECKSUM}/transformed/rules-1.0.2/res{!}
-            - resStaticLibrary    = {GRADLE_CACHE}/{CHECKSUM}/transformed/rules-1.0.2/res.apk{!}
-            - assetsFolder        = {GRADLE_CACHE}/{CHECKSUM}/transformed/rules-1.0.2/assets{!}
-            - jniFolder           = {GRADLE_CACHE}/{CHECKSUM}/transformed/rules-1.0.2/jni{!}
-            - aidlFolder          = {GRADLE_CACHE}/{CHECKSUM}/transformed/rules-1.0.2/aidl{!}
-            - renderscriptFolder  = {GRADLE_CACHE}/{CHECKSUM}/transformed/rules-1.0.2/rs{!}
-            - proguardRules       = {GRADLE_CACHE}/{CHECKSUM}/transformed/rules-1.0.2/proguard.txt{F}
-            - externalAnnotations = {GRADLE_CACHE}/{CHECKSUM}/transformed/rules-1.0.2/annotations.zip{!}
-            - publicResources     = {GRADLE_CACHE}/{CHECKSUM}/transformed/rules-1.0.2/public.txt{!}
-            - symbolFile          = {GRADLE_CACHE}/{CHECKSUM}/transformed/rules-1.0.2/R.txt{F}
-         < androidLibraryData
-      < com.android.support.test|rules|1.0.2|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|com.android.support.test:rules:1.0.2
-      > com.android.support.test|runner|1.0.2|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|com.android.support.test:runner:1.0.2:
-         - type        = ANDROID_LIBRARY
-         - artifact    = {LOCAL_REPO}/com/android/support/test/runner/1.0.2/runner-1.0.2.aar{F}
-         - projectInfo = (null)
-         > libraryInfo:
-            - group          = "com.android.support.test"
-            - name           = "runner"
-            - version        = "1.0.2"
-            - isTestFixtures = false
-            - buildType      = (null)
-            - productFlavors = []
-            - attributes:
-               * "org.gradle.category -> library"
-               * "org.gradle.libraryelements -> jar"
-               * "org.gradle.status -> release"
-               * "org.gradle.usage -> java-api"
-            - capabilities:
-               * "com.android.support.test:runner:1.0.2"
-         < libraryInfo
-         - lintJar     = (null)
-         > androidLibraryData:
-            - compileJarFiles     = [{GRADLE_CACHE}/{CHECKSUM}/transformed/runner-1.0.2/jars/classes.jar{F}]
-            - runtimeJarFiles     = [{GRADLE_CACHE}/{CHECKSUM}/transformed/runner-1.0.2/jars/classes.jar{F}]
-            - manifest            = {GRADLE_CACHE}/{CHECKSUM}/transformed/runner-1.0.2/AndroidManifest.xml{F}
-            - resFolder           = {GRADLE_CACHE}/{CHECKSUM}/transformed/runner-1.0.2/res{!}
-            - resStaticLibrary    = {GRADLE_CACHE}/{CHECKSUM}/transformed/runner-1.0.2/res.apk{!}
-            - assetsFolder        = {GRADLE_CACHE}/{CHECKSUM}/transformed/runner-1.0.2/assets{!}
-            - jniFolder           = {GRADLE_CACHE}/{CHECKSUM}/transformed/runner-1.0.2/jni{!}
-            - aidlFolder          = {GRADLE_CACHE}/{CHECKSUM}/transformed/runner-1.0.2/aidl{!}
-            - renderscriptFolder  = {GRADLE_CACHE}/{CHECKSUM}/transformed/runner-1.0.2/rs{!}
-            - proguardRules       = {GRADLE_CACHE}/{CHECKSUM}/transformed/runner-1.0.2/proguard.txt{F}
-            - externalAnnotations = {GRADLE_CACHE}/{CHECKSUM}/transformed/runner-1.0.2/annotations.zip{!}
-            - publicResources     = {GRADLE_CACHE}/{CHECKSUM}/transformed/runner-1.0.2/public.txt{!}
-            - symbolFile          = {GRADLE_CACHE}/{CHECKSUM}/transformed/runner-1.0.2/R.txt{F}
-         < androidLibraryData
-      < com.android.support.test|runner|1.0.2|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|com.android.support.test:runner:1.0.2
-      > com.android.support.test|runner|1.0.2|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|com.android.support.test:runner:1.0.2:
-         - type        = ANDROID_LIBRARY
-         - artifact    = {LOCAL_REPO}/com/android/support/test/runner/1.0.2/runner-1.0.2.aar{F}
-         - projectInfo = (null)
-         > libraryInfo:
-            - group          = "com.android.support.test"
-            - name           = "runner"
-            - version        = "1.0.2"
-            - isTestFixtures = false
-            - buildType      = (null)
-            - productFlavors = []
-            - attributes:
-               * "org.gradle.category -> library"
-               * "org.gradle.libraryelements -> jar"
-               * "org.gradle.status -> release"
-               * "org.gradle.usage -> java-runtime"
-            - capabilities:
-               * "com.android.support.test:runner:1.0.2"
-         < libraryInfo
-         - lintJar     = (null)
-         > androidLibraryData:
-            - compileJarFiles     = [{GRADLE_CACHE}/{CHECKSUM}/transformed/runner-1.0.2/jars/classes.jar{F}]
-            - runtimeJarFiles     = [{GRADLE_CACHE}/{CHECKSUM}/transformed/runner-1.0.2/jars/classes.jar{F}]
-            - manifest            = {GRADLE_CACHE}/{CHECKSUM}/transformed/runner-1.0.2/AndroidManifest.xml{F}
-            - resFolder           = {GRADLE_CACHE}/{CHECKSUM}/transformed/runner-1.0.2/res{!}
-            - resStaticLibrary    = {GRADLE_CACHE}/{CHECKSUM}/transformed/runner-1.0.2/res.apk{!}
-            - assetsFolder        = {GRADLE_CACHE}/{CHECKSUM}/transformed/runner-1.0.2/assets{!}
-            - jniFolder           = {GRADLE_CACHE}/{CHECKSUM}/transformed/runner-1.0.2/jni{!}
-            - aidlFolder          = {GRADLE_CACHE}/{CHECKSUM}/transformed/runner-1.0.2/aidl{!}
-            - renderscriptFolder  = {GRADLE_CACHE}/{CHECKSUM}/transformed/runner-1.0.2/rs{!}
-            - proguardRules       = {GRADLE_CACHE}/{CHECKSUM}/transformed/runner-1.0.2/proguard.txt{F}
-            - externalAnnotations = {GRADLE_CACHE}/{CHECKSUM}/transformed/runner-1.0.2/annotations.zip{!}
-            - publicResources     = {GRADLE_CACHE}/{CHECKSUM}/transformed/runner-1.0.2/public.txt{!}
-            - symbolFile          = {GRADLE_CACHE}/{CHECKSUM}/transformed/runner-1.0.2/R.txt{F}
-         < androidLibraryData
-      < com.android.support.test|runner|1.0.2|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|com.android.support.test:runner:1.0.2
-      > com.android.support|support-annotations|27.1.1|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|com.android.support:support-annotations:27.1.1:
+      > androidx.annotation|annotation|1.0.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.annotation:annotation:1.0.0:
          - type               = JAVA_LIBRARY
-         - artifact           = {LOCAL_REPO}/com/android/support/support-annotations/27.1.1/support-annotations-27.1.1.jar{F}
+         - artifact           = {LOCAL_REPO}/androidx/annotation/annotation/1.0.0/annotation-1.0.0.jar{F}
          - projectInfo        = (null)
          > libraryInfo:
-            - group          = "com.android.support"
-            - name           = "support-annotations"
-            - version        = "27.1.1"
+            - group          = "androidx.annotation"
+            - name           = "annotation"
+            - version        = "1.0.0"
             - isTestFixtures = false
             - buildType      = (null)
             - productFlavors = []
@@ -371,19 +165,19 @@
                * "org.gradle.status -> release"
                * "org.gradle.usage -> java-api"
             - capabilities:
-               * "com.android.support:support-annotations:27.1.1"
+               * "androidx.annotation:annotation:1.0.0"
          < libraryInfo
          - lintJar            = (null)
          - androidLibraryData = (null)
-      < com.android.support|support-annotations|27.1.1|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|com.android.support:support-annotations:27.1.1
-      > com.android.support|support-annotations|27.1.1|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|com.android.support:support-annotations:27.1.1:
+      < androidx.annotation|annotation|1.0.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.annotation:annotation:1.0.0
+      > androidx.annotation|annotation|1.0.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|androidx.annotation:annotation:1.0.0:
          - type               = JAVA_LIBRARY
-         - artifact           = {LOCAL_REPO}/com/android/support/support-annotations/27.1.1/support-annotations-27.1.1.jar{F}
+         - artifact           = {LOCAL_REPO}/androidx/annotation/annotation/1.0.0/annotation-1.0.0.jar{F}
          - projectInfo        = (null)
          > libraryInfo:
-            - group          = "com.android.support"
-            - name           = "support-annotations"
-            - version        = "27.1.1"
+            - group          = "androidx.annotation"
+            - name           = "annotation"
+            - version        = "1.0.0"
             - isTestFixtures = false
             - buildType      = (null)
             - productFlavors = []
@@ -393,11 +187,343 @@
                * "org.gradle.status -> release"
                * "org.gradle.usage -> java-runtime"
             - capabilities:
-               * "com.android.support:support-annotations:27.1.1"
+               * "androidx.annotation:annotation:1.0.0"
          < libraryInfo
          - lintJar            = (null)
          - androidLibraryData = (null)
-      < com.android.support|support-annotations|27.1.1|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|com.android.support:support-annotations:27.1.1
+      < androidx.annotation|annotation|1.0.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|androidx.annotation:annotation:1.0.0
+      > androidx.test.services|storage|1.4.0-alpha06|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.test.services:storage:1.4.0-alpha06:
+         - type        = ANDROID_LIBRARY
+         - artifact    = {LOCAL_REPO}/androidx/test/services/storage/1.4.0-alpha06/storage-1.4.0-alpha06.aar{F}
+         - projectInfo = (null)
+         > libraryInfo:
+            - group          = "androidx.test.services"
+            - name           = "storage"
+            - version        = "1.4.0-alpha06"
+            - isTestFixtures = false
+            - buildType      = (null)
+            - productFlavors = []
+            - attributes:
+               * "org.gradle.category -> library"
+               * "org.gradle.libraryelements -> jar"
+               * "org.gradle.status -> release"
+               * "org.gradle.usage -> java-api"
+            - capabilities:
+               * "androidx.test.services:storage:1.4.0-alpha06"
+         < libraryInfo
+         - lintJar     = (null)
+         > androidLibraryData:
+            - compileJarFiles     = [{GRADLE_CACHE}/{CHECKSUM}/transformed/storage-1.4.0-alpha06/jars/classes.jar{F}]
+            - runtimeJarFiles     = [{GRADLE_CACHE}/{CHECKSUM}/transformed/storage-1.4.0-alpha06/jars/classes.jar{F}]
+            - manifest            = {GRADLE_CACHE}/{CHECKSUM}/transformed/storage-1.4.0-alpha06/AndroidManifest.xml{F}
+            - resFolder           = {GRADLE_CACHE}/{CHECKSUM}/transformed/storage-1.4.0-alpha06/res{!}
+            - resStaticLibrary    = {GRADLE_CACHE}/{CHECKSUM}/transformed/storage-1.4.0-alpha06/res.apk{!}
+            - assetsFolder        = {GRADLE_CACHE}/{CHECKSUM}/transformed/storage-1.4.0-alpha06/assets{!}
+            - jniFolder           = {GRADLE_CACHE}/{CHECKSUM}/transformed/storage-1.4.0-alpha06/jni{!}
+            - aidlFolder          = {GRADLE_CACHE}/{CHECKSUM}/transformed/storage-1.4.0-alpha06/aidl{!}
+            - renderscriptFolder  = {GRADLE_CACHE}/{CHECKSUM}/transformed/storage-1.4.0-alpha06/rs{!}
+            - proguardRules       = {GRADLE_CACHE}/{CHECKSUM}/transformed/storage-1.4.0-alpha06/proguard.txt{!}
+            - externalAnnotations = {GRADLE_CACHE}/{CHECKSUM}/transformed/storage-1.4.0-alpha06/annotations.zip{!}
+            - publicResources     = {GRADLE_CACHE}/{CHECKSUM}/transformed/storage-1.4.0-alpha06/public.txt{!}
+            - symbolFile          = {GRADLE_CACHE}/{CHECKSUM}/transformed/storage-1.4.0-alpha06/R.txt{F}
+         < androidLibraryData
+      < androidx.test.services|storage|1.4.0-alpha06|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.test.services:storage:1.4.0-alpha06
+      > androidx.test.services|storage|1.4.0-alpha06|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|androidx.test.services:storage:1.4.0-alpha06:
+         - type        = ANDROID_LIBRARY
+         - artifact    = {LOCAL_REPO}/androidx/test/services/storage/1.4.0-alpha06/storage-1.4.0-alpha06.aar{F}
+         - projectInfo = (null)
+         > libraryInfo:
+            - group          = "androidx.test.services"
+            - name           = "storage"
+            - version        = "1.4.0-alpha06"
+            - isTestFixtures = false
+            - buildType      = (null)
+            - productFlavors = []
+            - attributes:
+               * "org.gradle.category -> library"
+               * "org.gradle.libraryelements -> jar"
+               * "org.gradle.status -> release"
+               * "org.gradle.usage -> java-runtime"
+            - capabilities:
+               * "androidx.test.services:storage:1.4.0-alpha06"
+         < libraryInfo
+         - lintJar     = (null)
+         > androidLibraryData:
+            - compileJarFiles     = [{GRADLE_CACHE}/{CHECKSUM}/transformed/storage-1.4.0-alpha06/jars/classes.jar{F}]
+            - runtimeJarFiles     = [{GRADLE_CACHE}/{CHECKSUM}/transformed/storage-1.4.0-alpha06/jars/classes.jar{F}]
+            - manifest            = {GRADLE_CACHE}/{CHECKSUM}/transformed/storage-1.4.0-alpha06/AndroidManifest.xml{F}
+            - resFolder           = {GRADLE_CACHE}/{CHECKSUM}/transformed/storage-1.4.0-alpha06/res{!}
+            - resStaticLibrary    = {GRADLE_CACHE}/{CHECKSUM}/transformed/storage-1.4.0-alpha06/res.apk{!}
+            - assetsFolder        = {GRADLE_CACHE}/{CHECKSUM}/transformed/storage-1.4.0-alpha06/assets{!}
+            - jniFolder           = {GRADLE_CACHE}/{CHECKSUM}/transformed/storage-1.4.0-alpha06/jni{!}
+            - aidlFolder          = {GRADLE_CACHE}/{CHECKSUM}/transformed/storage-1.4.0-alpha06/aidl{!}
+            - renderscriptFolder  = {GRADLE_CACHE}/{CHECKSUM}/transformed/storage-1.4.0-alpha06/rs{!}
+            - proguardRules       = {GRADLE_CACHE}/{CHECKSUM}/transformed/storage-1.4.0-alpha06/proguard.txt{!}
+            - externalAnnotations = {GRADLE_CACHE}/{CHECKSUM}/transformed/storage-1.4.0-alpha06/annotations.zip{!}
+            - publicResources     = {GRADLE_CACHE}/{CHECKSUM}/transformed/storage-1.4.0-alpha06/public.txt{!}
+            - symbolFile          = {GRADLE_CACHE}/{CHECKSUM}/transformed/storage-1.4.0-alpha06/R.txt{F}
+         < androidLibraryData
+      < androidx.test.services|storage|1.4.0-alpha06|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|androidx.test.services:storage:1.4.0-alpha06
+      > androidx.test|monitor|1.4.0-alpha06|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.test:monitor:1.4.0-alpha06:
+         - type        = ANDROID_LIBRARY
+         - artifact    = {LOCAL_REPO}/androidx/test/monitor/1.4.0-alpha06/monitor-1.4.0-alpha06.aar{F}
+         - projectInfo = (null)
+         > libraryInfo:
+            - group          = "androidx.test"
+            - name           = "monitor"
+            - version        = "1.4.0-alpha06"
+            - isTestFixtures = false
+            - buildType      = (null)
+            - productFlavors = []
+            - attributes:
+               * "org.gradle.category -> library"
+               * "org.gradle.libraryelements -> jar"
+               * "org.gradle.status -> release"
+               * "org.gradle.usage -> java-api"
+            - capabilities:
+               * "androidx.test:monitor:1.4.0-alpha06"
+         < libraryInfo
+         - lintJar     = (null)
+         > androidLibraryData:
+            - compileJarFiles     = [{GRADLE_CACHE}/{CHECKSUM}/transformed/monitor-1.4.0-alpha06/jars/classes.jar{F}]
+            - runtimeJarFiles     = [{GRADLE_CACHE}/{CHECKSUM}/transformed/monitor-1.4.0-alpha06/jars/classes.jar{F}]
+            - manifest            = {GRADLE_CACHE}/{CHECKSUM}/transformed/monitor-1.4.0-alpha06/AndroidManifest.xml{F}
+            - resFolder           = {GRADLE_CACHE}/{CHECKSUM}/transformed/monitor-1.4.0-alpha06/res{!}
+            - resStaticLibrary    = {GRADLE_CACHE}/{CHECKSUM}/transformed/monitor-1.4.0-alpha06/res.apk{!}
+            - assetsFolder        = {GRADLE_CACHE}/{CHECKSUM}/transformed/monitor-1.4.0-alpha06/assets{!}
+            - jniFolder           = {GRADLE_CACHE}/{CHECKSUM}/transformed/monitor-1.4.0-alpha06/jni{!}
+            - aidlFolder          = {GRADLE_CACHE}/{CHECKSUM}/transformed/monitor-1.4.0-alpha06/aidl{!}
+            - renderscriptFolder  = {GRADLE_CACHE}/{CHECKSUM}/transformed/monitor-1.4.0-alpha06/rs{!}
+            - proguardRules       = {GRADLE_CACHE}/{CHECKSUM}/transformed/monitor-1.4.0-alpha06/proguard.txt{F}
+            - externalAnnotations = {GRADLE_CACHE}/{CHECKSUM}/transformed/monitor-1.4.0-alpha06/annotations.zip{!}
+            - publicResources     = {GRADLE_CACHE}/{CHECKSUM}/transformed/monitor-1.4.0-alpha06/public.txt{!}
+            - symbolFile          = {GRADLE_CACHE}/{CHECKSUM}/transformed/monitor-1.4.0-alpha06/R.txt{F}
+         < androidLibraryData
+      < androidx.test|monitor|1.4.0-alpha06|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.test:monitor:1.4.0-alpha06
+      > androidx.test|monitor|1.4.0-alpha06|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|androidx.test:monitor:1.4.0-alpha06:
+         - type        = ANDROID_LIBRARY
+         - artifact    = {LOCAL_REPO}/androidx/test/monitor/1.4.0-alpha06/monitor-1.4.0-alpha06.aar{F}
+         - projectInfo = (null)
+         > libraryInfo:
+            - group          = "androidx.test"
+            - name           = "monitor"
+            - version        = "1.4.0-alpha06"
+            - isTestFixtures = false
+            - buildType      = (null)
+            - productFlavors = []
+            - attributes:
+               * "org.gradle.category -> library"
+               * "org.gradle.libraryelements -> jar"
+               * "org.gradle.status -> release"
+               * "org.gradle.usage -> java-runtime"
+            - capabilities:
+               * "androidx.test:monitor:1.4.0-alpha06"
+         < libraryInfo
+         - lintJar     = (null)
+         > androidLibraryData:
+            - compileJarFiles     = [{GRADLE_CACHE}/{CHECKSUM}/transformed/monitor-1.4.0-alpha06/jars/classes.jar{F}]
+            - runtimeJarFiles     = [{GRADLE_CACHE}/{CHECKSUM}/transformed/monitor-1.4.0-alpha06/jars/classes.jar{F}]
+            - manifest            = {GRADLE_CACHE}/{CHECKSUM}/transformed/monitor-1.4.0-alpha06/AndroidManifest.xml{F}
+            - resFolder           = {GRADLE_CACHE}/{CHECKSUM}/transformed/monitor-1.4.0-alpha06/res{!}
+            - resStaticLibrary    = {GRADLE_CACHE}/{CHECKSUM}/transformed/monitor-1.4.0-alpha06/res.apk{!}
+            - assetsFolder        = {GRADLE_CACHE}/{CHECKSUM}/transformed/monitor-1.4.0-alpha06/assets{!}
+            - jniFolder           = {GRADLE_CACHE}/{CHECKSUM}/transformed/monitor-1.4.0-alpha06/jni{!}
+            - aidlFolder          = {GRADLE_CACHE}/{CHECKSUM}/transformed/monitor-1.4.0-alpha06/aidl{!}
+            - renderscriptFolder  = {GRADLE_CACHE}/{CHECKSUM}/transformed/monitor-1.4.0-alpha06/rs{!}
+            - proguardRules       = {GRADLE_CACHE}/{CHECKSUM}/transformed/monitor-1.4.0-alpha06/proguard.txt{F}
+            - externalAnnotations = {GRADLE_CACHE}/{CHECKSUM}/transformed/monitor-1.4.0-alpha06/annotations.zip{!}
+            - publicResources     = {GRADLE_CACHE}/{CHECKSUM}/transformed/monitor-1.4.0-alpha06/public.txt{!}
+            - symbolFile          = {GRADLE_CACHE}/{CHECKSUM}/transformed/monitor-1.4.0-alpha06/R.txt{F}
+         < androidLibraryData
+      < androidx.test|monitor|1.4.0-alpha06|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|androidx.test:monitor:1.4.0-alpha06
+      > androidx.test|rules|1.4.0-alpha06|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.test:rules:1.4.0-alpha06:
+         - type        = ANDROID_LIBRARY
+         - artifact    = {LOCAL_REPO}/androidx/test/rules/1.4.0-alpha06/rules-1.4.0-alpha06.aar{F}
+         - projectInfo = (null)
+         > libraryInfo:
+            - group          = "androidx.test"
+            - name           = "rules"
+            - version        = "1.4.0-alpha06"
+            - isTestFixtures = false
+            - buildType      = (null)
+            - productFlavors = []
+            - attributes:
+               * "org.gradle.category -> library"
+               * "org.gradle.libraryelements -> jar"
+               * "org.gradle.status -> release"
+               * "org.gradle.usage -> java-api"
+            - capabilities:
+               * "androidx.test:rules:1.4.0-alpha06"
+         < libraryInfo
+         - lintJar     = (null)
+         > androidLibraryData:
+            - compileJarFiles     = [{GRADLE_CACHE}/{CHECKSUM}/transformed/rules-1.4.0-alpha06/jars/classes.jar{F}]
+            - runtimeJarFiles     = [{GRADLE_CACHE}/{CHECKSUM}/transformed/rules-1.4.0-alpha06/jars/classes.jar{F}]
+            - manifest            = {GRADLE_CACHE}/{CHECKSUM}/transformed/rules-1.4.0-alpha06/AndroidManifest.xml{F}
+            - resFolder           = {GRADLE_CACHE}/{CHECKSUM}/transformed/rules-1.4.0-alpha06/res{!}
+            - resStaticLibrary    = {GRADLE_CACHE}/{CHECKSUM}/transformed/rules-1.4.0-alpha06/res.apk{!}
+            - assetsFolder        = {GRADLE_CACHE}/{CHECKSUM}/transformed/rules-1.4.0-alpha06/assets{!}
+            - jniFolder           = {GRADLE_CACHE}/{CHECKSUM}/transformed/rules-1.4.0-alpha06/jni{!}
+            - aidlFolder          = {GRADLE_CACHE}/{CHECKSUM}/transformed/rules-1.4.0-alpha06/aidl{!}
+            - renderscriptFolder  = {GRADLE_CACHE}/{CHECKSUM}/transformed/rules-1.4.0-alpha06/rs{!}
+            - proguardRules       = {GRADLE_CACHE}/{CHECKSUM}/transformed/rules-1.4.0-alpha06/proguard.txt{F}
+            - externalAnnotations = {GRADLE_CACHE}/{CHECKSUM}/transformed/rules-1.4.0-alpha06/annotations.zip{!}
+            - publicResources     = {GRADLE_CACHE}/{CHECKSUM}/transformed/rules-1.4.0-alpha06/public.txt{!}
+            - symbolFile          = {GRADLE_CACHE}/{CHECKSUM}/transformed/rules-1.4.0-alpha06/R.txt{F}
+         < androidLibraryData
+      < androidx.test|rules|1.4.0-alpha06|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.test:rules:1.4.0-alpha06
+      > androidx.test|rules|1.4.0-alpha06|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|androidx.test:rules:1.4.0-alpha06:
+         - type        = ANDROID_LIBRARY
+         - artifact    = {LOCAL_REPO}/androidx/test/rules/1.4.0-alpha06/rules-1.4.0-alpha06.aar{F}
+         - projectInfo = (null)
+         > libraryInfo:
+            - group          = "androidx.test"
+            - name           = "rules"
+            - version        = "1.4.0-alpha06"
+            - isTestFixtures = false
+            - buildType      = (null)
+            - productFlavors = []
+            - attributes:
+               * "org.gradle.category -> library"
+               * "org.gradle.libraryelements -> jar"
+               * "org.gradle.status -> release"
+               * "org.gradle.usage -> java-runtime"
+            - capabilities:
+               * "androidx.test:rules:1.4.0-alpha06"
+         < libraryInfo
+         - lintJar     = (null)
+         > androidLibraryData:
+            - compileJarFiles     = [{GRADLE_CACHE}/{CHECKSUM}/transformed/rules-1.4.0-alpha06/jars/classes.jar{F}]
+            - runtimeJarFiles     = [{GRADLE_CACHE}/{CHECKSUM}/transformed/rules-1.4.0-alpha06/jars/classes.jar{F}]
+            - manifest            = {GRADLE_CACHE}/{CHECKSUM}/transformed/rules-1.4.0-alpha06/AndroidManifest.xml{F}
+            - resFolder           = {GRADLE_CACHE}/{CHECKSUM}/transformed/rules-1.4.0-alpha06/res{!}
+            - resStaticLibrary    = {GRADLE_CACHE}/{CHECKSUM}/transformed/rules-1.4.0-alpha06/res.apk{!}
+            - assetsFolder        = {GRADLE_CACHE}/{CHECKSUM}/transformed/rules-1.4.0-alpha06/assets{!}
+            - jniFolder           = {GRADLE_CACHE}/{CHECKSUM}/transformed/rules-1.4.0-alpha06/jni{!}
+            - aidlFolder          = {GRADLE_CACHE}/{CHECKSUM}/transformed/rules-1.4.0-alpha06/aidl{!}
+            - renderscriptFolder  = {GRADLE_CACHE}/{CHECKSUM}/transformed/rules-1.4.0-alpha06/rs{!}
+            - proguardRules       = {GRADLE_CACHE}/{CHECKSUM}/transformed/rules-1.4.0-alpha06/proguard.txt{F}
+            - externalAnnotations = {GRADLE_CACHE}/{CHECKSUM}/transformed/rules-1.4.0-alpha06/annotations.zip{!}
+            - publicResources     = {GRADLE_CACHE}/{CHECKSUM}/transformed/rules-1.4.0-alpha06/public.txt{!}
+            - symbolFile          = {GRADLE_CACHE}/{CHECKSUM}/transformed/rules-1.4.0-alpha06/R.txt{F}
+         < androidLibraryData
+      < androidx.test|rules|1.4.0-alpha06|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|androidx.test:rules:1.4.0-alpha06
+      > androidx.test|runner|1.4.0-alpha06|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.test:runner:1.4.0-alpha06:
+         - type        = ANDROID_LIBRARY
+         - artifact    = {LOCAL_REPO}/androidx/test/runner/1.4.0-alpha06/runner-1.4.0-alpha06.aar{F}
+         - projectInfo = (null)
+         > libraryInfo:
+            - group          = "androidx.test"
+            - name           = "runner"
+            - version        = "1.4.0-alpha06"
+            - isTestFixtures = false
+            - buildType      = (null)
+            - productFlavors = []
+            - attributes:
+               * "org.gradle.category -> library"
+               * "org.gradle.libraryelements -> jar"
+               * "org.gradle.status -> release"
+               * "org.gradle.usage -> java-api"
+            - capabilities:
+               * "androidx.test:runner:1.4.0-alpha06"
+         < libraryInfo
+         - lintJar     = (null)
+         > androidLibraryData:
+            - compileJarFiles     = [{GRADLE_CACHE}/{CHECKSUM}/transformed/runner-1.4.0-alpha06/jars/classes.jar{F}]
+            - runtimeJarFiles     = [{GRADLE_CACHE}/{CHECKSUM}/transformed/runner-1.4.0-alpha06/jars/classes.jar{F}]
+            - manifest            = {GRADLE_CACHE}/{CHECKSUM}/transformed/runner-1.4.0-alpha06/AndroidManifest.xml{F}
+            - resFolder           = {GRADLE_CACHE}/{CHECKSUM}/transformed/runner-1.4.0-alpha06/res{!}
+            - resStaticLibrary    = {GRADLE_CACHE}/{CHECKSUM}/transformed/runner-1.4.0-alpha06/res.apk{!}
+            - assetsFolder        = {GRADLE_CACHE}/{CHECKSUM}/transformed/runner-1.4.0-alpha06/assets{!}
+            - jniFolder           = {GRADLE_CACHE}/{CHECKSUM}/transformed/runner-1.4.0-alpha06/jni{!}
+            - aidlFolder          = {GRADLE_CACHE}/{CHECKSUM}/transformed/runner-1.4.0-alpha06/aidl{!}
+            - renderscriptFolder  = {GRADLE_CACHE}/{CHECKSUM}/transformed/runner-1.4.0-alpha06/rs{!}
+            - proguardRules       = {GRADLE_CACHE}/{CHECKSUM}/transformed/runner-1.4.0-alpha06/proguard.txt{F}
+            - externalAnnotations = {GRADLE_CACHE}/{CHECKSUM}/transformed/runner-1.4.0-alpha06/annotations.zip{!}
+            - publicResources     = {GRADLE_CACHE}/{CHECKSUM}/transformed/runner-1.4.0-alpha06/public.txt{!}
+            - symbolFile          = {GRADLE_CACHE}/{CHECKSUM}/transformed/runner-1.4.0-alpha06/R.txt{F}
+         < androidLibraryData
+      < androidx.test|runner|1.4.0-alpha06|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.test:runner:1.4.0-alpha06
+      > androidx.test|runner|1.4.0-alpha06|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|androidx.test:runner:1.4.0-alpha06:
+         - type        = ANDROID_LIBRARY
+         - artifact    = {LOCAL_REPO}/androidx/test/runner/1.4.0-alpha06/runner-1.4.0-alpha06.aar{F}
+         - projectInfo = (null)
+         > libraryInfo:
+            - group          = "androidx.test"
+            - name           = "runner"
+            - version        = "1.4.0-alpha06"
+            - isTestFixtures = false
+            - buildType      = (null)
+            - productFlavors = []
+            - attributes:
+               * "org.gradle.category -> library"
+               * "org.gradle.libraryelements -> jar"
+               * "org.gradle.status -> release"
+               * "org.gradle.usage -> java-runtime"
+            - capabilities:
+               * "androidx.test:runner:1.4.0-alpha06"
+         < libraryInfo
+         - lintJar     = (null)
+         > androidLibraryData:
+            - compileJarFiles     = [{GRADLE_CACHE}/{CHECKSUM}/transformed/runner-1.4.0-alpha06/jars/classes.jar{F}]
+            - runtimeJarFiles     = [{GRADLE_CACHE}/{CHECKSUM}/transformed/runner-1.4.0-alpha06/jars/classes.jar{F}]
+            - manifest            = {GRADLE_CACHE}/{CHECKSUM}/transformed/runner-1.4.0-alpha06/AndroidManifest.xml{F}
+            - resFolder           = {GRADLE_CACHE}/{CHECKSUM}/transformed/runner-1.4.0-alpha06/res{!}
+            - resStaticLibrary    = {GRADLE_CACHE}/{CHECKSUM}/transformed/runner-1.4.0-alpha06/res.apk{!}
+            - assetsFolder        = {GRADLE_CACHE}/{CHECKSUM}/transformed/runner-1.4.0-alpha06/assets{!}
+            - jniFolder           = {GRADLE_CACHE}/{CHECKSUM}/transformed/runner-1.4.0-alpha06/jni{!}
+            - aidlFolder          = {GRADLE_CACHE}/{CHECKSUM}/transformed/runner-1.4.0-alpha06/aidl{!}
+            - renderscriptFolder  = {GRADLE_CACHE}/{CHECKSUM}/transformed/runner-1.4.0-alpha06/rs{!}
+            - proguardRules       = {GRADLE_CACHE}/{CHECKSUM}/transformed/runner-1.4.0-alpha06/proguard.txt{F}
+            - externalAnnotations = {GRADLE_CACHE}/{CHECKSUM}/transformed/runner-1.4.0-alpha06/annotations.zip{!}
+            - publicResources     = {GRADLE_CACHE}/{CHECKSUM}/transformed/runner-1.4.0-alpha06/public.txt{!}
+            - symbolFile          = {GRADLE_CACHE}/{CHECKSUM}/transformed/runner-1.4.0-alpha06/R.txt{F}
+         < androidLibraryData
+      < androidx.test|runner|1.4.0-alpha06|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|androidx.test:runner:1.4.0-alpha06
+      > com.google.code.findbugs|jsr305|2.0.1|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|com.google.code.findbugs:jsr305:2.0.1:
+         - type               = JAVA_LIBRARY
+         - artifact           = {LOCAL_REPO}/com/google/code/findbugs/jsr305/2.0.1/jsr305-2.0.1.jar{F}
+         - projectInfo        = (null)
+         > libraryInfo:
+            - group          = "com.google.code.findbugs"
+            - name           = "jsr305"
+            - version        = "2.0.1"
+            - isTestFixtures = false
+            - buildType      = (null)
+            - productFlavors = []
+            - attributes:
+               * "org.gradle.category -> library"
+               * "org.gradle.libraryelements -> jar"
+               * "org.gradle.status -> release"
+               * "org.gradle.usage -> java-api"
+            - capabilities:
+               * "com.google.code.findbugs:jsr305:2.0.1"
+         < libraryInfo
+         - lintJar            = (null)
+         - androidLibraryData = (null)
+      < com.google.code.findbugs|jsr305|2.0.1|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|com.google.code.findbugs:jsr305:2.0.1
+      > com.google.code.findbugs|jsr305|2.0.1|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|com.google.code.findbugs:jsr305:2.0.1:
+         - type               = JAVA_LIBRARY
+         - artifact           = {LOCAL_REPO}/com/google/code/findbugs/jsr305/2.0.1/jsr305-2.0.1.jar{F}
+         - projectInfo        = (null)
+         > libraryInfo:
+            - group          = "com.google.code.findbugs"
+            - name           = "jsr305"
+            - version        = "2.0.1"
+            - isTestFixtures = false
+            - buildType      = (null)
+            - productFlavors = []
+            - attributes:
+               * "org.gradle.category -> library"
+               * "org.gradle.libraryelements -> jar"
+               * "org.gradle.status -> release"
+               * "org.gradle.usage -> java-runtime"
+            - capabilities:
+               * "com.google.code.findbugs:jsr305:2.0.1"
+         < libraryInfo
+         - lintJar            = (null)
+         - androidLibraryData = (null)
+      < com.google.code.findbugs|jsr305|2.0.1|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|com.google.code.findbugs:jsr305:2.0.1
       > junit|junit|4.12|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|junit:junit:4.12:
          - type               = JAVA_LIBRARY
          - artifact           = {LOCAL_REPO}/junit/junit/4.12/junit-4.12.jar{F}
@@ -442,50 +568,6 @@
          - lintJar            = (null)
          - androidLibraryData = (null)
       < junit|junit|4.12|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|junit:junit:4.12
-      > net.sf.kxml|kxml2|2.3.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|net.sf.kxml:kxml2:2.3.0:
-         - type               = JAVA_LIBRARY
-         - artifact           = {LOCAL_REPO}/net/sf/kxml/kxml2/2.3.0/kxml2-2.3.0.jar{F}
-         - projectInfo        = (null)
-         > libraryInfo:
-            - group          = "net.sf.kxml"
-            - name           = "kxml2"
-            - version        = "2.3.0"
-            - isTestFixtures = false
-            - buildType      = (null)
-            - productFlavors = []
-            - attributes:
-               * "org.gradle.category -> library"
-               * "org.gradle.libraryelements -> jar"
-               * "org.gradle.status -> release"
-               * "org.gradle.usage -> java-api"
-            - capabilities:
-               * "net.sf.kxml:kxml2:2.3.0"
-         < libraryInfo
-         - lintJar            = (null)
-         - androidLibraryData = (null)
-      < net.sf.kxml|kxml2|2.3.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|net.sf.kxml:kxml2:2.3.0
-      > net.sf.kxml|kxml2|2.3.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|net.sf.kxml:kxml2:2.3.0:
-         - type               = JAVA_LIBRARY
-         - artifact           = {LOCAL_REPO}/net/sf/kxml/kxml2/2.3.0/kxml2-2.3.0.jar{F}
-         - projectInfo        = (null)
-         > libraryInfo:
-            - group          = "net.sf.kxml"
-            - name           = "kxml2"
-            - version        = "2.3.0"
-            - isTestFixtures = false
-            - buildType      = (null)
-            - productFlavors = []
-            - attributes:
-               * "org.gradle.category -> library"
-               * "org.gradle.libraryelements -> jar"
-               * "org.gradle.status -> release"
-               * "org.gradle.usage -> java-runtime"
-            - capabilities:
-               * "net.sf.kxml:kxml2:2.3.0"
-         < libraryInfo
-         - lintJar            = (null)
-         - androidLibraryData = (null)
-      < net.sf.kxml|kxml2|2.3.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|net.sf.kxml:kxml2:2.3.0
       > org.hamcrest|hamcrest-core|1.3|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|org.hamcrest:hamcrest-core:1.3:
          - type               = JAVA_LIBRARY
          - artifact           = {LOCAL_REPO}/org/hamcrest/hamcrest-core/1.3/hamcrest-core-1.3.jar{F}

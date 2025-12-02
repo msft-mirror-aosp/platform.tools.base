@@ -31,7 +31,7 @@ android {
         versionName "2.0"
         minSdkVersion 16
         targetSdkVersion 16
-        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         testInstrumentationRunnerArguments "additionalTestOutputDir": "/sdcard/Download/Macrobenchmark/com.android.tests.basic.test"
     }
 
@@ -46,7 +46,7 @@ dependencies {
     debugApi "com.android.support:support-v13:${libs.versions.supportLibVersion.get()}"
 
     testImplementation 'junit:junit:4.12'
-    androidTestImplementation "com.android.support.test:runner:${libs.versions.testSupportLibVersion.get()}"
-    androidTestImplementation "com.android.support.test:rules:${libs.versions.testSupportLibVersion.get()}"
+    androidTestImplementation "androidx.test:runner:1.4.0-alpha06"
+    androidTestImplementation "androidx.test:rules:1.4.0-alpha06"
 }
 

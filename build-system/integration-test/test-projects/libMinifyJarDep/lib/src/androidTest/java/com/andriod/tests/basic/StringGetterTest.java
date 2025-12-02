@@ -4,7 +4,7 @@ import static org.junit.Assert.*;
 
 import com.android.tests.basic.StringGetter;
 
-import android.support.test.runner.AndroidJUnit4;
+import androidx.test.runner.AndroidJUnit4;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 

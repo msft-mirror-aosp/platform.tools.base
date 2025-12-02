@@ -3,10 +3,10 @@ package com.android.tests.basic;
 import static org.junit.Assert.*;
 
 import android.os.Looper;
-import android.support.test.annotation.UiThreadTest;
-import android.support.test.filters.MediumTest;
-import android.support.test.rule.ActivityTestRule;
-import android.support.test.runner.AndroidJUnit4;
+import androidx.test.annotation.UiThreadTest;
+import androidx.test.filters.MediumTest;
+import androidx.test.rule.ActivityTestRule;
+import androidx.test.runner.AndroidJUnit4;
 import android.widget.TextView;
 import org.junit.Before;
 import org.junit.Rule;

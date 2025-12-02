@@ -2,7 +2,7 @@ package com.example.android.multiproject.library;
 
 import static org.junit.Assert.*;
 
-import android.support.test.rule.ActivityTestRule;
+import androidx.test.rule.ActivityTestRule;
 import android.view.View;
 import android.widget.LinearLayout;
 import org.junit.Rule;

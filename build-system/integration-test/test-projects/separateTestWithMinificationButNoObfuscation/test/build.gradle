@@ -23,7 +23,7 @@ android {
 
     defaultConfig {
         minSdkVersion libs.versions.supportLibMinSdk.get()
-        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 
     targetProjectPath ':app'
@@ -39,6 +39,6 @@ android {
 
 dependencies {
   implementation 'junit:junit:4.12'
-  implementation "com.android.support.test:runner:${libs.versions.testSupportLibVersion.get()}"
-  implementation "com.android.support.test:rules:${libs.versions.testSupportLibVersion.get()}"
+  implementation "androidx.test:runner:1.4.0-alpha06"
+  implementation "androidx.test:rules:1.4.0-alpha06"
 }

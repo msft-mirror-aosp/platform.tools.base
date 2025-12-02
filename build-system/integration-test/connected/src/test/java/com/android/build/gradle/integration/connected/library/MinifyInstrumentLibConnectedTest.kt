@@ -69,8 +69,8 @@ class MinifyInstrumentLibConnectedTest {
         TestFileUtils.appendToFile(
             testProguardFile,
             """
-                -keep class android.support.test.runner.lifecycle.Stage {*;}
-                -keep class android.support.test.runner.AndroidJUnit4 {*;}
+                -keep class androidx.test.runner.lifecycle.Stage {*;}
+                -keep class androidx.test.runner.AndroidJUnit4 {*;}
                 -keep class com.android.tests.basic.StringGetterTest {
                     public void testFunctionFromDepLibrary();
                     <init>(...);
@@ -91,15 +91,15 @@ class MinifyInstrumentLibConnectedTest {
             .resolve("debugAndroidTest/processDebugAndroidTestManifest/AndroidManifest.xml")
         assertThat(libProject.projectDir.resolve(androidTestManifest).readText()).contains(
             """
-                android:name="android.support.test.runner.AndroidJUnitRunner"
+                android:name="androidx.test.runner.AndroidJUnitRunner"
             """.trimIndent()
         )
         val aaptRule = InternalArtifactType.AAPT_PROGUARD_FILE.getOutputDir(libProject.buildDir)
             .resolve("debugAndroidTest/processDebugAndroidTestResources/aapt_rules.txt")
         assertThat(libProject.projectDir.resolve(aaptRule).readText()).contains("""
-             -keep class android.support.test.runner.AndroidJUnitRunner { <init>(); }
+             -keep class androidx.test.runner.AndroidJUnitRunner { <init>(); }
         """.trimIndent())
-        TruthHelper.assertThat(libProject.testApk).containsClass("Landroid/support/test/runner/AndroidJUnitRunner;")
+        TruthHelper.assertThat(libProject.testApk).containsClass("Landroidx/test/runner/AndroidJUnitRunner;")
     }
 
     companion object {

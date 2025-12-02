@@ -77,7 +77,6 @@ public class MultiDexTest {
                 project.getBuildFile(), "\nandroid.dexOptions.keepRuntimeAnnotatedClasses = false");
 
         project.executor()
-                .with(BooleanOption.USE_ANDROID_X, false)
                 .run("assembleDebug", "makeApkFromBundleForIcsDebug", "assembleAndroidTest");
 
         List<String> mandatoryClasses =
@@ -110,9 +109,9 @@ public class MultiDexTest {
         commonApkChecks("debug");
 
         assertThat(project.getTestApk("ics"))
-                .doesNotContainClass("Landroid/support/multidex/MultiDexApplication;");
+                .doesNotContainClass("Landroidx/multidex/MultiDexApplication;");
         assertThat(project.getTestApk("lollipop"))
-                .doesNotContainClass("Landroid/support/multidex/MultiDexApplication;");
+                .doesNotContainClass("Landroidx/multidex/MultiDexApplication;");
 
         // Both test APKs should contain a class from Junit.
         assertThat(project.getTestApk("ics")).containsClass("Lorg/junit/Assert;");
@@ -157,7 +156,6 @@ public class MultiDexTest {
     @Test
     public void checkShrinker() throws Exception {
         project.executor()
-                .with(BooleanOption.USE_ANDROID_X, false)
                 .run(StringHelper.appendCapitalized("assemble", "r8"));
         assertMainDexContains("r8", ImmutableList.of());
 
@@ -259,9 +257,9 @@ public class MultiDexTest {
 
     private void commonApkChecks(String buildType) throws Exception {
         assertThat(project.getApk(ApkType.of(buildType, true), "ics"))
-                .containsClass("Landroid/support/multidex/MultiDexApplication;");
+                .containsClass("Landroidx/multidex/MultiDexApplication;");
         assertThat(project.getApk(ApkType.of(buildType, true), "lollipop"))
-                .doesNotContainClass("Landroid/support/multidex/MultiDexApplication;");
+                .doesNotContainClass("Landroidx/multidex/MultiDexApplication;");
 
         for (String flavor : ImmutableList.of("ics", "lollipop")) {
             assertThat(project.getApk(ApkType.of(buildType, true), flavor))
@@ -284,12 +282,12 @@ public class MultiDexTest {
         Dex mainDex = apk.getMainDexFile().orElseThrow(AssertionError::new);
 
         ImmutableSet<String> mainDexClasses = mainDex.getClasses().keySet();
-        assertThat(mainDexClasses).contains("Landroid/support/multidex/MultiDexApplication;");
+        assertThat(mainDexClasses).contains("Landroidx/multidex/MultiDexApplication;");
 
         Set<String> nonMultidexSupportClasses =
                 mainDexClasses
                         .stream()
-                        .filter(c -> !c.startsWith("Landroid/support/multidex"))
+                        .filter(c -> !c.startsWith("Landroidx/multidex"))
                         .collect(Collectors.toSet());
         assertThat(nonMultidexSupportClasses).containsExactlyElementsIn(mandatoryClasses);
     }

@@ -20,7 +20,7 @@ android {
 
         // This actual the app version code. Giving ourselves 1,000,000 values
         versionCode = 123
-        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildTypes.debug.jniDebuggable true
@@ -61,6 +61,6 @@ androidComponents {
 
 dependencies {
     testImplementation 'junit:junit:4.12'
-    androidTestImplementation "com.android.support.test:runner:${libs.versions.testSupportLibVersion.get()}"
-    androidTestImplementation "com.android.support.test:rules:${libs.versions.testSupportLibVersion.get()}"
+    androidTestImplementation "androidx.test:runner:1.4.0-alpha06"
+    androidTestImplementation "androidx.test:rules:1.4.0-alpha06"
 }

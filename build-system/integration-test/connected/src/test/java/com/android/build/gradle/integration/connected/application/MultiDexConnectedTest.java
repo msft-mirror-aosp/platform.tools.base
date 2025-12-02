@@ -18,7 +18,6 @@ package com.android.build.gradle.integration.connected.application;
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.connected.utils.EmulatorUtils;
-import com.android.build.gradle.options.BooleanOption;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Rule;
@@ -31,7 +30,6 @@ public class MultiDexConnectedTest {
             GradleTestProject.builder()
                     .fromTestProject("multiDex")
                     .withHeap("2048M")
-                    .addGradleProperty(BooleanOption.USE_ANDROID_X, false) // b/440265091
                     .create();
 
     @ClassRule public static final ExternalResource EMULATOR = EmulatorUtils.getEmulator();
