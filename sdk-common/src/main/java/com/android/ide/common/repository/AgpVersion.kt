@@ -20,6 +20,13 @@ import com.google.common.base.Objects
 import java.util.Locale
 
 /**
+ * This class is intended to represent versions of the Android Gradle Plugin (and things which
+ * by their nature have a version number identical to AGP, such as individual artifacts), and
+ * no other versions.  This class captures knowledge of how historical versions of AGP were
+ * spelt, and its assumptions about version ordering and constraints on the form of the version
+ * are not generally applicable to arbitrary Gradle artifacts.  Do not use this to represent
+ * version numbers of software that is not the Android Gradle Plugin.
+ *
  * This class is deliberately non-comparable with [Version], for two reasons: firstly,
  * the ordering semantics we depend on for `-dev` versions are incompatible with the specified
  * ordering of Gradle version specifiers; secondly, we use Android Gradle Plugin versions as version
