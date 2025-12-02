@@ -180,6 +180,33 @@ class ContextTest : AbstractCheckTest() {
       .expectClean()
   }
 
+  fun testKotlinSuppressionWithPropertyInitializer() {
+    // Regression test for b/464947724
+    // When using custom suppress annotations, a different code path is used to check for
+    // annotations, and this was not including UField.sourceAnnotations.
+    lint()
+      .files(
+        kotlin(
+            """
+            package com.example.app
+
+            annotation class Sup
+
+            fun foo(s: String): String = s
+
+            class MyClass {
+              @Sup
+              var s: Any = foo("")
+            }
+            """
+          )
+          .indented()
+      )
+      .issues(ReportsCallDetector.ISSUE)
+      .run()
+      .expectClean()
+  }
+
   fun testMultilineReporter() {
     // Test to make sure that when the argument to string is indented and/or has line continuations
     // (\) the
@@ -313,6 +340,29 @@ class ContextTest : AbstractCheckTest() {
           5,
           Severity.WARNING,
           Implementation(ReportsArgumentDetector::class.java, Scope.JAVA_FILE_SCOPE),
+        )
+    }
+  }
+
+  class ReportsCallDetector : Detector(), SourceCodeScanner {
+
+    override fun getApplicableMethodNames() = listOf("foo")
+
+    override fun visitMethodCall(context: JavaContext, node: UCallExpression, method: PsiMethod) {
+      context.report(Incident(ISSUE, "Call to foo", context.getLocation(node), node))
+    }
+
+    companion object {
+      val ISSUE =
+        Issue.create(
+          id = "_UReportsCallIssue",
+          briefDescription = "Not applicable",
+          explanation = "Not applicable",
+          category = Category.MESSAGES,
+          priority = 5,
+          severity = Severity.WARNING,
+          implementation = Implementation(ReportsCallDetector::class.java, Scope.JAVA_FILE_SCOPE),
+          suppressAnnotations = listOf("com.example.app.Sup"),
         )
     }
   }
@@ -583,5 +633,16 @@ class ContextTest : AbstractCheckTest() {
         Severity.WARNING,
         Implementation(NoLocationNodeDetector::class.java, Scope.JAVA_FILE_SCOPE),
       )
+
+    //    val REPORT_BAD_ISSUE =
+    //      Issue.create(
+    //        "_ReportBadIssueId",
+    //        "Not applicable",
+    //        "Not applicable",
+    //        Category.MESSAGES,
+    //        5,
+    //        Severity.WARNING,
+    //        Implementation(ReportBadDetector::class.java, Scope.JAVA_FILE_SCOPE),
+    //      )
   }
 }
