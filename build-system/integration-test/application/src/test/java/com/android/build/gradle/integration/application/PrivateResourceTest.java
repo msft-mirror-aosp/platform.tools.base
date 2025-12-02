@@ -33,7 +33,7 @@ import java.io.IOException;
  *
  * <pre>
  *     $ cd tools
- *     $ ./gradlew :base:build-system:integration-test:application:test -D:base:build-system:integration-test:application:test.single=PrivateResourceTest
+ *     $ ./gradlew :base:build-system:integration-test:application:test --tests "PrivateResourceTest"
  * </pre>
  */
 public class PrivateResourceTest {
