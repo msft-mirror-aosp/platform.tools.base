@@ -99,7 +99,7 @@ public final class SystemImageSupplier {
                 return images.iterator().next();
             default:
                 logger.warning(
-                        "Multiple images for %. Returning the first.", localPackage.getPath());
+                        "Multiple images for %s. Returning the first.", localPackage.getPath());
                 return images.iterator().next();
         }
     }
