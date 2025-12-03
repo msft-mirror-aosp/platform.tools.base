@@ -13,161 +13,144 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.android.build.gradle.internal
 
-package com.android.build.gradle.internal;
+import com.android.build.api.artifact.SingleArtifact
+import com.android.build.api.variant.TestVariantBuilder
+import com.android.build.gradle.internal.component.*
+import com.android.build.gradle.internal.publishing.AndroidArtifacts
+import com.android.build.gradle.internal.tasks.DeviceProviderInstrumentTestTask
+import com.android.build.gradle.internal.tasks.SigningConfigVersionsWriterTask
+import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfig
+import com.android.build.gradle.internal.tasks.factory.TaskManagerConfig
+import com.android.build.gradle.internal.tasks.factory.dependsOn
+import com.android.build.gradle.internal.test.SeparateTestModuleTestData
+import com.android.build.gradle.internal.variant.ComponentInfo
+import com.android.build.gradle.tasks.CheckTestedAppObfuscation
+import com.android.build.gradle.tasks.ManifestProcessorTask
+import com.android.build.gradle.tasks.ProcessTestManifest
+import com.android.builder.core.ComponentType
+import com.google.common.base.Preconditions
+import org.gradle.api.Action
+import org.gradle.api.DefaultTask
+import org.gradle.api.Project
+import org.gradle.api.Task
+import org.gradle.api.file.Directory
+import org.gradle.api.provider.Provider
+import org.gradle.api.tasks.TaskProvider
 
-
-import com.android.annotations.NonNull;
-import com.android.build.api.artifact.SingleArtifact;
-import com.android.build.api.variant.TestVariantBuilder;
-import com.android.build.gradle.BaseExtension;
-import com.android.build.gradle.internal.component.ApkCreationConfig;
-import com.android.build.gradle.internal.component.ConsumableCreationConfig;
-import com.android.build.gradle.internal.component.TestComponentCreationConfig;
-import com.android.build.gradle.internal.component.TestCreationConfig;
-import com.android.build.gradle.internal.component.TestFixturesCreationConfig;
-import com.android.build.gradle.internal.component.TestSuiteCreationConfig;
-import com.android.build.gradle.internal.component.TestVariantCreationConfig;
-import com.android.build.gradle.internal.publishing.AndroidArtifacts;
-import com.android.build.gradle.internal.tasks.DeviceProviderInstrumentTestTask;
-import com.android.build.gradle.internal.tasks.SigningConfigVersionsWriterTask;
-import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfig;
-import com.android.build.gradle.internal.tasks.factory.TaskFactoryUtils;
-import com.android.build.gradle.internal.tasks.factory.TaskManagerConfig;
-import com.android.build.gradle.internal.test.SeparateTestModuleTestData;
-import com.android.build.gradle.internal.variant.ComponentInfo;
-import com.android.build.gradle.tasks.CheckTestedAppObfuscation;
-import com.android.build.gradle.tasks.ManifestProcessorTask;
-import com.android.build.gradle.tasks.ProcessTestManifest;
-import com.android.builder.core.ComponentType;
-
-import com.google.common.base.Preconditions;
-
-import org.gradle.api.Project;
-import org.gradle.api.file.Directory;
-import org.gradle.api.file.FileCollection;
-import org.gradle.api.provider.Provider;
-import org.gradle.api.tasks.TaskProvider;
-import org.jetbrains.annotations.NotNull;
-
-import java.util.Collection;
 
 /**
  * TaskManager for standalone test application that lives in a separate module from the tested
  * application.
  */
-public class TestApplicationTaskManager
-        extends AbstractAppTaskManager<TestVariantBuilder, TestVariantCreationConfig> {
+class TestApplicationTaskManager(
+    project: Project,
+    variants: MutableCollection<out ComponentInfo<TestVariantBuilder, TestVariantCreationConfig>>,
+    testComponents: MutableCollection<out TestComponentCreationConfig?>,
+    testFixturesComponents: MutableCollection<out TestFixturesCreationConfig?>,
+    globalConfig: GlobalTaskCreationConfig,
+    localConfig: TaskManagerConfig
+) : AbstractAppTaskManager<TestVariantBuilder, TestVariantCreationConfig>(
+    project,
+    variants,
+    testComponents,
+    testFixturesComponents,
+    globalConfig,
+    localConfig
+) {
+    private fun getTestData(
+        testVariantProperties: TestVariantCreationConfig
+    ): SeparateTestModuleTestData {
+        val testingApk: Provider<Directory> =
+            testVariantProperties.artifacts.get(SingleArtifact.APK)
 
-    public TestApplicationTaskManager(
-            @NonNull Project project,
-            @NonNull
-                    Collection<
-                                    ? extends
-                                            ComponentInfo<
-                                                    TestVariantBuilder, TestVariantCreationConfig>>
-                            variants,
-            @NonNull Collection<? extends TestComponentCreationConfig> testComponents,
-            @NonNull Collection<? extends TestFixturesCreationConfig> testFixturesComponents,
-            @NonNull GlobalTaskCreationConfig globalConfig,
-            @NonNull TaskManagerConfig localConfig) {
-        super(
-                project,
-                variants,
-                testComponents,
-                testFixturesComponents,
-                globalConfig,
-                localConfig);
-    }
-
-    private SeparateTestModuleTestData getTestData(
-            TestVariantCreationConfig testVariantProperties) {
-        Provider<Directory> testingApk =
-                testVariantProperties.getArtifacts().get(SingleArtifact.APK.INSTANCE);
-
-        FileCollection privacySandboxSdkApks =
-                testVariantProperties.getPrivacySandboxEnabled()
-                        ? testVariantProperties
-                                .getVariantDependencies()
-                                .getArtifactFileCollection(
-                                        AndroidArtifacts.ConsumedConfigType.PROVIDED_CLASSPATH,
-                                        AndroidArtifacts.ArtifactScope.ALL,
-                                        AndroidArtifacts.ArtifactType
-                                                .ANDROID_PRIVACY_SANDBOX_EXTRACTED_SDK_APKS)
-                        : null;
-
-        return new SeparateTestModuleTestData(
-                testVariantProperties.getNamespace(),
-                testVariantProperties,
-                testingApk,
-                testVariantProperties.getTestedApks(),
-                null,
-                null,
-                null,
+        val privacySandboxSdkApks =
+            if (testVariantProperties.privacySandboxEnabled)
                 testVariantProperties
-                        .getServices()
-                        .getProjectOptions()
-                        .getExtraInstrumentationTestRunnerArgs());
+                    .variantDependencies
+                    .getArtifactFileCollection(
+                        AndroidArtifacts.ConsumedConfigType.PROVIDED_CLASSPATH,
+                        AndroidArtifacts.ArtifactScope.ALL,
+                        AndroidArtifacts.ArtifactType
+                            .ANDROID_PRIVACY_SANDBOX_EXTRACTED_SDK_APKS
+                    )
+            else
+                null
+
+        return SeparateTestModuleTestData(
+            testVariantProperties.namespace,
+            testVariantProperties,
+            testingApk,
+            testVariantProperties.testedApks,
+            null,
+            null,
+            null,
+            testVariantProperties
+                .services
+                .projectOptions
+                .getExtraInstrumentationTestRunnerArgs()
+        )
     }
 
-    @Override
-    protected void doCreateTasksForVariant(
-            @NotNull ComponentInfo<TestVariantBuilder, TestVariantCreationConfig> variantInfo) {
-        createCommonTasks(variantInfo);
+    override fun doCreateTasksForVariant(
+        variantInfo: ComponentInfo<TestVariantBuilder, TestVariantCreationConfig>
+    ) {
+        createCommonTasks(variantInfo)
 
-        TestVariantCreationConfig testVariantProperties = variantInfo.getVariant();
-        SeparateTestModuleTestData testData = getTestData(testVariantProperties);
-        configureTestData(testVariantProperties, testData);
+        val testVariantProperties = variantInfo.variant
+        val testData = getTestData(testVariantProperties)
+        configureTestData(testVariantProperties, testData)
 
         // create tasks to validate signing and produce signing config versions file.
-        createValidateSigningTask(testVariantProperties);
-        taskFactory.register(
-                new SigningConfigVersionsWriterTask.CreationAction(testVariantProperties));
+        createValidateSigningTask(testVariantProperties)
+        taskFactory.register<SigningConfigVersionsWriterTask>(
+            SigningConfigVersionsWriterTask.CreationAction(testVariantProperties)
+        )
 
         // create the test connected check task.
-        TaskProvider<DeviceProviderInstrumentTestTask> instrumentTestTask =
-                taskFactory.register(
-                        new DeviceProviderInstrumentTestTask.CreationAction(
-                                testVariantProperties, testData) {
-                            @NonNull
-                            @Override
-                            public String getName() {
-                                return super.getName() + ComponentType.ANDROID_TEST_SUFFIX;
-                            }
-                        });
+        val instrumentTestTask: TaskProvider<DeviceProviderInstrumentTestTask> =
+            taskFactory.register<DeviceProviderInstrumentTestTask>(
+                object : DeviceProviderInstrumentTestTask.CreationAction(
+                    testVariantProperties, testData
+                ) {
+                    override val name: String
+                        get() = super.name + ComponentType.ANDROID_TEST_SUFFIX
+                })
 
-        taskFactory.configure(CONNECTED_ANDROID_TEST, task -> task.dependsOn(instrumentTestTask));
+        taskFactory.configure(CONNECTED_ANDROID_TEST, Action { task: Task? -> task!!.dependsOn(instrumentTestTask) })
 
         createTestDevicesForVariant(
-                testVariantProperties,
-                testData,
-                testVariantProperties.getName(),
-                ComponentType.ANDROID_TEST_SUFFIX);
+            testVariantProperties,
+            testData,
+            testVariantProperties.name,
+            ComponentType.ANDROID_TEST_SUFFIX
+        )
     }
 
-    @Override
-    protected void maybeCreateJavaCodeShrinkerTask(
-            @NonNull ConsumableCreationConfig creationConfig) {
-        if (creationConfig.getOptimizationCreationConfig().getMinifiedEnabled()) {
-            doCreateJavaCodeShrinkerTask(creationConfig, true);
+    override fun maybeCreateJavaCodeShrinkerTask(
+        creationConfig: ConsumableCreationConfig
+    ) {
+        if (creationConfig.optimizationCreationConfig.minifiedEnabled) {
+            doCreateJavaCodeShrinkerTask(creationConfig, true)
         } else {
-            TaskProvider<CheckTestedAppObfuscation> checkObfuscation =
-                    taskFactory.register(
-                            new CheckTestedAppObfuscation.CreationAction(
-                                    (TestVariantCreationConfig) creationConfig));
-            Preconditions.checkNotNull(creationConfig.getTaskContainer().getJavacTask());
-            TaskFactoryUtils.dependsOn(
-                    creationConfig.getTaskContainer().getJavacTask(), checkObfuscation);
+            val checkObfuscation: TaskProvider<CheckTestedAppObfuscation> =
+                taskFactory.register<CheckTestedAppObfuscation>(
+                    CheckTestedAppObfuscation.CreationAction(
+                        creationConfig as TestVariantCreationConfig
+                    )
+                )
+            Preconditions.checkNotNull(creationConfig.taskContainer.javacTask)
+            creationConfig.taskContainer.javacTask.dependsOn<DefaultTask>(checkObfuscation)
         }
     }
 
-    /** Creates the merge manifests task. */
-    @Override
-    @NonNull
-    protected TaskProvider<? extends ManifestProcessorTask> createMergeManifestTasks(
-            @NonNull ApkCreationConfig creationConfig) {
+    /** Creates the merge manifests task.  */
+    override fun createMergeManifestTasks(
+        creationConfig: ApkCreationConfig
+    ): TaskProvider<out ManifestProcessorTask> {
         return taskFactory.register(
-                new ProcessTestManifest.CreationAction((TestCreationConfig) creationConfig));
+            ProcessTestManifest.CreationAction(creationConfig as TestCreationConfig)
+        )
     }
-
 }
