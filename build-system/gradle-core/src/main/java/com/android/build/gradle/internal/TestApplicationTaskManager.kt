@@ -65,19 +65,6 @@ class TestApplicationTaskManager(
         val testingApk: Provider<Directory> =
             testVariantProperties.artifacts.get(SingleArtifact.APK)
 
-        val privacySandboxSdkApks =
-            if (testVariantProperties.privacySandboxEnabled)
-                testVariantProperties
-                    .variantDependencies
-                    .getArtifactFileCollection(
-                        AndroidArtifacts.ConsumedConfigType.PROVIDED_CLASSPATH,
-                        AndroidArtifacts.ArtifactScope.ALL,
-                        AndroidArtifacts.ArtifactType
-                            .ANDROID_PRIVACY_SANDBOX_EXTRACTED_SDK_APKS
-                    )
-            else
-                null
-
         return SeparateTestModuleTestData(
             testVariantProperties.namespace,
             testVariantProperties,
