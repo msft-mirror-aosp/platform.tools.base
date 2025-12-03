@@ -39,6 +39,7 @@ public class ApiTest {
     public static void setUp() throws IOException, InterruptedException {
         project.executor()
                 .with(BooleanOption.ENABLE_LEGACY_API, true)
+                .with(BooleanOption.USE_NEW_DSL, false)
                 .run("clean", "assembleDebug");
     }
 
@@ -49,7 +50,10 @@ public class ApiTest {
 
     @Test
     public void lint() throws IOException, InterruptedException {
-        project.executor().with(BooleanOption.ENABLE_LEGACY_API, true).run("lint");
+        project.executor()
+                .with(BooleanOption.ENABLE_LEGACY_API, true)
+                .with(BooleanOption.USE_NEW_DSL, false)
+                .run("lint");
     }
 
     @Test
