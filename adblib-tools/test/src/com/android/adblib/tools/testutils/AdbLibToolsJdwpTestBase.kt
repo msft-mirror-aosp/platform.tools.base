@@ -29,7 +29,7 @@ import com.android.adblib.tools.debugging.impl.AbstractJdwpProcess
 import com.android.adblib.tools.debugging.impl.JdwpProcessManager
 import com.android.adblib.tools.debugging.impl.JdwpProcessSessionFinder
 import com.android.adblib.tools.debugging.impl.addJdwpProcessSessionFinder
-import com.android.adblib.tools.debugging.impl.jdwpProcessManager
+import com.android.adblib.tools.debugging.jdwpProcessFlow
 import com.android.adblib.tools.debugging.jdwpProcessTracker
 import com.android.adblib.tools.debugging.jdwpProxySocketServer
 import com.android.adblib.tools.debugging.packets.JdwpPacketView
@@ -54,6 +54,8 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.transform
 import java.io.EOFException
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.map
 
 open class AdbLibToolsJdwpTestBase : AdbLibToolsTestBase() {
     protected class JdwpProxySessionInfo(
@@ -76,7 +78,10 @@ open class AdbLibToolsJdwpTestBase : AdbLibToolsTestBase() {
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
         val connectedDevice = session.waitForOnlineConnectedDevice(fakeDevice.deviceId)
         fakeDevice.startClient(pid, 0, "a.b.c", false)
-        val process = connectedDevice.jdwpProcessManager.getProcess(pid)
+        val process =
+            connectedDevice.jdwpProcessFlow.map { processes -> processes.find { it.pid == pid } }
+                .filterNotNull()
+                .first()
         CoroutineTestUtils.yieldUntil {
              process.jdwpProxySocketServer.proxyStatusFlow.value.socketAddress.hasValue &&
                     process.properties.processName.hasValue
@@ -218,17 +223,6 @@ open class AdbLibToolsJdwpTestBase : AdbLibToolsTestBase() {
                 emit(it)
             }
         }.first()
-    }
-
-    internal suspend fun createJdwpProcess(
-        deviceApi: Int = 30,
-        pid: Int = 10,
-        waitForDebugger: Boolean = true
-    ): Triple<FakeAdbServerProvider, ConnectedDevice, AbstractJdwpProcess> {
-        val device = fakeAdb.addDevice(deviceApi)
-        val clientState = device.createFakeAdbProcess(pid, waitForDebugger)
-        val process = device.jdwpProcessManager.getProcess(clientState.pid)
-        return Triple(fakeAdb, device, process)
     }
 
     internal suspend fun FakeAdbServerProvider.addDevice(deviceApi: Int = 30): ConnectedDevice {
