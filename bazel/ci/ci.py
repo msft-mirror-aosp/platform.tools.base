@@ -12,10 +12,11 @@ import uuid
 
 from tools.base.bazel.ci import bazel
 from tools.base.bazel.ci import errors
-from tools.base.bazel.ci import query_checks
 from tools.base.bazel.ci import owners_checks
+from tools.base.bazel.ci import query_checks
 from tools.base.bazel.ci import studio_linux
 from tools.base.bazel.ci import studio_mac
+from tools.base.bazel.ci import studio_nightly
 from tools.base.bazel.ci import studio_win
 
 _ARCH_ALIAS = {
@@ -160,6 +161,8 @@ def main():
       ci.run(studio_mac.studio_mac)
     case 'studio-mac-arm':
       ci.run(studio_mac.studio_mac_arm)
+    case 'studio-nightly':
+      ci.run(studio_nightly.studio_nightly)
     case _:
       raise NotImplementedError(f'target: "{args.target}" does not exist')
 
