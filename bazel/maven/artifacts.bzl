@@ -170,7 +170,7 @@ ARTIFACTS = [
     "org.apache.maven:maven-model-builder:3.9.1",
     "org.bouncycastle:bcpkix-jdk18on:1.79",
     "org.bouncycastle:bcprov-jdk18on:1.79",
-    "org.bytedeco:ffmpeg:6.0-1.5.9",
+    "org.bytedeco:ffmpeg:7.1.1-1.5.12",
     "org.codehaus.groovy:groovy-all:pom:3.0.22",
     "org.commonmark:commonmark:0.24.0",
     "org.eclipse.aether:aether-connector-basic:1.0.2.v20150114",
