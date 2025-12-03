@@ -856,6 +856,11 @@ abstract class TaskManager(
     }
 
     protected open fun postJavacCreation(creationConfig: ComponentCreationConfig) {
+
+        val projectScope = creationConfig
+            .artifacts
+            .forScope(ScopedArtifacts.Scope.PROJECT)
+
         // Use the deprecated public artifact types to register the pre/post JavaC hooks as well as
         // the javac output itself.
         // It is necessary to do so in case some third-party plugin is using those deprecated public
@@ -921,6 +926,12 @@ abstract class TaskManager(
                creationConfig.artifacts,
                JAVAC
            )
+
+        // add back all the user added post compilation classes that we stored in this internal
+        // artifact type for book keeping reasons.
+        creationConfig.artifacts.forScope(ScopedArtifacts.Scope.PROJECT)
+            .setInitialContent(ScopedArtifact.CLASSES,
+                projectScope.userAddedClasses)
 
         creationConfig
             .artifacts
