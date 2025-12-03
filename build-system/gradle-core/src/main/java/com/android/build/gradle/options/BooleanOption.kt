@@ -412,15 +412,6 @@ enum class BooleanOption(
         FeatureStage.Experimental
     ),
 
-    /**
-     * Enables gradual R8 shrinking
-     */
-    GRADUAL_R8_SHRINKING(
-        "android.experimental.gradual.r8",
-        false,
-        FeatureStage.Experimental
-    ),
-
     ENABLE_PROBLEMS_API("android.enableProblemsAPI", false, FeatureStage.Experimental),
 
     // Flag should only be used in test.

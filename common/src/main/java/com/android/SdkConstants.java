@@ -417,9 +417,6 @@ public final class SdkConstants {
     /** File holding relative class entries */
     public static final String FN_CLASS_LIST = "classes.txt";
 
-    /** File holding package names for use in R8Task */
-    public static final String FN_PACKAGE_LIST = "packages.txt";
-
     /** File holding data extracted from the navigation xml files */
     public static final String FN_NAVIGATION_JSON = "navigation.json";
 

@@ -113,7 +113,6 @@ import com.android.build.gradle.internal.tasks.MergeClassesTask
 import com.android.build.gradle.internal.tasks.MergeGeneratedProguardFilesCreationAction
 import com.android.build.gradle.internal.tasks.MergeJavaResourceTask
 import com.android.build.gradle.internal.tasks.MergeNativeLibsTask
-import com.android.build.gradle.internal.tasks.MergePackageListsForR8Task
 import com.android.build.gradle.internal.tasks.OptimizeResourcesTask
 import com.android.build.gradle.internal.tasks.PrepareLintJarForPublish
 import com.android.build.gradle.internal.tasks.ProcessJavaResTask
@@ -1996,9 +1995,7 @@ abstract class TaskManager(
             project,
             creationConfig.services.projectOptions
         ).execute()
-        if (creationConfig.services.projectOptions[BooleanOption.GRADUAL_R8_SHRINKING]) {
-            taskFactory.register(MergePackageListsForR8Task.CreationAction(creationConfig))
-        }
+
         return taskFactory.register(
             R8Task.CreationAction(creationConfig, isTestApplication, addCompileRClass))
     }

@@ -113,7 +113,6 @@ class BooleanOptionTest {
             BooleanOption.DISABLE_INLINE_SCOPES_NUMBERS,
             BooleanOption.ENABLE_DEVICE_TARGETING_CONFIG_API,
             BooleanOption.DUMP_ARTIFACTS_LOCATIONS,
-            BooleanOption.GRADUAL_R8_SHRINKING,
             BooleanOption.ENABLE_PROBLEMS_API,
             BooleanOption.R8_GRADUAL_API,
             BooleanOption.ENABLE_CLASSPATH_CHECK_TASKS,
