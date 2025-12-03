@@ -158,7 +158,8 @@ class ProcessTestManifestTest {
 
                     <application android:label="@string/app_name">
                         <activity android:name=".HelloWorld"
-                                  android:label="@string/app_name">
+                                  android:label="@string/app_name"
+                                  android:exported="true">
                             <intent-filter>
                                 <action android:name="android.intent.action.MAIN" />
                                 <category android:name="android.intent.category.LAUNCHER" />
@@ -369,7 +370,8 @@ class ProcessTestManifestTest {
 
                     <application android:label="${'$'}{label}">
                         <activity android:name=".HelloWorld"
-                                  android:label="@string/app_name">
+                                  android:label="@string/app_name"
+                                  android:exported="true">
                             <intent-filter>
                                 <action android:name="android.intent.action.MAIN" />
                                 <category android:name="android.intent.category.LAUNCHER" />
@@ -417,7 +419,8 @@ class ProcessTestManifestTest {
 
                     <application android:label="${'$'}{label}">
                         <activity android:name=".HelloWorld"
-                                  android:label="@string/app_name">
+                                  android:label="@string/app_name"
+                                  android:exported="true">
                             <intent-filter>
                                 <action android:name="android.intent.action.MAIN" />
                                 <category android:name="android.intent.category.LAUNCHER" />
@@ -603,7 +606,8 @@ class ProcessTestManifestTest {
 
                     <application android:label="@string/app_name">
                         <activity android:name=".HelloWorld"
-                                  android:label="@string/app_name">
+                                  android:label="@string/app_name"
+                                  android:exported="true">
                             <intent-filter>
                                 <action android:name="android.intent.action.MAIN" />
                                 <category android:name="android.intent.category.LAUNCHER" />
