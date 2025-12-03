@@ -62,6 +62,8 @@ public class AndroidTestResourcesConnectedTest {
                         + "'\n"
                         + "    defaultConfig {\n"
                         + "        minSdkVersion libs.versions.supportLibMinSdk.get()\n"
+                        + "        //noinspection ExpiredTargetSdkVersion\n"
+                        + "        targetSdkVersion libs.versions.supportLibMinSdk.get()\n"
                         + "        testInstrumentationRunner 'android.support.test.runner.AndroidJUnitRunner'\n"
                         + "    }\n"
                         + "}\n"
