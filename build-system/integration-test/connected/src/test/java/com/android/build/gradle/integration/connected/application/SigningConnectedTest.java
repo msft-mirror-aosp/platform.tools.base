@@ -95,7 +95,7 @@ public class SigningConnectedTest {
                         + "        minSdkVersion "
                         + minSdkVersion
                         + "\n"
-                        + "        testInstrumentationRunner 'android.support.test.runner.AndroidJUnitRunner'\n"
+                        + "        testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'\n"
                         + "    }\n"
                         + "\n"
                         + "    signingConfigs {\n"
@@ -132,8 +132,9 @@ public class SigningConnectedTest {
                         + "    }\n"
                         + "}\n"
                         + "dependencies {\n"
-                        + "  androidTestImplementation \"com.android.support.test:runner:${libs.versions.testSupportLibVersion.get()}\"\n"
-                        + "  androidTestImplementation \"com.android.support.test:rules:${libs.versions.testSupportLibVersion.get()}\"\n"
+                        + "    androidTestImplementation \"androidx.test:runner:1.4.0-alpha06\"\n"
+                        + "    androidTestImplementation \"androidx.test:rules:1.4.0-alpha06\"\n"
+                        + "    androidTestImplementation \"androidx.annotation:annotation-experimental:1.3.0\"\n"
                         + "}\n"
                         + "");
 

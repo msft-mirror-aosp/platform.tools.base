@@ -48,8 +48,8 @@ public class TestingSupportLibraryTest {
                         "\n"
                                 + "package com.example.helloworld;\n"
                                 + "\n"
-                                + "import android.support.test.runner.AndroidJUnit4;\n"
-                                + "import android.support.test.filters.SmallTest;\n"
+                                + "import androidx.test.runner.AndroidJUnit4;\n"
+                                + "import androidx.test.filters.SmallTest;\n"
                                 + "\n"
                                 + "import org.junit.Ignore;\n"
                                 + "import org.junit.Test;\n"
@@ -119,19 +119,13 @@ public class TestingSupportLibraryTest {
                         + GradleTestProject.DEFAULT_BUILD_TOOL_VERSION
                         + "'\n"
                         + "    defaultConfig {\n"
-                        + "        testInstrumentationRunner \"android.support.test.runner.AndroidJUnitRunner\"\n"
+                        + "        testInstrumentationRunner \"androidx.test.runner.AndroidJUnitRunner\"\n"
                         + "        minSdkVersion 18\n"
                         + "    }\n"
                         + "    dependencies {\n"
-                        + "        androidTestImplementation 'com.android.support:support-annotations:"
-                        + TestVersions.SUPPORT_LIB_VERSION
-                        + "'\n"
-                        + "        androidTestImplementation 'com.android.support.test:runner:"
-                        + TestVersions.TEST_SUPPORT_LIB_VERSION
-                        + "'\n"
-                        + "        androidTestImplementation 'com.android.support.test:rules:"
-                        + TestVersions.TEST_SUPPORT_LIB_VERSION
-                        + "'\n"
+                        + "        androidTestImplementation \"androidx.test:runner:1.4.0-alpha06\"\n"
+                        + "        androidTestImplementation \"androidx.test:rules:1.4.0-alpha06\"\n"
+                        + "        androidTestImplementation \"androidx.annotation:annotation-experimental:1.3.0\"\n"
                         + "    }\n"
                         + "}\n");
     }

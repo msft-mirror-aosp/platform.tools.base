@@ -67,14 +67,13 @@ public class AndroidTestResourcesTest {
                         + "    defaultConfig {\n"
                         + "        minSdkVersion libs.versions.supportLibMinSdk.get()\n"
                         + "        testInstrumentationRunner"
-                        + " 'android.support.test.runner.AndroidJUnitRunner'\n"
+                        + " 'androidx.test.runner.AndroidJUnitRunner'\n"
                         + "    }\n"
                         + "}\n"
                         + "dependencies {\n"
-                        + "    androidTestImplementation"
-                        + " \"com.android.support.test:runner:${libs.versions.testSupportLibVersion.get()}\"\n"
-                        + "    androidTestImplementation"
-                        + " \"com.android.support.test:rules:${libs.versions.testSupportLibVersion.get()}\"\n"
+                        + "    androidTestImplementation \"androidx.test:runner:1.4.0-alpha06\"\n"
+                        + "    androidTestImplementation \"androidx.test:rules:1.4.0-alpha06\"\n"
+                        + "    androidTestImplementation \"androidx.annotation:annotation-experimental:1.3.0\""
                         + "}\n");
 
         setUpProject(libProject);
@@ -95,14 +94,13 @@ public class AndroidTestResourcesTest {
                         + "    defaultConfig {\n"
                         + "        minSdkVersion libs.versions.supportLibMinSdk.get()\n"
                         + "        testInstrumentationRunner"
-                        + " 'android.support.test.runner.AndroidJUnitRunner'\n"
+                        + " 'androidx.test.runner.AndroidJUnitRunner'\n"
                         + "    }\n"
                         + "}\n"
                         + "dependencies {\n"
-                        + "    androidTestImplementation"
-                        + " \"com.android.support.test:runner:${libs.versions.testSupportLibVersion.get()}\"\n"
-                        + "    androidTestImplementation"
-                        + " \"com.android.support.test:rules:${libs.versions.testSupportLibVersion.get()}\"\n"
+                        + "    androidTestImplementation \"androidx.test:runner:1.4.0-alpha06\"\n"
+                        + "    androidTestImplementation \"androidx.test:rules:1.4.0-alpha06\"\n"
+                        + "    androidTestImplementation \"androidx.annotation:annotation-experimental:1.3.0\""
                         + "}\n");
     }
 
@@ -214,9 +212,9 @@ public class AndroidTestResourcesTest {
         Files.createDirectories(resourcesTest.getParent());
         String sourcesTestContent =
                 "package com.example.helloworld;\n"
-                        + "                import android.support.test.filters.MediumTest;\n"
-                        + "                import android.support.test.rule.ActivityTestRule;\n"
-                        + "                import android.support.test.runner.AndroidJUnit4;\n"
+                        + "                import androidx.test.filters.MediumTest;\n"
+                        + "                import androidx.test.rule.ActivityTestRule;\n"
+                        + "                import androidx.test.runner.AndroidJUnit4;\n"
                         + "                import android.widget.TextView;\n"
                         + "                import org.junit.Assert;\n"
                         + "                import org.junit.Before;\n"
