@@ -488,12 +488,12 @@ enum class BooleanOption(
      */
     DISALLOW_KOTLIN_SOURCE_SETS(
         propertyName = "android.disallowKotlinSourceSets",
-        defaultValue = false,
+        defaultValue = true,
         stage = FeatureStage.Experimental,
         FutureStage(
-            version = Version.VERSION_9_0,
+            version = Version.VERSION_10_0,
             defaultValue = true,
-            stage = FeatureStage.Experimental
+            stage = FeatureStage.Enforced(enforcedVersion = Version.VERSION_10_0)
         )
     ),
 
