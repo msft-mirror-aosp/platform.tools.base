@@ -214,7 +214,7 @@ package com.android.build.api.artifact {
     field public static final com.android.build.api.artifact.SingleArtifact.METADATA_LIBRARY_DEPENDENCIES_REPORT INSTANCE;
   }
 
-  public static final class SingleArtifact.OBFUSCATION_MAPPING_FILE extends com.android.build.api.artifact.SingleArtifact<org.gradle.api.file.RegularFile> {
+  public static final class SingleArtifact.OBFUSCATION_MAPPING_FILE extends com.android.build.api.artifact.SingleArtifact<org.gradle.api.file.RegularFile> implements com.android.build.api.artifact.Artifact.Replaceable com.android.build.api.artifact.Artifact.Transformable {
     field public static final com.android.build.api.artifact.SingleArtifact.OBFUSCATION_MAPPING_FILE INSTANCE;
   }
 
