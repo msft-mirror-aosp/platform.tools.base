@@ -118,7 +118,9 @@ class BuiltInKaptForScreenshotTestTest {
                 }
                 """.trimIndent(),
         )
-        project.executor().with(BooleanOption.ENABLE_LEGACY_API, true)
+        project.executor()
+            .with(BooleanOption.ENABLE_LEGACY_API, true)
+            .with(BooleanOption.USE_NEW_DSL, false)
             .run("app:compileDebugScreenshotTestJavaWithJavac")
         val kaptGeneratedTestDir =
             app.buildDir.resolve("generated/source/kapt/screenshotTest/debug/com/example")
