@@ -113,7 +113,8 @@ public class HelloWorldJniApp extends GradleProject {
 "\n" +
 "    <application android:label=\"@string/app_name\">\n" +
 "        <activity android:name=\".HelloJni\"\n" +
-"                  android:label=\"@string/app_name\">\n" +
+"                  android:label=\"@string/app_name\"\n" +
+"                  android:exported=\"true\">\n" +
 "            <intent-filter>\n" +
 "                <action android:name=\"android.intent.action.MAIN\" />\n" +
 "                <category android:name=\"android.intent.category.LAUNCHER\" />\n" +
