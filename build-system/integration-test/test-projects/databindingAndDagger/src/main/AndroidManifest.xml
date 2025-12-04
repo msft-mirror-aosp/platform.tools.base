@@ -21,7 +21,8 @@
         android:label="blah">
         <activity
             android:name=".MainActivity"
-            android:label="main act" >
+            android:label="main act"
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
