@@ -16,17 +16,30 @@
 
 package com.android.build.gradle.integration.application
 
-import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.fixture.app.MinimalSubProject
-import com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk
+import com.android.build.gradle.integration.common.fixture.project.ApkSelector
+import com.android.build.gradle.integration.common.fixture.project.GradleRule
+import com.android.build.gradle.integration.common.fixture.project.plugins.LegacyApplicationCallback
+import com.android.build.gradle.internal.dsl.BaseAppModuleExtension
+import com.android.build.gradle.options.BooleanOption
+import org.gradle.api.Project
 import org.junit.Rule
 import org.junit.Test
+import java.io.File
 
 class RegisterExternalAptJavaOutputTest {
-    @JvmField
-    @Rule
-    var project =
-        GradleTestProject.builder().fromTestApp(MinimalSubProject.app("apt.test")).create()
+
+    @get:Rule
+    val rule =
+        GradleRule.configure()
+            .disableBrokenNewDslOptOutChecks()
+            .from {
+                androidApplication {
+                    pluginCallbacks += MyAppLegacyCallBack::class.java
+                }
+                gradleProperties {
+                    add(BooleanOption.USE_NEW_DSL, false)
+                }
+            }
 
     /**
      * Regression test for http://b/135780031. Test correctness if we configure Java compile task
@@ -34,21 +47,26 @@ class RegisterExternalAptJavaOutputTest {
      */
     @Test
     fun testAddingGenSourcesAfterJavaCompileConfigured() {
-        project.buildFile.appendText("\n" +
-            """
-                File genSrcDir = new File(projectDir, "externally_generated")
-                File testSrc = new File(genSrcDir, "test/Data.java")
+        rule.build.executor.run("assembleDebug")
+        rule.build.androidApplication().assertApk(ApkSelector.DEBUG) {
+            classes().subPackage("test").contains("Data")
+        }
+    }
+
+    class MyAppLegacyCallBack: LegacyApplicationCallback {
+        override fun handleExtension(
+            project: Project,
+            extension: BaseAppModuleExtension
+        ) {
+            extension.applicationVariants.all { variant ->
+                val genSrcDir = File(project.projectDir, "externally_generated")
+                val testSrc = File(genSrcDir, "test/Data.java")
                 testSrc.parentFile.mkdirs()
-                testSrc.write("package test;\n public class Data {}")
+                testSrc.writeText("package test;\n public class Data {}")
 
-                android.applicationVariants.all {
-                  it.getJavaCompileProvider().get()
-                  it.registerExternalAptJavaOutput(project.fileTree(genSrcDir))
-                }
-            """.trimIndent()
-        )
-
-        project.executor().run("assembleDebug")
-        assertThatApk(project.getApk(GradleTestProject.ApkType.DEBUG)).containsClass("Ltest/Data;")
+                variant.getJavaCompileProvider().get()
+                variant.registerExternalAptJavaOutput(project.fileTree(genSrcDir))
+            }
+        }
     }
 }

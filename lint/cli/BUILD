@@ -43,7 +43,7 @@ maven_library(
         "//tools/analytics-library/protos/src/main/proto",
         "//tools/analytics-library/shared:tools.analytics-shared",
         "//tools/analytics-library/tracker:tools.analytics-tracker",
-        "//tools/base/build-system:tools.manifest-merger",
+        "//tools/base/build-system/manifest-merger:tools.manifest-merger",
         "//tools/base/common:tools.common",
         "//tools/base/layoutlib-api:tools.layoutlib-api",
         "//tools/base/sdk-common:tools.sdk-common",

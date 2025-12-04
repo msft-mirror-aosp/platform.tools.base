@@ -26,9 +26,6 @@ import org.gradle.tooling.GradleConnectionException
 import org.gradle.tooling.ProjectConnection
 import org.gradle.tooling.ResultHandler
 import org.gradle.tooling.events.OperationType
-import org.gradle.tooling.events.ProgressEvent
-import org.gradle.tooling.events.problems.ProblemAggregationEvent
-import org.gradle.tooling.events.problems.SingleProblemEvent
 import java.io.BufferedOutputStream
 import java.io.File
 import java.io.FileOutputStream
@@ -147,6 +144,7 @@ gradle ${Joiner.on(' ').join(args)} ${Joiner.on(' ').join(tasksList)}
         val result =
             GradleBuildResult(tmpStdOut, tmpStdErr, tasksProgressListener.getEvents(), problemsProgressListener.getEvents(), failure)
         lastBuildResultConsumer.accept(result)
+        result.copyMentionedFilesTo(testOutputDir)
 
         if (isExpectingFailure && failure == null) {
             throw AssertionError("Expecting build to fail")

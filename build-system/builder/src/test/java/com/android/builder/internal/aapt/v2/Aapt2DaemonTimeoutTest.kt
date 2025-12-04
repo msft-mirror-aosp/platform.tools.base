@@ -21,6 +21,7 @@ import com.android.builder.internal.aapt.AaptConvertConfig
 import com.android.builder.internal.aapt.AaptOptions
 import com.android.builder.internal.aapt.AaptPackageConfig
 import com.android.ide.common.resources.CompileResourceRequest
+import com.android.ide.common.resources.ResourcePathEncoding
 import com.android.prefs.AndroidLocationsSingleton
 import com.android.repository.testframework.FakeProgressIndicator
 import com.android.sdklib.IAndroidTarget
@@ -58,7 +59,9 @@ class Aapt2DaemonTimeoutTest {
             daemon.compile(
                     CompileResourceRequest(
                             inputFile = File("values/does_not_matter.xml"),
-                            outputDirectory = compiledDir),
+                            outputDirectory = compiledDir,
+                            resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable
+                    ),
                     logger)
         }
         assertThat(exception.message).contains("Daemon startup timed out")
@@ -74,9 +77,11 @@ class Aapt2DaemonTimeoutTest {
         val daemon = CompileLinkTimeoutAapt2Daemon(name = testName.methodName)
         val exception = assertFailsWith(Aapt2InternalException::class) {
             daemon.compile(
-                    CompileResourceRequest(
+                CompileResourceRequest(
                             inputFile = File("values/does_not_matter.xml"),
-                            outputDirectory = compiledDir),
+                            outputDirectory = compiledDir,
+                            resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable
+                        ),
                     logger)
         }
         assertThat(exception.message).contains("Compile")
@@ -140,7 +145,9 @@ class Aapt2DaemonTimeoutTest {
         daemon.compile(
                 CompileResourceRequest(
                         inputFile = File("values/does_not_matter.xml"),
-                        outputDirectory = compiledDir),
+                        outputDirectory = compiledDir,
+                        resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable
+                ),
                 NoErrorsOrWarningsLogger())
         assertThat(daemon.state).isEqualTo(Aapt2Daemon.State.RUNNING)
         daemon.shutDown()

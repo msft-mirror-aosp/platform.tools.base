@@ -696,7 +696,7 @@ class DslDecoratorUnitTest {
             BooleanOption.ENABLE_IMPROVED_DEPENDENCY_RESOLUTION to true
         )
         whenever(dslServices.projectOptions)
-            .thenAnswer { invocation -> ProjectOptions(ImmutableMap.of(), FakeProviderFactory(FakeProviderFactory.factory, gradleProperties.mapKeys { it.key.propertyName })) }
+            .thenAnswer { invocation -> ProjectOptions(FakeProviderFactory(FakeProviderFactory.factory, gradleProperties.mapKeys { it.key.propertyName })) }
 
         val o1 = decorated.getDeclaredConstructor(DslServices::class.java)
             .newInstance(dslServices)
@@ -756,7 +756,7 @@ class DslDecoratorUnitTest {
             BooleanOption.ENABLE_NEW_RESOURCE_PROCESSING to true,
         )
         whenever(dslServices.projectOptions)
-            .thenAnswer { invocation -> ProjectOptions(ImmutableMap.of(), FakeProviderFactory(FakeProviderFactory.factory, gradleProperties.mapKeys { it.key.propertyName })) }
+            .thenAnswer { invocation -> ProjectOptions( FakeProviderFactory(FakeProviderFactory.factory, gradleProperties.mapKeys { it.key.propertyName })) }
 
         val o1 = decorated.getDeclaredConstructor(DslServices::class.java)
             .newInstance(dslServices)

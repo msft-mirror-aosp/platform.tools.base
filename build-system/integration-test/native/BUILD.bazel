@@ -77,7 +77,9 @@ MAVEN_REPO_ZIPS = [
 #keep sorted
 MAVEN_REPOS = [
     "//tools/base/build-system:android_gradle_plugin_runtime_dependencies",
+    "//tools/base/build-system:gradle-runtime-maven",
     "//tools/base/build-system/integration-test:androidx_latest",
+    "//tools/base/build-system/integration-test:androidx_test_latest",
     "//tools/base/build-system/integration-test:kotlin_gradle_plugin_prebuilts",
     "//tools/base/build-system/integration-test:prefab_repo",
     "//tools/base/build-system/integration-test:support_library_latest",
@@ -298,15 +300,6 @@ single_gradle_integration_test(
 single_gradle_integration_test(
     name = "NdkBuildVariantApiTest",
     timeout = "long",
-    srcs = "src/test/java/com/android/build/gradle/integration/nativebuild/",
-    data = DATA + NDK,
-    maven_repo_zips = MAVEN_REPO_ZIPS,
-    maven_repos = MAVEN_REPOS,
-    deps = DEPS,
-)
-
-single_gradle_integration_test(
-    name = "Pre21SplitTest",
     srcs = "src/test/java/com/android/build/gradle/integration/nativebuild/",
     data = DATA + NDK,
     maven_repo_zips = MAVEN_REPO_ZIPS,

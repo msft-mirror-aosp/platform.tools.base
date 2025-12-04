@@ -24,8 +24,7 @@ import org.junit.Rule
 import org.junit.Test
 
 class OldAndNewVariantAPIInteractionTest {
-    @JvmField
-    @Rule
+    @get:Rule
     val project = GradleTestProject.builder().fromTestApp(MinimalSubProject.app("com.example.app"))
         .withPluginManagementBlock(true)
         .create()
@@ -122,8 +121,11 @@ class OldAndNewVariantAPIInteractionTest {
             }
         """.trimIndent())
 
-        project.executor().with(BooleanOption.ENABLE_LEGACY_API, true).run("readVariantObjects").stdout.use {
-            assertThat(it).contains("""Read NEW variant object:
+        project.executor()
+            .with(BooleanOption.ENABLE_LEGACY_API, true)
+            .with(BooleanOption.USE_NEW_DSL, false)
+            .run("readVariantObjects").stdout.use {
+                assertThat(it).contains("""Read NEW variant object:
 classNames = [className-SetByNewApi, className-SetByOldApi]
 arguments = {argument-SetByNewApi, argument-SetByOldApi}
 argumentProviders = {argumentProvider-SetByNewApi, argumentProvider-SetByOldApi}

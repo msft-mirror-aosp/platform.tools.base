@@ -2,7 +2,7 @@ package com.android.tests.basic;
 
 import static org.junit.Assert.*;
 
-import android.support.test.runner.AndroidJUnit4;
+import androidx.test.runner.AndroidJUnit4;
 import java.lang.reflect.Method;
 import org.junit.Test;
 import org.junit.runner.RunWith;

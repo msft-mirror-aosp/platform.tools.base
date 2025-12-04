@@ -21,6 +21,7 @@ import com.android.annotations.NonNull;
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp;
 import com.android.build.gradle.integration.common.utils.TestFileUtils;
+import com.android.build.gradle.options.BooleanOption;
 import com.android.utils.FileUtils;
 import java.io.File;
 import java.io.IOException;
@@ -29,13 +30,18 @@ import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
 
-/** Test basic project with crashlytics. */
+/**
+ * Test basic project with crashlytics.  See {@link CrashlyticsNewDslTest} for a test with
+ * versions of the Crashlytics plugin compatible with AGP 9.x/10.x (i.e. with
+ * {@link BooleanOption#USE_NEW_DSL} defaulting to true).
+ */
 public class CrashlyticsTest {
     @ClassRule
     public static GradleTestProject project =
             GradleTestProject.builder()
                     .fromTestApp(
                             HelloWorldApp.forPluginWithMinSdkVersion("com.android.application", 16))
+                    .addGradleProperty(BooleanOption.USE_NEW_DSL, false)
                     .create();
 
     @BeforeClass
@@ -54,13 +60,12 @@ public class CrashlyticsTest {
                         + "dependencies {\n"
                         + "    api 'com.crashlytics.sdk.android:crashlytics:2.6.8@aar'\n"
                         + "}\n"
-                        + ""
+                        + "\n"
                         + "android {\n"
                         + "    buildTypes.debug {\n"
                         + "        // Enable crashlytics for test variants\n"
                         + "        ext.enableCrashlytics = true\n"
-                        + "    }\n"
-                        + "");
+                        + "    }\n");
 
         TestFileUtils.searchAndReplace(
                 project.file("src/main/AndroidManifest.xml"),

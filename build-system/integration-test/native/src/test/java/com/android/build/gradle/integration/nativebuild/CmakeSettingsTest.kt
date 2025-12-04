@@ -94,6 +94,8 @@ class CmakeSettingsTest(private val cmakeVersionInDsl: String) {
                     ndkVersion = "$DEFAULT_NDK_SIDE_BY_SIDE_VERSION"
                     defaultConfig {
                       minSdk = $DEFAULT_MIN_SDK_VERSION
+                      //noinspection ExpiredTargetSdkVersion
+                      targetSdk = $DEFAULT_MIN_SDK_VERSION
                       externalNativeBuild {
                           cmake {
                             abiFilters.addAll("armeabi-v7a", "x86_64");

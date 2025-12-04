@@ -36,7 +36,6 @@ class EmulatorControlConfigTest {
     private lateinit var emulatorControl: EmulatorControl
 
     private val emptyProjectOptions = ProjectOptions(
-        ImmutableMap.of(),
         FakeProviderFactory(
             FakeProviderFactory.factory, ImmutableMap.of()
         )

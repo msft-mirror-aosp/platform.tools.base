@@ -83,6 +83,7 @@ class FlavorSelectionTest(val variantApi: VariantApiType) {
         // add selection on flavors
         android.flavorDimensions += "dimension"
         android.productFlavors.createAndConfig("flavor") {
+            // Here, flavor stands for the dimension value, and won't be considered as a fallback value
             missingDimensionStrategy("flavor", "other-flavor")
             missingDimensionStrategy("flavor-only", "other-flavor-only")
         }
@@ -120,8 +121,8 @@ class FlavorSelectionTest(val variantApi: VariantApiType) {
 
     @Test
     fun testFlavorAttribute() {
-        checkAttribute("flavor", "flavor")
-        checkAttribute("flavor-only", "flavor")
+        checkAttribute("flavor", "other-flavor")
+        checkAttribute("flavor-only", "other-flavor-only")
 
         // TODO: we should check the strategies but there's no API for it right now.
     }

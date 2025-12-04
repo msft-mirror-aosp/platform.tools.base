@@ -51,6 +51,8 @@ class NdkBuildVariantApiTest {
                 ndkPath = "${project.ndkPath}"
                 defaultConfig {
                     minSdk = ${GradleTestProject.DEFAULT_MIN_SDK_VERSION}
+                    //noinspection ExpiredTargetSdkVersion
+                    targetSdk = ${GradleTestProject.DEFAULT_MIN_SDK_VERSION}
                     externalNativeBuild {
                       ndkBuild {
                         abiFilters.addAll("armeabi-v7a", "x86_64");
@@ -106,6 +108,8 @@ class NdkBuildVariantApiTest {
                 ndkPath = "${project.ndkPath}"
                 defaultConfig {
                     minSdk = ${GradleTestProject.DEFAULT_MIN_SDK_VERSION}
+                    //noinspection ExpiredTargetSdkVersion
+                    targetSdk = ${GradleTestProject.DEFAULT_MIN_SDK_VERSION}
                     externalNativeBuild {
                       ndkBuild {
                         abiFilters.addAll("armeabi-v7a", "x86_64");
@@ -162,6 +166,8 @@ class NdkBuildVariantApiTest {
                 ndkPath = "${project.ndkPath}"
                 defaultConfig {
                     minSdk = ${GradleTestProject.DEFAULT_MIN_SDK_VERSION}
+                    //noinspection ExpiredTargetSdkVersion
+                    targetSdk = ${GradleTestProject.DEFAULT_MIN_SDK_VERSION}
                     externalNativeBuild {
                       ndkBuild {
                         abiFilters.addAll("armeabi-v7a", "x86_64");

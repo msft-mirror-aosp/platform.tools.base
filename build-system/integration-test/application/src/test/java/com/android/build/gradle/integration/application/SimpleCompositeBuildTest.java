@@ -24,7 +24,6 @@ import com.google.common.truth.Truth;
 import org.junit.ClassRule;
 import org.junit.Test;
 
-import java.io.IOException;
 import java.util.List;
 
 public class SimpleCompositeBuildTest {
@@ -38,7 +37,7 @@ public class SimpleCompositeBuildTest {
                     .create();
 
     @Test
-    public void testBuild() throws IOException, InterruptedException {
+    public void testBuild() {
         project.executor().run("clean", "assembleDebug");
         ModelContainerV2.ModelInfo modelInfo = project.modelV2()
                 .fetchVariantDependencies("debug")

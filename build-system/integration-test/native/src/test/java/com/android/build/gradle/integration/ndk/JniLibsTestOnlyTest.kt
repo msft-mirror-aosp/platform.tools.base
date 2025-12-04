@@ -74,7 +74,7 @@ class JniLibsTestOnlyTest {
             .appendToBuild(
                 """
                     android {
-                        targetProjectPath ':app'
+                        targetProjectPath = ':app'
                     }
                 """.trimIndent()
             )

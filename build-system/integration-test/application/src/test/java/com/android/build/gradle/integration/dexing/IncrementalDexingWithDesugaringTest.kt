@@ -38,6 +38,7 @@ import com.android.build.gradle.internal.scope.InternalArtifactType.PROJECT_DEX_
 import com.android.build.gradle.internal.scope.InternalArtifactType.RUNTIME_LIBRARY_CLASSES_DIR
 import com.android.build.gradle.internal.scope.InternalArtifactType.RUNTIME_LIBRARY_CLASSES_JAR
 import com.android.build.gradle.internal.scope.getOutputDir
+import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.TestInputsGenerator
 import com.android.utils.FileUtils
 import org.junit.Before
@@ -300,7 +301,13 @@ class IncrementalDexingWithDesugaringTest(
                 classUsingInterfaceWithDefaultMethodPublishedClassFile,
                 standAloneClassPublishedClassFile
             ) + dexDir
-        )
+        ).updateExecutor {
+            it.apply {
+                if (scenario == ANDROID_LIB_WITH_POST_JAVAC_CLASSES) {
+                    with(BooleanOption.USE_NEW_DSL, false)
+                }
+            }
+        }
     }
 
     /**

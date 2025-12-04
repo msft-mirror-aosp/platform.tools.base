@@ -897,7 +897,7 @@ public class ResourceMergerTest extends BaseTestCase {
                         mergeLogFolder,
                         mPreprocessor,
                         mTemporaryFolder.getRoot(),
-                        new HashMap<>());
+                        ResourcePathEncoding.AbsoluteNotRelocatable.INSTANCE);
         resourceMerger.mergeData(writer, false /*doCleanUp*/);
 
         // Check the content.
@@ -1033,7 +1033,7 @@ public class ResourceMergerTest extends BaseTestCase {
                         mergeLogFolder,
                         mPreprocessor,
                         mTemporaryFolder.getRoot(),
-                        new HashMap<>());
+                        ResourcePathEncoding.AbsoluteNotRelocatable.INSTANCE);
         resourceMerger.mergeData(writer, false /*doCleanUp*/);
 
         // Check the content.
@@ -2162,7 +2162,7 @@ public class ResourceMergerTest extends BaseTestCase {
                 null /*blameLogFolder*/,
                 mPreprocessor,
                 mTemporaryFolder.getRoot(),
-                new HashMap<>());
+                ResourcePathEncoding.AbsoluteNotRelocatable.INSTANCE);
     }
 
 }

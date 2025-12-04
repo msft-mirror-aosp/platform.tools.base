@@ -44,6 +44,7 @@ import com.android.builder.internal.aapt.v2.Aapt2RenamingConventions
 import com.android.ide.common.resources.CompileResourceRequest
 import com.android.ide.common.resources.FileStatus
 import com.android.ide.common.resources.ResourceCompilationService
+import com.android.ide.common.resources.ResourcePathEncoding
 import com.android.ide.common.resources.mergeIdentifiedSourceSetFiles
 import com.android.utils.FileUtils
 import com.google.common.annotations.VisibleForTesting
@@ -340,7 +341,8 @@ abstract class VerifyLibraryResourcesTask : NewIncrementalTask() {
                                 dirName,
                                 isPseudoLocalize = false,
                                 isPngCrunching = false,
-                                mergeBlameFolder = mergeBlameFolder
+                                mergeBlameFolder = mergeBlameFolder,
+                                resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable
                             )
                             compilationService.submitCompile(request)
                         } catch (e: Exception) {

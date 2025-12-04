@@ -16,7 +16,6 @@
 
 package com.android.build.gradle.options
 
-import com.android.build.gradle.internal.errors.DeprecationReporter.DeprecationTarget
 import com.android.build.gradle.internal.errors.DeprecationReporter.DeprecationTarget.EXCLUDE_LIBRARIES_FROM_CONSTRAINTS
 import com.android.build.gradle.internal.errors.DeprecationReporter.DeprecationTarget.VERSION_10_0
 import com.android.build.gradle.internal.errors.DeprecationReporter.DeprecationTarget.VERSION_11_0
@@ -84,19 +83,6 @@ enum class BooleanOption(
 
     // DSLs default values
     ENABLE_DATABINDING_KTX("android.defaults.databinding.addKtx", true, ApiStage.Stable),
-
-    // AndroidX & Jetifier
-    USE_ANDROID_X(
-        "android.useAndroidX",
-        true,
-        ApiStage.Stable,
-        FutureStage(
-            true,
-            ApiStage.Deprecated(DeprecationTarget.VERSION_11_0),
-            Version.VERSION_10_0
-        )
-    ),
-    ENABLE_JETIFIER("android.enableJetifier", false, ApiStage.Stable),
 
     DEBUG_OBSOLETE_API("android.debug.obsoleteApi", false, ApiStage.Stable),
 
@@ -176,9 +162,9 @@ enum class BooleanOption(
         true,
         FeatureStage.Supported,
         FutureStage(
+            Version.VERSION_10_0,
             true,
             FeatureStage.Enforced(Version.VERSION_10_0),
-            Version.VERSION_10_0
         )),
 
     // Flag added to work around b/130596259.
@@ -194,9 +180,9 @@ enum class BooleanOption(
         defaultValue = true,
         FeatureStage.Supported,
         FutureStage(
+            Version.VERSION_10_0,
             true,
             FeatureStage.SoftlyEnforced(VERSION_11_0),
-            Version.VERSION_10_0
         )
     ),
 
@@ -209,22 +195,6 @@ enum class BooleanOption(
         FeatureStage.Supported
     ),
 
-/**
-     * When enabled, R8 will perform resource shrinking in a more optimal way.
-     *
-     * Note: This flag takes effect only if resource shrinking is enabled AND
-     * [R8_INTEGRATED_RESOURCE_SHRINKING] is enabled AND [USE_NON_FINAL_RES_IDS] is enabled.
-     */
-    R8_OPTIMIZED_RESOURCE_SHRINKING(
-        "android.r8.optimizedResourceShrinking",
-        true,
-        FeatureStage.Supported,
-        FutureStage(
-            true,
-            FeatureStage.Enforced(Version.VERSION_10_0),
-            Version.VERSION_10_0
-        )
-    ),
     /* -----------------
      * EXPERIMENTAL APIs
      */
@@ -459,9 +429,9 @@ enum class BooleanOption(
         false,
         FeatureStage.Experimental,
         FutureStage(
+            Version.VERSION_10_0,
             true,
             FeatureStage.Experimental,
-            Version.VERSION_10_0
         )
     ),
 
@@ -470,9 +440,9 @@ enum class BooleanOption(
         false,
         FeatureStage.Experimental,
         FutureStage(
+            Version.VERSION_9_0,
             true,
             FeatureStage.Enforced(Version.VERSION_9_0),
-            Version.VERSION_9_0
         )
     ),
 
@@ -499,9 +469,9 @@ enum class BooleanOption(
         false,
         FeatureStage.Experimental,
         futureStage = FutureStage(
+            Version.VERSION_10_0,
             true,
             FeatureStage.Experimental,
-            Version.VERSION_10_0
         )
     ),
 
@@ -513,14 +483,34 @@ enum class BooleanOption(
         true,
         FeatureStage.Experimental,
         FutureStage(
+            Version.VERSION_10_0,
             true,
             FeatureStage.Enforced(Version.VERSION_10_0),
-            Version.VERSION_10_0
         )
     ),
 
     /** Enables R8 gradual support */
     R8_GRADUAL_API("android.r8.gradual.support", false, FeatureStage.Experimental),
+
+    /**
+     * Whether to disallow the use of Kotlin source sets
+     * ([org.jetbrains.kotlin.gradle.plugin.KotlinSourceSet]) when built-in Kotlin is enabled
+     * (b/386221070).
+     *   - When the value is `true`, report an error if Kotlin source sets are used.
+     *   - When the value is `false, just silently ignore Kotlin source sets.
+     *
+     * Note: The flag takes effect only when built-in Kotlin is enabled.
+     */
+    DISALLOW_KOTLIN_SOURCE_SETS(
+        propertyName = "android.disallowKotlinSourceSets",
+        defaultValue = false,
+        stage = FeatureStage.Experimental,
+        FutureStage(
+            version = Version.VERSION_9_0,
+            defaultValue = true,
+            stage = FeatureStage.Experimental
+        )
+    ),
 
     /* ------------------------
      * SOFTLY-ENFORCED FEATURES
@@ -704,6 +694,16 @@ enum class BooleanOption(
         FeatureStage.SoftlyEnforced(VERSION_10_0)
     ),
 
+    /**
+     * When enabled, R8 will perform resource shrinking in a more optimal way.
+     *
+     * Note: This flag takes effect only if [USE_NON_FINAL_RES_IDS] is enabled.
+     */
+    R8_OPTIMIZED_RESOURCE_SHRINKING(
+        "android.r8.optimizedResourceShrinking",
+        true,
+        FeatureStage.SoftlyEnforced(VERSION_10_0)
+    ),
 
     /* -------------------
      * DEPRECATED API
@@ -734,6 +734,10 @@ enum class BooleanOption(
         false,
         ApiStage.Deprecated(EXCLUDE_LIBRARIES_FROM_CONSTRAINTS),
     ),
+
+    USE_ANDROID_X("android.useAndroidX", true, ApiStage.Deprecated(removalTarget = VERSION_10_0)),
+
+    ENABLE_JETIFIER("android.enableJetifier", false, ApiStage.Deprecated(removalTarget = VERSION_10_0)),
 
     /* -------------------
      * DEPRECATED FEATURES

@@ -131,7 +131,7 @@ class CmakeBasicProjectTest(
                 // This test covers a wider range of CMake versions than most other tests to verify that
                 // the basic functionality of each mode works.
                 CMakeVersion.FOR_TESTING.map { it.version }.toTypedArray(),
-                Mode.values())
+                arrayOf(Mode.CMake))
                 // Shuffle helps find problems earlier by not grouping similar cases with each other
                 .toList().shuffled(Random(192))
                 .toTypedArray()
@@ -187,6 +187,8 @@ class CmakeBasicProjectTest(
                 ndkPath = "${project.ndkPath}"
                 defaultConfig {
                   minSdk = ${GradleTestProject.DEFAULT_MIN_SDK_VERSION}
+                  //noinspection ExpiredTargetSdkVersion
+                  targetSdk = ${GradleTestProject.DEFAULT_MIN_SDK_VERSION}
                   externalNativeBuild {
                       cmake {
                         abiFilters.addAll("armeabi-v7a", "x86_64");
@@ -205,10 +207,8 @@ class CmakeBasicProjectTest(
               // -----------------------------------------------------------------------
               // See b/131857476
               // -----------------------------------------------------------------------
-              applicationVariants.all { variant ->
-                for (def task : variant.getExternalNativeBuildTasks()) {
-                    println("externalNativeBuild soFolder = " + task.soFolder)
-                }
+              tasks.withType(com.android.build.gradle.tasks.ExternalNativeBuildTask.class).configureEach {
+                  println("externalNativeBuild soFolder = " + soFolder)
               }
 
               // ------------------------------------------------------------------------
@@ -234,6 +234,8 @@ class CmakeBasicProjectTest(
                 ndkPath = "${project.ndkPath}"
                 defaultConfig {
                     minSdk = ${GradleTestProject.DEFAULT_MIN_SDK_VERSION}
+                    //noinspection ExpiredTargetSdkVersion
+                    targetSdk = ${GradleTestProject.DEFAULT_MIN_SDK_VERSION}
                     externalNativeBuild {
                       experimentalProperties["ninja.path"] = "$cmakeListsPath"
                       experimentalProperties["ninja.configure"] = "${cmakeExe.replace("\\", "\\\\")}"
@@ -327,6 +329,8 @@ class CmakeBasicProjectTest(
                 ndkPath = "${project.ndkPath}"
                 defaultConfig {
                     minSdk = ${GradleTestProject.DEFAULT_MIN_SDK_VERSION}
+                    //noinspection ExpiredTargetSdkVersion
+                    targetSdk = ${GradleTestProject.DEFAULT_MIN_SDK_VERSION}
                     externalNativeBuild {
                       experimentalProperties["ninja.abiFilters"] = ["armeabi-v7a", "x86_64"];
                       experimentalProperties["ninja.cFlags"] = ["-DTEST_C_FLAG", "-DTEST_C_FLAG_2"];
@@ -674,14 +678,6 @@ class CmakeBasicProjectTest(
         assertThat(library.runtimeFiles).containsExactly(fooPath)
     }
 
-    // See b/131857476
-    @Test
-    fun checkModuleBodyReferencesObjAndSo() {
-        if (mode != Mode.CMake) return
-        // Checks for whether module body has references to soFolder
-        Truth.assertThat(moduleBody("CMakeLists.txt")).contains(".soFolder")
-    }
-
     /**
      * In this bug, the file metadata_generation_command.txt was deleted by clean task.
      * This caused configure task to delete the module/.cxx folder as 'stale'.
@@ -928,7 +924,8 @@ class CmakeBasicProjectTest(
 
     @Test
     fun checkModel() {
-        val fetchResult = project.modelV2().fetchNativeModules(NativeModuleParams(emptyList(), emptyList()))
+        val fetchResult = project.modelV2()
+            .fetchNativeModules(NativeModuleParams(emptyList(), emptyList()))
         Truth.assertThat(fetchResult.dump()).isEqualTo(
           """[:]
 > NativeModule:
@@ -978,7 +975,8 @@ class CmakeBasicProjectTest(
         executorWithLegacyApi().run("clean", "assembleDebug", "assembleRelease")
 
         // We specify to not generate the build information for any variants or ABIs here.
-        val result = project.modelV2().fetchNativeModules(NativeModuleParams(emptyList(), emptyList()))
+        val result = project.modelV2()
+            .fetchNativeModules(NativeModuleParams(emptyList(), emptyList()))
 
         val additionalProjectFileStatus =  "F"
 
@@ -1044,7 +1042,8 @@ class CmakeBasicProjectTest(
     fun checkCleanAfterAbiSubset() {
         executorWithLegacyApi().run("clean", "assembleDebug", "assembleRelease")
         val buildOutputs = run {
-            val result = project.modelV2().fetchNativeModules(NativeModuleParams(emptyList(), emptyList()))
+            val result = project.modelV2()
+                .fetchNativeModules(NativeModuleParams(emptyList(), emptyList()))
             val nativeModule = result.container.singleNativeModule
             val buildOutputFolders = nativeModule.variants.flatMap { variant ->
                 variant.abis.flatMap { abi ->

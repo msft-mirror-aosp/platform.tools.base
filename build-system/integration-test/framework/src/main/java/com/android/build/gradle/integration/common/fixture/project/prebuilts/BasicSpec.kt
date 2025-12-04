@@ -16,18 +16,11 @@
 
 package com.android.build.gradle.integration.common.fixture.project.prebuilts
 
-import com.android.build.gradle.api.ApkVariantOutput
-import com.android.build.gradle.api.ApplicationVariant
 import com.android.build.gradle.integration.common.fixture.PLAY_SERVICES_VERSION
 import com.android.build.gradle.integration.common.fixture.SUPPORT_LIB_VERSION
-import com.android.build.gradle.integration.common.fixture.TEST_SUPPORT_LIB_VERSION
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition.Companion.DEFAULT_COMPILE_SDK_VERSION
 import com.android.build.gradle.integration.common.fixture.project.builder.LocalTestProjectSpec
-import com.android.build.gradle.integration.common.fixture.project.plugins.LegacyApplicationCallback
-import com.android.build.gradle.internal.dsl.BaseAppModuleExtension
-import com.android.build.gradle.options.BooleanOption
-import org.gradle.api.Project
 
 class BasicSpec : LocalTestProjectSpec {
 
@@ -48,8 +41,8 @@ class BasicSpec : LocalTestProjectSpec {
                 androidTestImplementation("org.hamcrest:hamcrest-library:1.3")
 
                 testImplementation("junit:junit:4.12")
-                androidTestImplementation("com.android.support.test:runner:$TEST_SUPPORT_LIB_VERSION")
-                androidTestImplementation("com.android.support.test:rules:$TEST_SUPPORT_LIB_VERSION")
+                androidTestImplementation("androidx.test:runner:1.4.0-alpha06")
+                androidTestImplementation("androidx.test:rules:1.4.0-alpha06")
             }
 
             android {
@@ -71,7 +64,7 @@ class BasicSpec : LocalTestProjectSpec {
                         version = release(16)
                     }
 
-                    testInstrumentationRunner = "android.support.test.runner.AndroidJUnitRunner"
+                    testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
                     testInstrumentationRunnerArguments += "size" to "medium"
 
                     testHandleProfiling = false

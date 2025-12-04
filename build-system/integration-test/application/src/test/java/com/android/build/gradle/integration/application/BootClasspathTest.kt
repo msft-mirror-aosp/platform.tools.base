@@ -3,11 +3,19 @@ package com.android.build.gradle.integration.application
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
 import com.android.build.gradle.integration.common.utils.TestFileUtils
+import com.android.build.gradle.options.BooleanOption
+import com.android.build.gradle.BaseExtension
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 
-/** Test BaseExtension.getBootClasspath can be use before afterEvaluate.  */
+/**
+ * Test [BaseExtension.bootClasspath] can be used before afterEvaluate with
+ * [BooleanOption.USE_NEW_DSL] set to `false`.
+ *
+ * Once [BooleanOption.USE_NEW_DSL] is no longer an option, the cleanup described at
+ * [BaseExtension.bootClasspath] can happen (and this test can be deleted).
+ */
 class BootClasspathTest {
 
     @get:Rule
@@ -35,6 +43,6 @@ class BootClasspathTest {
 
     @Test
     fun checkBootClasspathCanBeCalled() {
-        project.execute("checkBootClasspath")
+        project.executor().with(BooleanOption.USE_NEW_DSL, false).run("checkBootClasspath")
     }
 }

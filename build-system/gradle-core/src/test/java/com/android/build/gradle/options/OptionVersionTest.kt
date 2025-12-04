@@ -17,6 +17,7 @@
 package com.android.build.gradle.options
 
 import com.android.Version.ANDROID_GRADLE_PLUGIN_VERSION
+import com.android.build.gradle.internal.errors.DeprecationReporter.DeprecationTarget
 import com.android.ide.common.repository.AgpVersion
 import org.junit.Test
 
@@ -34,18 +35,19 @@ class OptionVersionTest {
             val agpVersion = AgpVersion.parse(ANDROID_GRADLE_PLUGIN_VERSION)
             AgpVersion(agpVersion.major, agpVersion.minor, 0)
         }
+
         /**
-         * [Option]s that have invalid associated future stages.
+         * Deprecated [Option]s that have invalid [DeprecationTarget].
          *
-         * @ RELEASE TEAM: If you update this list when upgrading AGP, be sure to file a new bug
-         * assigned to the AGP team and blocking beta release.
+         * @ RELEASE TEAM: If you update this list when upgrading AGP, please file a bug for the AGP
+         * team and mark it as blocking the RC release.
          *   - [Insert new bug below]
          *   - Tracking bug for AGP 9.0: b/433951904
          *   - Tracking bug for AGP 8.3: b/295183580
          *   - Tracking bug for AGP 8.2: b/277803353
          *   - Tracking bug for AGP 8.0: b/243560711
          */
-        private val INVALID_DEPRECATION_TARGET: List<Option<*>> = listOf(
+        private val INVALID_DEPRECATED_OPTIONS: List<Option<*>> = listOf(
             BooleanOption.ANDROID_TEST_USES_UNIFIED_TEST_PLATFORM,
             BooleanOption.DISABLE_MINIFY_LOCAL_DEPENDENCIES_FOR_LIBRARIES,
             BooleanOption.ENABLE_EMULATOR_CONTROL,
@@ -58,16 +60,17 @@ class OptionVersionTest {
         )
 
         /**
-         * [Option]s that have invalid associated future stages.
+         * [Option]s that have invalid [FutureStage].
          *
-         * @ RELEASE TEAM: If you update this list when upgrading AGP, be sure to file a new bug
-         * assigned to the AGP team and blocking beta release.
+         * @ RELEASE TEAM: If you update this list when upgrading AGP, please file a bug for the AGP
+         * team and mark it as blocking the RC release.
+         *   - [Insert new bug below]
          *   - Tracking bug for AGP 9.0: b/433951904
          *   - Tracking bug for AGP 8.3: b/295183580
          *   - Tracking bug for AGP 8.2: b/277803353
          *   - Tracking bug for AGP 8.0: b/243560711
          */
-        private val INVALID_FUTURE_STAGES: List<Option<*>> = listOf(
+        private val OPTIONS_WITH_INVALID_FUTURE_STAGE: List<Option<*>> = listOf(
             BooleanOption.ANDROID_BUILTIN_TEST_PLATFORM,
             BooleanOption.ANDROID_TEST_USES_UNIFIED_TEST_PLATFORM,
             BooleanOption.DISABLE_MINIFY_LOCAL_DEPENDENCIES_FOR_LIBRARIES,
@@ -78,13 +81,14 @@ class OptionVersionTest {
             BooleanOption.LINT_ANALYSIS_PER_COMPONENT,
             BooleanOption.PRIVACY_SANDBOX_SDK_ENABLE_LINT,
             BooleanOption.TEST_SUITE_SUPPORT,
-            BooleanOption.DEFAULT_ANDROIDX_TEST_RUNNER
+            BooleanOption.DEFAULT_ANDROIDX_TEST_RUNNER,
+            BooleanOption.DISALLOW_KOTLIN_SOURCE_SETS
         )
 
     }
 
     @Test
-    fun `check deprecated options have deprecation versions in the future`() {
+    fun `check deprecated options have removal versions in the future`() {
         val violatingOptions = getAllOptions()
             .filter { it.status is Option.Status.Deprecated }
             .filter {
@@ -93,13 +97,13 @@ class OptionVersionTest {
 
         checkViolatingProjectOptions(
                 violatingOptions = violatingOptions,
-                ignoreList = INVALID_DEPRECATION_TARGET,
-                requirement = "Deprecated options must have target removal versions in the future. (@ RELEASE TEAM: To handle this error, please read the full error message.) ",
+                ignoreList = INVALID_DEPRECATED_OPTIONS,
+                requirement = "Deprecated options must have removal versions in the future. (@ RELEASE TEAM: To handle this error, please read the full error message.) ",
                 suggestion = "@ RELEASE TEAM: This error usually happens when we upgrade AGP version.\n" +
-                        "We don't have to fix this issue immediately, but we should fix it before the beta release.\n" +
+                        "We don't have to fix this issue immediately, but we should fix it before the RC release.\n" +
                         "To do that:\n" +
-                        "  - Please copy the invalid options shown above to `OptionVersionTest.INVALID_DEPRECATION_TARGET`.\n" +
-                        "  - Please file a bug for the AGP team and mark it as blocking the beta release (example bug: b/277803353)."
+                        "  - Please copy the invalid options shown above to `OptionVersionTest.INVALID_DEPRECATED_OPTIONS`.\n" +
+                        "  - Please file a bug for the AGP team and mark it as blocking the RC release (example bug: b/277803353)."
         )
     }
 
@@ -125,13 +129,13 @@ class OptionVersionTest {
 
         checkViolatingProjectOptions(
             violatingOptions = violatingOptions,
-            ignoreList = INVALID_FUTURE_STAGES,
+            ignoreList = OPTIONS_WITH_INVALID_FUTURE_STAGE,
             requirement = "`BooleanOption`s must have FutureStage in the future. (@ RELEASE TEAM: To handle this error, please read the full error message.) ",
             suggestion = "@ RELEASE TEAM: This error usually happens when we upgrade AGP version.\n" +
-                    "We don't have to fix this issue immediately, but we should fix it before the beta release.\n" +
+                    "We don't have to fix this issue immediately, but we should fix it before the RC release.\n" +
                     "To do that:\n" +
-                    "  - Please copy the invalid options shown above to `OptionVersionTest.INVALID_FUTURE_OPTIONS`.\n" +
-                    "  - Please file a bug for the AGP team and mark it as blocking the beta release (example bug: b/277803353)."
+                    "  - Please copy the invalid options shown above to `OptionVersionTest.OPTIONS_WITH_INVALID_FUTURE_STAGES`.\n" +
+                    "  - Please file a bug for the AGP team and mark it as blocking the RC release (example bug: b/277803353)."
         )
     }
 

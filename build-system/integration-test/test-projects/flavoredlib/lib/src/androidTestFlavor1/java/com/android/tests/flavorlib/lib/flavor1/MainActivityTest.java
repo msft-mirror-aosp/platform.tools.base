@@ -18,9 +18,9 @@ package com.android.tests.flavorlib.lib.flavor1;
 
 import static org.junit.Assert.*;
 
-import android.support.test.filters.MediumTest;
-import android.support.test.rule.ActivityTestRule;
-import android.support.test.runner.AndroidJUnit4;
+import androidx.test.filters.MediumTest;
+import androidx.test.rule.ActivityTestRule;
+import androidx.test.runner.AndroidJUnit4;
 import android.widget.TextView;
 import com.android.tests.flavorlib.lib.R;
 import org.junit.Before;

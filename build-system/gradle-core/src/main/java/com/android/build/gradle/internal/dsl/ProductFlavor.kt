@@ -113,14 +113,6 @@ abstract class ProductFlavor @Inject constructor(name: String, dslServices: DslS
         get() = _dimension ?: internalDimensionDefault
         set(value) { _dimension = value }
 
-    override fun computeRequestedAndFallBacks(requestedValues: List<String>): DimensionRequest {
-        // in order to have different fallbacks per variant for missing dimensions, we are
-        // going to actually have the flavor request itself (in the other dimension).
-        // So we will always fail to find the actual request and try for
-        // the fallbacks.
-        return DimensionRequest(name, ImmutableList.copyOf(requestedValues))
-    }
-
     override fun _initWith(that: BaseConfig) { // we need to avoid doing this because of Property objects that cannot
         // be set from themselves
         if (this === that) {

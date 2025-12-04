@@ -61,7 +61,12 @@ public class NoSplitNdkVariantsTest {
                         + "        defaultConfig {\n"
                         + "          minSdk = "
                         + GradleTestProject.DEFAULT_MIN_SDK_VERSION
-                        + "\n}\n"
+                        + "\n"
+                        + "          //noinspection ExpiredTargetSdkVersion\n"
+                        + "          targetSdk = "
+                        + GradleTestProject.DEFAULT_MIN_SDK_VERSION
+                        + "\n"
+                        + "        }\n"
                         + "    externalNativeBuild {\n"
                         + "        ndkBuild {\n"
                         + "            path 'Android.mk'\n"

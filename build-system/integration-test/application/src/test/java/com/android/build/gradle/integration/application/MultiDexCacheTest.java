@@ -21,6 +21,8 @@ import static com.android.testutils.truth.PathSubject.assertThat;
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.utils.TestFileUtils;
+import com.android.build.gradle.options.BooleanOption;
+
 import org.junit.Rule;
 import org.junit.Test;
 
@@ -31,9 +33,11 @@ import org.junit.Test;
 public class MultiDexCacheTest {
 
     @Rule
-    public GradleTestProject mProject = GradleTestProject.builder()
-            .fromTestProject("flavored")
-            .create();
+    public GradleTestProject mProject =
+            GradleTestProject.builder()
+                    .fromTestProject("flavored")
+                    .addGradleProperty(BooleanOption.USE_NEW_DSL, false)
+                    .create();
 
     @Test
     public void checkMultiDexToPreDexCache() throws Exception {

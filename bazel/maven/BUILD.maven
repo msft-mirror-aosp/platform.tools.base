@@ -10062,13 +10062,13 @@ maven_import(
 )
 
 maven_artifact(
-    name = "org.bytedeco.ffmpeg_6.0-1.5.9",
-    pom = "repository/org/bytedeco/ffmpeg/6.0-1.5.9/ffmpeg-6.0-1.5.9.pom",
+    name = "org.bytedeco.ffmpeg_7.1.1-1.5.12",
+    pom = "repository/org/bytedeco/ffmpeg/7.1.1-1.5.12/ffmpeg-7.1.1-1.5.12.pom",
     repo_root_path = "repository",
-    repo_path = "org/bytedeco/ffmpeg/6.0-1.5.9",
-    parent = "org.bytedeco.javacpp-presets_1.5.9",
+    repo_path = "org/bytedeco/ffmpeg/7.1.1-1.5.12",
+    parent = "org.bytedeco.javacpp-presets_1.5.12",
     deps = [
-        "org.bytedeco.javacpp_1.5.9",
+        "org.bytedeco.javacpp_1.5.12",
     ],
     visibility = ["//visibility:public"],
 )
@@ -10076,27 +10076,27 @@ maven_artifact(
 maven_import(
     name = "org.bytedeco.ffmpeg",
     classifiers = [],
-    parent = "org.bytedeco.javacpp-presets_1.5.9",
+    parent = "org.bytedeco.javacpp-presets_1.5.12",
     jars = [
-        "repository/org/bytedeco/ffmpeg/6.0-1.5.9/ffmpeg-6.0-1.5.9.jar"
+        "repository/org/bytedeco/ffmpeg/7.1.1-1.5.12/ffmpeg-7.1.1-1.5.12.jar"
     ],
     exports = [
         "org.bytedeco.javacpp",
     ],
     original_deps = [
-        "org.bytedeco.javacpp_1.5.9",
+        "org.bytedeco.javacpp_1.5.12",
     ],
-    pom = "repository/org/bytedeco/ffmpeg/6.0-1.5.9/ffmpeg-6.0-1.5.9.pom",
+    pom = "repository/org/bytedeco/ffmpeg/7.1.1-1.5.12/ffmpeg-7.1.1-1.5.12.pom",
     repo_root_path = "repository",
-    repo_path = "org/bytedeco/ffmpeg/6.0-1.5.9",
+    repo_path = "org/bytedeco/ffmpeg/7.1.1-1.5.12",
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
-    name = "org.bytedeco.javacpp_1.5.9",
-    pom = "repository/org/bytedeco/javacpp/1.5.9/javacpp-1.5.9.pom",
+    name = "org.bytedeco.javacpp_1.5.12",
+    pom = "repository/org/bytedeco/javacpp/1.5.12/javacpp-1.5.12.pom",
     repo_root_path = "repository",
-    repo_path = "org/bytedeco/javacpp/1.5.9",
+    repo_path = "org/bytedeco/javacpp/1.5.12",
     visibility = ["//visibility:public"],
 )
 
@@ -10104,12 +10104,12 @@ maven_import(
     name = "org.bytedeco.javacpp",
     classifiers = [],
     jars = [
-        "repository/org/bytedeco/javacpp/1.5.9/javacpp-1.5.9.jar"
+        "repository/org/bytedeco/javacpp/1.5.12/javacpp-1.5.12.jar"
     ],
     original_deps = [],
-    pom = "repository/org/bytedeco/javacpp/1.5.9/javacpp-1.5.9.pom",
+    pom = "repository/org/bytedeco/javacpp/1.5.12/javacpp-1.5.12.pom",
     repo_root_path = "repository",
-    repo_path = "org/bytedeco/javacpp/1.5.9",
+    repo_path = "org/bytedeco/javacpp/1.5.12",
     visibility = ["//visibility:public"],
 )
 
@@ -30318,6 +30318,36 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "androidx.datastore.datastore-android_1.1.7",
+    pom = "repository/androidx/datastore/datastore-android/1.1.7/datastore-android-1.1.7.pom",
+    repo_root_path = "repository",
+    repo_path = "androidx/datastore/datastore-android/1.1.7",
+    deps = [
+        "androidx.annotation.annotation_1.2.0",
+        "androidx.datastore.datastore-core_1.1.7",
+        "androidx.datastore.datastore-core-okio_1.1.7",
+        "com.squareup.okio.okio-jvm_3.4.0",
+        "org.jetbrains.kotlin.kotlin-stdlib_1.8.22",
+        "org.jetbrains.kotlinx.kotlinx-coroutines-core-jvm_1.7.3",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "androidx.datastore.datastore-core-android_1.1.7",
+    pom = "repository/androidx/datastore/datastore-core-android/1.1.7/datastore-core-android-1.1.7.pom",
+    repo_root_path = "repository",
+    repo_path = "androidx/datastore/datastore-core-android/1.1.7",
+    deps = [
+        "androidx.annotation.annotation-jvm_1.7.0",
+        "org.jetbrains.kotlin.kotlin-parcelize-runtime_1.9.22",
+        "org.jetbrains.kotlin.kotlin-stdlib_1.8.22",
+        "org.jetbrains.kotlinx.kotlinx-coroutines-core-jvm_1.7.3",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "androidx.datastore.datastore-core-android_1.1.0-alpha04",
     pom = "repository/androidx/datastore/datastore-core-android/1.1.0-alpha04/datastore-core-android-1.1.0-alpha04.pom",
     repo_root_path = "repository",
@@ -30344,6 +30374,19 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "androidx.datastore.datastore-core-jvm_1.1.7",
+    pom = "repository/androidx/datastore/datastore-core-jvm/1.1.7/datastore-core-jvm-1.1.7.pom",
+    repo_root_path = "repository",
+    repo_path = "androidx/datastore/datastore-core-jvm/1.1.7",
+    deps = [
+        "androidx.annotation.annotation-jvm_1.7.0",
+        "org.jetbrains.kotlin.kotlin-stdlib_1.8.22",
+        "org.jetbrains.kotlinx.kotlinx-coroutines-core_1.7.3",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "androidx.datastore.datastore-core-okio-jvm_1.1.0-alpha04",
     pom = "repository/androidx/datastore/datastore-core-okio-jvm/1.1.0-alpha04/datastore-core-okio-jvm-1.1.0-alpha04.pom",
     repo_root_path = "repository",
@@ -30354,6 +30397,20 @@ maven_artifact(
         "org.jetbrains.kotlin.kotlin-stdlib_1.8.10",
         "org.jetbrains.kotlinx.atomicfu-jvm_0.17.0",
         "org.jetbrains.kotlinx.kotlinx-coroutines-core_1.6.4",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "androidx.datastore.datastore-core-okio-jvm_1.1.7",
+    pom = "repository/androidx/datastore/datastore-core-okio-jvm/1.1.7/datastore-core-okio-jvm-1.1.7.pom",
+    repo_root_path = "repository",
+    repo_path = "androidx/datastore/datastore-core-okio-jvm/1.1.7",
+    deps = [
+        "androidx.datastore.datastore-core-jvm_1.1.7",
+        "com.squareup.okio.okio-jvm_3.4.0",
+        "org.jetbrains.kotlin.kotlin-stdlib_1.8.22",
+        "org.jetbrains.kotlinx.kotlinx-coroutines-core_1.7.3",
     ],
     visibility = ["//visibility:public"],
 )
@@ -30374,6 +30431,22 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "androidx.datastore.datastore-core-okio_1.1.7",
+    pom = "repository/androidx/datastore/datastore-core-okio/1.1.7/datastore-core-okio-1.1.7.pom",
+    repo_root_path = "repository",
+    repo_path = "androidx/datastore/datastore-core-okio/1.1.7",
+    deps = [
+        "androidx.datastore.datastore-core_1.1.7",
+        "androidx.datastore.datastore-core-okio-jvm_1.1.7",
+        "com.squareup.okio.okio_3.4.0",
+        "org.jetbrains.kotlin.kotlin-stdlib_1.8.22",
+        "org.jetbrains.kotlinx.atomicfu_0.17.0",
+        "org.jetbrains.kotlinx.kotlinx-coroutines-core_1.7.3",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "androidx.datastore.datastore-core_1.1.0-alpha04",
     pom = "repository/androidx/datastore/datastore-core/1.1.0-alpha04/datastore-core-1.1.0-alpha04.pom",
     repo_root_path = "repository",
@@ -30383,6 +30456,65 @@ maven_artifact(
         "org.jetbrains.kotlin.kotlin-stdlib_1.8.10",
         "org.jetbrains.kotlinx.atomicfu_0.17.0",
         "org.jetbrains.kotlinx.kotlinx-coroutines-core_1.6.4",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "androidx.datastore.datastore-core_1.1.7",
+    pom = "repository/androidx/datastore/datastore-core/1.1.7/datastore-core-1.1.7.pom",
+    repo_root_path = "repository",
+    repo_path = "androidx/datastore/datastore-core/1.1.7",
+    deps = [
+        "androidx.annotation.annotation_1.7.0",
+        "androidx.datastore.datastore-core-android_1.1.7",
+        "org.jetbrains.kotlin.kotlin-stdlib_1.8.22",
+        "org.jetbrains.kotlinx.atomicfu_0.17.0",
+        "org.jetbrains.kotlinx.kotlinx-coroutines-core_1.7.3",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "androidx.datastore.datastore-jvm_1.1.7",
+    pom = "repository/androidx/datastore/datastore-jvm/1.1.7/datastore-jvm-1.1.7.pom",
+    repo_root_path = "repository",
+    repo_path = "androidx/datastore/datastore-jvm/1.1.7",
+    deps = [
+        "androidx.annotation.annotation_1.2.0",
+        "androidx.datastore.datastore-core-jvm_1.1.7",
+        "androidx.datastore.datastore-core-okio-jvm_1.1.7",
+        "org.jetbrains.kotlin.kotlin-stdlib_1.8.22",
+        "org.jetbrains.kotlinx.kotlinx-coroutines-core_1.7.3",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "androidx.datastore.datastore-preferences-android_1.1.7",
+    pom = "repository/androidx/datastore/datastore-preferences-android/1.1.7/datastore-preferences-android-1.1.7.pom",
+    repo_root_path = "repository",
+    repo_path = "androidx/datastore/datastore-preferences-android/1.1.7",
+    deps = [
+        "androidx.datastore.datastore_1.1.7",
+        "androidx.datastore.datastore-preferences-core_1.1.7",
+        "org.jetbrains.kotlin.kotlin-stdlib_1.8.22",
+        "org.jetbrains.kotlinx.kotlinx-coroutines-core-jvm_1.7.3",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "androidx.datastore.datastore-preferences-core-android_1.1.7",
+    pom = "repository/androidx/datastore/datastore-preferences-core-android/1.1.7/datastore-preferences-core-android-1.1.7.pom",
+    repo_root_path = "repository",
+    repo_path = "androidx/datastore/datastore-preferences-core-android/1.1.7",
+    deps = [
+        "androidx.datastore.datastore-core_1.1.7",
+        "androidx.datastore.datastore-core-okio_1.1.7",
+        "androidx.datastore.datastore-preferences-proto_1.1.7",
+        "com.squareup.okio.okio-jvm_3.4.0",
+        "org.jetbrains.kotlin.kotlin-stdlib_1.8.22",
     ],
     visibility = ["//visibility:public"],
 )
@@ -30402,6 +30534,21 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "androidx.datastore.datastore-preferences-core-jvm_1.1.7",
+    pom = "repository/androidx/datastore/datastore-preferences-core-jvm/1.1.7/datastore-preferences-core-jvm-1.1.7.pom",
+    repo_root_path = "repository",
+    repo_path = "androidx/datastore/datastore-preferences-core-jvm/1.1.7",
+    deps = [
+        "androidx.datastore.datastore-core-jvm_1.1.7",
+        "androidx.datastore.datastore-core-okio-jvm_1.1.7",
+        "androidx.datastore.datastore-preferences-proto_1.1.7",
+        "com.squareup.okio.okio-jvm_3.4.0",
+        "org.jetbrains.kotlin.kotlin-stdlib_1.8.22",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "androidx.datastore.datastore-preferences-core_1.1.0-alpha04",
     pom = "repository/androidx/datastore/datastore-preferences-core/1.1.0-alpha04/datastore-preferences-core-1.1.0-alpha04.pom",
     repo_root_path = "repository",
@@ -30413,6 +30560,87 @@ maven_artifact(
         "org.jetbrains.kotlin.kotlin-stdlib_1.8.10",
         "org.jetbrains.kotlinx.kotlinx-serialization-core_1.3.3",
         "org.jetbrains.kotlinx.kotlinx-serialization-protobuf_1.3.3",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "androidx.datastore.datastore-preferences-core_1.1.7",
+    pom = "repository/androidx/datastore/datastore-preferences-core/1.1.7/datastore-preferences-core-1.1.7.pom",
+    repo_root_path = "repository",
+    repo_path = "androidx/datastore/datastore-preferences-core/1.1.7",
+    deps = [
+        "androidx.datastore.datastore-core_1.1.7",
+        "androidx.datastore.datastore-core-okio_1.1.7",
+        "androidx.datastore.datastore-preferences-core-jvm_1.1.7",
+        "com.squareup.okio.okio_3.4.0",
+        "org.jetbrains.kotlin.kotlin-stdlib_1.8.22",
+        "org.jetbrains.kotlinx.kotlinx-serialization-core_1.6.3",
+        "org.jetbrains.kotlinx.kotlinx-serialization-protobuf_1.6.3",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "androidx.datastore.datastore-preferences-external-protobuf_1.1.7",
+    pom = "repository/androidx/datastore/datastore-preferences-external-protobuf/1.1.7/datastore-preferences-external-protobuf-1.1.7.pom",
+    repo_root_path = "repository",
+    repo_path = "androidx/datastore/datastore-preferences-external-protobuf/1.1.7",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "androidx.datastore.datastore-preferences-jvm_1.1.7",
+    pom = "repository/androidx/datastore/datastore-preferences-jvm/1.1.7/datastore-preferences-jvm-1.1.7.pom",
+    repo_root_path = "repository",
+    repo_path = "androidx/datastore/datastore-preferences-jvm/1.1.7",
+    deps = [
+        "androidx.datastore.datastore-jvm_1.1.7",
+        "androidx.datastore.datastore-preferences-core-jvm_1.1.7",
+        "org.jetbrains.kotlin.kotlin-stdlib_1.8.22",
+        "org.jetbrains.kotlinx.kotlinx-coroutines-core_1.7.3",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "androidx.datastore.datastore-preferences-proto_1.1.7",
+    pom = "repository/androidx/datastore/datastore-preferences-proto/1.1.7/datastore-preferences-proto-1.1.7.pom",
+    repo_root_path = "repository",
+    repo_path = "androidx/datastore/datastore-preferences-proto/1.1.7",
+    deps = [
+        "androidx.datastore.datastore-preferences-external-protobuf_1.1.7",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "androidx.datastore.datastore-preferences_1.1.7",
+    pom = "repository/androidx/datastore/datastore-preferences/1.1.7/datastore-preferences-1.1.7.pom",
+    repo_root_path = "repository",
+    repo_path = "androidx/datastore/datastore-preferences/1.1.7",
+    deps = [
+        "androidx.datastore.datastore_1.1.7",
+        "androidx.datastore.datastore-preferences-android_1.1.7",
+        "androidx.datastore.datastore-preferences-core_1.1.7",
+        "org.jetbrains.kotlin.kotlin-stdlib_1.8.22",
+        "org.jetbrains.kotlinx.kotlinx-coroutines-core_1.7.3",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "androidx.datastore.datastore_1.1.7",
+    pom = "repository/androidx/datastore/datastore/1.1.7/datastore-1.1.7.pom",
+    repo_root_path = "repository",
+    repo_path = "androidx/datastore/datastore/1.1.7",
+    deps = [
+        "androidx.annotation.annotation_1.2.0",
+        "androidx.datastore.datastore-android_1.1.7",
+        "androidx.datastore.datastore-core_1.1.7",
+        "androidx.datastore.datastore-core-okio_1.1.7",
+        "org.jetbrains.kotlin.kotlin-stdlib_1.8.22",
+        "org.jetbrains.kotlinx.kotlinx-coroutines-core_1.7.3",
     ],
     visibility = ["//visibility:public"],
 )
@@ -35281,6 +35509,37 @@ maven_artifact(
         "org.jetbrains.kotlin.kotlin-stdlib_1.8.22",
         "androidx.privacysandbox.activity.activity-core_1.0.0-alpha02",
         "androidx.annotation.annotation_1.8.1",
+        "org.jetbrains.kotlinx.kotlinx-coroutines-core_1.7.3",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "androidx.privacysandbox.ads.ads-adservices-java_1.1.0-beta11",
+    pom = "repository/androidx/privacysandbox/ads/ads-adservices-java/1.1.0-beta11/ads-adservices-java-1.1.0-beta11.pom",
+    repo_root_path = "repository",
+    repo_path = "androidx/privacysandbox/ads/ads-adservices-java/1.1.0-beta11",
+    deps = [
+        "androidx.concurrent.concurrent-futures_1.1.0",
+        "androidx.privacysandbox.ads.ads-adservices_1.1.0-beta11",
+        "org.jetbrains.kotlin.kotlin-stdlib_1.8.22",
+        "androidx.core.core-ktx_1.8.0",
+        "androidx.annotation.annotation_1.8.1",
+        "org.jetbrains.kotlinx.kotlinx-coroutines-core_1.7.3",
+        "com.google.guava.listenablefuture_1.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "androidx.privacysandbox.ads.ads-adservices_1.1.0-beta11",
+    pom = "repository/androidx/privacysandbox/ads/ads-adservices/1.1.0-beta11/ads-adservices-1.1.0-beta11.pom",
+    repo_root_path = "repository",
+    repo_path = "androidx/privacysandbox/ads/ads-adservices/1.1.0-beta11",
+    deps = [
+        "androidx.annotation.annotation_1.8.1",
+        "androidx.core.core-ktx_1.8.0",
+        "org.jetbrains.kotlin.kotlin-stdlib_1.8.22",
         "org.jetbrains.kotlinx.kotlinx-coroutines-core_1.7.3",
     ],
     visibility = ["//visibility:public"],
@@ -64574,6 +64833,88 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "com.google.android.datatransport.transport-api_3.1.0",
+    pom = "repository/com/google/android/datatransport/transport-api/3.1.0/transport-api-3.1.0.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/android/datatransport/transport-api/3.1.0",
+    deps = [
+        "androidx.annotation.annotation_1.1.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.google.android.datatransport.transport-api_3.2.0",
+    pom = "repository/com/google/android/datatransport/transport-api/3.2.0/transport-api-3.2.0.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/android/datatransport/transport-api/3.2.0",
+    deps = [
+        "androidx.annotation.annotation_1.1.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.google.android.datatransport.transport-backend-cct_3.2.0",
+    pom = "repository/com/google/android/datatransport/transport-backend-cct/3.2.0/transport-backend-cct-3.2.0.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/android/datatransport/transport-backend-cct/3.2.0",
+    deps = [
+        "com.google.android.datatransport.transport-api_3.1.0",
+        "com.google.android.datatransport.transport-runtime_3.2.0",
+        "com.google.firebase.firebase-encoders_17.0.0",
+        "com.google.firebase.firebase-encoders-json_18.0.0",
+        "androidx.annotation.annotation_1.1.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.google.android.datatransport.transport-backend-cct_3.3.0",
+    pom = "repository/com/google/android/datatransport/transport-backend-cct/3.3.0/transport-backend-cct-3.3.0.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/android/datatransport/transport-backend-cct/3.3.0",
+    deps = [
+        "com.google.android.datatransport.transport-api_3.2.0",
+        "com.google.android.datatransport.transport-runtime_3.3.0",
+        "com.google.firebase.firebase-encoders_17.0.0",
+        "com.google.firebase.firebase-encoders-json_18.0.0",
+        "androidx.annotation.annotation_1.1.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.google.android.datatransport.transport-runtime_3.2.0",
+    pom = "repository/com/google/android/datatransport/transport-runtime/3.2.0/transport-runtime-3.2.0.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/android/datatransport/transport-runtime/3.2.0",
+    deps = [
+        "com.google.android.datatransport.transport-api_3.1.0",
+        "androidx.annotation.annotation_1.3.0",
+        "javax.inject.javax.inject_1",
+        "com.google.firebase.firebase-encoders_17.0.0",
+        "com.google.firebase.firebase-encoders-proto_16.0.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.google.android.datatransport.transport-runtime_3.3.0",
+    pom = "repository/com/google/android/datatransport/transport-runtime/3.3.0/transport-runtime-3.3.0.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/android/datatransport/transport-runtime/3.3.0",
+    deps = [
+        "com.google.android.datatransport.transport-api_3.2.0",
+        "androidx.annotation.annotation_1.3.0",
+        "javax.inject.javax.inject_1",
+        "com.google.firebase.firebase-encoders_17.0.0",
+        "com.google.firebase.firebase-encoders-proto_16.0.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "com.google.android.gms.play-services-ads-base_20.0.0",
     pom = "repository/com/google/android/gms/play-services-ads-base/20.0.0/play-services-ads-base-20.0.0.pom",
     repo_root_path = "repository",
@@ -64848,6 +65189,21 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "com.google.android.gms.play-services-base_18.5.0",
+    pom = "repository/com/google/android/gms/play-services-base/18.5.0/play-services-base-18.5.0.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/android/gms/play-services-base/18.5.0",
+    deps = [
+        "androidx.collection.collection_1.0.0",
+        "androidx.core.core_1.2.0",
+        "androidx.fragment.fragment_1.0.0",
+        "com.google.android.gms.play-services-basement_18.4.0",
+        "com.google.android.gms.play-services-tasks_18.2.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "com.google.android.gms.play-services-base_9.8.0",
     pom = "repository/com/google/android/gms/play-services-base/9.8.0/play-services-base-9.8.0.pom",
     repo_root_path = "repository",
@@ -65003,6 +65359,45 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "com.google.android.gms.play-services-basement_18.3.0",
+    pom = "repository/com/google/android/gms/play-services-basement/18.3.0/play-services-basement-18.3.0.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/android/gms/play-services-basement/18.3.0",
+    deps = [
+        "androidx.collection.collection_1.0.0",
+        "androidx.core.core_1.2.0",
+        "androidx.fragment.fragment_1.1.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.google.android.gms.play-services-basement_18.4.0",
+    pom = "repository/com/google/android/gms/play-services-basement/18.4.0/play-services-basement-18.4.0.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/android/gms/play-services-basement/18.4.0",
+    deps = [
+        "androidx.collection.collection_1.0.0",
+        "androidx.core.core_1.2.0",
+        "androidx.fragment.fragment_1.1.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.google.android.gms.play-services-basement_18.5.0",
+    pom = "repository/com/google/android/gms/play-services-basement/18.5.0/play-services-basement-18.5.0.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/android/gms/play-services-basement/18.5.0",
+    deps = [
+        "androidx.collection.collection_1.0.0",
+        "androidx.core.core_1.2.0",
+        "androidx.fragment.fragment_1.1.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "com.google.android.gms.play-services-basement_9.8.0",
     pom = "repository/com/google/android/gms/play-services-basement/9.8.0/play-services-basement-9.8.0.pom",
     repo_root_path = "repository",
@@ -65103,6 +65498,28 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "com.google.android.gms.play-services-measurement-api_23.0.0",
+    pom = "repository/com/google/android/gms/play-services-measurement-api/23.0.0/play-services-measurement-api-23.0.0.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/android/gms/play-services-measurement-api/23.0.0",
+    deps = [
+        "com.google.android.gms.play-services-ads-identifier_18.0.0",
+        "com.google.android.gms.play-services-basement_18.5.0",
+        "com.google.android.gms.play-services-measurement-base_23.0.0",
+        "com.google.android.gms.play-services-measurement-sdk-api_23.0.0",
+        "com.google.android.gms.play-services-tasks_18.2.0",
+        "com.google.firebase.firebase-common_21.0.0",
+        "com.google.firebase.firebase-components_18.0.0",
+        "com.google.firebase.firebase-installations_17.0.1",
+        "com.google.firebase.firebase-installations-interop_17.0.0",
+        "com.google.firebase.firebase-measurement-connector_19.0.0",
+        "com.google.guava.guava_31.1-android",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.0.21",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "com.google.android.gms.play-services-measurement-base_18.0.0",
     pom = "repository/com/google/android/gms/play-services-measurement-base/18.0.0/play-services-measurement-base-18.0.0.pom",
     repo_root_path = "repository",
@@ -65131,6 +65548,38 @@ maven_artifact(
     repo_path = "com/google/android/gms/play-services-measurement-base/20.1.2",
     deps = [
         "com.google.android.gms.play-services-basement_18.0.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.google.android.gms.play-services-measurement-base_23.0.0",
+    pom = "repository/com/google/android/gms/play-services-measurement-base/23.0.0/play-services-measurement-base-23.0.0.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/android/gms/play-services-measurement-base/23.0.0",
+    deps = [
+        "com.google.android.gms.play-services-basement_18.5.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.google.android.gms.play-services-measurement-impl_23.0.0",
+    pom = "repository/com/google/android/gms/play-services-measurement-impl/23.0.0/play-services-measurement-impl-23.0.0.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/android/gms/play-services-measurement-impl/23.0.0",
+    deps = [
+        "androidx.collection.collection_1.0.0",
+        "androidx.core.core_1.9.0",
+        "androidx.privacysandbox.ads.ads-adservices_1.1.0-beta11",
+        "androidx.privacysandbox.ads.ads-adservices-java_1.1.0-beta11",
+        "com.google.android.gms.play-services-ads-identifier_18.0.0",
+        "com.google.android.gms.play-services-base_18.5.0",
+        "com.google.android.gms.play-services-basement_18.5.0",
+        "com.google.android.gms.play-services-measurement-base_23.0.0",
+        "com.google.android.gms.play-services-stats_17.0.2",
+        "com.google.android.gms.play-services-tasks_18.2.0",
+        "com.google.guava.guava_31.1-android",
     ],
     visibility = ["//visibility:public"],
 )
@@ -65172,6 +65621,50 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "com.google.android.gms.play-services-measurement-sdk-api_23.0.0",
+    pom = "repository/com/google/android/gms/play-services-measurement-sdk-api/23.0.0/play-services-measurement-sdk-api-23.0.0.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/android/gms/play-services-measurement-sdk-api/23.0.0",
+    deps = [
+        "com.google.android.gms.play-services-basement_18.5.0",
+        "com.google.android.gms.play-services-measurement-base_23.0.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.google.android.gms.play-services-measurement-sdk_23.0.0",
+    pom = "repository/com/google/android/gms/play-services-measurement-sdk/23.0.0/play-services-measurement-sdk-23.0.0.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/android/gms/play-services-measurement-sdk/23.0.0",
+    deps = [
+        "androidx.collection.collection_1.0.0",
+        "com.google.android.gms.play-services-basement_18.5.0",
+        "com.google.android.gms.play-services-measurement-base_23.0.0",
+        "com.google.android.gms.play-services-measurement-impl_23.0.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.google.android.gms.play-services-measurement_23.0.0",
+    pom = "repository/com/google/android/gms/play-services-measurement/23.0.0/play-services-measurement-23.0.0.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/android/gms/play-services-measurement/23.0.0",
+    deps = [
+        "androidx.collection.collection_1.0.0",
+        "androidx.legacy.legacy-support-core-utils_1.0.0",
+        "com.google.android.gms.play-services-ads-identifier_18.0.0",
+        "com.google.android.gms.play-services-basement_18.5.0",
+        "com.google.android.gms.play-services-measurement-base_23.0.0",
+        "com.google.android.gms.play-services-measurement-impl_23.0.0",
+        "com.google.android.gms.play-services-measurement-sdk-api_23.0.0",
+        "com.google.android.gms.play-services-stats_17.0.2",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "com.google.android.gms.play-services-pay_16.0.3",
     pom = "repository/com/google/android/gms/play-services-pay/16.0.3/play-services-pay-16.0.3.pom",
     repo_root_path = "repository",
@@ -65206,6 +65699,18 @@ maven_artifact(
         "com.google.android.gms.play-services-base_10.0.0",
         "com.google.android.gms.play-services-basement_10.0.0",
         "com.google.android.gms.play-services-tasks_10.0.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.google.android.gms.play-services-stats_17.0.2",
+    pom = "repository/com/google/android/gms/play-services-stats/17.0.2/play-services-stats-17.0.2.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/android/gms/play-services-stats/17.0.2",
+    deps = [
+        "androidx.legacy.legacy-support-core-utils_1.0.0",
+        "com.google.android.gms.play-services-basement_18.0.0",
     ],
     visibility = ["//visibility:public"],
 )
@@ -65330,6 +65835,28 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "com.google.android.gms.play-services-tasks_18.1.0",
+    pom = "repository/com/google/android/gms/play-services-tasks/18.1.0/play-services-tasks-18.1.0.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/android/gms/play-services-tasks/18.1.0",
+    deps = [
+        "com.google.android.gms.play-services-basement_18.3.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.google.android.gms.play-services-tasks_18.2.0",
+    pom = "repository/com/google/android/gms/play-services-tasks/18.2.0/play-services-tasks-18.2.0.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/android/gms/play-services-tasks/18.2.0",
+    deps = [
+        "com.google.android.gms.play-services-basement_18.4.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "com.google.android.gms.play-services-tasks_9.8.0",
     pom = "repository/com/google/android/gms/play-services-tasks/9.8.0/play-services-tasks-9.8.0.pom",
     repo_root_path = "repository",
@@ -65380,6 +65907,19 @@ maven_artifact(
         "com.google.android.gms.play-services-base_18.0.1",
         "com.google.android.gms.play-services-basement_18.0.0",
         "com.google.android.gms.play-services-tasks_18.0.1",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.google.android.gms.strict-version-matcher-plugin_1.2.4",
+    pom = "repository/com/google/android/gms/strict-version-matcher-plugin/1.2.4/strict-version-matcher-plugin-1.2.4.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/android/gms/strict-version-matcher-plugin/1.2.4",
+    deps = [
+        "com.google.code.findbugs.jsr305_3.0.2",
+        "com.google.guava.guava_27.0.1-jre",
+        "org.jetbrains.kotlin.kotlin-stdlib-jdk8_1.4.10",
     ],
     visibility = ["//visibility:public"],
 )
@@ -67692,6 +68232,15 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "com.google.errorprone.error_prone_annotations_2.26.0",
+    pom = "repository/com/google/errorprone/error_prone_annotations/2.26.0/error_prone_annotations-2.26.0.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/errorprone/error_prone_annotations/2.26.0",
+    parent = "com.google.errorprone.error_prone_parent_2.26.0",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "com.google.errorprone.error_prone_annotations_2.26.1",
     pom = "repository/com/google/errorprone/error_prone_annotations/2.26.1/error_prone_annotations-2.26.1.pom",
     repo_root_path = "repository",
@@ -67871,6 +68420,17 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "com.google.firebase.crashlytics.com.google.firebase.crashlytics.gradle.plugin_3.0.6",
+    pom = "repository/com/google/firebase/crashlytics/com.google.firebase.crashlytics.gradle.plugin/3.0.6/com.google.firebase.crashlytics.gradle.plugin-3.0.6.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/firebase/crashlytics/com.google.firebase.crashlytics.gradle.plugin/3.0.6",
+    deps = [
+        "com.google.firebase.firebase-crashlytics-gradle_3.0.6",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "com.google.firebase.testlab.testlab-gradle-plugin_0.0.1-alpha12",
     pom = "repository/com/google/firebase/testlab/testlab-gradle-plugin/0.0.1-alpha12/testlab-gradle-plugin-0.0.1-alpha12.pom",
     repo_root_path = "repository",
@@ -67889,10 +68449,117 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "com.google.firebase.firebase-analytics_23.0.0",
+    pom = "repository/com/google/firebase/firebase-analytics/23.0.0/firebase-analytics-23.0.0.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/firebase/firebase-analytics/23.0.0",
+    deps = [
+        "com.google.android.gms.play-services-measurement_23.0.0",
+        "com.google.android.gms.play-services-measurement-api_23.0.0",
+        "com.google.android.gms.play-services-measurement-sdk_23.0.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.google.firebase.firebase-annotations_16.0.0",
+    pom = "repository/com/google/firebase/firebase-annotations/16.0.0/firebase-annotations-16.0.0.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/firebase/firebase-annotations/16.0.0",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.google.firebase.firebase-annotations_16.2.0",
+    pom = "repository/com/google/firebase/firebase-annotations/16.2.0/firebase-annotations-16.2.0.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/firebase/firebase-annotations/16.2.0",
+    deps = [
+        "javax.inject.javax.inject_1",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.google.firebase.firebase-annotations_17.0.0",
+    pom = "repository/com/google/firebase/firebase-annotations/17.0.0/firebase-annotations-17.0.0.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/firebase/firebase-annotations/17.0.0",
+    deps = [
+        "javax.inject.javax.inject_1",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.google.firebase.firebase-common-ktx_21.0.0",
+    pom = "repository/com/google/firebase/firebase-common-ktx/21.0.0/firebase-common-ktx-21.0.0.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/firebase/firebase-common-ktx/21.0.0",
+    deps = [
+        "com.google.firebase.firebase-common_21.0.0",
+        "org.jetbrains.kotlin.kotlin-stdlib-jdk8_1.8.22",
+        "com.google.firebase.firebase-components_18.0.0",
+        "com.google.firebase.firebase-annotations_16.2.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "com.google.firebase.firebase-common-license_12.0.1",
     pom = "repository/com/google/firebase/firebase-common-license/12.0.1/firebase-common-license-12.0.1.pom",
     repo_root_path = "repository",
     repo_path = "com/google/firebase/firebase-common-license/12.0.1",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.google.firebase.firebase-common_20.1.0",
+    pom = "repository/com/google/firebase/firebase-common/20.1.0/firebase-common-20.1.0.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/firebase/firebase-common/20.1.0",
+    deps = [
+        "com.google.android.gms.play-services-basement_18.0.0",
+        "com.google.android.gms.play-services-tasks_18.0.1",
+        "com.google.firebase.firebase-components_17.0.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.google.firebase.firebase-common_21.0.0",
+    pom = "repository/com/google/firebase/firebase-common/21.0.0/firebase-common-21.0.0.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/firebase/firebase-common/21.0.0",
+    deps = [
+        "org.jetbrains.kotlinx.kotlinx-coroutines-play-services_1.6.4",
+        "com.google.firebase.firebase-components_18.0.0",
+        "com.google.firebase.firebase-annotations_16.2.0",
+        "androidx.annotation.annotation_1.5.0",
+        "androidx.concurrent.concurrent-futures_1.1.0",
+        "org.jetbrains.kotlin.kotlin-stdlib_1.8.22",
+        "com.google.android.gms.play-services-basement_18.3.0",
+        "com.google.android.gms.play-services-tasks_18.1.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.google.firebase.firebase-common_22.0.1",
+    pom = "repository/com/google/firebase/firebase-common/22.0.1/firebase-common-22.0.1.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/firebase/firebase-common/22.0.1",
+    deps = [
+        "org.jetbrains.kotlinx.kotlinx-coroutines-play-services_1.9.0",
+        "com.google.firebase.firebase-components_19.0.0",
+        "com.google.firebase.firebase-annotations_17.0.0",
+        "androidx.datastore.datastore-preferences_1.1.7",
+        "androidx.annotation.annotation_1.5.0",
+        "androidx.concurrent.concurrent-futures_1.1.0",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.0.21",
+        "com.google.android.gms.play-services-basement_18.3.0",
+        "com.google.android.gms.play-services-tasks_18.1.0",
+    ],
     visibility = ["//visibility:public"],
 )
 
@@ -67905,6 +68572,56 @@ maven_artifact(
         "com.google.android.gms.play-services-basement_12.0.1",
         "com.google.android.gms.play-services-tasks_12.0.1",
         "com.google.firebase.firebase-common-license_12.0.1",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.google.firebase.firebase-components_17.0.0",
+    pom = "repository/com/google/firebase/firebase-components/17.0.0/firebase-components-17.0.0.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/firebase/firebase-components/17.0.0",
+    deps = [
+        "androidx.annotation.annotation_1.1.0",
+        "com.google.firebase.firebase-annotations_16.0.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.google.firebase.firebase-components_18.0.0",
+    pom = "repository/com/google/firebase/firebase-components/18.0.0/firebase-components-18.0.0.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/firebase/firebase-components/18.0.0",
+    deps = [
+        "com.google.firebase.firebase-annotations_16.2.0",
+        "androidx.annotation.annotation_1.5.0",
+        "com.google.errorprone.error_prone_annotations_2.26.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.google.firebase.firebase-components_19.0.0",
+    pom = "repository/com/google/firebase/firebase-components/19.0.0/firebase-components-19.0.0.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/firebase/firebase-components/19.0.0",
+    deps = [
+        "com.google.firebase.firebase-annotations_17.0.0",
+        "androidx.annotation.annotation_1.5.0",
+        "com.google.errorprone.error_prone_annotations_2.26.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.google.firebase.firebase-config-interop_16.0.1",
+    pom = "repository/com/google/firebase/firebase-config-interop/16.0.1/firebase-config-interop-16.0.1.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/firebase/firebase-config-interop/16.0.1",
+    deps = [
+        "com.google.firebase.firebase-encoders-json_18.0.1",
+        "com.google.firebase.firebase-encoders_17.0.0",
     ],
     visibility = ["//visibility:public"],
 )
@@ -67926,12 +68643,271 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "com.google.firebase.firebase-crashlytics-buildtools_3.0.6",
+    pom = "repository/com/google/firebase/firebase-crashlytics-buildtools/3.0.6/firebase-crashlytics-buildtools-3.0.6.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/firebase/firebase-crashlytics-buildtools/3.0.6",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "com.google.firebase.firebase-crashlytics-gradle_2.5.1",
     pom = "repository/com/google/firebase/firebase-crashlytics-gradle/2.5.1/firebase-crashlytics-gradle-2.5.1.pom",
     repo_root_path = "repository",
     repo_path = "com/google/firebase/firebase-crashlytics-gradle/2.5.1",
     deps = [
         "com.google.firebase.firebase-crashlytics-buildtools_2.5.1",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.google.firebase.firebase-crashlytics-gradle_3.0.6",
+    pom = "repository/com/google/firebase/firebase-crashlytics-gradle/3.0.6/firebase-crashlytics-gradle-3.0.6.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/firebase/firebase-crashlytics-gradle/3.0.6",
+    deps = [
+        "org.jetbrains.kotlin.kotlin-stdlib-jdk8_1.8.0",
+        "com.google.firebase.firebase-crashlytics-buildtools_3.0.6",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.google.firebase.firebase-crashlytics_20.0.3",
+    pom = "repository/com/google/firebase/firebase-crashlytics/20.0.3/firebase-crashlytics-20.0.3.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/firebase/firebase-crashlytics/20.0.3",
+    deps = [
+        "com.google.firebase.firebase-sessions_3.0.3",
+        "com.google.android.gms.play-services-tasks_18.1.0",
+        "com.google.firebase.firebase-annotations_17.0.0",
+        "com.google.firebase.firebase-common_22.0.1",
+        "com.google.firebase.firebase-components_19.0.0",
+        "com.google.firebase.firebase-config-interop_16.0.1",
+        "com.google.firebase.firebase-encoders_17.0.0",
+        "com.google.firebase.firebase-encoders-json_18.0.1",
+        "com.google.firebase.firebase-installations_18.0.0",
+        "com.google.firebase.firebase-installations-interop_17.2.0",
+        "com.google.firebase.firebase-measurement-connector_20.0.1",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.0.21",
+        "com.google.android.datatransport.transport-api_3.2.0",
+        "com.google.android.datatransport.transport-backend-cct_3.3.0",
+        "com.google.android.datatransport.transport-runtime_3.3.0",
+        "androidx.annotation.annotation_1.5.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.google.firebase.firebase-datatransport_19.0.0",
+    pom = "repository/com/google/firebase/firebase-datatransport/19.0.0/firebase-datatransport-19.0.0.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/firebase/firebase-datatransport/19.0.0",
+    deps = [
+        "androidx.annotation.annotation_1.1.0",
+        "com.google.android.datatransport.transport-api_3.1.0",
+        "com.google.android.datatransport.transport-backend-cct_3.2.0",
+        "com.google.android.datatransport.transport-runtime_3.2.0",
+        "org.jetbrains.kotlin.kotlin-stdlib-jdk8_1.8.22",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.google.firebase.firebase-encoders-json_18.0.0",
+    pom = "repository/com/google/firebase/firebase-encoders-json/18.0.0/firebase-encoders-json-18.0.0.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/firebase/firebase-encoders-json/18.0.0",
+    deps = [
+        "androidx.annotation.annotation_1.1.0",
+        "com.google.firebase.firebase-encoders_17.0.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.google.firebase.firebase-encoders-json_18.0.1",
+    pom = "repository/com/google/firebase/firebase-encoders-json/18.0.1/firebase-encoders-json-18.0.1.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/firebase/firebase-encoders-json/18.0.1",
+    deps = [
+        "org.jetbrains.kotlin.kotlin-stdlib-jdk8_1.7.10",
+        "androidx.annotation.annotation_1.1.0",
+        "com.google.firebase.firebase-encoders_17.0.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.google.firebase.firebase-encoders-proto_16.0.0",
+    pom = "repository/com/google/firebase/firebase-encoders-proto/16.0.0/firebase-encoders-proto-16.0.0.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/firebase/firebase-encoders-proto/16.0.0",
+    deps = [
+        "androidx.annotation.annotation_1.1.0",
+        "com.google.firebase.firebase-encoders_17.0.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.google.firebase.firebase-encoders_17.0.0",
+    pom = "repository/com/google/firebase/firebase-encoders/17.0.0/firebase-encoders-17.0.0.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/firebase/firebase-encoders/17.0.0",
+    deps = [
+        "androidx.annotation.annotation_1.1.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.google.firebase.firebase-installations-interop_17.0.0",
+    pom = "repository/com/google/firebase/firebase-installations-interop/17.0.0/firebase-installations-interop-17.0.0.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/firebase/firebase-installations-interop/17.0.0",
+    deps = [
+        "com.google.android.gms.play-services-tasks_17.0.0",
+        "com.google.firebase.firebase-annotations_16.0.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.google.firebase.firebase-installations-interop_17.0.1",
+    pom = "repository/com/google/firebase/firebase-installations-interop/17.0.1/firebase-installations-interop-17.0.1.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/firebase/firebase-installations-interop/17.0.1",
+    deps = [
+        "com.google.android.gms.play-services-tasks_18.0.1",
+        "com.google.firebase.firebase-annotations_16.0.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.google.firebase.firebase-installations-interop_17.1.1",
+    pom = "repository/com/google/firebase/firebase-installations-interop/17.1.1/firebase-installations-interop-17.1.1.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/firebase/firebase-installations-interop/17.1.1",
+    deps = [
+        "com.google.android.gms.play-services-tasks_18.0.1",
+        "com.google.firebase.firebase-annotations_16.2.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.google.firebase.firebase-installations-interop_17.2.0",
+    pom = "repository/com/google/firebase/firebase-installations-interop/17.2.0/firebase-installations-interop-17.2.0.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/firebase/firebase-installations-interop/17.2.0",
+    deps = [
+        "com.google.android.gms.play-services-tasks_18.0.1",
+        "com.google.firebase.firebase-annotations_16.2.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.google.firebase.firebase-installations_17.0.1",
+    pom = "repository/com/google/firebase/firebase-installations/17.0.1/firebase-installations-17.0.1.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/firebase/firebase-installations/17.0.1",
+    deps = [
+        "com.google.android.gms.play-services-tasks_18.0.1",
+        "com.google.firebase.firebase-common_20.1.0",
+        "com.google.firebase.firebase-components_17.0.0",
+        "com.google.firebase.firebase-installations-interop_17.0.1",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.google.firebase.firebase-installations_18.0.0",
+    pom = "repository/com/google/firebase/firebase-installations/18.0.0/firebase-installations-18.0.0.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/firebase/firebase-installations/18.0.0",
+    deps = [
+        "com.google.android.gms.play-services-tasks_18.0.1",
+        "com.google.firebase.firebase-annotations_16.2.0",
+        "com.google.firebase.firebase-common_21.0.0",
+        "com.google.firebase.firebase-components_18.0.0",
+        "com.google.firebase.firebase-installations-interop_17.1.1",
+        "org.jetbrains.kotlin.kotlin-stdlib_1.8.22",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.google.firebase.firebase-measurement-connector_19.0.0",
+    pom = "repository/com/google/firebase/firebase-measurement-connector/19.0.0/firebase-measurement-connector-19.0.0.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/firebase/firebase-measurement-connector/19.0.0",
+    deps = [
+        "com.google.android.gms.play-services-basement_17.0.0",
+        "com.google.firebase.firebase-annotations_16.0.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.google.firebase.firebase-measurement-connector_20.0.1",
+    pom = "repository/com/google/firebase/firebase-measurement-connector/20.0.1/firebase-measurement-connector-20.0.1.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/firebase/firebase-measurement-connector/20.0.1",
+    deps = [
+        "com.google.android.gms.play-services-basement_18.0.0",
+        "com.google.firebase.firebase-annotations_16.0.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.google.firebase.firebase-sessions_3.0.3",
+    pom = "repository/com/google/firebase/firebase-sessions/3.0.3/firebase-sessions-3.0.3.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/firebase/firebase-sessions/3.0.3",
+    deps = [
+        "com.google.firebase.firebase-common_22.0.1",
+        "com.google.firebase.firebase-components_19.0.0",
+        "com.google.firebase.firebase-installations-interop_17.2.0",
+        "com.google.firebase.firebase-annotations_17.0.0",
+        "com.google.firebase.firebase-encoders_17.0.0",
+        "com.google.firebase.firebase-encoders-json_18.0.1",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.0.21",
+        "com.google.firebase.firebase-installations_18.0.0",
+        "com.google.firebase.firebase-datatransport_19.0.0",
+        "com.google.android.datatransport.transport-api_3.2.0",
+        "javax.inject.javax.inject_1",
+        "androidx.annotation.annotation_1.5.0",
+        "androidx.datastore.datastore_1.1.7",
+        "org.jetbrains.kotlinx.kotlinx-serialization-json_1.7.3",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.google.gms.google-services.com.google.gms.google-services.gradle.plugin_4.4.4",
+    pom = "repository/com/google/gms/google-services/com.google.gms.google-services.gradle.plugin/4.4.4/com.google.gms.google-services.gradle.plugin-4.4.4.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/gms/google-services/com.google.gms.google-services.gradle.plugin/4.4.4",
+    deps = [
+        "com.google.gms.google-services_4.4.4",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.google.gms.google-services_4.4.4",
+    pom = "repository/com/google/gms/google-services/4.4.4/google-services-4.4.4.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/gms/google-services/4.4.4",
+    deps = [
+        "org.jetbrains.kotlin.kotlin-stdlib-jdk8_1.7.10",
+        "com.google.android.gms.strict-version-matcher-plugin_1.2.4",
+        "com.google.code.gson.gson_2.8.5",
     ],
     visibility = ["//visibility:public"],
 )
@@ -74573,25 +75549,25 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.bytedeco.ffmpeg-platform_6.0-1.5.9",
-    pom = "repository/org/bytedeco/ffmpeg-platform/6.0-1.5.9/ffmpeg-platform-6.0-1.5.9.pom",
+    name = "org.bytedeco.ffmpeg-platform_7.1.1-1.5.12",
+    pom = "repository/org/bytedeco/ffmpeg-platform/7.1.1-1.5.12/ffmpeg-platform-7.1.1-1.5.12.pom",
     repo_root_path = "repository",
-    repo_path = "org/bytedeco/ffmpeg-platform/6.0-1.5.9",
-    parent = "org.bytedeco.javacpp-presets_1.5.9",
+    repo_path = "org/bytedeco/ffmpeg-platform/7.1.1-1.5.12",
+    parent = "org.bytedeco.javacpp-presets_1.5.12",
     deps = [
-        "org.bytedeco.javacpp-platform_1.5.9",
-        "org.bytedeco.ffmpeg_6.0-1.5.9",
+        "org.bytedeco.javacpp-platform_1.5.12",
+        "org.bytedeco.ffmpeg_7.1.1-1.5.12",
     ],
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
-    name = "org.bytedeco.javacpp-platform_1.5.9",
-    pom = "repository/org/bytedeco/javacpp-platform/1.5.9/javacpp-platform-1.5.9.pom",
+    name = "org.bytedeco.javacpp-platform_1.5.12",
+    pom = "repository/org/bytedeco/javacpp-platform/1.5.12/javacpp-platform-1.5.12.pom",
     repo_root_path = "repository",
-    repo_path = "org/bytedeco/javacpp-platform/1.5.9",
+    repo_path = "org/bytedeco/javacpp-platform/1.5.12",
     deps = [
-        "org.bytedeco.javacpp_1.5.9",
+        "org.bytedeco.javacpp_1.5.12",
     ],
     visibility = ["//visibility:public"],
 )
@@ -75665,6 +76641,17 @@ maven_artifact(
     pom = "repository/org/gradle/gradle-core/4.2.1/gradle-core-4.2.1.pom",
     repo_root_path = "repository",
     repo_path = "org/gradle/gradle-core/4.2.1",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.gradle.gradle-tooling-api_9.2.1",
+    pom = "repository/org/gradle/gradle-tooling-api/9.2.1/gradle-tooling-api-9.2.1.pom",
+    repo_root_path = "repository",
+    repo_path = "org/gradle/gradle-tooling-api/9.2.1",
+    deps = [
+        "org.slf4j.slf4j-api_2.0.17",
+    ],
     visibility = ["//visibility:public"],
 )
 
@@ -77568,12 +78555,12 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.android.org.jetbrains.kotlin.android.gradle.plugin_2.3.0-Beta2",
-    pom = "repository/org/jetbrains/kotlin/android/org.jetbrains.kotlin.android.gradle.plugin/2.3.0-Beta2/org.jetbrains.kotlin.android.gradle.plugin-2.3.0-Beta2.pom",
+    name = "org.jetbrains.kotlin.android.org.jetbrains.kotlin.android.gradle.plugin_2.3.0-RC2",
+    pom = "repository/org/jetbrains/kotlin/android/org.jetbrains.kotlin.android.gradle.plugin/2.3.0-RC2/org.jetbrains.kotlin.android.gradle.plugin-2.3.0-RC2.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/android/org.jetbrains.kotlin.android.gradle.plugin/2.3.0-Beta2",
+    repo_path = "org/jetbrains/kotlin/android/org.jetbrains.kotlin.android.gradle.plugin/2.3.0-RC2",
     deps = [
-        "org.jetbrains.kotlin.kotlin-gradle-plugin_2.3.0-Beta2",
+        "org.jetbrains.kotlin.kotlin-gradle-plugin_2.3.0-RC2",
     ],
     visibility = ["//visibility:public"],
 )
@@ -77722,12 +78709,12 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.jvm.org.jetbrains.kotlin.jvm.gradle.plugin_2.3.0-Beta2",
-    pom = "repository/org/jetbrains/kotlin/jvm/org.jetbrains.kotlin.jvm.gradle.plugin/2.3.0-Beta2/org.jetbrains.kotlin.jvm.gradle.plugin-2.3.0-Beta2.pom",
+    name = "org.jetbrains.kotlin.jvm.org.jetbrains.kotlin.jvm.gradle.plugin_2.3.0-RC2",
+    pom = "repository/org/jetbrains/kotlin/jvm/org.jetbrains.kotlin.jvm.gradle.plugin/2.3.0-RC2/org.jetbrains.kotlin.jvm.gradle.plugin-2.3.0-RC2.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/jvm/org.jetbrains.kotlin.jvm.gradle.plugin/2.3.0-Beta2",
+    repo_path = "org/jetbrains/kotlin/jvm/org.jetbrains.kotlin.jvm.gradle.plugin/2.3.0-RC2",
     deps = [
-        "org.jetbrains.kotlin.kotlin-gradle-plugin_2.3.0-Beta2",
+        "org.jetbrains.kotlin.kotlin-gradle-plugin_2.3.0-RC2",
     ],
     visibility = ["//visibility:public"],
 )
@@ -77788,12 +78775,12 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kapt.org.jetbrains.kotlin.kapt.gradle.plugin_2.3.0-Beta2",
-    pom = "repository/org/jetbrains/kotlin/kapt/org.jetbrains.kotlin.kapt.gradle.plugin/2.3.0-Beta2/org.jetbrains.kotlin.kapt.gradle.plugin-2.3.0-Beta2.pom",
+    name = "org.jetbrains.kotlin.kapt.org.jetbrains.kotlin.kapt.gradle.plugin_2.3.0-RC2",
+    pom = "repository/org/jetbrains/kotlin/kapt/org.jetbrains.kotlin.kapt.gradle.plugin/2.3.0-RC2/org.jetbrains.kotlin.kapt.gradle.plugin-2.3.0-RC2.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kapt/org.jetbrains.kotlin.kapt.gradle.plugin/2.3.0-Beta2",
+    repo_path = "org/jetbrains/kotlin/kapt/org.jetbrains.kotlin.kapt.gradle.plugin/2.3.0-RC2",
     deps = [
-        "org.jetbrains.kotlin.kotlin-gradle-plugin_2.3.0-Beta2",
+        "org.jetbrains.kotlin.kotlin-gradle-plugin_2.3.0-RC2",
     ],
     visibility = ["//visibility:public"],
 )
@@ -77843,12 +78830,12 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.multiplatform.org.jetbrains.kotlin.multiplatform.gradle.plugin_2.3.0-Beta2",
-    pom = "repository/org/jetbrains/kotlin/multiplatform/org.jetbrains.kotlin.multiplatform.gradle.plugin/2.3.0-Beta2/org.jetbrains.kotlin.multiplatform.gradle.plugin-2.3.0-Beta2.pom",
+    name = "org.jetbrains.kotlin.multiplatform.org.jetbrains.kotlin.multiplatform.gradle.plugin_2.3.0-RC2",
+    pom = "repository/org/jetbrains/kotlin/multiplatform/org.jetbrains.kotlin.multiplatform.gradle.plugin/2.3.0-RC2/org.jetbrains.kotlin.multiplatform.gradle.plugin-2.3.0-RC2.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/multiplatform/org.jetbrains.kotlin.multiplatform.gradle.plugin/2.3.0-Beta2",
+    repo_path = "org/jetbrains/kotlin/multiplatform/org.jetbrains.kotlin.multiplatform.gradle.plugin/2.3.0-RC2",
     deps = [
-        "org.jetbrains.kotlin.kotlin-gradle-plugin_2.3.0-Beta2",
+        "org.jetbrains.kotlin.kotlin-gradle-plugin_2.3.0-RC2",
     ],
     visibility = ["//visibility:public"],
 )
@@ -77876,12 +78863,12 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.plugin.compose.org.jetbrains.kotlin.plugin.compose.gradle.plugin_2.3.0-Beta2",
-    pom = "repository/org/jetbrains/kotlin/plugin/compose/org.jetbrains.kotlin.plugin.compose.gradle.plugin/2.3.0-Beta2/org.jetbrains.kotlin.plugin.compose.gradle.plugin-2.3.0-Beta2.pom",
+    name = "org.jetbrains.kotlin.plugin.compose.org.jetbrains.kotlin.plugin.compose.gradle.plugin_2.3.0-RC2",
+    pom = "repository/org/jetbrains/kotlin/plugin/compose/org.jetbrains.kotlin.plugin.compose.gradle.plugin/2.3.0-RC2/org.jetbrains.kotlin.plugin.compose.gradle.plugin-2.3.0-RC2.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/plugin/compose/org.jetbrains.kotlin.plugin.compose.gradle.plugin/2.3.0-Beta2",
+    repo_path = "org/jetbrains/kotlin/plugin/compose/org.jetbrains.kotlin.plugin.compose.gradle.plugin/2.3.0-RC2",
     deps = [
-        "org.jetbrains.kotlin.compose-compiler-gradle-plugin_2.3.0-Beta2",
+        "org.jetbrains.kotlin.compose-compiler-gradle-plugin_2.3.0-RC2",
     ],
     visibility = ["//visibility:public"],
 )
@@ -77898,12 +78885,12 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.plugin.parcelize.org.jetbrains.kotlin.plugin.parcelize.gradle.plugin_2.3.0-Beta2",
-    pom = "repository/org/jetbrains/kotlin/plugin/parcelize/org.jetbrains.kotlin.plugin.parcelize.gradle.plugin/2.3.0-Beta2/org.jetbrains.kotlin.plugin.parcelize.gradle.plugin-2.3.0-Beta2.pom",
+    name = "org.jetbrains.kotlin.plugin.parcelize.org.jetbrains.kotlin.plugin.parcelize.gradle.plugin_2.3.0-RC2",
+    pom = "repository/org/jetbrains/kotlin/plugin/parcelize/org.jetbrains.kotlin.plugin.parcelize.gradle.plugin/2.3.0-RC2/org.jetbrains.kotlin.plugin.parcelize.gradle.plugin-2.3.0-RC2.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/plugin/parcelize/org.jetbrains.kotlin.plugin.parcelize.gradle.plugin/2.3.0-Beta2",
+    repo_path = "org/jetbrains/kotlin/plugin/parcelize/org.jetbrains.kotlin.plugin.parcelize.gradle.plugin/2.3.0-RC2",
     deps = [
-        "org.jetbrains.kotlin.kotlin-gradle-plugin_2.3.0-Beta2",
+        "org.jetbrains.kotlin.kotlin-gradle-plugin_2.3.0-RC2",
     ],
     visibility = ["//visibility:public"],
 )
@@ -77917,10 +78904,10 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.abi-tools-api_2.3.0-Beta2",
-    pom = "repository/org/jetbrains/kotlin/abi-tools-api/2.3.0-Beta2/abi-tools-api-2.3.0-Beta2.pom",
+    name = "org.jetbrains.kotlin.abi-tools-api_2.3.0-RC2",
+    pom = "repository/org/jetbrains/kotlin/abi-tools-api/2.3.0-RC2/abi-tools-api-2.3.0-RC2.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/abi-tools-api/2.3.0-Beta2",
+    repo_path = "org/jetbrains/kotlin/abi-tools-api/2.3.0-RC2",
     visibility = ["//visibility:public"],
 )
 
@@ -77947,14 +78934,14 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.compose-compiler-gradle-plugin_2.3.0-Beta2",
-    pom = "repository/org/jetbrains/kotlin/compose-compiler-gradle-plugin/2.3.0-Beta2/compose-compiler-gradle-plugin-2.3.0-Beta2.pom",
+    name = "org.jetbrains.kotlin.compose-compiler-gradle-plugin_2.3.0-RC2",
+    pom = "repository/org/jetbrains/kotlin/compose-compiler-gradle-plugin/2.3.0-RC2/compose-compiler-gradle-plugin-2.3.0-RC2.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/compose-compiler-gradle-plugin/2.3.0-Beta2",
+    repo_path = "org/jetbrains/kotlin/compose-compiler-gradle-plugin/2.3.0-RC2",
     deps = [
-        "org.jetbrains.kotlin.kotlin-gradle-plugin-api_2.3.0-Beta2",
-        "org.jetbrains.kotlin.kotlin-gradle-plugin_2.3.0-Beta2",
-        "org.jetbrains.kotlin.kotlin-gradle-plugins-bom_2.3.0-Beta2",
+        "org.jetbrains.kotlin.kotlin-gradle-plugin-api_2.3.0-RC2",
+        "org.jetbrains.kotlin.kotlin-gradle-plugin_2.3.0-RC2",
+        "org.jetbrains.kotlin.kotlin-gradle-plugins-bom_2.3.0-RC2",
     ],
     visibility = ["//visibility:public"],
 )
@@ -77995,12 +78982,12 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.fus-statistics-gradle-plugin_2.3.0-Beta2",
-    pom = "repository/org/jetbrains/kotlin/fus-statistics-gradle-plugin/2.3.0-Beta2/fus-statistics-gradle-plugin-2.3.0-Beta2.pom",
+    name = "org.jetbrains.kotlin.fus-statistics-gradle-plugin_2.3.0-RC2",
+    pom = "repository/org/jetbrains/kotlin/fus-statistics-gradle-plugin/2.3.0-RC2/fus-statistics-gradle-plugin-2.3.0-RC2.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/fus-statistics-gradle-plugin/2.3.0-Beta2",
+    repo_path = "org/jetbrains/kotlin/fus-statistics-gradle-plugin/2.3.0-RC2",
     deps = [
-        "org.jetbrains.kotlin.kotlin-gradle-plugin-api_2.3.0-Beta2",
+        "org.jetbrains.kotlin.kotlin-gradle-plugin-api_2.3.0-RC2",
     ],
     visibility = ["//visibility:public"],
 )
@@ -78594,10 +79581,10 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-annotation-processing-gradle_2.3.0-Beta2",
-    pom = "repository/org/jetbrains/kotlin/kotlin-annotation-processing-gradle/2.3.0-Beta2/kotlin-annotation-processing-gradle-2.3.0-Beta2.pom",
+    name = "org.jetbrains.kotlin.kotlin-annotation-processing-gradle_2.3.0-RC2",
+    pom = "repository/org/jetbrains/kotlin/kotlin-annotation-processing-gradle/2.3.0-RC2/kotlin-annotation-processing-gradle-2.3.0-RC2.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-annotation-processing-gradle/2.3.0-Beta2",
+    repo_path = "org/jetbrains/kotlin/kotlin-annotation-processing-gradle/2.3.0-RC2",
     visibility = ["//visibility:public"],
 )
 
@@ -78770,12 +79757,12 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-build-statistics_2.3.0-Beta2",
-    pom = "repository/org/jetbrains/kotlin/kotlin-build-statistics/2.3.0-Beta2/kotlin-build-statistics-2.3.0-Beta2.pom",
+    name = "org.jetbrains.kotlin.kotlin-build-statistics_2.3.0-RC2",
+    pom = "repository/org/jetbrains/kotlin/kotlin-build-statistics/2.3.0-RC2/kotlin-build-statistics-2.3.0-RC2.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-build-statistics/2.3.0-Beta2",
+    repo_path = "org/jetbrains/kotlin/kotlin-build-statistics/2.3.0-RC2",
     deps = [
-        "org.jetbrains.kotlin.kotlin-build-tools-api_2.3.0-Beta2",
+        "org.jetbrains.kotlin.kotlin-build-tools-api_2.3.0-RC2",
         "com.google.code.gson.gson_2.11.0",
     ],
     visibility = ["//visibility:public"],
@@ -78866,10 +79853,10 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-build-tools-api_2.3.0-Beta2",
-    pom = "repository/org/jetbrains/kotlin/kotlin-build-tools-api/2.3.0-Beta2/kotlin-build-tools-api-2.3.0-Beta2.pom",
+    name = "org.jetbrains.kotlin.kotlin-build-tools-api_2.3.0-RC2",
+    pom = "repository/org/jetbrains/kotlin/kotlin-build-tools-api/2.3.0-RC2/kotlin-build-tools-api-2.3.0-RC2.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-build-tools-api/2.3.0-Beta2",
+    repo_path = "org/jetbrains/kotlin/kotlin-build-tools-api/2.3.0-RC2",
     visibility = ["//visibility:public"],
 )
 
@@ -78882,12 +79869,12 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-build-tools-compat_2.3.0-Beta2",
-    pom = "repository/org/jetbrains/kotlin/kotlin-build-tools-compat/2.3.0-Beta2/kotlin-build-tools-compat-2.3.0-Beta2.pom",
+    name = "org.jetbrains.kotlin.kotlin-build-tools-compat_2.3.0-RC2",
+    pom = "repository/org/jetbrains/kotlin/kotlin-build-tools-compat/2.3.0-RC2/kotlin-build-tools-compat-2.3.0-RC2.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-build-tools-compat/2.3.0-Beta2",
+    repo_path = "org/jetbrains/kotlin/kotlin-build-tools-compat/2.3.0-RC2",
     deps = [
-        "org.jetbrains.kotlin.kotlin-tooling-core_2.3.0-Beta2",
+        "org.jetbrains.kotlin.kotlin-tooling-core_2.3.0-RC2",
     ],
     visibility = ["//visibility:public"],
 )
@@ -78952,15 +79939,15 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-build-tools-impl_2.3.0-Beta2",
-    pom = "repository/org/jetbrains/kotlin/kotlin-build-tools-impl/2.3.0-Beta2/kotlin-build-tools-impl-2.3.0-Beta2.pom",
+    name = "org.jetbrains.kotlin.kotlin-build-tools-impl_2.3.0-RC2",
+    pom = "repository/org/jetbrains/kotlin/kotlin-build-tools-impl/2.3.0-RC2/kotlin-build-tools-impl-2.3.0-RC2.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-build-tools-impl/2.3.0-Beta2",
+    repo_path = "org/jetbrains/kotlin/kotlin-build-tools-impl/2.3.0-RC2",
     deps = [
-        "org.jetbrains.kotlin.kotlin-build-tools-api_2.3.0-Beta2",
-        "org.jetbrains.kotlin.kotlin-stdlib_2.3.0-Beta2",
-        "org.jetbrains.kotlin.kotlin-compiler-embeddable_2.3.0-Beta2",
-        "org.jetbrains.kotlin.kotlin-compiler-runner_2.3.0-Beta2",
+        "org.jetbrains.kotlin.kotlin-build-tools-api_2.3.0-RC2",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.3.0-RC2",
+        "org.jetbrains.kotlin.kotlin-compiler-embeddable_2.3.0-RC2",
+        "org.jetbrains.kotlin.kotlin-compiler-runner_2.3.0-RC2",
     ],
     visibility = ["//visibility:public"],
 )
@@ -79293,15 +80280,15 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-compiler-embeddable_2.3.0-Beta2",
-    pom = "repository/org/jetbrains/kotlin/kotlin-compiler-embeddable/2.3.0-Beta2/kotlin-compiler-embeddable-2.3.0-Beta2.pom",
+    name = "org.jetbrains.kotlin.kotlin-compiler-embeddable_2.3.0-RC2",
+    pom = "repository/org/jetbrains/kotlin/kotlin-compiler-embeddable/2.3.0-RC2/kotlin-compiler-embeddable-2.3.0-RC2.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-compiler-embeddable/2.3.0-Beta2",
+    repo_path = "org/jetbrains/kotlin/kotlin-compiler-embeddable/2.3.0-RC2",
     deps = [
-        "org.jetbrains.kotlin.kotlin-stdlib_2.3.0-Beta2",
-        "org.jetbrains.kotlin.kotlin-script-runtime_2.3.0-Beta2",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.3.0-RC2",
+        "org.jetbrains.kotlin.kotlin-script-runtime_2.3.0-RC2",
         "org.jetbrains.kotlin.kotlin-reflect_1.6.10",
-        "org.jetbrains.kotlin.kotlin-daemon-embeddable_2.3.0-Beta2",
+        "org.jetbrains.kotlin.kotlin-daemon-embeddable_2.3.0-RC2",
         "org.jetbrains.kotlinx.kotlinx-coroutines-core-jvm_1.8.0",
     ],
     visibility = ["//visibility:public"],
@@ -79616,14 +80603,14 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-compiler-runner_2.3.0-Beta2",
-    pom = "repository/org/jetbrains/kotlin/kotlin-compiler-runner/2.3.0-Beta2/kotlin-compiler-runner-2.3.0-Beta2.pom",
+    name = "org.jetbrains.kotlin.kotlin-compiler-runner_2.3.0-RC2",
+    pom = "repository/org/jetbrains/kotlin/kotlin-compiler-runner/2.3.0-RC2/kotlin-compiler-runner-2.3.0-RC2.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-compiler-runner/2.3.0-Beta2",
+    repo_path = "org/jetbrains/kotlin/kotlin-compiler-runner/2.3.0-RC2",
     deps = [
-        "org.jetbrains.kotlin.kotlin-daemon-client_2.3.0-Beta2",
+        "org.jetbrains.kotlin.kotlin-daemon-client_2.3.0-RC2",
         "org.jetbrains.kotlinx.kotlinx-coroutines-core-jvm_1.8.0",
-        "org.jetbrains.kotlin.kotlin-compiler-embeddable_2.3.0-Beta2",
+        "org.jetbrains.kotlin.kotlin-compiler-embeddable_2.3.0-RC2",
     ],
     visibility = ["//visibility:public"],
 )
@@ -79758,13 +80745,13 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-compiler_2.3.0-Beta2",
-    pom = "repository/org/jetbrains/kotlin/kotlin-compiler/2.3.0-Beta2/kotlin-compiler-2.3.0-Beta2.pom",
+    name = "org.jetbrains.kotlin.kotlin-compiler_2.3.0-RC2",
+    pom = "repository/org/jetbrains/kotlin/kotlin-compiler/2.3.0-RC2/kotlin-compiler-2.3.0-RC2.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-compiler/2.3.0-Beta2",
+    repo_path = "org/jetbrains/kotlin/kotlin-compiler/2.3.0-RC2",
     deps = [
-        "org.jetbrains.kotlin.kotlin-stdlib-jdk8_2.3.0-Beta2",
-        "org.jetbrains.kotlin.kotlin-script-runtime_2.3.0-Beta2",
+        "org.jetbrains.kotlin.kotlin-stdlib-jdk8_2.3.0-RC2",
+        "org.jetbrains.kotlin.kotlin-script-runtime_2.3.0-RC2",
         "org.jetbrains.kotlin.kotlin-reflect_1.6.10",
         "org.jetbrains.kotlinx.kotlinx-coroutines-core-jvm_1.8.0",
     ],
@@ -79796,10 +80783,10 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-compose-compiler-plugin-embeddable_2.3.0-Beta2",
-    pom = "repository/org/jetbrains/kotlin/kotlin-compose-compiler-plugin-embeddable/2.3.0-Beta2/kotlin-compose-compiler-plugin-embeddable-2.3.0-Beta2.pom",
+    name = "org.jetbrains.kotlin.kotlin-compose-compiler-plugin-embeddable_2.3.0-RC2",
+    pom = "repository/org/jetbrains/kotlin/kotlin-compose-compiler-plugin-embeddable/2.3.0-RC2/kotlin-compose-compiler-plugin-embeddable-2.3.0-RC2.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-compose-compiler-plugin-embeddable/2.3.0-Beta2",
+    repo_path = "org/jetbrains/kotlin/kotlin-compose-compiler-plugin-embeddable/2.3.0-RC2",
     visibility = ["//visibility:public"],
 )
 
@@ -80046,10 +81033,10 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-daemon-client_2.3.0-Beta2",
-    pom = "repository/org/jetbrains/kotlin/kotlin-daemon-client/2.3.0-Beta2/kotlin-daemon-client-2.3.0-Beta2.pom",
+    name = "org.jetbrains.kotlin.kotlin-daemon-client_2.3.0-RC2",
+    pom = "repository/org/jetbrains/kotlin/kotlin-daemon-client/2.3.0-RC2/kotlin-daemon-client-2.3.0-RC2.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-daemon-client/2.3.0-Beta2",
+    repo_path = "org/jetbrains/kotlin/kotlin-daemon-client/2.3.0-RC2",
     deps = [
         "org.jetbrains.kotlin.kotlin-stdlib_2.1.21",
     ],
@@ -80228,10 +81215,10 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-daemon-embeddable_2.3.0-Beta2",
-    pom = "repository/org/jetbrains/kotlin/kotlin-daemon-embeddable/2.3.0-Beta2/kotlin-daemon-embeddable-2.3.0-Beta2.pom",
+    name = "org.jetbrains.kotlin.kotlin-daemon-embeddable_2.3.0-RC2",
+    pom = "repository/org/jetbrains/kotlin/kotlin-daemon-embeddable/2.3.0-RC2/kotlin-daemon-embeddable-2.3.0-RC2.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-daemon-embeddable/2.3.0-Beta2",
+    repo_path = "org/jetbrains/kotlin/kotlin-daemon-embeddable/2.3.0-RC2",
     visibility = ["//visibility:public"],
 )
 
@@ -80365,12 +81352,12 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-gradle-plugin-annotations_2.3.0-Beta2",
-    pom = "repository/org/jetbrains/kotlin/kotlin-gradle-plugin-annotations/2.3.0-Beta2/kotlin-gradle-plugin-annotations-2.3.0-Beta2.pom",
+    name = "org.jetbrains.kotlin.kotlin-gradle-plugin-annotations_2.3.0-RC2",
+    pom = "repository/org/jetbrains/kotlin/kotlin-gradle-plugin-annotations/2.3.0-RC2/kotlin-gradle-plugin-annotations-2.3.0-RC2.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-gradle-plugin-annotations/2.3.0-Beta2",
+    repo_path = "org/jetbrains/kotlin/kotlin-gradle-plugin-annotations/2.3.0-RC2",
     deps = [
-        "org.jetbrains.kotlin.kotlin-gradle-plugins-bom_2.3.0-Beta2",
+        "org.jetbrains.kotlin.kotlin-gradle-plugins-bom_2.3.0-RC2",
     ],
     visibility = ["//visibility:public"],
 )
@@ -80670,16 +81657,16 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-gradle-plugin-api_2.3.0-Beta2",
-    pom = "repository/org/jetbrains/kotlin/kotlin-gradle-plugin-api/2.3.0-Beta2/kotlin-gradle-plugin-api-2.3.0-Beta2.pom",
+    name = "org.jetbrains.kotlin.kotlin-gradle-plugin-api_2.3.0-RC2",
+    pom = "repository/org/jetbrains/kotlin/kotlin-gradle-plugin-api/2.3.0-RC2/kotlin-gradle-plugin-api-2.3.0-RC2.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-gradle-plugin-api/2.3.0-Beta2",
+    repo_path = "org/jetbrains/kotlin/kotlin-gradle-plugin-api/2.3.0-RC2",
     deps = [
-        "org.jetbrains.kotlin.kotlin-gradle-plugin-annotations_2.3.0-Beta2",
-        "org.jetbrains.kotlin.kotlin-native-utils_2.3.0-Beta2",
-        "org.jetbrains.kotlin.kotlin-tooling-core_2.3.0-Beta2",
-        "org.jetbrains.kotlin.kotlin-build-tools-api_2.3.0-Beta2",
-        "org.jetbrains.kotlin.kotlin-gradle-plugins-bom_2.3.0-Beta2",
+        "org.jetbrains.kotlin.kotlin-gradle-plugin-annotations_2.3.0-RC2",
+        "org.jetbrains.kotlin.kotlin-native-utils_2.3.0-RC2",
+        "org.jetbrains.kotlin.kotlin-tooling-core_2.3.0-RC2",
+        "org.jetbrains.kotlin.kotlin-build-tools-api_2.3.0-RC2",
+        "org.jetbrains.kotlin.kotlin-gradle-plugins-bom_2.3.0-RC2",
     ],
     visibility = ["//visibility:public"],
 )
@@ -80854,12 +81841,12 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-gradle-plugin-idea-proto_2.3.0-Beta2",
-    pom = "repository/org/jetbrains/kotlin/kotlin-gradle-plugin-idea-proto/2.3.0-Beta2/kotlin-gradle-plugin-idea-proto-2.3.0-Beta2.pom",
+    name = "org.jetbrains.kotlin.kotlin-gradle-plugin-idea-proto_2.3.0-RC2",
+    pom = "repository/org/jetbrains/kotlin/kotlin-gradle-plugin-idea-proto/2.3.0-RC2/kotlin-gradle-plugin-idea-proto-2.3.0-RC2.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-gradle-plugin-idea-proto/2.3.0-Beta2",
+    repo_path = "org/jetbrains/kotlin/kotlin-gradle-plugin-idea-proto/2.3.0-RC2",
     deps = [
-        "org.jetbrains.kotlin.kotlin-gradle-plugin-idea_2.3.0-Beta2",
+        "org.jetbrains.kotlin.kotlin-gradle-plugin-idea_2.3.0-RC2",
     ],
     visibility = ["//visibility:public"],
 )
@@ -81049,13 +82036,13 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-gradle-plugin-idea_2.3.0-Beta2",
-    pom = "repository/org/jetbrains/kotlin/kotlin-gradle-plugin-idea/2.3.0-Beta2/kotlin-gradle-plugin-idea-2.3.0-Beta2.pom",
+    name = "org.jetbrains.kotlin.kotlin-gradle-plugin-idea_2.3.0-RC2",
+    pom = "repository/org/jetbrains/kotlin/kotlin-gradle-plugin-idea/2.3.0-RC2/kotlin-gradle-plugin-idea-2.3.0-RC2.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-gradle-plugin-idea/2.3.0-Beta2",
+    repo_path = "org/jetbrains/kotlin/kotlin-gradle-plugin-idea/2.3.0-RC2",
     deps = [
-        "org.jetbrains.kotlin.kotlin-tooling-core_2.3.0-Beta2",
-        "org.jetbrains.kotlin.kotlin-gradle-plugin-annotations_2.3.0-Beta2",
+        "org.jetbrains.kotlin.kotlin-tooling-core_2.3.0-RC2",
+        "org.jetbrains.kotlin.kotlin-gradle-plugin-annotations_2.3.0-RC2",
     ],
     visibility = ["//visibility:public"],
 )
@@ -81807,21 +82794,21 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-gradle-plugin_2.3.0-Beta2",
-    pom = "repository/org/jetbrains/kotlin/kotlin-gradle-plugin/2.3.0-Beta2/kotlin-gradle-plugin-2.3.0-Beta2.pom",
+    name = "org.jetbrains.kotlin.kotlin-gradle-plugin_2.3.0-RC2",
+    pom = "repository/org/jetbrains/kotlin/kotlin-gradle-plugin/2.3.0-RC2/kotlin-gradle-plugin-2.3.0-RC2.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-gradle-plugin/2.3.0-Beta2",
+    repo_path = "org/jetbrains/kotlin/kotlin-gradle-plugin/2.3.0-RC2",
     deps = [
-        "org.jetbrains.kotlin.kotlin-gradle-plugin-api_2.3.0-Beta2",
-        "org.jetbrains.kotlin.fus-statistics-gradle-plugin_2.3.0-Beta2",
-        "org.jetbrains.kotlin.kotlin-gradle-plugin-idea_2.3.0-Beta2",
-        "org.jetbrains.kotlin.kotlin-gradle-plugin-idea-proto_2.3.0-Beta2",
-        "org.jetbrains.kotlin.kotlin-klib-commonizer-api_2.3.0-Beta2",
-        "org.jetbrains.kotlin.kotlin-build-statistics_2.3.0-Beta2",
-        "org.jetbrains.kotlin.kotlin-util-klib-metadata_2.3.0-Beta2",
-        "org.jetbrains.kotlin.abi-tools-api_2.3.0-Beta2",
-        "org.jetbrains.kotlin.kotlin-compiler-runner_2.3.0-Beta2",
-        "org.jetbrains.kotlin.kotlin-gradle-plugins-bom_2.3.0-Beta2",
+        "org.jetbrains.kotlin.kotlin-gradle-plugin-api_2.3.0-RC2",
+        "org.jetbrains.kotlin.fus-statistics-gradle-plugin_2.3.0-RC2",
+        "org.jetbrains.kotlin.kotlin-gradle-plugin-idea_2.3.0-RC2",
+        "org.jetbrains.kotlin.kotlin-gradle-plugin-idea-proto_2.3.0-RC2",
+        "org.jetbrains.kotlin.kotlin-klib-commonizer-api_2.3.0-RC2",
+        "org.jetbrains.kotlin.kotlin-build-statistics_2.3.0-RC2",
+        "org.jetbrains.kotlin.kotlin-util-klib-metadata_2.3.0-RC2",
+        "org.jetbrains.kotlin.abi-tools-api_2.3.0-RC2",
+        "org.jetbrains.kotlin.kotlin-compiler-runner_2.3.0-RC2",
+        "org.jetbrains.kotlin.kotlin-gradle-plugins-bom_2.3.0-RC2",
     ],
     visibility = ["//visibility:public"],
 )
@@ -81935,10 +82922,10 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-gradle-plugins-bom_2.3.0-Beta2",
-    pom = "repository/org/jetbrains/kotlin/kotlin-gradle-plugins-bom/2.3.0-Beta2/kotlin-gradle-plugins-bom-2.3.0-Beta2.pom",
+    name = "org.jetbrains.kotlin.kotlin-gradle-plugins-bom_2.3.0-RC2",
+    pom = "repository/org/jetbrains/kotlin/kotlin-gradle-plugins-bom/2.3.0-RC2/kotlin-gradle-plugins-bom-2.3.0-RC2.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-gradle-plugins-bom/2.3.0-Beta2",
+    repo_path = "org/jetbrains/kotlin/kotlin-gradle-plugins-bom/2.3.0-RC2",
     visibility = ["//visibility:public"],
 )
 
@@ -82149,12 +83136,12 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-klib-commonizer-api_2.3.0-Beta2",
-    pom = "repository/org/jetbrains/kotlin/kotlin-klib-commonizer-api/2.3.0-Beta2/kotlin-klib-commonizer-api-2.3.0-Beta2.pom",
+    name = "org.jetbrains.kotlin.kotlin-klib-commonizer-api_2.3.0-RC2",
+    pom = "repository/org/jetbrains/kotlin/kotlin-klib-commonizer-api/2.3.0-RC2/kotlin-klib-commonizer-api-2.3.0-RC2.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-klib-commonizer-api/2.3.0-Beta2",
+    repo_path = "org/jetbrains/kotlin/kotlin-klib-commonizer-api/2.3.0-RC2",
     deps = [
-        "org.jetbrains.kotlin.kotlin-native-utils_2.3.0-Beta2",
+        "org.jetbrains.kotlin.kotlin-native-utils_2.3.0-RC2",
     ],
     visibility = ["//visibility:public"],
 )
@@ -82195,13 +83182,13 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-klib-commonizer-embeddable_2.3.0-Beta2",
-    pom = "repository/org/jetbrains/kotlin/kotlin-klib-commonizer-embeddable/2.3.0-Beta2/kotlin-klib-commonizer-embeddable-2.3.0-Beta2.pom",
+    name = "org.jetbrains.kotlin.kotlin-klib-commonizer-embeddable_2.3.0-RC2",
+    pom = "repository/org/jetbrains/kotlin/kotlin-klib-commonizer-embeddable/2.3.0-RC2/kotlin-klib-commonizer-embeddable-2.3.0-RC2.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-klib-commonizer-embeddable/2.3.0-Beta2",
+    repo_path = "org/jetbrains/kotlin/kotlin-klib-commonizer-embeddable/2.3.0-RC2",
     deps = [
-        "org.jetbrains.kotlin.kotlin-stdlib_2.3.0-Beta2",
-        "org.jetbrains.kotlin.kotlin-compiler-embeddable_2.3.0-Beta2",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.3.0-RC2",
+        "org.jetbrains.kotlin.kotlin-compiler-embeddable_2.3.0-RC2",
     ],
     visibility = ["//visibility:public"],
 )
@@ -82215,10 +83202,10 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-native-prebuilt_2.3.0-Beta2",
-    pom = "repository/org/jetbrains/kotlin/kotlin-native-prebuilt/2.3.0-Beta2/kotlin-native-prebuilt-2.3.0-Beta2.pom",
+    name = "org.jetbrains.kotlin.kotlin-native-prebuilt_2.3.0-RC2",
+    pom = "repository/org/jetbrains/kotlin/kotlin-native-prebuilt/2.3.0-RC2/kotlin-native-prebuilt-2.3.0-RC2.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-native-prebuilt/2.3.0-Beta2",
+    repo_path = "org/jetbrains/kotlin/kotlin-native-prebuilt/2.3.0-RC2",
     visibility = ["//visibility:public"],
 )
 
@@ -82464,14 +83451,14 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-native-utils_2.3.0-Beta2",
-    pom = "repository/org/jetbrains/kotlin/kotlin-native-utils/2.3.0-Beta2/kotlin-native-utils-2.3.0-Beta2.pom",
+    name = "org.jetbrains.kotlin.kotlin-native-utils_2.3.0-RC2",
+    pom = "repository/org/jetbrains/kotlin/kotlin-native-utils/2.3.0-RC2/kotlin-native-utils-2.3.0-RC2.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-native-utils/2.3.0-Beta2",
+    repo_path = "org/jetbrains/kotlin/kotlin-native-utils/2.3.0-RC2",
     deps = [
-        "org.jetbrains.kotlin.kotlin-util-io_2.3.0-Beta2",
-        "org.jetbrains.kotlin.kotlin-util-klib_2.3.0-Beta2",
-        "org.jetbrains.kotlin.kotlin-gradle-plugins-bom_2.3.0-Beta2",
+        "org.jetbrains.kotlin.kotlin-util-io_2.3.0-RC2",
+        "org.jetbrains.kotlin.kotlin-util-klib_2.3.0-RC2",
+        "org.jetbrains.kotlin.kotlin-gradle-plugins-bom_2.3.0-RC2",
     ],
     visibility = ["//visibility:public"],
 )
@@ -82508,6 +83495,18 @@ maven_artifact(
     deps = [
         "org.jetbrains.kotlin.kotlin-stdlib_1.7.20",
         "org.jetbrains.kotlin.kotlin-android-extensions-runtime_1.7.20",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.jetbrains.kotlin.kotlin-parcelize-runtime_1.9.22",
+    pom = "repository/org/jetbrains/kotlin/kotlin-parcelize-runtime/1.9.22/kotlin-parcelize-runtime-1.9.22.pom",
+    repo_root_path = "repository",
+    repo_path = "org/jetbrains/kotlin/kotlin-parcelize-runtime/1.9.22",
+    deps = [
+        "org.jetbrains.kotlin.kotlin-stdlib_1.9.22",
+        "org.jetbrains.kotlin.kotlin-android-extensions-runtime_1.9.22",
     ],
     visibility = ["//visibility:public"],
 )
@@ -83054,12 +84053,23 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-reflect_2.3.0-Beta2",
-    pom = "repository/org/jetbrains/kotlin/kotlin-reflect/2.3.0-Beta2/kotlin-reflect-2.3.0-Beta2.pom",
+    name = "org.jetbrains.kotlin.kotlin-reflect_2.2.20",
+    pom = "repository/org/jetbrains/kotlin/kotlin-reflect/2.2.20/kotlin-reflect-2.2.20.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-reflect/2.3.0-Beta2",
+    repo_path = "org/jetbrains/kotlin/kotlin-reflect/2.2.20",
     deps = [
-        "org.jetbrains.kotlin.kotlin-stdlib_2.3.0-Beta2",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.2.20",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.jetbrains.kotlin.kotlin-reflect_2.3.0-RC2",
+    pom = "repository/org/jetbrains/kotlin/kotlin-reflect/2.3.0-RC2/kotlin-reflect-2.3.0-RC2.pom",
+    repo_root_path = "repository",
+    repo_path = "org/jetbrains/kotlin/kotlin-reflect/2.3.0-RC2",
+    deps = [
+        "org.jetbrains.kotlin.kotlin-stdlib_2.3.0-RC2",
     ],
     visibility = ["//visibility:public"],
 )
@@ -83249,10 +84259,10 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-script-runtime_2.3.0-Beta2",
-    pom = "repository/org/jetbrains/kotlin/kotlin-script-runtime/2.3.0-Beta2/kotlin-script-runtime-2.3.0-Beta2.pom",
+    name = "org.jetbrains.kotlin.kotlin-script-runtime_2.3.0-RC2",
+    pom = "repository/org/jetbrains/kotlin/kotlin-script-runtime/2.3.0-RC2/kotlin-script-runtime-2.3.0-RC2.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-script-runtime/2.3.0-Beta2",
+    repo_path = "org/jetbrains/kotlin/kotlin-script-runtime/2.3.0-RC2",
     visibility = ["//visibility:public"],
 )
 
@@ -83450,12 +84460,12 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-scripting-common_2.3.0-Beta2",
-    pom = "repository/org/jetbrains/kotlin/kotlin-scripting-common/2.3.0-Beta2/kotlin-scripting-common-2.3.0-Beta2.pom",
+    name = "org.jetbrains.kotlin.kotlin-scripting-common_2.3.0-RC2",
+    pom = "repository/org/jetbrains/kotlin/kotlin-scripting-common/2.3.0-RC2/kotlin-scripting-common-2.3.0-RC2.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-scripting-common/2.3.0-Beta2",
+    repo_path = "org/jetbrains/kotlin/kotlin-scripting-common/2.3.0-RC2",
     deps = [
-        "org.jetbrains.kotlin.kotlin-stdlib_2.3.0-Beta2",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.3.0-RC2",
     ],
     visibility = ["//visibility:public"],
 )
@@ -83695,15 +84705,15 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-scripting-compiler-embeddable_2.3.0-Beta2",
-    pom = "repository/org/jetbrains/kotlin/kotlin-scripting-compiler-embeddable/2.3.0-Beta2/kotlin-scripting-compiler-embeddable-2.3.0-Beta2.pom",
+    name = "org.jetbrains.kotlin.kotlin-scripting-compiler-embeddable_2.3.0-RC2",
+    pom = "repository/org/jetbrains/kotlin/kotlin-scripting-compiler-embeddable/2.3.0-RC2/kotlin-scripting-compiler-embeddable-2.3.0-RC2.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-scripting-compiler-embeddable/2.3.0-Beta2",
+    repo_path = "org/jetbrains/kotlin/kotlin-scripting-compiler-embeddable/2.3.0-RC2",
     deps = [
-        "org.jetbrains.kotlin.kotlin-scripting-common_2.3.0-Beta2",
-        "org.jetbrains.kotlin.kotlin-scripting-jvm_2.3.0-Beta2",
-        "org.jetbrains.kotlin.kotlin-scripting-compiler-impl-embeddable_2.3.0-Beta2",
-        "org.jetbrains.kotlin.kotlin-stdlib_2.3.0-Beta2",
+        "org.jetbrains.kotlin.kotlin-scripting-common_2.3.0-RC2",
+        "org.jetbrains.kotlin.kotlin-scripting-jvm_2.3.0-RC2",
+        "org.jetbrains.kotlin.kotlin-scripting-compiler-impl-embeddable_2.3.0-RC2",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.3.0-RC2",
     ],
     visibility = ["//visibility:public"],
 )
@@ -83959,14 +84969,14 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-scripting-compiler-impl-embeddable_2.3.0-Beta2",
-    pom = "repository/org/jetbrains/kotlin/kotlin-scripting-compiler-impl-embeddable/2.3.0-Beta2/kotlin-scripting-compiler-impl-embeddable-2.3.0-Beta2.pom",
+    name = "org.jetbrains.kotlin.kotlin-scripting-compiler-impl-embeddable_2.3.0-RC2",
+    pom = "repository/org/jetbrains/kotlin/kotlin-scripting-compiler-impl-embeddable/2.3.0-RC2/kotlin-scripting-compiler-impl-embeddable-2.3.0-RC2.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-scripting-compiler-impl-embeddable/2.3.0-Beta2",
+    repo_path = "org/jetbrains/kotlin/kotlin-scripting-compiler-impl-embeddable/2.3.0-RC2",
     deps = [
-        "org.jetbrains.kotlin.kotlin-scripting-common_2.3.0-Beta2",
-        "org.jetbrains.kotlin.kotlin-scripting-jvm_2.3.0-Beta2",
-        "org.jetbrains.kotlin.kotlin-stdlib_2.3.0-Beta2",
+        "org.jetbrains.kotlin.kotlin-scripting-common_2.3.0-RC2",
+        "org.jetbrains.kotlin.kotlin-scripting-jvm_2.3.0-RC2",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.3.0-RC2",
     ],
     visibility = ["//visibility:public"],
 )
@@ -84204,14 +85214,14 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-scripting-jvm_2.3.0-Beta2",
-    pom = "repository/org/jetbrains/kotlin/kotlin-scripting-jvm/2.3.0-Beta2/kotlin-scripting-jvm-2.3.0-Beta2.pom",
+    name = "org.jetbrains.kotlin.kotlin-scripting-jvm_2.3.0-RC2",
+    pom = "repository/org/jetbrains/kotlin/kotlin-scripting-jvm/2.3.0-RC2/kotlin-scripting-jvm-2.3.0-RC2.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-scripting-jvm/2.3.0-Beta2",
+    repo_path = "org/jetbrains/kotlin/kotlin-scripting-jvm/2.3.0-RC2",
     deps = [
-        "org.jetbrains.kotlin.kotlin-script-runtime_2.3.0-Beta2",
-        "org.jetbrains.kotlin.kotlin-stdlib_2.3.0-Beta2",
-        "org.jetbrains.kotlin.kotlin-scripting-common_2.3.0-Beta2",
+        "org.jetbrains.kotlin.kotlin-script-runtime_2.3.0-RC2",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.3.0-RC2",
+        "org.jetbrains.kotlin.kotlin-scripting-common_2.3.0-RC2",
     ],
     visibility = ["//visibility:public"],
 )
@@ -84617,10 +85627,18 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-stdlib-common_2.3.0-Beta2",
-    pom = "repository/org/jetbrains/kotlin/kotlin-stdlib-common/2.3.0-Beta2/kotlin-stdlib-common-2.3.0-Beta2.pom",
+    name = "org.jetbrains.kotlin.kotlin-stdlib-common_2.2.20",
+    pom = "repository/org/jetbrains/kotlin/kotlin-stdlib-common/2.2.20/kotlin-stdlib-common-2.2.20.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-stdlib-common/2.3.0-Beta2",
+    repo_path = "org/jetbrains/kotlin/kotlin-stdlib-common/2.2.20",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.jetbrains.kotlin.kotlin-stdlib-common_2.3.0-RC2",
+    pom = "repository/org/jetbrains/kotlin/kotlin-stdlib-common/2.3.0-RC2/kotlin-stdlib-common-2.3.0-RC2.pom",
+    repo_root_path = "repository",
+    repo_path = "org/jetbrains/kotlin/kotlin-stdlib-common/2.3.0-RC2",
     visibility = ["//visibility:public"],
 )
 
@@ -85084,12 +86102,12 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-stdlib-jdk7_2.3.0-Beta2",
-    pom = "repository/org/jetbrains/kotlin/kotlin-stdlib-jdk7/2.3.0-Beta2/kotlin-stdlib-jdk7-2.3.0-Beta2.pom",
+    name = "org.jetbrains.kotlin.kotlin-stdlib-jdk7_2.3.0-RC2",
+    pom = "repository/org/jetbrains/kotlin/kotlin-stdlib-jdk7/2.3.0-RC2/kotlin-stdlib-jdk7-2.3.0-RC2.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-stdlib-jdk7/2.3.0-Beta2",
+    repo_path = "org/jetbrains/kotlin/kotlin-stdlib-jdk7/2.3.0-RC2",
     deps = [
-        "org.jetbrains.kotlin.kotlin-stdlib_2.3.0-Beta2",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.3.0-RC2",
     ],
     visibility = ["//visibility:public"],
 )
@@ -85586,13 +86604,13 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-stdlib-jdk8_2.3.0-Beta2",
-    pom = "repository/org/jetbrains/kotlin/kotlin-stdlib-jdk8/2.3.0-Beta2/kotlin-stdlib-jdk8-2.3.0-Beta2.pom",
+    name = "org.jetbrains.kotlin.kotlin-stdlib-jdk8_2.3.0-RC2",
+    pom = "repository/org/jetbrains/kotlin/kotlin-stdlib-jdk8/2.3.0-RC2/kotlin-stdlib-jdk8-2.3.0-RC2.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-stdlib-jdk8/2.3.0-Beta2",
+    repo_path = "org/jetbrains/kotlin/kotlin-stdlib-jdk8/2.3.0-RC2",
     deps = [
-        "org.jetbrains.kotlin.kotlin-stdlib_2.3.0-Beta2",
-        "org.jetbrains.kotlin.kotlin-stdlib-jdk7_2.3.0-Beta2",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.3.0-RC2",
+        "org.jetbrains.kotlin.kotlin-stdlib-jdk7_2.3.0-RC2",
     ],
     visibility = ["//visibility:public"],
 )
@@ -86378,10 +87396,10 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-stdlib_2.3.0-Beta2",
-    pom = "repository/org/jetbrains/kotlin/kotlin-stdlib/2.3.0-Beta2/kotlin-stdlib-2.3.0-Beta2.pom",
+    name = "org.jetbrains.kotlin.kotlin-stdlib_2.3.0-RC2",
+    pom = "repository/org/jetbrains/kotlin/kotlin-stdlib/2.3.0-RC2/kotlin-stdlib-2.3.0-RC2.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-stdlib/2.3.0-Beta2",
+    repo_path = "org/jetbrains/kotlin/kotlin-stdlib/2.3.0-RC2",
     deps = [
         "org.jetbrains.annotations_13.0",
     ],
@@ -86448,12 +87466,12 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-test-junit_2.3.0-Beta2",
-    pom = "repository/org/jetbrains/kotlin/kotlin-test-junit/2.3.0-Beta2/kotlin-test-junit-2.3.0-Beta2.pom",
+    name = "org.jetbrains.kotlin.kotlin-test-junit_2.3.0-RC2",
+    pom = "repository/org/jetbrains/kotlin/kotlin-test-junit/2.3.0-RC2/kotlin-test-junit-2.3.0-RC2.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-test-junit/2.3.0-Beta2",
+    repo_path = "org/jetbrains/kotlin/kotlin-test-junit/2.3.0-RC2",
     deps = [
-        "org.jetbrains.kotlin.kotlin-test_2.3.0-Beta2",
+        "org.jetbrains.kotlin.kotlin-test_2.3.0-RC2",
         "junit.junit_4.13.2",
     ],
     visibility = ["//visibility:public"],
@@ -86504,12 +87522,12 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-test_2.3.0-Beta2",
-    pom = "repository/org/jetbrains/kotlin/kotlin-test/2.3.0-Beta2/kotlin-test-2.3.0-Beta2.pom",
+    name = "org.jetbrains.kotlin.kotlin-test_2.3.0-RC2",
+    pom = "repository/org/jetbrains/kotlin/kotlin-test/2.3.0-RC2/kotlin-test-2.3.0-RC2.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-test/2.3.0-Beta2",
+    repo_path = "org/jetbrains/kotlin/kotlin-test/2.3.0-RC2",
     deps = [
-        "org.jetbrains.kotlin.kotlin-stdlib_2.3.0-Beta2",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.3.0-RC2",
     ],
     visibility = ["//visibility:public"],
 )
@@ -86656,10 +87674,10 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-tooling-core_2.3.0-Beta2",
-    pom = "repository/org/jetbrains/kotlin/kotlin-tooling-core/2.3.0-Beta2/kotlin-tooling-core-2.3.0-Beta2.pom",
+    name = "org.jetbrains.kotlin.kotlin-tooling-core_2.3.0-RC2",
+    pom = "repository/org/jetbrains/kotlin/kotlin-tooling-core/2.3.0-RC2/kotlin-tooling-core-2.3.0-RC2.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-tooling-core/2.3.0-Beta2",
+    repo_path = "org/jetbrains/kotlin/kotlin-tooling-core/2.3.0-RC2",
     visibility = ["//visibility:public"],
 )
 
@@ -86882,10 +87900,10 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-util-io_2.3.0-Beta2",
-    pom = "repository/org/jetbrains/kotlin/kotlin-util-io/2.3.0-Beta2/kotlin-util-io-2.3.0-Beta2.pom",
+    name = "org.jetbrains.kotlin.kotlin-util-io_2.3.0-RC2",
+    pom = "repository/org/jetbrains/kotlin/kotlin-util-io/2.3.0-RC2/kotlin-util-io-2.3.0-RC2.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-util-io/2.3.0-Beta2",
+    repo_path = "org/jetbrains/kotlin/kotlin-util-io/2.3.0-RC2",
     visibility = ["//visibility:public"],
 )
 
@@ -86934,13 +87952,13 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-util-klib-metadata_2.3.0-Beta2",
-    pom = "repository/org/jetbrains/kotlin/kotlin-util-klib-metadata/2.3.0-Beta2/kotlin-util-klib-metadata-2.3.0-Beta2.pom",
+    name = "org.jetbrains.kotlin.kotlin-util-klib-metadata_2.3.0-RC2",
+    pom = "repository/org/jetbrains/kotlin/kotlin-util-klib-metadata/2.3.0-RC2/kotlin-util-klib-metadata-2.3.0-RC2.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-util-klib-metadata/2.3.0-Beta2",
+    repo_path = "org/jetbrains/kotlin/kotlin-util-klib-metadata/2.3.0-RC2",
     deps = [
-        "org.jetbrains.kotlin.kotlin-util-io_2.3.0-Beta2",
-        "org.jetbrains.kotlin.kotlin-util-klib_2.3.0-Beta2",
+        "org.jetbrains.kotlin.kotlin-util-io_2.3.0-RC2",
+        "org.jetbrains.kotlin.kotlin-util-klib_2.3.0-RC2",
     ],
     visibility = ["//visibility:public"],
 )
@@ -87180,12 +88198,12 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-util-klib_2.3.0-Beta2",
-    pom = "repository/org/jetbrains/kotlin/kotlin-util-klib/2.3.0-Beta2/kotlin-util-klib-2.3.0-Beta2.pom",
+    name = "org.jetbrains.kotlin.kotlin-util-klib_2.3.0-RC2",
+    pom = "repository/org/jetbrains/kotlin/kotlin-util-klib/2.3.0-RC2/kotlin-util-klib-2.3.0-RC2.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-util-klib/2.3.0-Beta2",
+    repo_path = "org/jetbrains/kotlin/kotlin-util-klib/2.3.0-RC2",
     deps = [
-        "org.jetbrains.kotlin.kotlin-util-io_2.3.0-Beta2",
+        "org.jetbrains.kotlin.kotlin-util-io_2.3.0-RC2",
     ],
     visibility = ["//visibility:public"],
 )
@@ -87961,6 +88979,34 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "org.jetbrains.kotlinx.kotlinx-coroutines-play-services_1.6.4",
+    pom = "repository/org/jetbrains/kotlinx/kotlinx-coroutines-play-services/1.6.4/kotlinx-coroutines-play-services-1.6.4.pom",
+    repo_root_path = "repository",
+    repo_path = "org/jetbrains/kotlinx/kotlinx-coroutines-play-services/1.6.4",
+    deps = [
+        "org.jetbrains.kotlinx.kotlinx-coroutines-core-jvm_1.6.4",
+        "com.google.android.gms.play-services-tasks_16.0.1",
+        "org.jetbrains.kotlin.kotlin-stdlib-jdk8_1.6.21",
+        "org.jetbrains.kotlinx.kotlinx-coroutines-bom_1.6.4",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.jetbrains.kotlinx.kotlinx-coroutines-play-services_1.9.0",
+    pom = "repository/org/jetbrains/kotlinx/kotlinx-coroutines-play-services/1.9.0/kotlinx-coroutines-play-services-1.9.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/jetbrains/kotlinx/kotlinx-coroutines-play-services/1.9.0",
+    deps = [
+        "org.jetbrains.kotlinx.kotlinx-coroutines-core-jvm_1.9.0",
+        "com.google.android.gms.play-services-tasks_16.0.1",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.0.0",
+        "org.jetbrains.kotlinx.kotlinx-coroutines-bom_1.9.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "org.jetbrains.kotlinx.kotlinx-coroutines-reactive_1.7.3",
     pom = "repository/org/jetbrains/kotlinx/kotlinx-coroutines-reactive/1.7.3/kotlinx-coroutines-reactive-1.7.3.pom",
     repo_root_path = "repository",
@@ -88587,12 +89633,38 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "org.jetbrains.kotlinx.kotlinx-serialization-protobuf-jvm_1.6.3",
+    pom = "repository/org/jetbrains/kotlinx/kotlinx-serialization-protobuf-jvm/1.6.3/kotlinx-serialization-protobuf-jvm-1.6.3.pom",
+    repo_root_path = "repository",
+    repo_path = "org/jetbrains/kotlinx/kotlinx-serialization-protobuf-jvm/1.6.3",
+    deps = [
+        "org.jetbrains.kotlin.kotlin-stdlib_1.9.22",
+        "org.jetbrains.kotlin.kotlin-stdlib-common_1.9.22",
+        "org.jetbrains.kotlinx.kotlinx-serialization-core-jvm_1.6.3",
+        "org.jetbrains.kotlinx.kotlinx-serialization-bom_1.6.3",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "org.jetbrains.kotlinx.kotlinx-serialization-protobuf_1.3.3",
     pom = "repository/org/jetbrains/kotlinx/kotlinx-serialization-protobuf/1.3.3/kotlinx-serialization-protobuf-1.3.3.pom",
     repo_root_path = "repository",
     repo_path = "org/jetbrains/kotlinx/kotlinx-serialization-protobuf/1.3.3",
     deps = [
         "org.jetbrains.kotlinx.kotlinx-serialization-protobuf-jvm_1.3.3",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.jetbrains.kotlinx.kotlinx-serialization-protobuf_1.6.3",
+    pom = "repository/org/jetbrains/kotlinx/kotlinx-serialization-protobuf/1.6.3/kotlinx-serialization-protobuf-1.6.3.pom",
+    repo_root_path = "repository",
+    repo_path = "org/jetbrains/kotlinx/kotlinx-serialization-protobuf/1.6.3",
+    deps = [
+        "org.jetbrains.kotlinx.kotlinx-serialization-protobuf-jvm_1.6.3",
+        "org.jetbrains.kotlinx.kotlinx-serialization-bom_1.6.3",
     ],
     visibility = ["//visibility:public"],
 )
@@ -91228,6 +92300,13 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "com.google.errorprone.error_prone_parent_2.26.0",
+    pom = "repository/com/google/errorprone/error_prone_parent/2.26.0/error_prone_parent-2.26.0.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/errorprone/error_prone_parent/2.26.0",
+)
+
+maven_artifact(
     name = "com.google.errorprone.error_prone_parent_2.26.1",
     pom = "repository/com/google/errorprone/error_prone_parent/2.26.1/error_prone_parent-2.26.1.pom",
     repo_root_path = "repository",
@@ -93125,10 +94204,10 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.bytedeco.javacpp-presets_1.5.9",
-    pom = "repository/org/bytedeco/javacpp-presets/1.5.9/javacpp-presets-1.5.9.pom",
+    name = "org.bytedeco.javacpp-presets_1.5.12",
+    pom = "repository/org/bytedeco/javacpp-presets/1.5.12/javacpp-presets-1.5.12.pom",
     repo_root_path = "repository",
-    repo_path = "org/bytedeco/javacpp-presets/1.5.9",
+    repo_path = "org/bytedeco/javacpp-presets/1.5.12",
 )
 
 maven_artifact(

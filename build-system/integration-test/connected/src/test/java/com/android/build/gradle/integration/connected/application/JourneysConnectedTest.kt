@@ -913,6 +913,113 @@ class JourneysConnectedTest {
         assertJourneyEvents(result, "$DEVICE_SERIAL > simple.journey.xml", "", expectedEvents)
     }
 
+    @Test
+    fun `run journey that fails with agent resource exhausted error`() {
+        val build = rule.build
+        val appProject = build.androidApplication()
+        appProject.files.add(
+            "src/journeysTest/simple.journey.xml",
+            """
+                <?xml version="1.0" encoding="utf-8"?>
+                <journey name="A simple journey">
+                    <actions>
+                        <action>Tap on the search icon and enter 'Compose' into the search bar at the top of the screen</action>
+                        <action>Tap on the 'Compose' topic</action>
+                        <action>Save the first post</action>
+                        <action>Go to saved posts</action>
+                        <action>Confirm that there is a single saved post that belongs to the 'Compose' topic</action>
+                    </actions>
+                </journey>
+            """.trimIndent()
+        )
+        val roboResultsPath = appProject.resolve("robo_results.textproto")
+        createRoboResults("journeys/robo_results_agent_resource_exhausted_error.textproto", roboResultsPath)
+        val result = executor.expectFailure().withArgument("-DroboResultsPath=$roboResultsPath")
+            .run(":app:testJourneysTestT1DebugTestSuite")
+
+        val outputDir =
+            appProject.buildDir.resolve("intermediates/debug/testJourneysTestT1DebugTestSuite/results/$DEVICE_SERIAL/simple")
+        assertThat(outputDir.resolve("robo_results.pb")).exists()
+        assertThat(outputDir.resolve("journey_results.pb")).exists()
+        for (i in 0 until 2) {
+            assertThat(outputDir.resolve("displayState$i.png")).exists()
+        }
+        val expectedEvents = listOf(
+            buildRunStartedEvent(
+                prompts = listOf(
+                    "Tap on the search icon and enter 'Compose' into the search bar at the top of the screen",
+                    "Tap on the 'Compose' topic",
+                    "Save the first post",
+                    "Go to saved posts",
+                    "Confirm that there is a single saved post that belongs to the 'Compose' topic"
+                ),
+                metadata = mapOf("deviceId" to DEVICE_SERIAL, "deviceName" to DEVICE_NAME)
+            ),
+            buildStepStartedEvent(
+                "Tap on the search icon and enter 'Compose' into the search bar at the top of the screen",
+                Timestamp.newBuilder().setSeconds(1750247037).setNanos(165000000).build()
+            ),
+            buildRunFinishedEvent(
+                Status.ERROR,
+                "The AI agent directing this crawl returned resource exhausted [Reason=AGENT_RESOURCE_EXHAUSTED]"
+            )
+        )
+        assertJourneyEvents(result, "$DEVICE_SERIAL > simple.journey.xml", "", expectedEvents)
+    }
+
+    @Test
+    fun `run journey that fails to launch the app`() {
+        val build = rule.build
+        val appProject = build.androidApplication()
+        appProject.files.add(
+            "src/journeysTest/simple.journey.xml",
+            """
+                <?xml version="1.0" encoding="utf-8"?>
+                <journey name="A simple journey">
+                    <actions>
+                        <action>Tap on the search icon and enter 'Compose' into the search bar at the top of the screen</action>
+                        <action>Tap on the 'Compose' topic</action>
+                        <action>Save the first post</action>
+                        <action>Go to saved posts</action>
+                        <action>Confirm that there is a single saved post that belongs to the 'Compose' topic</action>
+                    </actions>
+                </journey>
+            """.trimIndent()
+        )
+        val roboResultsPath = appProject.resolve("robo_results.textproto")
+        createRoboResults("journeys/robo_results_app_launch_error.textproto", roboResultsPath)
+        val result = executor.expectFailure().withArgument("-DroboResultsPath=$roboResultsPath")
+            .run(":app:testJourneysTestT1DebugTestSuite")
+
+        val outputDir =
+            appProject.buildDir.resolve("intermediates/debug/testJourneysTestT1DebugTestSuite/results/$DEVICE_SERIAL/simple")
+        assertThat(outputDir.resolve("robo_results.pb")).exists()
+        assertThat(outputDir.resolve("journey_results.pb")).exists()
+        assertThat(outputDir.resolve("displayState0.png")).exists()
+
+        val expectedEvents = listOf(
+            buildRunStartedEvent(
+                prompts = listOf(
+                    "Tap on the search icon and enter 'Compose' into the search bar at the top of the screen",
+                    "Tap on the 'Compose' topic",
+                    "Save the first post",
+                    "Go to saved posts",
+                    "Confirm that there is a single saved post that belongs to the 'Compose' topic"
+                ),
+                metadata = mapOf("deviceId" to DEVICE_SERIAL, "deviceName" to DEVICE_NAME)
+            ),
+            buildStepStartedEvent(
+                "Tap on the search icon and enter 'Compose' into the search bar at the top of the screen",
+                Timestamp.newBuilder().setSeconds(1750247037).setNanos(165000000).build()
+            ),
+            buildRunFinishedEvent(
+                Status.ERROR,
+                "Failed to launch app - LAUNCH_INTENT_MISSING [Reason=LAUNCH_APP_FAILED]"
+            )
+        )
+        assertJourneyEvents(result, "$DEVICE_SERIAL > simple.journey.xml", "", expectedEvents)
+    }
+
     private fun createRoboResults(roboResultsResourceName: String, roboResultsPath: Path) {
         val roboResultsBytes = Resources.toByteArray(
             Resources.getResource(

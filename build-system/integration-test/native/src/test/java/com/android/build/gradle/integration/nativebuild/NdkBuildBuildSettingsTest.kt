@@ -44,10 +44,10 @@ class NdkBuildBuildSettingsTest {
     @Rule
     @JvmField
     val project = GradleTestProject.builder()
-      .fromTestApp(HelloWorldJniApp.builder().build())
-      .setSideBySideNdkVersion(DEFAULT_NDK_SIDE_BY_SIDE_VERSION)
-      .addFile(HelloWorldJniApp.androidMkC("src/main/jni"))
-      .create()
+        .fromTestApp(HelloWorldJniApp.builder().build())
+        .setSideBySideNdkVersion(DEFAULT_NDK_SIDE_BY_SIDE_VERSION)
+        .addFile(HelloWorldJniApp.androidMkC("src/main/jni"))
+        .create()
 
     @Before
     @Throws(IOException::class)
@@ -62,6 +62,8 @@ class NdkBuildBuildSettingsTest {
                     ndkPath = "${project.ndkPath}"
                     defaultConfig {
                       minSdk = $DEFAULT_MIN_SDK_VERSION
+                      //noinspection ExpiredTargetSdkVersion
+                      targetSdk = $DEFAULT_MIN_SDK_VERSION
                       externalNativeBuild {
                           ndkBuild {
                             abiFilters.addAll("armeabi-v7a", "arm64-v8a")
@@ -78,14 +80,6 @@ class NdkBuildBuildSettingsTest {
                 android.packagingOptions {
                     doNotStrip "*/armeabi-v7a/libhello-jni.so"
                 }
-            android {
-                applicationVariants.all { variant ->
-                    assert !variant.getExternalNativeBuildTasks().isEmpty()
-                    for (def task : variant.getExternalNativeBuildTasks()) {
-                        assert task.getName() == "externalNativeBuild" + variant.getName().capitalize()
-                    }
-                }
-            }
            """.trimIndent()
         )
     }
@@ -100,6 +94,11 @@ class NdkBuildBuildSettingsTest {
             .forEach {
                 assertThat(it).isEqualTo(BuildSettingsConfiguration())
             }
+    }
+
+    @Test
+    fun `externalNativeBuild task exists`() {
+        project.execute("externalNativeBuildDebug")
     }
 
     @Test

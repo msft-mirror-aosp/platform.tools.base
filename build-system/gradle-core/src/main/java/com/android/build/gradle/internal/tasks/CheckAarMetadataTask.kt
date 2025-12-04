@@ -628,11 +628,6 @@ abstract class CheckAarMetadataWorkAction: WorkAction<CheckAarMetadataWorkParame
         throw RuntimeException("Unsupported target hash: $sdkVersion")
     }
 
-    enum class DesugarJdkVariant(val size: Int) {
-        MINIMAL(0),
-        BASIC(1),
-        NIO(2);
-    }
 }
 
 /** [WorkParameters] for [CheckAarMetadataWorkAction] */

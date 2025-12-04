@@ -116,9 +116,19 @@ public class SdkVersionInfo {
     public static final int HIGHEST_KNOWN_API_XR = 34;
 
     /**
+     * The highest known API level for AI Glasses.
+     */
+    public static final int HIGHEST_KNOWN_API_AI_GLASSES = 36;
+
+    /**
      * The lowest active API for XR, minimum required by libraries.
      */
     public static final int LOWEST_ACTIVE_API_XR = 34;
+
+    /**
+     * The lowest active API for AI Glasses, minimum required by libraries.
+     */
+    public static final int LOWEST_ACTIVE_API_AI_GLASSES = 36;
 
     /**
      * The lowest api level we can accept for compileSdkVersion for

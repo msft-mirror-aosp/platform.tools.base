@@ -1,5 +1,4 @@
 apply plugin: 'com.android.application'
-//apply plugin: 'kotlin-android'
 
 android {
     namespace = "com.test.composite1"
@@ -11,7 +10,7 @@ android {
         targetSdkVersion rootProject.ext.latestCompileSdk
         versionCode 1
         versionName "1.0"
-        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
     buildTypes {
         release {

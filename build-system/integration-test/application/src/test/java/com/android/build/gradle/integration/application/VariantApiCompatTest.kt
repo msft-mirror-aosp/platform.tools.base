@@ -19,6 +19,7 @@ package com.android.build.gradle.integration.application
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
 import com.android.build.gradle.integration.common.utils.TestFileUtils
+import com.android.build.gradle.options.BooleanOption
 import org.junit.Rule
 import org.junit.Test
 
@@ -30,6 +31,7 @@ class VariantApiCompatTest {
     @get:Rule
     var project: GradleTestProject = GradleTestProject.builder()
         .fromTestApp(HelloWorldApp.forPlugin("com.android.application"))
+        .addGradleProperty(BooleanOption.USE_NEW_DSL, false)
         .create()
 
     @Test

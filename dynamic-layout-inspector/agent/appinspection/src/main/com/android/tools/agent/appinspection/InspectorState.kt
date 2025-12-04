@@ -105,7 +105,7 @@ data class ScreenshotSettings(
     val scale: Float = 1.0f
 )
 
-class SnapshotRequest {
+class SnapshotRequest(val screenshotType: Screenshot.Type) {
     enum class State { NEW, PROCESSING }
     val result = CompletableDeferred<LayoutInspectorViewProtocol.CaptureSnapshotResponse.WindowSnapshot>()
     val state = AtomicReference(State.NEW)

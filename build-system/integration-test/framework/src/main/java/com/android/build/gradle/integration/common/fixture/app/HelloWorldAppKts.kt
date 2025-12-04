@@ -46,14 +46,12 @@ class HelloWorldAppKts private constructor(val namespace: String) : KotlinHelloW
             buildscript {
                 apply(from = "../commonBuildScript.gradle")
                 dependencies {
-                    classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:${"$"}{libs.versions.kotlinVersion.get()}")
                     classpath("com.android.tools.build:gradle:${"$"}{libs.versions.buildVersion.get()}")
                 }
             }
 
             plugins {
                 id("$plugin") version libs.versions.buildVersion.get()
-                id("org.jetbrains.kotlin.android") version libs.versions.kotlinVersion.get()
             }
 
             //import anchor
@@ -68,11 +66,6 @@ class HelloWorldAppKts private constructor(val namespace: String) : KotlinHelloW
                     }
             }
 
-            kotlin {
-                compilerOptions {
-                    jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11
-                }
-            }
 
             dependencies {
               api("org.jetbrains.kotlin:kotlin-stdlib:${"$"}{libs.versions.kotlinVersion.get()}")

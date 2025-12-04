@@ -102,6 +102,15 @@ py_library(
 )
 
 py_library(
+    name = "studio_nightly",
+    srcs = ["studio_nightly.py"],
+    deps = [
+        ":bazel",
+        ":studio",
+    ],
+)
+
+py_library(
     name = "studio_win",
     srcs = ["studio_win.py"],
     deps = [
@@ -133,6 +142,7 @@ py_library(
         ":query_checks",
         ":studio_linux",
         ":studio_mac",
+        ":studio_nightly",
         ":studio_win",
     ],
 )

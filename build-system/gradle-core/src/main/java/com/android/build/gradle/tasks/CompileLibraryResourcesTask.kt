@@ -34,6 +34,7 @@ import com.android.builder.files.SerializableInputChanges
 import com.android.builder.internal.aapt.v2.Aapt2RenamingConventions
 import com.android.ide.common.resources.CompileResourceRequest
 import com.android.ide.common.resources.FileStatus
+import com.android.ide.common.resources.ResourcePathEncoding
 import com.android.utils.FileUtils
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.DirectoryProperty
@@ -192,7 +193,8 @@ abstract class CompileLibraryResourcesTask : NewIncrementalTask() {
                 parameters.outputDirectory.asFile.get(),
                 partialRFile = computePartialR(file),
                 isPseudoLocalize = parameters.pseudoLocalize.get(),
-                isPngCrunching = parameters.crunchPng.get()
+                isPngCrunching = parameters.crunchPng.get(),
+                resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable,
             )
             compilationService.submitCompile(request)
         }

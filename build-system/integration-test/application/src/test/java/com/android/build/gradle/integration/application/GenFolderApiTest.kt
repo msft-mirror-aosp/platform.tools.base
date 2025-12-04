@@ -19,10 +19,12 @@ import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.GradleTestProject.Companion.builder
 import com.android.build.gradle.integration.common.fixture.ModelContainerV2
 import com.android.build.gradle.integration.common.fixture.VariantApiTestType
+import com.android.build.gradle.integration.common.fixture.VariantApiTestType.OLD
 import com.android.build.gradle.integration.common.truth.ApkSubject
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.build.gradle.integration.common.utils.getDebugGenerateSourcesCommands
 import com.android.build.gradle.integration.common.utils.getVariantByName
+import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.truth.PathSubject
 import com.android.utils.FileUtils
 import com.google.common.truth.Truth
@@ -56,7 +58,11 @@ class GenFolderApiTest(private val variantApiTestType: VariantApiTestType) {
     }
 
     @get:Rule
-    val project: GradleTestProject = builder().fromTestProject("genFolderApi").create()
+    val project: GradleTestProject = builder()
+        .fromTestProject("genFolderApi").apply {
+            if (variantApiTestType == OLD) addGradleProperty(BooleanOption.USE_NEW_DSL, false)
+        }
+        .create()
 
     private lateinit var ideSetupTasks: List<String>
 
@@ -74,6 +80,7 @@ class GenFolderApiTest(private val variantApiTestType: VariantApiTestType) {
             .run("assembleDebug")
         container =
             project.modelV2()
+                .allowOptionWarning(BooleanOption.USE_NEW_DSL)
                 .withArgument("-P" + "inject_enable_generate_values_res=true")
                 .fetchModels()
                 .container
@@ -94,7 +101,7 @@ class GenFolderApiTest(private val variantApiTestType: VariantApiTestType) {
     @Throws(Exception::class)
     fun checkTheCustomResGenerationTaskRan() {
         project.getApk(GradleTestProject.ApkType.DEBUG).use { apk ->
-            if (variantApiTestType == VariantApiTestType.OLD) {
+            if (variantApiTestType == OLD) {
                 ApkSubject.assertThat(apk).contains("res/xml/generated.xml")
             }
             ApkSubject.assertThat(apk)
@@ -135,7 +142,7 @@ class GenFolderApiTest(private val variantApiTestType: VariantApiTestType) {
             PathSubject.assertThat(it).isDirectory()
         }
 
-        if (variantApiTestType == VariantApiTestType.OLD) {
+        if (variantApiTestType == OLD) {
             val customResources2 =
                 mainArtifact.generatedResourceFolders.single { it: File ->
                     it.absolutePath.startsWith(
@@ -197,7 +204,7 @@ class GenFolderApiTest(private val variantApiTestType: VariantApiTestType) {
             val genResFolders = mainInfo.generatedResourceFolders.map(File::getAbsolutePath)
             Truth.assertThat(genResFolders).containsNoDuplicates()
             Truth.assertThat(genResFolders).contains(getCustomPath("res", variant.name))
-            if (variantApiTestType == VariantApiTestType.OLD) {
+            if (variantApiTestType == OLD) {
                 Truth.assertThat(genResFolders).contains(
                     customRes2Path + variant.name
                 )
@@ -218,7 +225,7 @@ class GenFolderApiTest(private val variantApiTestType: VariantApiTestType) {
 
     private fun getCustomPath(sourceType: String, variantName: String, index: String = ""): String =
         when(variantApiTestType) {
-            VariantApiTestType.OLD ->
+            OLD ->
                 FileUtils.join(
                     project.projectDir.absolutePath,
                     "build", "custom" + sourceType.capitalize() + index,

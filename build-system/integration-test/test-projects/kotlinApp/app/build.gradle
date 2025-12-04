@@ -16,7 +16,6 @@
 
 
 apply plugin: 'com.android.application'
-apply plugin: 'kotlin-android'
 
 android {
     namespace = "com.example.android.kotlin"
@@ -34,14 +33,10 @@ android {
     sourceSets {
         main.java.srcDirs += 'src/main/kotlin'
     }
-    kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_11
-    }
 }
 
 dependencies {
 	implementation project(':library')
-    implementation "org.jetbrains.kotlin:kotlin-stdlib:${libs.versions.kotlinVersion.get()}"
     androidTestImplementation 'androidx.test.ext:junit:1.1.5'
     androidTestImplementation 'androidx.test:runner:1.4.0-alpha06'
 }

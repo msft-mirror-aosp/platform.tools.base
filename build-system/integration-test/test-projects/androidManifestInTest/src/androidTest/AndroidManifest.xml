@@ -3,7 +3,7 @@
 
     <instrumentation android:name="${instrumentationRunner}">
         <meta-data android:name="listener"
-                   android:value="android.support.test.internal.runner.listener.ManifestListener"/>
+                   android:value="androidx.test.internal.runner.listener.ManifestListener"/>
     </instrumentation>
 
     <permission-group android:name="foo.permission-group.COST_MONEY"

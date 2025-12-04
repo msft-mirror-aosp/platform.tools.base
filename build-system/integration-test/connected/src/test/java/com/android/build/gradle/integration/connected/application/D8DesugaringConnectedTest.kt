@@ -69,7 +69,9 @@ class D8DesugaringConnectedTest {
                     defaultConfig {
                         applicationId "com.example.d8desugartest"
                         minSdkVersion 20
-                        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+                        //noinspection ExpiredTargetSdkVersion
+                        targetSdkVersion 20
+                        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
                     }
 
                     flavorDimensions "whatever"
@@ -88,10 +90,10 @@ class D8DesugaringConnectedTest {
 
                 dependencies {
                     implementation project(':lib')
-                    androidTestImplementation 'com.android.support:support-v4:$SUPPORT_LIB_VERSION'
                     testImplementation 'junit:junit:4.12'
-                    androidTestImplementation 'com.android.support.test:runner:$TEST_SUPPORT_LIB_VERSION'
-                    androidTestImplementation 'com.android.support.test:rules:$TEST_SUPPORT_LIB_VERSION'
+                    androidTestImplementation "androidx.test:runner:1.4.0-alpha06"
+                    androidTestImplementation "androidx.test:rules:1.4.0-alpha06"
+                    androidTestImplementation "androidx.annotation:annotation-experimental:1.3.0"
                 }
                 """.trimIndent()
         )
@@ -148,8 +150,8 @@ class D8DesugaringConnectedTest {
             ("""package com.example.helloworld;
 
                     import android.content.Context;
-                    import android.support.test.InstrumentationRegistry;
-                    import android.support.test.runner.AndroidJUnit4;
+                    import androidx.test.InstrumentationRegistry;
+                    import androidx.test.runner.AndroidJUnit4;
 
                     import org.junit.Test;
                     import org.junit.runner.RunWith;

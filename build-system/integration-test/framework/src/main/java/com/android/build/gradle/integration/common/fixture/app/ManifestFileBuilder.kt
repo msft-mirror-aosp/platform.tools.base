@@ -44,7 +44,8 @@ class ManifestFileBuilder() {
                 android:allowBackup="true"
                 android:supportsRtl="true"
                 android:theme="@style/Theme.AppCompat.Light">
-                <activity android:name= "$namespace.$activityClassName">
+                <activity android:name= "$namespace.$activityClassName"
+                   android:exported="true">
                 ${if(isMainActivity) mainLauncherIntentFilter else ""}
                 </activity>
             </application>

@@ -25,11 +25,10 @@ import org.junit.Rule
 import org.junit.Test
 import java.io.File
 
-class WorkerEnabledTransformationTest{
+class WorkerEnabledTransformationTest {
     @get:Rule
     val project: GradleTestProject = GradleTestProject.builder()
          .fromTestApp(HelloWorldAppKts.forPlugin("com.android.application"))
-         .disableBuiltInKotlin()
          .create();
 
     @Test

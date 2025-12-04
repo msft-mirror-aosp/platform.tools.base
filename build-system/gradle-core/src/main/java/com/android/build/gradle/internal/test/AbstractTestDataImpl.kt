@@ -20,13 +20,11 @@ import com.android.build.api.variant.impl.BuiltArtifactsImpl
 import com.android.build.api.variant.impl.BuiltArtifactsLoaderImpl
 import com.android.build.gradle.internal.component.InstrumentedTestCreationConfig
 import com.android.build.gradle.internal.tasks.databinding.DATA_BINDING_TRIGGER_CLASS
-import com.android.build.gradle.internal.tasks.extractApkFilesBypassingBundleTool
 import com.android.build.gradle.internal.test.BuiltArtifactsSplitOutputMatcher.computeBestOutput
 import com.android.build.gradle.internal.testing.StaticTestData
 import com.android.build.gradle.internal.testing.TestData
 import com.android.builder.testing.api.DeviceConfigProvider
 import com.android.ide.common.util.toPathString
-import com.google.common.collect.ImmutableList
 import com.google.common.io.Files
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.Directory
@@ -68,7 +66,7 @@ abstract class AbstractTestDataImpl(
     @get:PathSensitive(PathSensitivity.NONE)
     @get:Optional
     val additionalSdkSupportedSplitApks: Provider<Directory>?,
-    extraInstrumentationTestRunnerArgs: Map<String, String>
+    extraInstrumentationTestRunnerArgs: Provider<Map<String, String>>
 ) : TestData {
 
     @get:Internal

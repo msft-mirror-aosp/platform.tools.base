@@ -325,7 +325,6 @@ public class VariantDslInfoTest {
         if (injectedDeviceApi == null) {
             projectOptions =
                     new ProjectOptions(
-                            ImmutableMap.of(),
                             new FakeProviderFactory(
                                     FakeProviderFactory.getFactory(), ImmutableMap.of()));
         } else {
@@ -335,7 +334,6 @@ public class VariantDslInfoTest {
                             injectedDeviceApi);
             projectOptions =
                     new ProjectOptions(
-                            ImmutableMap.of(),
                             new FakeProviderFactory(
                                     FakeProviderFactory.getFactory(), gradleProperties));
         }

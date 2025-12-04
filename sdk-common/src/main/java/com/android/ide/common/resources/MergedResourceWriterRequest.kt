@@ -17,9 +17,7 @@
 package com.android.ide.common.resources
 
 import com.android.ide.common.blame.MergingLog
-import com.android.ide.common.workers.ExecutorServiceAdapter
 import com.android.ide.common.workers.WorkerExecutorFacade
-import com.google.common.util.concurrent.MoreExecutors
 import java.io.File
 
 /**
@@ -39,7 +37,7 @@ import java.io.File
  *     transform and for unit testing with resources.
  * @param pseudoLocalesEnabled generate resources for pseudo-locales (en-XA and ar-XB).
  * @param crunchPng should we crunch PNG files.
- * @param moduleSourceSets for determining source set ordering when writing relative resource paths.
+ * @param relativePathEncoding for determining source set ordering when writing relative resource paths.
  */
 class MergedResourceWriterRequest(
         val workerExecutor: WorkerExecutorFacade,
@@ -53,5 +51,5 @@ class MergedResourceWriterRequest(
         val notCompiledOutputDirectory: File?,
         val pseudoLocalesEnabled: Boolean,
         val crunchPng: Boolean,
-        val moduleSourceSets: Map<String, String>
+        val relativePathEncoding: ResourcePathEncoding
 )

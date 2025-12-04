@@ -70,7 +70,12 @@ public class InjectedAbiSplitTest {
                         + "        defaultConfig {\n"
                         + "          minSdk = "
                         + GradleTestProject.DEFAULT_MIN_SDK_VERSION
-                        + "\n}\n"
+                        + "\n"
+                        + "          //noinspection ExpiredTargetSdkVersion\n"
+                        + "          targetSdk = "
+                        + GradleTestProject.DEFAULT_MIN_SDK_VERSION
+                        + "\n"
+                        + "        }\n"
                         + "    externalNativeBuild {\n"
                         + "        cmake {\n"
                         + "            path 'CMakeLists.txt'\n"

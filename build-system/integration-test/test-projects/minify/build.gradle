@@ -16,7 +16,7 @@ android {
         minSdkVersion 16
         //noinspection ExpiringTargetSdkVersion,ExpiredTargetSdkVersion
         targetSdkVersion 16
-        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildTypes {
@@ -30,18 +30,15 @@ android {
         }
     }
 
-    dexOptions {
-        incremental = false
-    }
-
     // Included in both hamcrest-core and hamcrest-library.
     packagingOptions.exclude 'LICENSE.txt'
 }
 
 dependencies {
     testImplementation 'junit:junit:4.12'
-    androidTestImplementation "com.android.support.test:runner:${libs.versions.testSupportLibVersion.get()}"
-    androidTestImplementation "com.android.support.test:rules:${libs.versions.testSupportLibVersion.get()}"
+    androidTestImplementation "androidx.test:runner:1.4.0-alpha06"
+    androidTestImplementation "androidx.test:rules:1.4.0-alpha06"
+    androidTestImplementation "androidx.annotation:annotation-experimental:1.3.0"
 
     // This library references java.beans classes that are not part of Android,
     // so ProGuard can't find references and fails without the rule from

@@ -30,6 +30,8 @@ import com.android.tools.journeys.proto.StepStarted
 import com.android.tools.journeys.proto.TurnAdded
 import com.android.tools.journeys.testengine.adapter.JourneysResultAdapter
 import com.android.tools.journeys.testengine.adapter.consumer.JourneyRunEventConsumer
+import com.android.tools.journeys.testengine.robo.platform.JourneyExecutionException
+import com.android.tools.journeys.testengine.robo.platform.JourneyFailureReason
 import com.android.tools.journeys.testengine.robo.platform.RoboConfigConstants
 import com.google.protobuf.Timestamp
 import java.nio.file.Path
@@ -61,14 +63,12 @@ class RoboResultAdapter(
     /**
      * Processes a [Crawl] object.
      * The raw artifact bytes are expected to be a serialized [Crawl] object.
+     *
+     * @throws [JourneyExecutionException] if the crawl terminates with an error
      */
     override fun process(rawArtifactBytes: ByteArray) {
-        try {
-            val crawl = Crawl.parseFrom(rawArtifactBytes)
-            onCrawlReceived(crawl)
-        } catch (e: Exception) {
-            println("Error while processing crawl bytes: ${e.message}")
-        }
+        val crawl = Crawl.parseFrom(rawArtifactBytes)
+        onCrawlReceived(crawl)
     }
 
     /**
@@ -77,10 +77,57 @@ class RoboResultAdapter(
      * and triggers the appropriate event handlers.
      *
      * @param crawl The [Crawl] object containing actions and script details.
+     * @throws [JourneyExecutionException] if the crawl terminates with an error
      */
     fun onCrawlReceived(crawl: Crawl) {
         preprocessCrawlResults(crawl)
         processActions(crawl)
+
+        // If the crawl result maps to an exception - then throw it
+        mapCrawlResultToException(crawl.crawlResult)?.let {
+            throw it
+        }
+    }
+
+    private fun mapCrawlResultToException(crawlResult: Crawl.CrawlResult): JourneyExecutionException? {
+        return when (crawlResult) {
+            Crawl.CrawlResult.TIMED_OUT -> JourneyExecutionException(
+                message = "The crawler ran out of time before exploring all actions",
+                reason = JourneyFailureReason.CRAWLER_TIMED_OUT
+            )
+
+            Crawl.CrawlResult.APP_TERMINATED -> JourneyExecutionException(
+                message = "The app terminated during the crawl",
+                reason = JourneyFailureReason.APP_TERMINATED
+            )
+
+            Crawl.CrawlResult.CRAWLER_TERMINATED -> JourneyExecutionException(
+                message = "The crawler service was terminated unexpectedly (e.g. due to OOM)",
+                reason = JourneyFailureReason.CRAWLER_TERMINATED
+            )
+
+            Crawl.CrawlResult.CANCELLED -> JourneyExecutionException(
+                message = "Cancelled by user",
+                reason = JourneyFailureReason.CRAWLER_TERMINATED
+            )
+
+            Crawl.CrawlResult.AGENT_TIMED_OUT -> JourneyExecutionException(
+                message = "The AI agent directing this crawl timed out",
+                reason = JourneyFailureReason.AGENT_TIMED_OUT
+            )
+
+            Crawl.CrawlResult.AGENT_RESOURCE_EXHAUSTED -> JourneyExecutionException(
+                message = "The AI agent directing this crawl returned resource exhausted",
+                reason = JourneyFailureReason.AGENT_RESOURCE_EXHAUSTED
+            )
+
+            Crawl.CrawlResult.COMPLETED -> null
+            Crawl.CrawlResult.UNDEFINED_CRAWL_RESULT -> null
+
+            // We don't know if a newly added crawl result represents a success or failure,
+            // so let's play it safe and not map it as an exception.
+            Crawl.CrawlResult.UNRECOGNIZED -> null
+        }
     }
 
     /**
@@ -104,6 +151,18 @@ class RoboResultAdapter(
      */
     private fun processActions(crawl: Crawl) {
         for (action in crawl.actionsList) {
+            if (action.details.detailsCase == ActionDetails.DetailsCase.LAUNCH_ACTION && action.executionResult == Action.ExecutionResult.ACTION_FAILED) {
+                val errorMessage = if (action.resultDetails.hasLaunchResult()) {
+                    "Failed to launch app - ${action.resultDetails.launchResult.resultType}"
+                } else {
+                    "Failed to launch app"
+                }
+                throw JourneyExecutionException(
+                    message = errorMessage,
+                    reason = JourneyFailureReason.LAUNCH_APP_FAILED
+                )
+            }
+
             // If an action has no RoboScriptDetails, we skip showing such actions.
             // This typically happens for setup actions like LAUNCH_ACTION before the first prompt.
             if (action.roboScriptDetailsList.isEmpty()) {

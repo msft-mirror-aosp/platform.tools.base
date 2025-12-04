@@ -8,8 +8,8 @@ dependencies {
     api 'com.google.code.findbugs:jsr305:1.3.9'
     api 'com.google.guava:guava:19.0'
 
-    androidTestImplementation "com.android.support.test:runner:${libs.versions.testSupportLibVersion.get()}"
-    androidTestImplementation "com.android.support.test:rules:${libs.versions.testSupportLibVersion.get()}"
+    androidTestImplementation "androidx.test:runner:1.4.0-alpha06"
+    androidTestImplementation "androidx.test:rules:1.4.0-alpha06"
 }
 
 android {
@@ -18,6 +18,6 @@ android {
     buildToolsVersion = libs.versions.buildToolsVersion.get()
     defaultConfig {
         minSdkVersion libs.versions.supportLibMinSdk.get()
-        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 }

@@ -32,7 +32,7 @@ class TestDataImpl(
     privacySandboxSdkApks: FileCollection?,
     privacySandboxCompatSdkApksDir: Provider<Directory>?,
     additionalSdkSupportedApkSplits: Provider<Directory>?,
-    extraInstrumentationTestRunnerArgs: Map<String, String>
+    extraInstrumentationTestRunnerArgs: Provider<Map<String, String>>
 ) : AbstractTestDataImpl(
     namespace,
     testConfig,

@@ -89,6 +89,7 @@ public class VariantsApiTest {
                 GradleTestProject.builder()
                         .fromTestApp(HelloWorldApp.forPlugin(plugin))
                         .disableBuiltInKotlin()
+                        .addGradleProperty(BooleanOption.USE_NEW_DSL, false)
                         .create();
 
         this.dslProperty = dslProperty;

@@ -4,7 +4,7 @@ android {
     namespace = "com.android.tools.test.mylibrary"
     compileSdkVersion libs.versions.latestCompileSdk.get().toInteger()
     buildToolsVersion = libs.versions.buildToolsVersion.get()
-    resourcePrefix 'mylib_'
+    resourcePrefix = 'mylib_'
 
     defaultConfig {
         minSdkVersion 21

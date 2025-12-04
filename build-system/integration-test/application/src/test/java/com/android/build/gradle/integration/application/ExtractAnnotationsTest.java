@@ -27,6 +27,7 @@ import com.android.build.gradle.integration.common.fixture.project.AarSelector;
 import com.android.build.gradle.integration.common.runner.FilterableParameterized;
 import com.android.build.gradle.integration.common.truth.ScannerSubject;
 import com.android.build.gradle.integration.common.utils.TestFileUtils;
+import com.android.build.gradle.options.BooleanOption;
 import com.android.build.gradle.options.OptionalBooleanOption;
 
 import com.google.common.truth.Truth;
@@ -46,7 +47,7 @@ import java.util.Scanner;
  *
  * <pre>
  *     $ cd tools
- *     $ ./gradlew :base:build-system:integration-test:application:test -D:base:build-system:integration-test:application:test.single=ExtractAnnotationTest
+ *     $ ./gradlew :base:build-system:integration-test:application:test --tests "ExtractAnnotationsTest"
  * </pre>
  */
 @RunWith(FilterableParameterized.class)
@@ -229,7 +230,7 @@ public class ExtractAnnotationsTest {
                         + "        project.files('/does/not/exist')\n"
                         + "    )\n"
                         + "}\n");
-        getExecutor().run("clean", "assembleDebug");
+        getExecutor().with(BooleanOption.USE_NEW_DSL, false).run("clean", "assembleDebug");
     }
 
     /** Regression test for b/228751486 */

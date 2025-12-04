@@ -356,7 +356,6 @@ public class AnalyticsUtilTest {
     public void checkEmptyProjectOptions() {
         ProjectOptions options =
                 new ProjectOptions(
-                        ImmutableMap.of(),
                         new FakeProviderFactory(
                                 FakeProviderFactory.getFactory(), ImmutableMap.of()));
         GradleProjectOptionsSettings gradleProjectOptionsSettings = AnalyticsUtil.toProto(options);
@@ -382,7 +381,6 @@ public class AnalyticsUtilTest {
         properties.put(StringOption.IDE_BUILD_TARGET_ABI.getPropertyName(), "x86");
         ProjectOptions options =
                 new ProjectOptions(
-                        ImmutableMap.of(),
                         new FakeProviderFactory(
                                 FakeProviderFactory.getFactory(), properties.build()));
 

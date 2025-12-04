@@ -152,6 +152,7 @@ class AndroidXJetifierMatrixTest {
         val model = project.modelV2()
             .with(BooleanOption.USE_ANDROID_X, false)
             .with(BooleanOption.ENABLE_JETIFIER, false)
+            .suppressOptionWarning(BooleanOption.USE_ANDROID_X)
             .ignoreSyncIssues()
             .fetchModels("debug")
             .container
@@ -177,6 +178,7 @@ class AndroidXJetifierMatrixTest {
         val model = project.modelV2()
                 .with(BooleanOption.USE_ANDROID_X, false)
                 .with(BooleanOption.ENABLE_JETIFIER, false)
+                .suppressOptionWarning(BooleanOption.USE_ANDROID_X)
                 .ignoreSyncIssues().fetchModels().container
         assertThat(model.getProject().issues!!.syncIssues).isEmpty()
     }
@@ -186,6 +188,8 @@ class AndroidXJetifierMatrixTest {
         val model = project.modelV2()
             .with(BooleanOption.USE_ANDROID_X, false)
             .with(BooleanOption.ENABLE_JETIFIER, true)
+            .suppressOptionWarning(BooleanOption.USE_ANDROID_X)
+            .suppressOptionWarning(BooleanOption.ENABLE_JETIFIER)
             .ignoreSyncIssues()
             .fetchModels("debug")
             .container

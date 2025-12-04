@@ -141,7 +141,12 @@ private class GoogleMavenRepositoryV2Impl : GoogleMavenRepositoryV2 {
         artifactId: String,
         filter: Predicate<Version>?,
         allowPreview: Boolean
-    ): Version? = findVersion(groupId, artifactId, { filter?.test(it) != false }, allowPreview)
+    ): Version? = findVersion(
+        groupId,
+        artifactId,
+        filter?.let { filter -> filter::test },
+        allowPreview
+    )
 
     override fun findVersion(
         groupId: String,

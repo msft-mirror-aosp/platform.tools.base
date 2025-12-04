@@ -1,88 +1,9 @@
 load("@rules_java//java:defs.bzl", "java_import", "java_library")
-load("//tools/base/bazel:bazel.bzl", "iml_module")
 load("//tools/base/bazel:gradle.bzl", "gradle_build", "gradle_test")
-load("//tools/base/bazel:kotlin.bzl", "kotlin_test")
 load("//tools/base/bazel:maven.bzl", "maven_library", "maven_repository")
 load("//tools/base/build-system/integration-test:common-dependencies.bzl", "KGP_FOR_TESTS", "KGP_VERSION_FOR_TESTS")
-load("//tools/base/common:version.bzl", "BASE_VERSION", "BUILD_VERSION", "IS_AGP_RELEASE_BRANCH")
+load("//tools/base/common:version.bzl", "BUILD_VERSION", "IS_AGP_RELEASE_BRANCH")
 load("hybrid_build.bzl", "GRADLE_PROPERTIES")
-
-# managed by go/iml_to_build
-iml_module(
-    name = "studio.android.sdktools.manifest-merger",
-    srcs = ["manifest-merger/src/main/java"],
-    iml_files = ["manifest-merger/android.sdktools.manifest-merger.iml"],
-    lint_baseline = "lint_baseline.xml",
-    # do not sort: must match IML order
-    test_deps = [
-        "//tools/adt/idea/.idea/libraries:junit4",
-        "//tools/adt/idea/.idea/libraries:mockito",
-        "//tools/base/testutils:studio.android.sdktools.testutils",
-        "//tools/adt/idea/.idea/libraries:truth",
-        "//tools/adt/idea/.idea/libraries:mockito-kotlin",
-    ],
-    test_resources = ["manifest-merger/src/test/resources"],
-    test_srcs = ["manifest-merger/src/test/java"],
-    visibility = ["//visibility:public"],
-    exports = ["//tools/base/sdklib:studio.android.sdktools.sdklib"],
-    # do not sort: must match IML order
-    deps = [
-        "@intellij//:intellij-sdk",
-        "@intellij//:com.intellij.java",
-        "//tools/base/sdklib:studio.android.sdktools.sdklib",
-        "//tools/base/sdk-common:studio.android.sdktools.sdk-common",
-    ],
-)
-
-maven_library(
-    name = "tools.manifest-merger",
-    srcs = glob([
-        "manifest-merger/src/main/java/com/android/manifmerger/*.java",
-        "manifest-merger/src/main/java/com/android/manifmerger/*.kt",
-    ]),
-    coordinates = "com.android.tools.build:manifest-merger",
-    notice = "manifest-merger/NOTICE",
-    resource_strip_prefix = "tools/base/build-system/manifest-merger",
-    version = BASE_VERSION,
-    visibility = ["//visibility:public"],
-    deps = [
-        "//tools/base/common:tools.common",
-        "//tools/base/sdk-common:tools.sdk-common",
-        "//tools/base/sdklib:tools.sdklib",
-        "@maven//:com.google.code.gson.gson",
-        "@maven//:org.jetbrains.kotlin.kotlin-stdlib-jdk8",
-    ],
-)
-
-kotlin_test(
-    name = "tools.manifest-merger_tests",
-    srcs = glob([
-        "manifest-merger/src/test/java/com/android/manifmerger/*.java",
-        "manifest-merger/src/test/java/com/android/manifmerger/testutils/*.kt",
-        "manifest-merger/src/test/java/com/android/manifmerger/unit/*.kt",
-        "manifest-merger/src/test/java/com/android/manifmerger/*.kt",
-    ]),
-    jvm_flags = ["-Dtest.suite.jar=tools.manifest-merger_tests.jar"],
-    lint_baseline = "lint_baseline_manifest_merger_tests.xml",
-    resources = glob(["manifest-merger/src/test/resources/**"]),
-    tags = ["noci:studio-win"],  # b/77288863
-    test_class = "com.android.testutils.JarTestSuite",
-    runtime_deps = ["//tools/base/testutils:tools.testutils"],
-    deps = [
-        ":tools.manifest-merger",
-        "//tools/base/annotations",
-        "//tools/base/common:tools.common",
-        "//tools/base/sdk-common:tools.sdk-common",
-        "//tools/base/sdklib:tools.sdklib",
-        "//tools/base/testutils:tools.testutils",
-        "@maven//:com.google.code.gson.gson",
-        "@maven//:com.google.guava.guava",
-        "@maven//:com.google.truth.truth",
-        "@maven//:junit.junit",
-        "@maven//:org.mockito.kotlin.mockito-kotlin",
-        "@maven//:org.mockito.mockito-core",
-    ],
-)
 
 maven_library(
     name = "tools.apksig",
@@ -374,37 +295,60 @@ java_library(
     runtime_deps = ["@maven//:org.slf4j.slf4j-api"],
 )
 
+GRADLE_API_JARS = {
+    "gradle-api-" + GRADLE_VERSION + ".jar": "build/gradle-api-" + GRADLE_VERSION + ".jar",
+    "gradle-installation-beacon-" + GRADLE_VERSION + ".jar": "build/lib/gradle-installation-beacon-" + GRADLE_VERSION + ".jar",
+    "gradle-runtime-api-info-" + GRADLE_VERSION + ".jar": "build/lib/gradle-runtime-api-info-" + GRADLE_VERSION + ".jar",
+}
+
 gradle_build(
     name = "gradle_api_jar",
     build_file = "extract-gradle-api/build.gradle",
     data = [":gradle-distrib"],
-    output_file = "gradle-api.jar",
     # Note that the Gradle API (the output of this Gradle build) consists of multiple jars:
     #   - gradle-api-<version>.jar
     #   - gradle-installation-beacon-<version>.jar
     #   - groovy jars
     #   - kotlin-stdlib jars
     #   - etc.
-    # Currently, we extract only the "thin" gradle-api-<version>.jar, and therefore we'll have to
-    # add the other jars manually as needed.
-    # Fixing this properly requires further work (there was a failed attempt to create a fat jar at
-    # change Ia6c40546).
-    output_file_source = "gradle-api-" + GRADLE_VERSION + ".jar",
+    # Currently, we extract only some of the jars that Gradle exposes as gradleApi:
+    #    - gradle-api-<version>.jar and
+    #    - gradle-installation-beacon-<version>.jar.
+    # But we also extract
+    #    - gradle-runtime-api-info-<version>.jar
+    # which is not typically on the classpath for Gradle plugin tests, but Gradle's test infra
+    # locates it by locating the installation beacon jar, and from that finding the
+    # surrounding Gradle installation, and then finding that jar by name for Gradle 9.2.x
+    #
+    # Supporting that codepath requires preserving the extracted directory structure, which
+    # isn't straightforward to model in Bazel. However, Gradle's internals will also work if
+    # the runtime-info jar is on the classpath, so extract it here so it can be included on
+    # the test runtime classpath.
+    #
+    # Below we expose the gradle-api jar for compilation only as gradle-api_neverlink
+    # and all the jars together as runtime only for running the gradle-core unit tests.
+    output_files = GRADLE_API_JARS,
     tasks = [":copyGradleApiJars"],
 )
 
 java_import(
     name = "gradle-api_neverlink",
-    jars = [":gradle-api.jar"],
+    jars = [":gradle-api-" + GRADLE_VERSION + ".jar"],
     neverlink = 1,
     visibility = ["//visibility:public"],
 )
 
-# Used for tests only.
 java_import(
+    name = "gradle-api_for_test_runtime",
+    jars = [":" + f for f in GRADLE_API_JARS],
+)
+
+# Used for tests only.
+java_library(
     name = "gradle-api",
-    jars = [":gradle-api.jar"],
     visibility = ["//visibility:public"],
+    exports = [":gradle-api_neverlink"],  # only expose the gradle-api jar for compilation...
+    runtime_deps = [":gradle-api_for_test_runtime"],  # ...but include the extra jars at runtime.
 )
 
 # Kotlin Gradle plugin dependencies for projects using Compose (these are typically used when the
@@ -455,13 +399,8 @@ maven_repository(
 
 filegroup(
     name = "agp_gradle_build_files",
-    srcs = glob([
-        "manifest-merger/src/main/java/com/android/manifmerger/*.java",
-        "manifest-merger/src/main/java/com/android/manifmerger/*.kt",
-    ]) + [
+    srcs = [
         "docs/build.gradle",
-        "manifest-merger/NOTICE",
-        "manifest-merger/build.gradle",
     ],
     visibility = ["//tools/base/build-system:__pkg__"],
 )
@@ -485,6 +424,7 @@ ANDROID_GRADLE_PLUGIN_SOURCE_FILES = [
     "//tools/base/build-system/gradle-kotlin:agp_gradle_build_files",
     "//tools/base/build-system/gradle-settings:agp_gradle_build_files",
     "//tools/base/build-system/gradle-settings-api:agp_gradle_build_files",
+    "//tools/base/build-system/manifest-merger:agp_gradle_build_files",
     "//tools/base/build-system/profile:agp_gradle_build_files",
     "//tools/base/build-system/shrinker:agp_gradle_build_files",
     "//tools/base/common:agp_gradle_build_files",

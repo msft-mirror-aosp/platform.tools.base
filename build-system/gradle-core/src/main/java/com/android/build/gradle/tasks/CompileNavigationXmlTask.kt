@@ -31,6 +31,7 @@ import com.android.builder.files.SerializableInputChanges
 import com.android.builder.internal.aapt.v2.Aapt2RenamingConventions
 import com.android.ide.common.resources.CompileResourceRequest
 import com.android.ide.common.resources.FileStatus
+import com.android.ide.common.resources.ResourcePathEncoding
 import com.android.utils.FileUtils
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.DirectoryProperty
@@ -172,7 +173,8 @@ abstract class CompileNavigationXmlTask : NewIncrementalTask() {
                 parameters.outputDirectory.asFile.get(),
                 partialRFile = computePartialR(file),
                 isPseudoLocalize = parameters.pseudoLocalize.get(),
-                isPngCrunching = false
+                isPngCrunching = false,
+                resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable,
             )
             compilationService.submitCompile(request)
         }

@@ -51,7 +51,6 @@ public class PackagingOptionsFilteringTest {
     public GradleTestProject project =
             GradleTestProject.builder()
                     .fromTestProject("kotlinApp")
-                    .disableBuiltInKotlin()
                     .create();
 
     @Before
@@ -395,7 +394,7 @@ public class PackagingOptionsFilteringTest {
                 AarSelector.DEBUG,
                 aar -> {
                     aar.javaResources()
-                            .containsExactly("foo.keep", "META-INF/library_debug.kotlin_module");
+                            .containsExactly("foo.keep", "META-INF/library.kotlin_module");
                     aar.javaResources().resourceAsBytes("foo.keep").isEqualTo(c0);
                 });
     }
@@ -523,7 +522,7 @@ public class PackagingOptionsFilteringTest {
                 AarSelector.DEBUG,
                 aar -> {
                     aar.javaResources()
-                            .containsExactly("foo.libKeep", "META-INF/library_debug.kotlin_module");
+                            .containsExactly("foo.libKeep", "META-INF/library.kotlin_module");
                     aar.javaResources().resourceAsBytes("foo.libKeep").isEqualTo(c0);
                 });
 

@@ -27,7 +27,6 @@ import com.android.build.gradle.internal.component.NestedComponentCreationConfig
 import com.android.build.gradle.internal.component.TestFixturesCreationConfig
 import com.android.build.gradle.internal.component.HostTestCreationConfig
 import com.android.build.gradle.internal.component.VariantCreationConfig
-import com.android.build.gradle.internal.privaysandboxsdk.PrivacySandboxSdkVariantScope
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.scope.InternalArtifactType.ANDROID_TEST_LINT_PARTIAL_RESULTS
@@ -41,13 +40,11 @@ import com.android.build.gradle.internal.services.getBuildService
 import com.android.build.gradle.internal.services.getLintParallelBuildService
 import com.android.build.gradle.internal.tasks.BuildAnalyzer
 import com.android.build.gradle.internal.tasks.NonIncrementalTask
-import com.android.build.gradle.internal.tasks.factory.PrivacySandboxSdkVariantTaskCreationAction
 import com.android.build.gradle.internal.tasks.factory.VariantTaskCreationAction
 import com.android.build.gradle.internal.utils.fromDisallowChanges
 import com.android.build.gradle.internal.utils.getDesugaredMethods
 import com.android.build.gradle.internal.utils.setDisallowChanges
 import com.android.build.gradle.options.BooleanOption
-import com.android.build.gradle.options.ProjectOptions
 import com.android.buildanalyzer.common.TaskCategory
 import com.android.tools.lint.model.LintModelArtifactType
 import com.android.tools.lint.model.LintModelSerialization

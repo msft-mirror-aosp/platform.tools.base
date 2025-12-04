@@ -49,6 +49,8 @@ class CmakeVariantApiTest {
                 ndkPath = "${project.ndkPath}"
                 defaultConfig {
                     minSdk = ${GradleTestProject.DEFAULT_MIN_SDK_VERSION}
+                    //noinspection ExpiredTargetSdkVersion
+                    targetSdk = ${GradleTestProject.DEFAULT_MIN_SDK_VERSION}
                     externalNativeBuild {
                       cmake {
                         abiFilters.addAll("armeabi-v7a", "x86_64");
@@ -114,6 +116,8 @@ class CmakeVariantApiTest {
                 ndkPath = "${project.ndkPath}"
                 defaultConfig {
                     minSdk = ${GradleTestProject.DEFAULT_MIN_SDK_VERSION}
+                    //noinspection ExpiredTargetSdkVersion
+                    targetSdk = ${GradleTestProject.DEFAULT_MIN_SDK_VERSION}
                     externalNativeBuild {
                       cmake {
                         abiFilters.addAll("armeabi-v7a", "x86_64");
@@ -179,7 +183,9 @@ class CmakeVariantApiTest {
                 ndkPath = "${project.ndkPath}"
                 defaultConfig {
                     minSdk = ${GradleTestProject.DEFAULT_MIN_SDK_VERSION}
-                    externalNativeBuild {
+                    //noinspection ExpiredTargetSdkVersion
+                    targetSdk = ${GradleTestProject.DEFAULT_MIN_SDK_VERSION}
+                   externalNativeBuild {
                       cmake {
                         abiFilters.addAll("armeabi-v7a", "x86_64");
                         cFlags.addAll("-DTEST_C_FLAG")

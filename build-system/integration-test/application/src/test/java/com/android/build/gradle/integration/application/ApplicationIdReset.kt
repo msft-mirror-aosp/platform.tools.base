@@ -20,6 +20,7 @@ import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.build.gradle.integration.common.utils.getVariantByName
+import com.android.build.gradle.options.BooleanOption
 import com.android.ide.common.build.ListingFileRedirect
 import com.google.common.truth.Truth
 import org.junit.Before
@@ -29,7 +30,10 @@ import org.junit.Test
 class ApplicationIdReset {
 
     @get:Rule
-    var project = GradleTestProject.builder().fromTestApp(HelloWorldApp.noBuildFile()).create()
+    var project = GradleTestProject.builder()
+        .fromTestApp(HelloWorldApp.noBuildFile())
+        .addGradleProperty(BooleanOption.USE_NEW_DSL, false)
+        .create()
 
     @Before
     fun setUp() {
@@ -89,7 +93,9 @@ class ApplicationIdReset {
     @Test
     fun checkApplicationIdDebug() {
         project.execute("assembleApp1FreeDebug")
-        val androidProject = project.modelV2().fetchModels().container.getProject().androidProject!!
+        val androidProject = project.modelV2()
+            .allowOptionWarning(BooleanOption.USE_NEW_DSL)
+            .fetchModels().container.getProject().androidProject!!
 
         val listingFile = ListingFileRedirect.getListingFile(
             androidProject.getVariantByName("app1FreeDebug").mainArtifact.assembleTaskOutputListingFile!!

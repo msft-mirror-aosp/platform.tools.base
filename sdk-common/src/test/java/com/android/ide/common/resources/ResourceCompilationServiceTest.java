@@ -34,11 +34,16 @@ public class ResourceCompilationServiceTest {
     @Test
     public void callToCompileOutputForDoesNotCreateDirectories() throws Exception {
         try (ResourceCompilationService aapt =
-                CopyToOutputDirectoryResourceCompilationService.INSTANCE) {
+                     CopyToOutputDirectoryResourceCompilationService.INSTANCE) {
             File outputDir = mTemporaryFolder.newFolder("empty");
             File input = new File(mTemporaryFolder.newFolder("values"), "values.xml");
 
-            CompileResourceRequest request = new CompileResourceRequest(input, outputDir, "values");
+            CompileResourceRequest request =
+                    new CompileResourceRequest(
+                            input,
+                            outputDir,
+                            "values",
+                            ResourcePathEncoding.AbsoluteNotRelocatable.INSTANCE);
             File output = aapt.compileOutputFor(request);
 
             assertFalse(output.exists());

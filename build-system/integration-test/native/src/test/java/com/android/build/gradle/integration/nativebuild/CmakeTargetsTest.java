@@ -73,6 +73,10 @@ public class CmakeTargetsTest {
                         + "    defaultConfig.minSdk="
                         + GradleTestProject.DEFAULT_MIN_SDK_VERSION
                         + "\n"
+                        + "    //noinspection ExpiredTargetSdkVersion\n"
+                        + "    defaultConfig.targetSdk="
+                        + GradleTestProject.DEFAULT_MIN_SDK_VERSION
+                        + "\n"
                         + "    externalNativeBuild {\n"
                         + "      cmake {\n"
                         + "        path \"CMakeLists.txt\"\n"

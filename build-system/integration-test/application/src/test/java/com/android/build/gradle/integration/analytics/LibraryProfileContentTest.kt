@@ -17,9 +17,8 @@
 package com.android.build.gradle.integration.analytics
 
 import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
-import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.ProfileCapturer
-import com.android.build.gradle.integration.common.fixture.app.KotlinHelloWorldApp
+import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
 import com.android.build.gradle.integration.common.truth.TruthHelper.assertWithMessage
 import com.android.tools.build.gradle.internal.profile.GradleTaskExecutionType
@@ -32,28 +31,35 @@ import org.junit.Test
  * Smoke test for the content of the profile collected from library projects.
  */
 class LibraryProfileContentTest {
+
     @get:Rule
-    var project = GradleTestProject.builder()
-        .fromTestApp(KotlinHelloWorldApp.forPlugin("com.android.library"))
-        .enableProfileOutput()
-        .create()
+    val rule = GradleRule.configure()
+        .withProfileOutput()
+        .from {
+            androidLibrary { }
+        }
 
     @Test
     fun testProfileProtoContentMakesSense() {
-        val capturer = ProfileCapturer(project)
+        val capturer = ProfileCapturer(rule.build)
 
         val cleanBuild = Iterables.getOnlyElement(
-            capturer.capture { project.executor()
-                .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
-                .withArguments(listOf("--parallel", "--max-workers=1")).run("assembleDebug") })
+            capturer.capture {
+                rule.build.executor
+                    .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
+                    .withArguments(listOf("--parallel", "--max-workers=1")).run("assembleDebug")
+            }
+        )
 
         // Check that the generate library R file task records its worker spans.
-        val generateLibraryTask = cleanBuild.spanList.first() {
-            it.hasTask() && it.task.type == GradleTaskExecutionType.GENERATE_LIBRARY_R_FILE.number }
+        val generateLibraryTask = cleanBuild.spanList.first {
+            it.hasTask() && it.task.type == GradleTaskExecutionType.GENERATE_LIBRARY_R_FILE.number
+        }
         val generateLibraryTaskChildren =
             cleanBuild.spanList.filter { it.parentId == generateLibraryTask.id }
         assertThat(generateLibraryTaskChildren).hasSize(3)
-        val workerSpan = generateLibraryTaskChildren.first() { it.type == GradleBuildProfileSpan.ExecutionType.WORKER_EXECUTION }
+        val workerSpan =
+            generateLibraryTaskChildren.first { it.type == GradleBuildProfileSpan.ExecutionType.WORKER_EXECUTION }
         assertWithMessage("Worker span is positive").that(workerSpan.durationInMs).isGreaterThan(0)
         assertThat(cleanBuild.parallelTaskExecution).isTrue()
     }

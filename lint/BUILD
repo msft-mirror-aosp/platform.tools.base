@@ -84,7 +84,7 @@ iml_module(
         "//tools/base/lint:studio.android.sdktools.lint-model",
         "//tools/base/sdk-common:studio.android.sdktools.sdk-common",
         "//tools/base/layoutlib-api:studio.android.sdktools.layoutlib-api",
-        "//tools/base/build-system:studio.android.sdktools.manifest-merger",
+        "//tools/base/build-system/manifest-merger:studio.android.sdktools.manifest-merger",
     ],
     # do not sort: must match IML order
     deps = [
@@ -98,7 +98,7 @@ iml_module(
         "//tools/base/sdklib:studio.android.sdktools.sdklib",
         "//tools/base/sdk-common:studio.android.sdktools.sdk-common",
         "//tools/base/layoutlib-api:studio.android.sdktools.layoutlib-api",
-        "//tools/base/build-system:studio.android.sdktools.manifest-merger",
+        "//tools/base/build-system/manifest-merger:studio.android.sdktools.manifest-merger",
     ],
 )
 
@@ -132,7 +132,7 @@ maven_library(
         "//prebuilts/tools/common/lint-psi/intellij-core",
         "//prebuilts/tools/common/lint-psi/kotlin-compiler",
         "//prebuilts/tools/common/lint-psi/uast",
-        "//tools/base/build-system:tools.manifest-merger",
+        "//tools/base/build-system/manifest-merger:tools.manifest-merger",
         "//tools/base/common:tools.common",
         "//tools/base/layoutlib-api:tools.layoutlib-api",
         "//tools/base/sdk-common:tools.sdk-common",
@@ -271,8 +271,8 @@ kotlin_test(
         "//prebuilts/tools/common/lint-psi/kotlin-compiler",
         "//prebuilts/tools/common/lint-psi/uast",
         "//tools/base/annotations",
-        "//tools/base/build-system:tools.manifest-merger",
         "//tools/base/build-system/builder-model",
+        "//tools/base/build-system/manifest-merger:tools.manifest-merger",
         "//tools/base/common:tools.common",
         "//tools/base/layoutlib-api:tools.layoutlib-api",
         "//tools/base/lint/cli",

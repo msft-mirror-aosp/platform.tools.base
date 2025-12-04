@@ -185,8 +185,12 @@ DATA = [
     "androidx.databinding:viewbinding:8.0.0-beta04",
     "androidx.datastore:datastore-core-android:1.1.0-alpha04",
     "androidx.datastore:datastore-core-okio-jvm:1.1.0-alpha04",
+    "androidx.datastore:datastore-jvm:1.1.7",
     "androidx.datastore:datastore-preferences-core:1.1.0-alpha04",
+    "androidx.datastore:datastore-preferences-core:1.1.7",
+    "androidx.datastore:datastore-preferences-core-android:1.1.7",
     "androidx.datastore:datastore-preferences-core-jvm:1.1.0-alpha04",
+    "androidx.datastore:datastore-preferences-jvm:1.1.7",
     "androidx.documentfile:documentfile:1.0.1",
     "androidx.emoji2:emoji2-views-helper:1.3.0",
     "androidx.emoji2:emoji2-views-helper:1.4.0",
@@ -805,10 +809,15 @@ DATA = [
     "com.google.errorprone:error_prone_check_api:2.33.0",
     "com.google.errorprone:error_prone_core:2.33.0",
     "com.google.errorprone:error_prone_type_annotations:2.33.0",
+    "com.google.firebase.crashlytics:com.google.firebase.crashlytics.gradle.plugin:pom:3.0.6",
+    "com.google.firebase:firebase-analytics:23.0.0",
     "com.google.firebase:firebase-common:12.0.1",
+    "com.google.firebase:firebase-common-ktx:21.0.0",
+    "com.google.firebase:firebase-crashlytics:20.0.3",
     "com.google.firebase:firebase-crashlytics-gradle:2.5.1",
     "com.google.firebase.testlab:testlab-gradle-plugin:0.0.1-alpha12",
     "com.google.flogger:flogger:0.8",
+    "com.google.gms.google-services:com.google.gms.google-services.gradle.plugin:pom:4.4.4",
     "com.google.guava:guava:20.0",
     "com.google.guava:guava:28.2-jre",
     "com.google.guava:guava:30.1-android",
@@ -940,13 +949,14 @@ DATA = [
     "org.bouncycastle:bcprov-jdk16:1.46",
     "org.bouncycastle:bcprov-jdk18on:1.77",
     "org.brotli:dec:0.1.2",
-    "org.bytedeco:ffmpeg-platform:6.0-1.5.9",
-    "org.bytedeco:javacpp-platform:1.5.9",
+    "org.bytedeco:ffmpeg-platform:7.1.1-1.5.12",
+    "org.bytedeco:javacpp-platform:1.5.12",
     "org.codehaus.mojo:animal-sniffer-annotations:1.19",
     "org.duckdb:duckdb_jdbc:1.3.0.0",
     "org.eclipse.lsp4j:org.eclipse.lsp4j:0.21.1",
     "org.eclipse.lsp4j:org.eclipse.lsp4j.debug:0.21.1",
     "org.gradle:gradle-core:4.2.1",
+    "org.gradle:gradle-tooling-api:9.2.1",
     "org.gradle.toolchains.foojay-resolver-convention:org.gradle.toolchains.foojay-resolver-convention.gradle.plugin:pom:1.0.0",
     "org.hamcrest:hamcrest-core:2.2",
     "org.jacoco:org.jacoco.agent:0.7.4.201502262128",  # Keep old Jacoco version for testing.
@@ -999,9 +1009,9 @@ DATA = [
     "org.jetbrains.kotlin.android:org.jetbrains.kotlin.android.gradle.plugin:pom:2.0.21",  # Used by tools/adt/idea/android-templates/BUILD and tools/adt/idea/android/integration/BUILD
     "org.jetbrains.kotlin.android:org.jetbrains.kotlin.android.gradle.plugin:pom:2.1.20",
     "org.jetbrains.kotlin.android:org.jetbrains.kotlin.android.gradle.plugin:pom:2.2.10",  # Used by AGP privacy-sandbox tests
-    "org.jetbrains.kotlin.android:org.jetbrains.kotlin.android.gradle.plugin:pom:2.3.0-Beta2",  # Used by AGP tests
+    "org.jetbrains.kotlin.android:org.jetbrains.kotlin.android.gradle.plugin:pom:2.3.0-RC2",  # Used by AGP tests
     "org.jetbrains.kotlin.android:org.jetbrains.kotlin.android.gradle.plugin:pom:2.3.20-dev-825",
-    "org.jetbrains.kotlin:compose-compiler-gradle-plugin:2.3.0-Beta2",  # Used by AGP tests
+    "org.jetbrains.kotlin:compose-compiler-gradle-plugin:2.3.0-RC2",  # Used by AGP tests
     "org.jetbrains.kotlin.jvm:org.jetbrains.kotlin.jvm.gradle.plugin:pom:1.6.10",
     "org.jetbrains.kotlin.jvm:org.jetbrains.kotlin.jvm.gradle.plugin:pom:1.6.21",
     "org.jetbrains.kotlin.jvm:org.jetbrains.kotlin.jvm.gradle.plugin:pom:1.7.10",
@@ -1014,14 +1024,14 @@ DATA = [
     "org.jetbrains.kotlin.jvm:org.jetbrains.kotlin.jvm.gradle.plugin:pom:2.1.0",
     "org.jetbrains.kotlin.jvm:org.jetbrains.kotlin.jvm.gradle.plugin:pom:2.1.20",
     "org.jetbrains.kotlin.jvm:org.jetbrains.kotlin.jvm.gradle.plugin:pom:2.2.0",
-    "org.jetbrains.kotlin.jvm:org.jetbrains.kotlin.jvm.gradle.plugin:pom:2.3.0-Beta2",  # Used by AGP tests
+    "org.jetbrains.kotlin.jvm:org.jetbrains.kotlin.jvm.gradle.plugin:pom:2.3.0-RC2",  # Used by AGP tests
     "org.jetbrains.kotlin.jvm:org.jetbrains.kotlin.jvm.gradle.plugin:pom:2.3.20-dev-825",
     "org.jetbrains.kotlin:jvm-abi-gen:2.2.20",  # Studio build
     "org.jetbrains.kotlin.kapt:org.jetbrains.kotlin.kapt.gradle.plugin:pom:1.8.10",  # Dependency of architecture-samples
     "org.jetbrains.kotlin.kapt:org.jetbrains.kotlin.kapt.gradle.plugin:pom:1.9.22",
     "org.jetbrains.kotlin.kapt:org.jetbrains.kotlin.kapt.gradle.plugin:pom:1.9.23",
     "org.jetbrains.kotlin.kapt:org.jetbrains.kotlin.kapt.gradle.plugin:pom:2.1.20",
-    "org.jetbrains.kotlin.kapt:org.jetbrains.kotlin.kapt.gradle.plugin:pom:2.3.0-Beta2",  # Used by AGP tests
+    "org.jetbrains.kotlin.kapt:org.jetbrains.kotlin.kapt.gradle.plugin:pom:2.3.0-RC2",  # Used by AGP tests
     "org.jetbrains.kotlin.kapt:org.jetbrains.kotlin.kapt.gradle.plugin:pom:2.3.20-dev-825",
     "org.jetbrains.kotlin:kotlin-android-extensions-runtime:1.3.41",
     "org.jetbrains.kotlin:kotlin-android-extensions-runtime:1.3.72",
@@ -1045,16 +1055,16 @@ DATA = [
     "org.jetbrains.kotlin:kotlin-annotation-processing-gradle:2.0.21",
     "org.jetbrains.kotlin:kotlin-annotation-processing-gradle:2.1.20",
     "org.jetbrains.kotlin:kotlin-annotation-processing-gradle:2.2.10",  # Used by AGP built-in Kapt tests
-    "org.jetbrains.kotlin:kotlin-annotation-processing-gradle:2.3.0-Beta2",  # Used by AGP tests
+    "org.jetbrains.kotlin:kotlin-annotation-processing-gradle:2.3.0-RC2",  # Used by AGP tests
     "org.jetbrains.kotlin:kotlin-bom:pom:1.8.0",
     "org.jetbrains.kotlin:kotlin-bom:pom:1.8.22",
-    "org.jetbrains.kotlin:kotlin-build-tools-compat:2.3.0-Beta2",  # Used by AGP tests
+    "org.jetbrains.kotlin:kotlin-build-tools-compat:2.3.0-RC2",  # Used by AGP tests
     "org.jetbrains.kotlin:kotlin-build-tools-compat:2.3.20-dev-825",
     "org.jetbrains.kotlin:kotlin-build-tools-impl:2.0.21",  # Kotlin templates
     "org.jetbrains.kotlin:kotlin-build-tools-impl:2.1.0",
     "org.jetbrains.kotlin:kotlin-build-tools-impl:2.1.20",
     "org.jetbrains.kotlin:kotlin-build-tools-impl:2.2.10",  # Used by AGP privacy-sandbox tests
-    "org.jetbrains.kotlin:kotlin-build-tools-impl:2.3.0-Beta2",  # Used by AGP tests
+    "org.jetbrains.kotlin:kotlin-build-tools-impl:2.3.0-RC2",  # Used by AGP tests
     "org.jetbrains.kotlin:kotlin-build-tools-impl:2.3.20-dev-825",
     "org.jetbrains.kotlin:kotlin-compiler:1.7.20",
     "org.jetbrains.kotlin:kotlin-compiler:1.8.10",
@@ -1064,7 +1074,7 @@ DATA = [
     "org.jetbrains.kotlin:kotlin-compiler:2.0.21",
     "org.jetbrains.kotlin:kotlin-compiler:2.1.20",
     "org.jetbrains.kotlin:kotlin-compiler:2.2.20",  # Studio build
-    "org.jetbrains.kotlin:kotlin-compiler:2.3.0-Beta2",  # Used by AGP tests
+    "org.jetbrains.kotlin:kotlin-compiler:2.3.0-RC2",  # Used by AGP tests
     "org.jetbrains.kotlin:kotlin-compiler-embeddable:1.7.20",
     "org.jetbrains.kotlin:kotlin-compiler-embeddable:1.8.10",
     "org.jetbrains.kotlin:kotlin-compiler-embeddable:1.9.22",
@@ -1075,7 +1085,7 @@ DATA = [
     "org.jetbrains.kotlin:kotlin-compose-compiler-plugin-embeddable:2.0.21",  # Kotlin templates
     "org.jetbrains.kotlin:kotlin-compose-compiler-plugin-embeddable:2.1.0",
     "org.jetbrains.kotlin:kotlin-compose-compiler-plugin-embeddable:2.2.10",  # Used by AGP Compose tests
-    "org.jetbrains.kotlin:kotlin-compose-compiler-plugin-embeddable:2.3.0-Beta2",  # Used by AGP tests
+    "org.jetbrains.kotlin:kotlin-compose-compiler-plugin-embeddable:2.3.0-RC2",  # Used by AGP tests
     "org.jetbrains.kotlin:kotlin-gradle-plugin:1.3.41",
     "org.jetbrains.kotlin:kotlin-gradle-plugin:1.3.72",
     "org.jetbrains.kotlin:kotlin-gradle-plugin:1.4.32",
@@ -1091,7 +1101,7 @@ DATA = [
     "org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.23",
     "org.jetbrains.kotlin:kotlin-gradle-plugin:2.1.0",
     "org.jetbrains.kotlin:kotlin-gradle-plugin:2.1.20",
-    "org.jetbrains.kotlin:kotlin-gradle-plugin:2.3.0-Beta2",  # Used by AGP tests
+    "org.jetbrains.kotlin:kotlin-gradle-plugin:2.3.0-RC2",  # Used by AGP tests
     "org.jetbrains.kotlin:kotlin-gradle-plugin:2.3.20-dev-825",
     "org.jetbrains.kotlin:kotlin-gradle-plugin:jar:gradle70:1.7.10",
     "org.jetbrains.kotlin:kotlin-gradle-plugin:jar:gradle70:1.7.20",
@@ -1107,7 +1117,7 @@ DATA = [
     "org.jetbrains.kotlin:kotlin-gradle-plugin-api:1.9.23",
     "org.jetbrains.kotlin:kotlin-gradle-plugin-api:2.1.0",
     "org.jetbrains.kotlin:kotlin-gradle-plugin-api:2.1.20",
-    "org.jetbrains.kotlin:kotlin-gradle-plugin-api:2.3.0-Beta2",  # Used by AGP tests
+    "org.jetbrains.kotlin:kotlin-gradle-plugin-api:2.3.0-RC2",  # Used by AGP tests
     "org.jetbrains.kotlin:kotlin-gradle-plugin-api:jar:gradle70:1.7.10",
     "org.jetbrains.kotlin:kotlin-gradle-plugin-api:jar:gradle70:1.7.20",
     "org.jetbrains.kotlin:kotlin-gradle-plugin-api:jar:gradle71:1.7.20",
@@ -1115,11 +1125,11 @@ DATA = [
     "org.jetbrains.kotlin:kotlin-gradle-plugin-api:jar:gradle76:1.8.10",
     "org.jetbrains.kotlin:kotlin-klib-commonizer-embeddable:1.8.21",
     "org.jetbrains.kotlin:kotlin-klib-commonizer-embeddable:2.0.21",
-    "org.jetbrains.kotlin:kotlin-klib-commonizer-embeddable:2.3.0-Beta2",  # Used by AGP tests
-    "org.jetbrains.kotlin:kotlin-native-prebuilt:tar.gz:linux-x86_64:2.3.0-Beta2",  # Used by AGP tests
-    "org.jetbrains.kotlin:kotlin-native-prebuilt:tar.gz:macos-aarch64:2.3.0-Beta2",  # Used by AGP tests
-    "org.jetbrains.kotlin:kotlin-native-prebuilt:tar.gz:macos-x86_64:2.3.0-Beta2",  # Used by AGP tests
-    "org.jetbrains.kotlin:kotlin-native-prebuilt:zip:windows-x86_64:2.3.0-Beta2",  # Used by AGP tests
+    "org.jetbrains.kotlin:kotlin-klib-commonizer-embeddable:2.3.0-RC2",  # Used by AGP tests
+    "org.jetbrains.kotlin:kotlin-native-prebuilt:tar.gz:linux-x86_64:2.3.0-RC2",  # Used by AGP tests
+    "org.jetbrains.kotlin:kotlin-native-prebuilt:tar.gz:macos-aarch64:2.3.0-RC2",  # Used by AGP tests
+    "org.jetbrains.kotlin:kotlin-native-prebuilt:tar.gz:macos-x86_64:2.3.0-RC2",  # Used by AGP tests
+    "org.jetbrains.kotlin:kotlin-native-prebuilt:zip:windows-x86_64:2.3.0-RC2",  # Used by AGP tests
     "org.jetbrains.kotlin:kotlin-parcelize-compiler:1.7.20",
     "org.jetbrains.kotlin:kotlin-parcelize-runtime:1.7.20",
     "org.jetbrains.kotlin:kotlin-reflect:1.4.31",
@@ -1141,7 +1151,8 @@ DATA = [
     "org.jetbrains.kotlin:kotlin-reflect:2.0.21",
     "org.jetbrains.kotlin:kotlin-reflect:2.1.20",
     "org.jetbrains.kotlin:kotlin-reflect:2.2.0",  # AGP dependencies (AGP depends on kotlin-reflect:2.2.10, but Gradle downgrades it to kotlin-reflect:2.2.0)
-    "org.jetbrains.kotlin:kotlin-reflect:2.3.0-Beta2",  # Used by AGP tests
+    "org.jetbrains.kotlin:kotlin-reflect:2.2.20",
+    "org.jetbrains.kotlin:kotlin-reflect:2.3.0-RC2",  # Used by AGP tests
     "org.jetbrains.kotlin:kotlin-script-runtime:1.5.21",
     "org.jetbrains.kotlin:kotlin-script-runtime:1.6.10",
     "org.jetbrains.kotlin:kotlin-script-runtime:1.6.21",
@@ -1155,13 +1166,14 @@ DATA = [
     "org.jetbrains.kotlin:kotlin-script-runtime:1.9.24",
     "org.jetbrains.kotlin:kotlin-script-runtime:2.1.20",
     "org.jetbrains.kotlin:kotlin-script-runtime:2.2.0",
-    "org.jetbrains.kotlin:kotlin-script-runtime:2.3.0-Beta2",  # Used by AGP tests
-    "org.jetbrains.kotlin:kotlin-scripting-compiler-embeddable:2.3.0-Beta2",  # Used by AGP tests
+    "org.jetbrains.kotlin:kotlin-script-runtime:2.3.0-RC2",  # Used by AGP tests
+    "org.jetbrains.kotlin:kotlin-scripting-compiler-embeddable:2.3.0-RC2",  # Used by AGP tests
     "org.jetbrains.kotlin:kotlin-serialization-compiler-plugin:2.2.20",  # Studio build
     "org.jetbrains.kotlin:kotlin-stdlib:2.0.21",
     "org.jetbrains.kotlin:kotlin-stdlib:2.1.20",
     "org.jetbrains.kotlin:kotlin-stdlib:2.2.0",  # AGP dependencies (AGP depends on kotlin-stdlib:2.2.10, but Gradle downgrades it to kotlin-stdlib:2.2.0)
-    "org.jetbrains.kotlin:kotlin-stdlib:2.3.0-Beta2",  # Used by AGP tests
+    "org.jetbrains.kotlin:kotlin-stdlib:2.2.20",
+    "org.jetbrains.kotlin:kotlin-stdlib:2.3.0-RC2",  # Used by AGP tests
     "org.jetbrains.kotlin:kotlin-stdlib:2.3.20-dev-825",
     "org.jetbrains.kotlin:kotlin-stdlib-common:1.9.20",
     "org.jetbrains.kotlin:kotlin-stdlib-common:1.9.22",
@@ -1171,7 +1183,8 @@ DATA = [
     "org.jetbrains.kotlin:kotlin-stdlib-common:pom:2.1.0",
     "org.jetbrains.kotlin:kotlin-stdlib-common:pom:2.2.0",  # Used by com.android.tools.idea.benchmarks.tests.JetNewsBenchmarkTest
     "org.jetbrains.kotlin:kotlin-stdlib-common:pom:2.2.10",  # AGP dependencies + Used by AGP privacy-sandbox tests
-    "org.jetbrains.kotlin:kotlin-stdlib-common:pom:2.3.0-Beta2",  # Used by AGP tests
+    "org.jetbrains.kotlin:kotlin-stdlib-common:pom:2.2.20",
+    "org.jetbrains.kotlin:kotlin-stdlib-common:pom:2.3.0-RC2",  # Used by AGP tests
     "org.jetbrains.kotlin:kotlin-stdlib-common:pom:2.3.20-dev-825",
     "org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.4.32",
     "org.jetbrains.kotlin:kotlin-stdlib-jdk7:2.1.21",
@@ -1192,7 +1205,7 @@ DATA = [
     "org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.0.0",  # Compose/Kotlin 2.0.0 templates
     "org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.1.20",
     "org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.2.0",
-    "org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.3.0-Beta2",  # Used by AGP tests
+    "org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.3.0-RC2",  # Used by AGP tests
     "org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.3.20-dev-825",
     "org.jetbrains.kotlin:kotlin-test:1.9.24",
     "org.jetbrains.kotlin:kotlin-test:2.0.21",
@@ -1201,16 +1214,16 @@ DATA = [
     "org.jetbrains.kotlin:kotlin-test-junit:1.9.24",
     "org.jetbrains.kotlin:kotlin-test-junit:2.0.21",
     "org.jetbrains.kotlin:kotlin-test-junit:2.1.20",
-    "org.jetbrains.kotlin:kotlin-test-junit:2.3.0-Beta2",  # Used by AGP tests
+    "org.jetbrains.kotlin:kotlin-test-junit:2.3.0-RC2",  # Used by AGP tests
     "org.jetbrains.kotlin.multiplatform:org.jetbrains.kotlin.multiplatform.gradle.plugin:pom:1.8.21",
     "org.jetbrains.kotlin.multiplatform:org.jetbrains.kotlin.multiplatform.gradle.plugin:pom:1.9.23",
     "org.jetbrains.kotlin.multiplatform:org.jetbrains.kotlin.multiplatform.gradle.plugin:pom:2.2.10",  # Used by AGP privacy-sandbox tests
-    "org.jetbrains.kotlin.multiplatform:org.jetbrains.kotlin.multiplatform.gradle.plugin:pom:2.3.0-Beta2",  # Used by AGP tests
+    "org.jetbrains.kotlin.multiplatform:org.jetbrains.kotlin.multiplatform.gradle.plugin:pom:2.3.0-RC2",  # Used by AGP tests
     "org.jetbrains.kotlin.plugin.compose:org.jetbrains.kotlin.plugin.compose.gradle.plugin:pom:2.0.21",
     "org.jetbrains.kotlin.plugin.compose:org.jetbrains.kotlin.plugin.compose.gradle.plugin:pom:2.2.10",  # Used by AGP Compose tests
-    "org.jetbrains.kotlin.plugin.compose:org.jetbrains.kotlin.plugin.compose.gradle.plugin:pom:2.3.0-Beta2",  # Used by AGP tests
+    "org.jetbrains.kotlin.plugin.compose:org.jetbrains.kotlin.plugin.compose.gradle.plugin:pom:2.3.0-RC2",  # Used by AGP tests
     "org.jetbrains.kotlin.plugin.compose:org.jetbrains.kotlin.plugin.compose.gradle.plugin:pom:2.3.20-dev-825",
-    "org.jetbrains.kotlin.plugin.parcelize:org.jetbrains.kotlin.plugin.parcelize.gradle.plugin:pom:2.3.0-Beta2",  # Used by com.android.tools.idea.benchmarks.tests.JetNewsBenchmarkTest
+    "org.jetbrains.kotlin.plugin.parcelize:org.jetbrains.kotlin.plugin.parcelize.gradle.plugin:pom:2.3.0-RC2",  # Used by com.android.tools.idea.benchmarks.tests.JetNewsBenchmarkTest
     "org.jetbrains.kotlinx:atomicfu:0.21.0",
     "org.jetbrains.kotlinx:atomicfu:0.29.0",
     "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.0.1",

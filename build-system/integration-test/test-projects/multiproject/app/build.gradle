@@ -7,7 +7,7 @@ android {
 
     defaultConfig {
         minSdkVersion libs.versions.supportLibMinSdk.get()
-        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 }
 
@@ -19,6 +19,6 @@ dependencies {
     compileOnly 'org.codehaus.mojo:animal-sniffer-annotations:1.19'
 
     testImplementation 'junit:junit:4.12'
-    androidTestImplementation "com.android.support.test:runner:${libs.versions.testSupportLibVersion.get()}"
-    androidTestImplementation "com.android.support.test:rules:${libs.versions.testSupportLibVersion.get()}"
+    androidTestImplementation "androidx.test:runner:1.4.0-alpha06"
+    androidTestImplementation "androidx.test:rules:1.4.0-alpha06"
 }

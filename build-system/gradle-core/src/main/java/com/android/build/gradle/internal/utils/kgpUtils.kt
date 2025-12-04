@@ -24,6 +24,8 @@ import com.android.build.gradle.internal.component.ComponentCreationConfig
 import com.android.build.gradle.internal.profile.AnalyticsConfiguratorService
 import com.android.build.gradle.internal.services.ProjectServices
 import com.android.build.gradle.internal.services.getBuildService
+import com.android.build.gradle.options.BooleanOption
+import com.android.builder.errors.IssueReporter.Type
 import com.android.utils.appendCapitalized
 import com.google.wireless.android.sdk.stats.GradleBuildVariant
 import org.gradle.api.NamedDomainObjectContainer
@@ -32,7 +34,6 @@ import org.gradle.api.Project
 import org.gradle.api.artifacts.Configuration
 import org.gradle.api.artifacts.ExternalDependency
 import org.gradle.api.file.FileCollection
-import org.gradle.api.file.SourceDirectorySet
 import org.gradle.api.logging.Logger
 import org.gradle.api.tasks.SourceSet
 import org.jetbrains.kotlin.gradle.dsl.KotlinAndroidProjectExtension
@@ -42,6 +43,7 @@ import org.jetbrains.kotlin.gradle.plugin.KotlinBasePluginWrapper
 import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSet
 import org.jetbrains.kotlin.gradle.plugin.SubpluginOption
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import java.io.File
 import java.util.Locale
 
 const val KOTLIN_ANDROID_PLUGIN_ID = "org.jetbrains.kotlin.android"
@@ -286,8 +288,10 @@ private fun KotlinCompile.maybeAddSourceInformationOption(kotlinVersion: KotlinV
     )
 }
 
-/** Syncs Kotlin source sets between AGP and KGP. */
-fun syncAgpAndKgpSourceSets(
+/**
+ * Handles [KotlinSourceSet]s depending on whether built-in Kotlin is enabled (b/386221070).
+ */
+fun handleKotlinSourceSets(
     project: Project,
     projectServices: ProjectServices,
     androidSourceSets: NamedDomainObjectContainer<out AndroidSourceSet>,
@@ -296,30 +300,78 @@ fun syncAgpAndKgpSourceSets(
     // Skip this work if the `kotlin-multiplatform` plugin is applied
     if (project.pluginManager.hasPlugin(KOTLIN_MPP_PLUGIN_ID)) return
 
-    val kotlinSourceSets: NamedDomainObjectContainer<KotlinSourceSet>? by lazy {
-        project.extensions.findByType(KotlinAndroidProjectExtension::class.java)?.sourceSets
+    fun reportErrorIfKotlinSourceSetsAreUsed(kotlinSourceSets: NamedDomainObjectContainer<KotlinSourceSet>) {
+        androidSourceSets.forEach { androidSourceSet ->
+            val kotlinSourceSet = kotlinSourceSets.findByName(androidSourceSet.name) ?: return@forEach
+
+            if (kotlinSourceSet.kotlin.srcDirs.isNotEmpty()) {
+                // Filter out default directories added by KGP
+                val nonDefaultKotlinSrcDirs = kotlinSourceSet.kotlin.srcDirs.filterNot {
+                    it.invariantSeparatorsPath.endsWith("${kotlinSourceSet.name}/kotlin")
+                }
+
+                if (nonDefaultKotlinSrcDirs.isNotEmpty()) {
+                    projectServices.issueReporter.reportError(
+                        Type.GENERIC,
+                        "Using kotlin.sourceSets DSL to add Kotlin sources is not allowed with built-in Kotlin.\n" +
+                                "Kotlin source set '${androidSourceSet.name}' contains: ${kotlinSourceSet.kotlin.srcDirs}\n" +
+                                "Solution: Use android.sourceSets DSL instead.\n" +
+                                "For more information, see https://developer.android.com/r/tools/built-in-kotlin"
+                    )
+                }
+
+                // Clear the Kotlin source set to indicate that it should not be used
+                kotlinSourceSet.kotlin.setSrcDirs(emptySet<File>())
+            }
+        }
     }
 
-    fun AndroidSourceSet.findKotlinSourceSet(): SourceDirectorySet? {
-        return kotlinSourceSets?.findByName(this.name)?.kotlin
-    }
-
-    if (builtInKotlin) {
-        // TODO(b/461767350): Stop creating Kotlin source sets for each Android source set
+    fun createKotlinSourceSetsPerAndroidSourceSet(kotlinSourceSets: NamedDomainObjectContainer<KotlinSourceSet>) {
         androidSourceSets.forEach {
             // Note: The source set may have been created by the user, so we call `maybeCreate`
             // instead of `create`
-            kotlinSourceSets!!.maybeCreate(it.name)
+            kotlinSourceSets.maybeCreate(it.name)
+        }
+    }
+
+    fun syncAndroidAndKotlinSourceSets() {
+        val kotlinExtension = project.extensions.findByType(KotlinAndroidProjectExtension::class.java) ?: return
+        val kotlinSourceSets = kotlinExtension.sourceSets
+
+        androidSourceSets.forEach { androidSourceSet ->
+            val kotlinSourceSet = kotlinSourceSets.findByName(androidSourceSet.name) ?: return@forEach
+
+            kotlinSourceSet.kotlin.srcDirs((androidSourceSet.java as DefaultAndroidSourceDirectorySet).srcDirs)
+            kotlinSourceSet.kotlin.srcDirs((androidSourceSet.kotlin as DefaultAndroidSourceDirectorySet).srcDirs)
+            @Suppress("DEPRECATION")
+            androidSourceSet.kotlin.setSrcDirs(kotlinSourceSet.kotlin.srcDirs)
+        }
+    }
+
+    // When built-in Kotlin is enabled, Kotlin source sets should not be used (b/386221070).
+    // However, to give plugins time to migrate, we still partially allow it when the user sets
+    // `android.disallowKotlinSourceSets=false`.
+    if (builtInKotlin) {
+        val kotlinSourceSets = projectServices.builtInKotlinServices.kotlinAndroidProjectExtension.sourceSets
+        if (projectServices.projectOptions.get(BooleanOption.DISALLOW_KOTLIN_SOURCE_SETS)) {
+            // When built-in Kotlin is enabled and `android.disallowKotlinSourceSets=true`:
+            //   1. DO NOT create one Kotlin source set for each Android source set (b/461767350)
+            //   2. DO NOT sync Kotlin source sets with Android source sets
+            //   3. REPORT AN ERROR if Kotlin source sets are used
+            reportErrorIfKotlinSourceSetsAreUsed(kotlinSourceSets)
+        } else {
+            // When built-in Kotlin is enabled and `android.disallowKotlinSourceSets=false`:
+            //   1. Create one Kotlin source set for each Android source set (b/461767350)
+            //   2. DO NOT sync Kotlin source sets with Android source sets
+            //   3. SILENTLY IGNORE Kotlin source sets if they are used
+            createKotlinSourceSetsPerAndroidSourceSet(kotlinSourceSets)
         }
     } else {
-        // Only sync Kotlin source sets when built-in Kotlin is disabled (b/386221070)
-        androidSourceSets.configureEach {
-            val kotlinSourceSet = it.findKotlinSourceSet() ?: return@configureEach
-
-            kotlinSourceSet.srcDirs((it.java as DefaultAndroidSourceDirectorySet).srcDirs)
-            kotlinSourceSet.srcDirs((it.kotlin as DefaultAndroidSourceDirectorySet).srcDirs)
-            it.kotlin.setSrcDirs(kotlinSourceSet.srcDirs)
-        }
+        // When built-in Kotlin is disabled:
+        //    1. Create one Kotlin source set for each Android source set (this is done by KGP)
+        //    2. Sync Kotlin source sets with Android source sets
+        //    3. Allow Kotlin source sets to be used
+        syncAndroidAndKotlinSourceSets()
     }
 }
 

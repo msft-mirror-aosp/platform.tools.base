@@ -8,7 +8,8 @@
         android:label="@string/lib_name" >
         <activity
             android:name="MainActivity"
-            android:label="@string/lib_name" >
+            android:label="@string/lib_name"
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 

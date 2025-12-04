@@ -23,6 +23,7 @@ import com.android.ide.common.blame.MessageJsonSerializer
 import com.android.ide.common.blame.MessageJsonSerializer.STDOUT_ERROR_TAG
 import com.android.ide.common.blame.parser.aapt.AbstractAaptOutputParser.AAPT_TOOL_NAME
 import com.android.ide.common.resources.CompileResourceRequest
+import com.android.ide.common.resources.ResourcePathEncoding
 import com.google.common.truth.Truth.assertThat
 import com.google.gson.GsonBuilder
 import org.gradle.api.logging.Logger
@@ -50,7 +51,8 @@ class Aapt2ErrorUtilsTest {
             inputFile = temporaryFolder.newFile("processed"),
             inputDirectoryName = "values",
             outputDirectory = temporaryFolder.newFolder(),
-            originalInputFile = temporaryFolder.newFile("original")
+            originalInputFile = temporaryFolder.newFile("original"),
+            resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable
         )
 
         val aaptException = Aapt2Exception.create(
@@ -82,7 +84,8 @@ class Aapt2ErrorUtilsTest {
             inputFile = temporaryFolder.newFile("processed"),
             inputDirectoryName = "values",
             outputDirectory = temporaryFolder.newFolder(),
-            originalInputFile = temporaryFolder.newFile("original")
+            originalInputFile = temporaryFolder.newFile("original"),
+            resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable
         )
 
         val aaptException = Aapt2Exception.create(
@@ -124,7 +127,8 @@ class Aapt2ErrorUtilsTest {
             inputFile = temporaryFolder.newFile("processed"),
             inputDirectoryName = "values",
             outputDirectory = temporaryFolder.newFolder(),
-            originalInputFile = temporaryFolder.newFile("original")
+            originalInputFile = temporaryFolder.newFile("original"),
+            resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable
         )
 
         val aaptException = Aapt2Exception.create(

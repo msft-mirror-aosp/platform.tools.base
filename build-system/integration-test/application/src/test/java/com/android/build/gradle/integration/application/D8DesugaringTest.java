@@ -80,7 +80,7 @@ public class D8DesugaringTest {
                         + "        applicationId \"com.example.d8desugartest\"\n"
                         + "        minSdkVersion 20\n"
                         + "        testInstrumentationRunner "
-                        + "\"android.support.test.runner.AndroidJUnitRunner\"\n"
+                        + "\"androidx.test.runner.AndroidJUnitRunner\"\n"
                         + "    }\n"
                         + "\n"
                         + "  flavorDimensions \"whatever\"\n"
@@ -102,17 +102,10 @@ public class D8DesugaringTest {
                         + "\n"
                         + "    dependencies {\n"
                         + "        implementation project(':lib')\n"
-                        + "        androidTestImplementation"
-                        + " 'com.android.support:support-v4:"
-                        + TestVersions.SUPPORT_LIB_VERSION
-                        + "'\n"
                         + "        testImplementation 'junit:junit:4.12'\n"
-                        + "        androidTestImplementation 'com.android.support.test:runner:"
-                        + TestVersions.TEST_SUPPORT_LIB_VERSION
-                        + "'\n"
-                        + "        androidTestImplementation 'com.android.support.test:rules:"
-                        + TestVersions.TEST_SUPPORT_LIB_VERSION
-                        + "'\n"
+                        + "        androidTestImplementation \"androidx.test:runner:1.4.0-alpha06\"\n"
+                        + "        androidTestImplementation \"androidx.test:rules:1.4.0-alpha06\"\n"
+                        + "        androidTestImplementation \"androidx.annotation:annotation-experimental:1.3.0\"\n"
                         + "    }\n"
                         + "}\n");
 
@@ -166,8 +159,8 @@ public class D8DesugaringTest {
                 "package com.example.helloworld;\n"
                         + "\n"
                         + "import android.content.Context;\n"
-                        + "import android.support.test.InstrumentationRegistry;\n"
-                        + "import android.support.test.runner.AndroidJUnit4;\n"
+                        + "import androidx.test.InstrumentationRegistry;\n"
+                        + "import androidx.test.runner.AndroidJUnit4;\n"
                         + "\n"
                         + "import org.junit.Test;\n"
                         + "import org.junit.runner.RunWith;\n"

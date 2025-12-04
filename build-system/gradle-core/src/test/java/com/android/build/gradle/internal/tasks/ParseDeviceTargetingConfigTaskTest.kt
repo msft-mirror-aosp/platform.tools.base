@@ -99,7 +99,6 @@ class ParseDeviceTargetingConfigTaskTest {
         val projectServices = createProjectServices(
             project = project,
             projectOptions = ProjectOptions(
-                ImmutableMap.of(),
                 FakeProviderFactory(FakeProviderFactory.factory, gradleProperties)
             )
         )

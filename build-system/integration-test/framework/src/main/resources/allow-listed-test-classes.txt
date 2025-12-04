@@ -1,7 +1,6 @@
 com.android.build.gradle.integration.analytics.AnalyticsCompositeBuildTest
 com.android.build.gradle.integration.analytics.AnalyticsConfigurationCachingTest
 com.android.build.gradle.integration.analytics.AnalyticsConfigureOnDemandTest
-com.android.build.gradle.integration.analytics.LibraryProfileContentTest
 com.android.build.gradle.integration.analytics.ProfileContentTest
 com.android.build.gradle.integration.analytics.ProjectIdAnonymizationTest
 com.android.build.gradle.integration.annotationprocessor.AutoServiceTest
@@ -40,7 +39,6 @@ com.android.build.gradle.integration.application.AndroidManifestInTestTest
 com.android.build.gradle.integration.application.AndroidTestResourcesTest
 com.android.build.gradle.integration.application.AnnotationProcessorTest
 com.android.build.gradle.integration.application.AppAndLibNoBuildConfigTest
-com.android.build.gradle.integration.application.ApplicationIdInLibsTest
 com.android.build.gradle.integration.application.ApplicationIdReset
 com.android.build.gradle.integration.application.ApplicationIdTest
 com.android.build.gradle.integration.application.AppMetadataTaskTest
@@ -124,7 +122,6 @@ com.android.build.gradle.integration.application.ManifestMergingTest
 com.android.build.gradle.integration.application.MapSourceSetPathsTaskTest
 com.android.build.gradle.integration.application.MaxSdkVersionTest
 com.android.build.gradle.integration.application.MergeGeneratedProguardFilesTest
-com.android.build.gradle.integration.application.MessageRewrite2Test
 com.android.build.gradle.integration.application.MessageRewriteTest
 com.android.build.gradle.integration.application.MessageRewriteWithJvmResCompilerTest
 com.android.build.gradle.integration.application.MigratedTest
@@ -151,6 +148,7 @@ com.android.build.gradle.integration.application.NoCruncherTest
 com.android.build.gradle.integration.application.NoManifestTest
 com.android.build.gradle.integration.application.NoMappingTest
 com.android.build.gradle.integration.application.OldAndNewVariantAPIInteractionTest
+com.android.build.gradle.integration.application.OldAndNewVariantAPIMisuseTest
 com.android.build.gradle.integration.application.OldVariantApiCompatibility
 com.android.build.gradle.integration.application.OldVariantApiGenTaskVisibility
 com.android.build.gradle.integration.application.OptionalLibraryTest
@@ -167,7 +165,6 @@ com.android.build.gradle.integration.application.PrivateResourceTest
 com.android.build.gradle.integration.application.ProfileableTest
 com.android.build.gradle.integration.application.ProjectNoJavaSourcesTest
 com.android.build.gradle.integration.application.PseudoLocalizationTest
-com.android.build.gradle.integration.application.RegisterExternalAptJavaOutputTest
 com.android.build.gradle.integration.application.RenamedApkTest
 com.android.build.gradle.integration.application.RenderscriptDeprecationTest
 com.android.build.gradle.integration.application.RenderscriptTest
@@ -536,7 +533,6 @@ com.android.build.gradle.integration.nativebuild.NdkBuildTargetsTest
 com.android.build.gradle.integration.nativebuild.NdkBuildTest
 com.android.build.gradle.integration.nativebuild.NdkBuildVariantApiTest
 com.android.build.gradle.integration.nativebuild.NdkRiscvBuildTest
-com.android.build.gradle.integration.nativebuild.Pre21SplitTest
 com.android.build.gradle.integration.nativebuild.RenderscriptNdkTest
 com.android.build.gradle.integration.nativebuild.RsEnabledAnnotationTest
 com.android.build.gradle.integration.nativebuild.RsSupportModeTest

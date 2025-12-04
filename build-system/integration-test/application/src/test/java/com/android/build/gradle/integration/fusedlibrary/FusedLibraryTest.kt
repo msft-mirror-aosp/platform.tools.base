@@ -290,9 +290,9 @@ class FusedLibraryTest {
                 // Default value
                 minCompileSdkExtension().isEqualTo("0")
 
-                // Value from androidLib1
+                // Value not specified in dependencies
                 coreLibraryDesugaringEnabled().isEqualTo("false")
-                // desugarJdkLib is not yet used by consumption
+                // desugarJdkLib is not set in any dependencies
                 desugarJdkLibId().isEqualTo(null)
             }
         }

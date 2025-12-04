@@ -30,7 +30,7 @@
       - renderscriptSupportModeBlasEnabled = (null)
       - renderscriptNdkModeEnabled         = (null)
       - testApplicationId                  = (null)
-      - testInstrumentationRunner          = "android.support.test.runner.AndroidJUnitRunner"
+      - testInstrumentationRunner          = "androidx.test.runner.AndroidJUnitRunner"
       - testInstrumentationRunnerArguments = []
       - testHandleProfiling                = (null)
       - testFunctionalTest                 = (null)

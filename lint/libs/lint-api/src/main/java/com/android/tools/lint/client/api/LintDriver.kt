@@ -114,6 +114,7 @@ import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiLiteral
 import com.intellij.psi.PsiModifierListOwner
 import com.intellij.psi.PsiParenthesizedExpression
+import com.intellij.util.asSafely
 import java.io.File
 import java.io.IOException
 import java.net.URL
@@ -147,6 +148,7 @@ import org.jetbrains.uast.UCatchClause
 import org.jetbrains.uast.UComment
 import org.jetbrains.uast.UElement
 import org.jetbrains.uast.UExpression
+import org.jetbrains.uast.UField
 import org.jetbrains.uast.UFile
 import org.jetbrains.uast.UImportStatement
 import org.jetbrains.uast.ULiteralExpression
@@ -156,6 +158,7 @@ import org.jetbrains.uast.UTypeReferenceExpression
 import org.jetbrains.uast.expressions.UInjectionHost
 import org.jetbrains.uast.getParentOfType
 import org.jetbrains.uast.kotlin.BaseKotlinUastResolveProviderService
+import org.jetbrains.uast.sourceAnnotations
 import org.jetbrains.uast.toUElement
 import org.objectweb.asm.ClassReader
 import org.objectweb.asm.Opcodes
@@ -4441,8 +4444,9 @@ class LintDriver(
     }
 
     private fun isAnnotatedWith(annotated: UAnnotated, names: Set<String>): Boolean {
-      //noinspection ExternalAnnotations
-      val annotations = annotated.uAnnotations
+      @Suppress("UnstableApiUsage", "ExternalAnnotations")
+      val annotations =
+        annotated.asSafely<UField>()?.sourceAnnotations.orEmpty() + annotated.uAnnotations
       if (annotations.isEmpty()) {
         return false
       }

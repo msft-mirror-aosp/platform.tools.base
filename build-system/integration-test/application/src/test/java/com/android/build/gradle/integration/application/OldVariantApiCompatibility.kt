@@ -44,6 +44,7 @@ class OldVariantApiCompatibility {
         )
         val result = project.executor()
             .with(BooleanOption.ENABLE_LEGACY_API, true)
+            .with(BooleanOption.USE_NEW_DSL, false)
             .run(
                 "clean"
             )
@@ -63,6 +64,7 @@ class OldVariantApiCompatibility {
         )
         val result = project.executor()
             .with(BooleanOption.ENABLE_LEGACY_API, false)
+            .with(BooleanOption.USE_NEW_DSL, false)
             .expectFailure()
             .run(
                 "clean"

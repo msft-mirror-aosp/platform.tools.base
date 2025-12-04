@@ -19,12 +19,15 @@ package com.android.build.gradle.integration.application
 import com.android.SdkConstants
 import com.android.SdkConstants.FN_NAVIGATION_JSON
 import com.android.build.api.artifact.SingleArtifact
+import com.android.build.gradle.integration.common.fixture.GradleTaskExecutor
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.MinimalSubProject
 import com.android.build.gradle.integration.common.fixture.app.MultiModuleTestProject
 import com.android.build.gradle.integration.common.fixture.project.AarSelector
+import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition.Companion.DEFAULT_COMPILE_SDK_VERSION
 import com.android.build.gradle.integration.common.truth.ScannerSubject
 import com.android.build.gradle.integration.common.utils.TestFileUtils
+import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.truth.PathSubject
 import com.android.utils.FileUtils
 import org.junit.Before
@@ -40,7 +43,7 @@ class NavigationIntentFilterTest {
                 """
                     <manifest xmlns:android="http://schemas.android.com/apk/res/android">
                         <application>
-                            <activity android:name="MyActivity">
+                            <activity android:name="MyActivity" android:exported="true">
                                 <nav-graph android:value="@navigation/nav_app"/>
                                 <nav-graph android:value="@navigation/nav_lib"/>
                             </activity>
@@ -106,19 +109,12 @@ class NavigationIntentFilterTest {
             )
             .create()
 
-    @Before
-    fun setUp() {
-        TestFileUtils.appendToFile(
-            project.gradlePropertiesFile,
-            """
-                android.useAndroidX=true
-            """.trimIndent()
-        )
-    }
+    private val executor: GradleTaskExecutor
+        get() = project.executor().with(BooleanOption.DEFAULT_TARGET_SDK_TO_COMPILE_SDK_IF_UNSET, true)
 
     @Test
     fun testNavigationIntentActionAndMimeType() {
-        project.executor().run(":app:assembleDebug")
+        executor.run(":app:assembleDebug")
         val mergedManifest =
             project.file(
                 "app/build/${SdkConstants.FD_INTERMEDIATES}/${SingleArtifact.MERGED_MANIFEST.getFolderName()}/debug/processDebugMainManifest/AndroidManifest.xml"
@@ -141,7 +137,7 @@ class NavigationIntentFilterTest {
             """.trimIndent()
         )
         // Build AAR, check that it has expected navigation.json entry, and copy it to libAarDir.
-        project.executor().run(":lib:assembleDebug")
+        executor.run(":lib:assembleDebug")
 
         project.getSubproject("lib").assertAar(AarSelector.DEBUG) {
             textFile(FN_NAVIGATION_JSON).isNotEmpty()
@@ -158,7 +154,7 @@ class NavigationIntentFilterTest {
         TestFileUtils.appendToFile(project.settingsFile, "include ':lib-aar'")
 
         // Finally, build the APK and check the contents of the merged manifest.
-        project.executor().run(":app:assembleDebug")
+        executor.run(":app:assembleDebug")
         val mergedManifest =
             project.file(
                 "app/build/${SdkConstants.FD_INTERMEDIATES}/${SingleArtifact.MERGED_MANIFEST.getFolderName()}/debug/processDebugMainManifest/AndroidManifest.xml"
@@ -181,7 +177,7 @@ class NavigationIntentFilterTest {
             action = null, // should result in default "VIEW" action
             mimeType = null // should result in no mimeType
         ))
-        project.executor().run(":app:assembleDebug")
+        executor.run(":app:assembleDebug")
         val mergedManifest =
             project.file(
                 "app/build/${SdkConstants.FD_INTERMEDIATES}/${SingleArtifact.MERGED_MANIFEST.getFolderName()}/debug/processDebugMainManifest/AndroidManifest.xml"
@@ -205,13 +201,15 @@ class NavigationIntentFilterTest {
 
                 <uses-sdk
                     android:minSdkVersion="14"
-                    android:targetSdkVersion="14" />
+                    android:targetSdkVersion="$DEFAULT_COMPILE_SDK_VERSION" />
 
                 <application
                     android:appComponentFactory="androidx.core.app.CoreComponentFactory"
                     android:debuggable="true"
                     android:extractNativeLibs="true" >
-                    <activity android:name="com.example.app.MyActivity" >
+                    <activity
+                        android:name="com.example.app.MyActivity"
+                        android:exported="true" >
                         <intent-filter>
                             <action android:name="android.intent.action.APP_ACTION" />
 

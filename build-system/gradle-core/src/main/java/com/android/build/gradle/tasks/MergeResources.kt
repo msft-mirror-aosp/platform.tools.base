@@ -64,6 +64,7 @@ import com.android.ide.common.resources.MergingException
 import com.android.ide.common.resources.NoOpResourcePreprocessor
 import com.android.ide.common.resources.ResourceCompilationService
 import com.android.ide.common.resources.ResourceMerger
+import com.android.ide.common.resources.ResourcePathEncoding
 import com.android.ide.common.resources.ResourcePreprocessor
 import com.android.ide.common.resources.ResourceSet
 import com.android.ide.common.resources.SingleFileProcessor
@@ -298,7 +299,7 @@ abstract class MergeResources : NewIncrementalTask() {
                             notCompiledOutputDirectory = mergedNotCompiledResourcesOutputDirectory.orNull?.asFile,
                             pseudoLocalesEnabled = pseudoLocalesEnabled.get(),
                             crunchPng = crunchPng,
-                            moduleSourceSets = sourceSetPaths
+                            relativePathEncoding = ResourcePathEncoding.Relative(sourceSetPaths)
                         )
                     )
                     Blocks.recordSpan<MergingException>(
@@ -458,7 +459,7 @@ abstract class MergeResources : NewIncrementalTask() {
                             mergedNotCompiledResourcesOutputDirectory.orNull?.asFile,
                             pseudoLocalesEnabled.get(),
                             crunchPng,
-                            sourceSetPaths
+                            ResourcePathEncoding.Relative(sourceSetPaths)
                         )
                     )
                     merger.mergeData(writer, false /*doCleanUp*/)

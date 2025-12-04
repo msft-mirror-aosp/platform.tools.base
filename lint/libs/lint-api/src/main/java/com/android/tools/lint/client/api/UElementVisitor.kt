@@ -497,7 +497,7 @@ constructor(driver: LintDriver, private val parser: UastParser, detectors: List<
           val useSiteTarget = annotationEntry.useSiteTarget?.getAnnotationUseSiteTarget()
           // Only care about annotations with default or property use-sites
           if (useSiteTarget == null || useSiteTarget == AnnotationUseSiteTarget.PROPERTY) {
-            eachDetectorVisit(anno, UElementHandler::visitAnnotation)
+            visitAnnotation(anno)
           }
         }
       }

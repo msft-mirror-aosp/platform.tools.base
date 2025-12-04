@@ -23,14 +23,16 @@ import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp;
 import com.android.build.gradle.integration.common.utils.TestFileUtils;
 import com.android.build.gradle.integration.connected.utils.EmulatorUtils;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
+
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExternalResource;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 public class AndroidTestResourcesConnectedTest {
 
@@ -62,12 +64,15 @@ public class AndroidTestResourcesConnectedTest {
                         + "'\n"
                         + "    defaultConfig {\n"
                         + "        minSdkVersion libs.versions.supportLibMinSdk.get()\n"
-                        + "        testInstrumentationRunner 'android.support.test.runner.AndroidJUnitRunner'\n"
+                        + "        //noinspection ExpiredTargetSdkVersion\n"
+                        + "        targetSdkVersion libs.versions.supportLibMinSdk.get()\n"
+                        + "        testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'\n"
                         + "    }\n"
                         + "}\n"
                         + "dependencies {\n"
-                        + "    androidTestImplementation \"com.android.support.test:runner:${libs.versions.testSupportLibVersion.get()}\"\n"
-                        + "    androidTestImplementation \"com.android.support.test:rules:${libs.versions.testSupportLibVersion.get()}\"\n"
+                        + "        androidTestImplementation \"androidx.test:runner:1.4.0-alpha06\"\n"
+                        + "        androidTestImplementation \"androidx.test:rules:1.4.0-alpha06\"\n"
+                        + "        androidTestImplementation \"androidx.annotation:annotation-experimental:1.3.0\"\n"
                         + "}\n");
         // fail fast if no response
         appProject.addAdbTimeout();
@@ -84,15 +89,15 @@ public class AndroidTestResourcesConnectedTest {
 
         String testLayout =
                 "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
-                        + "<LinearLayout xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
-                        + "        android:layout_width=\"match_parent\"\n"
-                        + "        android:layout_height=\"match_parent\"\n"
-                        + "        android:orientation=\"vertical\" >\n"
-                        + "    <TextView android:id=\"@+id/test_layout_1_textview\"\n"
-                        + "            android:layout_width=\"wrap_content\"\n"
-                        + "            android:layout_height=\"wrap_content\"\n"
-                        + "            android:text=\"Hello, I am a TextView\" />\n"
-                        + "</LinearLayout>\n";
+                    + "<LinearLayout xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                    + "        android:layout_width=\"match_parent\"\n"
+                    + "        android:layout_height=\"match_parent\"\n"
+                    + "        android:orientation=\"vertical\" >\n"
+                    + "    <TextView android:id=\"@+id/test_layout_1_textview\"\n"
+                    + "            android:layout_width=\"wrap_content\"\n"
+                    + "            android:layout_height=\"wrap_content\"\n"
+                    + "            android:text=\"Hello, I am a TextView\" />\n"
+                    + "</LinearLayout>\n";
 
         Files.createDirectories(layout.getParent());
         Files.write(layout, testLayout.getBytes());
@@ -108,9 +113,9 @@ public class AndroidTestResourcesConnectedTest {
         Files.createDirectories(resourcesTest.getParent());
         String sourcesTestContent =
                 "package com.example.helloworld;\n"
-                        + "                import android.support.test.filters.MediumTest;\n"
-                        + "                import android.support.test.rule.ActivityTestRule;\n"
-                        + "                import android.support.test.runner.AndroidJUnit4;\n"
+                        + "                import androidx.test.filters.MediumTest;\n"
+                        + "                import androidx.test.rule.ActivityTestRule;\n"
+                        + "                import androidx.test.runner.AndroidJUnit4;\n"
                         + "                import android.widget.TextView;\n"
                         + "                import org.junit.Assert;\n"
                         + "                import org.junit.Before;\n"
@@ -120,24 +125,28 @@ public class AndroidTestResourcesConnectedTest {
                         + "\n"
                         + "                @RunWith(AndroidJUnit4.class)\n"
                         + "                public class HelloWorldResourceTest {\n"
-                        + "                    @Rule public ActivityTestRule<HelloWorld> rule = new ActivityTestRule<>(HelloWorld.class);\n"
+                        + "                    @Rule public ActivityTestRule<HelloWorld> rule = new"
+                        + " ActivityTestRule<>(HelloWorld.class);\n"
                         + "                    private TextView mainAppTextView;\n"
                         + "                    private Object testLayout;\n"
                         + "\n"
-                        + "\n                  @Before"
-                        + "                    public void setUp() {\n"
+                        + "\n"
+                        + "                  @Before                    public void setUp() {\n"
                         + "                        final HelloWorld a = rule.getActivity();\n"
                         + "                        mainAppTextView = (TextView) a.findViewById(\n"
                         + "                                com.example.helloworld.R.id.text);\n"
                         + "                        testLayout = rule.getActivity().getResources()\n"
-                        + "                                .getLayout(com.example.helloworld.test.R.layout.test_layout_1);\n"
+                        + "                               "
+                        + " .getLayout(com.example.helloworld.test.R.layout.test_layout_1);\n"
                         + "                    }\n"
                         + "\n"
                         + "                    @Test\n"
                         + "                    @MediumTest\n"
                         + "                    public void testPreconditions() {\n"
-                        + "                        Assert.assertNotNull(\"Should find test test_layout_1.\", testLayout);\n"
-                        + "                        Assert.assertNotNull(\"Should find main app text view.\", mainAppTextView);\n"
+                        + "                        Assert.assertNotNull(\"Should find test"
+                        + " test_layout_1.\", testLayout);\n"
+                        + "                        Assert.assertNotNull(\"Should find main app text"
+                        + " view.\", mainAppTextView);\n"
                         + "                    }\n"
                         + "                }\n"
                         + "                ";

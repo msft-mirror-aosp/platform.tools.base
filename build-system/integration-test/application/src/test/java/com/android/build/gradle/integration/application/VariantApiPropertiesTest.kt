@@ -31,6 +31,7 @@ class VariantApiPropertiesTest {
     @get:Rule
     val project = builder()
         .fromTestApp(HelloWorldApp.forPlugin("com.android.application"))
+        .addGradleProperty(BooleanOption.USE_NEW_DSL, false)
         .create()
 
     @Test

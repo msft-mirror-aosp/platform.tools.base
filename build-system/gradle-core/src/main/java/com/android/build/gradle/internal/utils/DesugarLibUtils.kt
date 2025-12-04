@@ -74,6 +74,16 @@ private val ATTR_LINT_COMPILE_SDK: Attribute<String> =
 val ATTR_ENABLE_CORE_LIBRARY_DESUGARING: Attribute<String> =
     Attribute.of("enable-core-library-desugaring", String::class.java)
 
+const val DESUGAR_JDK_LIBS_MINIMAL = "desugar_jdk_libs_minimal"
+const val DESUGAR_JDK_LIBS = "desugar_jdk_libs"
+const val DESUGAR_JDK_LIBS_NIO = "desugar_jdk_libs_nio"
+
+enum class DesugarJdkVariant(val priority: Int) {
+    MINIMAL(0),
+    BASIC(1),
+    NIO(2);
+}
+
 /**
  * Returns a file collection which contains desugar lib jars
  */
@@ -297,6 +307,18 @@ private fun getD8DesugarMethodFileFromTransform(
             it.attribute(ATTR_LINT_MIN_SDK, minSdkVersion.toString())
         }
     }.artifacts.artifactFiles
+}
+
+fun parseDesugarJdkVariant(variant: String): DesugarJdkVariant {
+    return when (variant) {
+        DESUGAR_JDK_LIBS_MINIMAL -> DesugarJdkVariant.MINIMAL
+        DESUGAR_JDK_LIBS -> DesugarJdkVariant.BASIC
+        DESUGAR_JDK_LIBS_NIO -> DesugarJdkVariant.NIO
+        else -> throw RuntimeException(
+            "Failed to parse desugar_jdk_libs variant from" +
+                    " desugarJdkLib property of AAR metadata: unknown variant '$variant' "
+        )
+    }
 }
 
 /**

@@ -22,6 +22,7 @@ import com.android.build.gradle.integration.common.fixture.project.builder.Build
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
 import com.android.build.gradle.internal.dsl.ModulePropertyKey.BooleanWithDefault
 import com.android.build.gradle.options.BooleanOption
+import com.android.testutils.TestUtils
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -30,36 +31,41 @@ import org.junit.runners.Parameterized
 /** Tests that built-in Kotlin support works when Kotlin compiler Gradle plugins are used. */
 @RunWith(Parameterized::class)
 class BuiltInKotlinCompilerPluginTest(
-    private val builtInKotlinBooleanOption: Boolean,
+    private val builtInKotlin: Boolean,
+    private val disallowKotlinSourceSets: Boolean
 ) {
 
     companion object {
 
-        @Parameterized.Parameters(name = "builtInKotlinBooleanOption_{0}")
+        @Parameterized.Parameters(name = "builtInKotlin={0},disallowKotlinSourceSets={1}")
         @JvmStatic
-        fun parameters() = listOf(false, true)
+        fun parameters() = listOf(
+            // disallowKotlinSourceSets takes effect only when builtInKotlin=true
+            arrayOf(false, BooleanOption.DISALLOW_KOTLIN_SOURCE_SETS.defaultValue),
+            arrayOf(true, false),
+            arrayOf(true, true)
+        )
     }
 
     @get:Rule
     val rule = GradleRule.from {
         buildFileType = BuildFileType.KTS
         androidApplication {
-            applyPlugin(PluginType.ANDROID_BUILT_IN_KOTLIN)
+            @Suppress("DEPRECATION")
+            if (!builtInKotlin) applyPlugin(PluginType.KOTLIN_ANDROID, TestUtils.BUILT_IN_KOTLIN_VERSION)
             android.experimentalProperties[BooleanWithDefault.SCREENSHOT_TEST.key] = true
         }
         gradleProperties {
-            add(BooleanOption.BUILT_IN_KOTLIN, builtInKotlinBooleanOption)
+            add(BooleanOption.BUILT_IN_KOTLIN, builtInKotlin)
+            if (!builtInKotlin) add(BooleanOption.USE_NEW_DSL, false)
+            add(BooleanOption.DISALLOW_KOTLIN_SOURCE_SETS, disallowKotlinSourceSets)
             add(BooleanOption.ENABLE_SCREENSHOT_TEST, true)
         }
     }
 
     @Test
     fun `test Kotlin compiler Gradle plugin is invoked`() {
-        val build = if (builtInKotlinBooleanOption) {
-            rule.build
-        } else {
-            rule.configure().disableBrokenBuiltInKotlinOptOutChecks().build
-        }
+        val build = rule.build
         build.addKotlinCompilerGradlePlugin()
 
         // Check Kotlin compiler Gradle plugin is invoked
@@ -68,11 +74,20 @@ class BuiltInKotlinCompilerPluginTest(
 
         // Also check KotlinCompilation details
         result.assertOutputContains("KotlinAndroidTarget.compilations = [debug, debugAndroidTest, debugScreenshotTest, debugUnitTest, release, releaseScreenshotTest]")
+        val expectedDefaultSourceSetForDebug = when {
+            builtInKotlin && disallowKotlinSourceSets -> "[]"
+            builtInKotlin && !disallowKotlinSourceSets -> "[src/main/java,src/main/kotlin,src/debug/java,src/debug/kotlin]"
+            else -> "[src/debug/kotlin,src/debug/java]"
+        }
+        val expectedKotlinSourceSetsForDebug = when {
+            builtInKotlin -> "[$expectedDefaultSourceSetForDebug]"
+            else -> "[$expectedDefaultSourceSetForDebug,[src/main/kotlin,src/main/java]]"
+        }
         result.assertOutputContains(
             """
             Details of KotlinCompilation 'debug':
             allAssociatedCompilations = []
-            allKotlinSourceSets = [[src/main/java,src/main/kotlin,src/debug/java,src/debug/kotlin]]
+            allKotlinSourceSets = $expectedKotlinSourceSetsForDebug
             apiConfigurationName = debugCompilationApi
             associateWith = []
             associatedCompilations = []
@@ -86,7 +101,7 @@ class BuiltInKotlinCompilerPluginTest(
             compileOnlyConfigurationName = debugCompilationCompileOnly
             compileTaskProvider = provider(task 'compileDebugKotlin', class org.jetbrains.kotlin.gradle.tasks.KotlinCompile)
             compilerOptions = org.jetbrains.kotlin.gradle.plugin.mpp.compilationImpl.factory.KotlinJvmCompilerOptionsFactory${"$"}create${"$"}compilerOptions$1@<hash-code>
-            defaultSourceSet = [src/main/java,src/main/kotlin,src/debug/java,src/debug/kotlin]
+            defaultSourceSet = $expectedDefaultSourceSetForDebug
             defaultSourceSetName = debug
             disambiguatedName = debug
             extras = [org.jetbrains.kotlin.gradle.utils.StoredPropertyStorage=org.jetbrains.kotlin.gradle.utils.StoredPropertyStorage@<hash-code>,org.jetbrains.kotlin.gradle.plugin.hierarchy.KotlinSourceSetTreeClassifier=property(org.jetbrains.kotlin.gradle.plugin.KotlinSourceSetTree, fixed(class org.jetbrains.kotlin.gradle.plugin.KotlinSourceSetTree, main))]
@@ -94,7 +109,7 @@ class BuiltInKotlinCompilerPluginTest(
             getName = debug
             implementationConfigurationName = debugCompilationImplementation
             kotlinOptions = org.jetbrains.kotlin.gradle.plugin.mpp.compilationImpl.factory.KotlinJvmCompilerOptionsFactory${"$"}create${"$"}kotlinOptions$1@<hash-code>
-            kotlinSourceSets = [[src/main/java,src/main/kotlin,src/debug/java,src/debug/kotlin]]
+            kotlinSourceSets = $expectedKotlinSourceSetsForDebug
             output = org.jetbrains.kotlin.gradle.plugin.mpp.DefaultKotlinCompilationOutput@<hash-code>
             platformType = androidJvm
             project = project ':app'
@@ -105,17 +120,29 @@ class BuiltInKotlinCompilerPluginTest(
             toString = compilation 'debug' (target  (androidJvm))
             """.trimIndent()
         )
-        // Check KotlinCompilation 'debugUnitTest' too as it is slightly different from
-        // KotlinCompilation `debug`: The kotlinSourceSets directory names do not
-        // contain the Kotlin compilation name.
+        // Check KotlinCompilation 'debugUnitTest' too to ensure the default directory added by KGP
+        // (`src/debugUnitTest/kotlin`) is overwritten by AGP when `builtInKotlin=true`
+        val expectedDefaultSourceSetForDebugUnitTest = when {
+            builtInKotlin && disallowKotlinSourceSets -> "[]"
+            builtInKotlin && !disallowKotlinSourceSets -> "[src/test/java,src/test/kotlin,src/testDebug/java,src/testDebug/kotlin]"
+            else -> "[src/debugUnitTest/kotlin]"
+        }
+        val expectedKotlinSourceSetsForDebugUnitTest = when {
+            builtInKotlin -> "[$expectedDefaultSourceSetForDebugUnitTest]"
+            else -> "[$expectedDefaultSourceSetForDebugUnitTest,[src/test/kotlin,src/test/java],[src/testDebug/kotlin,src/testDebug/java]]"
+        }
+        val associatedCompilationsForDebugUnitTest = when {
+            builtInKotlin -> "[]"
+            else -> "[compilation 'debug' (target  (androidJvm))]"
+        }
         result.assertOutputContains(
             """
             Details of KotlinCompilation 'debugUnitTest':
-            allAssociatedCompilations = []
-            allKotlinSourceSets = [[src/test/java,src/test/kotlin,src/testDebug/java,src/testDebug/kotlin]]
+            allAssociatedCompilations = $associatedCompilationsForDebugUnitTest
+            allKotlinSourceSets = $expectedKotlinSourceSetsForDebugUnitTest
             apiConfigurationName = debugUnitTestCompilationApi
-            associateWith = []
-            associatedCompilations = []
+            associateWith = $associatedCompilationsForDebugUnitTest
+            associatedCompilations = $associatedCompilationsForDebugUnitTest
             compilationName = debugUnitTest
             compileAllTaskName = debugUnitTestClasses
             compileDependencyConfigurationName = debugUnitTestCompileClasspath
@@ -126,7 +153,7 @@ class BuiltInKotlinCompilerPluginTest(
             compileOnlyConfigurationName = debugUnitTestCompilationCompileOnly
             compileTaskProvider = provider(task 'compileDebugUnitTestKotlin', class org.jetbrains.kotlin.gradle.tasks.KotlinCompile)
             compilerOptions = org.jetbrains.kotlin.gradle.plugin.mpp.compilationImpl.factory.KotlinJvmCompilerOptionsFactory${"$"}create${"$"}compilerOptions$1@<hash-code>
-            defaultSourceSet = [src/test/java,src/test/kotlin,src/testDebug/java,src/testDebug/kotlin]
+            defaultSourceSet = $expectedDefaultSourceSetForDebugUnitTest
             defaultSourceSetName = debugUnitTest
             disambiguatedName = debugUnitTest
             extras = [org.jetbrains.kotlin.gradle.utils.StoredPropertyStorage=org.jetbrains.kotlin.gradle.utils.StoredPropertyStorage@<hash-code>,org.jetbrains.kotlin.gradle.plugin.hierarchy.KotlinSourceSetTreeClassifier=property(org.jetbrains.kotlin.gradle.plugin.KotlinSourceSetTree, fixed(class org.jetbrains.kotlin.gradle.plugin.KotlinSourceSetTree, test))]
@@ -134,7 +161,7 @@ class BuiltInKotlinCompilerPluginTest(
             getName = debugUnitTest
             implementationConfigurationName = debugUnitTestCompilationImplementation
             kotlinOptions = org.jetbrains.kotlin.gradle.plugin.mpp.compilationImpl.factory.KotlinJvmCompilerOptionsFactory${"$"}create${"$"}kotlinOptions$1@<hash-code>
-            kotlinSourceSets = [[src/test/java,src/test/kotlin,src/testDebug/java,src/testDebug/kotlin]]
+            kotlinSourceSets = $expectedKotlinSourceSetsForDebugUnitTest
             output = org.jetbrains.kotlin.gradle.plugin.mpp.DefaultKotlinCompilationOutput@<hash-code>
             platformType = androidJvm
             project = project ':app'
@@ -145,14 +172,19 @@ class BuiltInKotlinCompilerPluginTest(
             toString = compilation 'debugUnitTest' (target  (androidJvm))
             """.trimIndent()
         )
-        // Check KotlinCompilation 'debugScreenshotTest' too as it is slightly different from
-        // KotlinCompilation 'debug': It is supported only by built-in Kotlin, not the
-        // `kotlin-android` plugin.
+        // Check KotlinCompilation 'debugScreenshotTest' too as screenshot-test / test-fixture
+        // components make use of built-in Kotlin support even when built-in Kotlin is disabled
+        val expectedDefaultSourceSetForDebugScreenshotTest = when {
+            builtInKotlin && disallowKotlinSourceSets -> "[]"
+            builtInKotlin && !disallowKotlinSourceSets -> "[src/screenshotTest/java,src/screenshotTest/kotlin,src/screenshotTestDebug/java,src/screenshotTestDebug/kotlin]"
+            else -> "[src/screenshotTest/kotlin,src/screenshotTest/java,src/screenshotTestDebug/kotlin,src/screenshotTestDebug/java]"
+        }
+        val expectedKotlinSourceSetsForDebugScreenshotTest = "[$expectedDefaultSourceSetForDebugScreenshotTest]"
         result.assertOutputContains(
             """
             Details of KotlinCompilation 'debugScreenshotTest':
             allAssociatedCompilations = []
-            allKotlinSourceSets = [[src/screenshotTest/java,src/screenshotTest/kotlin,src/screenshotTestDebug/java,src/screenshotTestDebug/kotlin]]
+            allKotlinSourceSets = $expectedKotlinSourceSetsForDebugScreenshotTest
             apiConfigurationName = debugScreenshotTestCompilationApi
             associateWith = []
             associatedCompilations = []
@@ -166,7 +198,7 @@ class BuiltInKotlinCompilerPluginTest(
             compileOnlyConfigurationName = debugScreenshotTestCompilationCompileOnly
             compileTaskProvider = provider(task 'compileDebugScreenshotTestKotlin', class org.jetbrains.kotlin.gradle.tasks.KotlinCompile)
             compilerOptions = org.jetbrains.kotlin.gradle.plugin.mpp.compilationImpl.factory.KotlinJvmCompilerOptionsFactory${"$"}create${"$"}compilerOptions$1@<hash-code>
-            defaultSourceSet = [src/screenshotTest/java,src/screenshotTest/kotlin,src/screenshotTestDebug/java,src/screenshotTestDebug/kotlin]
+            defaultSourceSet = $expectedDefaultSourceSetForDebugScreenshotTest
             defaultSourceSetName = debugScreenshotTest
             disambiguatedName = debugScreenshotTest
             extras = [org.jetbrains.kotlin.gradle.utils.StoredPropertyStorage=org.jetbrains.kotlin.gradle.utils.StoredPropertyStorage@<hash-code>,org.jetbrains.kotlin.gradle.plugin.hierarchy.KotlinSourceSetTreeClassifier=None]
@@ -174,7 +206,7 @@ class BuiltInKotlinCompilerPluginTest(
             getName = debugScreenshotTest
             implementationConfigurationName = debugScreenshotTestCompilationImplementation
             kotlinOptions = org.jetbrains.kotlin.gradle.plugin.mpp.compilationImpl.factory.KotlinJvmCompilerOptionsFactory${"$"}create${"$"}kotlinOptions$1@<hash-code>
-            kotlinSourceSets = [[src/screenshotTest/java,src/screenshotTest/kotlin,src/screenshotTestDebug/java,src/screenshotTestDebug/kotlin]]
+            kotlinSourceSets = $expectedKotlinSourceSetsForDebugScreenshotTest
             output = org.jetbrains.kotlin.gradle.plugin.mpp.DefaultKotlinCompilationOutput@<hash-code>
             platformType = androidJvm
             project = project ':app'

@@ -53,7 +53,6 @@ public class ProjectOptionsTest {
 
     private static Integer parseInteger(@NonNull Object input) {
         return new ProjectOptions(
-                        ImmutableMap.of(),
                         new FakeProviderFactory(
                                 FakeProviderFactory.getFactory(),
                                 ImmutableMap.of("android.injected.build.api", input)))
@@ -87,7 +86,6 @@ public class ProjectOptionsTest {
 
         assertThat(
                         new ProjectOptions(
-                                        ImmutableMap.of(),
                                         new FakeProviderFactory(
                                                 FakeProviderFactory.getFactory(),
                                                 ImmutableMap.of()))
@@ -98,7 +96,6 @@ public class ProjectOptionsTest {
                 ImmutableMap.of("android.injected.invoked.from.ide", "true");
         assertThat(
                         new ProjectOptions(
-                                        ImmutableMap.of(),
                                         new FakeProviderFactory(
                                                 FakeProviderFactory.getFactory(), gradleProperties))
                                 .get(BooleanOption.IDE_INVOKED_FROM_IDE))
@@ -106,7 +103,6 @@ public class ProjectOptionsTest {
 
         assertThat(
                         new ProjectOptions(
-                                        ImmutableMap.of(),
                                         new FakeProviderFactory(
                                                 FakeProviderFactory.getFactory(), gradleProperties))
                                 .getProvider(BooleanOption.IDE_INVOKED_FROM_IDE)
@@ -116,7 +112,6 @@ public class ProjectOptionsTest {
         gradleProperties = ImmutableMap.of("android.injected.invoked.from.ide", "false");
         assertThat(
                         new ProjectOptions(
-                                        ImmutableMap.of(),
                                         new FakeProviderFactory(
                                                 FakeProviderFactory.getFactory(), gradleProperties))
                                 .get(BooleanOption.IDE_INVOKED_FROM_IDE))
@@ -124,7 +119,6 @@ public class ProjectOptionsTest {
 
         assertThat(
                         new ProjectOptions(
-                                        ImmutableMap.of(),
                                         new FakeProviderFactory(
                                                 FakeProviderFactory.getFactory(), gradleProperties))
                                 .getProvider(BooleanOption.IDE_INVOKED_FROM_IDE)
@@ -135,7 +129,6 @@ public class ProjectOptionsTest {
             //noinspection ResultOfObjectAllocationIgnored
             gradleProperties = ImmutableMap.of("android.injected.invoked.from.ide", "?");
             new ProjectOptions(
-                            ImmutableMap.of(),
                             new FakeProviderFactory(
                                     FakeProviderFactory.getFactory(), gradleProperties))
                     .get(BooleanOption.IDE_INVOKED_FROM_IDE);
@@ -150,7 +143,6 @@ public class ProjectOptionsTest {
         assertThat(IntegerOption.IDE_TARGET_DEVICE_API.getDefaultValue()).isNull();
         assertThat(
                         new ProjectOptions(
-                                        ImmutableMap.of(),
                                         new FakeProviderFactory(
                                                 FakeProviderFactory.getFactory(),
                                                 ImmutableMap.of()))
@@ -165,7 +157,6 @@ public class ProjectOptionsTest {
         try {
             //noinspection ResultOfObjectAllocationIgnored
             new ProjectOptions(
-                            ImmutableMap.of(),
                             new FakeProviderFactory(
                                     FakeProviderFactory.getFactory(),
                                     ImmutableMap.of("android.injected.build.api", new Object())))
@@ -181,7 +172,6 @@ public class ProjectOptionsTest {
         assertThat(StringOption.IDE_BUILD_TARGET_ABI.getDefaultValue()).isNull();
         assertThat(
                         new ProjectOptions(
-                                        ImmutableMap.of(),
                                         new FakeProviderFactory(
                                                 FakeProviderFactory.getFactory(),
                                                 ImmutableMap.of()))
@@ -190,32 +180,12 @@ public class ProjectOptionsTest {
 
         ProjectOptions options =
                 new ProjectOptions(
-                        ImmutableMap.of(),
                         new FakeProviderFactory(
                                 FakeProviderFactory.getFactory(),
                                 ImmutableMap.of(
                                         "android.injected.build.abi", asGroovyString("x86"))));
         assertThat(options.get(StringOption.IDE_BUILD_TARGET_ABI)).isEqualTo("x86");
         assertThat(options.getProvider(StringOption.IDE_BUILD_TARGET_ABI).get()).isEqualTo("x86");
-    }
-
-    @Test
-    public void argsSanity() {
-        assertThat(
-                        new ProjectOptions(
-                                        ImmutableMap.of(),
-                                        new FakeProviderFactory(
-                                                FakeProviderFactory.getFactory(),
-                                                ImmutableMap.of()))
-                                .getExtraInstrumentationTestRunnerArgs())
-                .isEmpty();
-        ImmutableMap<String, String> gradleProperties = ImmutableMap.of("a", "b");
-        ProjectOptions options =
-                new ProjectOptions(
-                        gradleProperties,
-                        new FakeProviderFactory(
-                                FakeProviderFactory.getFactory(), gradleProperties));
-        assertThat(options.getExtraInstrumentationTestRunnerArgs()).containsExactly("a", "b");
     }
 
     @Test
@@ -241,21 +211,18 @@ public class ProjectOptionsTest {
         AnalyticsSettings.setInstanceForTest(settingsData);
 
         ProjectOptions projectOptions = new ProjectOptions(
-                ImmutableMap.of(),
                 new FakeProviderFactory(
                         FakeProviderFactory.getFactory(), ImmutableMap.of()));
         assertThat(projectOptions.isAnalyticsEnabled()).isFalse();
 
         projectOptions =
                 new ProjectOptions(
-                        ImmutableMap.of(),
                         new FakeProviderFactory(
                                 FakeProviderFactory.getFactory(),
                                 ImmutableMap.of("android.enableProfileJson", "true")));
         assertThat(projectOptions.isAnalyticsEnabled()).isTrue();
 
         projectOptions = new ProjectOptions(
-                ImmutableMap.of(),
                 new FakeProviderFactory(
                         FakeProviderFactory.getFactory(),
                         ImmutableMap.of("android.advanced.profileOutputDir", "path")));
@@ -264,7 +231,6 @@ public class ProjectOptionsTest {
         settingsData.setOptedIn(true);
         projectOptions =
                 new ProjectOptions(
-                        ImmutableMap.of(),
                         new FakeProviderFactory(
                                 FakeProviderFactory.getFactory(), ImmutableMap.of()));
         assertThat(projectOptions.isAnalyticsEnabled()).isTrue();
@@ -274,7 +240,6 @@ public class ProjectOptionsTest {
     public void checkSimulatedAgpVersionTest() {
         ProjectOptions projectOptions =
                 new ProjectOptions(
-                        ImmutableMap.of(),
                         new FakeProviderFactory(
                                 FakeProviderFactory.getFactory(),
                                 ImmutableMap.of("android.simulateAgpVersionBehavior", "9.0.0")));
@@ -282,7 +247,6 @@ public class ProjectOptionsTest {
 
         projectOptions =
                 new ProjectOptions(
-                        ImmutableMap.of(),
                         new FakeProviderFactory(
                                 FakeProviderFactory.getFactory(),
                                 ImmutableMap.of("android.simulateAgpVersionBehavior", "10.0.0")));
@@ -290,7 +254,6 @@ public class ProjectOptionsTest {
 
         projectOptions =
                 new ProjectOptions(
-                        ImmutableMap.of(),
                         new FakeProviderFactory(
                                 FakeProviderFactory.getFactory(),
                                 ImmutableMap.of("android.simulateAgpVersionBehavior", "11.0.0")));

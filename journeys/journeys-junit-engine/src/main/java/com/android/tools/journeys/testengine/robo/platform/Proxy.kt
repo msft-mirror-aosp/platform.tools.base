@@ -101,6 +101,14 @@ class Proxy(
         } catch (e: JourneyExecutionException) {
             throw e
         } catch (e: Exception) {
+            // Unpack and propagate [JourneyExecutionException] errors thrown within the GRPC client
+            if (e is GrpcClient.ServerErrorException) {
+                val cause = e.cause?.cause
+                if (cause is JourneyExecutionException) {
+                    throw cause
+                }
+            }
+
             throw JourneyExecutionException(
                 "An unexpected error occurred during journey execution: ${e.message}",
                 e,

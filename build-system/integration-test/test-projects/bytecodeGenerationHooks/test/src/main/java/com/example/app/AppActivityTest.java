@@ -2,8 +2,8 @@ package com.example.app;
 
 import static org.junit.Assert.*;
 
-import android.support.test.rule.ActivityTestRule;
-import android.support.test.runner.AndroidJUnit4;
+import androidx.test.rule.ActivityTestRule;
+import androidx.test.runner.AndroidJUnit4;
 import com.example.bytecode.App;
 import com.example.bytecode.Lib;
 import com.example.bytecode.PostJavacApp;

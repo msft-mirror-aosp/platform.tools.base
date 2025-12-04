@@ -81,7 +81,7 @@ public class KotlinHelloWorldApp extends HelloWorldApp {
                                 + "    buildToolsVersion = libs.versions.buildToolsVersion.get()\n"
                                 + "    defaultConfig {\n"
                                 + "        minSdkVersion libs.versions.supportLibMinSdk.get()\n"
-                                + "        testInstrumentationRunner 'android.support.test.runner.AndroidJUnitRunner'\n"
+                                + "        testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'\n"
                                 + "    }\n"
                                 + "    sourceSets {\n"
                                 + "        main.java.srcDirs += 'src/main/kotlin'\n"
@@ -89,8 +89,9 @@ public class KotlinHelloWorldApp extends HelloWorldApp {
                                 + "}\n"
                                 + "dependencies {\n"
                                 + "    api \"org.jetbrains.kotlin:kotlin-stdlib:${libs.versions.kotlinVersion.get()}\"\n"
-                                + "    androidTestImplementation \"com.android.support.test:runner:${libs.versions.testSupportLibVersion.get()}\"\n"
-                                + "    androidTestImplementation \"com.android.support.test:rules:${libs.versions.testSupportLibVersion.get()}\"\n"
+                                + "    androidTestImplementation \"androidx.test:runner:1.4.0-alpha06\"\n"
+                                + "    androidTestImplementation \"androidx.test:rules:1.4.0-alpha06\"\n"
+                                + "    androidTestImplementation \"androidx.annotation:annotation-experimental:1.3.0\"\n"
                                 + "}\n");
 
         addFile(buildFile);

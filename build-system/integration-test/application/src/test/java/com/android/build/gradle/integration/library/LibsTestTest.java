@@ -58,7 +58,7 @@ public class LibsTestTest {
 
         assertThat(xPath.evaluate("/manifest/instrumentation/@android:name", manifest))
                 .named("instrumentation-name")
-                .isEqualTo("android.support.test.runner.AndroidJUnitRunner");
+                .isEqualTo("androidx.test.runner.AndroidJUnitRunner");
 
         assertThat(xPath.evaluate("/manifest/instrumentation/@android:targetPackage", manifest))
                 .named("targetPackage")

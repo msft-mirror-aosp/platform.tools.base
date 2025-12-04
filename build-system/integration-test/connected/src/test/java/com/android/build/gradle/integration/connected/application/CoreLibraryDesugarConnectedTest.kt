@@ -42,6 +42,8 @@ class CoreLibraryDesugarConnectedTest {
                 project.buildFile,
                 """
                     android {
+                        //noinspection ExpiredTargetSdkVersion
+                        defaultConfig.targetSdkVersion 21
                         compileOptions {
                             coreLibraryDesugaringEnabled = true
                         }

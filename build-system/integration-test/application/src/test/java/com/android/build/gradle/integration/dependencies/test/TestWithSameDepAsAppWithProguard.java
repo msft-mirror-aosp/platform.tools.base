@@ -58,7 +58,7 @@ public class TestWithSameDepAsAppWithProguard {
                         + "\n"
                         + "  defaultConfig {\n"
                         + "    minSdkVersion 21\n"
-                        + "    testInstrumentationRunner 'android.support.test.runner.AndroidJUnitRunner'\n"
+                        + "    testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'\n"
                         + "  }\n"
                         + "\n"
                         + "  buildTypes {\n"
@@ -71,9 +71,9 @@ public class TestWithSameDepAsAppWithProguard {
                         + "\n"
                         + "dependencies {\n"
                         + "  api 'com.android.tools:annotations:+'\n"
-                        + "  androidTestImplementation 'com.android.tools:annotations:+'\n"
-                        + "  androidTestImplementation \"com.android.support.test:runner:${libs.versions.testSupportLibVersion.get()}\"\n"
-                        + "  androidTestImplementation \"com.android.support.test:rules:${libs.versions.testSupportLibVersion.get()}\"\n"
+                        + "  androidTestImplementation \"androidx.test:runner:1.4.0-alpha06\"\n"
+                        + "  androidTestImplementation \"androidx.test:rules:1.4.0-alpha06\"\n"
+                        + "  androidTestImplementation \"androidx.annotation:annotation-experimental:1.3.0\"\n"
                         + "}\n");
     }
 

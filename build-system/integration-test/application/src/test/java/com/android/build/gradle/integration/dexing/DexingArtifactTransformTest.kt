@@ -65,7 +65,7 @@ class DexingArtifactTransformTest {
                                 )
                         )
                 )
-        ).create()
+        ).addGradleProperty(BooleanOption.USE_NEW_DSL, false).create()
 
     @Before
     fun before() {
@@ -234,8 +234,8 @@ class DexingArtifactTransformTest {
             }
         """.trimIndent()
         )
-        val result =
-            project.executor().run("assembleDebug")
+
+        project.executor().run("assembleDebug")
         assertThatApk(project.getApk(GradleTestProject.ApkType.DEBUG)).containsClass("Ltest/A;")
     }
 

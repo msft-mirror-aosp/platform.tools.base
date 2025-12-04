@@ -97,6 +97,9 @@ public class NativeBuildOutputTest {
                         + GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
                         + "\nandroid.defaultConfig.minSdk = "
                         + GradleTestProject.DEFAULT_MIN_SDK_VERSION
+                        +"\n//noinspection ExpiredTargetSdkVersion"
+                        + "\nandroid.defaultConfig.targetSdk = "
+                        + GradleTestProject.DEFAULT_MIN_SDK_VERSION
                         + "\n");
     }
 

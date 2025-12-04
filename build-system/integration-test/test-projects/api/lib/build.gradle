@@ -10,7 +10,9 @@ android {
     buildToolsVersion = libs.versions.buildToolsVersion.get()
     defaultConfig {
         minSdkVersion libs.versions.supportLibMinSdk.get()
-        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+	//noinspection ExpiredTargetSdkVersion
+	targetSdkVersion libs.versions.supportLibMinSdk.get()
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 }
 
@@ -26,8 +28,8 @@ android.libraryVariants.all { variant ->
 }
 
 dependencies {
-    androidTestImplementation "com.android.support.test:runner:${libs.versions.testSupportLibVersion.get()}"
-    androidTestImplementation "com.android.support.test:rules:${libs.versions.testSupportLibVersion.get()}"
+    androidTestImplementation "androidx.test:runner:1.4.0-alpha06"
+    androidTestImplementation "androidx.test:rules:1.4.0-alpha06"
 }
 
 project.afterEvaluate {
