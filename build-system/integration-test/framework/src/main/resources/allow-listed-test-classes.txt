@@ -402,7 +402,6 @@ com.android.build.gradle.integration.library.LibMinifyJarDepTest
 com.android.build.gradle.integration.library.LibMinifyLibDepTest
 com.android.build.gradle.integration.library.LibMinifyTest
 com.android.build.gradle.integration.library.LibProguardConsumerFilesTest
-com.android.build.gradle.integration.library.LibraryBuildConfigTest
 com.android.build.gradle.integration.library.LibraryIntermediateArtifactPublishingTest
 com.android.build.gradle.integration.library.LibsTestTest
 com.android.build.gradle.integration.library.LibTestDepTest
