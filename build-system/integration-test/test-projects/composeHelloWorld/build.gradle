@@ -2,10 +2,4 @@ apply from: "../commonHeader.gradle"
 buildscript {
     apply from: "../commonHeader.gradle"
     apply from: "../commonBuildScript.gradle"
-
-    dependencies {
-        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${libs.versions.kotlinVersion.get()}"
-        classpath "org.jetbrains.kotlin:compose-compiler-gradle-plugin:${libs.versions.kotlinVersion.get()}"
-        classpath "org.jetbrains.kotlin.plugin.compose:org.jetbrains.kotlin.plugin.compose.gradle.plugin:${libs.versions.kotlinVersion.get()}"
-    }
 }
