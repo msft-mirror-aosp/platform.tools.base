@@ -20,6 +20,7 @@ import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.MinimalSubProject
 import com.android.build.gradle.integration.common.fixture.app.MultiModuleTestProject
 import com.android.build.gradle.integration.common.truth.TruthHelper
+import com.android.build.gradle.options.BooleanOption
 import com.android.builder.model.SyncIssue
 import org.junit.Rule
 import org.junit.Test
@@ -61,7 +62,7 @@ class BrokenTestModuleSyncTest {
 
     @Test
     fun checkSync() {
-        val modelInfo = project.modelV2().ignoreSyncIssues()
+        val modelInfo = project.modelV2().with(BooleanOption.USE_NEW_DSL, false).ignoreSyncIssues()
             .fetchModels("debug").container.getProject(":test")
         val syncIssues = modelInfo.issues!!.syncIssues.toList()
         val unresolvedDeps = modelInfo.variantDependencies?.mainArtifact?.unresolvedDependencies
