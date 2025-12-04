@@ -316,6 +316,37 @@ void InitializeProfiler(JavaVM* vm, jvmtiEnv* jvmti_env,
             }});
       });
 
+  Agent::Instance().RegisterCommandHandler(
+      Command::SIGNAL_HEAP_DUMP_COMPLETE, [vm](const Command* command) -> void {
+        JNIEnv* jni_env = GetThreadLocalJNI(vm);
+        if (jni_env == nullptr) {
+          Log::E(Log::Tag::PROFILER,
+                 "Could not get JNIEnv to handle SIGNAL_HEAP_DUMP_COMPLETE.");
+          return;
+        }
+
+        jclass manager_class = jni_env->FindClass(
+            "com/android/tools/profiler/support/profilers/LeakCanaryManager");
+        if (manager_class == nullptr) {
+          Log::E(Log::Tag::PROFILER, "LeakCanaryManager class not found.");
+          return;
+        }
+        ScopedLocalRef<jclass> manager_class_ref(jni_env, manager_class);
+
+        jmethodID signal_method = jni_env->GetStaticMethodID(
+            manager_class, "signalHeapDumpComplete", "(J)V");
+        if (signal_method == nullptr) {
+          Log::E(Log::Tag::PROFILER,
+                 "LeakCanaryManager.signalHeapDumpComplete method not found.");
+          return;
+        }
+
+        jlong heap_dump_timestamp =
+            command->signal_heap_dump_complete().heap_dump_timestamp();
+        jni_env->CallStaticVoidMethod(manager_class, signal_method,
+                                      heap_dump_timestamp);
+      });
+
   // Perf-test currently waits on this message to determine that agent
   // has finished profiler initialization.
   Log::V(Log::Tag::PROFILER, "Profiler initialization complete on agent.");
