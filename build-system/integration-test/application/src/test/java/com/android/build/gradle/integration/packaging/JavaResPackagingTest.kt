@@ -63,11 +63,7 @@ class JavaResPackagingTest {
         // setup dependencies.
         TestFileUtils.appendToFile(
             appProject.buildFile,
-            ("android {\n"
-                    + "    publishNonDefault = true\n"
-                    + "}\n"
-                    + "\n"
-                    + "dependencies {\n"
+            ("dependencies {\n"
                     + "    api project(':library')\n"
                     + "    api project(':library3')\n"
                     + "    api project(':jar')\n"
@@ -82,7 +78,7 @@ class JavaResPackagingTest {
                     + "}\n")
         )
 
-        TestFileUtils.appendToFile(testProject.buildFile, "android { targetProjectPath ':app' }\n")
+        TestFileUtils.appendToFile(testProject.buildFile, "android { targetProjectPath = ':app' }\n")
 
         // put some default files in the 4 projects, to check non incremental packaging as well,
         // and to provide files to change to test incremental support.

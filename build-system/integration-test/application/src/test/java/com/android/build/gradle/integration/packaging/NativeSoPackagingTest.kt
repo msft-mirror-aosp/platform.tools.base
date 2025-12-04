@@ -77,10 +77,6 @@ class NativeSoPackagingTest {
         TestFileUtils.appendToFile(
             appProject.buildFile,
             """
-                android {
-                    publishNonDefault = true
-                }
-
                 dependencies {
                     api project(':library')
                     api project(':jar')
@@ -101,8 +97,7 @@ class NativeSoPackagingTest {
             testProject.buildFile,
             """
                 android {
-                    targetProjectPath ':app'
-                    targetVariant 'debug'
+                    targetProjectPath = ':app'
                 }
             """.trimIndent()
         )
