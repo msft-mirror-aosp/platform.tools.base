@@ -159,14 +159,14 @@ sealed class BuiltInKotlinSupportMode {
          * Built-in Kotlin support is available because this is a screenshot test component and
          * the `kotlin-android` plugin is applied.
          */
-        object ScreenshotTestAndKgpApplied : Supported()
+        object ScreenshotTestAndKgpApplied : SupportedForTestFixturesAndScreenshotTest()
 
         /**
          * Built-in Kotlin support is available because this is a test-fixtures component and
          * [BooleanOption.ENABLE_TEST_FIXTURES_KOTLIN_SUPPORT] is enabled and the `kotlin-android`
          * plugin is applied.
          */
-        object TestFixturesSupportEnabledAndKgpApplied : Supported()
+        object TestFixturesSupportEnabledAndKgpApplied : SupportedForTestFixturesAndScreenshotTest()
     }
 
     object NotSupported : BuiltInKotlinSupportMode()
@@ -187,14 +187,14 @@ sealed class BuiltInKaptSupportMode {
          * Built-in Kapt support is available because this is a screenshot test component and the
          * `kotlin-kapt` plugin is applied.
          */
-        object ScreenshotTestAndKaptApplied : Supported()
+        object ScreenshotTestAndKaptApplied : SupportedForTestFixturesAndScreenshotTest()
 
         /**
          * Built-in Kapt support is available because this is a test-fixtures component and
          * [BooleanOption.ENABLE_TEST_FIXTURES_KOTLIN_SUPPORT] is enabled and the `kotlin-kapt`
          * plugin is applied.
          */
-        object TestFixturesSupportEnabledAndKaptApplied : Supported()
+        object TestFixturesSupportEnabledAndKaptApplied : SupportedForTestFixturesAndScreenshotTest()
     }
 
     object NotSupported : BuiltInKaptSupportMode()
