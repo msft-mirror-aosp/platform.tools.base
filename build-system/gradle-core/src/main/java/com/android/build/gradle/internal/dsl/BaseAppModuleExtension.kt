@@ -34,11 +34,13 @@ import com.android.builder.core.LibraryRequest
 import com.android.repository.Revision
 import com.google.wireless.android.sdk.stats.GradleBuildProject
 import org.gradle.api.Action
+import org.gradle.api.Incubating
 import org.gradle.api.NamedDomainObjectContainer
 import org.gradle.api.plugins.ExtensionContainer
 import org.gradle.declarative.dsl.model.annotations.Configuring
 import javax.inject.Inject
 
+@Incubating
 abstract class BaseAppModuleExtensionInternal(
     dslServices: DslServices,
     bootClasspathConfig: BootClasspathConfig,
@@ -72,7 +74,16 @@ abstract class BaseAppModuleExtensionInternal(
         get() = publicExtensionImpl.productFlavors as NamedDomainObjectContainer<DeclarativeProductFlavor>
 }
 
-/** The `android` extension for base feature module (application plugin).  */
+/**
+ * An intermediate implementation class of the previous `android` extension for the `com.android.application` plugin
+ *
+ * Replaced by [com.android.build.api.dsl.ApplicationExtension] .
+ */
+@Deprecated(
+    message = "Replaced by com.android.build.api.dsl.ApplicationExtension.\n" +
+            "This class is not used for the public extensions in AGP when android.newDsl=true, which is the default in AGP 9.0, and will be removed in AGP 10.0.",
+    replaceWith = ReplaceWith("com.android.build.api.dsl.ApplicationExtension")
+)
 abstract class BaseAppModuleExtension @Inject constructor(
     dslServices: DslServices,
     bootClasspathConfig: BootClasspathConfig,
@@ -95,10 +106,12 @@ abstract class BaseAppModuleExtension @Inject constructor(
 
     // Overrides to make the parameterized types match, due to BaseExtension being part of
     // the previous public API and not wanting to paramerterize that.
+    @Suppress("UNCHECKED_CAST")
     override val buildTypes: NamedDomainObjectContainer<out BuildType>
         get() = publicExtensionImpl.buildTypes as NamedDomainObjectContainer<BuildType>
 
     override fun buildTypes(action: Action<in NamedDomainObjectContainer<BuildType>>) {
+        @Suppress("UNCHECKED_CAST")
         action.execute(publicExtensionImpl.buildTypes as NamedDomainObjectContainer<BuildType>)
     }
 
@@ -111,9 +124,11 @@ abstract class BaseAppModuleExtension @Inject constructor(
     override val externalNativeBuild: ExternalNativeBuild
         get() = publicExtensionImpl.externalNativeBuild as ExternalNativeBuild
 
+    @Suppress("UNCHECKED_CAST")
     override val productFlavors: NamedDomainObjectContainer<out ProductFlavor>
         get() = publicExtensionImpl.productFlavors as NamedDomainObjectContainer<ProductFlavor>
 
+    @Suppress("DEPRECATION")
     override val sourceSets: NamedDomainObjectContainer<AndroidSourceSet>
         get() = publicExtensionImpl.sourceSets
 

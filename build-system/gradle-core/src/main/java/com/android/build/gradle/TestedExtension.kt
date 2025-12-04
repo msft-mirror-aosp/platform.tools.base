@@ -13,11 +13,15 @@ import org.gradle.api.NamedDomainObjectContainer
 import org.gradle.api.file.FileCollection
 
 /**
- * Provides test components that are common to [AppExtension] and [LibraryExtension].
+ * An intermediate implementation class of the previous `android` extension for plugins with separate test components, such as the application, library and dynamic-feature plugins.
  *
- * To learn more about testing Android projects, read
- * [Test your app](https://developer.android.com/studio/test/index.html)
+ * Replaced by [com.android.build.api.dsl.TestedExtension] .
  */
+@Deprecated(
+    message = "Replaced by com.android.build.api.dsl.TestedExtension.\n" +
+            "This class is not used for the public extensions in AGP when android.newDsl=true, which is the default in AGP 9.0, and will be removed in AGP 10.0.",
+    replaceWith = ReplaceWith("com.android.build.api.dsl.TestedExtension")
+)
 abstract class TestedExtension(
     dslServices: DslServices,
     bootClasspathConfig: BootClasspathConfig,

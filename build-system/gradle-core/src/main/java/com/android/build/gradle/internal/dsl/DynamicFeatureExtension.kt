@@ -32,6 +32,11 @@ import org.gradle.api.NamedDomainObjectContainer
 import org.gradle.api.plugins.ExtensionContainer
 import javax.inject.Inject
 
+@Deprecated(
+    message = "Replaced by com.android.build.api.dsl.DynamicFeatureExtension.\n" +
+            "This class is not used for the public extensions in AGP when android.newDsl=true, which is the default in AGP 9.0, and will be removed in AGP 10.0.",
+    replaceWith = ReplaceWith("com.android.build.api.dsl.DynamicFeatureExtension")
+)
 abstract class DynamicFeatureExtension @Inject constructor(
     dslServices: DslServices,
     bootClasspathConfig: BootClasspathConfig,
@@ -52,6 +57,7 @@ abstract class DynamicFeatureExtension @Inject constructor(
 
     // Overrides to make the parameterized types match, due to BaseExtension being part of
     // the previous public API and not wanting to paramerterize that.
+    @Suppress("UNCHECKED_CAST")
     override val buildTypes: NamedDomainObjectContainer<BuildType>
         get() = publicExtensionImpl.buildTypes as NamedDomainObjectContainer<BuildType>
 
@@ -68,9 +74,11 @@ abstract class DynamicFeatureExtension @Inject constructor(
     override val externalNativeBuild: ExternalNativeBuild
         get() = publicExtensionImpl.externalNativeBuild as ExternalNativeBuild
 
+    @Suppress("UNCHECKED_CAST")
     override val productFlavors: NamedDomainObjectContainer<ProductFlavor>
         get() = publicExtensionImpl.productFlavors as NamedDomainObjectContainer<ProductFlavor>
 
+    @Suppress("DEPRECATION")
     override val sourceSets: NamedDomainObjectContainer<AndroidSourceSet>
         get() = publicExtensionImpl.sourceSets
 

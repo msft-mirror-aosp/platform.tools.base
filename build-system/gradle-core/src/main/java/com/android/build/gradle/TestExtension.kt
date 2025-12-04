@@ -23,7 +23,16 @@ import org.gradle.api.internal.DefaultDomainObjectSet
 import org.gradle.api.plugins.ExtensionContainer
 import javax.inject.Inject
 
-/** {@code android} extension for {@code com.android.test} projects. */
+/**
+ * An intermediate implementation class of the previous `android` extension for the `com.android.test` plugin
+ *
+ * Replaced by [com.android.build.api.dsl.TestExtension] .
+ */
+@Deprecated(
+    message = "Replaced by com.android.build.api.dsl.TestExtension.\n" +
+            "This class is not used for the public extensions in AGP  when android.newDsl=true, which is the default in AGP 9.0, and will be removed in AGP 10.0.",
+    replaceWith = ReplaceWith("com.android.build.api.dsl.TestExtension")
+)
 abstract class TestExtension @Inject constructor(
     dslServices: DslServices,
     bootClasspathConfig: BootClasspathConfig,
