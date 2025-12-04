@@ -3,6 +3,7 @@ package com.android.build.gradle.tasks
 import com.android.SdkConstants
 import com.android.build.gradle.internal.component.AarCreationConfig
 import com.android.build.gradle.internal.component.ComponentCreationConfig
+import com.android.build.gradle.internal.dependency.gradleHomeSourceSetMap
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.tasks.BuildAnalyzer
 import com.android.build.gradle.internal.tasks.NonIncrementalTask
@@ -23,6 +24,7 @@ import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFiles
+import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.PathSensitive
@@ -57,6 +59,8 @@ abstract class MapSourceSetPathsTask : NonIncrementalTask() {
 
   @get:InputFiles @get:PathSensitive(PathSensitivity.RELATIVE) abstract val localResources: ConfigurableFileCollection
 
+  @get:Internal abstract val gradleUserHome: Property<String>
+
   @get:Input abstract val allGeneratedRes: ListProperty<String>
 
   @get:OutputFile abstract val filepathMappingFile: RegularFileProperty
@@ -78,6 +82,7 @@ abstract class MapSourceSetPathsTask : NonIncrementalTask() {
       projectPath = projectPath.get(),
       output = filepathMappingFile.get().asFile,
     )
+    writeGradleHomeMapping()
   }
 
   private fun listConfigurationSourceSets(additionalSourceSets: List<String>, generatedSourceSets: List<String>): List<File> {
@@ -93,6 +98,11 @@ abstract class MapSourceSetPathsTask : NonIncrementalTask() {
       .plus(additionalSourceSets.map(::File))
       .plus(generatedSourceSets.map(::File))
       .toList()
+  }
+
+  private fun writeGradleHomeMapping() {
+    val entry = gradleHomeSourceSetMap(gradleUserHome.get()).entries
+    filepathMappingFile.get().asFile.appendText(entry.joinToString(separator = "\n") { "${it.key} ${it.value}" })
   }
 
   private fun getPathIfPresentOrNull(property: Provider<String>, paths: List<String>): String? {
@@ -183,6 +193,7 @@ abstract class MapSourceSetPathsTask : NonIncrementalTask() {
           it.asFile.absolutePath
         }
       )
+      task.gradleUserHome.setDisallowChanges(task.project.gradle.gradleUserHomeDir.absolutePath)
     }
   }
 }

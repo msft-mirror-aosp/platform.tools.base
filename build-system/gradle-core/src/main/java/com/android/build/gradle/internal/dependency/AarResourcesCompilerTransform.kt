@@ -34,8 +34,10 @@ import org.gradle.api.artifacts.transform.InputArtifact
 import org.gradle.api.artifacts.transform.TransformAction
 import org.gradle.api.artifacts.transform.TransformOutputs
 import org.gradle.api.file.FileSystemLocation
+import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.Classpath
+import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.Nested
 
 @CacheableTransform
@@ -51,25 +53,15 @@ abstract class AarResourcesCompilerTransform : TransformAction<AarResourcesCompi
 
     val resourceDir = File(inputFile, FD_RES)
 
-    val resourceFolders =
-      if (resourceDir.exists()) {
-        resourceDir.listFiles { dir, name -> dir.isDirectory && !name.startsWith(FD_RES_VALUES) }
-      } else {
-        arrayOf<File>()
-      }
+    val resourceFolders = getPrecompileResDirsFromAndroidRes(resourceDir)
+
+    val resSourceSetPaths = gradleHomeSourceSetMap(parameters.gradleUserHomePath.get())
 
     val requestList = ArrayList<CompileResourceRequest>()
     resourceFolders?.forEach { folder ->
       folder?.listFiles()?.forEach {
         // TODO(b/130160921): Add compile options
-        requestList.add(
-          CompileResourceRequest(
-            it,
-            outputDir,
-            resourcePathEncoding =
-              ResourcePathEncoding.AbsoluteNotRelocatable("Relative path support to be added by I8e7aa064cf381314eff2a248ada2d8ecedbfb1a5"),
-          )
-        )
+        requestList.add(CompileResourceRequest(it, outputDir, resourcePathEncoding = ResourcePathEncoding.Relative(resSourceSetPaths)))
       }
     }
 
@@ -78,10 +70,25 @@ abstract class AarResourcesCompilerTransform : TransformAction<AarResourcesCompi
     runAapt2Compile(parameters.aapt2, requestList, false)
   }
 
+  interface Parameters : GenericTransformParameters {
+
+    @get:Nested val aapt2: Aapt2Input
+
+    @get:Internal val gradleUserHomePath: Property<String>
+  }
+
+  private fun getPrecompileResDirsFromAndroidRes(resourceDir: File): Array<File> {
+    val resourceFolders =
+      if (resourceDir.exists()) {
+        resourceDir.listFiles { dir, name -> dir.isDirectory && !name.startsWith(FD_RES_VALUES) }
+      } else {
+        arrayOf<File>()
+      }
+    return resourceFolders
+  }
+
   private fun getPackage(manifest: Path): String =
     BufferedInputStream(Files.newInputStream(manifest)).use { AndroidManifestParser.parse(it).`package` }
-
-  interface Parameters : GenericTransformParameters {
-    @get:Nested val aapt2: Aapt2Input
-  }
 }
+
+fun gradleHomeSourceSetMap(gradleUserHome: String): Map<String, String> = mapOf("gradleHome-0" to gradleUserHome)

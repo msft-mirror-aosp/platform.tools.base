@@ -6,6 +6,7 @@ import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.utils.FileUtils
 import com.google.common.truth.Truth.assertThat
 import java.io.File
+import kotlin.io.path.absolutePathString
 import org.junit.Rule
 import org.junit.Test
 
@@ -41,7 +42,8 @@ class MapSourceSetPathsTaskTest {
             com.android.tests.flavors-f1Fa-9 $projectDir/src/f1Fa/res
             com.android.tests.flavors-f1FaDebug-10 $projectDir/src/f1FaDebug/res
             com.android.tests.flavors-fa-11 $projectDir/src/fa/res
-            com.android.tests.flavors-main-12 $projectDir/src/main/res"""
+            com.android.tests.flavors-main-12 $projectDir/src/main/res
+            gradleHome-0 ${project.location.testLocation.gradleUserHome.absolutePathString()}"""
         .trimIndent()
         .replace("/", File.separator)
     assertThat(sourceSetMap.exists()).isTrue()
