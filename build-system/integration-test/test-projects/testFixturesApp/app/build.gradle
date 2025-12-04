@@ -25,6 +25,7 @@ android {
 
     defaultConfig {
         minSdkVersion libs.versions.supportLibMinSdk.get()
+        targetSdkVersion libs.versions.supportLibMinSdk.get()
     }
 
     lintOptions {
