@@ -17,7 +17,6 @@
 plugins {
     id 'com.android.library'
     id 'maven-publish'
-    id 'kotlin-android'
 }
 
 android {
@@ -37,6 +36,5 @@ java {
 
 dependencies {
     testFixturesApi 'com.google.truth:truth:0.44'
-    testFixturesImplementation "org.jetbrains.kotlin:kotlin-stdlib:${libs.versions.kotlinVersion.get()}"
     testImplementation 'junit:junit:4.12'
 }

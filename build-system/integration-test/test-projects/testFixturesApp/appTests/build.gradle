@@ -7,7 +7,7 @@ android {
     compileSdkVersion libs.versions.latestCompileSdk.get().toInteger()
     buildToolsVersion = libs.versions.buildToolsVersion.get()
 
-    targetProjectPath ':app'
+    targetProjectPath = ':app'
 
     defaultConfig {
         minSdkVersion libs.versions.supportLibMinSdk.get()
