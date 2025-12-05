@@ -31,13 +31,28 @@ class ReferencingFieldParser {
          * @return A `ReferencingField` object representing the parsed field reference.
          * @throws IllegalArgumentException If `referenceLines` is empty.
          */
-        fun parseReferencingField(referenceLines: List<String>, additionalLinesPrefix: String): ReferencingField {
+        fun parseReferencingField(
+            referenceLines: List<String>,
+            additionalLinesPrefix: String
+        ): ReferencingField {
             if (referenceLines.isEmpty()) {
                 throw IllegalArgumentException("Reference lines cannot be empty")
             }
 
-            val referenceTypeAndDisplayName = parseReferencePath(referenceLines[0].removePrefix(additionalLinesPrefix))
-            val referenceType = ReferencingField.ReferencingFieldType.valueOf(referenceTypeAndDisplayName[0])
+            /* To handle multi-line reference path merge all the lines and remove all '~'
+            * Convert this
+            * │    ↓ LinkedHashMap["androidx.lifecycle.ViewModelProvider.
+            * │                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            * │    LoginViewModel"]
+            * to
+            * ↓ LinkedHashMap["androidx.lifecycle.ViewModelProvider.LoginViewModel"]
+            */
+            val referencePathLine = referenceLines.joinToString(separator = "") { line ->
+                line.removePrefix(additionalLinesPrefix).trim()
+            }.filter { it != '~' }
+            val referenceTypeAndDisplayName = parseReferencePath(referencePathLine)
+            val referenceType =
+                ReferencingField.ReferencingFieldType.valueOf(referenceTypeAndDisplayName[0])
             val referenceDisplayName = referenceTypeAndDisplayName[1]
             val owningClassName = referenceTypeAndDisplayName[2]
             val isPrimeSuspect = referenceLines.getOrNull(1)?.contains("~") ?: false
@@ -67,7 +82,7 @@ class ReferencingFieldParser {
             var referenceDisplayName = ""
 
             val referencePathLineStartingIndex = referencePathLine.indexOf("↓") + 1
-            var referencePathLineTrimmed =
+            val referencePathLineTrimmed =
                 referencePathLine.substring(referencePathLineStartingIndex).trim()
 
             when {
@@ -80,15 +95,20 @@ class ReferencingFieldParser {
                 referencePathLineTrimmed.contains("[") -> {
                     referenceType = "ARRAY_ENTRY"
                     val arrayIndex = referencePathLineTrimmed.indexOf("[")
-                    val arrayEndIndex = referencePathLineTrimmed.indexOf("]")
-                    owningClassSimpleName = referencePathLineTrimmed.substring(0, arrayIndex).trim()
-                    referenceDisplayName = referencePathLineTrimmed.substring(arrayIndex + 1, arrayEndIndex).trim()
+                    owningClassSimpleName = referencePathLineTrimmed.take(arrayIndex).trim()
+                    val endIndex = referencePathLineTrimmed.indexOf("]")
+                    val arrayEndIndex =
+                        if (endIndex == -1) referencePathLineTrimmed.length else endIndex
+                    referenceDisplayName =
+                        referencePathLineTrimmed.substring(arrayIndex + 1, arrayEndIndex).trim()
                 }
                 referencePathLineTrimmed.contains("<Java Local>") -> {
                     referenceType = "LOCAL"
                     referenceDisplayName = "<Java Local>"
-                    owningClassSimpleName = referencePathLineTrimmed.removeSuffix("<Java Local>").trim()
+                    owningClassSimpleName =
+                        referencePathLineTrimmed.removeSuffix("<Java Local>").trim()
                 }
+
                 else -> {
                     referenceType = "INSTANCE_FIELD"
                     val parts = referencePathLineTrimmed.split(".")
