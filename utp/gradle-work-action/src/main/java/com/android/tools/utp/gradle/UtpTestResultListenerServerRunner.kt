@@ -18,10 +18,15 @@ package com.android.tools.utp.gradle
 
 import com.android.tools.utp.plugins.result.listener.gradle.proto.GradleAndroidTestResultListenerProto.TestResultEvent
 import com.android.utils.FileUtils
+import io.netty.util.internal.logging.InternalLogger
+import io.netty.util.internal.logging.InternalLoggerFactory
+import io.netty.util.internal.logging.JdkLoggerFactory
 import org.gradle.api.logging.Logging
 import java.io.Closeable
 import java.io.File
 import java.io.IOException
+import java.util.logging.Level
+import java.util.logging.Logger
 
 /**
  * Runner of the [UtpTestResultListenerServer].
@@ -47,6 +52,22 @@ class UtpTestResultListenerServerRunner(
 
     companion object {
         private val logger = Logging.getLogger(UtpTestResultListenerServerRunner::class.java)
+
+        init {
+            disableNettyLogging()
+        }
+
+        /**
+         * Disables Netty error logs. This is for fixing b/466374462.
+         */
+        private fun disableNettyLogging() {
+            InternalLoggerFactory.setDefaultFactory(object : JdkLoggerFactory() {
+                override fun newInstance(name: String): InternalLogger {
+                    Logger.getLogger(name).level = Level.OFF
+                    return super.newInstance(name)
+                }
+            })
+        }
     }
 
     private val serverCert: File = createUtpTempFile("resultListenerServerCert", ".pem")
@@ -87,14 +108,17 @@ class UtpTestResultListenerServerRunner(
     }
 
     override fun close() {
-        server.close()
         try {
-            FileUtils.deleteIfExists(serverCert)
-            FileUtils.deleteIfExists(serverPrivateKey)
-            FileUtils.deleteIfExists(clientCert)
-            FileUtils.deleteIfExists(clientPrivateKey)
-        } catch (e: IOException) {
-            logger.warn("Failed to cleanup temporary directories: $e")
+            server.close()
+        } finally {
+            try {
+                FileUtils.deleteIfExists(serverCert)
+                FileUtils.deleteIfExists(serverPrivateKey)
+                FileUtils.deleteIfExists(clientCert)
+                FileUtils.deleteIfExists(clientPrivateKey)
+            } catch (e: IOException) {
+                logger.warn("Failed to cleanup temporary directories: $e")
+            }
         }
     }
 }

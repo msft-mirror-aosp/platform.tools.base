@@ -1005,4 +1005,26 @@ abstract class UtpTestBase(val runWithBuiltInPlatform: Boolean) {
 
         result.assertOutputContains("No tests found, nothing to do.")
     }
+
+    /**
+     * Regression test for b/466374462.
+     */
+    @Test
+    fun connectedAndroidTestDoesNotOutputNoClassDefFoundError() {
+        // TODO(b/434015775): Implement built-in test platform.
+        Assume.assumeFalse(runWithBuiltInPlatform)
+
+        selectModule("test")
+
+        // NoClassDefFoundError typically happen when you return too early from work action
+        // and some callback happens after Gradle unloads classes in worker daemon.
+        // We repeat 10 times here to give Gradle a chance to unload some worker daemons
+        // between multiple builds.
+        repeat(10) {
+            executor.run(testTaskName).apply {
+                assertOutputDoesNotContain("java.lang.NoClassDefFoundError")
+                assertErrorDoesNotContain("java.lang.NoClassDefFoundError")
+            }
+        }
+    }
 }
