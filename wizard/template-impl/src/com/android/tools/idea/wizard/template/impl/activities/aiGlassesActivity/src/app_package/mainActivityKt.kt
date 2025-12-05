@@ -25,6 +25,8 @@ fun mainActivityKt(
 ) =
   // language=kotlin
   """
+@file:OptIn(ExperimentalProjectedApi::class)
+
 package ${escapeKotlinIdentifier(packageName)}
 
 import android.content.Intent
@@ -55,6 +57,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.xr.projected.ProjectedContext
+import androidx.xr.projected.experimental.ExperimentalProjectedApi
 import ${escapeKotlinIdentifier(packageName)}.ui.theme.${themeName}
 
 class $activityClass : ComponentActivity() {
