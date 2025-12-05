@@ -29,7 +29,6 @@ import com.android.adblib.tools.debugging.impl.AbstractJdwpProcess
 import com.android.adblib.tools.debugging.impl.JdwpProcessManager
 import com.android.adblib.tools.debugging.impl.JdwpProcessSessionFinder
 import com.android.adblib.tools.debugging.impl.addJdwpProcessSessionFinder
-import com.android.adblib.tools.debugging.jdwpProcessFlow
 import com.android.adblib.tools.debugging.jdwpProcessTracker
 import com.android.adblib.tools.debugging.jdwpProxySocketServer
 import com.android.adblib.tools.debugging.packets.JdwpPacketView
@@ -79,7 +78,7 @@ open class AdbLibToolsJdwpTestBase : AdbLibToolsTestBase() {
         val connectedDevice = session.waitForOnlineConnectedDevice(fakeDevice.deviceId)
         fakeDevice.startClient(pid, 0, "a.b.c", false)
         val process =
-            connectedDevice.jdwpProcessFlow.map { processes -> processes.find { it.pid == pid } }
+            connectedDevice.jdwpProcessTracker.processesFlow.map { processes -> processes.find { it.pid == pid } }
                 .filterNotNull()
                 .first()
         CoroutineTestUtils.yieldUntil {

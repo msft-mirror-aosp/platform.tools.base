@@ -25,6 +25,7 @@ import com.android.adblib.tools.debugging.isTrackAppSupported
 import com.android.adblib.tools.debugging.trackApp
 import com.android.adblib.tools.debugging.trackJdwp
 import com.android.adblib.utils.createChildScope
+import com.android.adblib.utils.logIOCompletionErrors
 import com.android.adblib.utils.toImmutableList
 import com.android.adblib.waitUntilOnline
 import com.android.adblib.withPrefix
@@ -46,7 +47,16 @@ internal class JdwpProcessTrackerImpl(
 
     private val trackProcessesJob: Job by lazy(LazyThreadSafetyMode.SYNCHRONIZED) {
         scope.launch {
-            trackProcesses()
+            runCatching {
+                try {
+                    trackProcesses()
+                } finally {
+                    processesMutableFlow.value =
+                        JdwpProcessList(emptyList(), StateFlowStatus.endOfFlow)
+                }
+            }.onFailure { throwable ->
+                logger.logIOCompletionErrors(throwable, "JdwpProcessTracker")
+            }
         }
     }
 
