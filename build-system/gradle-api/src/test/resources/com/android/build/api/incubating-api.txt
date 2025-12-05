@@ -696,6 +696,3 @@ https://issuetracker.google.com/444699160
   * com.android.build.api.variant.HostTest.getAndroidResourcesIncluded: boolean ()
   * com.android.build.api.variant.HostTestBuilder.getIncludeAndroidResources: boolean ()
   * com.android.build.api.variant.HostTestBuilder.setIncludeAndroidResources: void (boolean)
-https://issuetracker.google.com/449986388
-  * com.android.build.api.dsl.FusedLibraryExtension.getPackaging: com.android.build.api.dsl.Packaging ()
-  * com.android.build.api.dsl.FusedLibraryExtension.packaging: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.Packaging, kotlin.Unit>)

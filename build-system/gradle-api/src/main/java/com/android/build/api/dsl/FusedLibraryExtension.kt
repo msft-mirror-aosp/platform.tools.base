@@ -52,7 +52,6 @@ interface FusedLibraryExtension {
     /** Options for configuring AAR metadata. */
     fun aarMetadata(action: AarMetadata.() -> Unit)
 
-    @get:Incubating
     /**
      * Specifies options and rules that determine which files the Android plugin packages into your
      * fused AAR.
@@ -61,7 +60,6 @@ interface FusedLibraryExtension {
      */
     val packaging:  Packaging
 
-    @Incubating
     /**
      * Specifies options and rules that determine which files the Android plugin packages into your
      * fused AAR.
