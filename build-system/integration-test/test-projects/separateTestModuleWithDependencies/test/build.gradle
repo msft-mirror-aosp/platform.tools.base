@@ -5,7 +5,7 @@ android {
     compileSdkVersion libs.versions.latestCompileSdk.get().toInteger()
     buildToolsVersion = libs.versions.buildToolsVersion.get()
 
-    targetProjectPath ':app'
+    targetProjectPath = ':app'
     buildTypes {
         create("minified").initWith(buildTypes.debug)
         minified {

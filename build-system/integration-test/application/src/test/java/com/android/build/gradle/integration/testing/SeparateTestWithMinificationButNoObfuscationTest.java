@@ -20,7 +20,7 @@ public class SeparateTestWithMinificationButNoObfuscationTest {
                     .create();
 
     @Test
-    public void testBuilding() throws IOException, InterruptedException {
+    public void testBuilding() {
         // just building fine is enough to test the regression.
         project.executor().run("clean");
         project.executor().run("assemble");

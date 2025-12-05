@@ -29,8 +29,6 @@ android {
     compileSdkVersion libs.versions.latestCompileSdk.get().toInteger()
     buildToolsVersion = libs.versions.buildToolsVersion.get()
 
-    publishNonDefault = true
-
     defaultConfig {
         minSdkVersion libs.versions.supportLibMinSdk.get()
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
