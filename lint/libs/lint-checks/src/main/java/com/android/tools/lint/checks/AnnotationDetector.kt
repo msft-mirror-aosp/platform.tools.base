@@ -70,6 +70,7 @@ import com.android.tools.lint.detector.api.UastLintUtils.Companion.getLongAttrib
 import com.android.tools.lint.detector.api.VersionChecks.Companion.REQUIRES_API_ANNOTATION
 import com.android.tools.lint.detector.api.VersionChecks.Companion.REQUIRES_EXTENSION_ANNOTATION
 import com.android.tools.lint.detector.api.getAutoBoxedType
+import com.android.tools.lint.detector.api.isDefaultSwitchCaseValue
 import com.android.tools.lint.detector.api.isKotlin
 import com.android.tools.lint.detector.api.typeFromPsi
 import com.google.common.collect.Lists
@@ -100,11 +101,13 @@ import org.jetbrains.kotlin.psi.psiUtil.isPrivate
 import org.jetbrains.uast.UAnnotated
 import org.jetbrains.uast.UAnnotation
 import org.jetbrains.uast.UBinaryExpressionWithType
+import org.jetbrains.uast.UBlockExpression
 import org.jetbrains.uast.UCallExpression
 import org.jetbrains.uast.UClass
 import org.jetbrains.uast.UDeclarationsExpression
 import org.jetbrains.uast.UElement
 import org.jetbrains.uast.UExpression
+import org.jetbrains.uast.UExpressionList
 import org.jetbrains.uast.UField
 import org.jetbrains.uast.UIfExpression
 import org.jetbrains.uast.ULiteralExpression
@@ -114,7 +117,9 @@ import org.jetbrains.uast.UParameter
 import org.jetbrains.uast.UParenthesizedExpression
 import org.jetbrains.uast.UReferenceExpression
 import org.jetbrains.uast.USwitchClauseExpression
+import org.jetbrains.uast.USwitchClauseExpressionWithBody
 import org.jetbrains.uast.USwitchExpression
+import org.jetbrains.uast.UThrowExpression
 import org.jetbrains.uast.UVariable
 import org.jetbrains.uast.UastFacade
 import org.jetbrains.uast.evaluateString
@@ -954,6 +959,25 @@ class AnnotationDetector : Detector(), SourceCodeScanner {
     }
 
     override fun visitSwitchExpression(node: USwitchExpression) {
+      // If there's an explicit `default`, we skip reporting, unless it's a simple `throw` in a
+      // separate `default` case
+      fun UExpression.isSimpleThrow(): Boolean =
+        when (this) {
+          is UThrowExpression -> true
+          is UExpressionList -> expressions.size == 1 && expressions[0].isSimpleThrow()
+          is UBlockExpression -> expressions.size == 1 && expressions[0].isSimpleThrow()
+          else -> false
+        }
+      for (case in node.body.expressions) {
+        if (
+          case is USwitchClauseExpressionWithBody &&
+            case.caseValues.any(UExpression::isDefaultSwitchCaseValue)
+        ) {
+          if (case.caseValues.size == 1 && case.body.isSimpleThrow()) break
+          return
+        }
+      }
+
       val condition = node.expression
       if (condition != null && PsiTypes.intType() == condition.getExpressionType()) {
         val annotation = findIntDefAnnotation(condition)

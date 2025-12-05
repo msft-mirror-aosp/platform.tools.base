@@ -36,7 +36,7 @@ import com.intellij.psi.PsiModifier
 import com.intellij.psi.PsiModifierListOwner
 import com.intellij.psi.PsiNamedElement
 import com.intellij.psi.PsiParameter
-import com.intellij.psi.PsiSwitchLabelStatement
+import com.intellij.psi.PsiSwitchLabelStatementBase
 import com.intellij.psi.PsiType
 import com.intellij.psi.PsiTypes
 import com.intellij.psi.PsiVariable
@@ -1169,14 +1169,14 @@ private fun USwitchExpression.isExhaustive(): Boolean {
     isJava(body.lang) ->
       body.expressions.any { case ->
         case is USwitchClauseExpressionWithBody &&
-          case.caseValues.any {
-            val value = it.sourcePsi
-            value is PsiSwitchLabelStatement && value.isDefaultCase
-          }
+          case.caseValues.any(UExpression::isDefaultSwitchCaseValue)
       }
     else -> false
   }
 }
+
+fun UExpression.isDefaultSwitchCaseValue(): Boolean =
+  (sourcePsi as? PsiSwitchLabelStatementBase)?.isDefaultCase == true
 
 /**
  * Returns true if this [call] node calls a method known to never return, such as Kotlin's standard
