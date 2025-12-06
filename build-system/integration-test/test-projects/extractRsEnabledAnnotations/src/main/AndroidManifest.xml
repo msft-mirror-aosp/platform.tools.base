@@ -8,6 +8,7 @@
         android:label="lib1_name" >
         <activity
             android:name="MainActivity"
+            android:exported="true"
             android:label="lib1_name" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
