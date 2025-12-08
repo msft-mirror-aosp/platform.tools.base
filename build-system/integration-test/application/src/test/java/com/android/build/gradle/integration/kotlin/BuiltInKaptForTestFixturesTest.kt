@@ -39,14 +39,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 
-@RunWith(Parameterized::class)
-class BuiltInKaptForTestFixturesTest(private val kotlinVersion: String) {
-
-    companion object {
-        @JvmStatic
-        @Parameterized.Parameters(name = "kotlinVersion_{0}")
-        fun parameters() = listOf(TestUtils.KOTLIN_VERSION_FOR_TESTS)
-    }
+class BuiltInKaptForTestFixturesTest {
 
     @Rule
     @JvmField
@@ -60,17 +53,12 @@ class BuiltInKaptForTestFixturesTest(private val kotlinVersion: String) {
                 )
             )
         ).withKotlinGradlePlugin(true)
-            .withBuiltInKotlinSupport(kotlinVersion == TestUtils.KOTLIN_VERSION_FOR_TESTS)
+            .withBuiltInKotlinSupport(true)
             .disableBuiltInKotlin()
             .create()
 
     @Before
     fun setUp() {
-        TestFileUtils.searchAndReplace(
-            project.projectDir.parentFile.resolve(VERSION_CATALOG),
-            "version('kotlinVersion', '${TestUtils.KOTLIN_VERSION_FOR_TESTS}')",
-            "version('kotlinVersion', '$kotlinVersion' )"
-        )
         TestFileUtils.appendToFile(
             project.gradlePropertiesFile,
             "${BooleanOption.ENABLE_TEST_FIXTURES_KOTLIN_SUPPORT.propertyName}=true"
@@ -103,7 +91,6 @@ class BuiltInKaptForTestFixturesTest(private val kotlinVersion: String) {
 
     @Test
     fun testAnnotationProcessingWithAgpKaptPlugin() {
-        Assume.assumeTrue(kotlinVersion == TestUtils.KOTLIN_VERSION_FOR_TESTS)
         val app = project.getSubproject(":app")
         TestFileUtils.searchAndReplace(
             app.buildFile,
@@ -115,13 +102,7 @@ class BuiltInKaptForTestFixturesTest(private val kotlinVersion: String) {
                 """.trimIndent(),
         )
         project.executor()
-            .withConfigurationCaching(
-                if (kotlinVersion == TestUtils.KOTLIN_VERSION_FOR_TESTS) {
-                    BaseGradleExecutor.ConfigurationCaching.PROJECT_ISOLATION
-                } else {
-                    BaseGradleExecutor.ConfigurationCaching.ON
-                }
-            )
+            .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.PROJECT_ISOLATION)
             .run("app:assembleDebugTestFixtures")
         app.assertAar(AarSelector.DEBUG.forTestFixtures()) {
             mainJar().classes().containsExactly(
@@ -150,9 +131,9 @@ class BuiltInKaptForTestFixturesTest(private val kotlinVersion: String) {
         )
         project.executor()
             .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
-            // Version 1.9.22 of the jetbrains KAPT plugin uses deprecated Gradle features
-            .withFailOnWarning(kotlinVersion == TestUtils.KOTLIN_VERSION_FOR_TESTS)
+            .withFailOnWarning(true)
             .with(BooleanOption.ENABLE_LEGACY_API, true)
+            .with(BooleanOption.USE_NEW_DSL, false)
             .run("app:assembleDebugTestFixtures")
 
         app.assertAar(AarSelector.DEBUG.forTestFixtures()) {
@@ -166,7 +147,6 @@ class BuiltInKaptForTestFixturesTest(private val kotlinVersion: String) {
 
     @Test
     fun testKaptDslWithAgpKaptPlugin() {
-        Assume.assumeTrue(kotlinVersion == TestUtils.KOTLIN_VERSION_FOR_TESTS)
         val app = project.getSubproject(":app")
         TestFileUtils.searchAndReplace(
             app.buildFile,
@@ -233,9 +213,9 @@ class BuiltInKaptForTestFixturesTest(private val kotlinVersion: String) {
         val executor =
             project.executor()
                 .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
-                // Version 1.9.22 of the jetbrains KAPT plugin uses deprecated Gradle features
-                .withFailOnWarning(kotlinVersion == TestUtils.KOTLIN_VERSION_FOR_TESTS)
+                .withFailOnWarning(true)
                 .with(BooleanOption.ENABLE_LEGACY_API, true)
+                .with(BooleanOption.USE_NEW_DSL, false)
         // test for caching when useBuildCache = true
         assertThat(
             executor.run("app:assembleDebugTestFixtures").didWorkTasks
