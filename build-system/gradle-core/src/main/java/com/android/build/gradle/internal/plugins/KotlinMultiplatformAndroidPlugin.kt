@@ -433,12 +433,6 @@ class KotlinMultiplatformAndroidPlugin @Inject constructor(
         (global.compileOptions as CompileOptions)
             .finalizeSourceAndTargetCompatibility(project, global)
 
-        dependencyConfigurator.configureVariantTransforms(
-            variants = listOf(mainVariant),
-            nestedComponents = mainVariant.nestedComponents,
-            bootClasspathConfig = global
-        )
-
         if (androidTest?.codeCoverageEnabled == true) {
             dependencyConfigurator.configureJacocoTransforms()
         }
@@ -448,6 +442,12 @@ class KotlinMultiplatformAndroidPlugin @Inject constructor(
             mainVariant,
             unitTest,
             androidTest
+        )
+
+        dependencyConfigurator.configureVariantTransforms(
+            variants = listOf(mainVariant),
+            nestedComponents = mainVariant.nestedComponents,
+            bootClasspathConfig = global
         )
 
         updateTestComponentFriendPaths(listOfNotNull(unitTest, androidTest))
