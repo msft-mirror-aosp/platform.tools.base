@@ -36,6 +36,7 @@ import com.android.build.api.variant.impl.getApiString
 import com.android.build.gradle.api.AndroidSourceSet
 import com.android.build.gradle.internal.component.ApkCreationConfig
 import com.android.build.gradle.internal.component.ApplicationCreationConfig
+import com.android.build.gradle.internal.component.ComponentBasedBuiltInKotlinCreationConfig
 import com.android.build.gradle.internal.component.ComponentCreationConfig
 import com.android.build.gradle.internal.component.ConsumableCreationConfig
 import com.android.build.gradle.internal.component.DeviceTestCreationConfig
@@ -986,8 +987,9 @@ abstract class TaskManager(
         }
         val kotlinServices = creationConfig.services.builtInKotlinServices
 
+        val builtInCreationConfig = ComponentBasedBuiltInKotlinCreationConfig(creationConfig)
         val kotlinCompileTaskProvider =
-            KotlinCompileCreationAction(creationConfig, kotlinServices).registerTask()
+            KotlinCompileCreationAction(builtInCreationConfig, kotlinServices).registerTask()
         val kaptGenerateStubsProvider =
             if (creationConfig.useBuiltInKaptSupport) {
                 if (kotlinServices.kgpVersion < KgpVersion.KGP_2_1_0) {
@@ -997,7 +999,7 @@ abstract class TaskManager(
                     creationConfig.services.projectInfo.getExtension(KaptExtensionConfig::class.java)
                 val kaptCreationAction =
                     KaptCreationAction(
-                        creationConfig,
+                        builtInCreationConfig,
                         project,
                         kotlinServices,
                         kaptExtensionConfig
@@ -1005,7 +1007,7 @@ abstract class TaskManager(
                 kaptCreationAction.registerTask()
                 val kaptStubGenerationCreationAction =
                     KaptStubGenerationCreationAction(
-                        creationConfig,
+                        builtInCreationConfig,
                         kotlinServices,
                         kotlinCompileTaskProvider,
                         kaptExtensionConfig
@@ -1021,8 +1023,8 @@ abstract class TaskManager(
             maybeCreateKotlinExtensionConfiguration()
         }
 
-        val kotlinCompilation = creationConfig.createKotlinCompilation()
-        addSubpluginOptionsForBuiltInKotlin(creationConfig, kotlinCompilation, kaptGenerateStubsProvider)
+        val kotlinCompilation = builtInCreationConfig.createKotlinCompilation()
+        addSubpluginOptionsForBuiltInKotlin(kotlinCompilation, kaptGenerateStubsProvider)
     }
 
     /**
@@ -1060,7 +1062,6 @@ abstract class TaskManager(
 
     // Similar to SubpluginEnvironment.addSubpluginOptions in KGP
     private fun addSubpluginOptionsForBuiltInKotlin(
-        creationConfig: ComponentCreationConfig,
         kotlinCompilation: KotlinCompilation<Any>,
         kaptGenerateStubsTaskProvider: TaskProvider<out KaptGenerateStubs>?
     ) {

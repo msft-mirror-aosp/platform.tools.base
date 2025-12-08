@@ -17,6 +17,7 @@
 package com.android.build.gradle.tasks
 
 import com.android.build.api.component.impl.AnnotationProcessorImpl
+import com.android.build.gradle.internal.component.BuiltInKotlinCreationConfig
 import com.android.build.gradle.internal.component.ComponentCreationConfig
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
 import com.android.build.gradle.internal.scope.InternalArtifactType
@@ -35,7 +36,7 @@ internal const val KOTLIN_STDLIB = "kotlin-stdlib"
 private const val KAPT_WORKERS_CONFIGURATION = "kotlinKaptWorkerDependencies"
 
 class KaptCreationAction(
-    creationConfig: ComponentCreationConfig,
+    creationConfig: BuiltInKotlinCreationConfig,
     project: Project,
     private val kotlinServices: BuiltInKotlinServices,
     private val kaptExtension: KaptExtensionConfig
@@ -65,10 +66,10 @@ class KaptCreationAction(
         val artifacts = creationConfig.artifacts
 
         artifacts.setInitialProvider(task) { it.destinationDir }
-            .atLocation(creationConfig.paths.kaptSourceOutputDir)
+            .atLocation(creationConfig.kaptSourceOutputDir)
             .on(InternalArtifactType.BUILT_IN_KAPT_GENERATED_JAVA_SOURCES)
         artifacts.setInitialProvider(task) { it.kotlinSourcesDestinationDir }
-            .atLocation(creationConfig.paths.kaptKotlinSourceOutputDir)
+            .atLocation(creationConfig.kaptKotlinSourceOutputDir)
             .on(InternalArtifactType.BUILT_IN_KAPT_GENERATED_KOTLIN_SOURCES)
         artifacts.setInitialProvider(task) { it.incAptCache }
             .on(InternalArtifactType.BUILT_IN_KAPT_INCREMENTAL_CACHE)
@@ -79,7 +80,7 @@ class KaptCreationAction(
     override fun configureTask(task: Kapt) {
         task.sourceSetName.set(creationConfig.name)
 
-        creationConfig.sources.java {
+        creationConfig.java {
             task.source.from(it.all)
         }
         task.stubsDir.set(creationConfig.artifacts.get(InternalArtifactType.BUILT_IN_KAPT_STUBS))
@@ -89,7 +90,7 @@ class KaptCreationAction(
         // Never add jdk classes to classpath with Android as android.jar should be used
         task.addJdkClassesToClasspath.set(false)
         task.classpath.setFrom(
-            creationConfig.global.bootClasspath,
+            creationConfig.bootClasspath,
             creationConfig.getJavaClasspath(
                 AndroidArtifacts.ConsumedConfigType.COMPILE_CLASSPATH,
                 AndroidArtifacts.ArtifactType.CLASSES_JAR,
@@ -107,10 +108,10 @@ class KaptCreationAction(
         })
         task.kaptJars.from(kaptWorkersDependencies)
         task.defaultJavaSourceCompatibility
-            .set(creationConfig.global.compileOptions.sourceCompatibility.toString())
+            .set(creationConfig.sourceCompatibility.toString())
 
         // Add annotation processing options
-        val processorOptions = creationConfig.javaCompilation.annotationProcessor
+        val processorOptions = creationConfig.annotationProcessor
         task.annotationProcessorOptionProviders.add(
             listOf(
                 CommandLineArgumentProviderAdapter(

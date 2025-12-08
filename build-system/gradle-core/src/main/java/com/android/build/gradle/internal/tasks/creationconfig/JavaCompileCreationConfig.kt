@@ -23,7 +23,6 @@ import com.android.build.gradle.internal.component.KmpComponentCreationConfig
 import com.android.build.gradle.internal.component.TaskCreationConfig
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.tasks.DEFAULT_INCREMENTAL_COMPILATION
-import com.android.build.gradle.tasks.getAnnotationProcessorJars
 import org.gradle.api.file.Directory
 import org.gradle.api.file.FileCollection
 import org.gradle.api.file.FileTree

@@ -32,6 +32,10 @@ import com.android.build.gradle.internal.component.legacy.OldVariantApiLegacySup
 import com.android.build.gradle.internal.core.ProductFlavor
 import com.android.build.gradle.internal.dependency.VariantDependencies
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
+import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactScope.EXTERNAL
+import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactScope.PROJECT
+import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactType.JAR
+import com.android.build.gradle.internal.publishing.AndroidArtifacts.ConsumedConfigType.ANNOTATION_PROCESSOR
 import com.android.build.gradle.internal.scope.BuildFeatureValues
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.services.BuiltInKaptSupportMode
@@ -187,4 +191,15 @@ interface ComponentCreationConfig : ComponentIdentity, TaskCreationConfig {
 
     @Deprecated("DO NOT USE, this is just for old variant API legacy support")
     val oldVariantApiLegacySupport: OldVariantApiLegacySupport?
+
+    fun getAnnotationProcessorJars(): FileCollection {
+        // Optimization: For project jars, query for JAR instead of PROCESSED_JAR as project jars are
+        // currently considered already processed (unlike external jars).
+        val projectJars = variantDependencies
+            .getArtifactFileCollection(ANNOTATION_PROCESSOR, PROJECT, JAR)
+        val externalJars = variantDependencies
+            .getArtifactFileCollection(ANNOTATION_PROCESSOR, EXTERNAL, global.aarOrJarTypeToConsume.jar)
+
+        return projectJars.plus( externalJars)
+    }
 }
