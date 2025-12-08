@@ -22,12 +22,14 @@ import static org.junit.Assert.assertNotNull;
 
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
+import com.android.build.gradle.BaseExtension;
 import com.android.build.gradle.integration.common.fixture.GradleBuildResult;
 import com.android.build.gradle.integration.common.fixture.GradleTaskExecutor;
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.fixture.ModelBuilderV2;
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldJniApp;
 import com.android.build.gradle.integration.common.utils.TestFileUtils;
+import com.android.build.gradle.options.BooleanOption;
 import com.android.build.gradle.options.IntegerOption;
 import com.android.builder.core.ToolsRevisionUtils;
 import com.android.builder.model.v2.ide.SyncIssue;
@@ -157,7 +159,15 @@ public class SdkAutoDownloadTest {
                 project.getBuildFile(), "android.namespace = \"com.example.hellojni\"");
     }
 
-    /** Tests that the compile SDK target and build tools are automatically downloaded. */
+    /**
+     * Tests that the compile SDK target and build tools are automatically downloaded.
+     * <p>
+     * This test also includes a check that calling {@link BaseExtension#getBootClasspath()} does
+     * not break the build.  The visibility of that getter depends on
+     * {@link BooleanOption#USE_NEW_DSL} being false (no longer the default in the AGP 9.x series).
+     * When {@link BooleanOption#USE_NEW_DSL} is removed, delete the {@code println} line below
+     * (and its associated comment).
+     */
     @Test
     public void checkCompileSdkAndBuildToolsDownloading() throws Exception {
         TestFileUtils.appendToFile(
@@ -182,7 +192,9 @@ public class SdkAutoDownloadTest {
         assertThat(platformTarget).doesNotExist();
 
         // ---------- Build ----------
-        getExecutor().run("assembleDebug");
+        getExecutor()
+                .with(BooleanOption.USE_NEW_DSL, false)
+                .run("assembleDebug");
 
         // Installed platform
         assertThat(platformTarget).isDirectory();
