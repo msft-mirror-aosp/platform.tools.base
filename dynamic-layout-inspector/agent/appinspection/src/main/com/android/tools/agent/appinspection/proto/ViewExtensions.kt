@@ -128,6 +128,9 @@ private fun View.toNodeImpl(
         (view.layoutParams as? WindowManager.LayoutParams)?.let { params ->
             layoutFlags = params.flags
         }
+        if (view is WebView) {
+            flags = ViewNode.Flag.IS_WEBVIEW.number
+        }
 
         view.getTextValue()?.let { text ->
             textValue = stringTable.put(text)

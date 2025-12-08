@@ -81,6 +81,14 @@ message ViewNode {
     Resource layout_resource = 7;
     int32 layout_flags = 8;
 
+    // View specific flags
+    enum Flag {
+        NONE = 0;
+        // If the View is a WebView or derived from WebView.
+        IS_WEBVIEW = 1;
+    }
+    int32 flags = 9;
+
     // Type-specific node properties
     int32 text_value = 101; // For TextView, etc.
 }
