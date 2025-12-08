@@ -226,6 +226,13 @@ fun addComposeArgsToKotlinCompile(
     task.compilerOptions.freeCompilerArgs.add("-Xallow-unstable-dependencies")
 }
 
+/**
+ * Adds Kotlin compiler argument `-Xuse-inline-scopes-numbers` to improve the debugging experience
+ * in Android Studio (b/372264148).
+ *
+ * Note: When the Kotlin compiler enables this option by default (KT-79401), we can remove this
+ * method.
+ */
 fun maybeUseInlineScopesNumbers(
     task: KotlinCompile,
     creationConfig: ComponentCreationConfig,
@@ -234,11 +241,6 @@ fun maybeUseInlineScopesNumbers(
     // Only use -Xuse-inline-scopes-numbers for APKs. If it's used for an AAR (or any kind of
     // dependency), consumers wouldn't be able to use Kotlin < 2.0.
     if (!creationConfig.componentType.isApk || !creationConfig.debuggable) {
-        return
-    }
-
-    val kotlinVersion = getProjectKotlinPluginKotlinVersion(task.project)
-    if (kotlinVersion == null || !kotlinVersion.isVersionAtLeast(2, 0)) {
         return
     }
 
