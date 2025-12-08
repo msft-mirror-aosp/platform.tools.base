@@ -80,7 +80,6 @@ import org.gradle.build.event.BuildEventsListenerRegistry
 import shadow.bundletool.com.android.SdkConstants
 import javax.inject.Inject
 
-@Suppress("UnstableApiUsage")
 class FusedLibraryPlugin @Inject constructor(
         private val softwareComponentFactory: SoftwareComponentFactory,
         listenerRegistry: BuildEventsListenerRegistry,
