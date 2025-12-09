@@ -29,6 +29,10 @@ package com.android.build.api {
     method public com.android.build.api.AndroidPluginVersion getCurrent();
   }
 
+  public final class KotlinMultiplatformHierarchyDsl {
+    method @org.gradle.api.Incubating public static void withAndroid(org.jetbrains.kotlin.gradle.plugin.KotlinHierarchyBuilder);
+  }
+
 }
 
 package com.android.build.api.annotations {

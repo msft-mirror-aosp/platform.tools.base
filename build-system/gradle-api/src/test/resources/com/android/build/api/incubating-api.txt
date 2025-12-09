@@ -696,3 +696,5 @@ https://issuetracker.google.com/444699160
   * com.android.build.api.variant.HostTest.getAndroidResourcesIncluded: boolean ()
   * com.android.build.api.variant.HostTestBuilder.getIncludeAndroidResources: boolean ()
   * com.android.build.api.variant.HostTestBuilder.setIncludeAndroidResources: void (boolean)
+https://issuetracker.google.com/467692785
+  * com.android.build.api.KotlinMultiplatformHierarchyDsl.withAndroid: void (org.jetbrains.kotlin.gradle.plugin.KotlinHierarchyBuilder)
