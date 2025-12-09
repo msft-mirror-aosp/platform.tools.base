@@ -34,6 +34,18 @@ class FakeProviderFactory(
         }
     }
 
+    override fun gradlePropertiesPrefixedBy(propertyNamePrefix: String): Provider<Map<String, String>> {
+        val prefixedProperties = mutableMapOf<String, String>()
+        gradleProperties.forEach { entry ->
+            if (entry.key.startsWith(propertyNamePrefix)) {
+                prefixedProperties.put(entry.key, entry.value.toString())
+            }
+        }
+        return factory.provider {
+            prefixedProperties
+        }
+    }
+
     override fun fileContents(file: Provider<RegularFile>): FileContents {
         return FakeFileContents(file.get().asFile)
     }
