@@ -261,7 +261,7 @@ class BlockingDetector :
           """
           Ensures that blocking methods are not called from those that expect no blocking.
           """,
-        moreInfo = "TODO",
+        moreInfo = "https://docs.oracle.com/en/java/javase/21/core/virtual-threads.html", // TODO
         category = Category.CORRECTNESS,
         priority = 6,
         severity = Severity.ERROR,
