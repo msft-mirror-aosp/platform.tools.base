@@ -113,13 +113,7 @@ abstract class GenerateLocaleConfigTask : NonIncrementalTask() {
     abstract val localeFilters: SetProperty<String>
 
     @get:Internal
-    abstract val resApkDir: DirectoryProperty
-
-    @get:Internal
-    abstract val tempProjectDir: DirectoryProperty
-
-    @get:Internal
-    abstract val compiledResOutput: DirectoryProperty
+    abstract val incrementalDir: DirectoryProperty
 
     @get:Input
     @get:Optional
@@ -153,9 +147,9 @@ abstract class GenerateLocaleConfigTask : NonIncrementalTask() {
             it.resConfigs.set(resConfigs)
             it.localeFilters.set(localeFilters)
             it.aapt2.set(aapt2)
-            it.resApkDir.set(resApkDir)
-            it.compiledResOutput.set(compiledResOutput)
-            it.tempProjectDir.set(tempProjectDir)
+            it.resApkDir.set(incrementalDir.dir("resApkDir"))
+            it.compiledResOutput.set(incrementalDir.dir("compiledResOutput"))
+            it.tempProjectDir.set(incrementalDir.dir("tempProject"))
             it.androidJarInput.set(androidJarInput)
             it.compileSdk.set(compileSdk)
             it.minSdk.set(minSdk)
@@ -368,6 +362,11 @@ abstract class GenerateLocaleConfigTask : NonIncrementalTask() {
                 creationConfig.paths.getGeneratedResourcesDir("localeConfig")
                     .get().asFile.absolutePath
             ).on(InternalArtifactType.GENERATED_LOCALE_CONFIG)
+
+            creationConfig.artifacts.setInitialProvider(
+                taskProvider,
+                GenerateLocaleConfigTask::incrementalDir
+            ).on(InternalArtifactType.GENERATED_LOCALE_CONFIG_INCREMENTAL_DIR)
         }
 
         override fun configure(
@@ -402,13 +401,6 @@ abstract class GenerateLocaleConfigTask : NonIncrementalTask() {
             val resConfigs = creationConfig.androidResourcesCreationConfig?.resourceConfigurations ?: ImmutableSet.of()
             val filteredResConfigs = AaptUtils.getNonDensityResConfigs(resConfigs).toSet()
             task.resConfigs.setDisallowChanges(filteredResConfigs)
-            task.compiledResOutput.set(
-                creationConfig.paths.getIncrementalDir("${task.name}_compiledResOutput"))
-            task.resApkDir.set(
-                creationConfig.paths.getIncrementalDir("${task.name}_resApkDir"))
-            task.tempProjectDir.set(
-                creationConfig.paths.getIncrementalDir("${task.name}_tempProject"))
-
             creationConfig.androidResourcesCreationConfig?.let {
                 task.pseudoLocalesEnabled.set(it.pseudoLocalesEnabled)
             }

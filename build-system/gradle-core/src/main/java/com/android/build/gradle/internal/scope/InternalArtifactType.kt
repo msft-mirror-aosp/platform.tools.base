@@ -263,6 +263,7 @@ InternalArtifactType<T : FileSystemLocation>(
 
     // final output of the locale config generator.
     object GENERATED_LOCALE_CONFIG: InternalArtifactType<Directory>(DIRECTORY), Replaceable
+    object GENERATED_LOCALE_CONFIG_INCREMENTAL_DIR: InternalArtifactType<Directory>(DIRECTORY), Replaceable
 
     // intermediate output of the locale config generator.
     object SUPPORTED_LOCALE_LIST: InternalArtifactType<RegularFile>(FILE), Replaceable
