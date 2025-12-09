@@ -207,7 +207,7 @@ InternalArtifactType<T : FileSystemLocation>(
 
     // File containing map between a source set identifier and an absolute resource sourceset path
     // for generating absolute paths in resource linking error messages.
-    object SOURCE_SET_PATH_MAP: InternalArtifactType<RegularFile>(FILE), Replaceable
+    object ANDROID_RES_SOURCE_SET_PATH_MAP: InternalArtifactType<RegularFile>(FILE), Replaceable
     // File to map the ordering of deviceSpec paths to the directory ordinal
     object DEVICE_SPEC_PATH_MAP: InternalArtifactType<RegularFile>(FILE), Replaceable
     // The R class jar for compile classpath use.

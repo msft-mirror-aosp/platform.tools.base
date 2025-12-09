@@ -140,7 +140,7 @@ abstract class MapSourceSetPathsTask : NonIncrementalTask() {
                 taskProvider,
                 MapSourceSetPathsTask::filepathMappingFile
             ).withName("file-map${SdkConstants.DOT_TXT}")
-                .on(InternalArtifactType.SOURCE_SET_PATH_MAP)
+                .on(InternalArtifactType.ANDROID_RES_SOURCE_SET_PATH_MAP)
         }
 
         override fun configure(task: MapSourceSetPathsTask) {
