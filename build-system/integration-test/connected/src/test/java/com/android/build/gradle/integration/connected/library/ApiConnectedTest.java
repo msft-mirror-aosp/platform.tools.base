@@ -41,11 +41,17 @@ public class ApiConnectedTest {
         project.addAdbTimeout();
         // run the uninstall tasks in order to (1) make sure nothing is installed at the beginning
         // of each test and (2) check the adb connection before taking the time to build anything.
-        project.executor().with(BooleanOption.ENABLE_LEGACY_API, true).run("uninstallAll");
+        project.executor()
+                .with(BooleanOption.ENABLE_LEGACY_API, true)
+                .with(BooleanOption.USE_NEW_DSL, false)
+                .run("uninstallAll");
     }
 
     @Test
     public void connectedCheck() throws IOException, InterruptedException {
-        project.executor().with(BooleanOption.ENABLE_LEGACY_API, true).run("connectedAndroidTest");
+        project.executor()
+                .with(BooleanOption.ENABLE_LEGACY_API, true)
+                .with(BooleanOption.USE_NEW_DSL, false)
+                .run("connectedAndroidTest");
     }
 }
