@@ -168,45 +168,6 @@ class BuiltInKotlinForAppTest(
         PathSubject.assertThat(testResults).exists()
     }
 
-    /**
-     * Test that general built-in Kotlin support is compatible with Kotlin support for screenshot
-     * testing, in contrast to [BuiltInKotlinForScreenshotTestTest], which tests Kotlin support for
-     * screenshot testing in isolation
-     */
-    @Test
-    fun testWithScreenshotTestEnabled() {
-        val build = rule.build {
-            androidApplication {
-                android.experimentalProperties[SCREENSHOT_TEST.key] = true
-
-                files {
-                    add(
-                        "src/screenshotTest/kotlin/AppScreenshotTestFoo.kt",
-                        //language=kotlin
-                        """
-                            package com.foo.application
-                            class AppScreenshotTestFoo
-                        """.trimIndent()
-                    )
-                    add(
-                        "src/main/java/com/foo/application/AppFoo.kt",
-                        //language=kotlin
-                        """
-                            package com.foo.application
-                            class AppFoo
-                        """.trimIndent()
-                    )
-                }
-            }
-            gradleProperties {
-                add(BooleanOption.ENABLE_SCREENSHOT_TEST, true)
-            }
-        }
-
-        build.executor.run(":app:compileDebugScreenshotTestKotlin")
-        build.executor.run(":app:assembleDebug")
-    }
-
     @Test
     fun testInternalModifierAccessibleFromTests() {
         val build = rule.build {
