@@ -109,7 +109,7 @@ abstract class AgpTestSuiteImpl @Inject constructor(
     }
 
     override fun testApk(action: TestSuiteTestApkSpec.() -> Unit) {
-        throw RuntimeException("Not yet implemented")
+        addSource<TestSuiteApkSpecImpl>(action)
     }
 
     fun testApk(action: Action<TestSuiteTestApkSpec>) {

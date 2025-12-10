@@ -33,6 +33,7 @@ import com.android.build.api.variant.impl.HasHostTestsCreationConfig
 import com.android.build.api.variant.impl.HasTestFixtures
 import com.android.build.api.variant.impl.HasTestSuitesCreationConfig
 import com.android.build.api.variant.impl.ManifestFilesImpl
+import com.android.build.api.variant.impl.SourceDirectoriesImpl
 import com.android.build.api.variant.impl.TestSuiteSourceContainer
 import com.android.build.gradle.BaseExtension
 import com.android.build.gradle.internal.BuildTypeData
@@ -397,7 +398,27 @@ class ModelBuilder<ExtensionT : CommonExtension>(
                             )
                         }
                         is TestSuiteSourceSet.TestApk -> {
-                            throw RuntimeException("Not Supported ")
+                            testApkSources.add(
+                                TestApkTestSuiteSourceImpl(
+                                    name = suiteSourceContainer.name,
+                                    sourceProvider = SourceProviderImpl(
+                                        suiteSourceContainer.name,
+                                        sourceSet.manifestFile(),
+                                        variantSourcesForModel(sourceSet.java()),
+                                        variantSourcesForModel(sourceSet.kotlin()),
+                                        variantSourcesForModel(sourceSet.resources()),
+                                        aidlDirectories = null,
+                                        renderscriptDirectories = null,
+                                        baselineProfileDirectories = null,
+                                        resDirectories = null,
+                                        assetsDirectories = null,
+                                        jniLibsDirectories = listOf(),
+                                        shadersDirectories = null,
+                                        mlModelsDirectories = null,
+                                        customDirectories = null
+                                    )
+                                )
+                            )
                         }
                     }
                 }
@@ -440,6 +461,9 @@ class ModelBuilder<ExtensionT : CommonExtension>(
             bootClasspath = bootClasspath,
         )
     }
+
+    private fun variantSourcesForModel(sourceDirectories: SourceDirectoriesImpl?) =
+        sourceDirectories?.variantSourcesForModel { it.shouldBeAddedToIdeModel && !it.isGenerated } ?: emptyList()
 
     /**
      * Intermediary data structure to hold the suite and all its associated targets built from the
