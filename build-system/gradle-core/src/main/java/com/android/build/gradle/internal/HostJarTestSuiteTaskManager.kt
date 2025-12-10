@@ -18,8 +18,8 @@ package com.android.build.gradle.internal
 
 import com.android.build.api.artifact.impl.ArtifactsImpl
 import com.android.build.api.variant.impl.FlatSourceDirectoriesImpl
+import com.android.build.api.variant.impl.TestSuiteSourceContainer
 import com.android.build.gradle.internal.api.HostJarTestSuiteSourceSet
-import com.android.build.gradle.internal.testsuites.impl.TestSuiteSourceContainer
 import com.android.build.gradle.internal.scope.MutableTaskContainer
 import com.android.build.gradle.internal.services.TaskCreationServices
 import com.android.build.gradle.internal.tasks.ProcessJavaResTask

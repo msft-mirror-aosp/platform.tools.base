@@ -50,7 +50,6 @@ import com.android.build.api.variant.impl.HasTestSuitesCreationConfig
 import com.android.build.api.variant.impl.HostTestBuilderImpl
 import com.android.build.api.variant.impl.InternalVariantBuilder
 import com.android.build.api.variant.impl.TestSuiteImpl
-import com.android.build.gradle.internal.testsuites.impl.TestSuiteSourceContainer
 import com.android.build.api.variant.impl.capitalizeFirstChar
 import com.android.build.gradle.BaseExtension
 import com.android.build.gradle.internal.api.DefaultAndroidSourceSet
@@ -100,6 +99,8 @@ import com.android.build.gradle.internal.tasks.SigningConfigUtils.Companion.crea
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfig
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfigImpl.Companion.toExecutionEnum
 import com.android.build.api.variant.HasTestSuitesBuilder
+import com.android.build.api.variant.impl.TestSuiteSourceContainer
+import com.android.build.gradle.internal.manifest.ManifestDataProvider
 import com.android.build.gradle.internal.services.BuiltInKotlinSupportMode
 import com.android.build.gradle.internal.testsuites.TestSuiteSourceCreationConfig
 import com.android.build.gradle.internal.testsuites.impl.TestSuiteBuilderImpl
@@ -131,6 +132,7 @@ import java.util.Locale
 import java.util.stream.Collectors
 
 /** Class to create, manage variants.  */
+@Suppress("UNCHECKED_CAST")
 class VariantManager<
         CommonExtensionT: CommonExtension,
         VariantBuilderT : VariantBuilder,
@@ -863,7 +865,7 @@ class VariantManager<
         }
 
         // create the prod variant
-        val variantInfo = createVariant(
+        val variantInfo: VariantComponentInfo<VariantBuilderT, VariantDslInfoT, VariantT> = createVariant(
                 dimensionCombination,
                 buildTypeData,
                 productFlavorDataList,
@@ -975,46 +977,46 @@ class VariantManager<
                     val componentName = "${testSuiteBuilder.name}${variantInfo.variant.name.capitalizeFirstChar()}"
 
                     testSuiteBuilder as TestSuiteBuilderImpl
-                    val testSuiteSources = testSuiteBuilder.getSources().map {
-                        testSuiteSource: TestSuiteSourceCreationConfig ->
-                            // create the variant specific dependency that will be additive to the
-                            // DSL One.
-                            val variantSpecificDependencies = project.objects
-                                .newInstance(AgpTestSuiteDependencies::class.java)
+                    val testSuiteSources = testSuiteBuilder.getSources().map { testSuiteSource: TestSuiteSourceCreationConfig ->
+                        // create the variant specific dependency that will be additive to the
+                        // DSL One.
+                        val variantSpecificDependencies = project.objects
+                            .newInstance(AgpTestSuiteDependencies::class.java)
 
-                            TestSuiteSourceContainer(
+                        TestSuiteSourceContainer(
+                            project,
+                            variantBuilder.name,
+                            testSuiteSource.name,
+                            source = testSuiteSource.createTestSuiteSourceSet(
+                                variantServices,
+                                true, // so far, java is always enabled.
+                                variantInfo.variant.builtInKotlinSupportMode is BuiltInKotlinSupportMode.Supported
+                            ),
+                            variantSpecificDependencies,
+                            suiteSourceClasspath = TestSuiteDependenciesBuilder(
                                 project,
-                                variantBuilder.name,
-                                testSuiteSource.name,
-                                source = testSuiteSource.createTestSuiteSourceSet(
-                                    variantServices,
-                                    true, // so far, java is always enabled.
-                                    variantInfo.variant.builtInKotlinSupportMode is BuiltInKotlinSupportMode.Supported
-                                ),
-                                dependencies = variantSpecificDependencies,
-                                suiteSourceClasspath = TestSuiteDependenciesBuilder(
-                                    project,
-                                    dslServices.projectOptions,
-                                    projectServices.issueReporter,
-                                    testSuiteBuilder,
-                                    testSuiteSource.dependencies,
-                                    variantSpecificDependencies,
-                                    variantInfo.variant,
-                                    getFlavorSelection(variantInfo.variantDslInfo),
-                                    variantInfo.variantDslInfo as MultiVariantComponentDslInfo,
-                                ).build()
-                            )
+                                dslServices.projectOptions,
+                                projectServices.issueReporter,
+                                testSuiteBuilder,
+                                testSuiteSource.dependencies,
+                                variantSpecificDependencies,
+                                variantInfo.variant,
+                                getFlavorSelection(variantInfo.variantDslInfo),
+                                variantInfo.variantDslInfo as MultiVariantComponentDslInfo,
+                            ).build()
+                        )
                     }
 
                     val testSuite = TestSuiteImpl(
                         testSuiteBuilder,
                         testSuiteSources,
-                        variantInfo.variant,
+                        variantInfo as VariantComponentInfo<VariantBuilder, VariantDslInfo, VariantCreationConfig>,
                         globalTaskCreationConfig,
                         variantServices,
                         taskCreationServices,
                         ArtifactsImpl(project, componentName),
-                    )
+                        variantInputModel.defaultConfigData.defaultConfig
+                    ) { file: File -> getLazyManifestParser(file, false) }
 
                     variant.addTestSuite(
                         testSuiteBuilder.name,

@@ -32,7 +32,6 @@ import com.android.build.api.instrumentation.FramesComputationMode
 import com.android.build.api.variant.ScopedArtifacts
 import com.android.build.api.variant.impl.FlatSourceDirectoriesImpl
 import com.android.build.api.variant.impl.TaskProviderBasedDirectoryEntryImpl
-import com.android.build.api.variant.impl.getApiString
 import com.android.build.gradle.api.AndroidSourceSet
 import com.android.build.gradle.internal.component.ApkCreationConfig
 import com.android.build.gradle.internal.component.ApplicationCreationConfig
@@ -46,7 +45,6 @@ import com.android.build.gradle.internal.component.KmpComponentCreationConfig
 import com.android.build.gradle.internal.component.TaskCreationConfig
 import com.android.build.gradle.internal.component.TestComponentCreationConfig
 import com.android.build.gradle.internal.component.TestCreationConfig
-import com.android.build.gradle.internal.component.TestVariantCreationConfig
 import com.android.build.gradle.internal.component.VariantCreationConfig
 import com.android.build.gradle.internal.coverage.JacocoConfigurations
 import com.android.build.gradle.internal.coverage.JacocoPropertiesTask
@@ -127,6 +125,7 @@ import com.android.build.gradle.internal.tasks.checkIfR8VersionMatches
 import com.android.build.gradle.internal.tasks.creationconfig.ProcessJavaResCreationConfig
 import com.android.build.gradle.internal.tasks.creationconfig.createJavaCompileConfig
 import com.android.build.gradle.internal.tasks.creationconfig.createJavaPreCompileConfig
+import com.android.build.gradle.internal.tasks.creationconfig.forTestComponent
 import com.android.build.gradle.internal.tasks.databinding.DataBindingCompilerArguments.Companion.createArguments
 import com.android.build.gradle.internal.tasks.databinding.DataBindingGenBaseClassesTask
 import com.android.build.gradle.internal.tasks.databinding.DataBindingMergeDependencyArtifactsTask
@@ -151,9 +150,7 @@ import com.android.build.gradle.internal.utils.KgpVersion.Companion.MINIMUM_BUIL
 import com.android.build.gradle.internal.utils.getKotlinAndroidPluginVersion
 import com.android.build.gradle.internal.utils.isKotlinKaptPluginApplied
 import com.android.build.gradle.internal.utils.isKspPluginApplied
-import com.android.build.gradle.internal.utils.parseTargetHash
 import com.android.build.gradle.internal.variant.ApkVariantData
-import com.android.build.gradle.internal.variant.VariantPathHelper
 import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.tasks.AidlCompile
 import com.android.build.gradle.tasks.CompatibleScreensManifest
@@ -204,7 +201,6 @@ import org.gradle.api.logging.Logger
 import org.gradle.api.logging.Logging
 import org.gradle.api.plugins.BasePlugin
 import org.gradle.api.plugins.JavaBasePlugin
-import org.gradle.api.provider.MapProperty
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.Sync
@@ -450,7 +446,7 @@ abstract class TaskManager(
     }
 
     protected fun createProcessTestManifestTask(creationConfig: TestCreationConfig) {
-        val taskConfig = createProcessTestManifestConfig(creationConfig)
+        val taskConfig = forTestComponent(creationConfig)
 
         taskFactory.register(ProcessTestManifest.CreationAction(taskConfig))
     }

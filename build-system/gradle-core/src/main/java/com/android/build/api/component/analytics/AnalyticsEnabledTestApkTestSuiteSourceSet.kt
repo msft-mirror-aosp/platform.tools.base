@@ -49,7 +49,7 @@ open class AnalyticsEnabledTestApkTestSuiteSourceSet(
             return source.resources
         }
 
-    override val manifestFile: File?
+    override val manifestFile: File
         get() {
             stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
                 VariantPropertiesMethodType.TEST_SUITE_SOURCE_MANIFEST_FILE_VALUE

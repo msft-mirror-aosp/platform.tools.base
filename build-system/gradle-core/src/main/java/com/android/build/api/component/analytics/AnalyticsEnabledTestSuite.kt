@@ -25,6 +25,7 @@ import com.android.build.api.variant.TestSuiteTarget
 import com.android.tools.build.gradle.internal.profile.VariantPropertiesMethodType
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.Property
+import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.testing.Test
 
 open class AnalyticsEnabledTestSuite(
@@ -80,4 +81,8 @@ open class AnalyticsEnabledTestSuite(
                 VariantPropertiesMethodType.TEST_SUITE_CODE_COVERAGE_VALUE
             return delegate.codeCoverage
         }
+
+    override fun instrumentationRunner(source: TestSuiteSourceSet.TestApk): Provider<String> =
+        delegate.instrumentationRunner(source)
+
 }

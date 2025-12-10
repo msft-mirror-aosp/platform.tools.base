@@ -16,12 +16,14 @@
 
 package com.android.build.gradle.internal.core.dsl.impl
 
+import com.android.build.api.dsl.BaseFlavor
 import com.android.build.api.dsl.BuildType
 import com.android.build.api.dsl.ProductFlavor
 import com.android.build.api.dsl.VariantDimension
 import com.android.build.gradle.internal.core.MergedOptions
 import com.android.build.gradle.internal.dsl.DefaultConfig
 import com.android.build.gradle.internal.manifest.ManifestData
+import com.android.build.gradle.internal.manifest.ManifestDataProvider
 import com.android.build.gradle.internal.services.VariantServices
 import com.android.build.gradle.internal.variant.DimensionCombination
 import com.android.build.gradle.options.BooleanOption.DEFAULT_ANDROIDX_TEST_RUNNER
@@ -41,6 +43,28 @@ internal fun computeInstrumentationTestRunner(manifestData: Provider<ManifestDat
     return manifestData.zip(getDefaultInstrumentationTestRunner(services, dexingType)) { manifestData, fallback ->
         manifestData.instrumentationRunner ?: fallback
     }
+}
+
+internal fun getInstrumentationRunner(
+    productFlavorList: List<ProductFlavor>,
+    baseFlavor: BaseFlavor,
+    dataProvider: ManifestDataProvider,
+    dexingType: DexingType,
+    services: VariantServices
+): Provider<String> {
+    // first check whether the DSL has the info
+    val fromFlavor =
+        productFlavorList.asSequence().map { it.testInstrumentationRunner }
+            .firstOrNull { it != null }
+            ?: baseFlavor.testInstrumentationRunner
+
+    if (fromFlavor != null) {
+        val finalFromFlavor: String = fromFlavor
+        return services.provider{ finalFromFlavor }
+    }
+
+    // else return the value from the Manifest
+    return computeInstrumentationTestRunner(dataProvider.manifestData, services, dexingType)
 }
 
 internal fun getDefaultInstrumentationTestRunner(services: VariantServices, dexingType: DexingType): Provider<String> {

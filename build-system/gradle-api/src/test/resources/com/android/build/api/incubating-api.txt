@@ -600,6 +600,7 @@ https://issuetracker.google.com/392162853
   * com.android.build.api.testsuites.TestSuiteExecutionClient.getInputParameter: java.lang.String (java.lang.String)
   * com.android.build.api.testsuites.TestSuiteExecutionClient.getInputParameters: java.util.Collection<com.android.build.api.testsuites.TestEngineInputProperty> ()
   * com.android.build.api.variant.TestSuite.getSources: java.util.Collection<com.android.build.api.variant.TestSuiteSourceSet> ()
+  * com.android.build.api.variant.TestSuite.instrumentationRunner: org.gradle.api.provider.Provider<java.lang.String> (com.android.build.api.variant.TestSuiteSourceSet$TestApk)
   * com.android.build.api.variant.TestSuiteSourceSet implements org.gradle.api.Named
   * com.android.build.api.variant.TestSuiteSourceSet$Assets implements com.android.build.api.variant.TestSuiteSourceSet
   * com.android.build.api.variant.TestSuiteSourceSet$Assets$DefaultImpls.getType: com.android.build.api.variant.TestSuiteSourceType (com.android.build.api.variant.TestSuiteSourceSet$Assets)

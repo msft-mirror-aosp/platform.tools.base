@@ -20,6 +20,7 @@ import com.android.build.api.dsl.TestTaskContext
 import org.gradle.api.Incubating
 import org.gradle.api.Named
 import org.gradle.api.provider.Property
+import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.testing.Test
 
 /**
@@ -96,4 +97,12 @@ interface TestSuite: Named {
      */
     @get:Incubating
     val codeCoverage: Property<Boolean>
+
+    /**
+     * The instrumentationRunner to use to run the tests.
+     *
+     * @return the instrumentation test runner name
+     */
+    @Incubating
+    fun instrumentationRunner(source: TestSuiteSourceSet.TestApk): Provider<String>
 }

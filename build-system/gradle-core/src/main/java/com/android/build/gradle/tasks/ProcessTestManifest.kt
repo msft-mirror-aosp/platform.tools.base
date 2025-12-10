@@ -497,9 +497,10 @@ abstract class ProcessTestManifest : ManifestProcessorTask() {
     class CreationAction(
         creationConfig: ProcessTestManifestCreationConfig
     ) : VariantTaskCreationAction<ProcessTestManifest, ProcessTestManifestCreationConfig>(creationConfig) {
-        override val name = computeTaskName("process", "Manifest")
-        override val type = ProcessTestManifest::class.java
-
+        override val name
+            get() = computeTaskName("process", "Manifest")
+        override val type
+            get() = ProcessTestManifest::class.java
         override fun preConfigure(taskName: String) {
             super.preConfigure(taskName)
             creationConfig

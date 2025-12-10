@@ -35,7 +35,7 @@ class TestSuiteTaskManager(
     fun createTasks(creationConfig: TestSuiteCreationConfig) {
         // first create all tasks related to processing the source folders.
         val allSourcesProcessingTasks = creationConfig.sourceContainers.mapNotNull { testSuiteSourceContainer ->
-            testSuiteSourceContainer.createTasks(creationConfig.services)
+            testSuiteSourceContainer.createTasks(creationConfig.services, creationConfig)
         }
         creationConfig.targets
             .filter { it.value.enabled }

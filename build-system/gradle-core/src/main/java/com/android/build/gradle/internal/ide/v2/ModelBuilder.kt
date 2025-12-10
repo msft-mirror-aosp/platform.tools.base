@@ -35,7 +35,7 @@ import com.android.build.api.variant.impl.HasTestFixtures
 import com.android.build.api.variant.impl.HasTestSuitesCreationConfig
 import com.android.build.api.variant.impl.ManifestFilesImpl
 import com.android.build.api.variant.impl.SourceDirectoriesImpl
-import com.android.build.gradle.internal.testsuites.impl.TestSuiteSourceContainer
+import com.android.build.api.variant.impl.TestSuiteSourceContainer
 import com.android.build.gradle.BaseExtension
 import com.android.build.gradle.internal.BuildTypeData
 import com.android.build.gradle.internal.ProductFlavorData
@@ -1477,11 +1477,7 @@ class ModelBuilder<ExtensionT : CommonExtension>(
         dontBuildRuntimeClasspath
     )
 
-    private fun getGraphBuilder(
-        testSuiteSourceContainer: TestSuiteSourceContainer,
-        libraryService: LibraryService,
-        graphEdgeCache: GraphEdgeCache? = null,
-    ) = FullDependencyGraphBuilder(
+    private fun getGraphBuilder(testSuiteSourceContainer: TestSuiteSourceContainer, libraryService: LibraryService, graphEdgeCache: GraphEdgeCache? = null) = FullDependencyGraphBuilder(
         artifactsProvider = { configType, root -> getArtifactsForModelBuilder(testSuiteSourceContainer, configType) },
         projectPath = project.path,
 

@@ -3405,6 +3405,7 @@ package com.android.build.api.variant {
     method @org.gradle.api.Incubating public com.android.build.api.variant.JUnitEngineSpec getJunitEngineSpec();
     method @org.gradle.api.Incubating public java.util.Collection<com.android.build.api.variant.TestSuiteSourceSet> getSources();
     method public java.util.Map<java.lang.String,com.android.build.api.variant.TestSuiteTarget> getTargets();
+    method @org.gradle.api.Incubating public org.gradle.api.provider.Provider<java.lang.String> instrumentationRunner(com.android.build.api.variant.TestSuiteSourceSet.TestApk source);
     property @org.gradle.api.Incubating public abstract org.gradle.api.provider.Property<java.lang.Boolean> codeCoverage;
     property @org.gradle.api.Incubating public abstract com.android.build.api.variant.JUnitEngineSpec junitEngineSpec;
     property @org.gradle.api.Incubating public abstract java.util.Collection<com.android.build.api.variant.TestSuiteSourceSet> sources;
@@ -3450,12 +3451,12 @@ package com.android.build.api.variant {
   @org.gradle.api.Incubating public static interface TestSuiteSourceSet.TestApk extends com.android.build.api.variant.TestSuiteSourceSet {
     method @org.gradle.api.Incubating public com.android.build.api.variant.SourceDirectories.Flat? getJava();
     method @org.gradle.api.Incubating public com.android.build.api.variant.SourceDirectories.Flat? getKotlin();
-    method @org.gradle.api.Incubating public java.io.File? getManifestFile();
+    method @org.gradle.api.Incubating public java.io.File getManifestFile();
     method @org.gradle.api.Incubating public com.android.build.api.variant.SourceDirectories.Flat getResources();
     method @org.gradle.api.Incubating public default com.android.build.api.variant.TestSuiteSourceType getType();
     property @org.gradle.api.Incubating public abstract com.android.build.api.variant.SourceDirectories.Flat? java;
     property @org.gradle.api.Incubating public abstract com.android.build.api.variant.SourceDirectories.Flat? kotlin;
-    property @org.gradle.api.Incubating public abstract java.io.File? manifestFile;
+    property @org.gradle.api.Incubating public abstract java.io.File manifestFile;
     property @org.gradle.api.Incubating public abstract com.android.build.api.variant.SourceDirectories.Flat resources;
     property @org.gradle.api.Incubating public default com.android.build.api.variant.TestSuiteSourceType type;
   }
