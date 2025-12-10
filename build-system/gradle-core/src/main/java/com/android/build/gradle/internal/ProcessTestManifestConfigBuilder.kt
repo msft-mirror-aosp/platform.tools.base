@@ -24,10 +24,14 @@ import com.android.build.gradle.internal.component.InstrumentedTestCreationConfi
 import com.android.build.gradle.internal.component.TaskCreationConfig
 import com.android.build.gradle.internal.component.TestCreationConfig
 import com.android.build.gradle.internal.component.TestVariantCreationConfig
-import com.android.build.gradle.internal.dependency.VariantDependencies
-import com.android.build.gradle.internal.tasks.creationconfig.ProceedTestManifestCreationConfig
+import com.android.build.gradle.internal.publishing.AndroidArtifacts
+import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactScope
+import com.android.build.gradle.internal.publishing.AndroidArtifacts.ConsumedConfigType
+import com.android.build.gradle.internal.tasks.creationconfig.ProcessTestManifestCreationConfig
 import com.android.build.gradle.internal.utils.parseTargetHash
 import com.android.build.gradle.internal.variant.VariantPathHelper
+import org.gradle.api.artifacts.ArtifactCollection
+import org.gradle.api.file.FileCollection
 import org.gradle.api.provider.MapProperty
 import org.gradle.api.provider.Provider
 import java.io.File
@@ -40,11 +44,11 @@ fun <T : Any> TestCreationConfig.emptyProvider(): Provider<T> = this.services.pr
  * - unit test for application
  * - application instrumented test
  */
-fun createProcessTestManifestConfig(creationConfig: TestCreationConfig): ProceedTestManifestCreationConfig {
+fun createProcessTestManifestConfig(creationConfig: TestCreationConfig): ProcessTestManifestCreationConfig {
     val isHostTestWithTestedApk =
         creationConfig is HostTestCreationConfig && creationConfig.mainVariant.componentType.isApk
     return if (isHostTestWithTestedApk) {
-        object : BaseProceedTestManifestCreationConfig(creationConfig) {
+            object : BaseProcessTestManifestCreationConfig(creationConfig) {
             override val applicationId: Provider<String>
                 get() = creationConfig.mainVariant.applicationId
             override val testedApplicationId: Provider<String>
@@ -57,7 +61,7 @@ fun createProcessTestManifestConfig(creationConfig: TestCreationConfig): Proceed
                 get() = creationConfig.mainVariant.artifacts
         }
     } else if (creationConfig is InstrumentedTestCreationConfig) {
-        object : BaseProceedTestManifestCreationConfig(creationConfig) {
+        object : BaseProcessTestManifestCreationConfig(creationConfig) {
             override val handleProfiling: Provider<Boolean>
                 get() = creationConfig.handleProfiling
             override val functionalTest: Provider<Boolean>
@@ -66,15 +70,15 @@ fun createProcessTestManifestConfig(creationConfig: TestCreationConfig): Proceed
                 get() = creationConfig.testLabel
         }
     } else {
-        BaseProceedTestManifestCreationConfig(creationConfig)
+        BaseProcessTestManifestCreationConfig(creationConfig)
     }
 }
 
 /**
  * Config for library unit test config (no instrumentation, not an apk related unit test)
  */
-open class BaseProceedTestManifestCreationConfig(val creationConfig: TestCreationConfig) :
-    ProceedTestManifestCreationConfig,
+open class BaseProcessTestManifestCreationConfig(val creationConfig: TestCreationConfig) :
+    ProcessTestManifestCreationConfig,
     TaskCreationConfig by creationConfig {
 
     override val baseName: String
@@ -118,8 +122,23 @@ open class BaseProceedTestManifestCreationConfig(val creationConfig: TestCreatio
     override val targetSdkVersion: String
         get() = creationConfig.targetSdkVersion.getApiString()
 
-    override val variantDependencies: VariantDependencies
-        get() = creationConfig.variantDependencies
+    override val manifests: ArtifactCollection?
+        get() = creationConfig
+            .variantDependencies
+            .getArtifactCollection(
+                ConsumedConfigType.RUNTIME_CLASSPATH,
+                ArtifactScope.ALL,
+                AndroidArtifacts.ArtifactType.MANIFEST
+            )
+
+    override val navigationJsons: FileCollection?
+        get() = creationConfig
+            .variantDependencies
+            .getArtifactFileCollection(
+                ConsumedConfigType.RUNTIME_CLASSPATH,
+                ArtifactScope.ALL,
+                AndroidArtifacts.ArtifactType.NAVIGATION_JSON
+            )
     override val useLegacyPackaging: Provider<Boolean>
         get() = if (creationConfig is DeviceTestCreationConfig || creationConfig is TestVariantCreationConfig)
             creationConfig.packaging.jniLibs.useLegacyPackaging
