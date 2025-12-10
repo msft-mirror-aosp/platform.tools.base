@@ -72,6 +72,7 @@ internal class GradleBuildDefinitionImpl(
 
     override var buildFileType: BuildFileType = BuildFileType.GROOVY
     override var useOldPluginStyleForSeparateClassloaders: Boolean = false
+    override var useLatestKgpVersion: Boolean = false
 
     internal lateinit var globalDefinitionState: GlobalDefinitionState
 
@@ -523,6 +524,7 @@ internal class GradleBuildDefinitionImpl(
             allPlugins,
             customPluginMap,
             useOldPluginStyleForSeparateClassloaders,
+            useLatestKgpVersion,
             projectRepositories,
             buildFileType.getNewWriter())
 

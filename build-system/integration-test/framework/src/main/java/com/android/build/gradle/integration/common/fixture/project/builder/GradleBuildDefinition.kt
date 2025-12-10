@@ -72,6 +72,16 @@ interface GradleBuildDefinition {
      */
     var useOldPluginStyleForSeparateClassloaders: Boolean
 
+    /**
+     * Whether to modify the buildscript classpath to upgrade KGP from the version that AGP depends
+     * on to the latest version ([com.android.testutils.TestUtils.KOTLIN_VERSION_FOR_TESTS]).
+     *
+     * This is used to test AGP against the latest version of KGP.
+     *
+     * The default is `false`.
+     */
+    var useLatestKgpVersion: Boolean
+
     fun settings(action: GradleSettingsDefinition.() -> Unit)
 
     fun includedBuild(name: String, action: GradleBuildDefinition.() -> Unit): GradleBuildDefinition

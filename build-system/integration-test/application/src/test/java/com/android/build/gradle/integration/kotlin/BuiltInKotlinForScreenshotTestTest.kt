@@ -20,7 +20,6 @@ import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
 import com.android.build.gradle.internal.dsl.ModulePropertyKey.BooleanWithDefault.SCREENSHOT_TEST
 import com.android.build.gradle.options.BooleanOption
-import com.android.testutils.TestUtils
 import com.android.testutils.truth.PathSubject
 import org.junit.Rule
 import org.junit.Test
@@ -41,7 +40,7 @@ class BuiltInKotlinForScreenshotTestTest(private val builtInKotlin: Boolean) {
     val rule = GradleRule.from {
         androidLibrary {
             @Suppress("DEPRECATION")
-            if (!builtInKotlin) applyPlugin(PluginType.KOTLIN_ANDROID, TestUtils.BUILT_IN_KOTLIN_VERSION)
+            if (!builtInKotlin) applyPlugin(PluginType.KOTLIN_ANDROID)
             android {
                 defaultConfig.minSdk = 21
             }

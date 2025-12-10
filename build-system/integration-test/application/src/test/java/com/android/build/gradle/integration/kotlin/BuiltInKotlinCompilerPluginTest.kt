@@ -22,7 +22,6 @@ import com.android.build.gradle.integration.common.fixture.project.builder.Build
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
 import com.android.build.gradle.internal.dsl.ModulePropertyKey.BooleanWithDefault
 import com.android.build.gradle.options.BooleanOption
-import com.android.testutils.TestUtils
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -52,7 +51,7 @@ class BuiltInKotlinCompilerPluginTest(
         buildFileType = BuildFileType.KTS
         androidApplication {
             @Suppress("DEPRECATION")
-            if (!builtInKotlin) applyPlugin(PluginType.KOTLIN_ANDROID, TestUtils.BUILT_IN_KOTLIN_VERSION)
+            if (!builtInKotlin) applyPlugin(PluginType.KOTLIN_ANDROID)
             android.experimentalProperties[BooleanWithDefault.SCREENSHOT_TEST.key] = true
         }
         gradleProperties {
@@ -103,7 +102,7 @@ class BuiltInKotlinCompilerPluginTest(
             compilerOptions = org.jetbrains.kotlin.gradle.plugin.mpp.compilationImpl.factory.KotlinJvmCompilerOptionsFactory${"$"}create${"$"}compilerOptions$1@<hash-code>
             defaultSourceSet = $expectedDefaultSourceSetForDebug
             defaultSourceSetName = debug
-            disambiguatedName = debug
+            disambiguatedName = ${ if (builtInKotlin) "debug" else "Debug" }
             extras = [org.jetbrains.kotlin.gradle.utils.StoredPropertyStorage=org.jetbrains.kotlin.gradle.utils.StoredPropertyStorage@<hash-code>,org.jetbrains.kotlin.gradle.plugin.hierarchy.KotlinSourceSetTreeClassifier=property(org.jetbrains.kotlin.gradle.plugin.KotlinSourceSetTree, fixed(class org.jetbrains.kotlin.gradle.plugin.KotlinSourceSetTree, main))]
             getAttributes = org.jetbrains.kotlin.gradle.plugin.mpp.HierarchyAttributeContainer@<hash-code>
             getName = debug
@@ -155,7 +154,7 @@ class BuiltInKotlinCompilerPluginTest(
             compilerOptions = org.jetbrains.kotlin.gradle.plugin.mpp.compilationImpl.factory.KotlinJvmCompilerOptionsFactory${"$"}create${"$"}compilerOptions$1@<hash-code>
             defaultSourceSet = $expectedDefaultSourceSetForDebugUnitTest
             defaultSourceSetName = debugUnitTest
-            disambiguatedName = debugUnitTest
+            disambiguatedName = ${if (builtInKotlin) "debugUnitTest" else "DebugUnitTest"}
             extras = [org.jetbrains.kotlin.gradle.utils.StoredPropertyStorage=org.jetbrains.kotlin.gradle.utils.StoredPropertyStorage@<hash-code>,org.jetbrains.kotlin.gradle.plugin.hierarchy.KotlinSourceSetTreeClassifier=property(org.jetbrains.kotlin.gradle.plugin.KotlinSourceSetTree, fixed(class org.jetbrains.kotlin.gradle.plugin.KotlinSourceSetTree, test))]
             getAttributes = org.jetbrains.kotlin.gradle.plugin.mpp.HierarchyAttributeContainer@<hash-code>
             getName = debugUnitTest
@@ -200,7 +199,7 @@ class BuiltInKotlinCompilerPluginTest(
             compilerOptions = org.jetbrains.kotlin.gradle.plugin.mpp.compilationImpl.factory.KotlinJvmCompilerOptionsFactory${"$"}create${"$"}compilerOptions$1@<hash-code>
             defaultSourceSet = $expectedDefaultSourceSetForDebugScreenshotTest
             defaultSourceSetName = debugScreenshotTest
-            disambiguatedName = debugScreenshotTest
+            disambiguatedName = ${if (builtInKotlin) "debugScreenshotTest" else "DebugScreenshotTest"}
             extras = [org.jetbrains.kotlin.gradle.utils.StoredPropertyStorage=org.jetbrains.kotlin.gradle.utils.StoredPropertyStorage@<hash-code>,org.jetbrains.kotlin.gradle.plugin.hierarchy.KotlinSourceSetTreeClassifier=None]
             getAttributes = org.jetbrains.kotlin.gradle.plugin.mpp.HierarchyAttributeContainer@<hash-code>
             getName = debugScreenshotTest
