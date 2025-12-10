@@ -318,7 +318,8 @@ fun handleKotlinSourceSets(
                         "Using kotlin.sourceSets DSL to add Kotlin sources is not allowed with built-in Kotlin.\n" +
                                 "Kotlin source set '${androidSourceSet.name}' contains: ${kotlinSourceSet.kotlin.srcDirs}\n" +
                                 "Solution: Use android.sourceSets DSL instead.\n" +
-                                "For more information, see https://developer.android.com/r/tools/built-in-kotlin"
+                                "For more information, see https://developer.android.com/r/tools/built-in-kotlin\n" +
+                                "To suppress this error, set ${BooleanOption.DISALLOW_KOTLIN_SOURCE_SETS.propertyName}=false in gradle.properties."
                     )
                 }
 
