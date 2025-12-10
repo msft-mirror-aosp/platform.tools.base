@@ -1,33 +1,18 @@
-/*
- * Copyright 2016 Google Inc. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package com.google.devrel.gmscore.tools.apk.arsc;
 
+import com.google.auto.value.AutoValue;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableMap.Builder;
 import com.google.common.primitives.UnsignedBytes;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 
 /** Represents a single typed resource value. */
-public class ResourceValue implements SerializableResource {
+@AutoValue
+public abstract class ResourceValue implements SerializableResource {
 
   /** Resource type codes. */
   public enum Type {
@@ -66,14 +51,14 @@ public class ResourceValue implements SerializableResource {
 
     private final byte code;
 
-    private static final Map<Byte, Type> FROM_BYTE;
+    private static final ImmutableMap<Byte, Type> FROM_BYTE;
 
     static {
-      Builder<Byte, Type> builder = ImmutableMap.builder();
+      Map<Byte, Type> map = new HashMap<>();
       for (Type type : values()) {
-        builder.put(type.code(), type);
+        map.put(type.code(), type);
       }
-      FROM_BYTE = builder.build();
+      FROM_BYTE = ImmutableMap.copyOf(map);
     }
 
     Type(int code) {
@@ -92,40 +77,60 @@ public class ResourceValue implements SerializableResource {
   /** The serialized size in bytes of a {@link ResourceValue}. */
   public static final int SIZE = 8;
 
-  private final int size;
-  private final Type type;
-  private final int data;
+  /** The length in bytes of this value. */
+  public abstract int size();
+
+  /** The raw data type of this value. */
+  public abstract Type type();
+
+  /** The actual 4-byte value; interpretation of the value depends on {@code dataType}. */
+  public abstract int data();
+
+  /** A builder for {@link ResourceValue} instances. */
+  @AutoValue.Builder
+  public abstract static class Builder {
+    public abstract Builder size(int s);
+
+    public abstract Builder type(Type t);
+
+    public abstract Builder data(int d);
+
+    public abstract ResourceValue build();
+  }
+
+  /** Returns a new, empty builder for {@link ResourceValue} instances. */
+  public static Builder builder() {
+    return new AutoValue_ResourceValue.Builder();
+  }
+
+  abstract Builder toBuilder();
+
+  ResourceValue withData(int d) {
+    return toBuilder().data(d).build();
+  }
 
   public static ResourceValue create(ByteBuffer buffer) {
     int size = (buffer.getShort() & 0xFFFF);
     buffer.get();  // Unused
     Type type = Type.fromCode(buffer.get());
     int data = buffer.getInt();
-    return new ResourceValue(size, type, data);
+    return builder().size(size).type(type).data(data).build();
   }
 
-  private ResourceValue(int size, Type type, int data) {
-    this.size = size;
-    this.type = type;
-    this.data = data;
+  public static ResourceValue createCompact(ByteBuffer buffer, byte typeByte) {
+    int size = 8; // Always 8 for compact entries
+    Type type = Type.fromCode(typeByte);
+    int data = buffer.getInt();
+    return builder().size(size).type(type).data(data).build();
   }
-
-  /** The length in bytes of this value. */
-  public int size() { return size; }
-
-  /** The raw data type of this value. */
-  public Type type() { return type; }
-
-  /** The actual 4-byte value; interpretation of the value depends on {@code dataType}. */
-  public int data() { return data; }
 
   @Override
   public byte[] toByteArray() {
-    return toByteArray(false);
+    return toByteArray(SerializableResource.NONE);
   }
 
   @Override
-  public byte[] toByteArray(boolean shrink) {
+  public byte[] toByteArray(int options) {
     ByteBuffer buffer = ByteBuffer.allocate(SIZE).order(ByteOrder.LITTLE_ENDIAN);
     buffer.putShort((short) size());
     buffer.put((byte) 0);  // Unused
@@ -134,18 +139,30 @@ public class ResourceValue implements SerializableResource {
     return buffer.array();
   }
 
-  @Override
-  public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
-    ResourceValue that = (ResourceValue)o;
-    return size == that.size &&
-           data == that.data &&
-           type == that.type;
+  private String dataHexString() {
+    return String.format("0x%08x", data());
   }
 
   @Override
-  public int hashCode() {
-    return Objects.hash(size, type, data);
+  public final String toString() {
+    return switch (type()) {
+      case NULL -> data() == 0 ? "null" : "empty";
+      case REFERENCE -> "ref(" + dataHexString() + ")";
+      case ATTRIBUTE -> "attr(" + dataHexString() + ")";
+      case STRING -> "string(" + dataHexString() + ")";
+      case FLOAT -> "float(" + data() + ")";
+      case DIMENSION -> "dimen(" + data() + ")";
+      case FRACTION -> "frac(" + data() + ")";
+      case DYNAMIC_REFERENCE -> "dynref(" + dataHexString() + ")";
+      case DYNAMIC_ATTRIBUTE -> "dynattr(" + dataHexString() + ")";
+      case INT_DEC -> "dec(" + data() + ")";
+      case INT_HEX -> "hex(" + dataHexString() + ")";
+      case INT_BOOLEAN -> "bool(" + data() + ")";
+      case INT_COLOR_ARGB8 -> "argb8(" + dataHexString() + ")";
+      case INT_COLOR_RGB8 -> "rgb8(" + dataHexString() + ")";
+      case INT_COLOR_ARGB4 -> "argb4(" + dataHexString() + ")";
+      case INT_COLOR_RGB4 -> "rgb4(" + dataHexString() + ")";
+      default -> "<invalid value>";
+    };
   }
 }

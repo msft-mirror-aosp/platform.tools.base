@@ -1,38 +1,19 @@
-/*
- * Copyright 2016 Google Inc. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package com.google.devrel.gmscore.tools.apk.arsc;
 
 import com.google.common.io.ByteArrayDataOutput;
 import com.google.common.io.ByteStreams;
-import com.google.common.primitives.UnsignedBytes;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
-
-import static java.nio.charset.StandardCharsets.UTF_16LE;
-import static java.nio.charset.StandardCharsets.UTF_8;
+import java.nio.charset.StandardCharsets;
 
 /** Provides utilities to decode/encode a String packed in an arsc resource file. */
 public final class ResourceString {
 
   /** Type of {@link ResourceString} to encode / decode. */
   public enum Type {
-    UTF8(UTF_8),
-    UTF16(UTF_16LE);
+    UTF8(StandardCharsets.UTF_8),
+    UTF16(StandardCharsets.UTF_16LE);
 
     private final Charset charset;
 
@@ -65,18 +46,26 @@ public final class ResourceString {
    * @return The decoded string.
    */
   public static String decodeString(ByteBuffer buffer, int offset, Type type) {
-    int length;
     int characterCount = decodeLength(buffer, offset, type);
     offset += computeLengthOffset(characterCount, type);
     // UTF-8 strings have 2 lengths: the number of characters, and then the encoding length.
     // UTF-16 strings, however, only have 1 length: the number of characters.
     if (type == Type.UTF8) {
-      length = decodeLength(buffer, offset, type);
+      int length = decodeLength(buffer, offset, type);
       offset += computeLengthOffset(length, type);
+
+      int origPosition = buffer.position();
+      buffer.position(offset);
+      try {
+        char[] chars = UtfUtil.decodeUtf8OrModifiedUtf8(buffer, characterCount);
+        return new String(chars);
+      } finally {
+        buffer.position(origPosition);
+      }
     } else {
-      length = characterCount * 2;
+      int length = characterCount * 2;
+      return new String(buffer.array(), offset, length, type.charset());
     }
-    return new String(buffer.array(), offset, length, type.charset());
   }
 
   /**
@@ -144,9 +133,9 @@ public final class ResourceString {
     // UTF-8 strings use a clever variant of the 7-bit integer for packing the string length.
     // If the first byte is >= 0x80, then a second byte follows. For these values, the length
     // is WORD-length in big-endian & 0x7FFF.
-    int length = UnsignedBytes.toInt(buffer.get(offset));
+    int length = Byte.toUnsignedInt(buffer.get(offset));
     if ((length & 0x80) != 0) {
-      length = ((length & 0x7F) << 8) | UnsignedBytes.toInt(buffer.get(offset + 1));
+      length = ((length & 0x7F) << 8) | Byte.toUnsignedInt(buffer.get(offset + 1));
     }
     return length;
   }

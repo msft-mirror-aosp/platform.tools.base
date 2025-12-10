@@ -274,14 +274,30 @@ com/android/tools/apkparser/apkanalyzer
 com/android/tools/apkparser/binary-resources
   META-INF/
   META-INF/MANIFEST.MF
+  META-INF/maven/
+  META-INF/maven/com.google.auto.value/
+  META-INF/maven/com.google.auto.value/auto-value-annotations/
+  META-INF/maven/com.google.auto.value/auto-value-annotations/pom.properties
+  META-INF/maven/com.google.auto.value/auto-value-annotations/pom.xml
   NOTICE
   com/
   com/google/
+  com/google/auto/
+  com/google/auto/value/
+  com/google/auto/value/extension/
+  com/google/auto/value/extension/memoized/
+  com/google/auto/value/extension/serializable/
+  com/google/auto/value/extension/toprettystring/
   com/google/devrel/
   com/google/devrel/gmscore/
   com/google/devrel/gmscore/tools/
   com/google/devrel/gmscore/tools/apk/
   com/google/devrel/gmscore/tools/apk/arsc/
+  org/
+  org/checkerframework/
+  org/checkerframework/checker/
+  org/checkerframework/checker/nullness/
+  org/checkerframework/checker/nullness/compatqual/
 
 com/android/tools/build/aapt2-proto
   Configuration.proto

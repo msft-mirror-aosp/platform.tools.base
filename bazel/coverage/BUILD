@@ -1093,8 +1093,6 @@ coverage_report(
         "//tools/base/adb-proxy:studio.adb-proxy_tests",
         "//tools/base/adblib:adblib.tests.test",
         "//tools/base/adblib-tools:adblib.tools.tests.test",
-        "//tools/base/apkparser:studio.android.sdktools.binary-resources_tests",
-        "//tools/base/apkparser:tools.tests",
         "//tools/base/apkparser/analyzer:studio.android.sdktools.analyzer_tests",
         "//tools/base/apkparser/analyzer:tools.tests",
         "//tools/base/apkparser/cli:tools.tests",
