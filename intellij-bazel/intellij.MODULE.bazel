@@ -44,9 +44,9 @@ intellij.remote_platform(
 )
 intellij.remote_platform(
     name = "intellij_2025_3",
-    sha256 = "4bab2677f95d13f88cffe1d377f31f82c164da1bce44356ee687bcd7305e726f",
-    top_level_dir = "idea-IU-253.28086.51",
-    url = "https://download.jetbrains.com/idea/idea-253.28086.51.tar.gz",
+    sha256 = "13f4174ba16c1cef04871cb261433536d002586c269a809392c20ee3f94959f5",
+    top_level_dir = "idea-IU-253.28294.334",
+    url = "https://download.jetbrains.com/idea/idea-2025.3.tar.gz",
 )
 
 # IMPORTANT: This list of repos should always be kept up to date with the platforms defined above.
