@@ -16,9 +16,6 @@
 
 package com.google.devrel.gmscore.tools.apk.arsc;
 
-import static java.nio.charset.StandardCharsets.UTF_16LE;
-import static java.nio.charset.StandardCharsets.UTF_8;
-
 import com.google.common.io.ByteArrayDataOutput;
 import com.google.common.io.ByteStreams;
 import com.google.common.primitives.UnsignedBytes;
@@ -26,10 +23,13 @@ import com.google.common.primitives.UnsignedBytes;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 
-/** Provides utilities to decode/encode a String packed in an arsc resource file. */
-public final class BinaryResourceString {
+import static java.nio.charset.StandardCharsets.UTF_16LE;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
-  /** Type of {@link BinaryResourceString} to encode / decode. */
+/** Provides utilities to decode/encode a String packed in an arsc resource file. */
+public final class ResourceString {
+
+  /** Type of {@link ResourceString} to encode / decode. */
   public enum Type {
     UTF8(UTF_8),
     UTF16(UTF_16LE);
@@ -45,7 +45,7 @@ public final class BinaryResourceString {
     }
   }
 
-  private BinaryResourceString() {} // Private constructor
+  private ResourceString() {} // Private constructor
 
   /**
    * Given a buffer and an offset into the buffer, returns a String. The {@code offset} is the
@@ -61,7 +61,7 @@ public final class BinaryResourceString {
    *
    * @param buffer The buffer containing the string to decode.
    * @param offset Offset into the buffer where the string resides.
-   * @param type The encoding type that the {@link BinaryResourceString} is encoded in.
+   * @param type The encoding type that the {@link ResourceString} is encoded in.
    * @return The decoded string.
    */
   public static String decodeString(ByteBuffer buffer, int offset, Type type) {
@@ -88,7 +88,7 @@ public final class BinaryResourceString {
    * <pre>03 04 61 62 C2 A9 00</pre>
    *
    * @param str The string to be encoded.
-   * @param type The encoding type that the {@link BinaryResourceString} should be encoded in.
+   * @param type The encoding type that the {@link ResourceString} should be encoded in.
    * @return The encoded string.
    */
   public static byte[] encodeString(String str, Type type) {

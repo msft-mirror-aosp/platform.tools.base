@@ -17,11 +17,10 @@ package com.android.tools.apk.analyzer;
 
 import com.android.SdkConstants;
 import com.android.xml.XmlBuilder;
-
 import com.google.common.collect.Lists;
-import com.google.devrel.gmscore.tools.apk.arsc.BinaryResourceFile;
-import com.google.devrel.gmscore.tools.apk.arsc.BinaryResourceValue;
 import com.google.devrel.gmscore.tools.apk.arsc.Chunk;
+import com.google.devrel.gmscore.tools.apk.arsc.ResourceFile;
+import com.google.devrel.gmscore.tools.apk.arsc.ResourceValue;
 import com.google.devrel.gmscore.tools.apk.arsc.StringPoolChunk;
 import com.google.devrel.gmscore.tools.apk.arsc.XmlAttribute;
 import com.google.devrel.gmscore.tools.apk.arsc.XmlChunk;
@@ -30,7 +29,6 @@ import com.google.devrel.gmscore.tools.apk.arsc.XmlNamespaceEndChunk;
 import com.google.devrel.gmscore.tools.apk.arsc.XmlNamespaceStartChunk;
 import com.google.devrel.gmscore.tools.apk.arsc.XmlResourceMapChunk;
 import com.google.devrel.gmscore.tools.apk.arsc.XmlStartElementChunk;
-
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -47,7 +45,7 @@ public class BinaryXmlParser {
     @NotNull
     public static byte[] decodeXml(
             @NotNull byte[] bytes, @NotNull ResourceIdResolver resIdResolver) {
-        BinaryResourceFile file = new BinaryResourceFile(bytes);
+        ResourceFile file = new ResourceFile(bytes);
         List<Chunk> chunks = file.getChunks();
         if (chunks.size() != 1) {
             //Logger.getInstance(BinaryXmlParser.class).warn("Expected 1, but got " + chunks.size() + " chunks while parsing " + fileName);
@@ -187,13 +185,13 @@ public class BinaryXmlParser {
                 return rawValue;
             }
 
-            BinaryResourceValue resValue = attribute.typedValue();
+            ResourceValue resValue = attribute.typedValue();
             return formatValue(resValue, stringPool, resIdResolver);
         }
     }
 
     public static String formatValue(
-            @NotNull BinaryResourceValue resValue,
+            @NotNull ResourceValue resValue,
             @Nullable StringPoolChunk stringPool,
             @NotNull ResourceIdResolver resourceIdResolver) {
         int data = resValue.data();
@@ -240,7 +238,7 @@ public class BinaryXmlParser {
     }
 
     public static String formatValue(
-            @NotNull BinaryResourceValue resValue, @Nullable StringPoolChunk stringPool) {
+            @NotNull ResourceValue resValue, @Nullable StringPoolChunk stringPool) {
         return formatValue(resValue, stringPool, ResourceIdResolver.NO_RESOLUTION);
     }
 

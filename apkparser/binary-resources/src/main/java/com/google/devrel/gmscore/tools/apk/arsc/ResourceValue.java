@@ -20,13 +20,14 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMap.Builder;
 import com.google.common.primitives.UnsignedBytes;
+
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Map;
 import java.util.Objects;
 
 /** Represents a single typed resource value. */
-public class BinaryResourceValue implements SerializableResource {
+public class ResourceValue implements SerializableResource {
 
   /** Resource type codes. */
   public enum Type {
@@ -88,22 +89,22 @@ public class BinaryResourceValue implements SerializableResource {
     }
   }
 
-  /** The serialized size in bytes of a {@link BinaryResourceValue}. */
+  /** The serialized size in bytes of a {@link ResourceValue}. */
   public static final int SIZE = 8;
 
   private final int size;
   private final Type type;
   private final int data;
 
-  public static BinaryResourceValue create(ByteBuffer buffer) {
+  public static ResourceValue create(ByteBuffer buffer) {
     int size = (buffer.getShort() & 0xFFFF);
     buffer.get();  // Unused
     Type type = Type.fromCode(buffer.get());
     int data = buffer.getInt();
-    return new BinaryResourceValue(size, type, data);
+    return new ResourceValue(size, type, data);
   }
 
-  private BinaryResourceValue(int size, Type type, int data) {
+  private ResourceValue(int size, Type type, int data) {
     this.size = size;
     this.type = type;
     this.data = data;
@@ -137,7 +138,7 @@ public class BinaryResourceValue implements SerializableResource {
   public boolean equals(Object o) {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
-    BinaryResourceValue that = (BinaryResourceValue)o;
+    ResourceValue that = (ResourceValue)o;
     return size == that.size &&
            data == that.data &&
            type == that.type;

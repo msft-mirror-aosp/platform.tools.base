@@ -17,6 +17,7 @@
 package com.google.devrel.gmscore.tools.apk.arsc;
 
 import com.google.common.base.Preconditions;
+
 import java.util.Objects;
 
 /**
@@ -24,7 +25,7 @@ import java.util.Objects;
  * where pp is the {@link PackageChunk} id, tt is the {@link TypeChunk} id, and eeee is the index of
  * the entry in the {@link TypeChunk}.
  */
-public class BinaryResourceIdentifier {
+public class ResourceIdentifier {
 
   /** The {@link PackageChunk} id mask for a packed resource id of the form 0xpptteeee. */
   private static final int PACKAGE_ID_MASK = 0xFF000000;
@@ -42,23 +43,23 @@ public class BinaryResourceIdentifier {
   private final int typeId;
   private final int entryId;
 
-  /** Returns a {@link BinaryResourceIdentifier} from a {@code resourceId} of the form 0xpptteeee. */
-  public static BinaryResourceIdentifier create(int resourceId) {
+  /** Returns a {@link ResourceIdentifier} from a {@code resourceId} of the form 0xpptteeee. */
+  public static ResourceIdentifier create(int resourceId) {
     int packageId = (resourceId & PACKAGE_ID_MASK) >>> PACKAGE_ID_SHIFT;
     int typeId = (resourceId & TYPE_ID_MASK) >>> TYPE_ID_SHIFT;
     int entryId = (resourceId & ENTRY_ID_MASK) >>> ENTRY_ID_SHIFT;
     return create(packageId, typeId, entryId);
   }
 
-  /** Returns a {@link BinaryResourceIdentifier} with the given identifiers. */
-  public static BinaryResourceIdentifier create(int packageId, int typeId, int entryId) {
+  /** Returns a {@link ResourceIdentifier} with the given identifiers. */
+  public static ResourceIdentifier create(int packageId, int typeId, int entryId) {
     Preconditions.checkState((packageId & 0xFF) == packageId, "packageId must be <= 0xFF.");
     Preconditions.checkState((typeId & 0xFF) == typeId, "typeId must be <= 0xFF.");
     Preconditions.checkState((entryId & 0xFFFF) == entryId, "entryId must be <= 0xFFFF.");
-    return new BinaryResourceIdentifier(packageId, typeId, entryId);
+    return new ResourceIdentifier(packageId, typeId, entryId);
   }
 
-  private BinaryResourceIdentifier(int packageId, int typeId, int entryId) {
+  private ResourceIdentifier(int packageId, int typeId, int entryId) {
     this.packageId = packageId;
     this.typeId = typeId;
     this.entryId = entryId;
@@ -82,7 +83,7 @@ public class BinaryResourceIdentifier {
   public boolean equals(Object o) {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
-    BinaryResourceIdentifier that = (BinaryResourceIdentifier)o;
+    ResourceIdentifier that = (ResourceIdentifier)o;
     return packageId == that.packageId &&
            typeId == that.typeId &&
            entryId == that.entryId;

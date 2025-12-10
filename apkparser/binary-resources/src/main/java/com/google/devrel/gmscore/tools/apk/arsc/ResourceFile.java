@@ -28,12 +28,12 @@ import java.util.Collections;
 import java.util.List;
 
 /** Given an arsc file, maps the contents of the file. */
-public final class BinaryResourceFile implements SerializableResource {
+public final class ResourceFile implements SerializableResource {
 
   /** The chunks contained in this resource file. */
   private final List<Chunk> chunks = new ArrayList<>();
 
-  public BinaryResourceFile(byte[] buf) {
+  public ResourceFile(byte[] buf) {
     ByteBuffer buffer = ByteBuffer.wrap(buf).order(ByteOrder.LITTLE_ENDIAN);
     while (buffer.remaining() > 0) {
       chunks.add(Chunk.newInstance(buffer));
@@ -41,16 +41,16 @@ public final class BinaryResourceFile implements SerializableResource {
   }
 
   /**
-   * Given an input stream, reads the stream until the end and returns a {@link BinaryResourceFile}
+   * Given an input stream, reads the stream until the end and returns a {@link ResourceFile}
    * representing the contents of the stream.
    *
    * @param is The input stream to read from.
    * @return BinaryResourceFile represented by the @{link InputStream}.
    * @throws IOException
    */
-  public static BinaryResourceFile fromInputStream(InputStream is) throws IOException {
+  public static ResourceFile fromInputStream(InputStream is) throws IOException {
     byte[] buf = ByteStreams.toByteArray(is);
-    return new BinaryResourceFile(buf);
+    return new ResourceFile(buf);
   }
 
   /** Returns the chunks in this resource file. */
