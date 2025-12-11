@@ -31,7 +31,7 @@ class MapSourceSetPathsTaskTest {
         )
         val run = project.executor().run("mapF1FaDebugSourceSetPaths")
         val filePathMapsDir = FileUtils.join(project.intermediatesDir, InternalArtifactType
-                .SOURCE_SET_PATH_MAP.getFolderName())
+                .ANDROID_RES_SOURCE_SET_PATH_MAP.getFolderName())
         val sourceSetMap = FileUtils.join(filePathMapsDir, "f1FaDebug", "mapF1FaDebugSourceSetPaths", "file-map.txt")
         val projectDir = project.projectDir.absolutePath
         val expectedContents = """

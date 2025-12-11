@@ -1115,7 +1115,7 @@ coverage_report(
         "//tools/base/build-system/gradle-core:tests.test",
         "//tools/base/build-system/integration-test/application:automatic-tests",
         "//tools/base/build-system/integration-test/application:coupled_tests",
-        "//tools/base/build-system/integration-test/application:dependencies-tests",
+        "//tools/base/build-system/integration-test/application:deps-tests",
         "//tools/base/build-system/integration-test/application:library-tests",
         "//tools/base/build-system/integration-test/application:mlkit-tests",
         "//tools/base/build-system/integration-test/application:packaging-tests",

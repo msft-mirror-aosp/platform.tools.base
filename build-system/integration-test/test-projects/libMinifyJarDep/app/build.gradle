@@ -28,10 +28,6 @@ android {
             testProguardFiles 'config_test.pro'
         }
     }
-
-    dexOptions {
-        incremental = false
-    }
 }
 
 dependencies {

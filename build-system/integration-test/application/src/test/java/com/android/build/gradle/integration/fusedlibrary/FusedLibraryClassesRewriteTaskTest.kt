@@ -128,9 +128,6 @@ internal class FusedLibraryClassesRewriteTaskTest {
                 include(project(":androidLib2"))
             }
         }
-        gradleProperties {
-            add(BooleanOption.FUSED_LIBRARY_SUPPORT, true)
-        }
     }
 
     @Test

@@ -32,6 +32,7 @@ import com.android.build.api.instrumentation.FramesComputationMode
 import com.android.build.api.variant.ScopedArtifacts
 import com.android.build.api.variant.impl.FlatSourceDirectoriesImpl
 import com.android.build.api.variant.impl.TaskProviderBasedDirectoryEntryImpl
+import com.android.build.api.variant.impl.getApiString
 import com.android.build.gradle.api.AndroidSourceSet
 import com.android.build.gradle.internal.component.ApkCreationConfig
 import com.android.build.gradle.internal.component.ApplicationCreationConfig
@@ -44,6 +45,7 @@ import com.android.build.gradle.internal.component.KmpComponentCreationConfig
 import com.android.build.gradle.internal.component.TaskCreationConfig
 import com.android.build.gradle.internal.component.TestComponentCreationConfig
 import com.android.build.gradle.internal.component.TestCreationConfig
+import com.android.build.gradle.internal.component.TestVariantCreationConfig
 import com.android.build.gradle.internal.component.VariantCreationConfig
 import com.android.build.gradle.internal.coverage.JacocoConfigurations
 import com.android.build.gradle.internal.coverage.JacocoPropertiesTask
@@ -111,7 +113,6 @@ import com.android.build.gradle.internal.tasks.MergeClassesTask
 import com.android.build.gradle.internal.tasks.MergeGeneratedProguardFilesCreationAction
 import com.android.build.gradle.internal.tasks.MergeJavaResourceTask
 import com.android.build.gradle.internal.tasks.MergeNativeLibsTask
-import com.android.build.gradle.internal.tasks.MergePackageListsForR8Task
 import com.android.build.gradle.internal.tasks.OptimizeResourcesTask
 import com.android.build.gradle.internal.tasks.PrepareLintJarForPublish
 import com.android.build.gradle.internal.tasks.ProcessJavaResTask
@@ -122,6 +123,7 @@ import com.android.build.gradle.internal.tasks.ValidateResourcesTask
 import com.android.build.gradle.internal.tasks.ValidateSigningTask
 import com.android.build.gradle.internal.tasks.VerifyLibraryClassesTask
 import com.android.build.gradle.internal.tasks.checkIfR8VersionMatches
+import com.android.build.gradle.internal.tasks.creationconfig.ProceedTestManifestCreationConfig
 import com.android.build.gradle.internal.tasks.creationconfig.ProcessJavaResCreationConfig
 import com.android.build.gradle.internal.tasks.databinding.DataBindingCompilerArguments.Companion.createArguments
 import com.android.build.gradle.internal.tasks.databinding.DataBindingGenBaseClassesTask
@@ -147,7 +149,9 @@ import com.android.build.gradle.internal.utils.KgpVersion.Companion.MINIMUM_BUIL
 import com.android.build.gradle.internal.utils.getKotlinAndroidPluginVersion
 import com.android.build.gradle.internal.utils.isKotlinKaptPluginApplied
 import com.android.build.gradle.internal.utils.isKspPluginApplied
+import com.android.build.gradle.internal.utils.parseTargetHash
 import com.android.build.gradle.internal.variant.ApkVariantData
+import com.android.build.gradle.internal.variant.VariantPathHelper
 import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.tasks.AidlCompile
 import com.android.build.gradle.tasks.CompatibleScreensManifest
@@ -198,6 +202,7 @@ import org.gradle.api.logging.Logger
 import org.gradle.api.logging.Logging
 import org.gradle.api.plugins.BasePlugin
 import org.gradle.api.plugins.JavaBasePlugin
+import org.gradle.api.provider.MapProperty
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.Sync
@@ -443,7 +448,9 @@ abstract class TaskManager(
     }
 
     protected fun createProcessTestManifestTask(creationConfig: TestCreationConfig) {
-        taskFactory.register(ProcessTestManifest.CreationAction(creationConfig))
+        val taskConfig = createProcessTestManifestConfig(creationConfig)
+
+        taskFactory.register(ProcessTestManifest.CreationAction(taskConfig))
     }
 
     protected fun createRenderscriptTask(creationConfig: ConsumableCreationConfig) {
@@ -856,6 +863,11 @@ abstract class TaskManager(
     }
 
     protected open fun postJavacCreation(creationConfig: ComponentCreationConfig) {
+
+        val projectScope = creationConfig
+            .artifacts
+            .forScope(ScopedArtifacts.Scope.PROJECT)
+
         // Use the deprecated public artifact types to register the pre/post JavaC hooks as well as
         // the javac output itself.
         // It is necessary to do so in case some third-party plugin is using those deprecated public
@@ -921,6 +933,12 @@ abstract class TaskManager(
                creationConfig.artifacts,
                JAVAC
            )
+
+        // add back all the user added post compilation classes that we stored in this internal
+        // artifact type for book keeping reasons.
+        creationConfig.artifacts.forScope(ScopedArtifacts.Scope.PROJECT)
+            .setInitialContent(ScopedArtifact.CLASSES,
+                projectScope.userAddedClasses)
 
         creationConfig
             .artifacts
@@ -1977,9 +1995,7 @@ abstract class TaskManager(
             project,
             creationConfig.services.projectOptions
         ).execute()
-        if (creationConfig.services.projectOptions[BooleanOption.GRADUAL_R8_SHRINKING]) {
-            taskFactory.register(MergePackageListsForR8Task.CreationAction(creationConfig))
-        }
+
         return taskFactory.register(
             R8Task.CreationAction(creationConfig, isTestApplication, addCompileRClass))
     }

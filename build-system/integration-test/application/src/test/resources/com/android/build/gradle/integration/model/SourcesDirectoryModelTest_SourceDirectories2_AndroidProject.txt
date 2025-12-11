@@ -152,6 +152,7 @@
       * "JETPACK_COMPOSE -> false"
       * "ML_MODEL_BINDING -> false"
       * "OLD_VARIANT_API_IN_USE -> true"
+      * "R8_GRADUAL_API -> false"
       * "TEST_R_CLASS_CONSTANT_IDS -> false"
       * "TRANSITIVE_R_CLASS -> false"
       * "UNIFIED_TEST_PLATFORM -> true"

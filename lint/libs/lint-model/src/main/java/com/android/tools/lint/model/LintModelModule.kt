@@ -97,6 +97,8 @@ interface LintModelModule {
    */
   fun neverShrinking(): Boolean
 
+  val highlightGradualR8Api: Boolean
+
   fun findVariant(name: String): LintModelVariant? { // TODO: Lazily compute in delegate
     for (variant in variants) {
       if (name == variant.name) {
@@ -156,6 +158,7 @@ class DefaultLintModelModule(
   override val javaSourceLevel: String?,
   override val compileTarget: String,
   override val variants: List<LintModelVariant>,
+  override val highlightGradualR8Api: Boolean,
   private val neverShrinking: Boolean,
 ) : LintModelModule {
   override fun neverShrinking(): Boolean {

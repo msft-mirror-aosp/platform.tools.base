@@ -17,12 +17,15 @@
 package com.android.build.gradle.internal.feature
 
 import com.android.SdkConstants.FN_CLASSES_JAR
+import com.android.build.api.artifact.MultipleArtifact
 import com.android.build.api.artifact.ScopedArtifact
 import com.android.build.api.variant.ScopedArtifacts
 import com.android.build.gradle.internal.component.ComponentCreationConfig
+import com.android.build.gradle.internal.fusedlibrary.createTasks
 import com.android.build.gradle.internal.profile.ProfileAwareWorkAction
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
 import com.android.build.gradle.internal.scope.InternalArtifactType
+import com.android.build.gradle.internal.scope.InternalMultipleArtifactType
 import com.android.build.gradle.internal.scope.getDirectories
 import com.android.build.gradle.internal.scope.getRegularFiles
 import com.android.build.gradle.internal.tasks.BuildAnalyzer
@@ -181,6 +184,8 @@ abstract class BundleAllClasses : NonIncrementalTask() {
                 task.inputDirs.from(
                     listOfNotNull(
                         creationConfig.getBuiltInKotlincOutput(),
+                        creationConfig.artifacts.getAll(MultipleArtifact.PRE_COMPILATION_CLASSES),
+                        creationConfig.artifacts.forScope(ScopedArtifacts.Scope.PROJECT).userAddedClasses,
                         creationConfig.getBuiltInKaptArtifact(InternalArtifactType.BUILT_IN_KAPT_CLASSES_DIR),
                         creationConfig.artifacts.get(InternalArtifactType.JAVAC),
                         creationConfig.oldVariantApiLegacySupport?.variantData?.allPreJavacGeneratedBytecode,

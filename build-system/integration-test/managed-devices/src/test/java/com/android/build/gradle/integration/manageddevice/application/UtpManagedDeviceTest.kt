@@ -26,10 +26,13 @@ import com.android.build.gradle.integration.manageddevice.utils.CustomAndroidSdk
 import com.android.build.gradle.integration.manageddevice.utils.addManagedDevice
 import com.android.build.gradle.integration.utp.UtpTestBase
 import org.junit.Rule
+import org.junit.runner.RunWith
+import org.junit.runners.Parameterized
 
 /**
  * An integration test for Gradle Managed Device.
  */
+@RunWith(Parameterized::class)
 class UtpManagedDeviceTest(runWithBuiltInPlatform: Boolean) : UtpTestBase(runWithBuiltInPlatform) {
 
     @get:Rule

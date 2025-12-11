@@ -18,6 +18,7 @@ package com.android.adblib.tools.debugging.impl
 import com.android.adblib.testingutils.CoroutineTestUtils.runBlockingWithTimeout
 import com.android.adblib.testingutils.CoroutineTestUtils.yieldUntil
 import com.android.adblib.tools.debugging.getOrDefault
+import com.android.adblib.tools.debugging.jdwpProcessFlow
 import com.android.adblib.tools.debugging.jdwpProxySocketServer
 import com.android.adblib.tools.debugging.packets.JdwpPacketView
 import com.android.adblib.tools.debugging.properties
@@ -34,6 +35,9 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.IOException
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 
 class JdwpProxySocketServerTest : AdbLibToolsJdwpTestBase() {
 
@@ -54,7 +58,10 @@ class JdwpProxySocketServerTest : AdbLibToolsJdwpTestBase() {
         fakeDevice.startClient(10, 0, "a.b.c", false)
 
         // Act
-        val process = connectedDevice.jdwpProcessManager.getProcess(10)
+        val process =
+            connectedDevice.jdwpProcessFlow.map { processes -> processes.find { it.pid == 10 } }
+                .filterNotNull()
+                .first()
         yieldUntil {
             process.jdwpProxySocketServer.proxyStatus.socketAddress.hasValue
         }
@@ -181,7 +188,10 @@ class JdwpProxySocketServerTest : AdbLibToolsJdwpTestBase() {
         val pid = 12
         fakeDevice.startClient(pid, 0, "a.b.c", true)
 
-        val process = connectedDevice.jdwpProcessManager.getProcess(pid)
+        val process =
+            connectedDevice.jdwpProcessFlow.map { processes -> processes.find { it.pid == pid } }
+                .filterNotNull()
+                .first()
         yieldUntil { process.properties.isWaitingForDebugger.getOrDefault(false) }
 
         // Act
@@ -218,7 +228,10 @@ class JdwpProxySocketServerTest : AdbLibToolsJdwpTestBase() {
         val pid = 12
         fakeDevice.startClient(pid, 0, "a.b.c", true)
 
-        val process = connectedDevice.jdwpProcessManager.getProcess(pid)
+        val process =
+            connectedDevice.jdwpProcessFlow.map { processes -> processes.find { it.pid == pid } }
+                .filterNotNull()
+                .first()
         yieldUntil { process.properties.isWaitingForDebugger.getOrDefault(false) }
 
         // Act

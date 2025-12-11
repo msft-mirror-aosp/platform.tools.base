@@ -16,7 +16,6 @@
 
 package com.android.build.gradle.integration.library;
 
-import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat;
 import static com.android.testutils.truth.PathSubject.assertThat;
 
 import com.android.build.gradle.integration.common.fixture.GradleBuildResult;
@@ -24,6 +23,7 @@ import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.truth.ScannerSubject;
 import com.android.build.gradle.integration.common.utils.TestFileUtils;
 
+import com.android.build.gradle.options.BooleanOption;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
@@ -36,7 +36,10 @@ import java.util.Scanner;
 public class GenerateAnnotationsClassPathTest {
     @ClassRule
     public static GradleTestProject project =
-            GradleTestProject.builder().fromTestProject("extractAnnotations").create();
+            GradleTestProject.builder()
+                    .fromTestProject("extractAnnotations")
+                    .addGradleProperty(BooleanOption.USE_NEW_DSL, false)
+                    .create();
 
     @BeforeClass
     public static void setUpProject() throws IOException {

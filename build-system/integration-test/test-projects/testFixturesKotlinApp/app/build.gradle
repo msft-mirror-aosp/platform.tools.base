@@ -16,7 +16,6 @@
 
 plugins {
     id 'com.android.application'
-    id 'kotlin-android'
 }
 
 android {
@@ -46,7 +45,6 @@ dependencies {
     compileOnly project(":lib")
 
     testFixturesApi 'com.google.truth:truth:0.44'
-    testFixturesImplementation "org.jetbrains.kotlin:kotlin-stdlib:${libs.versions.kotlinVersion.get()}"
 
     testImplementation 'junit:junit:4.12'
     testImplementation testFixtures(project(":javaLib"))

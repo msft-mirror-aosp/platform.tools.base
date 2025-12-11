@@ -18,7 +18,6 @@ package com.google.devrel.gmscore.tools.apk.arsc;
 
 import com.google.common.base.Preconditions;
 import com.google.devrel.gmscore.tools.apk.arsc.ArscBlamer.ResourceEntry;
-
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
@@ -192,7 +191,7 @@ public class ResourceEntryStatsCollector {
   /** Given an {@code index} into a {@code stringPool}, return string's total size in bytes. */
   private int computeStringSize(StringPoolChunk stringPool, int index) {
     String string = stringPool.getString(index);
-    int result = BinaryResourceString.encodeString(string, stringPool.getStringType()).length;
+    int result = ResourceString.encodeString(string, stringPool.getStringType()).length;
     result += OFFSET_SIZE;
     return result;
   }

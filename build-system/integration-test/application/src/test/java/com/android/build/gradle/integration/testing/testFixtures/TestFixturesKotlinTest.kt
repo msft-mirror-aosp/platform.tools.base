@@ -14,51 +14,31 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.integration.kotlin
+package com.android.build.gradle.integration.testing.testFixtures
 
 import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
 import com.android.build.gradle.integration.common.fixture.GradleTaskExecutor
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.fixture.GradleTestProject.Companion.VERSION_CATALOG
 import com.android.build.gradle.integration.common.utils.TestFileUtils
-import com.android.testutils.TestUtils
+import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.apk.Apk
 import com.android.testutils.truth.PathSubject.assertThat
 import com.google.common.truth.Truth
-import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
-import org.junit.runner.RunWith
-import org.junit.runners.Parameterized
 import java.io.File
 
 /**
  * Similar to [TestFixturesTest], but using a project with kotlin test fixtures
  */
-@RunWith(Parameterized::class)
-class TestFixturesKotlinTest(private val kotlinVersion: String) {
-
-    companion object {
-        @JvmStatic
-        @Parameterized.Parameters(name = "kotlinVersion_{0}")
-        fun parameters() = listOf(TestUtils.KOTLIN_VERSION_FOR_TESTS)
-    }
+class TestFixturesKotlinTest {
 
     @get:Rule
     val project: GradleTestProject =
         GradleTestProject.builder()
             .fromTestProject("testFixturesKotlinApp")
-            .disableBuiltInKotlin()
+            .addGradleProperty(BooleanOption.ENABLE_TEST_FIXTURES_KOTLIN_SUPPORT, true)
             .create()
-
-    @Before
-    fun before() {
-        TestFileUtils.searchAndReplace(
-            project.projectDir.parentFile.resolve(VERSION_CATALOG),
-            "version('kotlinVersion', '${TestUtils.KOTLIN_VERSION_FOR_TESTS}')",
-            "version('kotlinVersion', '$kotlinVersion' )"
-        )
-    }
 
     private fun setUpProject(publishJavaLib: Boolean, publishAndroidLib: Boolean) {
         if (publishJavaLib) {

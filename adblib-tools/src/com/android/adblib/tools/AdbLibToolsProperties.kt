@@ -93,6 +93,16 @@ object AdbLibToolsProperties {
     )
 
     /**
+     * Whether to use [trackApp] when tracking debuggable processes in `JdwpProcessTracker` when
+     * device SDK >= 31. This is more efficient as `track-app` is already being utilized by
+     * other Android Studio components, preventing redundant commands.
+     */
+    val JDWP_PROCESS_TRACKER_SHOULD_USE_TRACK_APP_IF_AVAILABLE = AdbSessionHost.BooleanProperty(
+        name = "$NAME_PREFIX.jdwp.process.tracker.should.use.track.app.if.available",
+        defaultValue = true
+    )
+
+    /**
      * Amount of time to wait before collecting the properties of a [JdwpProcess] after the
      * process has been discovered, when [PROCESS_PROPERTIES_COLLECTOR_DELAY_USE_SHORT] is `false`.
      *

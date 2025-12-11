@@ -289,6 +289,44 @@ class CrawlProcessingStateTest {
     }
 
     @Test
+    fun testMakeActionString_forClickTargetAction_returnsCorrectString_whenScreenElementMissing() {
+        val tempDir = createTempDirectory()
+        val displayState =
+            DisplayState.newBuilder()
+                .setDisplayStateId(1)
+                .setScreenshot(ByteString.copyFrom(byteArrayOf(1, 2, 3)))
+                .build()
+        state.addScreenshot(displayState, tempDir)
+
+        val modelDetails = ModelDetails.newBuilder().setId(1).build()
+        state.initNewTurn(1, modelDetails)
+
+        val screenState = ScreenState.newBuilder()
+            .setScreenStateId(1)
+            .build()
+        state.addScreenState(screenState)
+
+        val targetAction = TargetAction.newBuilder()
+            .setActionType(TargetActionType.CLICK)
+            .setScreenElementId("element-id")
+            .build()
+        val action = Action.newBuilder()
+            .setScreenStateId(1)
+            .setDisplayStateId(1)
+            .setDetails(
+                ActionDetails.newBuilder()
+                    .setTargetAction(targetAction)
+            )
+            .build()
+
+        state.addInteractionToCurrentTurn(action)
+        val turn = state.finalizeCurrentTurn()
+        val interaction = turn.getInteractions(0)
+
+        assertThat(interaction.command).isEqualTo("CLICK")
+    }
+
+    @Test
     fun testMakeActionString_forEnterTextTargetAction_returnsCorrectString() {
         val tempDir = createTempDirectory()
         val displayState =

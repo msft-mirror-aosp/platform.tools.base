@@ -75,6 +75,14 @@ class DeviceState internal constructor(
     // Keep track of all ABB/ABB_EXEC commands invocation
     private val mAbbLogs = Vector<String>()
 
+    // Keep track of all track-app commands invocation
+    var trackAppInvocations: Int = 0
+        private set
+
+    // Keep track of all track-jdwp commands invocation
+    var trackJdwpInvocations: Int = 0
+        private set
+
     init {
         features = initFeatures(buildVersionSdk)
         this.properties =
@@ -454,6 +462,14 @@ class DeviceState internal constructor(
 
     val abbLogs: List<String>
         get() = mAbbLogs.clone() as List<String>
+
+    fun addTrackAppInvocation() {
+        trackAppInvocations++
+    }
+
+    fun addTrackJdwpInvocation() {
+        trackJdwpInvocations++
+    }
 
     internal inline fun <R> trackCommand(
         command: String,

@@ -259,4 +259,20 @@ public class ProjectOptionsTest {
                                 ImmutableMap.of("android.simulateAgpVersionBehavior", "11.0.0")));
         assertThat(projectOptions.get(BooleanOption.TEST_SIMULATE_AGP_VERSION_BEHAVIOR)).isTrue();
     }
+
+    @Test
+    public void checkTestRunnerArgs() {
+        ProjectOptions projectOptions =
+                new ProjectOptions(
+                        new FakeProviderFactory(
+                                FakeProviderFactory.getFactory(),
+                                ImmutableMap.of(
+                                        "android.testInstrumentationRunnerArguments.size", "large",
+                                        "android.testInstrumentationRunnerArguments.custom",
+                                                "customValue")));
+        assertThat(projectOptions.getExtraInstrumentationTestRunnerArgs().get())
+                .containsExactly(
+                        "size", "large",
+                        "android.testInstrumentationRunnerArguments.custom", "customValue");
+    }
 }

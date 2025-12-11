@@ -77,10 +77,6 @@ class NativeSoPackagingTest {
         TestFileUtils.appendToFile(
             appProject.buildFile,
             """
-                android {
-                    publishNonDefault = true
-                }
-
                 dependencies {
                     api project(':library')
                     api project(':jar')
@@ -101,8 +97,7 @@ class NativeSoPackagingTest {
             testProject.buildFile,
             """
                 android {
-                    targetProjectPath ':app'
-                    targetVariant 'debug'
+                    targetProjectPath = ':app'
                 }
             """.trimIndent()
         )
@@ -769,104 +764,6 @@ class NativeSoPackagingTest {
     private fun TemporaryProjectModification.replaceBinaryFile(path: String, content: String) {
         modifyFileWithBytes(path) {
             content.toByteArray()
-        }
-    }
-}
-
-/**
- * Checks the DEBUG apk has the specific list of x86 jni libraries. The list must be exhaustive.
- *
- * @param itemList a list of items that must be present in the android archive. The list
- * can either contain [String] to just validate presence, or [StringWithContent] to validate
- * presence and content.
- */
-internal fun GeneratesApk.checkApkJniLibs(
-    vararg itemList: Any
-) {
-    checkApkJniLibsForAbi("x86", *itemList)
-}
-
-/**
- * Checks the DEBUG apk has the specific list of jni libraries, for a given abi.
- * The list must be exhaustive.
- *
- * @param abi the abi to check
- * @param itemList a list of items that must be present in the android archive. The list
- * can either contain [String] to just validate presence, or [StringWithContent] to validate
- * presence and content.
- */
-internal fun GeneratesApk.checkApkJniLibsForAbi(
-    abi: String,
-    vararg itemList: Any
-) {
-    assertApk(ApkSelector.DEBUG) {
-        checkJniContent(abi, *itemList)
-    }
-}
-
-/**
- * Checks the DEBUG test apk has the specific list of x86 jni libraries. The list must be
- * exhaustive.
- *
- * @param itemList a list of items that must be present in the android archive. The list
- * can either contain [String] to just validate presence, or [StringWithContent] to validate
- * presence and content.
- */
-internal fun GeneratesApk.checkTestApkJniLibs(
-    vararg itemList: Any
-) {
-    assertApk(ApkSelector.ANDROIDTEST_DEBUG) {
-        checkJniContent("x86", *itemList)
-    }
-}
-
-/**
- * Checks the DEBUG aar has the specific list of x86 jni libraries. The list must be exhaustive.
- *
- * @param itemList a list of items that must be present in the android archive. The list
- * can either contain [String] to just validate presence, or [StringWithContent] to validate
- * presence and content.
- */
-internal fun GeneratesAar.checkAarJniLibs(
-    vararg itemList: Any
-) {
-    this.assertAar(AarSelector.DEBUG) {
-        checkJniContent("x86", *itemList)
-    }
-}
-
-/**
- * Checks the android archive has the specific list of jni libraries, for a given abi.
- * The list must be exhaustive.
- *
- * @param this@checkAar the project
- * @param abi the abi to check
- * @param itemList a list of items that must be present in the android archive. The list
- * can either contain [String] to just validate presence, or [StringWithContent] to validate
- * presence and content.
- */
-internal fun AbstractAndroidArchiveSubject<*, *>.checkJniContent(
-    abi: String,
-    vararg itemList: Any,
-) {
-    jniLibs().abi(abi) {
-        if (itemList.isEmpty()) {
-            isEmpty()
-        } else {
-            val itemsWithContent = itemList.mapNotNull { it as? StringWithContent }
-            val itemNames = itemList.map {
-                when (it) {
-                    is StringWithContent -> it.name
-                    is String -> it
-                    else -> throw RuntimeException("Unexpected type in itemList: ${it.javaClass}")
-                }
-            }
-
-            // check the list
-            containsExactly(itemNames)
-            for (item in itemsWithContent) {
-                bytesOf(item.name).isEqualTo(item.content.toByteArray())
-            }
         }
     }
 }

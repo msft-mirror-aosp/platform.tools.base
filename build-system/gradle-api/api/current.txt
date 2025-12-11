@@ -1313,6 +1313,23 @@ package com.android.build.api.dsl {
     property public abstract com.android.build.api.dsl.NdkBuildFlags ndkBuild;
   }
 
+  public interface FusedLibraryExtension {
+    method public void aarMetadata(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.AarMetadata,kotlin.Unit> action);
+    method public com.android.build.api.dsl.AarMetadata getAarMetadata();
+    method @org.gradle.api.Incubating public java.util.Map<java.lang.String,java.lang.Object> getExperimentalProperties();
+    method public java.util.Map<java.lang.String,java.lang.String> getManifestPlaceholders();
+    method public String? getNamespace();
+    method public com.android.build.api.dsl.Packaging getPackaging();
+    method public void minSdk(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.MinSdkSpec,kotlin.Unit> action);
+    method public void packaging(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.Packaging,kotlin.Unit> action);
+    method public void setNamespace(String?);
+    property public abstract com.android.build.api.dsl.AarMetadata aarMetadata;
+    property @org.gradle.api.Incubating public abstract java.util.Map<java.lang.String,java.lang.Object> experimentalProperties;
+    property public abstract java.util.Map<java.lang.String,java.lang.String> manifestPlaceholders;
+    property public abstract String? namespace;
+    property public abstract com.android.build.api.dsl.Packaging packaging;
+  }
+
   public interface HasConfigurableValue<T> {
     method public void configure(kotlin.jvm.functions.Function1<? super T,kotlin.Unit> action);
   }

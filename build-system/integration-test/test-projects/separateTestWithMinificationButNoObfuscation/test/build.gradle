@@ -26,7 +26,7 @@ android {
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 
-    targetProjectPath ':app'
+    targetProjectPath = ':app'
 
     buildTypes {
         create("minified").initWith(buildTypes.debug)

@@ -36,8 +36,7 @@ class ComposeHelloWorldConnectedTest {
     @Rule
     val project = GradleTestProject.builder()
             .fromTestProject("composeHelloWorld")
-            .addGradleProperties(
-                    "${BooleanOption.PRIVACY_SANDBOX_SDK_SUPPORT.propertyName}=false")
+            .withComposeCompilerGradlePlugin(true)
             .create()
 
     @Before

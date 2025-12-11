@@ -15,11 +15,13 @@
  */
 package com.android.adblib.tools.debugging.impl
 
+import com.android.adblib.ConnectedDevice
 import com.android.adblib.InstructionSet
 import com.android.adblib.connectedDevicesTracker
 import com.android.adblib.serialNumber
 import com.android.adblib.testingutils.CoroutineTestUtils.runBlockingWithTimeout
 import com.android.adblib.testingutils.CoroutineTestUtils.yieldUntil
+import com.android.adblib.testingutils.FakeAdbServerProvider
 import com.android.adblib.tools.AdbLibToolsProperties
 import com.android.adblib.tools.debugging.JdwpProcessProperties
 import com.android.adblib.tools.debugging.flow
@@ -390,6 +392,17 @@ class JdwpProcessManagerTest : AdbLibToolsJdwpTestBase() {
 
         // Assert
         assertSame(proxyAddress, delegatingProxyAddress)
+    }
+
+    private suspend fun createJdwpProcess(
+        deviceApi: Int = 30,
+        pid: Int = 10,
+        waitForDebugger: Boolean = true
+    ): Triple<FakeAdbServerProvider, ConnectedDevice, AbstractJdwpProcess> {
+        val device = fakeAdb.addDevice(deviceApi)
+        val clientState = device.createFakeAdbProcess(pid, waitForDebugger)
+        val process = device.jdwpProcessManager.getProcess(clientState.pid)
+        return Triple(fakeAdb, device, process)
     }
 
     private fun assertProcessPropertiesComplete(properties: JdwpProcessProperties) {

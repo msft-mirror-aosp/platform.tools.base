@@ -19,28 +19,18 @@ package com.android.build.gradle.integration.application
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.truth.ScannerSubject
 import com.android.build.gradle.integration.common.utils.TestFileUtils
-import com.android.build.gradle.internal.utils.ANDROID_BUILT_IN_KOTLIN_PLUGIN_ID
 import com.android.build.gradle.internal.utils.COMPOSE_COMPILER_PLUGIN_ID
+import com.android.build.gradle.internal.utils.KOTLIN_ANDROID_PLUGIN_ID
+import com.android.build.gradle.options.BooleanOption
 import com.android.builder.model.SyncIssue
 import com.android.builder.model.v2.ide.AndroidGradlePluginProjectFlags
 import com.android.builder.model.v2.models.ProjectSyncIssues
 import com.android.testutils.truth.PathSubject.assertThat
 import com.google.common.truth.Truth.assertThat
-import org.junit.Assume
-import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
-import org.junit.runner.RunWith
-import org.junit.runners.Parameterized
 
-@RunWith(Parameterized::class)
-class ComposeHelloWorldTest(private val useComposeCompilerGradlePlugin: Boolean) {
-
-    companion object {
-        @JvmStatic
-        @Parameterized.Parameters(name = "useComposeCompilerGradlePlugin_{0}")
-        fun parameters() = listOf(true) //, false) todo check if we still need the false case
-    }
+class ComposeHelloWorldTest {
 
     @JvmField
     @Rule
@@ -49,49 +39,12 @@ class ComposeHelloWorldTest(private val useComposeCompilerGradlePlugin: Boolean)
             .fromTestProject("composeHelloWorld")
             // increase max heap size to avoid OOMs (b/350788568)
             .withHeap("2048m")
-            .withBuiltInKotlinSupport(useComposeCompilerGradlePlugin)
-            .disableBuiltInKotlin()
+            .withKotlinGradlePlugin(true)
+            .withComposeCompilerGradlePlugin(true)
             .create()
-
-    @Before
-    fun before() {
-        if (!useComposeCompilerGradlePlugin) {
-            TestFileUtils.searchAndReplace(
-                project.buildFile,
-                "kotlinVersion",
-                "kotlinVersionForCompose"
-            )
-            TestFileUtils.searchAndReplace(
-                project.buildFile,
-                "classpath \"org.jetbrains.kotlin:compose-compiler-gradle-plugin",
-                "// classpath \"org.jetbrains.kotlin:compose-compiler-gradle-plugin"
-            )
-            TestFileUtils.searchAndReplace(
-                project.getSubproject("app").buildFile,
-                "apply plugin: '$COMPOSE_COMPILER_PLUGIN_ID'",
-                ""
-            )
-            TestFileUtils.appendToFile(
-                project.getSubproject("app").buildFile,
-                """
-                    android {
-                        buildFeatures {
-                            compose = true
-                        }
-                        composeOptions {
-                            kotlinCompilerExtensionVersion = "${"$"}{libs.versions.composeCompilerVersion.get()}"
-                        }
-                    }
-                """.trimIndent()
-            )
-        }
-    }
 
     @Test
     fun appAndTestsBuildSuccessfully() {
-        // KGP 2.0+ requires Compose compiler Gradle plugin when Compose is used
-        Assume.assumeTrue(useComposeCompilerGradlePlugin)
-
         val tasks = listOf("clean", "assembleDebug", "assembleDebugAndroidTest")
         project.executor().run(tasks)
         // run once again to test configuration caching
@@ -100,9 +53,6 @@ class ComposeHelloWorldTest(private val useComposeCompilerGradlePlugin: Boolean)
 
     @Test
     fun testScreenshotTestAndTestFixturesCompilation() {
-        // KGP 2.0+ requires Compose compiler Gradle plugin when Compose is used
-        Assume.assumeTrue(useComposeCompilerGradlePlugin)
-
         project.executor().run(":app:compileDebugTestFixturesKotlin")
         val testFixturesClassFile =
             project.getSubproject("app")
@@ -136,7 +86,6 @@ class ComposeHelloWorldTest(private val useComposeCompilerGradlePlugin: Boolean)
 
     @Test
     fun testErrorWhenComposeCompilerPluginNotAppliedWithKotlin2() {
-        Assume.assumeTrue(useComposeCompilerGradlePlugin)
         TestFileUtils.searchAndReplace(
             project.getSubproject("app").buildFile,
             "apply plugin: '$COMPOSE_COMPILER_PLUGIN_ID'",
@@ -166,7 +115,6 @@ class ComposeHelloWorldTest(private val useComposeCompilerGradlePlugin: Boolean)
 
     @Test
     fun testSyncIssue() {
-        Assume.assumeTrue(useComposeCompilerGradlePlugin)
         TestFileUtils.appendToFile(
             project.getSubproject("app").buildFile,
             """
@@ -187,23 +135,27 @@ class ComposeHelloWorldTest(private val useComposeCompilerGradlePlugin: Boolean)
     }
 
     @Test
-    fun testWithBuiltInKotlin() {
-        Assume.assumeTrue(useComposeCompilerGradlePlugin)
+    fun testWithJetbrainsKotlin() {
         val buildFile = project.getSubproject(":app").buildFile
         TestFileUtils.searchAndReplace(
             buildFile,
-            "apply plugin: 'kotlin-android'",
-            "apply plugin: '$ANDROID_BUILT_IN_KOTLIN_PLUGIN_ID'"
+            "apply plugin: 'com.android.application'",
+            """
+                apply plugin: 'com.android.application'
+                apply plugin: '$KOTLIN_ANDROID_PLUGIN_ID'
+            """.trimIndent()
         )
-        TestFileUtils.searchAndReplace(
-            buildFile,
-            "kotlinOptions.jvmTarget = \"1.8\"",
-            ""
-        )
+        TestFileUtils.appendToFile(buildFile, "kotlin.compilerOptions.jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_1_8")
 
         val tasks = listOf("clean", "assembleDebug", "assembleDebugAndroidTest")
-        project.executor().run(tasks)
+        project.executor()
+            .with(BooleanOption.BUILT_IN_KOTLIN, false)
+            .with(BooleanOption.USE_NEW_DSL, false)
+            .run(tasks)
         // run once again to test configuration caching
-        project.executor().run(tasks)
+        project.executor()
+            .with(BooleanOption.BUILT_IN_KOTLIN, false)
+            .with(BooleanOption.USE_NEW_DSL, false)
+            .run(tasks)
     }
 }

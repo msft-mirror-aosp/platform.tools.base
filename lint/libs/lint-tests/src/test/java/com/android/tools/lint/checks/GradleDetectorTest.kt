@@ -59,6 +59,7 @@ import com.android.tools.lint.checks.GradleDetector.Companion.PLAY_SDK_INDEX_GEN
 import com.android.tools.lint.checks.GradleDetector.Companion.PLAY_SDK_INDEX_NON_COMPLIANT
 import com.android.tools.lint.checks.GradleDetector.Companion.PLAY_SDK_INDEX_VULNERABILITY
 import com.android.tools.lint.checks.GradleDetector.Companion.PLUS
+import com.android.tools.lint.checks.GradleDetector.Companion.R8_GRADUAL_API
 import com.android.tools.lint.checks.GradleDetector.Companion.REMOTE_VERSION
 import com.android.tools.lint.checks.GradleDetector.Companion.RISKY_LIBRARY
 import com.android.tools.lint.checks.GradleDetector.Companion.STRING_INTEGER
@@ -77,7 +78,11 @@ import com.android.tools.lint.checks.infrastructure.platformPath
 import com.android.tools.lint.client.api.LintClient
 import com.android.tools.lint.detector.api.Detector
 import com.android.tools.lint.detector.api.Implementation
+import com.android.tools.lint.detector.api.Project
 import com.android.tools.lint.detector.api.Scope
+import com.android.tools.lint.model.DefaultLintModelLintOptions
+import com.android.tools.lint.model.LintModelLintOptions
+import com.android.tools.lint.model.LintModelModule
 import com.android.tools.lint.useFirUast
 import com.android.utils.FileUtils
 import java.io.ByteArrayOutputStream
@@ -85,10 +90,11 @@ import java.io.File
 import java.io.IOException
 import java.net.URL
 import java.net.URLConnection
-import java.util.Calendar
+import java.util.*
 import java.util.zip.GZIPOutputStream
 import junit.framework.TestCase
 import org.junit.rules.TemporaryFolder
+import org.mockito.Mockito
 
 /**
  * NOTE: Many of these tests are duplicated in the Android Studio plugin to test the custom
@@ -3462,6 +3468,127 @@ class GradleDetectorTest : AbstractCheckTest() {
             +testRunner2 = { module = "com.android.support.test:runner", version = { strictly ="0.5" } }
             """
       )
+  }
+
+  fun testR8NewApiWithFalseFlag() {
+    lint()
+      .files(
+        propertyFile(
+          "gradle.properties",
+          """
+            # comments
+            android.r8.gradual.support=false
+            android.r8.optimizedResourceShrinking=true"""
+            .trimIndent(),
+        ),
+        gradle(
+            """
+         android {
+             buildTypes {
+                 release {
+                     optimization {
+                         enable = true
+                     }
+                 }
+             }
+         }"""
+          )
+          .indented(),
+      )
+      .issues(R8_GRADUAL_API)
+      .clientFactory { clientFactoryWithR8FalseProject.create() }
+      .run()
+      .expect(
+        """
+        build.gradle:5: Warning: Cannot use optimization.enable=true without setting android.r8.gradual.support=true flag. [R8GradualApi]
+                        enable = true
+                        ~~~~~~
+        0 errors, 1 warning
+        """
+      )
+      .expectFixDiffs(
+        """
+          Autofix for build.gradle line 5: Replace flag value with true:
+          gradle.properties:
+          @@ -2 +2 @@
+          -android.r8.gradual.support=false
+          +android.r8.gradual.support=true"""
+      )
+  }
+
+  fun testR8NewApiWithNoFlag() {
+    lint()
+      .files(
+        propertyFile(
+          "gradle.properties",
+          """
+          # comments
+          """
+            .trimIndent(),
+        ),
+        gradle(
+            """
+         android {
+             buildTypes {
+                 release {
+                     optimization {
+                         enable = true
+                     }
+                 }
+             }
+         }"""
+          )
+          .indented(),
+      )
+      .issues(R8_GRADUAL_API)
+      .clientFactory { clientFactoryWithR8FalseProject.create() }
+      .run()
+      .expect(
+        """
+        build.gradle:5: Warning: Cannot use optimization.enable=true without setting android.r8.gradual.support=true flag. [R8GradualApi]
+                        enable = true
+                        ~~~~~~
+        0 errors, 1 warning
+        """
+      )
+      .expectFixDiffs(
+        """
+          Autofix for build.gradle line 5: Add android.r8.gradual.support=true flag:
+          gradle.properties:
+          @@ -1 +1,2 @@
+          -# comments
+          +# comments
+          +android.r8.gradual.support=true
+          """
+      )
+  }
+
+  fun testR8NewApiWithFlag() {
+    lint()
+      .files(
+        gradle(
+            """
+         android {
+             buildTypes {
+                 release {
+                     optimization {
+                         enable = true
+                     }
+                 }
+             }
+         }"""
+          )
+          .indented(),
+        propertyFile(
+          "gradle.properties",
+          """
+          android.r8.gradual.support=true
+          """,
+        ),
+      )
+      .issues(R8_GRADUAL_API)
+      .run()
+      .expectClean()
   }
 
   fun testLongHandDependencies() {
@@ -8545,6 +8672,51 @@ class GradleDetectorTest : AbstractCheckTest() {
       )
   }
 
+  fun testGradleDetectorFindPropertyValue() {
+    val str =
+      """
+         # comments
+      some.property = true
+    """
+        .trimIndent()
+    assertEquals(ValueOffset(29, 34), findPropertyValue(str, "some.property"))
+
+    val str2 =
+      """
+         ! comments
+      prop = \
+        some some.property = true \
+        some
+      some.property = true
+    """
+        .trimIndent()
+    assertEquals(ValueOffset(75, 80), findPropertyValue(str2, "some.property"))
+
+    val str3 =
+      """
+         ! comments
+      prop = \
+        some some.property = true \
+        some
+      some.property = multi \
+        line
+    """
+        .trimIndent()
+    assertEquals(ValueOffset(75, 90), findPropertyValue(str3, "some.property"))
+
+    // where multiline property has #symbol
+    val str4 =
+      """
+         ! comments
+      prop = \
+        #some some.property = true
+      some.property = multi \
+        line
+    """
+        .trimIndent()
+    assertEquals(ValueOffset(67, 82), findPropertyValue(str4, "some.property"))
+  }
+
   fun testCachedFilter() {
     // Regression test for b/282127516
     lint()
@@ -10518,3 +10690,22 @@ class GradleDetectorTest : AbstractCheckTest() {
     }
   }
 }
+
+val clientFactoryWithR8FalseProject: TestLintTask.ClientFactory =
+  object : TestLintTask.ClientFactory {
+    override fun create(): com.android.tools.lint.checks.infrastructure.TestLintClient {
+      return object : com.android.tools.lint.checks.infrastructure.TestLintClient() {
+        override fun createProject(dir: File, referenceDir: File): Project {
+          return object : Project(this, dir, referenceDir) {
+            override fun getBuildModule(): LintModelModule {
+              val model = Mockito.mock(LintModelModule::class.java)
+              Mockito.`when`<Boolean?>(model.highlightGradualR8Api).thenReturn(true)
+              Mockito.`when`<LintModelLintOptions>(model.lintOptions)
+                .thenReturn(DefaultLintModelLintOptions())
+              return model
+            }
+          }
+        }
+      }
+    }
+  }

@@ -61,7 +61,7 @@ class KotlinSourcesModelTest {
     }
 
     @Test
-    fun kotlinSourcesLocationHasNoEffectWhenBuiltInKotlinEnabled() {
+    fun kotlinSourcesLocationNotAllowedAndHasNoEffectWhenBuiltInKotlinEnabled() {
         project.buildFile.appendText("""
             buildscript {
                 dependencies {
@@ -80,13 +80,17 @@ class KotlinSourcesModelTest {
             }
         """.trimIndent())
 
-        val basicProject =
-            project.modelV2().fetchModels().container.singleProjectInfo.basicAndroidProject
-        assertThat(basicProject?.mainSourceSet?.sourceProvider?.kotlinDirectories)
-                .containsExactly(
-                        project.file("src/main/java"),
-                        project.file("src/main/kotlin"),
-                )
+        // There should be a sync issue (b/386221070)
+        val projectInfo = project.modelV2().ignoreSyncIssues().fetchModels().container.singleProjectInfo
+        assertThat(projectInfo.issues!!.syncIssues.single().message).contains(
+            "Using kotlin.sourceSets DSL to add Kotlin sources is not allowed with built-in Kotlin."
+        )
+
+        assertThat(projectInfo.basicAndroidProject?.mainSourceSet?.sourceProvider?.kotlinDirectories)
+            .containsExactly(
+                project.file("src/main/java"),
+                project.file("src/main/kotlin"),
+            )
     }
 
     @Test

@@ -17,6 +17,7 @@
 package com.google.devrel.gmscore.tools.apk.arsc;
 
 import com.android.annotations.Nullable;
+
 import java.io.DataOutput;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -66,8 +67,8 @@ public class XmlResourceMapChunk extends Chunk {
   }
 
   /** Returns the resource ID that this {@code attributeId} maps to. */
-  public BinaryResourceIdentifier getResourceId(int attributeId) {
-    return BinaryResourceIdentifier.create(resources.get(attributeId));
+  public ResourceIdentifier getResourceId(int attributeId) {
+    return ResourceIdentifier.create(resources.get(attributeId));
   }
 
   @Override

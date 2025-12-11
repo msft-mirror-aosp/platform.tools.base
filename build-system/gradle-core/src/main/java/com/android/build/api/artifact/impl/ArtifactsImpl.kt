@@ -91,7 +91,8 @@ class ArtifactsImpl(
                 identifier,
                 project.layout,
                 project::files,
-                lookupProjectScopedArtifactsContainer
+                lookupProjectScopedArtifactsContainer,
+                this
             )
         }
 
@@ -102,6 +103,7 @@ class ArtifactsImpl(
                 project.layout,
                 project::files,
                 lookupProjectScopedArtifactsContainer,
+                this,
             )
         }
     }

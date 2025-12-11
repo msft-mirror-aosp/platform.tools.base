@@ -18,6 +18,7 @@ package com.android.build.gradle.integration.cacheability
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.EmptyActivityProjectBuilder
+import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.testutils.FileSnapshot
 import com.google.common.truth.Expect
 import org.junit.Before
@@ -58,7 +59,7 @@ class DeterministicTaskOutputsTest {
             // MapSourceSetPathsTask is dependent on the absolute project path, as this test uses
             // two different project file paths for comparisons it causes the file-map.txt
             // contents to differ.
-            "app/build/intermediates/source_set_path_map/debug/mapDebugSourceSetPaths/file-map.txt",
+            "app/build/intermediates/${InternalArtifactType.ANDROID_RES_SOURCE_SET_PATH_MAP.getFolderName()}/debug/mapDebugSourceSetPaths/file-map.txt",
             "app/build/outputs/apk/debug/app-debug.apk",
             "app/build/outputs/logs/manifest-merger-debug-report.txt",
             // Coverage data contains timestamps.

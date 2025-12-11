@@ -689,7 +689,43 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
     } else if (parent == "toolchain" && property == "languageVersion") {
       mDeclaredSourceCompatibility = true
       mDeclaredTargetCompatibility = true
+    } else if (parent == "optimization" && property == "enable" && value == "true") {
+      val flag = context.project.getBuildModule()?.highlightGradualR8Api
+      if (flag == true) {
+        val message =
+          "Cannot use optimization.enable=true without setting android.r8.gradual.support=true flag."
+        val fix = createR8FlagFix(context.project)
+        report(context, propertyCookie, R8_GRADUAL_API, message, fix)
+      }
     }
+  }
+
+  fun createR8FlagFix(project: Project): LintFix? {
+    val propertyName = "android.r8.gradual.support"
+    val gradleProperties = File(project.dir, "gradle.properties")
+    val contents = gradleProperties.readText()
+
+    val valueOffset = findPropertyValue(contents, propertyName)
+
+    if (valueOffset != null) {
+      return LintFix.create()
+        .name("Replace flag value with true", true)
+        .replace()
+        .range(Location.create(gradleProperties, contents, valueOffset.start, valueOffset.end))
+        .with("true")
+        .autoFix()
+        .build()
+    }
+
+    // no flag declared - just insert it
+    return LintFix.create()
+      .name("Add ${propertyName}=true flag", true)
+      .replace()
+      .range(Location.create(gradleProperties, contents, contents.length, contents.length))
+      .beginning()
+      .with("\n${propertyName}=true")
+      .autoFix()
+      .build()
   }
 
   private fun isTomlVersionKey(value: String): Boolean {
@@ -3721,6 +3757,24 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
         androidSpecific = true,
       )
 
+    @JvmField
+    val R8_GRADUAL_API =
+      Issue.create(
+        id = "R8GradualApi",
+        briefDescription = "R8 Gradual API can be used only with experimental flag",
+        explanation =
+          """
+                R8 Gradual API can be used only when experimental flag \
+                android.r8.gradual.support is set to true
+            """,
+        category = Category.CORRECTNESS,
+        priority = 4,
+        severity = Severity.WARNING,
+        implementation = IMPLEMENTATION,
+        moreInfo = "https://developer.android.com/ndk/guides/abis",
+        androidSpecific = true,
+      )
+
     /** Gradle plugin IDs based on the Java plugin. */
     val JAVA_PLUGIN_IDS =
       listOf("java", "java-library", "application").flatMap { listOf(it, "org.gradle.$it") }
@@ -4854,4 +4908,44 @@ private fun Version?.isAgpNewerThan(dependency: Dependency): Boolean {
     lowerBoundAgpVersion != null && lowerBoundAgpVersion > thisAgpVersion -> false
     else -> !richVersion.contains(this)
   }
+}
+
+private fun String.isLineAComment(): Boolean {
+  val trimmedLine = trim()
+  return (trimmedLine.startsWith("#") || trimmedLine.startsWith("!"))
+}
+
+data class ValueOffset(val start: Int, val end: Int)
+
+fun findPropertyValue(contents: String, propertyName: String): ValueOffset? {
+  val iterator = Splitter.on('\n').split(contents).iterator()
+  val propertyRegexp = ("^\\s*" + propertyName.replace(".", "\\.") + "\\s*=").toRegex()
+  var offset = 0
+  var startOffset = 0
+  var parsingProperty = false
+  while (iterator.hasNext()) {
+    val line = iterator.next()
+    val lineStart = offset
+    offset += line.length + 1
+    // no current multiline property in progress
+    if (!parsingProperty) {
+      if (line.isLineAComment()) continue
+
+      if (line.contains("=")) {
+        parsingProperty = true
+        // its property we are searching for
+        if (line.contains(propertyRegexp)) {
+          startOffset = lineStart + line.indexOf("=") + 1
+        }
+      }
+    }
+    // end of property?
+    if (!line.endsWith('\\')) {
+      parsingProperty = false
+      if (startOffset != 0) {
+        return ValueOffset(startOffset, offset - 1)
+      }
+    }
+  }
+  return null
 }

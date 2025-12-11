@@ -318,6 +318,14 @@ private fun ModelSnapshotter<ProductFlavor>.snapshotProductFlavor() {
         item("useSupportLibrary", VectorDrawablesOptions::useSupportLibrary)
     }
     valueList("matchingFallbacks", ProductFlavor::matchingFallbacks)
+    println("The missing dimensions here are: ${ProductFlavor::missingDimensionStrategy}")
+    valueList(
+        name = "missingDimensionStrategy",
+        propertyAction = { missingDimensionStrategy.entries },
+        formatAction = { "$key -> $value" }
+    ) { collection ->
+        collection?.sortedBy { it.key }
+    }
 }
 
 private fun ModelSnapshotter<BuildType>.snapshotBuildType() {

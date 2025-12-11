@@ -23,15 +23,16 @@ import com.android.build.gradle.internal.component.features.AndroidResourcesCrea
 import com.android.build.gradle.internal.core.dsl.ComponentDslInfo
 import com.android.build.gradle.internal.core.dsl.features.AndroidResourcesDslInfo
 import com.android.build.gradle.internal.dsl.AaptOptions
-import com.android.build.gradle.internal.publishing.AndroidArtifacts
-import com.android.build.gradle.internal.scope.InternalArtifactType
+import com.android.build.gradle.internal.publishing.AndroidArtifacts.ConsumedConfigType
 import com.android.build.gradle.internal.scope.InternalArtifactType.COMPILE_AND_RUNTIME_R_CLASS_JAR
+import com.android.build.gradle.internal.scope.InternalArtifactType.COMPILE_R_CLASS_JAR
 import com.android.build.gradle.internal.services.VariantServices
 import com.android.build.gradle.options.BooleanOption
 import com.android.builder.core.ComponentTypeImpl
 import com.android.builder.errors.IssueReporter
 import com.android.builder.model.VectorDrawablesOptions
 import com.google.common.base.Preconditions
+import org.gradle.api.GradleException
 import org.gradle.api.file.FileCollection
 import org.gradle.api.file.RegularFile
 import org.gradle.api.provider.Property
@@ -110,7 +111,7 @@ open class AndroidResourcesCreationConfigImpl(
                 ComponentTypeImpl.UNIT_TEST, ComponentTypeImpl.SCREENSHOT_TEST -> getRJarForHostTests()
                 else -> {
                     if (componentType.isAar || useCompileRClassInApp) {
-                        component.artifacts.get(InternalArtifactType.COMPILE_R_CLASS_JAR)
+                        component.artifacts.get(COMPILE_R_CLASS_JAR)
                     } else {
                         Preconditions.checkState(
                             componentType.isApk,
@@ -124,14 +125,18 @@ open class AndroidResourcesCreationConfigImpl(
 
 
     override fun getCompiledRClasses(
-        configType: AndroidArtifacts.ConsumedConfigType
+        configType: ConsumedConfigType
     ): FileCollection {
-        return internalServices.fileCollection(compiledRClassArtifact)
+        return internalServices.fileCollection(when (configType) {
+            ConsumedConfigType.COMPILE_CLASSPATH -> compiledRClassArtifact
+            ConsumedConfigType.RUNTIME_CLASSPATH -> component.artifacts.get(COMPILE_AND_RUNTIME_R_CLASS_JAR)
+            else -> throw GradleException("Unsupported ConsumedConfigType value: $configType")
+        })
     }
 
     private fun getRJarForTestApks(useCompileRClassInApp: Boolean): Provider<RegularFile> {
         return if (useCompileRClassInApp) {
-            component.artifacts.get(InternalArtifactType.COMPILE_R_CLASS_JAR)
+            component.artifacts.get(COMPILE_R_CLASS_JAR)
         } else {
             component.artifacts.get(
                 COMPILE_AND_RUNTIME_R_CLASS_JAR

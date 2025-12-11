@@ -19,9 +19,11 @@ package com.android.build.api.dsl
 import org.gradle.api.Incubating
 
 /**
- * Extension properties for Fused libraries.
+ * Public extension properties for Fused Library.
+ * 
+ * [Android Developers page for Fused Library](https://developer.android.com/build/publish-library/fused-library)
  *
- * @suppress Do not use from production code. Only exposed for prototype.
+ * [API reference](https://developer.android.com/reference/tools/gradle-api/com/android/build/api/dsl/FusedLibraryExtension)
  **/
 interface FusedLibraryExtension {
 
@@ -52,7 +54,6 @@ interface FusedLibraryExtension {
     /** Options for configuring AAR metadata. */
     fun aarMetadata(action: AarMetadata.() -> Unit)
 
-    @get:Incubating
     /**
      * Specifies options and rules that determine which files the Android plugin packages into your
      * fused AAR.
@@ -61,7 +62,6 @@ interface FusedLibraryExtension {
      */
     val packaging:  Packaging
 
-    @Incubating
     /**
      * Specifies options and rules that determine which files the Android plugin packages into your
      * fused AAR.

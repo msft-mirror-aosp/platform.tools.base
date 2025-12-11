@@ -16,16 +16,17 @@
 
 package com.google.devrel.gmscore.tools.apk.arsc;
 
-import static com.google.common.truth.Truth.assertThat;
-
-import java.util.Arrays;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
+import java.util.Arrays;
+
+import static com.google.common.truth.Truth.assertThat;
+
 @RunWith(Parameterized.class)
-public class BinaryResourceIdentifierTest {
+public class ResourceIdentifierTest {
 
   @Parameters
   public static Iterable<Object[]> data() {
@@ -35,16 +36,16 @@ public class BinaryResourceIdentifierTest {
     });
   }
 
-  private final BinaryResourceIdentifier resourceIdentifier;
-  private final BinaryResourceIdentifier resourceIdPkgTypeEntry;
+  private final ResourceIdentifier resourceIdentifier;
+  private final ResourceIdentifier resourceIdPkgTypeEntry;
   private final int packageId;
   private final int typeId;
   private final int entryId;
   private final int resourceId;
 
-  public BinaryResourceIdentifierTest(int resourceId, int packageId, int typeId, int entryId) {
-    resourceIdentifier = BinaryResourceIdentifier.create(resourceId);
-    resourceIdPkgTypeEntry = BinaryResourceIdentifier.create(packageId, typeId, entryId);
+  public ResourceIdentifierTest(int resourceId, int packageId, int typeId, int entryId) {
+    resourceIdentifier = ResourceIdentifier.create(resourceId);
+    resourceIdPkgTypeEntry = ResourceIdentifier.create(packageId, typeId, entryId);
     this.packageId = packageId;
     this.typeId = typeId;
     this.entryId = entryId;

@@ -43,6 +43,7 @@ class TrackAppCommandHandler : DeviceCommandHandler("track-app") {
         device: DeviceState,
         args: String
     ) {
+        device.addTrackAppInvocation()
         val stream = socket.getOutputStream()
         if (!device.features.contains("track_app")) {
             writeFailResponse(stream, "track-app is not supported by this device")

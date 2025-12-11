@@ -51,7 +51,6 @@ public class LintKotlinTest {
             GradleTestProject.builder()
                     .fromTestProject("lintKotlin")
                     .addGradleProperties(BooleanOption.USE_ANDROID_X.getPropertyName() + "=true")
-                    .disableBuiltInKotlin()
                     .create();
 
     @Test

@@ -207,7 +207,7 @@ InternalArtifactType<T : FileSystemLocation>(
 
     // File containing map between a source set identifier and an absolute resource sourceset path
     // for generating absolute paths in resource linking error messages.
-    object SOURCE_SET_PATH_MAP: InternalArtifactType<RegularFile>(FILE), Replaceable
+    object ANDROID_RES_SOURCE_SET_PATH_MAP: InternalArtifactType<RegularFile>(FILE), Replaceable
     // File to map the ordering of deviceSpec paths to the directory ordinal
     object DEVICE_SPEC_PATH_MAP: InternalArtifactType<RegularFile>(FILE), Replaceable
     // The R class jar for compile classpath use.
@@ -263,6 +263,7 @@ InternalArtifactType<T : FileSystemLocation>(
 
     // final output of the locale config generator.
     object GENERATED_LOCALE_CONFIG: InternalArtifactType<Directory>(DIRECTORY), Replaceable
+    object GENERATED_LOCALE_CONFIG_INCREMENTAL_DIR: InternalArtifactType<Directory>(DIRECTORY), Replaceable
 
     // intermediate output of the locale config generator.
     object SUPPORTED_LOCALE_LIST: InternalArtifactType<RegularFile>(FILE), Replaceable
@@ -642,17 +643,6 @@ InternalArtifactType<T : FileSystemLocation>(
     object MERGED_STARTUP_PROFILE: InternalArtifactType<RegularFile>(
         FILE,
         fileName = BaselineProfiles.StartupProfileFileName
-    )
-
-    object PACKAGES_FOR_R8: InternalArtifactType<RegularFile>(
-        FILE,
-        fileName = SdkConstants.FN_PACKAGE_LIST
-    )
-
-    // Merged file for the lists of packages collected for gradual R8 shrinking
-    object MERGED_PACKAGES_FOR_R8: InternalArtifactType<RegularFile>(
-        FILE,
-        fileName = SdkConstants.FN_PACKAGE_LIST
     )
 
     override fun getFileSystemLocationName(): String {

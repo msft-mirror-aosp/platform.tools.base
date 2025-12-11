@@ -61,6 +61,7 @@ message Command {
     START_LOGCAT_TRACKING = 801;
     STOP_LOGCAT_TRACKING = 802;
     CHECK_LEAKCANARY_PRESENT = 803;
+    SIGNAL_HEAP_DUMP_COMPLETE = 804;
 
     // Sample echo Command
     ECHO = 1000;
@@ -113,6 +114,9 @@ message Command {
     StartAllocTracking start_alloc_tracking = 404;
     StopAllocTracking stop_alloc_tracking = 405;
 
+    // LeakCanary Prefix = 800
+    SignalHeapDumpCompleteData signal_heap_dump_complete = 804;
+
     // Energy Profiler Prefix = 500
     // Deprecated. Do not use.
 
@@ -163,4 +167,9 @@ message AttachAgent {
 
 message GetCpuCoreConfig {
   int64 device_id = 1;
+}
+
+message SignalHeapDumpCompleteData {
+    // The timestamp (in nanoseconds) when studio receives the heap dump completion event.
+    int64 heap_dump_timestamp = 1;
 }

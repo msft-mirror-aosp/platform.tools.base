@@ -26,12 +26,6 @@ public class SeparateTestWithoutMinificationWithDependenciesTest {
 
     @Before
     public void setup() throws IOException, InterruptedException {
-        TestFileUtils.appendToFile(
-                project.getSubproject("test").getBuildFile(),
-                "\n"
-                        + "        android {\n"
-                        + "            targetVariant 'debug'\n"
-                        + "        }\n");
         project.executor()
                 .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
                 .run("clean");
@@ -41,7 +35,7 @@ public class SeparateTestWithoutMinificationWithDependenciesTest {
     }
 
     @Test
-    public void checkApkContent() throws IOException, ProcessException {
+    public void checkApkContent() {
         Apk apk = project.getSubproject("app").getApk(GradleTestProject.ApkType.DEBUG);
         TruthHelper.assertThatApk(apk)
                 .containsClass("Lcom/android/tests/jarDep/JarDependencyUtil;");

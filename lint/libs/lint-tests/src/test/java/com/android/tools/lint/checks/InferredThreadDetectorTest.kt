@@ -1340,6 +1340,71 @@ class InferredThreadDetectorTest : AbstractCheckTest() {
     // This program never converged before the fix.
   }
 
+  // Test reduced from .../dfu/FirmwareUpdateStateMachine
+  fun testNestedLambda3() {
+    lint()
+      .files(
+        java(
+            """
+            import java.util.function.Function;
+
+            public class Test {
+              private void trigger(Event event) {
+                execute(event.tag());
+              }
+
+              private void execute(Tag tag) {
+                tag.sig()
+                  .flatMap(ignore -> recursiveExecuteFirmware(tag))
+                  .tapError(() -> trigger(new Event.Impl()));
+              }
+
+              private Sig<Void> recursiveExecuteFirmware(Tag tag) {
+                return tag.sig()
+                  .flatMap(ignore -> Sig.from())
+                  .flatMap(ignore -> recursiveExecuteFirmware(tag));
+              }
+
+              interface Event {
+                Tag tag();
+
+                class Impl implements Event {
+                  @Override public Tag tag() {
+                    throw new IllegalStateException();
+                  }
+                }
+              }
+
+              interface Tag {
+                Sig<Integer> sig();
+              }
+
+              static class Sig<T> {
+                <U> Sig<U> flatMap(Function<T, Sig<U>> f) {
+                  return new FMapped<>();
+                }
+
+                void tapError(Runnable consumer) { }
+
+                static Sig<Boolean> from() {
+                  throw new IllegalStateException();
+                }
+
+                static class FMapped<U, T> extends Sig<U> {
+                  FMapped() { }
+                }
+              }
+            }
+          """
+              .trimIndent()
+          )
+          .indented()
+      )
+      .run()
+      .expectClean()
+    // This program never converged before the fix
+  }
+
   fun testInterpreter_bigStep() {
     lint()
       .files(

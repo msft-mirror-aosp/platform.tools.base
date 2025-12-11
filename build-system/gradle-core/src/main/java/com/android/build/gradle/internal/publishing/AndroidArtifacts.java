@@ -58,7 +58,6 @@ public class AndroidArtifacts {
     private static final String TYPE_JACOCO_ASM_INSTRUMENTED_JARS = "jacoco-asm-instrumented-jars";
 
     private static final String TYPE_CLASSES = "android-classes";
-    private static final String TYPE_PACKAGES_FOR_R8 = "android-packages-for-r8";
 
     // type for enumerated classes
     private static final String TYPE_ENUMERATED_RUNTIME_CLASSES = "enumerated-runtime-classes";
@@ -654,8 +653,6 @@ public class AndroidArtifacts {
 
         // native libs to be packaged with test components instead of main components.
         MERGED_TEST_ONLY_NATIVE_LIBS(TYPE_MERGED_TEST_ONLY_NATIVE_LIBS),
-
-        PACKAGES_FOR_R8(TYPE_PACKAGES_FOR_R8),
 
         NAVIGATION_XML(TYPE_NAVIGATION_XML),
         ;

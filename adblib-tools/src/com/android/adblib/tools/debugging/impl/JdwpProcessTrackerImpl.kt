@@ -21,9 +21,12 @@ import com.android.adblib.scope
 import com.android.adblib.tools.debugging.StateFlowStatus
 import com.android.adblib.tools.debugging.JdwpProcessList
 import com.android.adblib.tools.debugging.JdwpProcessTracker
+import com.android.adblib.tools.debugging.isTrackAppSupported
+import com.android.adblib.tools.debugging.trackApp
 import com.android.adblib.tools.debugging.trackJdwp
 import com.android.adblib.utils.createChildScope
 import com.android.adblib.utils.toImmutableList
+import com.android.adblib.waitUntilOnline
 import com.android.adblib.withPrefix
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -31,7 +34,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 internal class JdwpProcessTrackerImpl(
-    override val device: ConnectedDevice
+    override val device: ConnectedDevice,
+    private val useTrackAppIfAvailable: Boolean
 ) : JdwpProcessTracker {
 
     private val logger = adbLogger(device.session)
@@ -56,13 +60,36 @@ internal class JdwpProcessTrackerImpl(
         }
 
     private suspend fun trackProcesses() {
-        device.trackJdwp.stateFlow.collect { jdwpProcessIdList ->
-            val processIds = jdwpProcessIdList.toSet()
-            val processMap = device.jdwpProcessManager.addProcesses(processIds)
-            processMap.values.toImmutableList().also { processList ->
-                logger.verbose { "Emitting new list of JDWP processes: $processList" }
-                processesMutableFlow.emit(JdwpProcessList(processList, jdwpProcessIdList.flowStatus))
+        val useTrackApp = if (useTrackAppIfAvailable) {
+            device.waitUntilOnline()
+            device.isTrackAppSupported()
+        } else {
+            false
+        }
+
+        if (useTrackApp) {
+            device.trackApp.stateFlow.collect { appProcessEntries ->
+                val processIds = appProcessEntries.filter { it.debuggable }.map { it.pid }.toSet()
+                emitJdwpProcessList(processIds, appProcessEntries.flowStatus)
             }
+        } else {
+            device.trackJdwp.stateFlow.collect { jdwpProcessIdList ->
+                val processIds = jdwpProcessIdList.toSet()
+                emitJdwpProcessList(processIds, jdwpProcessIdList.flowStatus)
+            }
+        }
+    }
+
+    private suspend fun emitJdwpProcessList(processIds: Set<Int>, flowStatus: StateFlowStatus) {
+        val processMap = device.jdwpProcessManager.addProcesses(processIds)
+        processMap.values.toImmutableList().also { processList ->
+            logger.verbose { "Emitting new list of JDWP processes: $processList" }
+            processesMutableFlow.emit(
+                JdwpProcessList(
+                    processList,
+                    flowStatus
+                )
+            )
         }
     }
 }

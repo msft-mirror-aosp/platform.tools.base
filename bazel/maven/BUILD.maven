@@ -52775,6 +52775,30 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "com.android.tools.journeys.journeys-junit-engine_0.2.0",
+    pom = "repository/com/android/tools/journeys/journeys-junit-engine/0.2.0/journeys-junit-engine-0.2.0.pom",
+    repo_root_path = "repository",
+    repo_path = "com/android/tools/journeys/journeys-junit-engine/0.2.0",
+    deps = [
+        "com.github.rholder.guava-retrying_2.0.0",
+        "com.google.auth.google-auth-library-oauth2-http_1.30.0",
+        "com.google.flogger.flogger_0.8",
+        "com.google.flogger.flogger-system-backend_0.8",
+        "com.google.oauth-client.google-oauth-client_1.36.0",
+        "com.google.protobuf.protobuf-java_3.25.5",
+        "com.google.protobuf.protobuf-java-util_3.25.5",
+        "io.grpc.grpc-auth_1.69.1",
+        "io.grpc.grpc-core_1.69.1",
+        "io.grpc.grpc-netty_1.69.1",
+        "io.grpc.grpc-protobuf_1.69.1",
+        "io.grpc.grpc-stub_1.69.1",
+        "org.jetbrains.kotlin.kotlin-stdlib-jdk8_2.2.10",
+        "org.junit.platform.junit-platform-engine_1.12.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "com.android.tools.layoutlib.layoutlib-api_26.0.0",
     pom = "repository/com/android/tools/layoutlib/layoutlib-api/26.0.0/layoutlib-api-26.0.0.pom",
     repo_root_path = "repository",
@@ -75328,6 +75352,30 @@ maven_artifact(
     pom = "repository/org/apache/lucene/lucene-facet/9.12.0/lucene-facet-9.12.0.pom",
     repo_root_path = "repository",
     repo_path = "org/apache/lucene/lucene-facet/9.12.0",
+    deps = [
+        "org.apache.lucene.lucene-core_9.12.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.apache.lucene.lucene-highlighter_9.12.0",
+    pom = "repository/org/apache/lucene/lucene-highlighter/9.12.0/lucene-highlighter-9.12.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/apache/lucene/lucene-highlighter/9.12.0",
+    deps = [
+        "org.apache.lucene.lucene-core_9.12.0",
+        "org.apache.lucene.lucene-queries_9.12.0",
+        "org.apache.lucene.lucene-memory_9.12.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.apache.lucene.lucene-memory_9.12.0",
+    pom = "repository/org/apache/lucene/lucene-memory/9.12.0/lucene-memory-9.12.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/apache/lucene/lucene-memory/9.12.0",
     deps = [
         "org.apache.lucene.lucene-core_9.12.0",
     ],

@@ -387,7 +387,6 @@ com.android.build.gradle.integration.instrumentation.AsmTransformTestCoverageInt
 com.android.build.gradle.integration.kotlin.BuiltInKaptForScreenshotTestTest
 com.android.build.gradle.integration.kotlin.BuiltInKaptForTestFixturesTest
 com.android.build.gradle.integration.kotlin.BuiltInKaptTest
-com.android.build.gradle.integration.kotlin.TestFixturesKotlinTest
 com.android.build.gradle.integration.library.AidlTest
 com.android.build.gradle.integration.library.ApiTest
 com.android.build.gradle.integration.library.ApplibtestTest
@@ -403,7 +402,6 @@ com.android.build.gradle.integration.library.LibMinifyJarDepTest
 com.android.build.gradle.integration.library.LibMinifyLibDepTest
 com.android.build.gradle.integration.library.LibMinifyTest
 com.android.build.gradle.integration.library.LibProguardConsumerFilesTest
-com.android.build.gradle.integration.library.LibraryBuildConfigTest
 com.android.build.gradle.integration.library.LibraryIntermediateArtifactPublishingTest
 com.android.build.gradle.integration.library.LibsTestTest
 com.android.build.gradle.integration.library.LibTestDepTest
@@ -617,6 +615,7 @@ com.android.build.gradle.integration.testing.SeparateTestWithAarDependencyTest
 com.android.build.gradle.integration.testing.SeparateTestWithDependenciesTest
 com.android.build.gradle.integration.testing.SeparateTestWithMinificationButNoObfuscationTest
 com.android.build.gradle.integration.testing.SeparateTestWithoutMinificationWithDependenciesTest
+com.android.build.gradle.integration.testing.testFixtures.TestFixturesKotlinTest
 com.android.build.gradle.integration.testing.testFixtures.TestFixturesTest
 com.android.build.gradle.integration.testing.TestingSupportLibraryTest
 com.android.build.gradle.integration.testing.TestOptionsExecutionTest

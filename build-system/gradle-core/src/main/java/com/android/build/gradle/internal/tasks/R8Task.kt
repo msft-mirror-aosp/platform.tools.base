@@ -253,11 +253,6 @@ abstract class R8Task @Inject constructor(
     @get:Input
     abstract val r8ThreadPoolSize: Property<Int>
 
-    @get:Optional
-    @get:PathSensitive(PathSensitivity.NAME_ONLY)
-    @get:InputFiles
-    abstract val packageList: RegularFileProperty
-
     @get:Input
     abstract val failOnMissingProguardFiles: Property<Boolean>
 
@@ -490,21 +485,13 @@ abstract class R8Task @Inject constructor(
             )
 
             task.partialShrinkingEnabled.setDisallowChanges(
-                creationConfig.optimizationCreationConfig.applicationOptimizationEnabled ||
-                        isGradualShrinkingPackagesEnabled()
+                creationConfig.optimizationCreationConfig.applicationOptimizationEnabled
             )
 
             if (creationConfig.optimizationCreationConfig.applicationOptimizationEnabled) {
                 task.gradualShrinkingPackages.set(creationConfig.optimizationCreationConfig.includePackages)
             }
-            task.packageList.setDisallowChanges(
-                creationConfig.artifacts.get(InternalArtifactType.MERGED_PACKAGES_FOR_R8)
-            )
         }
-
-        private fun isGradualShrinkingPackagesEnabled(): Boolean =
-            creationConfig.optimizationCreationConfig.minifiedEnabled
-                    && creationConfig.services.projectOptions[BooleanOption.GRADUAL_R8_SHRINKING]
 
         override fun keep(keep: String) {
             proguardConfigurations.add("-keep $keep")
@@ -691,16 +678,9 @@ abstract class R8Task @Inject constructor(
         if(partialShrinkingEnabled.orNull != true) return null
 
         // load from files and from new gradual r8 dsl
-        val fileIncludes = loadR8AllowedPackages()
         val packages = (gradualShrinkingPackages.orNull ?: listOf()).toList()
-        val updatedPackages = packages + fileIncludes
-        if (updatedPackages.contains("**")) return PartialShrinkingIncludeAll
-        return PartialShrinkingConfig(updatedPackages)
-    }
-
-    private fun loadR8AllowedPackages(): List<String> {
-        val packageFile = packageList.orNull
-        return packageFile?.asFile?.readLines() ?: listOf()
+        if (packages.contains("**")) return PartialShrinkingIncludeAll
+        return PartialShrinkingConfig(packages)
     }
 
     companion object {

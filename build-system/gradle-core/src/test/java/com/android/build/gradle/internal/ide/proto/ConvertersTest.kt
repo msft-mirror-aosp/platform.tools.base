@@ -68,12 +68,18 @@ class ConvertersTest {
 
     @Test
     fun convertBooleanFlag() {
+        val unrecognized = setOf(AndroidGradlePluginProjectFlags.BooleanFlag.R8_GRADUAL_API)
         AndroidGradlePluginProjectFlags.BooleanFlag.values().forEach {
             val protoValue = it.convert()
-
-            Truth.assertWithMessage(
-                enumMissingErrorMessage("AndroidGradlePluginProjectFlags.BooleanFlag")
-            ).that(it.name).isEqualTo(protoValue.name)
+            if (unrecognized.contains(it)) {
+                Truth.assertWithMessage(
+                    enumMissingErrorMessage("AndroidGradlePluginProjectFlags.BooleanFlag")
+                ).that(protoValue).isNull()
+            } else {
+                Truth.assertWithMessage(
+                    enumMissingErrorMessage("AndroidGradlePluginProjectFlags.BooleanFlag")
+                ).that(it.name).isEqualTo(protoValue!!.name)
+            }
         }
     }
 

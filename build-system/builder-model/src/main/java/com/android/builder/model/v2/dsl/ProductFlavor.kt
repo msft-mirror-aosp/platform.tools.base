@@ -72,6 +72,11 @@ interface ProductFlavor : BaseConfig, AndroidModel {
      */
     val matchingFallbacks: List<String>
 
+    /**
+     * Specifies a flavor that the plugin should try to use from a given dimension in a dependency.
+     */
+    val missingDimensionStrategy: Map<String, List<String>>
+
     /** The maxSdkVersion, or null if not specified. This is only the value set on this produce flavor. */
     val maxSdkVersion: Int?
 

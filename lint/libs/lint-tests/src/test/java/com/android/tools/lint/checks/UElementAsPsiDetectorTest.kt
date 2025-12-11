@@ -17,6 +17,7 @@ package com.android.tools.lint.checks
 
 import com.android.tools.lint.checks.infrastructure.TestFiles.getLintClassPath
 import com.android.tools.lint.detector.api.Detector
+import com.android.tools.lint.useFirUast
 
 class UElementAsPsiDetectorTest : AbstractCheckTest() {
   override fun getDetector(): Detector? {
@@ -652,6 +653,55 @@ src/pkg/k/test.kt:10: Warning: Do not use UElement as PsiElement [UElementAsPsi]
           )
           .indented(),
         *getLintClassPath(),
+      )
+      .run()
+      .expectClean()
+  }
+
+  fun testContractLambda() {
+    // b/463436546
+    // TODO: after https://youtrack.jetbrains.com/issue/KT-82846
+    if (useFirUast()) {
+      return
+    }
+    lint()
+      .files(
+        kotlin(
+            """
+            import kotlin.contracts.ExperimentalContracts
+            import kotlin.contracts.InvocationKind
+            import kotlin.contracts.contract
+
+            interface MyDeferred<T> {
+              suspend fun await(): T
+            }
+
+            abstract class MyException : Exception() {
+              abstract fun isInternal(): Boolean
+            }
+
+            @OptIn(ExperimentalContracts::class)
+            suspend fun <T> MyDeferred<T>.safeAwait(
+              fallbackOnAbort: suspend () -> T,
+              onCancelled: suspend (MyException) -> T = { throw it },
+            ) : T {
+              contract {
+                callsInPlace(fallbackOnAbort, InvocationKind.AT_MOST_ONCE)
+                callsInPlace(onCancelled, InvocationKind.AT_MOST_ONCE)
+              }
+              return try {
+                await()
+              } catch (e: MyException) {
+                if (e.isInternal()) {
+                  fallbackOnAbort()
+                } else {
+                  onCancelled(e)
+                }
+              }
+            }
+          """
+          )
+          .indented()
       )
       .run()
       .expectClean()

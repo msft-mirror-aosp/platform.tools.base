@@ -42,7 +42,6 @@ public class LibraryIntermediateArtifactPublishingTest {
     public GradleTestProject project =
             GradleTestProject.builder()
                     .fromTestApp(HelloWorldLibraryApp.create())
-                    .disableBuiltInKotlin()
                     .create();
 
     @Before
@@ -80,23 +79,21 @@ public class LibraryIntermediateArtifactPublishingTest {
                 "\n"
                         + "class VerifyTask extends DefaultTask {\n"
                         + "    @InputFiles\n"
-                        + "    FileCollection fullJar\n"
+                        + "    FileCollection jarFiles\n"
                         + "    @TaskAction\n"
                         + "    void verify() {\n"
-                        + "        assert fullJar.singleFile.name == '"
+                        + "        assert jarFiles.files.find { it.name == '"
                         + SdkConstants.FN_INTERMEDIATE_FULL_JAR
-                        + "'\n"
+                        + "' } != null\n"
                         + "    }\n"
                         + "}\n"
-                        + "android {\n"
-                        + "    applicationVariants.all { v ->\n"
-                        + "        if (v.name == 'debug') {\n"
-                        + "            project.tasks.create('verify', VerifyTask) {\n"
-                        + "                def artifactType = Attribute.of('artifactType',"
-                        + " String)\n"
-                        + "                fullJar = v.compileConfiguration.incoming.artifactView {"
-                        + " attributes { it.attribute(artifactType, 'jar') }}.files\n"
-                        + "            }\n"
+                        + "androidComponents {\n"
+                        + "    onVariants(selector().withBuildType('debug')), { v ->\n"
+                        + "        project.tasks.create('verify', VerifyTask) {\n"
+                        + "            def artifactType = Attribute.of('artifactType', String)\n"
+                        + "            jarFiles = v.compileConfiguration.incoming.artifactView {\n"
+                        + "                attributes { it.attribute(artifactType, 'jar') }\n"
+                        + "            }.files\n"
                         + "        }\n"
                         + "    }\n"
                         + "}\n");

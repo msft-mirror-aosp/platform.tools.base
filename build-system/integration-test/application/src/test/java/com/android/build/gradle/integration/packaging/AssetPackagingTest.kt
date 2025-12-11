@@ -65,7 +65,6 @@ class AssetPackagingTest {
             appProject.buildFile,
             """
                 android {
-                    publishNonDefault = true
                     aaptOptions {}
                 }
 
@@ -87,8 +86,7 @@ class AssetPackagingTest {
             testProject.buildFile,
             """
                 android {
-                    targetProjectPath ':app'
-                    targetVariant 'debug'
+                    targetProjectPath = ':app'
                 }
             """.trimIndent()
         )

@@ -77,6 +77,7 @@ import com.intellij.psi.PsiMethod
 import com.intellij.psi.PsiParameter
 import com.intellij.psi.PsiType
 import com.intellij.psi.PsiVariable
+import java.util.IdentityHashMap
 import kotlinx.collections.immutable.PersistentList
 import kotlinx.collections.immutable.PersistentSet
 import kotlinx.collections.immutable.persistentListOf
@@ -374,7 +375,12 @@ internal open class Analysis<FX : Any>(
       return giveUp(this, "Don't know what `$x` means in `${target.target.renderAbbrev()}`")
     }
 
+    val cache = IdentityHashMap<UExpression, Result<Type<FX>, R>>()
+
     fun loop(e: UExpression): Result<Type<FX>, R> {
+
+      /** Analyze local sub-expression that might be shared and reusable */
+      fun loopCached(e: UExpression) = cache.getOrPut(e) { loop(e) }
 
       fun callMethod(
         receiver: UExpression?,
@@ -388,18 +394,18 @@ internal open class Analysis<FX : Any>(
           when {
             method.isStatic() -> null
             method.isConstructor -> null
-            receiver != null -> loop(receiver) // TODO nope. See below
+            receiver != null -> loopCached(receiver) // TODO nope. See below
             else -> pure(env.receiver(ClassId.of(method.containingClass!!)) ?: implicitThis())
           }
 
         val extRecvAns: Result<Type<FX>, R>? =
           when {
             !method.isExtension() -> null
-            receiver != null -> loop(receiver) // TODO nope. See above
+            receiver != null -> loopCached(receiver) // TODO nope. See above
             else -> pure(env.innermostExtensionReceiver() ?: implicitThis())
           }
 
-        val (restTypes, restFx) = mapM(::loop, args)
+        val (restTypes, restFx) = mapM(::loopCached, args)
 
         return when {
           // virtual extension
@@ -992,7 +998,9 @@ internal open class Analysis<FX : Any>(
           Type.MethodRef(receiver.constructor, method),
           listOf(receiver) + args,
         ]
-      is Type.Lambda -> rec[receiver, listOf(receiver) + args]
+      is Type.Lambda ->
+        if (receiver.params.size == args.size) rec[receiver, listOf(receiver) + args]
+        else instantiationLattice.bottom
       is Type.MethodRef -> rec[receiver, args]
       is Type.SpecializedMethodRef -> rec[receiver.ref, listOf(receiver.receiver) + args]
       is Type.Sym.Param,
@@ -1217,13 +1225,7 @@ internal open class Analysis<FX : Any>(
           is Type.WildCard,
           is Type.MethodRef -> pure(this)
           is Type.Union -> cases.joinedOver(instantiationLattice) { it.substAndInvoke(base) }
-          is Type.Lambda -> {
-            val (bodyT0, bodyFx0) = body
-            val (bodyT, bodyFx) = bodyT0.substAndInvoke(base)
-            pure(
-              Type.Lambda(params, Result(bodyT, effectLattice.joinOf(bodyFx0, bodyFx.result)), intf)
-            )
-          }
+          is Type.Lambda -> pure(this)
           is Type.SpecializedMethodRef -> {
             val (t, fx) = receiver.substAndInvoke(base)
             Result(copy(receiver = t), fx)

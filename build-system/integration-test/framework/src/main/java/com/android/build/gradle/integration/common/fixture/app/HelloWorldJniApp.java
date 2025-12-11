@@ -113,7 +113,8 @@ public class HelloWorldJniApp extends GradleProject {
 "\n" +
 "    <application android:label=\"@string/app_name\">\n" +
 "        <activity android:name=\".HelloJni\"\n" +
-"                  android:label=\"@string/app_name\">\n" +
+"                  android:label=\"@string/app_name\"\n" +
+"                  android:exported=\"true\">\n" +
 "            <intent-filter>\n" +
 "                <action android:name=\"android.intent.action.MAIN\" />\n" +
 "                <category android:name=\"android.intent.category.LAUNCHER\" />\n" +
@@ -128,8 +129,8 @@ public class HelloWorldJniApp extends GradleProject {
                     "HelloJniTest.java",
                     "package com.example.hellojni;\n"
                             + "\n"
-                            + "import android.support.test.rule.ActivityTestRule;\n"
-                            + "import android.support.test.runner.AndroidJUnit4;\n"
+                            + "import androidx.test.rule.ActivityTestRule;\n"
+                            + "import androidx.test.runner.AndroidJUnit4;\n"
                             + "import org.junit.Assert;\n"
                             + "import org.junit.Rule;\n"
                             + "import org.junit.Test;\n"

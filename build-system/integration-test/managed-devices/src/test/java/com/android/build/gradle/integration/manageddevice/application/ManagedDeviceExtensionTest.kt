@@ -28,10 +28,8 @@ import com.android.build.api.variant.ApplicationAndroidComponentsExtension
 import com.android.build.gradle.integration.common.fixture.GradleTaskExecutor
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.plugins.ApplicationComponentCallback
-import com.android.build.gradle.integration.common.truth.ScannerSubject.Companion.assertThat
 import com.android.build.gradle.integration.manageddevice.utils.simpleProject
 import com.android.build.gradle.internal.utils.setDisallowChanges
-import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.truth.PathSubject.assertThat
 import com.android.utils.FileUtils
 import org.gradle.api.Project
@@ -62,7 +60,7 @@ class ManagedDeviceExtensionTest {
         abstract val objectFactory: ObjectFactory
 
         override fun configureTaskInput(deviceDSL: MyCustomDevice): SetupInput {
-            return objectFactory.newInstance<SetupInput>(SetupInput::class.java).apply {
+            return objectFactory.newInstance(SetupInput::class.java).apply {
                 deviceName.setDisallowChanges(deviceDSL.name)
             }
         }
@@ -83,7 +81,7 @@ class ManagedDeviceExtensionTest {
         abstract val objectFactory: ObjectFactory
 
         override fun configureTaskInput(deviceDSL: MyCustomDevice): TestRunInput {
-            return objectFactory.newInstance<TestRunInput>(TestRunInput::class.java)
+            return objectFactory.newInstance(TestRunInput::class.java)
         }
     }
 
@@ -144,10 +142,6 @@ class ManagedDeviceExtensionTest {
             }
             pluginCallbacks += AddCustomGMDCallback::class.java
         }
-        gradleProperties {
-            // TODO(b/458859093) remove when test is fixed to not require this.
-            add(BooleanOption.ENABLE_APP_COMPILE_TIME_R_CLASS, false)
-        }
     }
 
     class AddCustomGMDCallback : ApplicationComponentCallback {
@@ -170,7 +164,7 @@ class ManagedDeviceExtensionTest {
     }
 
     private val executor: GradleTaskExecutor
-        get() = rule.build.executor
+        get() = rule.build.executor.withEnableInfoLogging(false)
 
     @Test
     fun runCustomManagedDevice() {
@@ -225,11 +219,10 @@ class ManagedDeviceExtensionTest {
         val project = rule.build.androidApplication(":emptyAppProject")
 
         val result = executor
+            .withEnableInfoLogging(true)  // "No tests found" message is info level.
             .run(":emptyAppProject:myCustomDeviceCheck")
 
-        result.stdout.use {
-            assertThat(it).contains("No tests found, nothing to do.")
-        }
+        result.assertOutputContains("No tests found, nothing to do.")
 
         val setupDir = FileUtils.join(
             project.buildDir.toFile(),

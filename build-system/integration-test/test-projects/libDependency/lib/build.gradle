@@ -5,7 +5,7 @@ dependencies {
 
 android {
     namespace = "com.android.tests.libstest.lib"
-    resourcePrefix 'lib_'
+    resourcePrefix = 'lib_'
     compileSdkVersion libs.versions.latestCompileSdk.get().toInteger()
     buildToolsVersion = libs.versions.buildToolsVersion.get()
 

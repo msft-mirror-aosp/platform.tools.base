@@ -16,22 +16,28 @@
 
 package com.android.build.gradle.integration.library
 
-import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
-import com.android.build.gradle.integration.common.fixture.app.TestSourceFile
+import com.android.build.gradle.LibraryExtension
+import com.android.build.gradle.integration.common.fixture.project.GradleBuild
+import com.android.build.gradle.integration.common.fixture.project.GradleRule
+import com.android.build.gradle.integration.common.fixture.project.plugins.LegacyLibraryCallback
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.integration.common.utils.getBuildType
 import com.android.build.gradle.integration.common.utils.getProductFlavor
+import com.android.build.gradle.options.BooleanOption
 import com.android.builder.model.v2.dsl.ClassField
 import com.android.builder.model.v2.models.AndroidDsl
+import com.android.testutils.truth.PathSubject
 import com.google.common.base.Charsets
 import com.google.common.collect.Maps
 import com.google.common.io.Files
+import com.google.common.truth.Truth.assertAbout
+import com.google.common.truth.Truth.assertThat
+import org.gradle.api.Project
 import org.junit.Assert
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
-import org.junit.BeforeClass
-import org.junit.ClassRule
+import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 import java.io.File
 import java.io.IOException
@@ -44,93 +50,88 @@ import java.io.IOException
  */
 class LibraryBuildConfigTest {
 
-    companion object {
-        @JvmStatic
-        @get:ClassRule
-        val project: GradleTestProject =
-            GradleTestProject.builder().fromTestApp(HelloWorldApp.noBuildFile().also {
-                it.addFile(
-                    TestSourceFile(
-                        "build.gradle",
-                        """
-                            apply plugin: 'com.android.library'
+    @get:Rule
+    val project = GradleRule.configure().disableBrokenNewDslOptOutChecks().from {
+        androidLibrary {
+            android {
+                defaultConfig {
+                    buildConfigField("int", "VALUE_DEFAULT", "1")
+                    buildConfigField("int", "VALUE_DEBUG", "1")
+                    buildConfigField("int", "VALUE_FLAVOR", "1")
+                    buildConfigField("int", "VALUE_VARIANT", "1")
+                }
+                buildTypes {
+                    named("debug") {
+                        it.buildConfigField("int", "VALUE_DEBUG", "100")
+                        it.buildConfigField("int", "VALUE_VARIANT", "100")
+                    }
+                }
+                flavorDimensions += "foo"
+                productFlavors {
+                    create("flavor1") {
+                        it.buildConfigField("int", "VALUE_DEBUG", "10")
+                        it.buildConfigField("int", "VALUE_FLAVOR", "10")
+                        it.buildConfigField("int", "VALUE_VARIANT", "10")
+                    }
+                    create("flavor2") {
+                        it.buildConfigField("int", "VALUE_DEBUG", "20")
+                        it.buildConfigField("int", "VALUE_FLAVOR", "20")
+                        it.buildConfigField("int", "VALUE_VARIANT", "20")
+                    }
+                }
+                buildFeatures {
+                    buildConfig = true
+                }
+            }
+            pluginCallbacks += Callback::class.java
+        }
+        gradleProperties {
+            add(BooleanOption.USE_NEW_DSL, false)
+        }
+    }
+    class Callback : LegacyLibraryCallback {
+        override fun handleExtension(project: Project, extension: LibraryExtension) {
+            extension.libraryVariants.all { variant ->
+                if (variant.buildType.name == "debug") {
+                    variant.buildConfigField("int", "VALUE_VARIANT", "1000")
+                }
+            }
+        }
+    }
+    var _dslModel: AndroidDsl? = null
+    val dslModel: AndroidDsl
+        get() = _dslModel ?: throw AssertionError("dslModel unexpectedly null")
+    var _build: GradleBuild? = null
+    val build: GradleBuild
+        get() = _build ?: throw AssertionError("build unexpectedly null")
 
-                            android {
-                              namespace = "${HelloWorldApp.NAMESPACE}"
-                              compileSdkVersion ${GradleTestProject.DEFAULT_COMPILE_SDK_VERSION}
-
-                              defaultConfig {
-                                buildConfigField "int", "VALUE_DEFAULT", "1"
-                                buildConfigField "int", "VALUE_DEBUG",   "1"
-                                buildConfigField "int", "VALUE_FLAVOR",  "1"
-                                buildConfigField "int", "VALUE_VARIANT", "1"
-                              }
-
-                              buildTypes {
-                                debug {
-                                  buildConfigField "int", "VALUE_DEBUG",   "100"
-                                  buildConfigField "int", "VALUE_VARIANT", "100"
-                                }
-                              }
-
-                              flavorDimensions 'foo'
-                              productFlavors {
-                                flavor1 {
-                                  buildConfigField "int", "VALUE_DEBUG",   "10"
-                                  buildConfigField "int", "VALUE_FLAVOR",  "10"
-                                  buildConfigField "int", "VALUE_VARIANT", "10"
-                                }
-                                flavor2 {
-                                  buildConfigField "int", "VALUE_DEBUG",   "20"
-                                  buildConfigField "int", "VALUE_FLAVOR",  "20"
-                                  buildConfigField "int", "VALUE_VARIANT", "20"
-                                }
-                              }
-
-                              buildFeatures {
-                                buildConfig = true
-                              }
-
-                              libraryVariants.all { variant ->
-                                if (variant.buildType.name == "debug") {
-                                  variant.buildConfigField "int", "VALUE_VARIANT", "1000"
-                                }
-                              }
-                            }
-                            """.trimIndent()
-                    )
-                )
-            }).create()
-
-        private lateinit var dslModel: AndroidDsl
-
-        @JvmStatic
-        @BeforeClass
-        fun setUp() {
-            project.execute(
+    @Before
+    fun setup() {
+        _build = project.build.also {
+            it.executor.run(
                 "clean",
                 "generateFlavor1DebugBuildConfig",
                 "generateFlavor1ReleaseBuildConfig",
                 "generateFlavor2DebugBuildConfig",
                 "generateFlavor2ReleaseBuildConfig"
             )
-            dslModel = project.modelV2().fetchModels().container.getProject().androidDsl!!
+            _dslModel = it.modelBuilder
+                .allowOptionWarning(BooleanOption.USE_NEW_DSL)
+                .fetchModels().container.getProject().androidDsl
         }
     }
 
-
     @Test
-    @Throws(IOException::class)
     fun testFlavor1Debug() {
         val expected = """
             /**
              * Automatically generated file. DO NOT MODIFY
              */
-            package com.example.helloworld;
+            package pkg.name.lib;
 
             public final class BuildConfig {
               public static final boolean DEBUG = Boolean.parseBoolean("true");
-              public static final String LIBRARY_PACKAGE_NAME = "com.example.helloworld";
+              public static final String LIBRARY_PACKAGE_NAME = "pkg.name.lib";
               public static final String BUILD_TYPE = "debug";
               public static final String FLAVOR = "flavor1";
               // Field from build type: debug
@@ -142,42 +143,41 @@ class LibraryBuildConfigTest {
               // Field from the variant API
               public static final int VALUE_VARIANT = 1000;
             }
-
             """.trimIndent()
-        doCheckBuildConfig(expected, "flavor1/debug")
+        checkGeneratedFile("flavor1/debug", expected)
     }
 
     @Test
     fun modelDefaultConfig() {
-        val map = Maps.newHashMap<String, String>()
-        map["VALUE_DEFAULT"] = "1"
-        map["VALUE_FLAVOR"] = "1"
-        map["VALUE_DEBUG"] = "1"
-        map["VALUE_VARIANT"] = "1"
-        checkMaps(map, dslModel.defaultConfig?.buildConfigFields, "defaultConfig")
+        val map = mapOf(
+            "VALUE_DEFAULT" to "1",
+            "VALUE_FLAVOR" to "1",
+            "VALUE_DEBUG" to "1",
+            "VALUE_VARIANT" to "1")
+        checkMaps(map, dslModel.defaultConfig.buildConfigFields!!, "defaultConfig")
     }
 
     @Test
     fun modelFlavor1() {
-        val map = Maps.newHashMap<String, String>()
-        map["VALUE_FLAVOR"] = "10"
-        map["VALUE_DEBUG"] = "10"
-        map["VALUE_VARIANT"] = "10"
-        checkFlavor(dslModel, "flavor1", map)
+        val map = mapOf(
+            "VALUE_FLAVOR" to "10",
+            "VALUE_DEBUG" to "10",
+            "VALUE_VARIANT" to "10")
+        checkProductFlavor(dslModel, "flavor1", map)
     }
 
     @Test
     @Throws(IOException::class)
     fun buildFlavor2Debug() {
-        val expected = ("""
+        val expected = """
             /**
              * Automatically generated file. DO NOT MODIFY
              */
-            package com.example.helloworld;
+            package pkg.name.lib;
 
             public final class BuildConfig {
               public static final boolean DEBUG = Boolean.parseBoolean("true");
-              public static final String LIBRARY_PACKAGE_NAME = "com.example.helloworld";
+              public static final String LIBRARY_PACKAGE_NAME = "pkg.name.lib";
               public static final String BUILD_TYPE = "debug";
               public static final String FLAVOR = "flavor2";
               // Field from build type: debug
@@ -189,18 +189,17 @@ class LibraryBuildConfigTest {
               // Field from the variant API
               public static final int VALUE_VARIANT = 1000;
             }
-
-            """).trimIndent()
-        doCheckBuildConfig(expected, "flavor2/debug")
+            """.trimIndent()
+        checkGeneratedFile("flavor2/debug", expected)
     }
 
     @Test
     fun modelFlavor2() {
-        val map = Maps.newHashMap<String, String>()
-        map["VALUE_FLAVOR"] = "20"
-        map["VALUE_DEBUG"] = "20"
-        map["VALUE_VARIANT"] = "20"
-        checkFlavor(dslModel, "flavor2", map)
+        val map = mapOf(
+            "VALUE_FLAVOR" to "20",
+            "VALUE_DEBUG" to "20",
+            "VALUE_VARIANT" to "20")
+        checkProductFlavor(dslModel, "flavor2", map)
     }
 
     @Test
@@ -209,11 +208,11 @@ class LibraryBuildConfigTest {
             /**
              * Automatically generated file. DO NOT MODIFY
              */
-            package com.example.helloworld;
+            package pkg.name.lib;
 
             public final class BuildConfig {
               public static final boolean DEBUG = false;
-              public static final String LIBRARY_PACKAGE_NAME = "com.example.helloworld";
+              public static final String LIBRARY_PACKAGE_NAME = "pkg.name.lib";
               public static final String BUILD_TYPE = "release";
               public static final String FLAVOR = "flavor1";
               // Field from product flavor: flavor1
@@ -225,31 +224,27 @@ class LibraryBuildConfigTest {
               // Field from product flavor: flavor1
               public static final int VALUE_VARIANT = 10;
             }
-
             """.trimIndent()
-        doCheckBuildConfig(expected, "flavor1/release")
+        checkGeneratedFile("flavor1/release", expected)
     }
 
     @Test
     fun modelDebug() {
-        val map = Maps.newHashMap<String, String>()
-        map["VALUE_DEBUG"] = "100"
-        map["VALUE_VARIANT"] = "100"
+        val map = mapOf("VALUE_DEBUG" to "100", "VALUE_VARIANT" to "100")
         checkBuildType(dslModel, "debug", map)
     }
 
     @Test
-    @Throws(IOException::class)
     fun buildFlavor2Release() {
         val expected = """
             /**
              * Automatically generated file. DO NOT MODIFY
              */
-            package com.example.helloworld;
+            package pkg.name.lib;
 
             public final class BuildConfig {
               public static final boolean DEBUG = false;
-              public static final String LIBRARY_PACKAGE_NAME = "com.example.helloworld";
+              public static final String LIBRARY_PACKAGE_NAME = "pkg.name.lib";
               public static final String BUILD_TYPE = "release";
               public static final String FLAVOR = "flavor2";
               // Field from product flavor: flavor2
@@ -261,9 +256,8 @@ class LibraryBuildConfigTest {
               // Field from product flavor: flavor2
               public static final int VALUE_VARIANT = 20;
             }
-
             """.trimIndent()
-        doCheckBuildConfig(expected, "flavor2/release")
+        checkGeneratedFile("flavor2/release", expected)
     }
 
     @Test
@@ -271,60 +265,30 @@ class LibraryBuildConfigTest {
         checkBuildType(dslModel, "release", emptyMap())
     }
 
-    private fun doCheckBuildConfig(expected: String, variantDir: String) {
-        if (project.getIntermediateFile(
-                InternalArtifactType.COMPILE_BUILD_CONFIG_JAR.getFolderName()).exists()) {
-            return
-        }
-        val outputFile = File(
-            project.projectDir,
-            "build/generated/source/buildConfig/"
-                    + variantDir
-                    + "/com/example/helloworld/BuildConfig.java"
-        )
-        Assert.assertTrue("Missing file: $outputFile", outputFile.isFile)
-        assertEquals(
-            expected,
-            Files.asByteSource(outputFile).asCharSource(Charsets.UTF_8).read()
-        )
+    private fun checkBuildType(dsl: AndroidDsl, name: String, valueMap: Map<String, String>) {
+        val buildType = dsl.getBuildType(name)
+        checkMaps(valueMap, buildType.buildConfigFields!!, name)
     }
 
-    private fun checkFlavor(
-        androidDsl: AndroidDsl,
-        flavorName: String,
-        valueMap: Map<String, String>?
-    ) {
-        val productFlavor = androidDsl.getProductFlavor(flavorName)
-        assertNotNull("$flavorName variant null-check", productFlavor)
-
-        checkMaps(valueMap, productFlavor.buildConfigFields, flavorName)
+    private fun checkProductFlavor(dsl: AndroidDsl, name: String, valueMap: Map<String, String>) {
+        val productFlavor = dsl.getProductFlavor(name)
+        checkMaps(valueMap, productFlavor.buildConfigFields!!, name)
     }
 
-    private fun checkBuildType(
-        androidDsl: AndroidDsl,
-        buildTypeName: String,
-        valueMap: Map<String, String>?
-    ) {
-        val buildType = androidDsl.getBuildType(buildTypeName)
-        assertNotNull("$buildTypeName flavor null-check", buildType)
-        checkMaps(valueMap, buildType.buildConfigFields, buildTypeName)
-    }
-
-    private fun checkMaps(
-        valueMap: Map<String, String>?,
-        value: Map<String, ClassField>?,
-        name: String
-    ) {
-        assertNotNull(value)
-
-        // check the map against the expected one.
-        assertEquals(valueMap!!.keys, value!!.keys)
+    private fun checkMaps(valueMap: Map<String, String>, value: Map<String, ClassField>, name: String) {
+        assertThat(value.keys).isEqualTo(valueMap.keys)
         for (key in valueMap.keys) {
-            val field = value[key]
-            assertNotNull("$name: expected field $key", field)
-            assertEquals(
-                "$name: check Value of $key", valueMap[key], field!!.value
-            )
+            val field = value[key]!!
+            assertThat(field.value).named("$name: check value of $key").isEqualTo(valueMap[key])
         }
+    }
+
+    private fun checkGeneratedFile(variantDir: String, expected: String) {
+        val output = build.subProject(":lib").buildDir
+            .resolve("generated/source/buildConfig/")
+            .resolve(variantDir)
+            .resolve("pkg/name/lib/BuildConfig.java")
+        assertAbout(PathSubject.paths()).that(output).exists()
+        assertAbout(PathSubject.paths()).that(output).contentWithUnixLineSeparatorsIsExactly(expected)
     }
 }

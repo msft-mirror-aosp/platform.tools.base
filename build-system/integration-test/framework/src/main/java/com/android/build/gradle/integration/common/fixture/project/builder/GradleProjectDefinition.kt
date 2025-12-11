@@ -25,6 +25,7 @@ import com.android.build.gradle.integration.common.fixture.dsl.ExtensionAwareDef
 import com.android.build.gradle.integration.common.fixture.dsl.MethodReturnedFile
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType.PluginTypeWithExtension
 import com.android.build.gradle.integration.common.fixture.project.plugins.PluginCallback
+import com.android.testutils.TestUtils
 import com.google.common.annotations.VisibleForTesting
 import java.io.File
 import java.nio.file.Path
@@ -287,6 +288,7 @@ internal abstract class GradleProjectDefinitionImpl(
             customPluginMap,
             isRoot = false,
             useOldPluginStyle,
+            useLatestKgpVersion = false, // useLatestKgpVersion is relevant only for root project
             projectRepositories,
             buildWriter
         )
@@ -297,6 +299,7 @@ internal abstract class GradleProjectDefinitionImpl(
         allPlugins: Map<PluginType, Set<String>>,
         customPluginMap: Map<String, Set<String>>,
         useOldPluginStyle: Boolean,
+        useLatestKgpVersion: Boolean,
         projectRepositories: Collection<Path>,
         buildWriter: BuildWriter,
     ) {
@@ -306,6 +309,7 @@ internal abstract class GradleProjectDefinitionImpl(
             customPluginMap,
             isRoot = true,
             useOldPluginStyle,
+            useLatestKgpVersion,
             projectRepositories,
             buildWriter
         )
@@ -322,6 +326,7 @@ internal abstract class GradleProjectDefinitionImpl(
         customPluginMap: Map<String, Set<String>>,
         isRoot: Boolean,
         useOldPluginStyle: Boolean,
+        useLatestKgpVersion: Boolean, // Note: useLatestKgpVersion is relevant only when isRoot=true
         projectRepositories: Collection<Path>,
         buildWriter: BuildWriter,
     ) {
@@ -389,8 +394,9 @@ internal abstract class GradleProjectDefinitionImpl(
 
                 val pluginsWithNoMarkers = allPlugins.keys.filter { !it.hasMarker && it.artifact != null }
                 val isRootWithNonMarkerPlugin = isRoot && pluginsWithNoMarkers.isNotEmpty()
+                val isRootAndUseLatestKgpVersion = isRoot && useLatestKgpVersion
 
-                if (!buildscriptBuilder.isEmpty || isRootWithCustomPlugin || isRootWithNonMarkerPlugin) {
+                if (!buildscriptBuilder.isEmpty || isRootWithCustomPlugin || isRootWithNonMarkerPlugin || isRootAndUseLatestKgpVersion) {
                     block("buildscript") {
                         block("dependencies") {
                             writeDependencyBuilderContent(location)
@@ -401,6 +407,9 @@ internal abstract class GradleProjectDefinitionImpl(
                                 for (plugin in pluginsWithNoMarkers) {
                                     dependency("classpath", "${plugin.artifact}:${plugin.version}")
                                 }
+                            }
+                            if (isRootAndUseLatestKgpVersion) {
+                                dependency("classpath", "org.jetbrains.kotlin:kotlin-gradle-plugin:${TestUtils.KOTLIN_VERSION_FOR_TESTS}")
                             }
                         }
                     }

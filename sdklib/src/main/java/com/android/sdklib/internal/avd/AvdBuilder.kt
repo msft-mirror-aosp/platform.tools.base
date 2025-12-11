@@ -91,7 +91,7 @@ class AvdBuilder(var metadataIniPath: Path, avdFolder: Path, var device: Device)
   var frontCamera: AvdCamera = AvdCamera.NONE
   var backCamera: AvdCamera = AvdCamera.NONE
 
-  var gpuMode: GpuMode = GpuMode.OFF
+  var gpuMode: GpuMode = GpuMode.AUTO
 
   var enableKeyboard: Boolean = true
 
@@ -127,7 +127,7 @@ class AvdBuilder(var metadataIniPath: Path, avdFolder: Path, var device: Device)
     val properties = mutableMapOf<String, String>()
     properties.putAll(defaultConfigKeys)
     properties.putAll(DeviceManager.getHardwareProperties(device))
-    properties[ConfigKey.GPU_EMULATION] = if (gpuMode == GpuMode.OFF) "no" else "yes"
+    properties[ConfigKey.GPU_EMULATION] = "yes"
     properties[ConfigKey.AVD_ID] = avdName
     properties.putAll(bootMode.properties())
     if (environment != null) {

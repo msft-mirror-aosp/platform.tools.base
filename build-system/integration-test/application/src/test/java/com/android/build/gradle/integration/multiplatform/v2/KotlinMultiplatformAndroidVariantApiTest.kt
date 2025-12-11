@@ -53,6 +53,43 @@ class KotlinMultiplatformAndroidVariantApiTest {
     }
 
     @Test
+    fun testAsmInstrumentationVariantApi() {
+        TestFileUtils.appendToFile(
+            project.getSubproject("kmpFirstLib").ktsBuildFile,
+            // language=kotlin
+            """
+                androidComponents {
+                    onVariants { variant ->
+                        val testVariant = (variant as? com.android.build.api.variant.HasUnitTest)?.unitTest ?: return@onVariants
+                        testVariant.instrumentation.transformClassesWith(
+                            ClassVisitorFactory::class.java,
+                                    com.android.build.api.instrumentation.InstrumentationScope.ALL) {}
+
+                        testVariant.instrumentation.setAsmFramesComputationMode(com.android.build.api.instrumentation.FramesComputationMode.COMPUTE_FRAMES_FOR_INSTRUMENTED_METHODS)
+                    }
+                }
+
+                abstract class ClassVisitorFactory:
+                    com.android.build.api.instrumentation.AsmClassVisitorFactory<com.android.build.api.instrumentation.InstrumentationParameters.None> {
+                    override fun createClassVisitor(
+                        classContext: com.android.build.api.instrumentation.ClassContext,
+                        nextClassVisitor: org.objectweb.asm.ClassVisitor
+                    ): org.objectweb.asm.ClassVisitor {
+                        return object: org.objectweb.asm.ClassVisitor(instrumentationContext.apiVersion.get(), nextClassVisitor) {}
+                    }
+
+                    override fun isInstrumentable(classData: com.android.build.api.instrumentation.ClassData): Boolean {
+                        return true
+                    }
+                }
+
+            """.trimIndent()
+        )
+
+        executor().run(":kmpFirstLib:assemble")
+    }
+
+    @Test
     fun testHostTestCreationConfigExists() {
         TestFileUtils.appendToFile(
             project.getSubproject("kmpFirstLib").ktsBuildFile,

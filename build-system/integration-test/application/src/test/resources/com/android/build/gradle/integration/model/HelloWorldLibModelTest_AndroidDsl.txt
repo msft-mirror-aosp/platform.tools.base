@@ -41,6 +41,7 @@
          - generatedDensities = ["hdpi", "ldpi", "mdpi", "xhdpi", "xxhdpi", "xxxhdpi"]
          - useSupportLibrary  = false
       - matchingFallbacks                  = []
+      - missingDimensionStrategy           = []
    < defaultConfig
    > buildTypes:
       > debug:

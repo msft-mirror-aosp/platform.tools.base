@@ -331,12 +331,6 @@ enum class BooleanOption(
         FeatureStage.Experimental
     ),
 
-    FUSED_LIBRARY_SUPPORT(
-        "android.experimental.fusedLibrarySupport",
-        false,
-        FeatureStage.Experimental
-    ),
-
     FUSED_LIBRARY_PUBLICATION_ONLY_MODE(
         "android.experimental.fusedLibrarySupport.publicationOnly",
         true,
@@ -409,15 +403,6 @@ enum class BooleanOption(
     DUMP_ARTIFACTS_LOCATIONS(
         "android.debug.dumpArtifactsLocations",
         defaultValue = false,
-        FeatureStage.Experimental
-    ),
-
-    /**
-     * Enables gradual R8 shrinking
-     */
-    GRADUAL_R8_SHRINKING(
-        "android.experimental.gradual.r8",
-        false,
         FeatureStage.Experimental
     ),
 
@@ -503,12 +488,12 @@ enum class BooleanOption(
      */
     DISALLOW_KOTLIN_SOURCE_SETS(
         propertyName = "android.disallowKotlinSourceSets",
-        defaultValue = false,
+        defaultValue = true,
         stage = FeatureStage.Experimental,
         FutureStage(
-            version = Version.VERSION_9_0,
+            version = Version.VERSION_10_0,
             defaultValue = true,
-            stage = FeatureStage.Experimental
+            stage = FeatureStage.Enforced(enforcedVersion = Version.VERSION_10_0)
         )
     ),
 
@@ -1122,6 +1107,13 @@ enum class BooleanOption(
         FeatureStage.Enforced(Version.VERSION_9_0)
     ),
 
+
+    @Suppress("unused")
+    FUSED_LIBRARY_SUPPORT(
+        "android.fusedLibrarySupport",
+        true,
+        FeatureStage.Enforced(Version.VERSION_9_0),
+    ),
 
     /* ----------------
      * REMOVED API

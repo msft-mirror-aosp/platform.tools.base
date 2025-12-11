@@ -95,7 +95,9 @@ class MultiCompositeBuildTest: ModelComparator() {
         with(model).compareVariantDependencies(
             projectAction = { getProject(":composite1") }, goldenFile = "TestCompositeLib1_composite1_VariantDependencies"
         )
-
+        with(model).compareAndroidDsl(
+            projectAction = { getProject(":composite1") }, goldenFile = "AndroidDsl"
+        )
         with(model).compareVariantDependencies(
             projectAction = { getProject(":app") }, goldenFile = "TestCompositeLib1_app_VariantDependencies"
         )

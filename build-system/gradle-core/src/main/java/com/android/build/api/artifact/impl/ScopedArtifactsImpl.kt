@@ -17,9 +17,11 @@
 package com.android.build.api.artifact.impl
 
 import com.android.build.api.artifact.Artifact
+import com.android.build.api.artifact.ArtifactKind
 import com.android.build.api.artifact.ScopedArtifact
 import com.android.build.api.variant.ScopedArtifacts
 import com.android.build.api.variant.ScopedArtifactsOperation
+import com.android.build.gradle.internal.scope.InternalMultipleArtifactType
 import com.android.build.gradle.internal.scope.getDirectories
 import com.android.build.gradle.internal.scope.getIntermediateOutputPath
 import com.android.build.gradle.internal.scope.getRegularFiles
@@ -29,6 +31,7 @@ import org.gradle.api.file.Directory
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.FileCollection
 import org.gradle.api.file.FileSystemLocation
+import org.gradle.api.file.FileSystemLocationProperty
 import org.gradle.api.file.ProjectLayout
 import org.gradle.api.file.RegularFile
 import org.gradle.api.file.RegularFileProperty
@@ -42,8 +45,16 @@ class ScopedArtifactsImpl(
     private val variantIdentifier: String,
     private val projectLayout: ProjectLayout,
     private val fileCollectionCreator: () -> ConfigurableFileCollection,
-    private val lookupProjectScopedArtifactsContainer:() -> ScopedArtifactsImpl?
+    private val lookupProjectScopedArtifactsContainer:() -> ScopedArtifactsImpl?,
+    private val artifacts: ArtifactsImpl
 ): ScopedArtifacts {
+
+    // When users are adding classes in the post compilation step using the public CLASSES artifact,
+    // we need to keep the added directories in a separate artifact rather than adding them
+    // directly to CLASSES as we don't want to mangle the instrumented amd user added classes.
+    // This book keeping is particularly important when publishing to the RUNTIME_ELEMENTS as we
+    // need to make all the user added classes available for consumers.
+    val userAddedClasses = fileCollectionCreator()
 
     /**
      * Internal function to set the initial provider of a [ScopedArtifact]. Because AGP tasks
@@ -172,14 +183,7 @@ class ScopedArtifactsImpl(
                 }
             }
 
-            // since something is added, make sure the new content is registered so this scope
-            // content is tagged as `altered`.
-            val newContent = fileCollectionCreator.invoke()
-            newContent.from(scopedArtifacts.getScopedArtifactsContainer(to).currentScopedContent)
-            newContent.from(taskProvider.flatMap(with))
-            scopedArtifacts.getScopedArtifactsContainer(to).setNewContent(newContent)
-
-            // and sets the output path.
+            // sets the output path.
             taskProvider.configure {
                 when (val provider = with(it)) {
                     is RegularFileProperty -> setContentPath(to, provider, taskProvider.name)
@@ -188,6 +192,23 @@ class ScopedArtifactsImpl(
                             " instances are supported, got ${provider.javaClass}")
                 }
             }
+
+            // If we are dealing with user added CLASSES, don't add it to CLASSES but instead
+            // use the internal artifact type which itself is added to CLASSES. This allows for
+            // book keeping the user added classes separately which is handy when populating
+            // the published CLASSES_JAR artifact. See [BundleAllClasses] configuration block
+            // for an example.
+            if (to == ScopedArtifact.CLASSES) {
+                scopedArtifacts.userAddedClasses.from(taskProvider.flatMap { with(it) })
+                return
+            }
+
+            // since something is added, make sure the new content is registered so this scope
+            // content is tagged as `altered`.
+            val newContent = fileCollectionCreator.invoke()
+            newContent.from(scopedArtifacts.getScopedArtifactsContainer(to).currentScopedContent)
+            newContent.from(taskProvider.flatMap(with))
+            scopedArtifacts.getScopedArtifactsContainer(to).setNewContent(newContent)
         }
 
         override fun toGet(

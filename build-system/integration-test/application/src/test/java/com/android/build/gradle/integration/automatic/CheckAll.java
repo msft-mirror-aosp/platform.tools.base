@@ -91,8 +91,7 @@ public class CheckAll {
                         .fromTestProject(projectName)
                         .withConfigurationCaching(ConfigurationCaching.ON)
                         .withHeap("2048M")
-                        .addGradleProperties(
-                                BooleanOption.USE_ANDROID_X.getPropertyName() + "=true")
+                        .withComposeCompilerGradlePlugin(true)
                         .create();
     }
 

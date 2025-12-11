@@ -25,6 +25,7 @@ import com.android.build.api.variant.impl.capitalizeFirstChar
 import com.android.build.gradle.integration.common.fixture.project.ApkSelector
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.plugins.GenericCallback
+import com.android.build.gradle.internal.scope.InternalMultipleArtifactType
 import com.android.testutils.truth.PathSubject
 import com.google.common.truth.Truth
 import java.io.File
@@ -274,7 +275,8 @@ class AddPostCompileCodeGeneratorTest(private val jacocoSupport: Boolean, privat
             PathSubject.assertThat(generatedFiles).containsFile(
                 "GeneratorUtils.class"
             )
-            val originalFiles = gradleBuild.androidApplication().resolve(ScopedArtifact.CLASSES)
+            val originalFiles = gradleBuild.androidApplication()
+                .resolve(ScopedArtifact.CLASSES)
                 .resolve("debug")
                 .resolve("postCompilationDebugTask")
                 .resolve("com/android/test/utils")

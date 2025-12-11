@@ -37,9 +37,7 @@ public class SeparateTestModuleTest {
 
     @Rule
     public GradleTestProject project =
-            GradleTestProject.builder().fromTestProject("separateTestModule")
-                    .addGradleProperties(BooleanOption.USE_ANDROID_X.getPropertyName() + "=true")
-                    .create();
+            GradleTestProject.builder().fromTestProject("separateTestModule").create();
 
     @Before
     public void setUp() throws IOException {
@@ -171,8 +169,8 @@ public class SeparateTestModuleTest {
     public void validateLibraryTestTarget() throws Exception {
         TestFileUtils.searchAndReplace(
                 project.getSubproject(":test").getBuildFile(),
-                "targetProjectPath ':app'",
-                "targetProjectPath ':lib'");
+                "targetProjectPath = ':app'",
+                "targetProjectPath = ':lib'");
 
         GradleBuildResult result = project.executor().expectFailure().run(":test:assembleDebug");
         ScannerSubject.assertThat(result.getStderr())

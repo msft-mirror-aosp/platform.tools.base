@@ -32,8 +32,6 @@ import org.junit.Assume
 import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
-import org.junit.runner.RunWith
-import org.junit.runners.Parameterized
 import org.junit.runners.Parameterized.Parameters
 import java.io.File
 import java.nio.file.Path
@@ -44,7 +42,6 @@ import kotlin.io.path.readText
  * executed against both connected check and managed devices to ensure the feature
  * parity.
  */
-@RunWith(Parameterized::class)
 abstract class UtpTestBase(val runWithBuiltInPlatform: Boolean) {
 
     companion object {
@@ -321,6 +318,8 @@ abstract class UtpTestBase(val runWithBuiltInPlatform: Boolean) {
                 )
             }
         }
+
+        androidApplication(":emptyAppProject") {}
 
         gradleProperties {
             add(BooleanOption.ANDROID_BUILTIN_TEST_PLATFORM, runWithBuiltInPlatform)
@@ -988,5 +987,41 @@ abstract class UtpTestBase(val runWithBuiltInPlatform: Boolean) {
         assertThat(project.resolve(testCoverageXmlPath)).contains(
                 """<counter type="INSTRUCTION" missed="3" covered="5"/>"""
         )
+    }
+
+    @Test
+    fun runAndroidTestWithNoTestClasses() {
+        // TODO(b/434015775): Implement built-in test platform.
+        Assume.assumeFalse(runWithBuiltInPlatform)
+
+        selectModule("emptyAppProject")
+
+        val result = executor
+            .withEnableInfoLogging(true)  // "No tests found" message is info level.
+            .run(testTaskName)
+
+        result.assertOutputContains("No tests found, nothing to do.")
+    }
+
+    /**
+     * Regression test for b/466374462.
+     */
+    @Test
+    fun connectedAndroidTestDoesNotOutputNoClassDefFoundError() {
+        // TODO(b/434015775): Implement built-in test platform.
+        Assume.assumeFalse(runWithBuiltInPlatform)
+
+        selectModule("test")
+
+        // NoClassDefFoundError typically happen when you return too early from work action
+        // and some callback happens after Gradle unloads classes in worker daemon.
+        // We repeat 10 times here to give Gradle a chance to unload some worker daemons
+        // between multiple builds.
+        repeat(10) {
+            executor.run(testTaskName).apply {
+                assertOutputDoesNotContain("java.lang.NoClassDefFoundError")
+                assertErrorDoesNotContain("java.lang.NoClassDefFoundError")
+            }
+        }
     }
 }

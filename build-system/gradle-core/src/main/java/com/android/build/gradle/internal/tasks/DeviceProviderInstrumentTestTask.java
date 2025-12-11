@@ -74,7 +74,6 @@ import com.android.tools.utp.gradle.api.EmulatorControlConfig;
 import com.android.tools.utp.gradle.api.UtpDependencies;
 import com.android.utils.FileUtils;
 import com.android.utils.StringHelper;
-
 import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
