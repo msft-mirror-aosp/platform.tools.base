@@ -20,7 +20,6 @@ import com.android.annotations.concurrency.Slow
 import com.android.annotations.concurrency.UiThread
 import com.android.annotations.concurrency.WorkerThread
 import com.android.tools.lint.checks.ThreadConstraintDetector
-import com.android.tools.lint.checks.ThreadConstraintDetector.ThreadConstraintLattice.Companion.assumeCommonJavaAndKotlinSignatures
 import com.android.tools.lint.checks.fx.AssumptionTableBuilder.Companion.build
 import com.android.tools.lint.checks.fx.get
 import com.android.tools.lint.checks.fx.invoke
