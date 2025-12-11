@@ -27,6 +27,7 @@ import com.android.build.gradle.internal.publishing.AndroidArtifacts.ConsumedCon
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.tasks.BuildAnalyzer
 import com.android.build.gradle.internal.tasks.NonIncrementalTask
+import com.android.build.gradle.internal.tasks.creationconfig.JavaPreCompileTaskCreationConfig
 import com.android.build.gradle.internal.tasks.factory.VariantTaskCreationAction
 import com.android.build.gradle.internal.utils.findKaptOrKspConfigurationsForVariant
 import com.android.build.gradle.internal.utils.setDisallowChanges
@@ -85,44 +86,15 @@ abstract class JavaPreCompileTask : NonIncrementalTask() {
     }
 
     class CreationAction(
-        creationConfig: ComponentCreationConfig,
-        private val usingKapt: Boolean,
-        private val usingKsp: Boolean
+        creationConfig: JavaPreCompileTaskCreationConfig
     ) :
-        VariantTaskCreationAction<JavaPreCompileTask, ComponentCreationConfig>(creationConfig) {
+        VariantTaskCreationAction<JavaPreCompileTask, JavaPreCompileTaskCreationConfig>(creationConfig) {
 
         override val name: String
-            get() = computeTaskName("javaPreCompile")
+            get() = creationConfig.computeTaskNameInternal("javaPreCompile")
 
         override val type: Class<JavaPreCompileTask>
             get() = JavaPreCompileTask::class.java
-
-        // Create the configuration early to avoid issues with composite builds (e.g., bug 183952598)
-        private fun createKaptOrKspClassPath(kaptOrKsp: String): Configuration {
-            val configurations = findKaptOrKspConfigurationsForVariant(
-                this.creationConfig,
-                kaptOrKsp
-            )
-            // This is a private detail, so we want to use a detached configuration, but it's not
-            // possible because of https://github.com/gradle/gradle/issues/6881.
-            return creationConfig.services.configurations
-                .create("_agp_internal_${name}_${kaptOrKsp}Classpath")
-                .setExtendsFrom(configurations)
-                .apply {
-                    isVisible = false
-                    isCanBeResolved = true
-                    isCanBeConsumed = false
-                }
-        }
-
-        private val kaptClasspath: Configuration? = if (usingKapt) {
-            createKaptOrKspClassPath("kapt")
-        } else null
-
-        // Create the configuration early to avoid issues with composite builds (e.g., bug 183952598)
-        private val kspClasspath: Configuration? = if (usingKsp) {
-            createKaptOrKspClassPath("ksp")
-        } else null
 
         override fun handleProvider(taskProvider: TaskProvider<JavaPreCompileTask>) {
             super.handleProvider(taskProvider)
@@ -137,36 +109,12 @@ abstract class JavaPreCompileTask : NonIncrementalTask() {
         override fun configure(task: JavaPreCompileTask) {
             super.configure(task)
 
-            // Query for JAR instead of PROCESSED_JAR as this task only cares about the original
-            // jars.
-            if (usingKapt) {
-                task.annotationProcessorArtifacts = kaptClasspath!!.incoming
-                    .artifactView { config: ArtifactView.ViewConfiguration ->
-                        config.attributes { it.attribute(ARTIFACT_TYPE, ArtifactType.JAR.type) }
-                    }
-                    .artifacts
-            } else {
-                task.annotationProcessorArtifacts = if (creationConfig is KmpComponentCreationConfig) {
-                    null
-                } else {
-                    creationConfig.variantDependencies
-                        .getArtifactCollection(
-                            ConsumedConfigType.ANNOTATION_PROCESSOR,
-                            ArtifactScope.ALL,
-                            ArtifactType.JAR
-                        )
-                }
-            }
+            task.annotationProcessorArtifacts = creationConfig.annotationProcessorArtifacts
 
-            task.kspProcessorArtifacts = kspClasspath?.incoming
-                ?.artifactView { config: ArtifactView.ViewConfiguration ->
-                    config.attributes { it.attribute(ARTIFACT_TYPE, ArtifactType.JAR.type) }
-                }
-                ?.artifacts
+            task.kspProcessorArtifacts = creationConfig.kspProcessorArtifacts
 
             task.annotationProcessorClassNames.setDisallowChanges(
-                (creationConfig.javaCompilation.annotationProcessor as AnnotationProcessorImpl)
-                    .finalListOfClassNames
+                creationConfig.finalListOfClassNames
             )
         }
     }
