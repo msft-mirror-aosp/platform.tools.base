@@ -261,7 +261,7 @@ interface RecipeExecutor {
    * @param defaultVersion the default version to return if the JVM can't be found
    * @return the Java version
    */
-  fun getJavaVersion(defaultVersion: String = "JavaVersion.VERSION_17"): String
+  suspend fun getJavaVersion(defaultVersion: String = "JavaVersion.VERSION_17"): String
 
   /**
    * Adds a `useLibrary("[name]")` declaration to the module build.gradle[.kts] file
