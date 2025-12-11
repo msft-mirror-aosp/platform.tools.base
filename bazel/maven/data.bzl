@@ -39,6 +39,7 @@ DATA = [
     "androidx.annotation:annotation:1.6.0",
     "androidx.annotation:annotation:1.7.0-beta01",
     "androidx.annotation:annotation-jvm:1.6.0",
+    "androidx.annotation:annotation-jvm:1.9.0",
     "androidx.appcompat:appcompat:1.0.2",
     "androidx.appcompat:appcompat:1.3.0",
     "androidx.appcompat:appcompat:1.3.0-beta01",
@@ -911,6 +912,7 @@ DATA = [
     "com.squareup.wire:wire-grpc-client:5.3.1",
     "com.squareup.wire:wire-kotlin-generator:5.3.1",
     "com.squareup.wire:wire-runtime:5.3.1",
+    "com.squareup.wire:wire-runtime-jvm:5.4.0",
     "com.squareup.wire:wire-schema:5.3.1",
     "com.vladsch.flexmark:flexmark:0.64.8",
     "com.vladsch.flexmark:flexmark-ext-autolink:0.64.8",
@@ -1300,6 +1302,7 @@ DATA = [
     # Source JARs
     # keep sorted
     "androidx.arch.core:core-common:jar:sources:2.2.0",
+    "androidx.collection:collection-jvm:1.4.5",
     "androidx.collection:collection-jvm:jar:sources:1.4.0",
     "androidx.lifecycle:lifecycle-common-jvm:jar:sources:2.8.5",
     "androidx.lifecycle:lifecycle-runtime-desktop:jar:sources:2.8.5",

@@ -17024,6 +17024,17 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "androidx.annotation.annotation-jvm_1.9.0",
+    pom = "repository/androidx/annotation/annotation-jvm/1.9.0/annotation-jvm-1.9.0.pom",
+    repo_root_path = "repository",
+    repo_path = "androidx/annotation/annotation-jvm/1.9.0",
+    deps = [
+        "org.jetbrains.kotlin.kotlin-stdlib_1.7.10",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "androidx.annotation.annotation-jvm_1.9.1",
     pom = "repository/androidx/annotation/annotation-jvm/1.9.1/annotation-jvm-1.9.1.pom",
     repo_root_path = "repository",
@@ -17821,6 +17832,18 @@ maven_artifact(
     repo_path = "androidx/collection/collection-jvm/1.4.4",
     deps = [
         "androidx.annotation.annotation-jvm_1.8.1",
+        "org.jetbrains.kotlin.kotlin-stdlib_1.8.22",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "androidx.collection.collection-jvm_1.4.5",
+    pom = "repository/androidx/collection/collection-jvm/1.4.5/collection-jvm-1.4.5.pom",
+    repo_root_path = "repository",
+    repo_path = "androidx/collection/collection-jvm/1.4.5",
+    deps = [
+        "androidx.annotation.annotation-jvm_1.9.0",
         "org.jetbrains.kotlin.kotlin-stdlib_1.8.22",
     ],
     visibility = ["//visibility:public"],
@@ -71599,6 +71622,18 @@ maven_artifact(
     pom = "repository/com/squareup/wire/wire-runtime-jvm/5.3.1/wire-runtime-jvm-5.3.1.pom",
     repo_root_path = "repository",
     repo_path = "com/squareup/wire/wire-runtime-jvm/5.3.1",
+    deps = [
+        "com.squareup.okio.okio-jvm_3.9.1",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.0.21",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.squareup.wire.wire-runtime-jvm_5.4.0",
+    pom = "repository/com/squareup/wire/wire-runtime-jvm/5.4.0/wire-runtime-jvm-5.4.0.pom",
+    repo_root_path = "repository",
+    repo_path = "com/squareup/wire/wire-runtime-jvm/5.4.0",
     deps = [
         "com.squareup.okio.okio-jvm_3.9.1",
         "org.jetbrains.kotlin.kotlin-stdlib_2.0.21",
