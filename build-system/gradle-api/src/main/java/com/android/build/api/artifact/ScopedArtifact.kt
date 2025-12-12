@@ -41,7 +41,7 @@ sealed class ScopedArtifact: Artifact.Single<Directory>(DIRECTORY, Category.INTE
      * Instead, consume [POST_COMPILATION_CLASSES] and use [CLASSES] to append your bytecodes to.
      *
      * ```kotlin
-     * extension.onVariants(extension.selector().withBuildType("debug")) {  variant ->
+     * extension.onVariants(extension.selector().withBuildType("debug")) { variant ->
      *     val generatorTask = project.tasks.register(
      *          "postCompilation${variant.name.capitalizeFirstChar()}Task",
      *          AddPostCompilationCodeGeneratorTask::class.java) { task ->
