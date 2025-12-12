@@ -37,6 +37,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -408,5 +409,35 @@ class AppProcessTrackerTest {
             assertTrue(process.propertiesFlow.value.uid.isError)
             assertTrue(process.propertiesFlow.value.packageNames.isError)
             assertTrue(process.propertiesFlow.value.waitingForDebugger.isError)
+        }
+
+    @Test
+    fun testAppProcessTracker_shares_jdwpProcess_instances_with_jdwpProcessTracker(): Unit =
+        CoroutineTestUtils.runBlockingWithTimeout {
+            val deviceID = "1234"
+            val fakeDevice =
+                fakeAdb.connectDevice(
+                    deviceID,
+                    "test1",
+                    "test2",
+                    "model",
+                    AndroidApiLevel(31), // SDK >= 31 is required for track_app feature.
+                    DeviceState.HostConnectionType.USB
+                )
+            fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
+            val connectedDevice =
+                hostServices.session.waitForOnlineConnectedDevice(fakeDevice.deviceId)
+            val appProcessTracker = AppProcessTracker.create(connectedDevice)
+            val jdwpProcessTracker = JdwpProcessTracker.create(connectedDevice)
+            fakeDevice.startClient(pid = 10, userId = 0, packageName = "a.b.c", isWaiting = false)
+
+            // Act
+            val appTrackersJdwpProcess =
+                appProcessTracker.appProcessFlow.first { it.isNotEmpty() }.first().jdwpProcess
+            val jdwpTrackersJdwpProcess =
+                jdwpProcessTracker.processesFlow.first { it.isNotEmpty() }.first()
+
+            // Assert
+            assertSame(appTrackersJdwpProcess, jdwpTrackersJdwpProcess)
         }
 }
