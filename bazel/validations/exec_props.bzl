@@ -43,8 +43,13 @@ def _limit_exec_properties_impl(target, ctx):
 
 def _check_machine_size(label, rule):
     exec_properties = rule.attr.exec_properties
+    tags = rule.attr.tags
     machine_size = exec_properties.get("label:machine-size")
-    if machine_size == "large" and label not in LARGE_MACHINE_ALLOWLIST:
+
+    # We do not want to run evals on presubmit
+    is_eval = "eval" in tags and "noci:studio-linux" in tags and "noci:studio-win" in tags
+    is_allowed = label in LARGE_MACHINE_ALLOWLIST or is_eval
+    if machine_size == "large" and not is_allowed:
         fail(LARGE_MACHINE_FAILURE_MESSAGE.format(str(label)))
 
 def _check_docker_network(label, rule):
