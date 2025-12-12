@@ -1592,6 +1592,41 @@ class ConnectedDeviceTest {
         Assert.fail("Should not reach")
     }
 
+    @Test
+    fun testWaitUntilStateThrowsIOExceptionWhenDeviceDisconnects(): Unit = runBlockingWithTimeout {
+        // Prepare
+        val connectedDevice = addFakeConnectedDevice()
+
+        // Act
+        val job = async {
+            connectedDevice.waitUntilState(DeviceState.AUTHORIZING)
+        }
+
+        delay(50)
+        fakeAdb.disconnectDevice(connectedDevice.serialNumber)
+
+        // Assert
+        exceptionRule.expect(IOException::class.java)
+        job.await()
+    }
+
+    @Test
+    fun testWaitUntilStateWorksWhenWaitingForDisconnected(): Unit = runBlockingWithTimeout {
+        // Prepare
+        val connectedDevice = addFakeConnectedDevice()
+
+        // Act
+        val job = async {
+            connectedDevice.waitUntilState(DeviceState.DISCONNECTED)
+        }
+
+        delay(50)
+        fakeAdb.disconnectDevice(connectedDevice.serialNumber)
+
+        // Assert
+        job.await()
+    }
+
     open class TestSyncProgress : SyncProgress {
 
         var started = false
