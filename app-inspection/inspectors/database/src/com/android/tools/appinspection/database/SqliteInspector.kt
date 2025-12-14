@@ -313,19 +313,25 @@ internal class SqliteInspector(
         }
       }
     }
-    classes
-      .map { it.connectionClass }
-      .forEach {
-        Log.i(TAG, "Finding instances of ${it.name}")
-        artTooling.findInstances(it).forEach { sqlConnection ->
-          val file = sqlConnection.getDatabasePath()
+    val connectionClasses = buildSet {
+      if (bundledClasses != null) {
+        add(bundledClasses.connectionClass)
+      }
+      addAll(classes.map { it.connectionClass })
+    }
+    Log.i(TAG, "Connection classes: $connectionClasses")
 
-          val database = AndroidXDatabase(sqlConnection, file)
-          if (database.isOpen()) {
-            onDatabaseOpened(database)
-          }
+    connectionClasses.forEach {
+      Log.i(TAG, "Finding instances of ${it.name}")
+      artTooling.findInstances(it).forEach { sqlConnection ->
+        val file = sqlConnection.getDatabasePath()
+
+        val database = AndroidXDatabase(sqlConnection, file)
+        if (database.isOpen()) {
+          onDatabaseOpened(database)
         }
       }
+    }
 
     if (command.forceOpen) {
       databaseRegistry.enableForceOpen()

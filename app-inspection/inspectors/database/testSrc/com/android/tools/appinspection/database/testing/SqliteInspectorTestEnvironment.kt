@@ -23,6 +23,9 @@ import androidx.inspection.ArtTooling
 import androidx.inspection.testing.DefaultTestInspectorEnvironment
 import androidx.inspection.testing.InspectorTester
 import androidx.inspection.testing.TestInspectorExecutors
+import androidx.sqlite.SQLiteConnection
+import androidx.sqlite.driver.bundled.BundledSQLiteDriver
+import androidx.sqlite.driver.bundled.SQLITE_OPEN_MEMORY
 import androidx.sqlite.inspection.SqliteInspectorProtocol.Command
 import androidx.sqlite.inspection.SqliteInspectorProtocol.Command.OneOfCase.TRACK_DATABASES
 import androidx.sqlite.inspection.SqliteInspectorProtocol.DatabaseOpenedEvent
@@ -38,6 +41,7 @@ import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit.SECONDS
 import kotlin.coroutines.CoroutineContext
 import kotlin.test.fail
+import kotlin.time.Duration
 import kotlinx.coroutines.*
 import org.junit.rules.ExternalResource
 import org.junit.rules.TemporaryFolder
@@ -69,6 +73,9 @@ internal const val CREATE_IN_MEMORY_DATABASE_COMMAND_SIGNATURE_API27 =
     ")" +
     "Landroid/database/sqlite/SQLiteDatabase;"
 
+private const val ANDROIDX_DRIVER_OPEN_WITH_FLAGS_SIG =
+  "open(Ljava/lang/String;I)Landroidx/sqlite/SQLiteConnection;"
+
 private const val RELEASE_REFERENCE_COMMAND_SIGNATURE = "releaseReference()V"
 private const val ALL_REFERENCES_RELEASED_COMMAND_SIGNATURE = "onAllReferencesReleased()V"
 
@@ -85,6 +92,7 @@ class SqliteInspectorTestEnvironment(
     InspectorTester(SQLITE_INSPECTOR_ID, inspectorEnvironment, inspectorFactory)
   }
   private val databases = mutableListOf<SQLiteDatabase>()
+  private val androidXDatabases = mutableListOf<SQLiteConnection>()
   private var trackingStarted = false
   private val temporaryFolder: TemporaryFolder = TemporaryFolder()
 
@@ -134,7 +142,11 @@ class SqliteInspectorTestEnvironment(
     }
   }
 
-  fun registerAlreadyOpenDatabases(databases: List<SQLiteDatabase>) {
+  suspend fun receiveEvent(timeout: Duration): Event {
+    return withTimeout(timeout) { receiveEvent() }
+  }
+
+  fun registerAlreadyOpenDatabases(databases: List<Any>) {
     artTooling.registerInstancesToFind(databases)
   }
 
@@ -188,6 +200,12 @@ class SqliteInspectorTestEnvironment(
     }
   }
 
+  fun triggerOnOpenedExit(connection: SQLiteConnection) {
+    if (trackingStarted) {
+      artTooling.triggerOnOpenedExit(connection)
+    }
+  }
+
   fun triggerReleaseReference(db: SQLiteDatabase) {
     if (trackingStarted) {
       artTooling.triggerReleaseReference(db)
@@ -214,6 +232,13 @@ class SqliteInspectorTestEnvironment(
     triggerOnOpenedExit(db)
     databases.add(db)
     return db
+  }
+
+  fun openAndroidXDatabase(database: DatabaseModel): SQLiteConnection {
+    val connection = database.createAndroidXInstance(temporaryFolder)
+    triggerOnOpenedExit(connection)
+    androidXDatabases.add(connection)
+    return connection
   }
 
   fun closeDatabase(database: SQLiteDatabase) {
@@ -287,6 +312,17 @@ class FakeArtTooling : ArtTooling {
     @Suppress("UNCHECKED_CAST")
     val hook = onOpen.first().asExitHook as ArtTooling.ExitHook<SQLiteDatabase>
     hook.onExit(db)
+  }
+
+  fun triggerOnOpenedExit(connection: SQLiteConnection) {
+    val onOpen =
+      registeredHooks.filterIsInstance<Hook.ExitHook>().filter {
+        it.originMethod == ANDROIDX_DRIVER_OPEN_WITH_FLAGS_SIG
+      }
+    assertThat(onOpen).named("hooks").hasSize(1)
+    @Suppress("UNCHECKED_CAST")
+    val hook = onOpen.first().asExitHook as ArtTooling.ExitHook<SQLiteConnection>
+    hook.onExit(connection)
   }
 
   fun triggerReleaseReference(db: SQLiteDatabase) {
@@ -385,4 +421,36 @@ private fun DatabaseModel.createInstance(
   val db = openHelper.readableDatabase
   tables.forEach { t -> db.addTable(t) }
   return db
+}
+
+private fun DatabaseModel.createAndroidXInstance(
+  temporaryFolder: TemporaryFolder
+): SQLiteConnection {
+  val path =
+    when (name == null) {
+      true -> ""
+      false -> File(temporaryFolder.root, name).also { it.createNewFile() }.absolutePath
+    }
+
+  val driver = BundledSQLiteDriver()
+  val connection =
+    when (name == null) {
+      true -> driver.open(path, SQLITE_OPEN_MEMORY)
+      else -> driver.open(path)
+    }
+  tables.forEach { t -> connection.addTable(t) }
+  return connection
+}
+
+fun SQLiteConnection.getDatabaseName(): String {
+  prepare("PRAGMA database_list;").use { statement ->
+    while (statement.step()) {
+      val name = statement.getText(1)
+      if (name == "main") {
+        val path = statement.getText(2)
+        return path.takeIf { it.isNotEmpty() } ?: ":memory"
+      }
+    }
+  }
+  throw RuntimeException("Failed to get database name")
 }
