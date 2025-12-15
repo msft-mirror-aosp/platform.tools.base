@@ -196,7 +196,6 @@ com.android.build.gradle.integration.application.VectorDrawableTest
 com.android.build.gradle.integration.application.VectorDrawableTest_Library
 com.android.build.gradle.integration.application.WindowsSystemDependencyTest
 com.android.build.gradle.integration.attribution.BuildAttributionDataTest
-com.android.build.gradle.integration.attribution.BuildScriptDependenciesDataTest
 com.android.build.gradle.integration.automatic.CheckAll
 com.android.build.gradle.integration.baselineprofiles.ArtProfileBaselineTest
 com.android.build.gradle.integration.baselineprofiles.ArtProfileExternalDependenciesTest
