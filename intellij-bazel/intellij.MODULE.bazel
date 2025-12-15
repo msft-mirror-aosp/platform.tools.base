@@ -19,18 +19,6 @@ intellij.local_platform(
     target = "@//prebuilts/studio/intellij-sdk:sherlock-sdk",
 )
 intellij.remote_platform(
-    name = "intellij_ce_2024_2",
-    sha256 = "781cc03526d5811061c6ffd211942698b3d18ed2f055a04f384956686a7aa0a6",
-    top_level_dir = "idea-IC-242.21829.142",
-    url = "https://download.jetbrains.com/idea/ideaIC-2024.2.1.tar.gz",
-)
-intellij.remote_platform(
-    name = "intellij_ce_2024_3",
-    sha256 = "b183b126de2cd457475eea184874b5da2fa33ba5ae2ff874bdc8c1d534156428",
-    top_level_dir = "idea-IC-243.22562.218",
-    url = "https://download.jetbrains.com/idea/ideaIC-2024.3.1.1.tar.gz",
-)
-intellij.remote_platform(
     name = "intellij_ce_2025_1",
     sha256 = "e5abd978ec976bde4171dc380f9008c581db81b77a6e6420ce3e7cf35e9573ef",
     top_level_dir = "idea-IC-251.25410.109",
@@ -50,4 +38,4 @@ intellij.remote_platform(
 )
 
 # IMPORTANT: This list of repos should always be kept up to date with the platforms defined above.
-use_repo(intellij, "intellij", "intellij_2025_3", "intellij_ce_2024_2", "intellij_ce_2024_3", "intellij_ce_2025_1", "intellij_ce_2025_2")
+use_repo(intellij, "intellij", "intellij_2025_3", "intellij_ce_2025_1", "intellij_ce_2025_2")
