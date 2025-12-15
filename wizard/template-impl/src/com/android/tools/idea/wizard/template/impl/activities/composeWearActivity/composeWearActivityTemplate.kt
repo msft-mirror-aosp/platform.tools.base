@@ -38,7 +38,7 @@ import java.io.File
 val composeWearActivityTemplate
   get() = template {
     name = "Empty Wear App"
-    minApi = 26
+    minApi = 30
     description = "Creates an empty app using Compose for Wear OS"
 
     constraints =
@@ -65,15 +65,6 @@ val composeWearActivityTemplate
         "If true, this activity will have a CATEGORY_LAUNCHER intent filter, making it visible in the launcher"
     }
 
-    val greeting = stringParameter {
-      name = "Greeting function name"
-      default = "Greeting"
-      help = "Used for deduplication"
-      visible = { false }
-      constraints = listOf(UNIQUE, Constraint.KOTLIN_FUNCTION)
-      loggable = true
-    }
-
     val wearAppName = stringParameter {
       name = "WearApp function name"
       default = "WearApp"
@@ -97,7 +88,6 @@ val composeWearActivityTemplate
       PackageNameWidget(packageName),
       CheckBoxWidget(isLauncher),
       // Invisible widgets to pass data
-      TextFieldWidget(greeting),
       TextFieldWidget(defaultPreview),
     )
 
@@ -109,7 +99,6 @@ val composeWearActivityTemplate
         activityClass.value,
         packageName.value,
         isLauncher.value,
-        greeting.value,
         wearAppName.value,
         defaultPreview.value,
       )
@@ -119,7 +108,7 @@ val composeWearActivityTemplate
 val composeWearActivityWithTileAndComplicationTemplate
   get() = template {
     name = "Empty Wear App With Tile And Complication"
-    minApi = 26
+    minApi = 30
     description =
       "Creates an empty app using Compose for Wear OS, including a Tile and Complication"
 
@@ -161,15 +150,6 @@ val composeWearActivityWithTileAndComplicationTemplate
         "If true, this activity will have a CATEGORY_LAUNCHER intent filter, making it visible in the launcher"
     }
 
-    val greeting = stringParameter {
-      name = "Greeting function name"
-      default = "Greeting"
-      help = "Used for deduplication"
-      visible = { false }
-      constraints = listOf(UNIQUE, Constraint.KOTLIN_FUNCTION)
-      loggable = true
-    }
-
     val wearAppName = stringParameter {
       name = "WearApp function name"
       default = "WearApp"
@@ -203,7 +183,6 @@ val composeWearActivityWithTileAndComplicationTemplate
       PackageNameWidget(packageName),
       CheckBoxWidget(isLauncher),
       // Invisible widgets to pass data
-      TextFieldWidget(greeting),
       TextFieldWidget(defaultPreview),
       TextFieldWidget(tilePreview),
     )
@@ -219,7 +198,6 @@ val composeWearActivityWithTileAndComplicationTemplate
         complicationServiceClass.value,
         packageName.value,
         isLauncher.value,
-        greeting.value,
         wearAppName.value,
         defaultPreview.value,
       )

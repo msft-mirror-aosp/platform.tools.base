@@ -54,14 +54,18 @@ DATA = [
     "androidx.collection:collection:1.5.0-alpha06",
     "androidx.collection:collection-ktx:1.4.0",  # Compose BOM 2024.04.01
     "androidx.collection:collection-ktx:1.4.2",
+    "androidx.collection:collection-ktx:1.5.0",  # Needed for TemplateDiffTest#testNewComposeWearActivityWithTileAndComplication
     "androidx.collection:collection-ktx:1.5.0-alpha06",
     "androidx.compose.animation:animation:1.3.0",
     "androidx.compose.animation:animation:1.5.0-beta01",  # Necessary for Compose for TV.
     "androidx.compose.animation:animation:1.7.0",  # Compose BOM 2024.09.00
     "androidx.compose.animation:animation:1.7.0-beta05",
     "androidx.compose.animation:animation:1.8.0-alpha06",
+    "androidx.compose.animation:animation:1.8.2",  # Needed for TemplateDiffTest#testNewComposeWearActivityWithTileAndComplication
     "androidx.compose.animation:animation-core:1.3.3",  # Dependency of architecture-samples
     "androidx.compose.animation:animation-core-android:1.5.0-beta01",  # Necessary for Compose for TV.
+    "androidx.compose.animation:animation-graphics:1.10.0",  # Needed for TemplateDiffTest#testNewComposeWearActivityWithTileAndComplication
+    "androidx.compose.animation:animation-graphics:1.8.2",  # Needed for TemplateDiffTest#testNewComposeWearActivityWithTileAndComplication
     "androidx.compose.compiler:compiler:1.2.0",
     "androidx.compose.compiler:compiler:1.3.2",
     "androidx.compose.compiler:compiler:1.4.3",  # Dependency of architecture-samples
@@ -75,31 +79,44 @@ DATA = [
     "androidx.compose:compose-bom:pom:2023.08.00",
     "androidx.compose:compose-bom:pom:2024.09.00",
     "androidx.compose:compose-bom:pom:2025.02.00",
+    "androidx.compose:compose-bom:pom:2025.12.00",
+    "androidx.compose.foundation:foundation:1.10.0",  # Needed for TemplateDiffTest#testNewComposeWearActivityWithTileAndComplication
     "androidx.compose.foundation:foundation:1.3.0",
     "androidx.compose.foundation:foundation:1.3.1",  # Dependency of architecture-samples
     "androidx.compose.foundation:foundation:1.5.0-beta01",  # Necessary for Compose for TV.
     "androidx.compose.foundation:foundation:1.7.0",  # Compose BOM 2024.09.00
     "androidx.compose.foundation:foundation:1.8.0-alpha06",
+    "androidx.compose.foundation:foundation:1.8.2",  # Needed for TemplateDiffTest#testNewComposeWearActivityWithTileAndComplication
     "androidx.compose.foundation:foundation-android:1.5.0-beta01",  # Necessary for Compose for TV.
     "androidx.compose.foundation:foundation-layout:1.3.1",  # Dependency of architecture-samples
     "androidx.compose.foundation:foundation-layout:1.7.0",  # Compose BOM 2024.09.00
+    "androidx.compose.material:material:1.10.0",  # Needed for TemplateDiffTest#testNewComposeWearActivityWithTileAndComplication
     "androidx.compose.material:material:1.3.0",  # Needed by //tools/base/build-system/integration-test/...
     "androidx.compose.material:material:1.4.3",  # Necessary for Compose for TV.
     "androidx.compose.material:material:1.5.0-alpha04",
     "androidx.compose.material:material:1.7.0",
+    "androidx.compose.material:material:1.7.7",  # Needed for TemplateDiffTest#testNewComposeWearActivityWithTileAndComplication
     "androidx.compose.material:material:1.7.8",  # Compose BOM 2024.09.00
     "androidx.compose.material:material:1.8.0-alpha06",
+    "androidx.compose.material:material-desktop:1.7.0",  # Needed for TemplateDiffTest#testNewComposeWearActivityWithTileAndComplication
     "androidx.compose.material:material-icons-core:1.7.0",  # Compose BOM 2024.09.00
+    "androidx.compose.material:material-icons-core:1.7.8",  # Needed for TemplateDiffTest#testNewComposeWearActivityWithTileAndComplication
     "androidx.compose.material:material-icons-core-desktop:1.7.0",  # Compose BOM 2024.09.00
+    "androidx.compose.material:material-icons-core-desktop:1.7.7",  # Needed for TemplateDiffTest#testNewComposeWearActivityWithTileAndComplication
+    "androidx.compose.material:material-icons-core-desktop:1.7.8",  # Needed for TemplateDiffTest#testNewComposeWearActivityWithTileAndComplication
     "androidx.compose.material:material-icons-extended:1.3.0",
     "androidx.compose.material:material-icons-extended:1.7.0",
+    "androidx.compose.material:material-ripple:1.10.0",  # Needed for TemplateDiffTest#testNewComposeWearActivityWithTileAndComplication
     "androidx.compose.material:material-ripple:1.7.0",  # Compose BOM 2024.09.00
+    "androidx.compose.material:material-ripple:1.7.7",  # Needed for TemplateDiffTest#testNewComposeWearActivityWithTileAndComplication
+    "androidx.compose.material:material-ripple-jvmstubs:1.7.7",  # Needed for TemplateDiffTest#testNewComposeWearActivityWithTileAndComplication
     "androidx.compose.material3.adaptive:adaptive:1.0.0",  # Compose Navigation UI template: Compose BOM 2024.09.00
     "androidx.compose.material3:material3:1.0.0",
     "androidx.compose.material3:material3:1.1.1",
     "androidx.compose.material3:material3:1.3.0",  # Compose BOM 2024.09.00
     "androidx.compose.material3:material3-adaptive-navigation-suite:1.3.0",  # Compose Navigation UI template: Compose BOM 2024.09.00
     "androidx.compose.material3:material3-desktop:1.3.0",  # Compose BOM 2024.09.00
+    "androidx.compose.runtime:runtime:1.10.0",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
     "androidx.compose.runtime:runtime:1.3.3",  # Dependency of architecture-samples
     "androidx.compose.runtime:runtime:1.7.0",  # Compose BOM 2024.09.00
     "androidx.compose.runtime:runtime:1.8.0-alpha06",  # XR template
@@ -108,16 +125,19 @@ DATA = [
     "androidx.compose.runtime:runtime-saveable:1.3.3",  # Dependency of architecture-samples
     "androidx.compose.runtime:runtime-saveable:1.7.0",  # Compose BOM 2024.09.00
     "androidx.compose.runtime:runtime-saveable-desktop:1.7.0",  # Compose BOM 2024.09.00
+    "androidx.compose.ui:ui:1.10.0",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
     "androidx.compose.ui:ui:1.3.0",
     "androidx.compose.ui:ui:1.5.0-beta01",  # Necessary for Compose for TV.
     "androidx.compose.ui:ui:1.7.0",  # Compose BOM 2024.09.00
     "androidx.compose.ui:ui:1.7.5",
     "androidx.compose.ui:ui:1.8.0-alpha06",  # XR template
     "androidx.compose.ui:ui-desktop:1.7.0",  # Compose BOM 2024.09.00
+    "androidx.compose.ui:ui-graphics:1.10.0",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
     "androidx.compose.ui:ui-graphics:1.7.0",  # Compose BOM 2024.09.00
     "androidx.compose.ui:ui-graphics-android:1.5.0-beta01",  # Necessary for Compose for TV.
     "androidx.compose.ui:ui-graphics-desktop:1.7.0",  # Compose BOM 2024.09.00
     "androidx.compose.ui:ui-test-android:1.5.0-beta01",  # Necessary for Compose for TV.
+    "androidx.compose.ui:ui-test-junit4:1.10.0",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
     "androidx.compose.ui:ui-test-junit4:1.2.0",
     "androidx.compose.ui:ui-test-junit4:1.3.0",
     "androidx.compose.ui:ui-test-junit4:1.3.3",  # Dependency of architecture-samples
@@ -126,7 +146,9 @@ DATA = [
     "androidx.compose.ui:ui-test-junit4:1.7.0-beta03",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
     "androidx.compose.ui:ui-test-junit4:1.7.0-beta05",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
     "androidx.compose.ui:ui-test-junit4:1.8.0-alpha06",  # XR template
+    "androidx.compose.ui:ui-test-junit4:1.8.2",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
     "androidx.compose.ui:ui-test-junit4-android:1.5.0-beta01",  # Necessary for Compose for TV.
+    "androidx.compose.ui:ui-test-manifest:1.10.0",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
     "androidx.compose.ui:ui-test-manifest:1.3.0",
     "androidx.compose.ui:ui-test-manifest:1.3.3",  # Dependency of architecture-samples
     "androidx.compose.ui:ui-test-manifest:1.5.0-beta01",  # Necessary for Compose for TV.
@@ -134,8 +156,11 @@ DATA = [
     "androidx.compose.ui:ui-test-manifest:1.7.0-beta03",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
     "androidx.compose.ui:ui-test-manifest:1.7.0-beta05",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
     "androidx.compose.ui:ui-test-manifest:1.8.0-alpha06",  # XR template
+    "androidx.compose.ui:ui-test-manifest:1.8.2",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
+    "androidx.compose.ui:ui-text:1.10.0",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
     "androidx.compose.ui:ui-text:1.3.3",  # Dependency of architecture-samples
     "androidx.compose.ui:ui-text-google-fonts:1.7.0",
+    "androidx.compose.ui:ui-tooling:1.10.0",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
     "androidx.compose.ui:ui-tooling:1.2.0",  # Still needed from //tools/data-binding/compilationTests
     "androidx.compose.ui:ui-tooling:1.3.0",  # Still needed from //tools/base/build-system/integration-tests
     "androidx.compose.ui:ui-tooling:1.3.3",  # Dependency of architecture-samples
@@ -147,11 +172,14 @@ DATA = [
     "androidx.compose.ui:ui-tooling:1.7.0-beta05",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
     "androidx.compose.ui:ui-tooling:1.7.5",  # XR template
     "androidx.compose.ui:ui-tooling:1.8.0-alpha06",
+    "androidx.compose.ui:ui-tooling:1.8.2",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
     "androidx.compose.ui:ui-tooling-android:1.5.0-beta01",  # Necessary for Compose for TV.
     "androidx.compose.ui:ui-tooling-data-android:1.5.0-beta01",  # Necessary for Compose for TV.
     "androidx.compose.ui:ui-tooling-desktop:1.7.0",  # Compose BOM 2024.09.00
+    "androidx.compose.ui:ui-tooling-preview:1.10.0",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
     "androidx.compose.ui:ui-tooling-preview:1.5.0-beta01",  # Necessary for Compose for TV.
     "androidx.compose.ui:ui-tooling-preview:1.6.5",
+    "androidx.compose.ui:ui-tooling-preview:1.8.2",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
     "androidx.compose.ui:ui-tooling-preview-android:1.5.0-beta01",  # Necessary for Compose for TV.
     "androidx.compose.ui:ui-tooling-preview-desktop:1.7.0",  # Compose BOM 2024.09.00
     "androidx.compose.ui:ui-unit-android:1.5.0-beta01",  # Necessary for Compose for TV.
@@ -182,6 +210,7 @@ DATA = [
     "androidx.core:core-ktx:1.8.0",
     "androidx.core:core-ktx:1.9.0",
     "androidx.core:core-splashscreen:1.0.1",
+    "androidx.core:core-splashscreen:1.2.0",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
     "androidx.customview:customview-poolingcontainer:1.0.0-beta01",
     "androidx.databinding:databinding-adapters:8.5.0",
     "androidx.databinding:databinding-common:8.5.0",
@@ -209,6 +238,7 @@ DATA = [
     "androidx.fragment:fragment:1.3.0-rc01",
     "androidx.fragment:fragment-ktx:1.5.6",
     "androidx.games:games-activity:4.0.0",
+    "androidx.graphics:graphics-shapes-desktop:1.0.1",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
     "androidx.leanback:leanback:1.0.0",
     "androidx.legacy:legacy-support-v13:1.0.0",
     "androidx.legacy:legacy-support-v4:1.0.0",
@@ -224,7 +254,11 @@ DATA = [
     "androidx.lifecycle:lifecycle-livedata:2.6.0-alpha03",  # Dependency of architecture-samples
     "androidx.lifecycle:lifecycle-livedata:2.8.3",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
     "androidx.lifecycle:lifecycle-livedata:2.8.7",
+    "androidx.lifecycle:lifecycle-livedata:2.9.2",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
+    "androidx.lifecycle:lifecycle-livedata:2.9.4",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
     "androidx.lifecycle:lifecycle-livedata-core:2.8.7",
+    "androidx.lifecycle:lifecycle-livedata-core:2.9.2",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
+    "androidx.lifecycle:lifecycle-livedata-core:2.9.4",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
     "androidx.lifecycle:lifecycle-livedata-core-ktx:2.6.2",
     "androidx.lifecycle:lifecycle-livedata-ktx:2.2.0",
     "androidx.lifecycle:lifecycle-livedata-ktx:2.3.1",
@@ -239,6 +273,8 @@ DATA = [
     "androidx.lifecycle:lifecycle-process:2.6.2",
     "androidx.lifecycle:lifecycle-process:2.8.3",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
     "androidx.lifecycle:lifecycle-process:2.8.7",
+    "androidx.lifecycle:lifecycle-process:2.9.2",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
+    "androidx.lifecycle:lifecycle-process:2.9.4",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
     "androidx.lifecycle:lifecycle-reactivestreams:2.6.2",
     "androidx.lifecycle:lifecycle-reactivestreams:2.8.7",
     "androidx.lifecycle:lifecycle-reactivestreams-ktx:2.8.7",
@@ -251,6 +287,8 @@ DATA = [
     "androidx.lifecycle:lifecycle-runtime-compose:2.6.1",
     "androidx.lifecycle:lifecycle-runtime-compose:2.8.3",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
     "androidx.lifecycle:lifecycle-runtime-compose:2.8.7",
+    "androidx.lifecycle:lifecycle-runtime-compose:2.9.2",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
+    "androidx.lifecycle:lifecycle-runtime-compose:2.9.4",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
     "androidx.lifecycle:lifecycle-runtime-compose-jvmstubs:2.8.7",  # Needed for ComposeRenderTest
     "androidx.lifecycle:lifecycle-runtime-desktop:2.8.0-alpha02",  # Needed for kmp consumption test
     "androidx.lifecycle:lifecycle-runtime-desktop:2.8.7",  # Needed for Privacy Sandbox connected test
@@ -266,6 +304,7 @@ DATA = [
     "androidx.lifecycle:lifecycle-viewmodel:2.6.2",
     "androidx.lifecycle:lifecycle-viewmodel:2.8.3",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
     "androidx.lifecycle:lifecycle-viewmodel:2.8.7",
+    "androidx.lifecycle:lifecycle-viewmodel:2.9.4",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
     "androidx.lifecycle:lifecycle-viewmodel-compose:2.6.0-alpha03",  # Dependency of architecture-samples
     "androidx.lifecycle:lifecycle-viewmodel-compose:2.6.1",
     "androidx.lifecycle:lifecycle-viewmodel-compose:2.8.3",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
@@ -278,9 +317,12 @@ DATA = [
     "androidx.lifecycle:lifecycle-viewmodel-ktx:2.6.2",
     "androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.3",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
     "androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.7",
+    "androidx.lifecycle:lifecycle-viewmodel-ktx:2.9.4",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
     "androidx.lifecycle:lifecycle-viewmodel-savedstate:2.6.1",
     "androidx.lifecycle:lifecycle-viewmodel-savedstate:2.6.2",
     "androidx.lifecycle:lifecycle-viewmodel-savedstate:2.8.7",
+    "androidx.lifecycle:lifecycle-viewmodel-savedstate:2.9.2",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
+    "androidx.lifecycle:lifecycle-viewmodel-savedstate:2.9.4",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
     "androidx.media:media:1.5.0",
     "androidx.media:media:1.6.0",
     "androidx.multidex:multidex:2.0.0",
@@ -338,6 +380,7 @@ DATA = [
     "androidx.room:room-runtime:2.0.0",
     "androidx.room:room-testing:2.5.0-rc01",  # Dependency of architecture-samples
     "androidx.savedstate:savedstate-ktx:1.2.1",
+    "androidx.savedstate:savedstate-ktx:1.3.2",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
     "androidx.slice:slice-builders:1.0.0",
     "androidx.sqlite:sqlite:2.5.0-beta01",  # Database Inspector
     "androidx.sqlite:sqlite-bundled:2.5.0-beta01",  # Database Inspector
@@ -377,20 +420,29 @@ DATA = [
     "androidx.tv:tv-material:1.0.0-alpha07",
     "androidx.tvprovider:tvprovider:1.0.0",
     "androidx.wear.compose:compose-material:1.2.1",
+    "androidx.wear.compose:compose-material3:1.5.6",  # Needed for TemplateDiffTest#testNewComposeWearActivityWithTileAndComplication
     "androidx.wear.compose:compose-navigation:1.2.1",
     "androidx.wear.compose:compose-ui-tooling:1.2.1",
+    "androidx.wear.compose:compose-ui-tooling:1.5.6",  # Needed for TemplateDiffTest#testNewComposeWearActivityWithTileAndComplication
+    "androidx.wear.protolayout:protolayout:1.3.0",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
     "androidx.wear.protolayout:protolayout-expression-pipeline:1.2.0",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
     "androidx.wear.protolayout:protolayout-material:1.2.0",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
+    "androidx.wear.protolayout:protolayout-material3:1.3.0",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
     "androidx.wear.tiles:tiles:1.4.0",
+    "androidx.wear.tiles:tiles:1.5.0",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
     "androidx.wear.tiles:tiles-material:1.4.0",
     "androidx.wear.tiles:tiles-renderer:1.4.0",
+    "androidx.wear.tiles:tiles-renderer:1.5.0",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
     "androidx.wear.tiles:tiles-tooling:1.4.0",
+    "androidx.wear.tiles:tiles-tooling:1.5.0",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
     "androidx.wear.tiles:tiles-tooling-preview:1.4.0",
+    "androidx.wear.tiles:tiles-tooling-preview:1.5.0",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
     "androidx.wear.watchface:watchface-complications-data-source-ktx:1.2.1",
     "androidx.wear.watchface:watchface-guava:1.1.0",  # Dependency of wearWatchFace
     "androidx.wear.watchface:watchface-guava:1.2.1",
     "androidx.wear:wear:1.2.0",
     "androidx.wear:wear-tooling-preview:1.0.0",
+    "androidx.window:window-core-android:1.5.0",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
     "androidx.xr.compose:compose:1.0.0-alpha01",
     "androidx.xr.runtime:runtime:1.0.0-alpha01",
     "androidx.xr.scenecore:scenecore:1.0.0-alpha01",
@@ -1018,6 +1070,7 @@ DATA = [
     "org.jetbrains.kotlin.android:org.jetbrains.kotlin.android.gradle.plugin:pom:2.2.10",  # Used by AGP privacy-sandbox tests
     "org.jetbrains.kotlin.android:org.jetbrains.kotlin.android.gradle.plugin:pom:2.3.0-RC2",  # Used by AGP tests
     "org.jetbrains.kotlin.android:org.jetbrains.kotlin.android.gradle.plugin:pom:2.3.20-dev-6126",
+    "org.jetbrains.kotlin:compose-compiler-gradle-plugin:2.2.10",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
     "org.jetbrains.kotlin:compose-compiler-gradle-plugin:2.3.0-RC2",  # Used by AGP tests
     "org.jetbrains.kotlin.jvm:org.jetbrains.kotlin.jvm.gradle.plugin:pom:1.6.10",
     "org.jetbrains.kotlin.jvm:org.jetbrains.kotlin.jvm.gradle.plugin:pom:1.6.21",
@@ -1088,6 +1141,7 @@ DATA = [
     "org.jetbrains.kotlin:kotlin-compiler-embeddable:2.1.20",
     "org.jetbrains.kotlin:kotlin-compiler-embeddable:2.1.21",
     "org.jetbrains.kotlin:kotlin-compose-compiler-plugin:2.0.21",
+    "org.jetbrains.kotlin:kotlin-compose-compiler-plugin:2.2.10",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
     "org.jetbrains.kotlin:kotlin-compose-compiler-plugin:2.2.20",  # Studio build
     "org.jetbrains.kotlin:kotlin-compose-compiler-plugin-embeddable:2.0.21",  # Kotlin templates
     "org.jetbrains.kotlin:kotlin-compose-compiler-plugin-embeddable:2.1.0",
@@ -1249,6 +1303,7 @@ DATA = [
     "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.0",  # used in agp_dependencies
     "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
     "org.jetbrains.kotlinx:kotlinx-coroutines-core-common:1.3.6",
+    "org.jetbrains.kotlinx:kotlinx-coroutines-guava:1.9.0",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
     "org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.7.3",
     "org.jetbrains.kotlinx:kotlinx-coroutines-slf4j:1.7.3",
     "org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3",

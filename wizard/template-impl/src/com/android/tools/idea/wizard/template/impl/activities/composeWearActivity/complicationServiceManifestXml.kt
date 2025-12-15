@@ -16,10 +16,8 @@
 
 package com.android.tools.idea.wizard.template.impl.activities.composeWearActivity
 
-fun complicationServiceManifestXml(
-    complicationServiceClass: String,
-    packageName: String
-) = """
+fun complicationServiceManifestXml(complicationServiceClass: String, packageName: String) =
+  """
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-feature android:name="android.hardware.type.watch" />
 
@@ -38,7 +36,7 @@ fun complicationServiceManifestXml(
                 android:value="SHORT_TEXT" />
             <meta-data
                 android:name="android.support.wearable.complications.UPDATE_PERIOD_SECONDS"
-                android:value="0" />
+                android:value="3600" />
         </service>
     </application>
 </manifest>

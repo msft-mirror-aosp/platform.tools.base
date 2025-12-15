@@ -27,7 +27,6 @@ import com.android.tools.idea.wizard.template.impl.activities.composeWearActivit
 import com.android.tools.idea.wizard.template.impl.activities.composeWearActivity.res.values.stringsXml
 import com.android.tools.idea.wizard.template.impl.activities.composeWearActivity.res.values.stylesXml
 import com.android.tools.idea.wizard.template.impl.activities.composeWearActivity.res.values.tileStringsXml
-import com.android.tools.idea.wizard.template.impl.activities.composeWearActivity.res.values_round.stringsXml as stringsRoundXml
 import com.android.tools.idea.wizard.template.impl.activities.composeWearActivity.src.app_package.mainActivityKt
 import com.android.tools.idea.wizard.template.impl.activities.composeWearActivity.src.app_package.theme.themeKt
 import com.android.tools.idea.wizard.template.impl.activities.composeWearActivity.src.app_package.tile.tileServiceKt
@@ -38,7 +37,6 @@ private fun RecipeExecutor.commonComposeRecipe(
   activityClass: String,
   packageName: String,
   isLauncher: Boolean,
-  greeting: String,
   wearAppName: String,
   defaultPreview: String,
   composeBomVersion: String = COMPOSE_BOM_VERSION,
@@ -50,16 +48,17 @@ private fun RecipeExecutor.commonComposeRecipe(
 
   // Add Compose Wear dependencies; the Compose BOM doesn't include Wear.
   val wearComposeVersionVarName =
-    getDependencyVarName("androidx.wear.compose:compose-material", "wear_compose_version")
-  val wearComposeVersion = getExtVar(wearComposeVersionVarName, "1.2.1")
-  addDependency(mavenCoordinate = "androidx.wear.compose:compose-material:$wearComposeVersion")
+    getDependencyVarName("androidx.wear.compose:compose-material3", "wear_compose_version")
+  val wearComposeVersion = getExtVar(wearComposeVersionVarName, "1.5.6")
+  addDependency(mavenCoordinate = "androidx.wear.compose:compose-material3:$wearComposeVersion")
   addDependency(mavenCoordinate = "androidx.wear.compose:compose-foundation:$wearComposeVersion")
+  addDependency(mavenCoordinate = "androidx.wear.compose:compose-ui-tooling:$wearComposeVersion")
   // Add Wear Tooling Preview dependency, which is not included in the wear BOM
   addDependency(mavenCoordinate = "androidx.wear:wear-tooling-preview:1.0.0")
 
   addDependency(mavenCoordinate = "androidx.activity:activity-compose:+")
 
-  addDependency(mavenCoordinate = "androidx.core:core-splashscreen:1.0.1")
+  addDependency(mavenCoordinate = "androidx.core:core-splashscreen:1.2.0")
 
   val splashScreenTheme = "${activityClass}Theme.Starting"
   generateManifest(
@@ -83,7 +82,6 @@ private fun RecipeExecutor.commonComposeRecipe(
     useLibrary("wear-sdk")
   }
   mergeXml(stringsXml(activityClass, moduleData.isNewModule), resOut.resolve("values/strings.xml"))
-  mergeXml(stringsRoundXml(), resOut.resolve("values-round/strings.xml"))
 
   val themeName = "${moduleData.themesData.appName}Theme"
   save(
@@ -92,7 +90,6 @@ private fun RecipeExecutor.commonComposeRecipe(
       moduleData.projectTemplateData.applicationPackage ?: packageName,
       activityClass,
       defaultPreview,
-      greeting,
       wearAppName,
       packageName,
       themeName,
@@ -115,7 +112,6 @@ fun RecipeExecutor.composeWearActivityRecipe(
   activityClass: String,
   packageName: String,
   isLauncher: Boolean,
-  greeting: String,
   wearAppName: String,
   defaultPreview: String,
 ) {
@@ -124,7 +120,6 @@ fun RecipeExecutor.composeWearActivityRecipe(
     activityClass,
     packageName,
     isLauncher,
-    greeting,
     wearAppName,
     defaultPreview,
   )
@@ -146,7 +141,6 @@ fun RecipeExecutor.composeWearActivityWithTileAndComplicationRecipe(
   complicationServiceClass: String,
   packageName: String,
   isLauncher: Boolean,
-  greeting: String,
   wearAppName: String,
   defaultPreview: String,
 ) {
@@ -155,39 +149,41 @@ fun RecipeExecutor.composeWearActivityWithTileAndComplicationRecipe(
     activityClass,
     packageName,
     isLauncher,
-    greeting,
     wearAppName,
     defaultPreview,
+    composeBomVersion = "2025.12.00",
   )
 
   val wearTilesVersionVarName =
     getDependencyVarName("androidx.wear.tiles:tiles", "wear_tiles_version")
-  val wearTilesVersion = getExtVar(wearTilesVersionVarName, "1.4.0")
+  val wearTilesVersion = getExtVar(wearTilesVersionVarName, "1.5.0")
   addDependency(mavenCoordinate = "androidx.wear.tiles:tiles:$wearTilesVersion")
-  addDependency(mavenCoordinate = "androidx.wear.tiles:tiles-material:$wearTilesVersion")
+  addDependency(
+    mavenCoordinate = "androidx.wear.tiles:tiles-renderer:$wearTilesVersion",
+    configuration = "debugImplementation",
+  )
+
+  val protolayoutVersionVarName =
+    getDependencyVarName("androidx.wear.protolayout:protolayout", "protolayout_version")
+  val protolayoutVersion = getExtVar(protolayoutVersionVarName, "1.3.0")
+  addDependency(mavenCoordinate = "androidx.wear.protolayout:protolayout:$protolayoutVersion")
+  addDependency(
+    mavenCoordinate = "androidx.wear.protolayout:protolayout-material3:$protolayoutVersion"
+  )
+
+  val guavaVersionVarName = getDependencyVarName("com.google.guava:guava", "guava_version")
+  val guavaVersion = getExtVar(guavaVersionVarName, "33.2.1-android")
+  addDependency(mavenCoordinate = "com.google.guava:guava:$guavaVersion")
 
   val wearTilesPreviewVersionVarName =
     getDependencyVarName("androidx.wear.tiles:tiles", "wear_tiles_preview_version")
-  val wearTilesPreviewVersion = getExtVar(wearTilesPreviewVersionVarName, "1.4.0")
+  val wearTilesPreviewVersion = getExtVar(wearTilesPreviewVersionVarName, "1.5.0")
   addDependency(
     mavenCoordinate = "androidx.wear.tiles:tiles-tooling:$wearTilesPreviewVersion",
     configuration = "debugImplementation",
   )
   addDependency(
     mavenCoordinate = "androidx.wear.tiles:tiles-tooling-preview:$wearTilesPreviewVersion"
-  )
-
-  val horologistVersionVarName =
-    getDependencyVarName(
-      "com.google.android.horologist:horologist-compose-tools",
-      "horologist_version",
-    )
-  val horologistVersion = getExtVar(horologistVersionVarName, "0.6.17")
-  addDependency(
-    mavenCoordinate = "com.google.android.horologist:horologist-compose-tools:$horologistVersion"
-  )
-  addDependency(
-    mavenCoordinate = "com.google.android.horologist:horologist-tiles:$horologistVersion"
   )
 
   addDependency(
@@ -205,7 +201,6 @@ fun RecipeExecutor.composeWearActivityWithTileAndComplicationRecipe(
     manifestOut.resolve("AndroidManifest.xml"),
   )
   copy(File("wear-app").resolve("drawable"), resOut.resolve("drawable"))
-  copy(File("wear-app").resolve("drawable-round"), resOut.resolve("drawable-round"))
 
   save(
     complicationServiceKt(complicationServiceClass, packageName),
