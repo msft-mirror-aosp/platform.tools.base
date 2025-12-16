@@ -4,7 +4,7 @@ ATTENTION REVIEWER: If this needs to be changed, please make sure changes
 below are backwards compatible.
 -------------------------------------------------------------------------
 Sha256 of below classes:
-bab5d38d4aad192c376deabd4fd77e301433f4117c5bf58cf7f43a4d3a8bf87c
+587420b955ca6dfcbd62bddec423c35a70ed9935ee0909572b63784bebe09ebd
 -------------------------------------------------------------------------
 com.android.builder.model.AaptOptions
 com.android.builder.model.AaptOptions$Namespacing extends java.lang.Enum
@@ -91,7 +91,6 @@ com.android.builder.model.AndroidProject.getLintRuleJars: java.util.List<java.io
 com.android.builder.model.AndroidProject.getModelVersion: java.lang.String ()
 com.android.builder.model.AndroidProject.getName: java.lang.String ()
 com.android.builder.model.AndroidProject.getNamespace: java.lang.String ()
-com.android.builder.model.AndroidProject.getNativeToolchains: java.util.Collection<com.android.builder.model.NativeToolchain> ()
 com.android.builder.model.AndroidProject.getNdkVersion: java.lang.String ()
 com.android.builder.model.AndroidProject.getPluginGeneration: int ()
 com.android.builder.model.AndroidProject.getProductFlavors: java.util.Collection<com.android.builder.model.ProductFlavorContainer> ()
@@ -274,33 +273,6 @@ com.android.builder.model.ModelBuilderParameter.setShouldGenerateSources: void (
 com.android.builder.model.ModelBuilderParameter.setVariantName: void (java.lang.String)
 com.android.builder.model.Named
 com.android.builder.model.Named.getName: java.lang.String ()
-com.android.builder.model.NativeAndroidProject
-com.android.builder.model.NativeAndroidProject.getApiVersion: int ()
-com.android.builder.model.NativeAndroidProject.getArtifacts: java.util.Collection<com.android.builder.model.NativeArtifact> ()
-com.android.builder.model.NativeAndroidProject.getBuildFiles: java.util.Collection<java.io.File> ()
-com.android.builder.model.NativeAndroidProject.getBuildSystems: java.util.Collection<java.lang.String> ()
-com.android.builder.model.NativeAndroidProject.getDefaultNdkVersion: java.lang.String ()
-com.android.builder.model.NativeAndroidProject.getFileExtensions: java.util.Map<java.lang.String, java.lang.String> ()
-com.android.builder.model.NativeAndroidProject.getModelVersion: java.lang.String ()
-com.android.builder.model.NativeAndroidProject.getName: java.lang.String ()
-com.android.builder.model.NativeAndroidProject.getSettings: java.util.Collection<com.android.builder.model.NativeSettings> ()
-com.android.builder.model.NativeAndroidProject.getToolChains: java.util.Collection<com.android.builder.model.NativeToolchain> ()
-com.android.builder.model.NativeAndroidProject.getVariantInfos: java.util.Map<java.lang.String, com.android.builder.model.NativeVariantInfo> ()
-com.android.builder.model.NativeArtifact
-com.android.builder.model.NativeArtifact.getAbi: java.lang.String ()
-com.android.builder.model.NativeArtifact.getAssembleTaskName: java.lang.String ()
-com.android.builder.model.NativeArtifact.getExportedHeaders: java.util.Collection<java.io.File> ()
-com.android.builder.model.NativeArtifact.getGroupName: java.lang.String ()
-com.android.builder.model.NativeArtifact.getName: java.lang.String ()
-com.android.builder.model.NativeArtifact.getOutputFile: java.io.File ()
-com.android.builder.model.NativeArtifact.getRuntimeFiles: java.util.Collection<java.io.File> ()
-com.android.builder.model.NativeArtifact.getSourceFiles: java.util.Collection<com.android.builder.model.NativeFile> ()
-com.android.builder.model.NativeArtifact.getTargetName: java.lang.String ()
-com.android.builder.model.NativeArtifact.getToolChain: java.lang.String ()
-com.android.builder.model.NativeFile
-com.android.builder.model.NativeFile.getFilePath: java.io.File ()
-com.android.builder.model.NativeFile.getSettingsName: java.lang.String ()
-com.android.builder.model.NativeFile.getWorkingDirectory: java.io.File ()
 com.android.builder.model.NativeLibrary
 com.android.builder.model.NativeLibrary.getAbi: java.lang.String ()
 com.android.builder.model.NativeLibrary.getCCompilerFlags: java.util.List<java.lang.String> ()
@@ -314,24 +286,6 @@ com.android.builder.model.NativeLibrary.getCppSystemIncludeDirs: java.util.List<
 com.android.builder.model.NativeLibrary.getDebuggableLibraryFolders: java.util.List<java.io.File> ()
 com.android.builder.model.NativeLibrary.getName: java.lang.String ()
 com.android.builder.model.NativeLibrary.getToolchainName: java.lang.String ()
-com.android.builder.model.NativeSettings
-com.android.builder.model.NativeSettings.getCompilerFlags: java.util.List<java.lang.String> ()
-com.android.builder.model.NativeSettings.getName: java.lang.String ()
-com.android.builder.model.NativeToolchain
-com.android.builder.model.NativeToolchain.getCCompilerExecutable: java.io.File ()
-com.android.builder.model.NativeToolchain.getCppCompilerExecutable: java.io.File ()
-com.android.builder.model.NativeToolchain.getName: java.lang.String ()
-com.android.builder.model.NativeVariantAbi implements java.io.Serializable
-com.android.builder.model.NativeVariantAbi.getAbi: java.lang.String ()
-com.android.builder.model.NativeVariantAbi.getArtifacts: java.util.Collection<com.android.builder.model.NativeArtifact> ()
-com.android.builder.model.NativeVariantAbi.getBuildFiles: java.util.Collection<java.io.File> ()
-com.android.builder.model.NativeVariantAbi.getFileExtensions: java.util.Map<java.lang.String, java.lang.String> ()
-com.android.builder.model.NativeVariantAbi.getSettings: java.util.Collection<com.android.builder.model.NativeSettings> ()
-com.android.builder.model.NativeVariantAbi.getToolChains: java.util.Collection<com.android.builder.model.NativeToolchain> ()
-com.android.builder.model.NativeVariantAbi.getVariantName: java.lang.String ()
-com.android.builder.model.NativeVariantInfo implements java.io.Serializable
-com.android.builder.model.NativeVariantInfo.getAbiNames: java.util.List<java.lang.String> ()
-com.android.builder.model.NativeVariantInfo.getBuildRootFolderMap: java.util.Map<java.lang.String, java.io.File> ()
 com.android.builder.model.OptionalCompilationStep extends java.lang.Enum
 com.android.builder.model.OptionalCompilationStep.valueOf: com.android.builder.model.OptionalCompilationStep (java.lang.String)
 com.android.builder.model.OptionalCompilationStep.values: com.android.builder.model.OptionalCompilationStep[] ()
