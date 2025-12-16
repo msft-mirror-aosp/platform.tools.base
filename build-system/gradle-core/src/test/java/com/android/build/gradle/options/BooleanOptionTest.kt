@@ -116,7 +116,8 @@ class BooleanOptionTest {
             BooleanOption.R8_GRADUAL_API,
             BooleanOption.ENABLE_CLASSPATH_CHECK_TASKS,
             BooleanOption.DISABLE_ALL_CONSTRAINTS,
-            BooleanOption.ENABLE_IDENTITY_TRANSFORMS_FOR_PROCESSED_ARTIFACTS
+            BooleanOption.ENABLE_IDENTITY_TRANSFORMS_FOR_PROCESSED_ARTIFACTS,
+            BooleanOption.TREAT_MANIFEST_MERGER_WARNINGS_AS_ERRORS
         )
 
         checkViolatingProjectOptions(

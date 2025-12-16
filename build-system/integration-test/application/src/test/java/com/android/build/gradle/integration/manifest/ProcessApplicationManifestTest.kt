@@ -232,4 +232,19 @@ class ProcessApplicationManifestTest {
                 )
         }
     }
+
+    /**
+     * Verifies that [BooleanOption.MANIFEST_WARNINGS_AS_ERRORS] promotes warnings to failures.
+     */
+    @Test
+    fun testManifestWarningBecomesErrorWithFlag() {
+        val failure = project.executor()
+            .with(BooleanOption.TREAT_MANIFEST_MERGER_WARNINGS_AS_ERRORS, true)
+            .expectFailure()
+            .run(":app:processDebugManifest")
+
+        failure.assertErrorContains("treatManifestMergerWarningsAsErrors is enabled")
+
+        failure.assertErrorContains("android:extractNativeLibs is set to true in a dependency's AndroidManifest.xml")
+    }
 }

@@ -202,6 +202,15 @@ enum class BooleanOption(
     BUILD_FEATURE_MLMODELBINDING("android.defaults.buildfeatures.mlmodelbinding", false, ApiStage.Experimental),
     ENABLE_DEFAULT_DEBUG_SIGNING_CONFIG("android.experimental.useDefaultDebugSigningConfigForProfileableBuildtypes", false, ApiStage.Experimental),
 
+    /**
+     * When enabled, manifest merger warnings will be treated as errors and fail the build.
+     */
+    TREAT_MANIFEST_MERGER_WARNINGS_AS_ERRORS(
+        "android.experimental.treatManifestMergerWarningsAsErrors",
+        false,
+        FeatureStage.Experimental
+    ),
+
 
     /* ---------------------
      * EXPERIMENTAL FEATURES

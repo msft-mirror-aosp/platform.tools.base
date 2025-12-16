@@ -45,6 +45,7 @@ import com.android.ide.common.resources.generateLocaleConfigManifestAttribute
 import com.android.manifmerger.ManifestMerger2
 import com.android.manifmerger.ManifestMerger2.Invoker
 import com.android.manifmerger.ManifestProvider
+import com.android.manifmerger.MergingReport
 import com.google.common.base.Preconditions
 import org.apache.commons.io.FileUtils.readFileToString
 import org.gradle.api.InvalidUserDataException
@@ -99,6 +100,9 @@ abstract class ProcessApplicationManifest : ManifestProcessorTask() {
     @get:Optional
     @get:Input
     abstract val packageOverride: Property<String>
+
+    @get:Input
+    abstract val warningsAsErrors: Property<Boolean>
 
     @get:Input
     abstract val namespace: Property<String>
@@ -192,6 +196,12 @@ abstract class ProcessApplicationManifest : ManifestProcessorTask() {
             compileSdk = compileSdk.orNull,
             usesSdkInManifestLenientHandling = !disallowSdkVersionsInUsesSdkInManifest.get()
         )
+        if (warningsAsErrors.getOrElse(false) && mergingReport.result == MergingReport.Result.WARNING) {
+            throw RuntimeException(
+                "Manifest merger completed with warnings, and treatManifestMergerWarningsAsErrors is enabled.\n" +
+                        mergingReport.reportString
+            )
+        }
         outputMergeBlameContents(mergingReport, mergeBlameFile.get().asFile)
     }
 
@@ -456,6 +466,9 @@ abstract class ProcessApplicationManifest : ManifestProcessorTask() {
             )
             task.disallowSdkVersionsInUsesSdkInManifest.setDisallowChanges(
                 creationConfig.services.projectOptions[BooleanOption.DISALLOW_USES_SDK_IN_MANIFEST]
+            )
+            task.warningsAsErrors.setDisallowChanges(
+                creationConfig.services.projectOptions[BooleanOption.TREAT_MANIFEST_MERGER_WARNINGS_AS_ERRORS]
             )
         }
 
