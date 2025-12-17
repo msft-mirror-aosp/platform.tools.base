@@ -714,6 +714,7 @@ com.android.build.gradle.internal.dsl.KotlinMultiplatformAndroidLibraryExtension
 com.android.build.gradle.internal.dsl.KotlinMultiplatformAndroidLibraryExtensionImpl.setCompileSdkPreview: void (java.lang.String)
 com.android.build.gradle.internal.dsl.KotlinMultiplatformAndroidLibraryExtensionImpl.setMinSdk: void (java.lang.Integer)
 com.android.build.gradle.internal.dsl.KotlinMultiplatformAndroidLibraryExtensionImpl.setMinSdkPreview: void (java.lang.String)
+com.android.build.gradle.internal.dsl.KotlinMultiplatformAndroidLibraryExtensionImpl.testCoverage: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.TestCoverage, kotlin.Unit>)
 com.android.build.gradle.internal.dsl.KotlinMultiplatformAndroidLibraryExtensionImpl.useLibrary: void (java.lang.String)
 com.android.build.gradle.internal.dsl.KotlinMultiplatformAndroidLibraryExtensionImpl.useLibrary: void (java.lang.String, boolean)
 com.android.build.gradle.internal.dsl.KotlinMultiplatformAndroidLibraryExtensionImpl.withDeviceTest: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.KotlinMultiplatformAndroidDeviceTest, kotlin.Unit>)
