@@ -596,6 +596,21 @@ InternalArtifactType<T : FileSystemLocation>(
     /** Metadata file included in the app bundle as output from R8 */
     object R8_METADATA: InternalArtifactType<RegularFile>(FILE)
 
+    object R8_MAPPING_SEEDS :
+        InternalArtifactType<RegularFile>(FILE, Category.OUTPUTS, "mapping", "seeds.txt")
+
+    object R8_MAPPING_USAGE :
+        InternalArtifactType<RegularFile>(FILE, Category.OUTPUTS, "mapping","usage.txt")
+
+    object R8_MAPPING_CONFIGURATION :
+        InternalArtifactType<RegularFile>(FILE, Category.OUTPUTS, "mapping", "configuration.txt")
+
+    object R8_MAPPING_MISSING_RULES :
+        InternalArtifactType<RegularFile>(FILE, Category.OUTPUTS, "mapping", "missing_rules.txt")
+
+    object R8_MAPPING_RESOURCES :
+        InternalArtifactType<RegularFile>(FILE, Category.OUTPUTS, "mapping", "resources.txt")
+
     // Human-readable Art profile artifacts; combines art profiles from various project sources
     object MERGED_ART_PROFILE: InternalArtifactType<RegularFile>(
         FILE,
