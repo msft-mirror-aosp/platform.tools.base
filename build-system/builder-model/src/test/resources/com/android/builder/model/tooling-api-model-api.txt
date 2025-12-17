@@ -4,7 +4,7 @@ ATTENTION REVIEWER: If this needs to be changed, please make sure changes
 below are backwards compatible.
 -------------------------------------------------------------------------
 Sha256 of below classes:
-343e0a34f155c5659d90cce7e712cc74562312fa2a1263a248c4cfd6a725ea48
+75f085056c7f8b9f2563a83ff40e747465e2b0604c923469db8071a193d0f6fb
 -------------------------------------------------------------------------
 com.android.builder.model.AaptOptions
 com.android.builder.model.AaptOptions$Namespacing extends java.lang.Enum
@@ -99,7 +99,6 @@ com.android.builder.model.AndroidProject.getSigningConfigs: java.util.Collection
 com.android.builder.model.AndroidProject.getSyncIssues: java.util.Collection<com.android.builder.model.SyncIssue> ()
 com.android.builder.model.AndroidProject.getUnresolvedDependencies: java.util.Collection<java.lang.String> ()
 com.android.builder.model.AndroidProject.getVariantNames: java.util.Collection<java.lang.String> ()
-com.android.builder.model.AndroidProject.getVariants: java.util.Collection<com.android.builder.model.Variant> ()
 com.android.builder.model.AndroidProject.getVariantsBuildInformation: java.util.Collection<com.android.builder.model.VariantBuildInformation> ()
 com.android.builder.model.AndroidProject.getViewBindingOptions: com.android.builder.model.ViewBindingOptions ()
 com.android.builder.model.AndroidProject.isBaseSplit: boolean ()

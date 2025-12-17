@@ -192,17 +192,6 @@ public interface AndroidProject {
     Collection<ProductFlavorContainer> getProductFlavors();
 
     /**
-     * Returns a list of all the variants.
-     *
-     * This does not include test variant. Test variants are additional artifacts in their
-     * respective variant info.
-     *
-     * @return a list of the variants.
-     */
-    @NonNull
-    Collection<Variant> getVariants();
-
-    /**
      * Returns a list of all the variant names.
      *
      * <p>This does not include test variant. Test variants are additional artifacts in their
