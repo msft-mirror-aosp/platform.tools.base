@@ -16,11 +16,22 @@
 
 package com.android.build.api.variant.impl
 
+import com.android.build.api.dsl.AarMetadata
 import com.android.build.api.dsl.CompileSdkSpec
+import com.android.build.api.dsl.DependencySelection
+import com.android.build.api.dsl.HasConfigurableValue
+import com.android.build.api.dsl.KmpOptimization
 import com.android.build.api.dsl.KotlinMultiplatformAndroidCompilation
+import com.android.build.api.dsl.KotlinMultiplatformAndroidCompilationBuilder
+import com.android.build.api.dsl.KotlinMultiplatformAndroidDeviceTest
+import com.android.build.api.dsl.KotlinMultiplatformAndroidHostTest
 import com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryExtension
 import com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryTarget
+import com.android.build.api.dsl.LibraryAndroidResources
+import com.android.build.api.dsl.Lint
 import com.android.build.api.dsl.MinSdkSpec
+import com.android.build.api.dsl.Packaging
+import com.android.build.api.dsl.TestCoverage
 import com.android.build.gradle.internal.dsl.CompileSdkDelegate
 import com.android.build.gradle.internal.dsl.KotlinMultiplatformAndroidLibraryExtensionImpl
 import com.android.build.gradle.internal.dsl.MinSdkDelegate
@@ -104,5 +115,57 @@ internal open class KotlinMultiplatformAndroidLibraryTargetImpl @Inject construc
     )
     open fun minSdk(value: Int) {
         minSdkDelegate.minSdk = value
+    }
+
+    fun localDependencySelection(action: Action<DependencySelection>) {
+        action.execute(localDependencySelection)
+    }
+
+    fun androidResources(action: Action<LibraryAndroidResources>) {
+        action.execute(androidResources)
+    }
+
+    fun testCoverage(action: Action<TestCoverage>) {
+        action.execute(testCoverage)
+    }
+
+    fun optimization(action: Action<KmpOptimization>) {
+        action.execute(optimization)
+    }
+
+    fun lint(action: Action<Lint>) {
+        action.execute(lint)
+    }
+
+    fun aarMetadata(action: Action<AarMetadata>) {
+        action.execute(aarMetadata)
+    }
+
+    fun packaging(action: Action<Packaging>) {
+        action.execute(packaging)
+    }
+
+    fun withHostTest(action: Action<KotlinMultiplatformAndroidHostTest>) {
+        withHostTest {
+            action.execute(this)
+        }
+    }
+
+    fun withHostTestBuilder(action: Action<KotlinMultiplatformAndroidCompilationBuilder>): HasConfigurableValue<KotlinMultiplatformAndroidHostTest> {
+        return withHostTestBuilder {
+            action.execute(this)
+        }
+    }
+
+    fun withDeviceTest(action: Action<KotlinMultiplatformAndroidDeviceTest>) {
+        withDeviceTest {
+            action.execute(this)
+        }
+    }
+
+    fun withDeviceTestBuilder(action: Action<KotlinMultiplatformAndroidCompilationBuilder>): HasConfigurableValue<KotlinMultiplatformAndroidDeviceTest> {
+        return withDeviceTestBuilder {
+            action.execute(this)
+        }
     }
 }
