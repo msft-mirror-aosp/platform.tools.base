@@ -947,7 +947,6 @@ DATA = [
     "org.apache.commons:commons-lang3:3.13.0",
     "org.apache.commons:commons-text:1.11.0",
     # Lucene 9.12 - used by IntelliJ 25.2 and earlier.
-    "org.apache.lucene:lucene-analysis-common:9.12.0",
     "org.apache.lucene:lucene-backward-codecs:9.12.0",
     "org.apache.lucene:lucene-highlighter:9.12.0",
     "org.apache.lucene:lucene-queryparser:9.12.0",
