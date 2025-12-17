@@ -74749,10 +74749,51 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "org.apache.lucene.lucene-backward-codecs_10.3.0",
+    pom = "repository/org/apache/lucene/lucene-backward-codecs/10.3.0/lucene-backward-codecs-10.3.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/apache/lucene/lucene-backward-codecs/10.3.0",
+    deps = [
+        "org.apache.lucene.lucene-core_10.3.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.apache.lucene.lucene-backward-codecs_9.12.0",
+    pom = "repository/org/apache/lucene/lucene-backward-codecs/9.12.0/lucene-backward-codecs-9.12.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/apache/lucene/lucene-backward-codecs/9.12.0",
+    deps = [
+        "org.apache.lucene.lucene-core_9.12.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.apache.lucene.lucene-core_10.3.0",
+    pom = "repository/org/apache/lucene/lucene-core/10.3.0/lucene-core-10.3.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/apache/lucene/lucene-core/10.3.0",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "org.apache.lucene.lucene-core_9.12.0",
     pom = "repository/org/apache/lucene/lucene-core/9.12.0/lucene-core-9.12.0.pom",
     repo_root_path = "repository",
     repo_path = "org/apache/lucene/lucene-core/9.12.0",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.apache.lucene.lucene-facet_10.3.0",
+    pom = "repository/org/apache/lucene/lucene-facet/10.3.0/lucene-facet-10.3.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/apache/lucene/lucene-facet/10.3.0",
+    deps = [
+        "org.apache.lucene.lucene-core_10.3.0",
+    ],
     visibility = ["//visibility:public"],
 )
 
@@ -74763,6 +74804,19 @@ maven_artifact(
     repo_path = "org/apache/lucene/lucene-facet/9.12.0",
     deps = [
         "org.apache.lucene.lucene-core_9.12.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.apache.lucene.lucene-highlighter_10.3.0",
+    pom = "repository/org/apache/lucene/lucene-highlighter/10.3.0/lucene-highlighter-10.3.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/apache/lucene/lucene-highlighter/10.3.0",
+    deps = [
+        "org.apache.lucene.lucene-core_10.3.0",
+        "org.apache.lucene.lucene-queries_10.3.0",
+        "org.apache.lucene.lucene-memory_10.3.0",
     ],
     visibility = ["//visibility:public"],
 )
@@ -74781,12 +74835,34 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "org.apache.lucene.lucene-memory_10.3.0",
+    pom = "repository/org/apache/lucene/lucene-memory/10.3.0/lucene-memory-10.3.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/apache/lucene/lucene-memory/10.3.0",
+    deps = [
+        "org.apache.lucene.lucene-core_10.3.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "org.apache.lucene.lucene-memory_9.12.0",
     pom = "repository/org/apache/lucene/lucene-memory/9.12.0/lucene-memory-9.12.0.pom",
     repo_root_path = "repository",
     repo_path = "org/apache/lucene/lucene-memory/9.12.0",
     deps = [
         "org.apache.lucene.lucene-core_9.12.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.apache.lucene.lucene-queries_10.3.0",
+    pom = "repository/org/apache/lucene/lucene-queries/10.3.0/lucene-queries-10.3.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/apache/lucene/lucene-queries/10.3.0",
+    deps = [
+        "org.apache.lucene.lucene-core_10.3.0",
     ],
     visibility = ["//visibility:public"],
 )
@@ -74803,6 +74879,19 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "org.apache.lucene.lucene-queryparser_10.3.0",
+    pom = "repository/org/apache/lucene/lucene-queryparser/10.3.0/lucene-queryparser-10.3.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/apache/lucene/lucene-queryparser/10.3.0",
+    deps = [
+        "org.apache.lucene.lucene-core_10.3.0",
+        "org.apache.lucene.lucene-queries_10.3.0",
+        "org.apache.lucene.lucene-sandbox_10.3.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "org.apache.lucene.lucene-queryparser_9.12.0",
     pom = "repository/org/apache/lucene/lucene-queryparser/9.12.0/lucene-queryparser-9.12.0.pom",
     repo_root_path = "repository",
@@ -74811,6 +74900,19 @@ maven_artifact(
         "org.apache.lucene.lucene-core_9.12.0",
         "org.apache.lucene.lucene-queries_9.12.0",
         "org.apache.lucene.lucene-sandbox_9.12.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.apache.lucene.lucene-sandbox_10.3.0",
+    pom = "repository/org/apache/lucene/lucene-sandbox/10.3.0/lucene-sandbox-10.3.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/apache/lucene/lucene-sandbox/10.3.0",
+    deps = [
+        "org.apache.lucene.lucene-core_10.3.0",
+        "org.apache.lucene.lucene-queries_10.3.0",
+        "org.apache.lucene.lucene-facet_10.3.0",
     ],
     visibility = ["//visibility:public"],
 )

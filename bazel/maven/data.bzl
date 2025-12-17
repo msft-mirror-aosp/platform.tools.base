@@ -946,10 +946,15 @@ DATA = [
     "org.apache.commons:commons-compress:1.20",
     "org.apache.commons:commons-lang3:3.13.0",
     "org.apache.commons:commons-text:1.11.0",
+    # Lucene 9.12 - used by IntelliJ 25.2 and earlier.
     "org.apache.lucene:lucene-analysis-common:9.12.0",
-    "org.apache.lucene:lucene-core:9.12.0",  # Match the Lucene version here with the one used by IJ pre-2025.1. See b/460307944.
-    "org.apache.lucene:lucene-highlighter:9.12.0",  # Match the version of Lucene with the one used by IntelliJ
+    "org.apache.lucene:lucene-backward-codecs:9.12.0",
+    "org.apache.lucene:lucene-highlighter:9.12.0",
     "org.apache.lucene:lucene-queryparser:9.12.0",
+    # Lucene 10.3.0 - used by IntelliJ 25.3 and later.
+    "org.apache.lucene:lucene-backward-codecs:10.3.0",
+    "org.apache.lucene:lucene-highlighter:10.3.0",
+    "org.apache.lucene:lucene-queryparser:10.3.0",
     "org.bouncycastle:bcprov-jdk16:1.46",
     "org.bouncycastle:bcprov-jdk18on:1.77",
     "org.brotli:dec:0.1.2",
