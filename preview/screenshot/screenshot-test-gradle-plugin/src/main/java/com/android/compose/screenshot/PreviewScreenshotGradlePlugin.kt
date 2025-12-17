@@ -137,8 +137,8 @@ class PreviewScreenshotGradlePlugin : Plugin<Project> {
                     """.trimIndent()
                 )
             }
-            val screenshotSourcesetEnabled = project.findProperty(ST_SOURCE_SET_ENABLED)
-            if (screenshotSourcesetEnabled?.toString()?.toBoolean() != true) {
+            val screenshotSourcesetEnabled = project.providers.gradleProperty(ST_SOURCE_SET_ENABLED).getOrNull()
+            if (screenshotSourcesetEnabled?.toBoolean() != true) {
                 error(
                     """
                     Please enable screenshotTest source set first to apply the screenshot test plugin.
@@ -147,11 +147,11 @@ class PreviewScreenshotGradlePlugin : Plugin<Project> {
                 )
             }
 
-            val validationEngineVersionOverride = project.findProperty(VALIDATION_ENGINE_VERSION_OVERRIDE)
-            val validationEngineVersion = if (validationEngineVersionOverride != null && validationEngineVersionOverride.toString().isNotEmpty()) {
+            val validationEngineVersionOverride = project.providers.gradleProperty(VALIDATION_ENGINE_VERSION_OVERRIDE).getOrNull()
+            val validationEngineVersion = if (validationEngineVersionOverride != null && validationEngineVersionOverride.isNotEmpty()) {
                 // Changes to the image naming format make versions 0.0.1-alpha02 and below of the
                 // test engine incompatible with the latest plugin version
-                val validationEngineOverrideString = validationEngineVersionOverride.toString()
+                val validationEngineOverrideString = validationEngineVersionOverride
                 if (validationEngineOverrideString < MIN_VALIDATION_ENGINE_VERSION && !validationEngineOverrideString.endsWith("-dev")) {
                     error(
                         """
@@ -219,7 +219,7 @@ class PreviewScreenshotGradlePlugin : Plugin<Project> {
                     val screenshotTestComponent = variant.hostTests[HostTestBuilder.SCREENSHOT_TEST_TYPE] ?: return@onVariants
                     variant.runtimeConfiguration.checkToolingPresent(screenshotTestComponent)
                     val maxHeapSize =
-                        project.findProperty(MAX_HEAP_SIZE_OVERRIDE)?.toString()
+                        project.providers.gradleProperty(MAX_HEAP_SIZE_OVERRIDE).getOrNull()
 
                     val updateTask = project.tasks.register(
                         "update${variantName.capitalized()}ScreenshotTest",
