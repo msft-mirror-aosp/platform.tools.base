@@ -17,7 +17,6 @@
 package com.android.build.gradle.internal.multiplatform
 
 import com.android.build.api.dsl.KotlinMultiplatformAndroidCompilation
-import com.android.build.api.dsl.KotlinMultiplatformAndroidCompilationBuilder
 import com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryTarget
 import com.android.build.api.variant.impl.KmpAndroidCompilationType
 import com.android.build.api.variant.impl.KmpVariantImpl
@@ -101,6 +100,12 @@ internal class KotlinMultiplatformAndroidHandlerImpl(
                             "android plugin. Upgrade your kotlin version to at least " +
                             "`$MINIMUM_SUPPORTED_KOTLIN_MULTIPLATFORM_VERSION` " +
                             "in order to enable the android target.")
+                }
+                if (version < Version.parse("2.3.0")) {
+                    // enable the gradle property that enables the kgp IDE import APIs that we rely on.
+                    project.extensions.extraProperties.set(
+                        "kotlin.mpp.import.enableKgpDependencyResolution", "true"
+                    )
                 }
             }
 
