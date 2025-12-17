@@ -19,10 +19,18 @@ _BASE_TARGETS = [
 
 
 _EXTRA_TARGETS = [
-    '//tools/adt/idea/studio:android-studio.linux.zip',
-    '//tools/adt/idea/studio:android-studio.mac.zip',
-    '//tools/adt/idea/studio:android-studio.mac_arm.zip',
-    '//tools/adt/idea/studio:android-studio.win.zip',
+    '//tools/adt/idea/studio:android-studio.stable.linux.zip',
+    '//tools/adt/idea/studio:android-studio.stable.mac.zip',
+    '//tools/adt/idea/studio:android-studio.stable.mac_arm.zip',
+    '//tools/adt/idea/studio:android-studio.stable.win.zip',
+    '//tools/adt/idea/studio:android-studio.stable_build_manifest.textproto',
+    '//tools/adt/idea/studio:android-studio.stable_update_message.html',
+    '//tools/adt/idea/studio:android-studio.canary.linux.zip',
+    '//tools/adt/idea/studio:android-studio.canary.mac.zip',
+    '//tools/adt/idea/studio:android-studio.canary.mac_arm.zip',
+    '//tools/adt/idea/studio:android-studio.canary.win.zip',
+    '//tools/adt/idea/studio:android-studio.canary_build_manifest.textproto',
+    '//tools/adt/idea/studio:android-studio.canary_update_message.html',
     '//tools/adt/idea/studio:updater_deploy.jar',
     # TODO(xinruiy): remove the old artifacts after changing our release process.
     '//tools/vendor/google/aswb:aswb.linux.zip',
@@ -62,12 +70,18 @@ _EXTRA_TARGETS = [
 
 
 _ARTIFACTS = [
-    ('tools/adt/idea/studio/android-studio.linux.zip', 'artifacts'),
-    ('tools/adt/idea/studio/android-studio.win.zip', 'artifacts'),
-    ('tools/adt/idea/studio/android-studio.mac.zip', 'artifacts'),
-    ('tools/adt/idea/studio/android-studio.mac_arm.zip', 'artifacts'),
-    ('tools/adt/idea/studio/android-studio_build_manifest.textproto', 'artifacts'),
-    ('tools/adt/idea/studio/android-studio_update_message.html', 'artifacts'),
+    ('tools/adt/idea/studio/android-studio.stable.linux.zip', 'artifacts'),
+    ('tools/adt/idea/studio/android-studio.stable.win.zip', 'artifacts'),
+    ('tools/adt/idea/studio/android-studio.stable.mac.zip', 'artifacts'),
+    ('tools/adt/idea/studio/android-studio.stable.mac_arm.zip', 'artifacts'),
+    ('tools/adt/idea/studio/android-studio.stable_build_manifest.textproto', 'artifacts'),
+    ('tools/adt/idea/studio/android-studio.stable_update_message.html', 'artifacts'),
+    ('tools/adt/idea/studio/android-studio.canary.linux.zip', 'artifacts'),
+    ('tools/adt/idea/studio/android-studio.canary.win.zip', 'artifacts'),
+    ('tools/adt/idea/studio/android-studio.canary.mac.zip', 'artifacts'),
+    ('tools/adt/idea/studio/android-studio.canary.mac_arm.zip', 'artifacts'),
+    ('tools/adt/idea/studio/android-studio.canary_build_manifest.textproto', 'artifacts'),
+    ('tools/adt/idea/studio/android-studio.canary_update_message.html', 'artifacts'),
     ('tools/adt/idea/studio/android-studio-metadata.json', 'artifacts'),
     ('tools/adt/idea/studio/updater_deploy.jar', 'artifacts/android-studio-updater.jar'),
     ('tools/adt/idea/native/installer/android-studio-bundle-data.zip', 'artifacts'),
