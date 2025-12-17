@@ -271,8 +271,6 @@ public class ProjectOptionsTest {
                                         "android.testInstrumentationRunnerArguments.custom",
                                                 "customValue")));
         assertThat(projectOptions.getExtraInstrumentationTestRunnerArgs().get())
-                .containsExactly(
-                        "size", "large",
-                        "android.testInstrumentationRunnerArguments.custom", "customValue");
+                .containsExactly("size", "large", "custom", "customValue");
     }
 }
