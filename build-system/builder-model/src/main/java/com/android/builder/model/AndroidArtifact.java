@@ -104,15 +104,6 @@ public interface AndroidArtifact extends BaseArtifact {
     Set<String> getAbiFilters();
 
     /**
-     * Returns the native libraries associated with the artifact.
-     *
-     * <p>Deprecated since ndk-compile has been deprecated.
-     */
-    @Nullable
-    @Deprecated
-    Collection<NativeLibrary> getNativeLibraries();
-
-    /**
      * Map of generated res values where the key is the res name. This method is deprecated and will
      * always return an empty map
      *

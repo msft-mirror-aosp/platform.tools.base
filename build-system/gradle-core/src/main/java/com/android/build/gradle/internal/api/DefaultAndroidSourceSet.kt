@@ -320,16 +320,6 @@ open class DefaultAndroidSourceSet @Inject constructor(
         return renderscript.srcDirs
     }
 
-    override fun getCDirectories(): Set<File> {
-        return jni.srcDirs
-    }
-
-    override fun getCppDirectories(): Set<File> {
-        // The C and C++ directories are currently the same.  This may change in the future when
-        // we use Gradle's native source sets.
-        return jni.srcDirs
-    }
-
     override fun getResDirectories(): Set<File> {
         return res.srcDirs
     }

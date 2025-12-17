@@ -4,7 +4,7 @@ ATTENTION REVIEWER: If this needs to be changed, please make sure changes
 below are backwards compatible.
 -------------------------------------------------------------------------
 Sha256 of below classes:
-587420b955ca6dfcbd62bddec423c35a70ed9935ee0909572b63784bebe09ebd
+343e0a34f155c5659d90cce7e712cc74562312fa2a1263a248c4cfd6a725ea48
 -------------------------------------------------------------------------
 com.android.builder.model.AaptOptions
 com.android.builder.model.AaptOptions$Namespacing extends java.lang.Enum
@@ -27,7 +27,6 @@ com.android.builder.model.AndroidArtifact.getGeneratedResourceFolders: java.util
 com.android.builder.model.AndroidArtifact.getGeneratedSourceFolders: java.util.Collection<java.io.File> ()
 com.android.builder.model.AndroidArtifact.getInstantRun: com.android.builder.model.InstantRun ()
 com.android.builder.model.AndroidArtifact.getInstrumentedTestTaskName: java.lang.String ()
-com.android.builder.model.AndroidArtifact.getNativeLibraries: java.util.Collection<com.android.builder.model.NativeLibrary> ()
 com.android.builder.model.AndroidArtifact.getOutputs: java.util.Collection<com.android.builder.model.AndroidArtifactOutput> ()
 com.android.builder.model.AndroidArtifact.getResValues: java.util.Map<java.lang.String, com.android.builder.model.ClassField> ()
 com.android.builder.model.AndroidArtifact.getSigningConfigName: java.lang.String ()
@@ -273,19 +272,6 @@ com.android.builder.model.ModelBuilderParameter.setShouldGenerateSources: void (
 com.android.builder.model.ModelBuilderParameter.setVariantName: void (java.lang.String)
 com.android.builder.model.Named
 com.android.builder.model.Named.getName: java.lang.String ()
-com.android.builder.model.NativeLibrary
-com.android.builder.model.NativeLibrary.getAbi: java.lang.String ()
-com.android.builder.model.NativeLibrary.getCCompilerFlags: java.util.List<java.lang.String> ()
-com.android.builder.model.NativeLibrary.getCDefines: java.util.List<java.lang.String> ()
-com.android.builder.model.NativeLibrary.getCIncludeDirs: java.util.List<java.io.File> ()
-com.android.builder.model.NativeLibrary.getCSystemIncludeDirs: java.util.List<java.io.File> ()
-com.android.builder.model.NativeLibrary.getCppCompilerFlags: java.util.List<java.lang.String> ()
-com.android.builder.model.NativeLibrary.getCppDefines: java.util.List<java.lang.String> ()
-com.android.builder.model.NativeLibrary.getCppIncludeDirs: java.util.List<java.io.File> ()
-com.android.builder.model.NativeLibrary.getCppSystemIncludeDirs: java.util.List<java.io.File> ()
-com.android.builder.model.NativeLibrary.getDebuggableLibraryFolders: java.util.List<java.io.File> ()
-com.android.builder.model.NativeLibrary.getName: java.lang.String ()
-com.android.builder.model.NativeLibrary.getToolchainName: java.lang.String ()
 com.android.builder.model.OptionalCompilationStep extends java.lang.Enum
 com.android.builder.model.OptionalCompilationStep.valueOf: com.android.builder.model.OptionalCompilationStep (java.lang.String)
 com.android.builder.model.OptionalCompilationStep.values: com.android.builder.model.OptionalCompilationStep[] ()
@@ -336,8 +322,6 @@ com.android.builder.model.SigningConfig.isV2SigningEnabled: boolean ()
 com.android.builder.model.SourceProvider
 com.android.builder.model.SourceProvider.getAidlDirectories: java.util.Collection<java.io.File> ()
 com.android.builder.model.SourceProvider.getAssetsDirectories: java.util.Collection<java.io.File> ()
-com.android.builder.model.SourceProvider.getCDirectories: java.util.Collection<java.io.File> ()
-com.android.builder.model.SourceProvider.getCppDirectories: java.util.Collection<java.io.File> ()
 com.android.builder.model.SourceProvider.getCustomDirectories: java.util.Collection<com.android.builder.model.v2.CustomSourceDirectory> ()
 com.android.builder.model.SourceProvider.getJavaDirectories: java.util.Collection<java.io.File> ()
 com.android.builder.model.SourceProvider.getJniLibsDirectories: java.util.Collection<java.io.File> ()

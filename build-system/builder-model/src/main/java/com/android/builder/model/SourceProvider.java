@@ -84,26 +84,6 @@ public interface SourceProvider {
     Collection<File> getRenderscriptDirectories();
 
     /**
-     * Returns the C source folders.
-     *
-     * @return a list of folders. They may not all exist.
-     * @deprecated since ndk-compile is deprecated
-     */
-    @NonNull
-    @Deprecated
-    Collection<File> getCDirectories();
-
-    /**
-     * Returns the C++ source folders.
-     *
-     * @return a list of folders. They may not all exist.
-     * @deprecated since ndk-compile is deprecated
-     */
-    @NonNull
-    @Deprecated
-    Collection<File> getCppDirectories();
-
-    /**
      * Returns the android resources folders.
      *
      * @return a list of folders. They may not all exist.
