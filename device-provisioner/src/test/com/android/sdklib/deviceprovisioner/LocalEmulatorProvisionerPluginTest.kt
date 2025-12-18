@@ -27,8 +27,11 @@ import com.android.sdklib.deviceprovisioner.testing.SdkFixture
 import com.android.sdklib.devices.Abi
 import com.android.sdklib.internal.avd.AvdInfo
 import com.android.sdklib.internal.avd.AvdInfo.AvdStatus
+import com.android.sdklib.internal.avd.BootMode
 import com.android.sdklib.internal.avd.BootSnapshot
+import com.android.sdklib.internal.avd.ColdBoot
 import com.android.sdklib.internal.avd.ConfigKey
+import com.android.sdklib.internal.avd.QuickBoot
 import com.android.sdklib.internal.avd.UserSettingsKey.PREFERRED_ABI
 import com.google.common.truth.Truth.assertThat
 import com.google.wireless.android.sdk.stats.DeviceInfo
@@ -39,7 +42,6 @@ import java.time.Duration
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.io.path.name
 import kotlin.time.Duration.Companion.seconds
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collect
@@ -79,13 +81,11 @@ class LocalEmulatorProvisionerPluginTest {
     avdManager = FakeAvdManager(session, avdsPath)
     plugin =
       LocalEmulatorProvisionerPlugin(
-        session.scope,
-        session,
-        avdManager,
-        emptyDeviceIcons,
-        TestDefaultDeviceActionPresentation,
-        Dispatchers.IO,
-        Duration.ofMillis(100),
+        scope = session.scope,
+        adbSession = session,
+        deviceIcons = emptyDeviceIcons,
+        rescanPeriod = Duration.ofMillis(100),
+        refreshAvds = avdManager::rescanAvds,
         pluginExtensions = listOf(TestExtension::class providedBy { LocalEmulatorTestExtension() }),
         handleExtensions = listOf(TestExtension::class providedBy { LocalEmulatorTestExtension() }),
       )
@@ -141,8 +141,8 @@ class LocalEmulatorProvisionerPluginTest {
 
   @Test
   fun offlineDevices(): Unit = runBlockingWithTimeout {
-    avdManager.createAvd(null)
-    avdManager.createAvd(null)
+    avdManager.createAvd()
+    avdManager.createAvd()
 
     yieldUntil { provisioner.devices.value.size == 2 }
     val devices = provisioner.devices.value
@@ -154,7 +154,7 @@ class LocalEmulatorProvisionerPluginTest {
   @Test
   fun removeOfflineDevice(): Unit = runBlockingWithTimeout {
     val n = 20
-    repeat(n) { avdManager.createAvd(null) }
+    repeat(n) { avdManager.createAvd() }
     val avds = avdManager.rescanAvds()
     yieldUntil { provisioner.devices.value.size == n }
 
@@ -168,7 +168,7 @@ class LocalEmulatorProvisionerPluginTest {
 
   @Test
   fun removedOfflineDeviceScopeIsCancelled(): Unit = runBlockingWithTimeout {
-    avdManager.createAvd(null)
+    avdManager.createAvd()
     yieldUntil { provisioner.devices.value.size == 1 }
 
     val handle = provisioner.devices.value[0]
@@ -182,26 +182,26 @@ class LocalEmulatorProvisionerPluginTest {
 
   @Test
   fun startAndStopDevice(): Unit = runBlockingWithTimeout {
-    avdManager.createAvd(null)
+    avdManager.createAvd()
 
     yieldUntil { provisioner.devices.value.size == 1 }
 
-    val handle = provisioner.devices.value[0]
-    handle.activationAction?.activate()
-
-    assertThat(handle.state.connectedDevice).isNotNull()
+    val handle = provisioner.devices.value[0] as LocalEmulatorDeviceHandle
+    avdManager.startAvd(handle.avdInfo, QuickBoot)
 
     handle.awaitReady()
+    assertThat(handle.state.connectedDevice).isNotNull()
+
     assertThat(provisioner.devices.value.map { it.state.properties.title })
       .containsExactly("Fake Device 1")
     val properties = provisioner.devices.value[0].state.properties as LocalEmulatorProperties
     checkProperties(properties)
     assertThat(properties.androidRelease).isEqualTo(RELEASE)
 
-    handle.deactivationAction?.deactivate()
+    avdManager.stopAvd(handle.avdInfo)
 
+    handle.stateFlow.takeWhile { it is Connected }.collect()
     assertThat(handle.state.connectedDevice).isNull()
-
     assertThat(handle.state).isInstanceOf(Disconnected::class.java)
     assertThat(provisioner.devices.value.map { it.state.properties.title })
       .containsExactly("Fake Device 1")
@@ -209,13 +209,14 @@ class LocalEmulatorProvisionerPluginTest {
 
   @Test
   fun coldBootDevice(): Unit = runBlockingWithTimeout {
-    avdManager.createAvd(null)
+    avdManager.createAvd()
 
     yieldUntil { provisioner.devices.value.size == 1 }
 
-    val handle = provisioner.devices.value[0]
-    handle.coldBootAction?.activate()
+    val handle = provisioner.devices.value[0] as LocalEmulatorDeviceHandle
+    avdManager.startAvd(handle.avdInfo, ColdBoot)
 
+    handle.stateFlow.takeWhile { it !is Connected }.collect()
     val connectedDevice = checkNotNull(handle.state.connectedDevice)
     assertThat(handle.state.isReady).isFalse()
 
@@ -237,12 +238,11 @@ class LocalEmulatorProvisionerPluginTest {
 
     yieldUntil { provisioner.devices.value.size == 1 }
 
-    val handle = provisioner.devices.value[0]
-    val snapshots = runBlockingWithTimeout { handle.bootSnapshotAction!!.snapshots() }
-    handle.bootSnapshotAction?.activate(snapshot = snapshots[0])
+    val handle = provisioner.devices.value[0] as LocalEmulatorDeviceHandle
+    avdManager.startAvd(handle.avdInfo, BootSnapshot(snapshotPath.name))
 
-    val connectedDevice = checkNotNull(handle.state.connectedDevice)
     handle.awaitReady()
+    val connectedDevice = checkNotNull(handle.state.connectedDevice)
     val properties = connectedDevice.deviceProperties().allReadonly()
     assertThat(properties["ro.test.snapshot"]).isEqualTo(snapshotPath.name)
   }
@@ -259,11 +259,11 @@ class LocalEmulatorProvisionerPluginTest {
 
     yieldUntil { provisioner.devices.value.size == 1 }
 
-    val handle = provisioner.devices.value[0]
-    handle.activationAction?.activate()
+    val handle = provisioner.devices.value[0] as LocalEmulatorDeviceHandle
+    avdManager.startAvd(handle.avdInfo, BootMode.fromProperties(handle.avdInfo.properties))
 
-    val connectedDevice = checkNotNull(handle.state.connectedDevice)
     handle.awaitReady()
+    val connectedDevice = checkNotNull(handle.state.connectedDevice)
     val properties = connectedDevice.deviceProperties().allReadonly()
     assertThat(properties["ro.test.snapshot"]).isEqualTo(snapshotPath.name)
   }
@@ -278,10 +278,10 @@ class LocalEmulatorProvisionerPluginTest {
 
     yieldUntil { provisioner.devices.value.size == 1 }
 
-    val handle = provisioner.devices.value[0]
+    val handle = provisioner.devices.value[0] as LocalEmulatorDeviceHandle
 
     try {
-      handle.activationAction?.activate()
+      avdManager.startAvd(handle.avdInfo, QuickBoot)
       fail("Expected DeviceActionException")
     } catch (expected: DeviceActionException) {
       assertThat(expected.message).isEqualTo("AVD is broken")
@@ -322,7 +322,7 @@ class LocalEmulatorProvisionerPluginTest {
     val avdInfo = avdManager.makeAvdInfo(1)
     avdManager.createAvd(avdInfo)
     yieldUntil { provisioner.devices.value.size == 1 }
-    val handle = provisioner.devices.value[0]
+    val handle = provisioner.devices.value[0] as LocalEmulatorDeviceHandle
 
     handle.id.apply {
       assertThat(pluginId).isEqualTo(LocalEmulatorProvisionerPlugin.PLUGIN_ID)
@@ -333,26 +333,9 @@ class LocalEmulatorProvisionerPluginTest {
     // Editing the device adds "Edited" to its name. Verify that updating display name doesn't
     // affect ID equality.
     val id1 = handle.id
-    handle.editAction?.edit(null)
+    avdManager.editAvd(handle.onDiskAvdInfo)
 
     assertThat(id1).isEqualTo(handle.id)
-  }
-
-  @Test
-  fun isActivatable() = runBlockingWithTimeout {
-    avdManager.createAvd(null)
-
-    yieldUntil { provisioner.devices.value.size == 1 }
-
-    val handle = provisioner.devices.value[0]
-    val activationAction = handle.activationAction!!
-
-    activationAction.presentation.takeWhile { !it.enabled }.collect()
-
-    avdManager.avds[0] = avdManager.makeAvdInfo(1, avdStatus = AvdStatus.ERROR_IMAGE_MISSING)
-
-    // The action should become disabled.
-    yieldUntil { activationAction.presentation.value.enabled == false }
   }
 
   @Test
@@ -361,19 +344,13 @@ class LocalEmulatorProvisionerPluginTest {
 
     yieldUntil { provisioner.devices.value.size == 1 }
 
-    val handle = provisioner.devices.value[0]
+    val handle = provisioner.devices.value[0] as LocalEmulatorDeviceHandle
     assertThat(handle.state.error).isNotNull()
-    val activationAction = handle.activationAction!!
-    val repairAction = handle.repairDeviceAction!!
 
-    repairAction.presentation.takeWhile { !it.enabled }.collect()
+    avdManager.downloadAvdSystemImage(handle.avdInfo)
 
-    repairAction.repair()
-
-    // Should become possible to activate the device
-    activationAction.presentation.takeWhile { !it.enabled }.collect()
-    repairAction.presentation.takeWhile { it.enabled }.collect()
-    assertThat(handle.state.error).isNull()
+    // The error should go away
+    handle.stateFlow.takeWhile { it.error != null }.collect()
   }
 
   @Test
@@ -382,10 +359,10 @@ class LocalEmulatorProvisionerPluginTest {
 
     yieldUntil { provisioner.devices.value.size == 1 }
 
-    val handle = provisioner.devices.value[0]
+    val handle = provisioner.devices.value[0] as LocalEmulatorDeviceHandle
     assertThat(handle.state.properties.deviceType).isEqualTo(DeviceType.TV)
 
-    handle.activationAction?.activate()
+    avdManager.startAvd(handle.avdInfo, QuickBoot)
     handle.awaitReady()
 
     assertThat(handle.state.properties.deviceType).isEqualTo(DeviceType.TV)
@@ -446,10 +423,10 @@ class LocalEmulatorProvisionerPluginTest {
 
     yieldUntil { provisioner.devices.value.size == 1 }
 
-    val handle = provisioner.devices.value[0]
+    val handle = provisioner.devices.value[0] as LocalEmulatorDeviceHandle
     assertThat(handle.state.properties.deviceType).isEqualTo(DeviceType.XR_HEADSET)
 
-    handle.activationAction?.activate()
+    avdManager.startAvd(handle.avdInfo, QuickBoot)
     handle.awaitReady()
 
     assertThat(handle.state.properties.deviceType).isEqualTo(DeviceType.XR_HEADSET)
@@ -463,24 +440,24 @@ class LocalEmulatorProvisionerPluginTest {
 
     yieldUntil { provisioner.devices.value.size == 1 }
 
-    val handle = provisioner.devices.value[0]
+    val handle = provisioner.devices.value[0] as LocalEmulatorDeviceHandle
     val name = handle.state.properties.title
 
     val job = launch { handle.stateFlow.collect { channel.send(it) } }
 
     // Editing the device adds "Edited" to its name
-    handle.editAction?.edit(null)
+    avdManager.editAvd(handle.onDiskAvdInfo)
 
     channel.receiveUntilPassing { newState ->
       assertThat(newState.properties.title).isEqualTo("$name Edited")
     }
 
     // Editing the device while it's online puts it in AvdChangedError state
-    handle.activationAction?.activate()
+    avdManager.startAvd(handle.avdInfo, QuickBoot)
     channel.receiveUntilPassing { newState ->
       assertThat(newState).isInstanceOf(Connected::class.java)
     }
-    handle.editAction?.edit(null)
+    avdManager.editAvd(handle.onDiskAvdInfo)
 
     channel.receiveUntilPassing { newState ->
       assertThat(newState.error).isEqualTo(AvdChangedError)
@@ -488,7 +465,7 @@ class LocalEmulatorProvisionerPluginTest {
     }
 
     // Deactivating the device causes the prior edit to take effect
-    handle.deactivationAction?.deactivate()
+    avdManager.stopAvd(handle.avdInfo)
 
     channel.receiveUntilPassing { newState ->
       assertThat(newState.error).isNull()
@@ -509,7 +486,7 @@ class LocalEmulatorProvisionerPluginTest {
 
     yieldUntil { provisioner.devices.value.size == 1 }
 
-    val handle = provisioner.devices.value[0]
+    val handle = provisioner.devices.value[0] as LocalEmulatorDeviceHandle
     val job = launch { handle.stateFlow.collect { channel.send(it) } }
 
     // Check if editing the AVD name works while offline.
@@ -518,13 +495,13 @@ class LocalEmulatorProvisionerPluginTest {
       avdInfo.copy(avdInfo.iniFile.resolveSibling("New $originalName"))
     }
 
-    handle.editAction?.edit(null)
+    avdManager.editAvd(handle.onDiskAvdInfo)
     channel.receiveUntilPassing { newState ->
       assertThat((newState.properties as LocalEmulatorProperties).avdName)
         .isEqualTo("New $originalName")
     }
 
-    handle.activationAction?.activate()
+    avdManager.startAvd(handle.avdInfo, QuickBoot)
     channel.receiveUntilPassing { newState ->
       assertThat(newState).isInstanceOf(Connected::class.java)
     }
@@ -533,7 +510,7 @@ class LocalEmulatorProvisionerPluginTest {
     avdManager.avdEditor = { avdInfo: AvdInfo ->
       avdInfo.copy(userSettings = mapOf(PREFERRED_ABI to "arm64-v8a"))
     }
-    handle.editAction?.edit(null)
+    avdManager.editAvd(handle.onDiskAvdInfo)
     channel.receiveUntilPassing { newState ->
       assertThat((newState.properties as LocalEmulatorProperties).preferredAbi)
         .isEqualTo("arm64-v8a")
@@ -546,7 +523,7 @@ class LocalEmulatorProvisionerPluginTest {
   /** Verify that the device updates the expected number of times. */
   @Test
   fun updateCount() = runBlockingWithTimeout {
-    avdManager.createAvd(null)
+    avdManager.createAvd()
 
     yieldUntil { provisioner.devices.value.size == 1 }
 
@@ -564,7 +541,7 @@ class LocalEmulatorProvisionerPluginTest {
   fun extension() {
     checkNotNull(plugin.extension<TestExtension>())
     runBlockingWithTimeout {
-      avdManager.createAvd(null)
+      avdManager.createAvd()
 
       yieldUntil { provisioner.devices.value.size == 1 }
 
