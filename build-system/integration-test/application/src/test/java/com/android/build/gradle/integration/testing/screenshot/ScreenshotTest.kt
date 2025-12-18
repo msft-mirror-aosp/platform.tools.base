@@ -72,8 +72,6 @@ class ScreenshotTest {
 
             gradleProperties {
                 add(BooleanOption.ENABLE_SCREENSHOT_TEST, true)
-                add(BooleanOption.BUILT_IN_KOTLIN, false)
-                add(BooleanOption.USE_NEW_DSL, false)
             }
         }
 
@@ -193,7 +191,6 @@ class ScreenshotTest {
     }
 
     private fun AndroidProjectDefinition<out CommonExtension>.setupProjectNoScreenshotTestSource() {
-        applyPlugin(PluginType.KOTLIN_ANDROID, TestUtils.KOTLIN_VERSION_FOR_TESTS)
         applyPlugin(
             PluginType.Custom(
                 id = com.android.build.gradle.internal.utils.COMPOSE_COMPILER_PLUGIN_ID,
