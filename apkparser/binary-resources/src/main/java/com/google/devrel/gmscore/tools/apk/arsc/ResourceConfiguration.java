@@ -16,8 +16,6 @@
 
 package com.google.devrel.gmscore.tools.apk.arsc;
 
-import static java.nio.charset.StandardCharsets.US_ASCII;
-
 import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
@@ -25,10 +23,17 @@ import com.google.common.primitives.UnsignedBytes;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Objects;
+
+import static java.nio.charset.StandardCharsets.US_ASCII;
 
 /** Describes a particular resource configuration. */
-public class BinaryResourceConfiguration implements SerializableResource {
+public class ResourceConfiguration implements SerializableResource {
   private final int size;
   private final int mcc;
   private final int mnc;
@@ -54,7 +59,7 @@ public class BinaryResourceConfiguration implements SerializableResource {
   private final int screenLayout2;
   private final byte[] unknown;
 
-  static BinaryResourceConfiguration create(ByteBuffer buffer) {
+  static ResourceConfiguration create(ByteBuffer buffer) {
     int startPosition = buffer.position();  // The starting buffer position to calculate bytes read.
     int size = buffer.getInt();
     int mcc = buffer.getShort() & 0xFFFF;
@@ -113,36 +118,36 @@ public class BinaryResourceConfiguration implements SerializableResource {
     byte[] unknown = new byte[size - bytesRead];
     buffer.get(unknown);
 
-    return new BinaryResourceConfiguration(size, mcc, mnc, language, region, orientation,
-                                           touchscreen, density, keyboard, navigation, inputFlags, screenWidth, screenHeight,
-                                           sdkVersion, minorVersion, screenLayout, uiMode, smallestScreenWidthDp, screenWidthDp,
-                                           screenHeightDp, localeScript, localeVariant, screenLayout2, unknown);
+    return new ResourceConfiguration(size, mcc, mnc, language, region, orientation,
+                                     touchscreen, density, keyboard, navigation, inputFlags, screenWidth, screenHeight,
+                                     sdkVersion, minorVersion, screenLayout, uiMode, smallestScreenWidthDp, screenWidthDp,
+                                     screenHeightDp, localeScript, localeVariant, screenLayout2, unknown);
   }
 
-  private BinaryResourceConfiguration(int size,
-                                      int mcc,
-                                      int mnc,
-                                      byte[] language,
-                                      byte[] region,
-                                      int orientation,
-                                      int touchscreen,
-                                      int density,
-                                      int keyboard,
-                                      int navigation,
-                                      int inputFlags,
-                                      int screenWidth,
-                                      int screenHeight,
-                                      int sdkVersion,
-                                      int minorVersion,
-                                      int screenLayout,
-                                      int uiMode,
-                                      int smallestScreenWidthDp,
-                                      int screenWidthDp,
-                                      int screenHeightDp,
-                                      byte[] localeScript,
-                                      byte[] localeVariant,
-                                      int screenLayout2,
-                                      byte[] unknown) {
+  private ResourceConfiguration(int size,
+                                int mcc,
+                                int mnc,
+                                byte[] language,
+                                byte[] region,
+                                int orientation,
+                                int touchscreen,
+                                int density,
+                                int keyboard,
+                                int navigation,
+                                int inputFlags,
+                                int screenWidth,
+                                int screenHeight,
+                                int sdkVersion,
+                                int minorVersion,
+                                int screenLayout,
+                                int uiMode,
+                                int smallestScreenWidthDp,
+                                int screenWidthDp,
+                                int screenHeightDp,
+                                byte[] localeScript,
+                                byte[] localeVariant,
+                                int screenLayout2,
+                                byte[] unknown) {
     this.size = size;
     this.mcc = mcc;
     this.mnc = mnc;
@@ -169,7 +174,7 @@ public class BinaryResourceConfiguration implements SerializableResource {
     this.unknown = unknown;
   }
 
-  /** The different types of configs that can be present in a {@link BinaryResourceConfiguration}. */
+  /** The different types of configs that can be present in a {@link ResourceConfiguration}. */
   private enum Type {
     MCC,
     MNC,
@@ -409,15 +414,15 @@ public class BinaryResourceConfiguration implements SerializableResource {
    * @param sdkVersion The SDK version of the returned configuration.
    * @return A copy of this configuration with the only difference being #sdkVersion.
    */
-  public final BinaryResourceConfiguration withSdkVersion(int sdkVersion) {
+  public final ResourceConfiguration withSdkVersion(int sdkVersion) {
     if (sdkVersion == sdkVersion()) {
       return this;
     }
-    return new BinaryResourceConfiguration(size(), mcc(), mnc(), language(), region(),
-                                           orientation(), touchscreen(), density(), keyboard(), navigation(), inputFlags(),
-                                           screenWidth(), screenHeight(), sdkVersion, minorVersion(), screenLayout(), uiMode(),
-                                           smallestScreenWidthDp(), screenWidthDp(), screenHeightDp(), localeScript(), localeVariant(),
-                                           screenLayout2(), unknown());
+    return new ResourceConfiguration(size(), mcc(), mnc(), language(), region(),
+                                     orientation(), touchscreen(), density(), keyboard(), navigation(), inputFlags(),
+                                     screenWidth(), screenHeight(), sdkVersion, minorVersion(), screenLayout(), uiMode(),
+                                     smallestScreenWidthDp(), screenWidthDp(), screenHeightDp(), localeScript(), localeVariant(),
+                                     screenLayout2(), unknown());
   }
 
   public int minorVersion() { return minorVersion; }
@@ -572,7 +577,7 @@ public class BinaryResourceConfiguration implements SerializableResource {
   public boolean equals(Object o) {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
-    BinaryResourceConfiguration that = (BinaryResourceConfiguration)o;
+    ResourceConfiguration that = (ResourceConfiguration)o;
     return size == that.size &&
            mcc == that.mcc &&
            mnc == that.mnc &&
@@ -622,7 +627,7 @@ public class BinaryResourceConfiguration implements SerializableResource {
   /**
    * Returns a map of the configuration parts for {@link #toString}.
    *
-   * <p>If a configuration part is not defined for this {@link BinaryResourceConfiguration}, its value
+   * <p>If a configuration part is not defined for this {@link ResourceConfiguration}, its value
    * will be the empty string.
    */
   public final Map<Type, String> toStringParts() {

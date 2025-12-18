@@ -22,6 +22,7 @@ import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.ProfileCapturer
 import com.android.build.gradle.integration.common.fixture.SUPPORT_LIB_MIN_SDK
 import com.android.build.gradle.integration.common.fixture.app.KotlinHelloWorldApp
+import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition
 import com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
 import com.android.testutils.TestUtils
 import com.google.common.collect.Iterables
@@ -82,7 +83,8 @@ class ProfileContentTest {
             val gbv = gbp.getVariant(0)
             assertThat(gbv.minSdkVersion.apiLevel).isEqualTo(SUPPORT_LIB_MIN_SDK)
             assertThat(gbv.hasTargetSdkVersion()).named("has target sdk version").isTrue()
-            assertThat(gbv.targetSdkVersion.apiLevel).named("target sdk version").isEqualTo(SUPPORT_LIB_MIN_SDK)
+            assertThat(gbv.targetSdkVersion.apiLevel).named("target sdk version").isEqualTo(
+                GradleBuildDefinition.DEFAULT_COMPILE_SDK_VERSION)
             assertThat(gbv.hasMaxSdkVersion()).named("has max sdk version").isFalse()
             assertThat(gbp.appliedPluginsList.any {
                 it.className == "com.android.build.gradle.AppPlugin" &&

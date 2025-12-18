@@ -283,12 +283,17 @@ class CrawlProcessingState(private val journeyRunId: String, private val prompts
         val targetElement = elementForId(screenState, targetAction.screenElementId)
         return buildString {
             append(targetAction.actionType.name)
-            if (targetAction.actionType == TargetActionType.ENTER_TEXT || targetAction.actionType == TargetActionType.TYPE_TEXT) {
-                append(" \"${targetAction.enterTextString}\" in ")
-            } else {
-                append(" on ")
+
+            val isInputting = targetAction.actionType == TargetActionType.ENTER_TEXT || targetAction.actionType == TargetActionType.TYPE_TEXT
+            if (isInputting) {
+                append(" \"${targetAction.enterTextString}\"")
             }
-            append(toString(targetElement))
+
+            targetElement?.let {
+                append(if (isInputting) " in " else " on ")
+                append(toString(it))
+            }
+
         }
     }
 
@@ -311,12 +316,13 @@ class CrawlProcessingState(private val journeyRunId: String, private val prompts
 
     /**
      * Returns the `ScreenElement` corresponding to the given `elementId` in the screen
-     * given by the `screenStateId`.
+     * given by the `screenStateId` if it exists
      */
-    private fun elementForId(screenState: ScreenState, elementId: String): ScreenElement {
-        var currentElement = screenState.rootElementsList.first {
+    private fun elementForId(screenState: ScreenState, elementId: String): ScreenElement? {
+        var currentElement = screenState.rootElementsList.firstOrNull {
             elementId.startsWith(it.screenElementId)
-        }
+        } ?: return null
+
         while (currentElement.screenElementId != elementId) {
             currentElement = currentElement.childElementsList
                 .maxByOrNull { stringMatchLength(it.screenElementId, elementId) }

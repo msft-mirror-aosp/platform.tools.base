@@ -72,7 +72,8 @@ internal fun com.android.builder.model.v2.ide.TestInfo.convert() =
         )
         .build()
 
-internal fun com.android.builder.model.v2.ide.AndroidGradlePluginProjectFlags.BooleanFlag.convert() =
+internal fun com.android.builder.model.v2.ide.AndroidGradlePluginProjectFlags.BooleanFlag.convert()
+        : AndroidGradlePluginProjectFlags.BooleanFlag?=
     when (this) {
         com.android.builder.model.v2.ide.AndroidGradlePluginProjectFlags.BooleanFlag.APPLICATION_R_CLASS_CONSTANT_IDS ->
             AndroidGradlePluginProjectFlags.BooleanFlag.APPLICATION_R_CLASS_CONSTANT_IDS
@@ -102,20 +103,27 @@ internal fun com.android.builder.model.v2.ide.AndroidGradlePluginProjectFlags.Bo
             AndroidGradlePluginProjectFlags.BooleanFlag.GENERATE_MANIFEST_CLASS
         com.android.builder.model.v2.ide.AndroidGradlePluginProjectFlags.BooleanFlag.OLD_VARIANT_API_IN_USE ->
             AndroidGradlePluginProjectFlags.BooleanFlag.OLD_VARIANT_API_IN_USE
+        com.android.builder.model.v2.ide.AndroidGradlePluginProjectFlags.BooleanFlag.R8_GRADUAL_API ->
+            null
+
     }
 
 internal fun com.android.builder.model.v2.ide.AndroidGradlePluginProjectFlags.convert() =
     AndroidGradlePluginProjectFlags.newBuilder()
         .addAllBooleanFlagValues(
             com.android.builder.model.v2.ide.AndroidGradlePluginProjectFlags.BooleanFlag.values()
-                .map { flag ->
-                    AndroidGradlePluginProjectFlags.BooleanFlagValue.newBuilder()
-                        .setFlag(flag.convert())
-                        .setValue(flag.getValue(this))
-                        .build()
+                .mapNotNull { flag ->
+                    flag.convert()?.let { newFlag ->
+                        val value = flag.getValue(this)
+                        AndroidGradlePluginProjectFlags.BooleanFlagValue.newBuilder()
+                            .setFlag(newFlag)
+                            .setValue(value)
+                            .build()
+                    }
                 }
         )
         .build()
+
 
 internal fun com.android.build.api.variant.AndroidVersion.convert() =
     AndroidVersion.newBuilder()

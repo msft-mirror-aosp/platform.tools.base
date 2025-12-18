@@ -39,6 +39,7 @@ DATA = [
     "androidx.annotation:annotation:1.6.0",
     "androidx.annotation:annotation:1.7.0-beta01",
     "androidx.annotation:annotation-jvm:1.6.0",
+    "androidx.annotation:annotation-jvm:1.9.0",
     "androidx.appcompat:appcompat:1.0.2",
     "androidx.appcompat:appcompat:1.3.0",
     "androidx.appcompat:appcompat:1.3.0-beta01",
@@ -636,6 +637,7 @@ DATA = [
     "com.android.tools:desugar_jdk_libs_configuration_nio:2.0.4",
     "com.android.tools:desugar_jdk_libs_minimal:2.0.4",
     "com.android.tools:desugar_jdk_libs_nio:2.0.4",
+    "com.android.tools.journeys:journeys-junit-engine:0.2.0",
     "com.android.tools.layoutlib:layoutlib:16.1.0",
     "com.android.tools.layoutlib:layoutlib-api:30.1.3",
     "com.android.tools.layoutlib:layoutlib-resources:16.1.0",
@@ -910,6 +912,7 @@ DATA = [
     "com.squareup.wire:wire-grpc-client:5.3.1",
     "com.squareup.wire:wire-kotlin-generator:5.3.1",
     "com.squareup.wire:wire-runtime:5.3.1",
+    "com.squareup.wire:wire-runtime-jvm:5.4.0",
     "com.squareup.wire:wire-schema:5.3.1",
     "com.vladsch.flexmark:flexmark:0.64.8",
     "com.vladsch.flexmark:flexmark-ext-autolink:0.64.8",
@@ -945,6 +948,7 @@ DATA = [
     "org.apache.commons:commons-text:1.11.0",
     "org.apache.lucene:lucene-analysis-common:9.12.0",
     "org.apache.lucene:lucene-core:9.12.0",  # Match the Lucene version here with the one used by IJ pre-2025.1. See b/460307944.
+    "org.apache.lucene:lucene-highlighter:9.12.0",  # Match the version of Lucene with the one used by IntelliJ
     "org.apache.lucene:lucene-queryparser:9.12.0",
     "org.bouncycastle:bcprov-jdk16:1.46",
     "org.bouncycastle:bcprov-jdk18on:1.77",
@@ -984,18 +988,6 @@ DATA = [
     "org.jetbrains.dokka:dokka-base:1.4.32",
     "org.jetbrains.dokka:javadoc-plugin:1.4.32",
     "org.jetbrains.intellij:org.jetbrains.intellij.gradle.plugin:pom:1.16.0",
-    "org.jetbrains.jewel:jewel-ide-laf-bridge:0.28.0-243.27100",
-    "org.jetbrains.jewel:jewel-ide-laf-bridge-241:0.27.0",
-    "org.jetbrains.jewel:jewel-ide-laf-bridge-242:0.27.0",
-    "org.jetbrains.jewel:jewel-markdown-extension-autolink-241:0.27.0",
-    "org.jetbrains.jewel:jewel-markdown-extension-autolink-242:0.27.0",
-    "org.jetbrains.jewel:jewel-markdown-extension-gfm-alerts-241:0.27.0",
-    "org.jetbrains.jewel:jewel-markdown-extension-gfm-alerts-242:0.27.0",
-    "org.jetbrains.jewel:jewel-markdown-extensions-autolink:0.28.0-243.27100",
-    "org.jetbrains.jewel:jewel-markdown-extensions-gfm-alerts:0.28.0-243.27100",
-    "org.jetbrains.jewel:jewel-markdown-ide-laf-bridge-styling:0.28.0-243.27100",
-    "org.jetbrains.jewel:jewel-markdown-ide-laf-bridge-styling-241:0.27.0",
-    "org.jetbrains.jewel:jewel-markdown-ide-laf-bridge-styling-242:0.27.0",
     "org.jetbrains.kotlin.android:org.jetbrains.kotlin.android.gradle.plugin:pom:1.6.21",
     "org.jetbrains.kotlin.android:org.jetbrains.kotlin.android.gradle.plugin:pom:1.7.10",
     "org.jetbrains.kotlin.android:org.jetbrains.kotlin.android.gradle.plugin:pom:1.7.20",
@@ -1010,7 +1002,7 @@ DATA = [
     "org.jetbrains.kotlin.android:org.jetbrains.kotlin.android.gradle.plugin:pom:2.1.20",
     "org.jetbrains.kotlin.android:org.jetbrains.kotlin.android.gradle.plugin:pom:2.2.10",  # Used by AGP privacy-sandbox tests
     "org.jetbrains.kotlin.android:org.jetbrains.kotlin.android.gradle.plugin:pom:2.3.0-RC2",  # Used by AGP tests
-    "org.jetbrains.kotlin.android:org.jetbrains.kotlin.android.gradle.plugin:pom:2.3.20-dev-825",
+    "org.jetbrains.kotlin.android:org.jetbrains.kotlin.android.gradle.plugin:pom:2.3.20-dev-6126",
     "org.jetbrains.kotlin:compose-compiler-gradle-plugin:2.3.0-RC2",  # Used by AGP tests
     "org.jetbrains.kotlin.jvm:org.jetbrains.kotlin.jvm.gradle.plugin:pom:1.6.10",
     "org.jetbrains.kotlin.jvm:org.jetbrains.kotlin.jvm.gradle.plugin:pom:1.6.21",
@@ -1025,14 +1017,14 @@ DATA = [
     "org.jetbrains.kotlin.jvm:org.jetbrains.kotlin.jvm.gradle.plugin:pom:2.1.20",
     "org.jetbrains.kotlin.jvm:org.jetbrains.kotlin.jvm.gradle.plugin:pom:2.2.0",
     "org.jetbrains.kotlin.jvm:org.jetbrains.kotlin.jvm.gradle.plugin:pom:2.3.0-RC2",  # Used by AGP tests
-    "org.jetbrains.kotlin.jvm:org.jetbrains.kotlin.jvm.gradle.plugin:pom:2.3.20-dev-825",
+    "org.jetbrains.kotlin.jvm:org.jetbrains.kotlin.jvm.gradle.plugin:pom:2.3.20-dev-6126",
     "org.jetbrains.kotlin:jvm-abi-gen:2.2.20",  # Studio build
     "org.jetbrains.kotlin.kapt:org.jetbrains.kotlin.kapt.gradle.plugin:pom:1.8.10",  # Dependency of architecture-samples
     "org.jetbrains.kotlin.kapt:org.jetbrains.kotlin.kapt.gradle.plugin:pom:1.9.22",
     "org.jetbrains.kotlin.kapt:org.jetbrains.kotlin.kapt.gradle.plugin:pom:1.9.23",
     "org.jetbrains.kotlin.kapt:org.jetbrains.kotlin.kapt.gradle.plugin:pom:2.1.20",
     "org.jetbrains.kotlin.kapt:org.jetbrains.kotlin.kapt.gradle.plugin:pom:2.3.0-RC2",  # Used by AGP tests
-    "org.jetbrains.kotlin.kapt:org.jetbrains.kotlin.kapt.gradle.plugin:pom:2.3.20-dev-825",
+    "org.jetbrains.kotlin.kapt:org.jetbrains.kotlin.kapt.gradle.plugin:pom:2.3.20-dev-6126",
     "org.jetbrains.kotlin:kotlin-android-extensions-runtime:1.3.41",
     "org.jetbrains.kotlin:kotlin-android-extensions-runtime:1.3.72",
     "org.jetbrains.kotlin:kotlin-android-extensions-runtime:1.4.32",
@@ -1059,13 +1051,13 @@ DATA = [
     "org.jetbrains.kotlin:kotlin-bom:pom:1.8.0",
     "org.jetbrains.kotlin:kotlin-bom:pom:1.8.22",
     "org.jetbrains.kotlin:kotlin-build-tools-compat:2.3.0-RC2",  # Used by AGP tests
-    "org.jetbrains.kotlin:kotlin-build-tools-compat:2.3.20-dev-825",
+    "org.jetbrains.kotlin:kotlin-build-tools-compat:2.3.20-dev-6126",
     "org.jetbrains.kotlin:kotlin-build-tools-impl:2.0.21",  # Kotlin templates
     "org.jetbrains.kotlin:kotlin-build-tools-impl:2.1.0",
     "org.jetbrains.kotlin:kotlin-build-tools-impl:2.1.20",
     "org.jetbrains.kotlin:kotlin-build-tools-impl:2.2.10",  # Used by AGP privacy-sandbox tests
     "org.jetbrains.kotlin:kotlin-build-tools-impl:2.3.0-RC2",  # Used by AGP tests
-    "org.jetbrains.kotlin:kotlin-build-tools-impl:2.3.20-dev-825",
+    "org.jetbrains.kotlin:kotlin-build-tools-impl:2.3.20-dev-6126",
     "org.jetbrains.kotlin:kotlin-compiler:1.7.20",
     "org.jetbrains.kotlin:kotlin-compiler:1.8.10",
     "org.jetbrains.kotlin:kotlin-compiler:1.8.21",
@@ -1102,7 +1094,7 @@ DATA = [
     "org.jetbrains.kotlin:kotlin-gradle-plugin:2.1.0",
     "org.jetbrains.kotlin:kotlin-gradle-plugin:2.1.20",
     "org.jetbrains.kotlin:kotlin-gradle-plugin:2.3.0-RC2",  # Used by AGP tests
-    "org.jetbrains.kotlin:kotlin-gradle-plugin:2.3.20-dev-825",
+    "org.jetbrains.kotlin:kotlin-gradle-plugin:2.3.20-dev-6126",
     "org.jetbrains.kotlin:kotlin-gradle-plugin:jar:gradle70:1.7.10",
     "org.jetbrains.kotlin:kotlin-gradle-plugin:jar:gradle70:1.7.20",
     "org.jetbrains.kotlin:kotlin-gradle-plugin:jar:gradle71:1.7.20",
@@ -1174,7 +1166,7 @@ DATA = [
     "org.jetbrains.kotlin:kotlin-stdlib:2.2.0",  # AGP dependencies (AGP depends on kotlin-stdlib:2.2.10, but Gradle downgrades it to kotlin-stdlib:2.2.0)
     "org.jetbrains.kotlin:kotlin-stdlib:2.2.20",
     "org.jetbrains.kotlin:kotlin-stdlib:2.3.0-RC2",  # Used by AGP tests
-    "org.jetbrains.kotlin:kotlin-stdlib:2.3.20-dev-825",
+    "org.jetbrains.kotlin:kotlin-stdlib:2.3.20-dev-6126",
     "org.jetbrains.kotlin:kotlin-stdlib-common:1.9.20",
     "org.jetbrains.kotlin:kotlin-stdlib-common:1.9.22",
     "org.jetbrains.kotlin:kotlin-stdlib-common:1.9.23",
@@ -1185,7 +1177,7 @@ DATA = [
     "org.jetbrains.kotlin:kotlin-stdlib-common:pom:2.2.10",  # AGP dependencies + Used by AGP privacy-sandbox tests
     "org.jetbrains.kotlin:kotlin-stdlib-common:pom:2.2.20",
     "org.jetbrains.kotlin:kotlin-stdlib-common:pom:2.3.0-RC2",  # Used by AGP tests
-    "org.jetbrains.kotlin:kotlin-stdlib-common:pom:2.3.20-dev-825",
+    "org.jetbrains.kotlin:kotlin-stdlib-common:pom:2.3.20-dev-6126",
     "org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.4.32",
     "org.jetbrains.kotlin:kotlin-stdlib-jdk7:2.1.21",
     "org.jetbrains.kotlin:kotlin-stdlib-jdk7:2.2.0",
@@ -1206,7 +1198,7 @@ DATA = [
     "org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.1.20",
     "org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.2.0",
     "org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.3.0-RC2",  # Used by AGP tests
-    "org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.3.20-dev-825",
+    "org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.3.20-dev-6126",
     "org.jetbrains.kotlin:kotlin-test:1.9.24",
     "org.jetbrains.kotlin:kotlin-test:2.0.21",
     "org.jetbrains.kotlin:kotlin-test:2.1.20",
@@ -1222,7 +1214,7 @@ DATA = [
     "org.jetbrains.kotlin.plugin.compose:org.jetbrains.kotlin.plugin.compose.gradle.plugin:pom:2.0.21",
     "org.jetbrains.kotlin.plugin.compose:org.jetbrains.kotlin.plugin.compose.gradle.plugin:pom:2.2.10",  # Used by AGP Compose tests
     "org.jetbrains.kotlin.plugin.compose:org.jetbrains.kotlin.plugin.compose.gradle.plugin:pom:2.3.0-RC2",  # Used by AGP tests
-    "org.jetbrains.kotlin.plugin.compose:org.jetbrains.kotlin.plugin.compose.gradle.plugin:pom:2.3.20-dev-825",
+    "org.jetbrains.kotlin.plugin.compose:org.jetbrains.kotlin.plugin.compose.gradle.plugin:pom:2.3.20-dev-6126",
     "org.jetbrains.kotlin.plugin.parcelize:org.jetbrains.kotlin.plugin.parcelize.gradle.plugin:pom:2.3.0-RC2",  # Used by com.android.tools.idea.benchmarks.tests.JetNewsBenchmarkTest
     "org.jetbrains.kotlinx:atomicfu:0.21.0",
     "org.jetbrains.kotlinx:atomicfu:0.29.0",
@@ -1298,6 +1290,7 @@ DATA = [
     # Source JARs
     # keep sorted
     "androidx.arch.core:core-common:jar:sources:2.2.0",
+    "androidx.collection:collection-jvm:1.4.5",
     "androidx.collection:collection-jvm:jar:sources:1.4.0",
     "androidx.lifecycle:lifecycle-common-jvm:jar:sources:2.8.5",
     "androidx.lifecycle:lifecycle-runtime-desktop:jar:sources:2.8.5",
@@ -1341,13 +1334,6 @@ DATA = [
     "org.jetbrains.compose.ui:ui-text-desktop:jar:sources:1.7.3",
     "org.jetbrains.compose.ui:ui-unit-desktop:jar:sources:1.7.3",
     "org.jetbrains.compose.ui:ui-util-desktop:jar:sources:1.7.3",
-    "org.jetbrains.jewel:jewel-foundation:jar:sources:0.28.0-243.27100",
-    "org.jetbrains.jewel:jewel-ide-laf-bridge:jar:sources:0.28.0-243.27100",
-    "org.jetbrains.jewel:jewel-markdown-core:jar:sources:0.28.0-243.27100",
-    "org.jetbrains.jewel:jewel-markdown-extensions-autolink:jar:sources:0.28.0-243.27100",
-    "org.jetbrains.jewel:jewel-markdown-extensions-gfm-alerts:jar:sources:0.28.0-243.27100",
-    "org.jetbrains.jewel:jewel-markdown-ide-laf-bridge-styling:jar:sources:0.28.0-243.27100",
-    "org.jetbrains.jewel:jewel-ui:jar:sources:0.28.0-243.27100",
     "org.jetbrains.kotlin:kotlin-stdlib:jar:sources:1.9.22",
     "org.jetbrains.kotlin:kotlin-stdlib:jar:sources:1.9.23",
     "org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:jar:sources:1.6.4",

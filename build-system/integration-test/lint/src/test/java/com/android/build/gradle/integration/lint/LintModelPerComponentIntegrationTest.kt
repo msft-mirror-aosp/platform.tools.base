@@ -39,7 +39,6 @@ class LintModelPerComponentIntegrationTest {
             .fromTestProject("lintKotlin")
             .addGradleProperties("${BooleanOption.USE_ANDROID_X.propertyName}=true")
             .addGradleProperties("${BooleanOption.R8_PROGUARD_ANDROID_TXT_DISALLOWED.propertyName}=true")
-            .disableBuiltInKotlin()
             .dontOutputLogOnFailure()
             .create()
 

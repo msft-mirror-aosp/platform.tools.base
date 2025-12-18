@@ -814,7 +814,6 @@ coverage_report(
         "tools/adt/idea/project-system-gradle-upgrade/src/com/android/tools/idea/gradle/project/upgrade",
     ],
     tests = [
-        "//tools/adt/idea/project-system-gradle-upgrade:ProjectUpgradeTests_From_gradle_6.1.1_agp_4.0.0",
         "//tools/adt/idea/project-system-gradle-upgrade:ProjectUpgradeTests_From_gradle_6.7.1_agp_4.2.2",
         "//tools/adt/idea/project-system-gradle-upgrade:intellij.android.projectSystem.gradle.upgrade.tests_tests",
     ],
@@ -1066,7 +1065,6 @@ coverage_report(
         # TODO(b/136028658) too flaky for coverage
         #"//tools/adt/idea/project-system-gradle:intellij.android.projectSystem.gradle.tests_tests",
         "//tools/adt/idea/project-system-gradle-psd:intellij.android.projectSystem.gradle.psd.tests_tests",
-        "//tools/adt/idea/project-system-gradle-upgrade:ProjectUpgradeTests_From_gradle_6.1.1_agp_4.0.0",
         "//tools/adt/idea/project-system-gradle-upgrade:ProjectUpgradeTests_From_gradle_6.7.1_agp_4.2.2",
         "//tools/adt/idea/project-system-gradle-upgrade:intellij.android.projectSystem.gradle.upgrade.tests_tests",
         "//tools/adt/idea/sdk-updates:intellij.android.sdkUpdates.tests_tests",
@@ -1115,7 +1113,7 @@ coverage_report(
         "//tools/base/build-system/gradle-core:tests.test",
         "//tools/base/build-system/integration-test/application:automatic-tests",
         "//tools/base/build-system/integration-test/application:coupled_tests",
-        "//tools/base/build-system/integration-test/application:dependencies-tests",
+        "//tools/base/build-system/integration-test/application:deps-tests",
         "//tools/base/build-system/integration-test/application:library-tests",
         "//tools/base/build-system/integration-test/application:mlkit-tests",
         "//tools/base/build-system/integration-test/application:packaging-tests",

@@ -16,12 +16,12 @@
 package com.android.tools.leakcanarylib.parser
 
 import com.android.tools.leakcanarylib.data.AnalysisFailure
-import com.android.tools.leakcanarylib.data.AnalysisUpdate
 import com.android.tools.leakcanarylib.data.AnalysisSuccess
+import com.android.tools.leakcanarylib.data.AnalysisUpdate
 import com.android.tools.leakcanarylib.data.Leak
 import com.android.tools.leakcanarylib.data.LeakType
+import com.intellij.openapi.diagnostic.Logger
 import java.io.File
-import java.util.logging.Logger
 
 /**
  * A utility class for parsing the string representation of heap analysis results into corresponding `AnalysisSuccess` or
@@ -30,7 +30,8 @@ import java.util.logging.Logger
 class AnalysisParser {
 
     companion object {
-        private val LOG = Logger.getLogger(AnalysisParser::class.java.name)
+
+        private val LOG = Logger.getInstance(AnalysisParser::class.java.name)
         private const val SEPARATOR: String = "===================================="
 
         /**
@@ -74,9 +75,8 @@ class AnalysisParser {
                     leaks = overallLeaks,
                     analysisDurationMillis = heapAnalysisDuration
                 )
-            } catch (e: IllegalArgumentException) {
-                // Malformed leak, returning null.
-                LOG.warning("Malformed leak, returning null. Exception: $e")
+            } catch (e: Exception) {
+                LOG.warn("Malformed leak, returning null. Exception: $e.\nAttempted to parse:\n$text")
                 null
             }
         }
@@ -87,33 +87,38 @@ class AnalysisParser {
          * @param text The string representation of the analysis result.
          * @return An `AnalysisFailure` object containing the parsed data and the exception.
          */
-        fun analysisFailureFromString(text: String): AnalysisFailure {
-            val metadataSection = extractSection(text, "METADATA")
-            val stacktraceSection = extractSection(text, "STACKTRACE")
+        fun analysisFailureFromString(text: String): AnalysisFailure? {
+            return try {
+                val metadataSection = extractSection(text, "METADATA")
+                val stacktraceSection = extractSection(text, "STACKTRACE")
 
-            // Extract heap dump file from metadata section.
-            val heapDumpFile = extractFileFromTexts(metadataSection.lines())
+                // Extract heap dump file from metadata section.
+                val heapDumpFile = extractFileFromTexts(metadataSection.lines())
 
-            // Parse heap dump timestamp from metadata section.
-            val heapDumpTimestamp = extractHeapDumpTimestamp(metadataSection.lines())
+                // Parse heap dump timestamp from metadata section.
+                val heapDumpTimestamp = extractHeapDumpTimestamp(metadataSection.lines())
 
-            // Parse dump duration from metadata section.
-            val heapDumpDuration = extractHeapDumpDuration(metadataSection.lines())
+                // Parse dump duration from metadata section.
+                val heapDumpDuration = extractHeapDumpDuration(metadataSection.lines())
 
-            // Parse analysis duration from metadata section.
-            val heapAnalysisDuration = extractHeapAnalysisDuration(metadataSection.lines())
+                // Parse analysis duration from metadata section.
+                val heapAnalysisDuration = extractHeapAnalysisDuration(metadataSection.lines())
 
-            // Convert stacktrace section to a HeapAnalysisException object.
-            val exception = Throwable(findRootCauseForException(stacktraceSection))
+                // Convert stacktrace section to a HeapAnalysisException object.
+                val exception = Throwable(findRootCauseForException(stacktraceSection))
 
-            // Return a new HeapAnalysisFailure object with the parsed data and exception.
-            return AnalysisFailure(
-                heapDumpFile,
-                heapDumpTimestamp,
-                heapDumpDuration,
-                heapAnalysisDuration,
-                exception
-            )
+                // Return a new HeapAnalysisFailure object with the parsed data and exception.
+                AnalysisFailure(
+                    heapDumpFile,
+                    heapDumpTimestamp,
+                    heapDumpDuration,
+                    heapAnalysisDuration,
+                    exception
+                )
+            } catch (e: Exception) {
+                LOG.warn("Malformed failure report, returning null. Exception: $e.\nAttempted to parse:\n$text")
+                null
+            }
         }
 
         /**

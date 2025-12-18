@@ -87,6 +87,60 @@ class L8ToolTest {
 
     }
 
+    @Test
+    fun testMappingMerge() {
+        val output = tmp.newFolder().toPath()
+        val r8InputMapping = tmp.newFile("r8_mapping.txt").toPath()
+        Files.write(r8InputMapping, listOf(
+            "# compiler: R8",
+            "# pg_map_id: r8-uuid-1234",
+            "com.example.App -> a.a:",
+            "    void main() -> b"
+        ))
+
+        // Setup Keep Rules to force L8 to generate its own mapping
+        // keeping a known class from the desugar jar so L8 has something to obfuscate/map
+        val keepRulesFile = tmp.newFile("rules.pro").toPath()
+        Files.write(keepRulesFile, listOf("-keep class j$.util.stream.Stream { *; }"))
+
+        val finalOutputMapping = output.resolve("mapping.txt")
+
+        runL8(
+            inputClasses = desugarJar,
+            output = output,
+            libConfiguration = desugarConfig,
+            libraries = bootClasspath,
+            minSdkVersion = 20,
+            keepRules = KeepRulesConfig(listOf(keepRulesFile), emptyList()),
+            isDebuggable = false, // FALSE to enable obfuscation
+            outputMode = L8OutputMode.DexIndexed,
+
+            inputMappingFile = r8InputMapping,
+            outputMappingFile = finalOutputMapping
+        )
+
+        assertThat(finalOutputMapping).exists()
+        val content = Files.readAllLines(finalOutputMapping)
+
+        // Verify R8 Header is at the top
+        assertThat(content[0]).isEqualTo("# compiler: R8")
+        assertThat(content).contains("# pg_map_id: r8-uuid-1234")
+        assertThat(content).contains("com.example.App -> a.a:")
+
+        // Verify L8 content is merged
+        // We look for the class we kept. It might be obfuscated or kept depending on rules,
+        // but the mapping file should mention it.
+        // Since we didn't use -dontobfuscate, L8 should produce a map.
+        // We can check for the separator we added in L8Tool.
+        assertThat(content).contains(L8_MAPPING_HEADER)
+
+        // Verify L8 Headers are STRIPPED
+        // The file should NOT contain a second "pg_map_id" line from L8.
+        // (R8's id is present, L8's should be gone).
+        val mapIdCount = content.count { it.contains("pg_map_id") }
+        assertThat(mapIdCount).named("Should only have one Map ID (from R8)").isEqualTo(1)
+    }
+
     private fun getDexFileCount(dir: Path): Long =
         Files.list(dir).filter { it.toString().endsWith(".dex") }.count()
 

@@ -21,8 +21,16 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Multimaps;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
+import java.util.Set;
 
 /**
  * Analyzes an APK to:
@@ -108,7 +116,7 @@ public class ArscBlamer {
   }
 
   private void blameFromTypeChunkEntry(TypeChunk.Entry chunkEntry) {
-    for (BinaryResourceValue value : getAllResourceValues(chunkEntry)) {
+    for (ResourceValue value : getAllResourceValues(chunkEntry)) {
       for (ResourceEntry entry : typeEntryToBlame.get(chunkEntry)) {
         switch (value.type()) {
           case STRING:
@@ -121,14 +129,14 @@ public class ArscBlamer {
     }
   }
 
-  /** Returns all {@link BinaryResourceValue} for a single {@code entry}. */
-  private Collection<BinaryResourceValue> getAllResourceValues(TypeChunk.Entry entry) {
-    Set<BinaryResourceValue> values = new HashSet<BinaryResourceValue>();
-    BinaryResourceValue binaryResourceValue = entry.value();
-    if (binaryResourceValue != null) {
-      values.add(binaryResourceValue);
+  /** Returns all {@link ResourceValue} for a single {@code entry}. */
+  private Collection<ResourceValue> getAllResourceValues(TypeChunk.Entry entry) {
+    Set<ResourceValue> values = new HashSet<ResourceValue>();
+    ResourceValue resourceValue = entry.value();
+    if (resourceValue != null) {
+      values.add(resourceValue);
     }
-    for (BinaryResourceValue value : entry.values().values()) {
+    for (ResourceValue value : entry.values().values()) {
       values.add(value);
     }
     return values;

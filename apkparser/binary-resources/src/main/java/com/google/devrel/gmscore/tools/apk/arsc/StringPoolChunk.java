@@ -25,7 +25,11 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
 /** Represents a string pool structure. */
 public final class StringPoolChunk extends Chunk {
@@ -136,8 +140,8 @@ public final class StringPoolChunk extends Chunk {
   }
 
   /** Returns the type of strings in this pool. */
-  public BinaryResourceString.Type getStringType() {
-    return isUTF8() ? BinaryResourceString.Type.UTF8 : BinaryResourceString.Type.UTF16;
+  public ResourceString.Type getStringType() {
+    return isUTF8() ? ResourceString.Type.UTF8 : ResourceString.Type.UTF16;
   }
 
   @Override
@@ -174,7 +178,7 @@ public final class StringPoolChunk extends Chunk {
     // After the header, we now have an array of offsets for the strings in this pool.
     for (int i = 0; i < count; ++i) {
       int stringOffset = offset + buffer.getInt();
-      result.add(BinaryResourceString.decodeString(buffer, stringOffset, getStringType()));
+      result.add(ResourceString.decodeString(buffer, stringOffset, getStringType()));
       if (stringOffset <= previousOffset) {
         isOriginalDeduped = true;
       }
@@ -204,7 +208,7 @@ public final class StringPoolChunk extends Chunk {
         Integer offset = used.get(string);
         offsets.putInt(offset == null ? 0 : offset);
       } else {
-        byte[] encodedString = BinaryResourceString.encodeString(string, getStringType());
+        byte[] encodedString = ResourceString.encodeString(string, getStringType());
         payload.write(encodedString);
         used.put(string, stringOffset);
         offsets.putInt(stringOffset);

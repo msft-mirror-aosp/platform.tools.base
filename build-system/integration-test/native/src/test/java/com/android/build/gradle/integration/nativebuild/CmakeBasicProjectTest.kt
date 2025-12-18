@@ -215,8 +215,8 @@ class CmakeBasicProjectTest(
             }
 
             dependencies {
-                androidTestImplementation "com.android.support.test:runner:${"$"}{libs.versions.testSupportLibVersion.get()}"
-                androidTestImplementation "com.android.support.test:rules:${"$"}{libs.versions.testSupportLibVersion.get()}"
+                androidTestImplementation "androidx.test:runner:1.4.0-alpha06"
+                androidTestImplementation "androidx.test:rules:1.4.0-alpha06"
             }
         """.trimIndent()
     }
@@ -267,8 +267,8 @@ class CmakeBasicProjectTest(
             }
 
             dependencies {
-                androidTestImplementation "com.android.support.test:runner:${"$"}{libs.versions.testSupportLibVersion.get()}"
-                androidTestImplementation "com.android.support.test:rules:${"$"}{libs.versions.testSupportLibVersion.get()}"
+                androidTestImplementation "androidx.test:runner:1.4.0-alpha06"
+                androidTestImplementation "androidx.test:rules:1.4.0-alpha06"
             }
         """.trimIndent()
     }
@@ -363,8 +363,8 @@ class CmakeBasicProjectTest(
             }
 
             dependencies {
-                androidTestImplementation "com.android.support.test:runner:${"$"}{libs.versions.testSupportLibVersion.get()}"
-                androidTestImplementation "com.android.support.test:rules:${"$"}{libs.versions.testSupportLibVersion.get()}"
+                androidTestImplementation "androidx.test:runner:1.4.0-alpha06"
+                androidTestImplementation "androidx.test:rules:1.4.0-alpha06"
             }
         """.trimIndent()
     }

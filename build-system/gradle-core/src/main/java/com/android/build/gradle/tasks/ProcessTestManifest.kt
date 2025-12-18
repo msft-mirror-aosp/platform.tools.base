@@ -23,12 +23,10 @@ import com.android.build.api.variant.impl.BuiltArtifactsImpl
 import com.android.build.gradle.internal.LoggerWrapper
 import com.android.build.gradle.internal.component.ComponentCreationConfig
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
-import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactScope
-import com.android.build.gradle.internal.publishing.AndroidArtifacts.ConsumedConfigType
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.scope.InternalArtifactType.PACKAGED_MANIFESTS
 import com.android.build.gradle.internal.tasks.BuildAnalyzer
-import com.android.build.gradle.internal.tasks.creationconfig.ProceedTestManifestCreationConfig
+import com.android.build.gradle.internal.tasks.creationconfig.ProcessTestManifestCreationConfig
 import com.android.build.gradle.internal.tasks.factory.VariantTaskCreationAction
 import com.android.build.gradle.internal.tasks.manifest.ManifestProviderImpl
 import com.android.build.gradle.internal.utils.setDisallowChanges
@@ -496,8 +494,8 @@ abstract class ProcessTestManifest : ManifestProcessorTask() {
     }
 
     class CreationAction(
-        creationConfig: ProceedTestManifestCreationConfig
-    ) : VariantTaskCreationAction<ProcessTestManifest, ProceedTestManifestCreationConfig>(creationConfig) {
+        creationConfig: ProcessTestManifestCreationConfig
+    ) : VariantTaskCreationAction<ProcessTestManifest, ProcessTestManifestCreationConfig>(creationConfig) {
         override val name = computeTaskName("process", "Manifest")
         override val type = ProcessTestManifest::class.java
 
@@ -562,23 +560,11 @@ abstract class ProcessTestManifest : ManifestProcessorTask() {
             task.functionalTest.setDisallowChanges(creationConfig.functionalTest)
             task.testLabel.setDisallowChanges(creationConfig.testLabel)
 
-            task.manifests = creationConfig
-                .variantDependencies
-                .getArtifactCollection(
-                    ConsumedConfigType.RUNTIME_CLASSPATH,
-                    ArtifactScope.ALL,
-                    AndroidArtifacts.ArtifactType.MANIFEST
-                )
+            task.manifests = creationConfig.manifests
             task.placeholdersValues.setDisallowChanges(creationConfig.placeholderValues)
             task.navigationJsons = task.project.files(
-                    creationConfig
-                        .variantDependencies
-                        .getArtifactFileCollection(
-                            ConsumedConfigType.RUNTIME_CLASSPATH,
-                            ArtifactScope.ALL,
-                            AndroidArtifacts.ArtifactType.NAVIGATION_JSON
-                        )
-                )
+                creationConfig.navigationJsons
+            )
 
             task.extractNativeLibs.setDisallowChanges(creationConfig.useLegacyPackaging)
             task.debuggable.setDisallowChanges(creationConfig.debuggable)

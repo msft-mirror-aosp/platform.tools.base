@@ -26,7 +26,7 @@ single_version_override(
     ],
     patch_strip = 1,
 )
-bazel_dep(name = "rules_jvm_external", version = "6.6")
+bazel_dep(name = "rules_jvm_external", version = "6.8")
 bazel_dep(name = "rules_java", version = "8.6.3")
 bazel_dep(name = "rules_pkg", version = "1.0.1")
 compat = use_extension("@rules_java//java:rules_java_deps.bzl", "compatibility_proxy")
@@ -75,6 +75,29 @@ single_version_override(
     ],
     patch_strip = 1,
 )
+
+maven = use_extension("@rules_jvm_external//:extensions.bzl", "maven")
+# rules_jvm_external 6.8 includes the following commit:
+# https://github.com/bazel-contrib/rules_jvm_external/commit/3574cebf1a163ed992f460cc7877a0355e86e35b
+# which causes rules_android_maven's protobuf version to no longer be overridden.
+# This override is re-added to ensure the same protobuf version is used. Otherwise,
+# the version conflict causes PackageAndroidResources actions to fail.
+maven.override(
+    name = "rules_android_maven",
+    coordinates = "com.google.protobuf:protobuf-java",
+    target = "@com_google_protobuf//:protobuf_java",
+)
+maven.install(
+    known_contributing_modules = [
+        "android_studio",
+        "grpc-java",
+        "bazel_worker_java",
+    ],
+    lock_file = "//tools/base/bazel/bzlmod:maven_install.json",
+)
+# Rename the default rules_jvm_external maven repository to maven2 to avoid a
+# naming conflict with the custom maven repository.
+use_repo(maven, maven2 = "maven")
 
 android_sdk_repository_extension = use_extension(
     "@rules_android//rules/android_sdk_repository:rule.bzl",

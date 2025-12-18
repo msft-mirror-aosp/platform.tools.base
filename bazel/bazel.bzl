@@ -22,6 +22,31 @@ ImlModuleInfo = provider(
     ],
 )
 
+def get_xbootclasspath_jvm_flags(platform = "studio-sdk"):
+    """IntelliJ 2025.1+ requires nio-fs.jar on the bootclasspath, even for tests.
+
+    Args:
+        platform: The IntelliJ platform (studio-sdk or sherlock-sdk).
+    Returns:
+        List with the -Xbootclasspath VM arg that matches the one in Studio launcher scripts.
+    """
+    if platform == "sherlock-sdk":
+        return select({
+            "@platforms//os:linux": ["-Xbootclasspath/a:prebuilts/studio/intellij-sdk/IC/linux/sherlock/lib/nio-fs.jar"],
+            "//tools/base/bazel/platforms:macos-x86_64": ["-Xbootclasspath/a:prebuilts/studio/intellij-sdk/IC/darwin/sherlock/Contents/lib/nio-fs.jar"],
+            "//tools/base/bazel/platforms:macos-arm64": ["-Xbootclasspath/a:prebuilts/studio/intellij-sdk/IC/darwin_aarch64/sherlock/Contents/lib/nio-fs.jar"],
+            "@platforms//os:windows": ["-Xbootclasspath/a:prebuilts/studio/intellij-sdk/IC/windows/sherlock/lib/nio-fs.jar"],
+            "//conditions:default": [],
+        })
+    else:
+        return select({
+            "@platforms//os:linux": ["-Xbootclasspath/a:prebuilts/studio/intellij-sdk/AI/linux/android-studio/lib/nio-fs.jar"],
+            "//tools/base/bazel/platforms:macos-x86_64": ["-Xbootclasspath/a:prebuilts/studio/intellij-sdk/AI/darwin/android-studio/Contents/lib/nio-fs.jar"],
+            "//tools/base/bazel/platforms:macos-arm64": ["-Xbootclasspath/a:prebuilts/studio/intellij-sdk/AI/darwin_aarch64/android-studio/Contents/lib/nio-fs.jar"],
+            "@platforms//os:windows": ["-Xbootclasspath/a:prebuilts/studio/intellij-sdk/AI/windows/android-studio/lib/nio-fs.jar"],
+            "//conditions:default": [],
+        })
+
 def relative_paths(ctx, files, roots):
     """Returns paths of the given files relative to the roots.
 
@@ -638,7 +663,7 @@ def iml_module(
                 runtime_deps = [":" + name + "_testlib"] + test_utils,
                 jvm_flags = test_jvm_flags + [
                     "-Dtest.suite.jar=" + name + "_test.jar",
-                    "-Didea.kotlin.plugin.use.k2=false",
+                    "-Didea.kotlin.plugin.use.k1=true",
                 ],
                 main_class = test_main_class,
                 test_class = test_class,
@@ -772,6 +797,9 @@ def _iml_test(
         runtime_deps = runtime_deps + [":" + name + "_module"]
     else:
         runtime_deps = runtime_deps + [module + "_testlib"]
+
+    jvm_flags += get_xbootclasspath_jvm_flags(intellij_platform)
+
     native.java_test(
         name = name,
         jvm_flags = ["-Dintellij.plugin.test.platform=" + intellij_platform] + jvm_flags,
@@ -786,7 +814,9 @@ def _gen_tests(
         test_shard_count = None,
         test_tags = None,
         test_data = None,
+        jvm_flags = [],
         visibility = [],
+        intellij_platform = "studio-sdk",
         **kwargs):
     """Generates potentially-split test target(s).
 
@@ -800,6 +830,7 @@ def _gen_tests(
         test_shard_count: Shard count for the generated test. Only valid for single tests.
         test_tags: optional list of tags to include for test targets.
         test_data: optional list of data to include for test targets.
+        jvm_flags: Extra flags passed to java_test().
         visibility: Target visibility.
         **kwargs: Additional arguments passed to java_test().
     """
@@ -809,12 +840,15 @@ def _gen_tests(
     if split_test_targets and test_shard_count:
         fail("test_shard_count and split_test_targets should not both be specified")
 
+    jvm_flags += get_xbootclasspath_jvm_flags(intellij_platform)
+
     if split_test_targets:
         _gen_split_tests(
             name = name,
             split_test_targets = split_test_targets,
             test_tags = test_tags,
             test_data = test_data,
+            jvm_flags = jvm_flags,
             visibility = visibility,
             **kwargs
         )
@@ -825,6 +859,7 @@ def _gen_tests(
             shard_count = test_shard_count,
             tags = test_tags,
             data = test_data,
+            jvm_flags = jvm_flags,
             visibility = visibility,
             **kwargs
         )
@@ -887,10 +922,7 @@ def _gen_split_tests(
         if test_tags:
             tags += test_tags
 
-        test_jvm_flags = []
-        test_jvm_flags.extend(jvm_flags)
-        test_jvm_flags.extend(additional_jvm_args)
-        test_jvm_flags.extend(_gen_split_test_jvm_flags(split_name, split_test_targets))
+        test_jvm_flags = jvm_flags + additional_jvm_args + _gen_split_test_jvm_flags(split_name, split_test_targets)
         test_exec_properties = split_target.get("exec_properties", default = exec_properties)
 
         coverage_java_test(

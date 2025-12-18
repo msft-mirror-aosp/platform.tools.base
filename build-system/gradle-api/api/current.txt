@@ -29,6 +29,10 @@ package com.android.build.api {
     method public com.android.build.api.AndroidPluginVersion getCurrent();
   }
 
+  public final class KotlinMultiplatformHierarchyDsl {
+    method @org.gradle.api.Incubating public static void withAndroid(org.jetbrains.kotlin.gradle.plugin.KotlinHierarchyBuilder);
+  }
+
 }
 
 package com.android.build.api.annotations {
@@ -214,7 +218,7 @@ package com.android.build.api.artifact {
     field public static final com.android.build.api.artifact.SingleArtifact.METADATA_LIBRARY_DEPENDENCIES_REPORT INSTANCE;
   }
 
-  public static final class SingleArtifact.OBFUSCATION_MAPPING_FILE extends com.android.build.api.artifact.SingleArtifact<org.gradle.api.file.RegularFile> {
+  public static final class SingleArtifact.OBFUSCATION_MAPPING_FILE extends com.android.build.api.artifact.SingleArtifact<org.gradle.api.file.RegularFile> implements com.android.build.api.artifact.Artifact.Replaceable com.android.build.api.artifact.Artifact.Transformable {
     field public static final com.android.build.api.artifact.SingleArtifact.OBFUSCATION_MAPPING_FILE INSTANCE;
   }
 
@@ -1311,6 +1315,23 @@ package com.android.build.api.dsl {
     property public abstract com.android.build.api.dsl.CmakeFlags cmake;
     property @org.gradle.api.Incubating public abstract java.util.Map<java.lang.String,java.lang.Object> experimentalProperties;
     property public abstract com.android.build.api.dsl.NdkBuildFlags ndkBuild;
+  }
+
+  public interface FusedLibraryExtension {
+    method public void aarMetadata(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.AarMetadata,kotlin.Unit> action);
+    method public com.android.build.api.dsl.AarMetadata getAarMetadata();
+    method @org.gradle.api.Incubating public java.util.Map<java.lang.String,java.lang.Object> getExperimentalProperties();
+    method public java.util.Map<java.lang.String,java.lang.String> getManifestPlaceholders();
+    method public String? getNamespace();
+    method public com.android.build.api.dsl.Packaging getPackaging();
+    method public void minSdk(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.MinSdkSpec,kotlin.Unit> action);
+    method public void packaging(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.Packaging,kotlin.Unit> action);
+    method public void setNamespace(String?);
+    property public abstract com.android.build.api.dsl.AarMetadata aarMetadata;
+    property @org.gradle.api.Incubating public abstract java.util.Map<java.lang.String,java.lang.Object> experimentalProperties;
+    property public abstract java.util.Map<java.lang.String,java.lang.String> manifestPlaceholders;
+    property public abstract String? namespace;
+    property public abstract com.android.build.api.dsl.Packaging packaging;
   }
 
   public interface HasConfigurableValue<T> {

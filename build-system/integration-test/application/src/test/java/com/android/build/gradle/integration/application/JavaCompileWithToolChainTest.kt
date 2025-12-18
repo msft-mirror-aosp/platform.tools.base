@@ -33,7 +33,6 @@ class JavaCompileWithToolChainTest {
     val project = GradleTestProject.builder()
         .fromTestApp(HelloWorldApp.forPlugin("com.android.application"))
         .withKotlinGradlePlugin(true)
-        .disableBuiltInKotlin()
         .create()
 
     @Test
@@ -84,8 +83,7 @@ class JavaCompileWithToolChainTest {
         }
     }
 
-    @Test
-    fun `test source and target compatibility versions when toolchain is configured`() {
+    private fun setUpKotlin(builtInKotlin: Boolean) {
         TestFileUtils.appendToFile(
             project.gradlePropertiesFile,
             """
@@ -96,10 +94,10 @@ class JavaCompileWithToolChainTest {
         TestFileUtils.appendToFile(
             project.buildFile,
             """
-            apply plugin: 'org.jetbrains.kotlin.android'
+            ${if (builtInKotlin) "" else "apply plugin: 'org.jetbrains.kotlin.android'"}
 
             java.toolchain.languageVersion = JavaLanguageVersion.of($latestJdkVersion)
-            android.kotlinOptions.allWarningsAsErrors = true
+            ${if (builtInKotlin) "kotlin.compilerOptions" else "android.kotlinOptions"}.allWarningsAsErrors = true
 
             // Reading targetCompatibility early should fail
             try {
@@ -132,12 +130,37 @@ class JavaCompileWithToolChainTest {
                 """.trimIndent()
             )
         }
+    }
 
+    @Test
+    fun `test source and target compatibility versions when toolchain is configured with built-in kotlin`() {
+        setUpKotlin(true)
         // Compiling should not throw an error (regression test for bug 260059413)
         project.executor().run("compileDebugJavaWithJavac")
 
         val androidProject =
             project.modelV2()
+                .fetchModels(variantName = "debug").container.getProject().androidProject!!
+        assertThat(androidProject.javaCompileOptions).isNotNull()
+        androidProject.javaCompileOptions?.let {
+            assertThat(it.sourceCompatibility).isEqualTo(latestJdkVersion.toString())
+            assertThat(it.targetCompatibility).isEqualTo(latestJdkVersion.toString())
+        }
+    }
+
+    @Test
+    fun `test source and target compatibility versions when toolchain is configured with jetbrains kotlin`() {
+        setUpKotlin(false)
+        // Compiling should not throw an error (regression test for bug 260059413)
+        project.executor()
+            .disableBuiltInKotlin()
+            .with(BooleanOption.USE_NEW_DSL, false)
+            .run("compileDebugJavaWithJavac")
+
+        val androidProject =
+            project.modelV2()
+                .disableBuiltInKotlin()
+                .with(BooleanOption.USE_NEW_DSL, false)
                 .fetchModels(variantName = "debug").container.getProject().androidProject!!
         assertThat(androidProject.javaCompileOptions).isNotNull()
         androidProject.javaCompileOptions?.let {
@@ -177,7 +200,7 @@ class JavaCompileWithToolChainTest {
             """.trimIndent()
         )
         // Run JavaCompile 21 targeting Java 7, expect failure
-        val resultWithError = project.executor().expectFailure().run("compileDebugJavaWithJavac")
+        val resultWithError = project.executor().disableBuiltInKotlin().expectFailure().run("compileDebugJavaWithJavac")
         resultWithError.assertErrorContains("Java compiler version 21 has removed support for compiling with source/target version 7.")
 
         // Run JavaCompile 21 targeting Java 8, expect a warning

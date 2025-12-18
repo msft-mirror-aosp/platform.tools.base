@@ -17,6 +17,7 @@ package com.android.adblib
 
 import com.android.adblib.AdbLibProperties.AM_SERVICE_RETRY_DELAY
 import com.android.adblib.AdbLibProperties.AM_SERVICE_TIMEOUT
+import java.io.IOException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.ensureActive
@@ -96,17 +97,27 @@ val ConnectedDevice.isOnline: Boolean
     get() = deviceInfoFlow.value.deviceState == DeviceState.ONLINE
 
 /**
- * Waits until the device is [DeviceState.ONLINE]
+ * Waits until the device is [DeviceState.ONLINE].
+ *
+ * @throws IOException if the device disconnects while waiting for the [DeviceState.ONLINE] state.
  */
 suspend fun ConnectedDevice.waitUntilOnline() {
     return waitUntilState(DeviceState.ONLINE)
 }
 
 /**
- * Waits until the device state is [state]
+ * Waits until the device state is [state].
+ *
+ * @throws IOException if the device disconnects while waiting for a state other than
+ * [DeviceState.DISCONNECTED].
  */
 suspend fun ConnectedDevice.waitUntilState(state: DeviceState) {
-    deviceInfoFlow.first { it.deviceState == state }
+    deviceInfoFlow.first { deviceInfo ->
+        if (state != DeviceState.DISCONNECTED && deviceInfo.deviceState == DeviceState.DISCONNECTED) {
+            throw IOException("Device $serialNumber is disconnected")
+        }
+        deviceInfo.deviceState == state
+    }
 }
 
 /**

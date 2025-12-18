@@ -30,7 +30,10 @@ import com.google.common.collect.ImmutableMap;
 import org.gradle.api.provider.Provider;
 import org.gradle.api.provider.ProviderFactory;
 
+import java.util.Arrays;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /** Determines if various options, triggered from the command line or environment, are set. */
 @Immutable
@@ -72,7 +75,33 @@ public final class ProjectOptions {
 
     @NonNull
     private Provider<Map<String, String>> readTestRunnerArgs() {
-        return providerFactory.gradlePropertiesPrefixedBy(TEST_RUNNER_ARGS_PREFIX);
+        Provider<Map<String, String>> allTestRunnerArgsProvider =
+                providerFactory.gradlePropertiesPrefixedBy(TEST_RUNNER_ARGS_PREFIX);
+
+        return allTestRunnerArgsProvider.map(
+                allTestRunnerArgs -> {
+                    // collect standard args
+                    ImmutableMap.Builder<String, String> allArgs = ImmutableMap.builder();
+                    for (TestRunnerArguments arg : TestRunnerArguments.values()) {
+                        if (allTestRunnerArgs.containsKey(arg.getFullKey())) {
+                            // use short key to replace original full key
+                            allArgs.put(arg.getShortKey(), allTestRunnerArgs.get(arg.getFullKey()));
+                        }
+                    }
+                    // collect custom args
+                    Set<String> standardArgKeys =
+                            Arrays.stream(TestRunnerArguments.values())
+                                    .map(TestRunnerArguments::getFullKey)
+                                    .collect(Collectors.toSet());
+
+                    for (String eachArgKey : allTestRunnerArgs.keySet()) {
+                        if (!standardArgKeys.contains(eachArgKey)) {
+                            allArgs.put(eachArgKey, allTestRunnerArgs.get(eachArgKey));
+                        }
+                    }
+
+                    return allArgs.build();
+                });
     }
 
     /** Obtain the gradle property value immediately at configuration time. */

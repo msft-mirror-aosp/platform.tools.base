@@ -16,7 +16,7 @@
 package com.android.tools.manifest.parser;
 
 import com.android.annotations.NonNull;
-import com.google.devrel.gmscore.tools.apk.arsc.BinaryResourceValue;
+import com.google.devrel.gmscore.tools.apk.arsc.ResourceValue;
 import com.google.devrel.gmscore.tools.apk.arsc.XmlAttribute;
 import com.google.devrel.gmscore.tools.apk.arsc.XmlStartElementChunk;
 
@@ -47,10 +47,10 @@ public class XmlNode {
         for (XmlAttribute attribute : chunk.getAttributes()) {
             String name = attribute.name();
             String value;
-            BinaryResourceValue typeValue = attribute.typedValue();
-            if (typeValue.type() == BinaryResourceValue.Type.INT_BOOLEAN) {
+            ResourceValue typeValue = attribute.typedValue();
+            if (typeValue.type() == ResourceValue.Type.INT_BOOLEAN) {
                 value = typeValue.data() == 0 ? "false" : "true";
-            } else if (typeValue.type() == BinaryResourceValue.Type.INT_DEC) {
+            } else if (typeValue.type() == ResourceValue.Type.INT_DEC) {
                 value = String.valueOf(typeValue.data());
             } else {
                 value = attribute.rawValue();

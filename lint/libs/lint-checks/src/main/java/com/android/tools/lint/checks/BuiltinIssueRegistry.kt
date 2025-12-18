@@ -208,6 +208,7 @@ open class BuiltinIssueRegistry : IssueRegistry() {
           GradleDetector.PLAY_SDK_INDEX_VULNERABILITY,
           GradleDetector.PLUS,
           GradleDetector.REMOTE_VERSION,
+          GradleDetector.R8_GRADUAL_API,
           GradleDetector.RISKY_LIBRARY,
           GradleDetector.STRING_INTEGER,
           GradleDetector.SWITCH_TO_TOML,

@@ -82,7 +82,6 @@ class OptionVersionTest {
             BooleanOption.PRIVACY_SANDBOX_SDK_ENABLE_LINT,
             BooleanOption.TEST_SUITE_SUPPORT,
             BooleanOption.DEFAULT_ANDROIDX_TEST_RUNNER,
-            BooleanOption.DISALLOW_KOTLIN_SOURCE_SETS
         )
 
     }

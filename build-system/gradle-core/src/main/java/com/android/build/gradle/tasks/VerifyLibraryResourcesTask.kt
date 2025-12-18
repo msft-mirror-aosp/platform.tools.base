@@ -87,6 +87,11 @@ abstract class VerifyLibraryResourcesTask : NewIncrementalTask() {
     @get:PathSensitive(PathSensitivity.RELATIVE)
     abstract val inputDirectory: DirectoryProperty
 
+    @get:Incremental
+    @get:InputFiles
+    @get:PathSensitive(PathSensitivity.RELATIVE)
+    abstract val navigationResources: DirectoryProperty
+
     @get:InputFiles
     @get:PathSensitive(PathSensitivity.RELATIVE)
     abstract val manifestFiles: DirectoryProperty
@@ -110,11 +115,6 @@ abstract class VerifyLibraryResourcesTask : NewIncrementalTask() {
     @get:Nested
     abstract val androidJarInput: AndroidJarInput
 
-    @get:Classpath
-    @get:Optional
-    @get:Incremental
-    abstract val navigationUpdatedFolder: DirectoryProperty
-
     private lateinit var manifestMergeBlameFile: Provider<RegularFile>
 
     override fun doTaskAction(inputChanges: InputChanges) {
@@ -126,10 +126,9 @@ abstract class VerifyLibraryResourcesTask : NewIncrementalTask() {
             params.initializeFromBaseTask(this)
             params.androidJar.set(androidJarInput.getAndroidJar().get())
             params.aapt2.set(aapt2)
-            params.inputs.set(inputChanges.getChangesInSerializableForm(inputDirectory))
+            params.inputs.set(inputChanges.getChangesInSerializableForm(listOf(inputDirectory, navigationResources)))
             params.manifestFile.set(File(manifestFile))
             params.compiledDependenciesResources.from(compiledDependenciesResources)
-            params.navigationDir.set(navigationUpdatedFolder)
             params.manifestMergeBlameFile.set(manifestMergeBlameFile)
             params.compiledDirectory.set(compiledDirectory)
             params.mergeBlameFolder.set(mergeBlameFolder)
@@ -143,7 +142,6 @@ abstract class VerifyLibraryResourcesTask : NewIncrementalTask() {
         abstract val inputs: Property<SerializableInputChanges>
         abstract val manifestFile: RegularFileProperty
         abstract val compiledDependenciesResources: ConfigurableFileCollection
-        abstract val navigationDir: DirectoryProperty
         abstract val manifestMergeBlameFile: RegularFileProperty
         abstract val compiledDirectory: DirectoryProperty
         abstract val mergeBlameFolder: DirectoryProperty
@@ -223,11 +221,6 @@ abstract class VerifyLibraryResourcesTask : NewIncrementalTask() {
                 .setMergeBlameDirectory(mergeBlameFolder.get().asFile)
                 .setManifestMergeBlameFile(manifestMergeBlameFile.get().asFile)
                 .setIdentifiedSourceSetMap(identifiedSourceSetMap)
-                .apply {
-                    if (navigationDir.isPresent) {
-                        addResourceDir(navigationDir.get().asFile)
-                    }
-                }
                 .build()
         }
     }
@@ -265,6 +258,11 @@ abstract class VerifyLibraryResourcesTask : NewIncrementalTask() {
             )
 
             creationConfig.artifacts.setTaskInputToFinalProduct(
+                InternalArtifactType.UPDATED_NAVIGATION_XML,
+                task.navigationResources
+            )
+            
+            creationConfig.artifacts.setTaskInputToFinalProduct(
                 InternalArtifactType.AAPT_FRIENDLY_MERGED_MANIFESTS,
                 task.manifestFiles
             )
@@ -287,16 +285,11 @@ abstract class VerifyLibraryResourcesTask : NewIncrementalTask() {
             task.androidJarInput.initialize(task, creationConfig)
 
             val sourceSetMap =
-                    creationConfig.artifacts.get(InternalArtifactType.SOURCE_SET_PATH_MAP)
+                    creationConfig.artifacts.get(InternalArtifactType.ANDROID_RES_SOURCE_SET_PATH_MAP)
             task.sourceSetMaps.fromDisallowChanges(
                     creationConfig.services.fileCollection(sourceSetMap)
             )
             task.dependsOn(sourceSetMap)
-
-            creationConfig.artifacts.setTaskInputToFinalProduct(
-                InternalArtifactType.COMPILED_NAVIGATION_RES,
-                task.navigationUpdatedFolder
-            )
         }
     }
 

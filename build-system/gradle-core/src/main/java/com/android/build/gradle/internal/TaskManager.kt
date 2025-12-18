@@ -123,8 +123,9 @@ import com.android.build.gradle.internal.tasks.ValidateResourcesTask
 import com.android.build.gradle.internal.tasks.ValidateSigningTask
 import com.android.build.gradle.internal.tasks.VerifyLibraryClassesTask
 import com.android.build.gradle.internal.tasks.checkIfR8VersionMatches
-import com.android.build.gradle.internal.tasks.creationconfig.ProceedTestManifestCreationConfig
 import com.android.build.gradle.internal.tasks.creationconfig.ProcessJavaResCreationConfig
+import com.android.build.gradle.internal.tasks.creationconfig.createJavaCompileConfig
+import com.android.build.gradle.internal.tasks.creationconfig.createJavaPreCompileConfig
 import com.android.build.gradle.internal.tasks.databinding.DataBindingCompilerArguments.Companion.createArguments
 import com.android.build.gradle.internal.tasks.databinding.DataBindingGenBaseClassesTask
 import com.android.build.gradle.internal.tasks.databinding.DataBindingMergeDependencyArtifactsTask
@@ -960,14 +961,16 @@ abstract class TaskManager(
     ): TaskProvider<out JavaCompile> {
         val usingKapt = isKotlinKaptPluginApplied(project)
         val usingKsp = isKspPluginApplied(project)
-        taskFactory.register(JavaPreCompileTask.CreationAction(creationConfig, usingKapt, usingKsp))
+        val javaPreCompileTaskCreationConfig =
+            createJavaPreCompileConfig(creationConfig, usingKapt, usingKsp)
+        taskFactory.register(JavaPreCompileTask.CreationAction(javaPreCompileTaskCreationConfig))
+        val javaCompileConfig = createJavaCompileConfig(
+            creationConfig,
+            usingKapt
+        )
         val javacTask: TaskProvider<out JavaCompile> =
             taskFactory.register(
-                JavaCompileCreationAction(
-                    creationConfig,
-                    project.objects,
-                    usingKapt
-                )
+                JavaCompileCreationAction(javaCompileConfig)
             )
         creationConfig.attachRegisteredActionsToJavaCompileTask(javacTask)
         postJavacCreation(creationConfig)

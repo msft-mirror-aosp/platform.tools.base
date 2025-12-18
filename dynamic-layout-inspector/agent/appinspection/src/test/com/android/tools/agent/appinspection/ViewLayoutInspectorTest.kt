@@ -27,6 +27,7 @@ import android.hardware.SensorEventListener
 import android.hardware.display.DisplayManager
 import android.os.Build
 import android.os.Looper
+import android.util.AttributeSet
 import android.view.Display
 import android.view.Surface
 import android.view.View
@@ -64,6 +65,7 @@ import com.android.tools.idea.layoutinspector.view.inspection.LayoutInspectorVie
 import com.android.tools.idea.layoutinspector.view.inspection.LayoutInspectorViewProtocol.Response
 import com.android.tools.idea.layoutinspector.view.inspection.LayoutInspectorViewProtocol.Screenshot
 import com.android.tools.idea.layoutinspector.view.inspection.LayoutInspectorViewProtocol.StopFetchCommand
+import com.android.tools.idea.layoutinspector.view.inspection.LayoutInspectorViewProtocol.ViewNode
 import com.android.tools.idea.protobuf.ByteString
 import com.android.tools.layoutinspector.BITMAP_HEADER_SIZE
 import com.android.tools.layoutinspector.BitmapType
@@ -1774,6 +1776,57 @@ abstract class ViewLayoutInspectorTestBase {
         }
     }
 
+    @Test
+    fun flagSetForWebView() = createViewInspector { viewInspector ->
+        val eventQueue = ArrayBlockingQueue<ByteArray>(5)
+        inspectorRule.connection.eventListeners.add { bytes ->
+            eventQueue.add(bytes)
+        }
+
+        val packageName = "view.inspector.test"
+        val resources = createResources(packageName)
+        val context = Context(packageName, resources)
+        val root = ViewGroup(context).apply {
+            setAttachInfo(View.AttachInfo())
+            addView(View(context))
+            addView(WebView(context))
+            addView(MyWebViewExt(context))
+            addView(View(context))
+        }
+
+        WindowManagerGlobal.getInstance().rootViews.addAll(listOf(root))
+
+        val startFetchCommand = Command.newBuilder().apply {
+            startFetchCommandBuilder.apply {
+                continuous = true
+            }
+        }.build()
+        viewInspector.onReceiveCommand(
+            startFetchCommand.toByteArray(),
+            inspectorRule.commandCallback
+        )
+
+        ThreadUtils.runOnMainThread { }.get() // Wait for startCommand to finish initializing
+        val fakePicture1 = Picture(byteArrayOf(1, 1))
+        root.forcePictureCapture(fakePicture1)
+
+        checkNonProgressEvent(eventQueue) { event ->
+            assertThat(event.specializedCase).isEqualTo(Event.SpecializedCase.ROOTS_EVENT)
+            assertThat(event.rootsEvent.idsList).containsExactly(root.uniqueDrawingId)
+        }
+
+        checkNonProgressEvent(eventQueue) { event ->
+            assertThat(event.specializedCase).isEqualTo(Event.SpecializedCase.LAYOUT_EVENT)
+            val nodes = event.layoutEvent.rootView.node.childrenList
+            val flagsPerNode = nodes.map { it.flags }
+            assertThat(flagsPerNode).containsExactly(
+                ViewNode.Flag.NONE_VALUE,
+                ViewNode.Flag.IS_WEBVIEW_VALUE,
+                ViewNode.Flag.IS_WEBVIEW_VALUE,
+                ViewNode.Flag.NONE_VALUE,
+            ).inOrder()
+        }
+    }
 
     @Test
     fun correctScreenshotTypeForConnectType() = createViewInspector { viewInspector ->
@@ -2841,5 +2894,8 @@ abstract class ViewLayoutInspectorTestBase {
         ButtonInspectionCompanion.addResourceNames(resourceNames)
         AppCompatButtonInspectionCompanion.addResourceNames(packageName, resourceNames)
         return Resources(resourceNames)
+    }
+
+    private class MyWebViewExt(context: Context) : WebView(context) {
     }
 }

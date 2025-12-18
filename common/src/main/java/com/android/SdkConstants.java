@@ -2926,19 +2926,19 @@ public final class SdkConstants {
      * display a diagnostic informing the user that this project's version AGP is unsupported, but
      * at some point that might fail.
      */
-    public static final String GRADLE_PLUGIN_MINIMUM_FORCED_UPGRADE_VERSION = "4.0.0";
+    public static final String GRADLE_PLUGIN_MINIMUM_FORCED_UPGRADE_VERSION = "4.2.0";
 
     /**
      * The minimum released version of the Android Gradle Plugin that this version of Studio will
      * support. (Support of the development series leading up to it is unknown.)
      */
-    public static final String GRADLE_PLUGIN_MINIMUM_VERSION = "4.2.0";
+    public static final String GRADLE_PLUGIN_MINIMUM_VERSION = "7.0.0";
 
     /**
      * The minimum released version of the Android Gradle Plugin that the next version of Studio
      * will support.
      */
-    public static final String GRADLE_PLUGIN_NEXT_MINIMUM_VERSION = "7.0.0";
+    public static final String GRADLE_PLUGIN_NEXT_MINIMUM_VERSION = "7.1.0";
 
     /**
      * A version of the Android Gradle Plugin that this version of Studio and associated tools (e.g.

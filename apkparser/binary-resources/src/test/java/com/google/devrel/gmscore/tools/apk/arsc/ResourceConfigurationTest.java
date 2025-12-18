@@ -15,39 +15,39 @@
  */
 package com.google.devrel.gmscore.tools.apk.arsc;
 
-import static org.junit.Assert.assertEquals;
+import org.junit.Test;
 
 import java.nio.ByteBuffer;
 
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
 
-public class BinaryResourceConfigurationTest {
+public class ResourceConfigurationTest {
   @Test
   public void testConfigurationString() {
     {
       byte[] buff = new byte[] {
           0, 0, 0, 28, 0, 0, 0, 0, 'f', 'r', 'C', 'A', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
       };
-      assertEquals("fr-rCA", BinaryResourceConfiguration.create(ByteBuffer.wrap(buff)).toString());
+      assertEquals("fr-rCA", ResourceConfiguration.create(ByteBuffer.wrap(buff)).toString());
     }
     {
       byte[] buff = new byte[] {
           0, 0, 0, 48, 0, 0, 0, 0, 's', 'r', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
           0, 0, 0, 0, 0, 0, 0, 0, 'L', 'a', 't', 'n', 0, 0, 0, 0, 0, 0, 0, 0
       };
-      assertEquals("b+sr+Latn", BinaryResourceConfiguration.create(ByteBuffer.wrap(buff)).toString());
+      assertEquals("b+sr+Latn", ResourceConfiguration.create(ByteBuffer.wrap(buff)).toString());
     }
     {
       byte[] buff = new byte[] {
           0, 0, 0, 28, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 36, 0, 0
       };
-      assertEquals("v36", BinaryResourceConfiguration.create(ByteBuffer.wrap(buff)).toString());
+      assertEquals("v36", ResourceConfiguration.create(ByteBuffer.wrap(buff)).toString());
     }
     {
       byte[] buff = new byte[] {
           0, 0, 0, 28, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 36, 0, 1
       };
-      assertEquals("v36.1", BinaryResourceConfiguration.create(ByteBuffer.wrap(buff)).toString());
+      assertEquals("v36.1", ResourceConfiguration.create(ByteBuffer.wrap(buff)).toString());
     }
   }
 }

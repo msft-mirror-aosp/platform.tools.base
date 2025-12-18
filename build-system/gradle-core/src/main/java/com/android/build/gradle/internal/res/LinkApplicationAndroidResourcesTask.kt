@@ -78,7 +78,6 @@ import com.google.common.collect.ImmutableSet
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.Directory
 import org.gradle.api.file.DirectoryProperty
-import org.gradle.api.file.FileCollection
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.logging.Logging
 import org.gradle.api.provider.ListProperty
@@ -649,7 +648,7 @@ abstract class LinkApplicationAndroidResourcesTask: ProcessAndroidResources() {
             val componentType = creationConfig.componentType
 
             val sourceSetMap =
-                creationConfig.artifacts.get(InternalArtifactType.SOURCE_SET_PATH_MAP)
+                creationConfig.artifacts.get(InternalArtifactType.ANDROID_RES_SOURCE_SET_PATH_MAP)
             task.sourceSetMaps.fromDisallowChanges(
                 creationConfig.services.fileCollection(sourceSetMap)
             )

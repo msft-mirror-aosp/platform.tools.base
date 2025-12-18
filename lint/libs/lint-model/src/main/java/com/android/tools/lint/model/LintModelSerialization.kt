@@ -565,6 +565,9 @@ private class LintModelModuleWriter(adapter: LintModelSerializationAdapter) :
     if (module.neverShrinking()) {
       printer.printAttribute("neverShrinking", VALUE_TRUE, indent)
     }
+
+    printer.printAttribute("highlightGradualR8Api", module.highlightGradualR8Api.toString(), indent)
+
     printer.printFiles("lintRuleJars", module.lintRuleJars, indent)
 
     printer.println(">")
@@ -1359,6 +1362,7 @@ private class LintModelModuleReader(adapter: LintModelSerializationAdapter) :
       val javaSourceLevel = getRequiredAttribute("javaSourceLevel")
       val compileTarget = getRequiredAttribute("compileTarget")
       val neverShrinking = getOptionalBoolean("neverShrinking", false)
+      val highlightGradualR8Api = getOptionalBoolean("highlightGradualR8Api", false)
       val variants = mutableListOf<LintModelVariant>()
       val lintRuleJars = getFiles("lintRuleJars")
       var lintOptions: LintModelLintOptions? = null
@@ -1396,6 +1400,7 @@ private class LintModelModuleReader(adapter: LintModelSerializationAdapter) :
           javaSourceLevel = javaSourceLevel,
           compileTarget = compileTarget,
           neverShrinking = neverShrinking,
+          highlightGradualR8Api = highlightGradualR8Api,
 
           // still empty list; will construct it below
           variants = variants,

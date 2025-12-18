@@ -134,10 +134,10 @@ object ConfigKey {
    */
   const val SNAPSHOT_PRESENT = "snapshot.present" // $NON-NLS-1$
 
-  /** Flag indicating if hardware OpenGLES emulation is enabled */
+  /** Flag indicating if hardware graphics emulation is enabled */
   const val GPU_EMULATION = "hw.gpu.enabled" // $NON-NLS-1$
 
-  /** Which software OpenGLES should be used, represented by [GpuMode]. */
+  /** Which graphics backend should be used, represented by [GpuMode]. */
   const val GPU_MODE = "hw.gpu.mode"
 
   /** Speed of the simulated network, represented by [AvdNetworkSpeed]. */

@@ -16,8 +16,6 @@
 
 package com.google.devrel.gmscore.tools.apk.arsc;
 
-import static com.google.common.truth.Truth.assertThat;
-
 import com.android.testutils.TestResources;
 import com.google.common.io.ByteStreams;
 import org.junit.Test;
@@ -36,9 +34,11 @@ import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
+import static com.google.common.truth.Truth.assertThat;
+
 @RunWith(JUnit4.class)
-/** Tests {@link BinaryResourceFile}. */
-public final class BinaryResourceFileTest {
+/** Tests {@link ResourceFile}. */
+public final class ResourceFileTest {
 
   /** Tests that resource files, when reassembled, are identical. */
   @Test
@@ -52,7 +52,7 @@ public final class BinaryResourceFileTest {
       String name = entry.getKey();
       byte[] fileBytes = entry.getValue();
       if (!name.startsWith("res/raw/")) {  // xml files in res/raw/ are not compact XML
-        BinaryResourceFile file = new BinaryResourceFile(fileBytes);
+        ResourceFile file = new ResourceFile(fileBytes);
         assertThat(file.toByteArray()).named(name).isEqualTo(fileBytes);
       }
     }

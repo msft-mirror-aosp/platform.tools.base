@@ -723,7 +723,11 @@ public final class Device {
 
     /** Whether the given device is an XR Glasses device */
     public static boolean isXrGlasses(@Nullable Device device) {
-        return "xr_glasses_device".equals(device != null ? device.getId() : null);
+        return device != null && isXrGlassesDeviceId(device.getId());
+    }
+
+    public static boolean isXrGlassesDeviceId(@NonNull String deviceId) {
+        return "xr_glasses_device".equals(deviceId);
     }
 
     /** Whether the given device appears to be a mobile device (e.g. not wear, tv, auto, etc) */

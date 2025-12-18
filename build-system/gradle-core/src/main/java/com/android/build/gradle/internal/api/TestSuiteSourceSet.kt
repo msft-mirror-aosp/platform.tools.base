@@ -20,6 +20,7 @@ import com.android.build.api.variant.SourceDirectories
 import com.android.build.api.variant.TestSuiteSourceType
 import com.android.build.api.variant.impl.FlatSourceDirectoriesImpl
 import org.gradle.api.Incubating
+import java.io.File
 
 /**
  * Simplistic version of a test suite source set.
@@ -58,8 +59,13 @@ sealed interface TestSuiteSourceSet{
     @Incubating
     interface TestApk: TestSuiteSourceSet {
         @Incubating
-        fun getByName(name: String): SourceDirectories.Flat
-
+        fun manifestFile(): File?
+        @Incubating
+        fun java(): FlatSourceDirectoriesImpl?
+        @Incubating
+        fun kotlin(): FlatSourceDirectoriesImpl?
+        @Incubating
+        fun resources(): FlatSourceDirectoriesImpl
         override val type: TestSuiteSourceType
             get() = TestSuiteSourceType.TEST_APK
     }

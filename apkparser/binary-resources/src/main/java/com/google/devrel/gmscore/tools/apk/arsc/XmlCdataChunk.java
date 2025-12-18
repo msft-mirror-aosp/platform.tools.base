@@ -17,6 +17,7 @@
 package com.google.devrel.gmscore.tools.apk.arsc;
 
 import com.android.annotations.Nullable;
+
 import java.io.DataOutput;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -27,13 +28,13 @@ public final class XmlCdataChunk extends XmlNodeChunk {
   /** A string reference to a string containing the raw character data. */
   private final int rawValue;
 
-  /** A {@link BinaryResourceValue} instance containing the parsed value. */
-  private final BinaryResourceValue binaryResourceValue;
+  /** A {@link ResourceValue} instance containing the parsed value. */
+  private final ResourceValue resourceValue;
 
   protected XmlCdataChunk(ByteBuffer buffer, @Nullable Chunk parent) {
     super(buffer, parent);
     rawValue = buffer.getInt();
-    binaryResourceValue = BinaryResourceValue.create(buffer);
+      resourceValue = ResourceValue.create(buffer);
   }
 
   /** Returns a string containing the raw character data of this chunk. */
@@ -41,9 +42,9 @@ public final class XmlCdataChunk extends XmlNodeChunk {
     return getString(rawValue);
   }
 
-  /** Returns a {@link BinaryResourceValue} instance containing the parsed cdata value. */
-  public BinaryResourceValue getResourceValue() {
-    return binaryResourceValue;
+  /** Returns a {@link ResourceValue} instance containing the parsed cdata value. */
+  public ResourceValue getResourceValue() {
+    return resourceValue;
   }
 
   @Override
@@ -56,7 +57,7 @@ public final class XmlCdataChunk extends XmlNodeChunk {
       throws IOException {
     super.writePayload(output, header, shrink);
     output.writeInt(rawValue);
-    output.write(binaryResourceValue.toByteArray());
+    output.write(resourceValue.toByteArray());
   }
 
   /**

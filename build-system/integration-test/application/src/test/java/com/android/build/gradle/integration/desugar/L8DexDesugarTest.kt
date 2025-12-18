@@ -31,6 +31,7 @@ import com.android.testutils.truth.DexSubject.assertThat
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import org.junit.Assert.assertTrue
 import kotlin.test.fail
 
 class L8DexDesugarTest {
@@ -132,6 +133,82 @@ class L8DexDesugarTest {
         """.trimIndent()
         )
         project.executor().run("assembleRelease")
+    }
+
+    /**
+     * Verifies that the L8 mapping file is correctly generated and merged into the final R8
+     * obfuscation mapping file when core library desugaring is enabled.
+     */
+    @Test
+    fun testMappingFileIsGeneratedAndMerged() {
+        normalSetUp()
+        project.buildFile.appendText("\n" +
+                """
+            android {
+                buildTypes {
+                    debug {
+                        minifyEnabled true
+                        proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+                    }
+                }
+            }
+            """.trimIndent()
+        )
+
+        project.file("proguard-rules.pro").writeText("-keep class com.example.test.BuildConfig { *; }")
+
+        project.executor().run("assembleDebug")
+
+        val mappingFile = project.file("build/outputs/mapping/debug/mapping.txt")
+
+        assertTrue("Mapping file should exist at $mappingFile", mappingFile.exists())
+
+        val content = mappingFile.readLines()
+
+        // Verify App Mapping (R8)
+        val hasAppMapping = content.any { it.contains("com.example.test.BuildConfig ->") }
+        TruthHelper.assertThat(hasAppMapping).named("Contains App Mapping").isTrue()
+
+        // Verify L8 Mapping (Desugared Lib)
+        val hasL8Header = content.any { it.contains(EXPECTED_L8_HEADER) }
+        TruthHelper.assertThat(hasL8Header).named("Contains L8 Separator").isTrue()
+    }
+
+    /**
+     * Verifies that the L8 mapping merge logic is skipped when core library desugaring is
+     * disabled, ensuring standard R8 builds are unaffected and do not contain L8 artifacts.
+     */
+    @Test
+    fun testMappingNotMergedWhenDesugaringDisabled() {
+        project.buildFile.appendText("\n" +
+                """
+            android {
+                compileOptions.coreLibraryDesugaringEnabled = false
+                buildTypes.debug {
+                    minifyEnabled true
+                    proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+                }
+            }
+            """.trimIndent()
+        )
+
+        project.file("proguard-rules.pro").writeText("-keep class com.example.test.BuildConfig { *; }")
+
+        project.executor().run("assembleDebug")
+
+        val mappingFile = project.file("build/outputs/mapping/debug/mapping.txt")
+
+        assertTrue("Mapping file should exist from R8", mappingFile.exists())
+
+        val content = mappingFile.readLines()
+
+        // It must contain R8 mappings
+        val hasAppMapping = content.any { it.contains("com.example.test.BuildConfig ->") }
+        TruthHelper.assertThat(hasAppMapping).named("Contains App Mapping").isTrue()
+
+        // It must not contain L8 content
+        val hasL8Header = content.any { it.contains(EXPECTED_L8_HEADER) }
+        TruthHelper.assertThat(hasL8Header).named("Should NOT contain L8 Separator").isFalse()
     }
 
     /**
@@ -258,5 +335,6 @@ class L8DexDesugarTest {
         private const val MISSING_DEPS_ERROR = "coreLibraryDesugaring configuration contains no " +
                 "dependencies. If you intend to enable core library desugaring, please add " +
                 "dependencies to coreLibraryDesugaring configuration."
+        private const val EXPECTED_L8_HEADER = "# L8 Desugaring Mapping"
     }
 }

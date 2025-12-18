@@ -28,12 +28,12 @@ import com.android.build.api.dsl.TestExtension
 import com.android.build.api.variant.ScopedArtifacts.Scope.ALL
 import com.android.build.api.variant.ScopedArtifacts.Scope.PROJECT
 import com.android.build.api.variant.TestSuiteSourceType
-import com.android.build.api.variant.impl.BuiltArtifactsImpl
 import com.android.build.api.variant.impl.HasDeviceTestsCreationConfig
 import com.android.build.api.variant.impl.HasHostTestsCreationConfig
 import com.android.build.api.variant.impl.HasTestFixtures
 import com.android.build.api.variant.impl.HasTestSuitesCreationConfig
 import com.android.build.api.variant.impl.ManifestFilesImpl
+import com.android.build.api.variant.impl.SourceDirectoriesImpl
 import com.android.build.api.variant.impl.TestSuiteSourceContainer
 import com.android.build.gradle.BaseExtension
 import com.android.build.gradle.internal.BuildTypeData
@@ -43,7 +43,6 @@ import com.android.build.gradle.internal.api.DefaultAndroidSourceSet
 import com.android.build.gradle.internal.api.TestSuiteSourceSet
 import com.android.build.gradle.internal.attributes.VariantAttr
 import com.android.build.gradle.internal.component.ApkCreationConfig
-import com.android.build.gradle.internal.component.ApplicationCreationConfig
 import com.android.build.gradle.internal.component.ComponentCreationConfig
 import com.android.build.gradle.internal.component.ConsumableCreationConfig
 import com.android.build.gradle.internal.component.DeviceTestCreationConfig
@@ -399,7 +398,27 @@ class ModelBuilder<ExtensionT : CommonExtension>(
                             )
                         }
                         is TestSuiteSourceSet.TestApk -> {
-                            throw RuntimeException("Not Supported ")
+                            testApkSources.add(
+                                TestApkTestSuiteSourceImpl(
+                                    name = suiteSourceContainer.name,
+                                    sourceProvider = SourceProviderImpl(
+                                        suiteSourceContainer.name,
+                                        sourceSet.manifestFile(),
+                                        variantSourcesForModel(sourceSet.java()),
+                                        variantSourcesForModel(sourceSet.kotlin()),
+                                        variantSourcesForModel(sourceSet.resources()),
+                                        aidlDirectories = null,
+                                        renderscriptDirectories = null,
+                                        baselineProfileDirectories = null,
+                                        resDirectories = null,
+                                        assetsDirectories = null,
+                                        jniLibsDirectories = listOf(),
+                                        shadersDirectories = null,
+                                        mlModelsDirectories = null,
+                                        customDirectories = null
+                                    )
+                                )
+                            )
                         }
                     }
                 }
@@ -442,6 +461,9 @@ class ModelBuilder<ExtensionT : CommonExtension>(
             bootClasspath = bootClasspath,
         )
     }
+
+    private fun variantSourcesForModel(sourceDirectories: SourceDirectoriesImpl?) =
+        sourceDirectories?.variantSourcesForModel { it.shouldBeAddedToIdeModel && !it.isGenerated } ?: emptyList()
 
     /**
      * Intermediary data structure to hold the suite and all its associated targets built from the
@@ -1677,6 +1699,10 @@ class ModelBuilder<ExtensionT : CommonExtension>(
             flags.put(
                 BooleanFlag.OLD_VARIANT_API_IN_USE,
                 oldVariantApiInUse
+            )
+            flags.put(
+                BooleanFlag.R8_GRADUAL_API,
+                projectOptions[BooleanOption.R8_GRADUAL_API]
             )
 
             return AndroidGradlePluginProjectFlagsImpl(flags.build())

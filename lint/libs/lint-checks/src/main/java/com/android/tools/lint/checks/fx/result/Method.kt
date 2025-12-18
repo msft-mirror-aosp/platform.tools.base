@@ -28,7 +28,7 @@ import org.jetbrains.uast.UExpression
 
 /** An internal representation of a method descriptor, identifying the name and overloading. */
 class MethodId(val isVirtual: Boolean, name: String, paramTags: List<ClassId?>) {
-  val name = namePool.intern(name)
+  val name = InterningPool.string(name)
   val paramTags = paramListPool.intern(paramTags)
 
   override fun equals(other: Any?) =
@@ -44,7 +44,6 @@ class MethodId(val isVirtual: Boolean, name: String, paramTags: List<ClassId?>) 
   override fun toString(): String = "$name${(paramTags.hashCode() % 1000).subscript()}"
 
   companion object {
-    private val namePool = InterningPool<String>()
     private val paramListPool = InterningPool<List<ClassId?>>()
 
     operator fun invoke(method: PsiMethod): MethodId =

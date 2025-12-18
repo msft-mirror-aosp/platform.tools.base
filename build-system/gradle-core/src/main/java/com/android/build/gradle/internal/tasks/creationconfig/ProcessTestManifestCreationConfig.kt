@@ -18,8 +18,9 @@ package com.android.build.gradle.internal.tasks.creationconfig
 
 import com.android.build.api.artifact.impl.ArtifactsImpl
 import com.android.build.gradle.internal.component.TaskCreationConfig
-import com.android.build.gradle.internal.dependency.VariantDependencies
 import com.android.build.gradle.internal.variant.VariantPathHelper
+import org.gradle.api.artifacts.ArtifactCollection
+import org.gradle.api.file.FileCollection
 import org.gradle.api.provider.MapProperty
 import org.gradle.api.provider.Provider
 import java.io.File
@@ -28,7 +29,7 @@ import java.io.File
  * Configuration needed to create the [com.android.build.gradle.tasks.ProcessTestManifest],
  * implementations should be partially delegated to [com.android.build.gradle.internal.component.ComponentCreationConfig].
  */
-interface ProceedTestManifestCreationConfig: TaskCreationConfig {
+interface ProcessTestManifestCreationConfig: TaskCreationConfig {
     val baseName: String
     val dirName: String
     val paths: VariantPathHelper
@@ -56,7 +57,8 @@ interface ProceedTestManifestCreationConfig: TaskCreationConfig {
     val functionalTest: Provider<Boolean>
     val testLabel: Provider<String>
 
-    val variantDependencies: VariantDependencies
+    val manifests: ArtifactCollection?
+    val navigationJsons: FileCollection?
 
     val useLegacyPackaging: Provider<Boolean>
 

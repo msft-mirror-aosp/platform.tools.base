@@ -29,12 +29,15 @@ import com.google.common.truth.Truth.assertThat
 import org.junit.Assume
 import org.junit.ClassRule
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.junit.runners.Parameterized
 import java.io.Closeable
 import java.util.concurrent.TimeUnit
 
 /**
  * Connected tests using UTP test executor.
  */
+@RunWith(Parameterized::class)
 class UtpConnectedTest(runWithBuiltInPlatform: Boolean) : UtpTestBase(runWithBuiltInPlatform) {
     private val connectedAndroidTestWithUtpBenchmark: Benchmark = Benchmark.Builder("connectedAndroidTestWithUtp").setProject("Android Studio Gradle").build()
 

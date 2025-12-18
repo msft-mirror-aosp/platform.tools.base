@@ -43,7 +43,7 @@ sealed interface ClassId {
     get() = null
 
   private class Named(fqn: String) : ClassId {
-    override val fqn = fqnPool.intern(fqn)
+    override val fqn = InterningPool.string(fqn)
 
     override fun equals(other: Any?) = other is Named && fqn === other.fqn
 
@@ -62,8 +62,6 @@ sealed interface ClassId {
     }
 
     companion object {
-      private val fqnPool = InterningPool<String>()
-
       fun of(name: String): Named {
         val bracketStart = name.indexOf('<')
         return Named(if (bracketStart == -1) name else name.substring(0, bracketStart))

@@ -68,7 +68,9 @@ sealed class SingleArtifact<T : FileSystemLocation>(
         Transformable
 
     object OBFUSCATION_MAPPING_FILE :
-        SingleArtifact<RegularFile>(FILE, Category.OUTPUTS, "mapping.txt") {
+        SingleArtifact<RegularFile>(FILE, Category.OUTPUTS, "mapping.txt"),
+        Replaceable,
+        Transformable {
 
         override fun getFolderName(): String = "mapping"
     }

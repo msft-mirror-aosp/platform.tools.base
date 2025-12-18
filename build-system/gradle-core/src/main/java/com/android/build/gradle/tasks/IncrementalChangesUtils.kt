@@ -45,6 +45,13 @@ fun InputChanges.getChangesInSerializableForm(input: Provider<out FileSystemLoca
     )
 }
 
+fun InputChanges.getChangesInSerializableForm(inputs: List<Provider<out FileSystemLocation>>): SerializableInputChanges {
+    return SerializableInputChanges(
+        roots = inputs.map { it.get().asFile },
+        changes = inputs.flatMap { convert(getFileChanges(it)) }
+    )
+}
+
 /**
  * Convert Gradle incremental changes to a serializable form for the worker API.
  *

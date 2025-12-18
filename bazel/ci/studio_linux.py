@@ -211,7 +211,7 @@ def studio_linux_k2(build_env: bazel.BuildEnv) -> None:
   )
   flags.extend([
       '--bes_keywords=k1',
-      '--jvmopt=-Didea.kotlin.plugin.use.k2=false',
+      '--jvmopt=-Didea.kotlin.plugin.use.k1=true',
       "--jvmopt=-Dlint.use.fir.uast=false",
   ])
   result = studio.run_tests(build_env, flags, _BASE_TARGETS)

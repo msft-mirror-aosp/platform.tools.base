@@ -46,7 +46,6 @@ class KaptTest() {
                                 ":lib-compiler", AnnotationProcessorLib.createCompiler()
                         )))
                 .withDependencyChecker(false)  // kotlin plugin is resolving kapt on configuration
-                .disableBuiltInKotlin()
                 .create()
     }
 
@@ -89,24 +88,19 @@ class KaptTest() {
             buildscript {
                 apply from: "../commonBuildScript.gradle"
                 dependencies {
-                    // Provides the 'kotlin-android' build plugin for the app
-                    classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${"$"}{libs.versions.kotlinVersion.get()}"
+                    classpath "com.android.tools.build:gradle-kotlin:${'$'}{libs.versions.buildVersion.get()}"
                 }
             }
             """.trimIndent()
         )
         val buildScript = """
 apply plugin: 'com.android.application'
-apply plugin: 'kotlin-android'
-apply plugin: 'kotlin-kapt'
+apply plugin: 'com.android.legacy-kapt'
 
 android {
     namespace = "${HelloWorldApp.NAMESPACE}"
     compileSdkVersion ${GradleTestProject.DEFAULT_COMPILE_SDK_VERSION}
     buildToolsVersion '${GradleTestProject.DEFAULT_BUILD_TOOL_VERSION}'
-    kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_11
-    }
 }
 
 tasks.withType(org.jetbrains.kotlin.gradle.tasks.KaptGenerateStubs.class).configureEach {

@@ -32,8 +32,6 @@ import org.junit.Assume
 import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
-import org.junit.runner.RunWith
-import org.junit.runners.Parameterized
 import org.junit.runners.Parameterized.Parameters
 import java.io.File
 import java.nio.file.Path
@@ -44,7 +42,6 @@ import kotlin.io.path.readText
  * executed against both connected check and managed devices to ensure the feature
  * parity.
  */
-@RunWith(Parameterized::class)
 abstract class UtpTestBase(val runWithBuiltInPlatform: Boolean) {
 
     companion object {

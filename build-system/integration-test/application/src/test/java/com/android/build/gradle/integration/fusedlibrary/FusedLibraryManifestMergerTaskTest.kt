@@ -123,9 +123,6 @@ internal class FusedLibraryManifestMergerTaskTest {
                 }
                 // Add a dependency on the fused library aar in the test if needed.
             }
-            gradleProperties {
-                add(BooleanOption.FUSED_LIBRARY_SUPPORT, true)
-            }
         }
 
     @Test
