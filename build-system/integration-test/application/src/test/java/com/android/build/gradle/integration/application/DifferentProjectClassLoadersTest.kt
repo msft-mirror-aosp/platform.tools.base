@@ -86,16 +86,15 @@ class DifferentProjectClassLoadersTest {
     fun testAttributionFile() {
         fun setUpDummyTask(taskName: String): String =
             """
-                task $taskName {
+                def taskProvider = tasks.register("$taskName") {
                     doLast {
                         // do nothing
                     }
                 }
 
-                afterEvaluate { project ->
-                    android.libraryVariants.all { variant ->
-                        def assembleTask = tasks.getByPath("assemble${"$"}{variant.name.capitalize()}")
-                        assembleTask.dependsOn $taskName
+                afterEvaluate {
+                    tasks.named("assembleDebug").configure {
+                        dependsOn taskProvider
                     }
                 }
                 """.trimIndent()
