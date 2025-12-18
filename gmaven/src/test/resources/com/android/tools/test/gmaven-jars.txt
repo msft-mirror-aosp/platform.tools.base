@@ -542,7 +542,10 @@ com/android/tools/build/gradle
   com/android/build/gradle/internal/core/dsl/impl/features/
   com/android/build/gradle/internal/coverage/
   com/android/build/gradle/internal/coverage/renderer/
+  com/android/build/gradle/internal/coverage/renderer/builders/
   com/android/build/gradle/internal/coverage/renderer/data/
+  com/android/build/gradle/internal/coverage/renderer/xmlparser/
+  com/android/build/gradle/internal/coverage/renderer/xmlparser/utils/
   com/android/build/gradle/internal/coverage/report/
   com/android/build/gradle/internal/coverage/tasks/
   com/android/build/gradle/internal/crash/
