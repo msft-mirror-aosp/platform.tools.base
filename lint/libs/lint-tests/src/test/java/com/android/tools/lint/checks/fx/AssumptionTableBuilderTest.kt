@@ -16,6 +16,9 @@
 package com.android.tools.lint.checks.fx
 
 import com.android.tools.lint.checks.fx.AssumptionTableBuilder.Companion.build
+import com.android.tools.lint.checks.fx.AssumptionTableBuilder.Container
+import com.android.tools.lint.checks.fx.AssumptionTableBuilder.Pkg
+import com.android.tools.lint.checks.fx.result.ClassId
 import com.android.tools.lint.checks.fx.result.Constraint
 import com.android.tools.lint.checks.fx.result.MethodId
 import com.android.tools.lint.checks.fx.result.Type
@@ -140,6 +143,28 @@ class AssumptionTableBuilderTest {
         Truth.assertThat(effect.constraint).isEqualTo(Constraint.MostPermissive)
         Truth.assertThat(effect.invocations).hasSize(1)
       }
+    }
+  }
+
+  @Test
+  fun `test packages and classes giving correct names`() {
+    with(Pkg<SideEffect>("com.pkg")) {
+      Truth.assertThat(path).isEqualTo("com.pkg")
+
+      with(child("internal")) {
+        Truth.assertThat(path).isEqualTo("com.pkg.internal")
+
+        with(klass("Class1")) {
+          Truth.assertThat(prefix).isEqualTo("com.pkg.internal")
+          Truth.assertThat(path).isEqualTo("com.pkg.internal")
+          Truth.assertThat(self).isEqualTo(ClassId.of("com.pkg.internal.Class1"))
+        }
+      }
+    }
+
+    with(Container<SideEffect>("com.pkg.Class2")) {
+      Truth.assertThat(prefix).isEqualTo("com.pkg")
+      Truth.assertThat(self).isEqualTo(ClassId.of("com.pkg.Class2"))
     }
   }
 

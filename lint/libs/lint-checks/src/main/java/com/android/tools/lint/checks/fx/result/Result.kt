@@ -149,6 +149,12 @@ sealed interface Type<out FX> {
         )
       }
 
+      fun rawVirtual(name: String, receiverFqn: String, vararg params: ClassId?): MethodRef =
+        MethodRef(ClassId.of(receiverFqn), MethodId(true, name, params.asList()))
+
+      fun rawStatic(name: String, containerFqn: String, vararg params: ClassId?): MethodRef =
+        MethodRef(ClassId.of(containerFqn), MethodId(false, name, params.asList()))
+
       // TODO for some reason, `kotlin.collections.CollectionsKt` show up as either
       //  `kotlin.collections.CollectionsKt___CollectionsKt` or
       //  `kotlin.collections.CollectionsKt` in tests and android studio.
