@@ -24,6 +24,10 @@ import java.net.InetSocketAddress
  * Creates an [AdbSession] to use with Console/Command Line Interface tools,
  * using standard Kotlin dispatchers and JVM stdout/stderr streams for I/O.
  *
+ * **Note:** This session acts as a smart client. If an ADB server is not currently
+ * running on the localhost, this session will attempt to locate the `adb` executable
+ * on the system PATH and start the server automatically.
+ *
  * ** WARNING **. Use this function with care. The philosophy of adblib is to have a
  * single AdbSession and a single AdbHost per VM. This is currently used in adblib CLI and
  * deployerlib CLI.
@@ -33,8 +37,6 @@ import java.net.InetSocketAddress
 
 @JvmOverloads
 fun createStandaloneSession(factory : AdbLoggerFactory = StdLoggerFactory()) : AdbSession {
-    // TODO Move to an AdbChannelProvider that knows how to spawn and ADB server.
-    // This one assume it is already up and running which is fine for our current needs.
     val host = StandaloneHost(factory)
     val session =
         AdbSession.create(
