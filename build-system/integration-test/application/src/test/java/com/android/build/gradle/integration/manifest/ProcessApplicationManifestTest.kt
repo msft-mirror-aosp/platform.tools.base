@@ -247,4 +247,19 @@ class ProcessApplicationManifestTest {
 
         failure.assertErrorContains("android:extractNativeLibs is set to true in a dependency's AndroidManifest.xml")
     }
+
+    /**
+     * Verifies that the build succeeds (logging the warning) when [BooleanOption.TREAT_MANIFEST_MERGER_WARNINGS_AS_ERRORS]
+     * is explicitly disabled.
+     */
+    @Test
+    fun testManifestWarningDoesNotFailWithoutFlag() {
+        val result = project.executor()
+            .with(BooleanOption.TREAT_MANIFEST_MERGER_WARNINGS_AS_ERRORS, false)
+            .run(":app:processDebugManifest")
+
+        result.stdout.use {
+            ScannerSubject.assertThat(it).contains("android:extractNativeLibs is set to true")
+        }
+    }
 }

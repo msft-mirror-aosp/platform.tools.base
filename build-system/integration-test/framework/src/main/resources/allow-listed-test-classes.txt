@@ -630,3 +630,4 @@ com.android.build.gradle.integration.testing.unit.UnitTestingRClassLoadTest
 com.android.build.gradle.integration.testing.unit.UnitTestingSupportTest
 com.android.build.gradle.integration.testing.unit.UnitTestingTestTaskAccess
 com.android.build.gradle.integration.validation.ValidateTaskPropertiesTest
+com.android.build.gradle.integration.manifest.ProcessLibraryManifestTest
