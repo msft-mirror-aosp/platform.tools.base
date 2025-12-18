@@ -543,7 +543,14 @@ com/android/tools/build/gradle
   com/android/build/gradle/internal/coverage/
   com/android/build/gradle/internal/coverage/renderer/
   com/android/build/gradle/internal/coverage/renderer/builders/
+  com/android/build/gradle/internal/coverage/renderer/css/
+  com/android/build/gradle/internal/coverage/renderer/css/style.css
   com/android/build/gradle/internal/coverage/renderer/data/
+  com/android/build/gradle/internal/coverage/renderer/index.html
+  com/android/build/gradle/internal/coverage/renderer/javascript/
+  com/android/build/gradle/internal/coverage/renderer/javascript/codecoveragescript.js
+  com/android/build/gradle/internal/coverage/renderer/javascript/sourceviewscript.js
+  com/android/build/gradle/internal/coverage/renderer/utils/
   com/android/build/gradle/internal/coverage/renderer/xmlparser/
   com/android/build/gradle/internal/coverage/renderer/xmlparser/utils/
   com/android/build/gradle/internal/coverage/report/
