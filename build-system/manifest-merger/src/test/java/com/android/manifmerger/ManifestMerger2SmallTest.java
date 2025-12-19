@@ -261,6 +261,62 @@ public class ManifestMerger2SmallTest {
     }
 
     @Test
+    public void testReplaceRequiredWithGeneratedFileForAndroidTest() throws Exception {
+        MockLog mockLog = new MockLog();
+        String generatedXml =
+                "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                    + "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                    + "    package=\"com.example.mylibrary.test\">\n"
+                    + "\n"
+                    + "    <uses-sdk android:minSdkVersion=\"36\" android:targetSdkVersion=\"36\""
+                    + " />\n"
+                    + "\n"
+                    + "    <instrumentation"
+                    + " android:name=\"androidx.test.runner.AndroidJUnitRunner\"\n"
+                    + "                     android:targetPackage=\"com.example.mylibrary.test\"\n"
+                    + "                     android:handleProfiling=\"false\"\n"
+                    + "                     android:functionalTest=\"false\"\n"
+                    + "                     android:label=\"Tests for"
+                    + " com.example.mylibrary.test\"/>\n"
+                    + "</manifest>";
+
+        File generatedFile = TestUtils.inputAsFile("testReplaceRequiredIsOk", generatedXml);
+
+        String testInput =
+                "<manifest\n"
+                        + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                        + "    xmlns:tools=\"http://schemas.android.com/tools\""
+                        + "    package = \"org.example.test\">\n"
+                        + "\n"
+                        + "    <application> \n"
+                        + "      <uses-library\n"
+                        + "            android:name=\"wear-sdk\"\n"
+                        + "            android:required=\"false\"\n"
+                        + "            tools:replace=\"android:required\" />\n"
+                        + "     </application>\n"
+                        + "\n"
+                        + "</manifest>";
+
+        File testFile = TestUtils.inputAsFile("testReplaceRequiredIsOk", testInput);
+
+        try {
+            MergingReport mergingReport =
+                    ManifestMerger2.newMerger(
+                                    testFile, mockLog, ManifestMerger2.MergeType.APPLICATION)
+                            .addLibraryManifest(generatedFile)
+                            .setNamespace("org.example.adnroidTest")
+                            .withFeatures(
+                                    ManifestMerger2.Invoker.Feature.DISABLE_REPLACE_WARNING,
+                                    ManifestMerger2.Invoker.Feature.DISABLE_MINSDKLIBRARY_CHECK)
+                            .merge();
+            assertEquals(MergingReport.Result.SUCCESS, mergingReport.getResult());
+        } finally {
+            assertTrue(generatedFile.delete());
+            assertTrue(testFile.delete());
+        }
+    }
+
+    @Test
     public void testToolsAnnotationPresence() throws Exception {
 
         MockLog mockLog = new MockLog();
