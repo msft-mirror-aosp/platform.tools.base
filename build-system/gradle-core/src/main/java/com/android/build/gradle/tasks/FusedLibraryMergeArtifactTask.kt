@@ -192,9 +192,6 @@ abstract class FusedLibraryMergeArtifactTask : NonIncrementalGlobalTask() {
                             .filter(File::isFile)
                             .filterNot { it.length() == 0L }
                             .onEach {
-                                if (it.name != FN_PROGUARD_TXT) {
-                                    error("Expected a file named '$FN_PROGUARD_TXT' but found file entry named '${it.name}'.")
-                                }
                                 ConsumerRuleGlobalGuardian.validateConsumerRulesHasNoBannedGlobals(
                                     it,
                                     false,
