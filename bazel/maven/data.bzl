@@ -243,6 +243,7 @@ DATA = [
     "androidx.lifecycle:lifecycle-runtime-compose:2.6.1",
     "androidx.lifecycle:lifecycle-runtime-compose:2.8.3",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
     "androidx.lifecycle:lifecycle-runtime-compose:2.8.7",
+    "androidx.lifecycle:lifecycle-runtime-compose-jvmstubs:2.8.7",  # Needed for ComposeRenderTest
     "androidx.lifecycle:lifecycle-runtime-desktop:2.8.0-alpha02",  # Needed for kmp consumption test
     "androidx.lifecycle:lifecycle-runtime-desktop:2.8.7",  # Needed for Privacy Sandbox connected test
     "androidx.lifecycle:lifecycle-runtime-ktx:2.4.0",  # Needed for tools/data-binding:runtimeLibrariesAndroidX
