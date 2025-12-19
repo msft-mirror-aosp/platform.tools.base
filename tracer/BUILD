@@ -1,6 +1,7 @@
 load("@rules_java//java:defs.bzl", "java_binary")
 load("//tools/base/bazel:bazel.bzl", "iml_module")
 load("//tools/base/bazel:coverage.bzl", "coverage_java_library")
+load("//tools/base/bazel:jvm_import.bzl", "jvm_import")
 load("//tools/base/bazel:utils.bzl", "java_jarjar")
 
 coverage_java_library(
@@ -70,5 +71,24 @@ iml_module(
     deps = [
         "@intellij//:intellij-sdk",
         "@intellij//:com.intellij.java",
+        "//tools/adt/idea/android-common:intellij.android.common",
+        "//tools/base/flags:studio.android.sdktools.flags",
+        "//tools/base/tracer:tracing-desktop-2.0.0-SNAPSHOT",
+        "//tools/base/tracer:tracing-wire-desktop-2.0.0-SNAPSHOT",
+        "//prebuilts/tools/common/m2:wire-runtime-jvm-5.4.0",
     ],
+)
+
+# managed by go/iml_to_build
+jvm_import(
+    name = "tracing-desktop-2.0.0-SNAPSHOT",
+    jars = ["libs/androidx/tracing/tracing-desktop/2.0.0-SNAPSHOT/tracing-desktop-2.0.0-SNAPSHOT.jar"],
+    visibility = ["//visibility:public"],
+)
+
+# managed by go/iml_to_build
+jvm_import(
+    name = "tracing-wire-desktop-2.0.0-SNAPSHOT",
+    jars = ["libs/androidx/tracing/tracing-wire-desktop/2.0.0-SNAPSHOT/tracing-wire-desktop-2.0.0-SNAPSHOT.jar"],
+    visibility = ["//visibility:public"],
 )
