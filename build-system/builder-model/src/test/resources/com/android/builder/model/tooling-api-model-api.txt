@@ -4,7 +4,7 @@ ATTENTION REVIEWER: If this needs to be changed, please make sure changes
 below are backwards compatible.
 -------------------------------------------------------------------------
 Sha256 of below classes:
-75f085056c7f8b9f2563a83ff40e747465e2b0604c923469db8071a193d0f6fb
+866d92678eb55438458ad847c9ab1a36a5b4202dc5d470c4ad9aad7b21933dd2
 -------------------------------------------------------------------------
 com.android.builder.model.AaptOptions
 com.android.builder.model.AaptOptions$Namespacing extends java.lang.Enum
@@ -740,6 +740,9 @@ com.android.builder.model.v2.ide.TestInfo.getAnimationsDisabled: boolean ()
 com.android.builder.model.v2.ide.TestInfo.getExecution: com.android.builder.model.v2.ide.TestInfo$Execution ()
 com.android.builder.model.v2.ide.TestInfo.getInstrumentedTestTaskName: java.lang.String ()
 com.android.builder.model.v2.ide.TestSuite implements com.android.builder.model.v2.AndroidModel
+com.android.builder.model.v2.ide.TestSuite.getGeneratedAssets: java.util.Collection<com.android.builder.model.v2.models.AssetsTestSuiteSource> ()
+com.android.builder.model.v2.ide.TestSuite.getGeneratedHostJars: java.util.Collection<com.android.builder.model.v2.models.HostJarTestSuiteSource> ()
+com.android.builder.model.v2.ide.TestSuite.getGeneratedTestApks: java.util.Collection<com.android.builder.model.v2.models.TestApkTestSuiteSource> ()
 com.android.builder.model.v2.ide.TestSuite.getJunitEngineInfo: com.android.builder.model.v2.ide.JUnitEngineInfo ()
 com.android.builder.model.v2.ide.TestSuite.getName: java.lang.String ()
 com.android.builder.model.v2.ide.TestSuiteArtifact implements com.android.builder.model.v2.ide.AbstractArtifact, com.android.builder.model.v2.AndroidModel

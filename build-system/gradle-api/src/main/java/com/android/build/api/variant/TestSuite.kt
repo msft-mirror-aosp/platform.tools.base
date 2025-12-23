@@ -31,8 +31,8 @@ import org.gradle.api.tasks.testing.Test
 interface TestSuite: Named {
 
     /**
-     * Return the list of sourcesets associated with this test suite. Sources are added through the
-     * DSL using one of the following methods:
+     * Return the list of sourcesets associated with this test suite. Sourcesets are added through
+     * the DSL using one of the following methods:
      *  - [com.android.build.api.dsl.AgpTestSuite.assets]
      *  - [com.android.build.api.dsl.AgpTestSuite.hostJar]
      *  - [com.android.build.api.dsl.AgpTestSuite.testApk]
