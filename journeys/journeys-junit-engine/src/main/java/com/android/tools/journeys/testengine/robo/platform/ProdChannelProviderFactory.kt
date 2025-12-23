@@ -56,6 +56,7 @@ class ProductionChannelProviderFactory : ChannelProviderFactory {
                 "Failed to obtain credentials for establishing connection with backend. "
                         + "Make sure you are logged in to Android Studio and are "
                         + "connected to a network before re-trying.",
+                cause = e,
                 reason = JourneyFailureReason.AUTHENTICATION_FAILED);
         }
     }

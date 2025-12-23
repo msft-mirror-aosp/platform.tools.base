@@ -207,6 +207,9 @@ class JourneysConnectedTest {
                 )
             )
         )
+
+        // Check that the cause of the AUTHENTICATION_FAILED error is shown in the logs
+        result.assertOutputContains("Caused by:\n        java.io.IOException:")
     }
 
     @Test
