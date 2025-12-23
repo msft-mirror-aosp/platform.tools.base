@@ -92,8 +92,8 @@ class ScreenshotTest {
         }
 
         kotlin {
-            // Required by LayoutLib (com/android/layoutlib/bridge/Bridge).
-            jvmToolchain(21)
+            // Screenshot Test should work with JDK 17.
+            jvmToolchain(17)
         }
 
         dependencies {

@@ -1162,8 +1162,11 @@ maven_repository(
     name = "layoutlib_prebuilts",
     artifacts = [
         "@maven//:com.android.tools.layoutlib.layoutlib-resources_" + LAYOUTLIB_PREBUILTS_VERSION,
+        "@maven//:com.android.tools.layoutlib.layoutlib-resources_" + LAYOUTLIB_PREBUILTS_VERSION + "-jdk17",
         "@maven//:com.android.tools.layoutlib.layoutlib-runtime_" + LAYOUTLIB_PREBUILTS_VERSION,
+        "@maven//:com.android.tools.layoutlib.layoutlib-runtime_" + LAYOUTLIB_PREBUILTS_VERSION + "-jdk17",
         "@maven//:com.android.tools.layoutlib.layoutlib_" + LAYOUTLIB_PREBUILTS_VERSION,
+        "@maven//:com.android.tools.layoutlib.layoutlib_" + LAYOUTLIB_PREBUILTS_VERSION + "-jdk17",
     ],
     visibility = ["__subpackages__"],
 )
