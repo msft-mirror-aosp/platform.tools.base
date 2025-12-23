@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.internal.dsl
 
+import com.android.build.api.variant.impl.KotlinMultiplatformAndroidLibraryTargetImpl
 import com.android.build.gradle.internal.dsl.decorator.androidPluginDslDecorator
 import com.android.utils.usLocaleDecapitalize
 import com.google.common.truth.Expect
@@ -75,6 +76,12 @@ class GroovyExtensionsTest {
     @Test
     fun testTestExtension() {
         validate("Test", InternalTestExtension::class.java, TestExtensionImpl::class.java)
+    }
+
+    @Test
+    fun testKotlinMultiplatformExtension() {
+        validateKmp("KotlinMultiplatformLibrary",
+            KotlinMultiplatformAndroidLibraryTargetImpl::class.java)
     }
 
     private val Type.lowerBound
@@ -167,6 +174,72 @@ class GroovyExtensionsTest {
             .map { val name = it.name.removePrefix("set")
                 "set$name(${name.usLocaleDecapitalize()}: ${it.genericParameterTypes[0]})"
              }
+
+        assertWithMessage(
+            "All collections defined in the AGP DSL " +
+                    extensionClass.simpleName.removePrefix("Internal") +
+                    " need corresponding setters for groovy in " +
+                    extensionClass.simpleName +
+                    "\n" +
+                    "e.g. CommonExtension has\n" +
+                    "    val flavorDimensions: MutableList<String>\n\n" +
+                    "so internalCommonExtension has\n" +
+                    "    fun setFlavorDimensions(flavorDimensions: List<String>)\n"
+        )
+            .that(actualSetters)
+            .named("Setters for Groovy DSL")
+            .containsExactlyElementsIn(expectedSetters)
+    }
+
+    private fun validateKmp(componentPrefix: String, extensionClass : Class<*>) {
+
+        val actualOverrides = extensionClass.methods
+            .filter { it.parameters.singleOrNull()?.type == Action::class.java }
+            .filter { it.name != "jvmToolchain" }
+            .associate { it.name to it.gradleBlockType }
+
+        val requiredOverrides = extensionClass.methods
+            .filter { it.parameters.singleOrNull()?.type == Function1::class.java }
+            .associate { it.name to it.gradleBlockType }
+
+        assertWithMessage("All blocks defined in the AGP DSL " +
+                extensionClass.simpleName.removePrefix("Internal") +
+                " need corresponding methods for groovy in " +
+                extensionClass.simpleName +
+                "\n" +
+                "e.g. CommonExtension has\n" +
+                "    fun androidResources(action: AndroidResources.() -> Unit)\n" +
+                "so internalCommonExtension has\n" +
+                "     fun androidResources(action: Action<AndroidResources>)")
+            .that(actualOverrides.keys)
+            .named("Methods with Action<> parameter for Groovy DSL")
+            .containsExactlyElementsIn(requiredOverrides.keys)
+
+
+        assertWithMessage("All action methods should have the same block type as the block method")
+            .that(actualOverrides.mapValues { it.value.normalizedTypeName(componentPrefix) })
+            .named("Map from method name to action receiver type")
+            .containsExactlyEntriesIn(requiredOverrides.mapValues { it.value.typeName })
+
+        // Call all the methods to make sure they are implemented
+        val instance = androidPluginDslDecorator.decorate(extensionClass)
+        actualOverrides.forEach { (name, blockType) ->
+            expect.that(Modifier.isAbstract(instance.getMethod(name, Action::class.java).modifiers))
+                .named("Method $name on $extensionClass is abstract")
+                .isFalse()
+        }
+
+        val expectedSetters = extensionClass.methods.filter { isCollectionGetter(it) }
+            .filter { it.name != "getKotlinComponents" }
+            .filter { it.name != "getComponents" }
+            .filter { it.name != "getExtras" }
+            .map {
+                val name = it.name.removePrefix("get")
+                "set$name(${name.usLocaleDecapitalize()}: ${it.genericReturnType})" }
+        val actualSetters = extensionClass.methods.filter { isCollectionSetter(it) }
+            .map { val name = it.name.removePrefix("set")
+                "set$name(${name.usLocaleDecapitalize()}: ${it.genericParameterTypes[0]})"
+            }
 
         assertWithMessage(
             "All collections defined in the AGP DSL " +

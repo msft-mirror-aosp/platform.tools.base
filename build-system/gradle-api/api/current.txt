@@ -1513,6 +1513,7 @@ package com.android.build.api.dsl {
     method public void setMinSdkPreview(String?);
     method public void setNamespace(String?);
     method public void setTestNamespace(String?);
+    method public void testCoverage(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.TestCoverage,kotlin.Unit> action);
     method public void useLibrary(String name);
     method public void useLibrary(String name, boolean required);
     method public void withDeviceTest(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.KotlinMultiplatformAndroidDeviceTest,kotlin.Unit> action);
