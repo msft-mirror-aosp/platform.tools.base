@@ -243,6 +243,7 @@ DATA = [
     "androidx.lifecycle:lifecycle-runtime-compose:2.6.1",
     "androidx.lifecycle:lifecycle-runtime-compose:2.8.3",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
     "androidx.lifecycle:lifecycle-runtime-compose:2.8.7",
+    "androidx.lifecycle:lifecycle-runtime-compose-jvmstubs:2.8.7",  # Needed for ComposeRenderTest
     "androidx.lifecycle:lifecycle-runtime-desktop:2.8.0-alpha02",  # Needed for kmp consumption test
     "androidx.lifecycle:lifecycle-runtime-desktop:2.8.7",  # Needed for Privacy Sandbox connected test
     "androidx.lifecycle:lifecycle-runtime-ktx:2.4.0",  # Needed for tools/data-binding:runtimeLibrariesAndroidX
@@ -946,10 +947,14 @@ DATA = [
     "org.apache.commons:commons-compress:1.20",
     "org.apache.commons:commons-lang3:3.13.0",
     "org.apache.commons:commons-text:1.11.0",
-    "org.apache.lucene:lucene-analysis-common:9.12.0",
-    "org.apache.lucene:lucene-core:9.12.0",  # Match the Lucene version here with the one used by IJ pre-2025.1. See b/460307944.
-    "org.apache.lucene:lucene-highlighter:9.12.0",  # Match the version of Lucene with the one used by IntelliJ
+    # Lucene 9.12 - used by IntelliJ 25.2 and earlier.
+    "org.apache.lucene:lucene-backward-codecs:9.12.0",
+    "org.apache.lucene:lucene-highlighter:9.12.0",
     "org.apache.lucene:lucene-queryparser:9.12.0",
+    # Lucene 10.3.0 - used by IntelliJ 25.3 and later.
+    "org.apache.lucene:lucene-backward-codecs:10.3.0",
+    "org.apache.lucene:lucene-highlighter:10.3.0",
+    "org.apache.lucene:lucene-queryparser:10.3.0",
     "org.bouncycastle:bcprov-jdk16:1.46",
     "org.bouncycastle:bcprov-jdk18on:1.77",
     "org.brotli:dec:0.1.2",
@@ -982,9 +987,6 @@ DATA = [
     "org.jdeferred:jdeferred-android-aar:1.2.2",
     "org.jdeferred:jdeferred-android-aar:1.2.3",
     "org.jetbrains:annotations-java5:jar:24.0.0",
-    "org.jetbrains.compose.components:components-resources:1.7.3",
-    "org.jetbrains.compose.components:components-resources-desktop:1.7.3",
-    "org.jetbrains.compose.ui:ui-test-junit4-desktop:1.7.3",
     "org.jetbrains.dokka:dokka-base:1.4.32",
     "org.jetbrains.dokka:javadoc-plugin:1.4.32",
     "org.jetbrains.intellij:org.jetbrains.intellij.gradle.plugin:pom:1.16.0",
@@ -1231,6 +1233,7 @@ DATA = [
     "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.3",
     "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4",
     "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3",
+    "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.0",  # used in agp_dependencies
     "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
     "org.jetbrains.kotlinx:kotlinx-coroutines-core-common:1.3.6",
     "org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.7.3",
@@ -1247,17 +1250,6 @@ DATA = [
     "org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.1",  # MCP kotlin-sdk
     "org.jetbrains.skiko:skiko:0.7.7",  # used by //tools/base/build-system/integration-test/lint and ASwB query sync
     "org.jetbrains.skiko:skiko-awt:0.7.7",
-    "org.jetbrains.skiko:skiko-awt:0.8.18",
-    "org.jetbrains.skiko:skiko-awt-runtime-linux-arm64:0.8.18",
-    "org.jetbrains.skiko:skiko-awt-runtime-linux-x64:0.7.16",
-    "org.jetbrains.skiko:skiko-awt-runtime-linux-x64:0.8.18",
-    "org.jetbrains.skiko:skiko-awt-runtime-macos-arm64:0.7.16",
-    "org.jetbrains.skiko:skiko-awt-runtime-macos-arm64:0.8.18",
-    "org.jetbrains.skiko:skiko-awt-runtime-macos-x64:0.7.16",
-    "org.jetbrains.skiko:skiko-awt-runtime-macos-x64:0.8.18",
-    "org.jetbrains.skiko:skiko-awt-runtime-windows-arm64:0.8.18",
-    "org.jetbrains.skiko:skiko-awt-runtime-windows-x64:0.7.16",
-    "org.jetbrains.skiko:skiko-awt-runtime-windows-x64:0.8.18",
     "org.junit:junit-bom:pom:5.10.0",
     "org.junit:junit-bom:pom:5.10.2",
     "org.junit:junit-bom:pom:5.11.0-M2",
@@ -1318,32 +1310,11 @@ DATA = [
     "org.commonmark:commonmark:jar:sources:0.24.0",
     "org.eclipse.lsp4j:org.eclipse.lsp4j.debug:jar:sources:0.21.1",
     "org.eclipse.lsp4j:org.eclipse.lsp4j:jar:sources:0.21.1",
-    "org.jetbrains.compose.animation:animation-core-desktop:jar:sources:1.7.3",
-    "org.jetbrains.compose.animation:animation-desktop:jar:sources:1.7.3",
-    "org.jetbrains.compose.components:components-resources:jar:sources:1.7.3",
-    "org.jetbrains.compose.components:components-resources-desktop:jar:sources:1.7.3",
-    "org.jetbrains.compose.foundation:foundation-desktop:jar:sources:1.7.3",
-    "org.jetbrains.compose.foundation:foundation-layout-desktop:jar:sources:1.7.3",
-    "org.jetbrains.compose.runtime:runtime-desktop:jar:sources:1.7.3",
-    "org.jetbrains.compose.runtime:runtime-saveable-desktop:jar:sources:1.7.3",
-    "org.jetbrains.compose.ui:ui-desktop:jar:sources:1.7.3",
-    "org.jetbrains.compose.ui:ui-geometry-desktop:jar:sources:1.7.3",
-    "org.jetbrains.compose.ui:ui-graphics-desktop:jar:sources:1.7.3",
-    "org.jetbrains.compose.ui:ui-test-desktop:jar:sources:1.7.3",
-    "org.jetbrains.compose.ui:ui-test-junit4-desktop:jar:sources:1.7.3",
-    "org.jetbrains.compose.ui:ui-text-desktop:jar:sources:1.7.3",
-    "org.jetbrains.compose.ui:ui-unit-desktop:jar:sources:1.7.3",
-    "org.jetbrains.compose.ui:ui-util-desktop:jar:sources:1.7.3",
     "org.jetbrains.kotlin:kotlin-stdlib:jar:sources:1.9.22",
     "org.jetbrains.kotlin:kotlin-stdlib:jar:sources:1.9.23",
     "org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:jar:sources:1.6.4",
     "org.jetbrains.kotlinx:kotlinx-coroutines-test-jvm:jar:sources:1.6.4",
     "org.jetbrains.kotlinx:kotlinx-coroutines-test-jvm:jar:sources:1.8.0-RC2",
-    "org.jetbrains.skiko:skiko-awt:jar:sources:0.8.18",
-    "org.jetbrains.skiko:skiko-awt-runtime-linux-x64:jar:sources:0.8.18",
-    "org.jetbrains.skiko:skiko-awt-runtime-macos-arm64:jar:sources:0.8.18",
-    "org.jetbrains.skiko:skiko-awt-runtime-macos-x64:jar:sources:0.8.18",
-    "org.jetbrains.skiko:skiko-awt-runtime-windows-x64:jar:sources:0.8.18",
     "org.mockito:mockito-core:4.3.1",
     "org.mockito:mockito-core:5.4.0",
     "org.ow2.asm:asm-bom:pom:9.6",

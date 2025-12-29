@@ -382,4 +382,6 @@ interface KotlinMultiplatformAndroidLibraryExtension {
      * Configure the gathering of code-coverage from tests.
      */
     val testCoverage: TestCoverage
+
+    fun testCoverage(action: TestCoverage.() -> Unit)
 }

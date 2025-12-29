@@ -33,6 +33,8 @@ import com.android.tools.lint.checks.fx.result.Result
 import com.android.tools.lint.checks.fx.result.ResultTable
 import com.android.tools.lint.checks.fx.result.ResultTemplate
 import com.android.tools.lint.checks.fx.result.Type
+import com.android.tools.lint.checks.fx.result.Type.MethodRef.Companion.static
+import com.android.tools.lint.checks.fx.result.Type.MethodRef.Companion.virtual
 import com.android.tools.lint.checks.fx.result.get
 import com.android.tools.lint.checks.fx.utils.Encoder
 import com.android.tools.lint.checks.fx.utils.Encoder.Companion.adapt
@@ -59,12 +61,20 @@ import com.android.tools.lint.detector.api.Project
 import com.android.tools.lint.detector.api.SourceCodeScanner
 import com.intellij.openapi.application.runReadAction
 import java.io.File
+import java.lang.Iterable as JIterable
 import java.nio.file.Paths
+import java.util.function.BiConsumer
+import java.util.function.Consumer
+import java.util.function.Function as JFunction
+import java.util.function.Predicate
+import java.util.stream.Stream
+import kotlin.collections.forEach as ktForEach
 import kotlin.io.path.exists
 import kotlinx.collections.immutable.PersistentMap
 import kotlinx.collections.immutable.PersistentSet
 import kotlinx.collections.immutable.persistentMapOf
 import kotlinx.collections.immutable.persistentSetOf
+import kotlinx.collections.immutable.plus
 import kotlinx.collections.immutable.toPersistentSet
 import org.jetbrains.kotlin.incremental.createDirectory
 import org.jetbrains.kotlin.psi.KtNamedFunction
@@ -429,6 +439,375 @@ abstract class JoinEffectDetector<FX : Any>(
       for ((i, classId) in classIds.withIndex()) {
         loaded = loaded.put(classId, classSummaries[i])
         toBeLoaded.remove(classId)
+      }
+    }
+  }
+
+  companion object {
+    /** Adds assumptions on common Java and Kotlin utils */
+    fun <FX> AssumptionTableBuilder<FX>.assumeCommonJavaAndKotlinSignatures() {
+      // Iterable
+      run {
+        virtual(JIterable<*>::forEach) assumedAs
+          forAll { a ->
+            forAll(Consumer::class(a)) { action ->
+              given(Iterable::class(a), action) {
+                symbolicInvocations += action[Consumer<*>::accept, a]
+              }
+            }
+          }
+        static(Iterable<*>::ktForEach) assumedAs
+          forAll { a ->
+            forAll(Function1::class(a, Type.Unit)) { action ->
+              given(Iterable::class(a), action) {
+                symbolicInvocations += action[MethodId.Invoke[1], a]
+              }
+            }
+          }
+        static(Iterable<*>::forEachIndexed) assumedAs
+          forAll { a ->
+            forAll(Function2::class(Type.Int, a, Type.Unit)) { action ->
+              given(Iterable::class(a), action) {
+                symbolicInvocations += action[MethodId.Invoke[2], Type.Int, a]
+              }
+            }
+          }
+        (static<_, (Any) -> Comparable<Any>>(Iterable<Nothing>::maxBy) +
+          static<_, (Any) -> Comparable<Any>>(Iterable<Nothing>::maxByOrNull) +
+          static<_, (Any) -> Comparable<Any>>(Iterable<Nothing>::minBy) +
+          static<_, (Any) -> Comparable<Any>>(Iterable<Nothing>::minByOrNull)) assumedAs
+          forAll { t ->
+            forAll { r ->
+              forAll(Function1::class(t, r)) { selector ->
+                given(Iterable::class(t), selector) {
+                  range = r
+                  symbolicInvocations += selector[MethodId.Invoke[1], t]
+                  symbolicInvocations += r[Comparable<*>::compareTo, r]
+                }
+              }
+            }
+          }
+        (static<_, Comparator<Any>, (Any) -> Any>(Iterable<Nothing>::maxOfWith) +
+          static<_, Comparator<Any>, (Any) -> Any>(Iterable<Nothing>::maxOfWithOrNull) +
+          static<_, Comparator<Any>, (Any) -> Any>(Iterable<Nothing>::minOfWith) +
+          static<_, Comparator<Any>, (Any) -> Any>(Iterable<Nothing>::minOfWithOrNull)) assumedAs
+          forAll { t ->
+            forAll { r ->
+              forAll(Comparator::class(r)) { comparator ->
+                forAll(Function1::class(t, r)) { selector ->
+                  given(Iterable::class(t), comparator, selector) {
+                    range = r
+                    symbolicInvocations += comparator[Comparator<*>::compare, r, r]
+                    symbolicInvocations += selector[MethodId.Invoke[1], t]
+                  }
+                }
+              }
+            }
+          }
+        (static(Iterable<*>::maxWith) +
+          static(Iterable<*>::maxWithOrNull) +
+          static(Iterable<*>::minWith) +
+          static(Iterable<*>::minWithOrNull)) assumedAs
+          forAll { t ->
+            forAll(Comparator::class(t)) { comparator ->
+              given(Iterable::class(t), comparator) {
+                range = t
+                symbolicInvocations += comparator[Comparator<*>::compare, t, t]
+              }
+            }
+          }
+        (static(Iterable<*>::all) +
+          static<_, _>(Iterable<*>::any) +
+          static<_, _>(Iterable<*>::none)) assumedAs
+          forAll { t ->
+            forAll(Function1::class(t, Type.Boolean)) { predicate ->
+              given(Iterable::class(t), predicate) {
+                range = Type.Boolean
+                symbolicInvocations += predicate[MethodId.Invoke[1], t]
+              }
+            }
+          }
+        static(Iterable<*>::onEach) assumedAs
+          forAll { t ->
+            forAll(Iterable::class(t)) { self ->
+              forAll(Function1::class(t, Type.Unit)) { action ->
+                given(self, action) {
+                  range = self
+                  symbolicInvocations += action[MethodId.Invoke[1], t]
+                }
+              }
+            }
+          }
+        static(Iterable<*>::onEachIndexed) assumedAs
+          forAll { t ->
+            forAll(Iterable::class(t)) { self ->
+              forAll(Function2::class(Type.Int, t, Type.Unit)) { action ->
+                given(Iterable::class(t), action) {
+                  range = self
+                  symbolicInvocations += action[MethodId.Invoke[2], Type.Int, t]
+                }
+              }
+            }
+          }
+        (static(Iterable<*>::reduce) + static(Iterable<*>::reduceOrNull)) assumedAs
+          forAll { s ->
+            forAll(s) { t ->
+              forAll(Function2::class(s, t, s)) { operation ->
+                given(Iterable::class(t), operation) {
+                  range = s
+                  symbolicInvocations += operation[MethodId.Invoke[2], s, t]
+                }
+              }
+            }
+          }
+        (static(Iterable<*>::reduceIndexed) + static(Iterable<*>::reduceIndexedOrNull)) assumedAs
+          forAll { s ->
+            forAll(s) { t ->
+              forAll(Function3::class(Type.Int, s, t, s)) { operation ->
+                given(Iterable::class(t), operation) {
+                  range = s
+                  symbolicInvocations += operation[MethodId.Invoke[3], Type.Int, s, t]
+                }
+              }
+            }
+          }
+
+        static<_, (Any?) -> Any>(Iterable<*>::map) assumedAs
+          forAll { x ->
+            forAll { y ->
+              forAll(Function1::class(x, y)) { transform ->
+                given(Iterable::class(x), transform) {
+                  range = List::class(y)
+                  symbolicInvocations += transform[MethodId.Invoke[1], x]
+                }
+              }
+            }
+          }
+        static(Iterable<*>::filter) assumedAs
+          forAll { x ->
+            forAll(Function1::class(x, Type.Boolean)) { predicate ->
+              given(Iterable::class(x), predicate) {
+                range = List::class(x)
+                symbolicInvocations += predicate[MethodId.Invoke[1], x]
+              }
+            }
+          }
+        static<_, Nothing, _>(Iterable<*>::fold) assumedAs
+          forAll { t ->
+            forAll { r ->
+              forAll(Function2::class(r, t, r)) { operation ->
+                given(Iterable::class(t), r, operation) {
+                  range = r
+                  symbolicInvocations += operation[MethodId.Invoke[2], r, t]
+                }
+              }
+            }
+          }
+      }
+
+      // List
+      run {
+        (static(List<*>::reduceRight) + static(List<*>::reduceRightOrNull)) assumedAs
+          forAll { s ->
+            forAll(s) { t ->
+              forAll(Function2::class(t, s, s)) { operation ->
+                given(List::class(t), operation) {
+                  range = s
+                  symbolicInvocations += operation[MethodId.Invoke[2], t, s]
+                }
+              }
+            }
+          }
+        (static(List<*>::reduceRightIndexed) + static(List<*>::reduceRightIndexedOrNull)) assumedAs
+          forAll { s ->
+            forAll(s) { t ->
+              forAll(Function3::class(Type.Int, t, s, s)) { operation ->
+                given(Iterable::class(t), operation) {
+                  range = s
+                  symbolicInvocations += operation[MethodId.Invoke[3], Type.Int, t, s]
+                }
+              }
+            }
+          }
+      }
+
+      // Map
+      run {
+        virtual(Map<*, *>::forEach) assumedAs
+          forAll { k ->
+            forAll { v ->
+              forAll(BiConsumer::class(k, v)) { action ->
+                given(Map::class(k, v), action) {
+                  symbolicInvocations += action[BiConsumer<*, *>::accept, k, v]
+                }
+              }
+            }
+          }
+        static(Map<*, *>::ktForEach) assumedAs
+          forAll { k ->
+            forAll { v ->
+              forAll(Function1::class(Map.Entry::class(k, v), Type.Unit)) { action ->
+                given(Map::class(k, v), action) {
+                  symbolicInvocations += action[MethodId.Invoke[1], Map::class(k, v)]
+                }
+              }
+            }
+          }
+        static<Map<*, *>, (Map.Entry<*, *>) -> Any>(Map<*, *>::map) assumedAs
+          forAll { k ->
+            forAll { v ->
+              forAll { r ->
+                forAll(Function1::class(Map.Entry::class(k, v), r)) { transform ->
+                  given(Map::class(k, v), transform) {
+                    range = List::class(r)
+                    symbolicInvocations += transform[MethodId.Invoke[1], Map.Entry::class(k, v)]
+                  }
+                }
+              }
+            }
+          }
+      }
+
+      // Array
+      run {
+        static(Array<*>::ktForEach) assumedAs
+          forAll { a ->
+            forAll(Function1::class(a, Type.Unit)) { action ->
+              given(Array::class(a), action) {
+                symbolicInvocations += action[MethodId.Invoke[1], a]
+              }
+            }
+          }
+        static<_, (Any?) -> Any>(Array<*>::map) assumedAs
+          forAll { a ->
+            forAll(Function1::class(a, Type.Unit)) { action ->
+              given(Array::class(a), action) {
+                symbolicInvocations += action[MethodId.Invoke[1], a]
+              }
+            }
+          }
+        static(Array<*>::filter) assumedAs
+          forAll { a ->
+            forAll(Function1::class(a, Type.Boolean)) { predicate ->
+              given(Array::class(a), predicate) {
+                range = List::class(a)
+                symbolicInvocations += predicate[MethodId.Invoke[1], a]
+              }
+            }
+          }
+        static<_, Nothing, _>(Array<*>::fold) assumedAs
+          forAll { t ->
+            forAll { r ->
+              forAll(Function2::class(r, t, r)) { operation ->
+                given(Array::class(t), r, operation) {
+                  range = r
+                  symbolicInvocations += operation[MethodId.Invoke[2], r, t]
+                }
+              }
+            }
+          }
+      }
+
+      // Sequence
+      // TODO below ain't accurate. Calls to `map`/`filter` only build up `Sequence`, and defer
+      //  the actions to iteration time.
+      run {
+        static(Sequence<*>::forEach) assumedAs
+          forAll { a ->
+            forAll(Function1::class(a, Type.Unit)) { action ->
+              given(Sequence::class(a), action) {
+                symbolicInvocations += action[MethodId.Invoke[1], a]
+              }
+            }
+          }
+        static<_, (Any?) -> Any>(Sequence<*>::map) assumedAs
+          forAll { x ->
+            forAll { y ->
+              forAll(Function1::class(x, y)) { transform ->
+                given(Sequence::class(x), transform) {
+                  range = Sequence::class(y)
+                  symbolicInvocations += transform[MethodId.Invoke[1], x]
+                }
+              }
+            }
+          }
+        static(Sequence<*>::filter) assumedAs
+          forAll { x ->
+            forAll(Function1::class(x, Type.Boolean)) { predicate ->
+              given(Sequence::class(x), predicate) {
+                range = Sequence::class(x)
+                symbolicInvocations += predicate[MethodId.Invoke[1], x]
+              }
+            }
+          }
+        static<_, Nothing, _>(Sequence<*>::fold) assumedAs
+          forAll { t ->
+            forAll { r ->
+              forAll(Function2::class(r, t, r)) { operation ->
+                given(Sequence::class(t), r, operation) {
+                  range = r
+                  symbolicInvocations += operation[MethodId.Invoke[2], r, t]
+                }
+              }
+            }
+          }
+      }
+
+      // Stream
+      // TODO(b/418276115)
+      run {
+        virtual(Stream<*>::forEach) assumedAs
+          forAll { a ->
+            forAll(Consumer::class(a)) { action ->
+              given(Stream::class(a), action) {
+                symbolicInvocations += action[Consumer<*>::accept, a]
+              }
+            }
+          }
+        virtual<JFunction<Any?, *>>(Stream<*>::map) assumedAs
+          forAll { x ->
+            forAll { y ->
+              forAll(JFunction::class(x, y)) { mapper ->
+                given(Stream::class(x), mapper) {
+                  range = Stream::class(y)
+                  symbolicInvocations += mapper[JFunction<*, *>::apply, x]
+                }
+              }
+            }
+          }
+        virtual(Stream<*>::filter) assumedAs
+          forAll { x ->
+            forAll(Predicate::class(x)) { predicate ->
+              given(Stream::class(x), predicate) {
+                range = Stream::class(x)
+                symbolicInvocations += predicate[Predicate<*>::test, x]
+              }
+            }
+          }
+      }
+
+      // Common scoping functions
+      run {
+        (static(Any::apply) + static(Any::also)) assumedAs
+          forAll { self ->
+            forAll(Function1::class(self, Type.Unit)) { block ->
+              given(self, block) {
+                range = self
+                symbolicInvocations += block[MethodId.Invoke[1], self]
+              }
+            }
+          }
+        (static<Any, Any.() -> Any>(::with) + static<Any, (Any) -> Any>(Any::let)) assumedAs
+          forAll { receiver ->
+            forAll { result ->
+              forAll(Function1::class(receiver, result)) { block ->
+                given(receiver, block) {
+                  range = result
+                  symbolicInvocations += block[MethodId.Invoke[1], receiver]
+                }
+              }
+            }
+          }
       }
     }
   }

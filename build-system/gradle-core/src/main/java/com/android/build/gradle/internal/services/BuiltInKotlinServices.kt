@@ -26,6 +26,7 @@ import com.android.build.api.variant.impl.ApplicationVariantImpl
 import com.android.build.api.variant.impl.DynamicFeatureVariantImpl
 import com.android.build.api.variant.impl.LibraryVariantImpl
 import com.android.build.api.variant.impl.TestVariantImpl
+import com.android.build.gradle.internal.component.BuiltInKotlinCreationConfig
 import com.android.build.gradle.internal.component.ComponentCreationConfig
 import com.android.build.gradle.internal.services.BuiltInKotlinServices.AvailabilityReason.BuiltInKotlinBooleanOptionEnabled
 import com.android.build.gradle.internal.services.BuiltInKotlinServices.AvailabilityReason.BuiltInKotlinPluginApplied
@@ -332,7 +333,7 @@ private fun initBuiltInKaptSupport(project: Project) {
 }
 
 @OptIn(InternalKotlinGradlePluginApi::class)
-internal fun ComponentCreationConfig.createKotlinCompilation(): KotlinCompilation<Any> {
+internal fun BuiltInKotlinCreationConfig.createKotlinCompilation(): KotlinCompilation<Any> {
     val kotlinServices = services.builtInKotlinServices
 
     @Suppress("UNCHECKED_CAST")
@@ -348,7 +349,7 @@ internal fun ComponentCreationConfig.createKotlinCompilation(): KotlinCompilatio
         // Note that we're setting instead of adding the directories because we want to overwrite
         // any directories that KGP previously set (e.g., KGP adds `src/debugUnitTest/kotlin`
         // for compilation `debugUnitTest`).
-        kotlinCompilation.defaultSourceSet.kotlin.setSrcDirs(listOf(sources.kotlin!!.all))
+        kotlinCompilation.defaultSourceSet.kotlin.setSrcDirs(listOf(kotlin!!.all))
     }
 
     if (builtInKotlinSupportMode is BuiltInKotlinSupportMode.Supported) {
@@ -375,7 +376,7 @@ internal fun ComponentCreationConfig.createKotlinCompilation(): KotlinCompilatio
 }
 
 @OptIn(InternalKotlinGradlePluginApi::class)
-private fun ComponentCreationConfig.toAndroidVariantType(): AndroidVariantType {
+internal fun ComponentCreationConfig.toAndroidVariantType(): AndroidVariantType {
     return when (this) {
         is ComponentImpl<*> -> when (this) {
             is ApplicationVariantImpl -> AndroidVariantType.Main

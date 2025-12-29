@@ -17,6 +17,7 @@
 package com.android.build.gradle.tasks
 
 import com.android.build.api.artifact.MultipleArtifact
+import com.android.build.gradle.internal.component.BuiltInKotlinCreationConfig
 import com.android.build.gradle.internal.component.ComponentCreationConfig
 import com.android.build.gradle.internal.component.NestedComponentCreationConfig
 import com.android.build.gradle.internal.component.TestComponentCreationConfig
@@ -40,7 +41,7 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
 
 class KotlinCompileCreationAction(
-    creationConfig: ComponentCreationConfig,
+    creationConfig: BuiltInKotlinCreationConfig,
     private val kotlinServices: BuiltInKotlinServices
 ) : KotlinTaskCreationAction<KotlinJvmCompile>(creationConfig) {
 
@@ -84,7 +85,7 @@ class KotlinCompileCreationAction(
     }
 
     private fun KotlinJvmCompile.ensureConsistentJvmTargetWithJavaCompileTask() {
-        val javaCompileJvmTarget = creationConfig.global.compileOptions.targetCompatibility.toJvmTarget()
+        val javaCompileJvmTarget = creationConfig.targetCompatibility.toJvmTarget()
 
         // Set `javaCompileJvmTarget` as the default JVM target for Kotlin compile tasks
         // (see b/408242956)
@@ -114,7 +115,7 @@ class KotlinCompileCreationAction(
 
 /** Base class for Built-in Kotlin/Kapt task registration. */
 abstract class KotlinTaskCreationAction<TASK : Task>(
-    protected val creationConfig: ComponentCreationConfig
+    protected val creationConfig: BuiltInKotlinCreationConfig
 ) {
 
     protected abstract val taskName: String
@@ -140,47 +141,19 @@ abstract class KotlinTaskCreationAction<TASK : Task>(
     }
 }
 
-internal fun ComponentCreationConfig.getExplicitApiMode(): ExplicitApiMode? {
-    return if (componentType.isForTesting) {
-         ExplicitApiMode.Disabled
-    } else {
-        services.builtInKotlinServices.kotlinAndroidProjectExtension.explicitApi
-    }
-}
-
-internal fun KotlinJvmCompile.configureKotlinJvmCompile(creationConfig: ComponentCreationConfig) {
-    creationConfig.sources.kotlin {
+internal fun KotlinJvmCompile.configureKotlinJvmCompile(creationConfig: BuiltInKotlinCreationConfig) {
+    creationConfig.kotlin {
         source(it.getAsFileTrees())
     }
-    creationConfig.sources.java {
+    creationConfig.java {
         source(it.getAsFileTrees())
     }
 
-    libraries.from(creationConfig.global.bootClasspath)
+    libraries.from(creationConfig.bootClasspath)
     libraries.from(creationConfig.artifacts.getAll(MultipleArtifact.PRE_COMPILATION_CLASSES))
     libraries.from(creationConfig.getJavaClasspath(COMPILE_CLASSPATH, CLASSES_JAR))
 
-    // Set friendPaths to allow tests/test fixtures to access internal functions/properties of the
-    // main component
-    if (creationConfig is NestedComponentCreationConfig) {
-        val mainComponent = creationConfig.mainVariant
-        val mainComponentClassesJar =
-            PublishingSpecs.getVariantPublishingSpec(mainComponent.componentType)
-                .getSpec(CLASSES_JAR, COMPILE_CLASSPATH.publishedTo)!!.outputType
-        friendPaths.from(mainComponent.artifacts.get(mainComponentClassesJar))
-    }
-
-    // Set friendPaths to allow tests to access internal functions/properties of test fixtures
-    if (creationConfig is TestComponentCreationConfig) {
-        val testFixturesComponent = creationConfig.mainVariant.nestedComponents
-            .filterIsInstance<TestFixturesCreationConfig>().firstOrNull()
-        if (testFixturesComponent != null) {
-            val testFixturesClassesJar =
-                PublishingSpecs.getVariantPublishingSpec(testFixturesComponent.componentType)
-                    .getSpec(CLASSES_JAR, COMPILE_CLASSPATH.publishedTo)!!.outputType
-            friendPaths.from(testFixturesComponent.artifacts.get(testFixturesClassesJar))
-        }
-    }
+    creationConfig.setupFriends(friendPaths)
 
     sourceSetName.set(creationConfig.name)
     useModuleDetection.set(true)

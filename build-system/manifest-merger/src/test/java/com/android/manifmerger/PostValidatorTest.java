@@ -22,6 +22,7 @@ import com.android.utils.ILogger;
 import com.android.utils.XmlUtils;
 
 import com.google.common.base.Joiner;
+import com.google.common.collect.ImmutableList;
 
 import junit.framework.TestCase;
 
@@ -92,7 +93,7 @@ public class PostValidatorTest extends TestCase {
         MergingReport.Builder mergingReportBuilder = new MergingReport.Builder(mILogger);
         mainDocument.merge(libraryDocument, mergingReportBuilder, () -> {});
 
-        PostValidator.validate(mainDocument, mergingReportBuilder);
+        PostValidator.validate(mainDocument, mergingReportBuilder, ImmutableList.of());
         for (MergingReport.Record record : mergingReportBuilder.build().getLoggingRecords()) {
             if (record.getSeverity() == MergingReport.Record.Severity.WARNING
                     && record.toString().contains("PostValidatorTest#testIncorrectRemoveMain:8")) {
@@ -141,7 +142,7 @@ public class PostValidatorTest extends TestCase {
         MergingReport.Builder mergingReportBuilder = new MergingReport.Builder(mILogger);
         mainDocument.merge(libraryDocument, mergingReportBuilder, () -> {});
 
-        PostValidator.validate(mainDocument, mergingReportBuilder);
+        PostValidator.validate(mainDocument, mergingReportBuilder, ImmutableList.of());
         for (MergingReport.Record record : mergingReportBuilder.build().getLoggingRecords()) {
             if (record.getSeverity() == MergingReport.Record.Severity.WARNING
                     && record.toString().contains("PostValidatorTest#testIncorrectReplaceMain:8")) {
@@ -176,7 +177,7 @@ public class PostValidatorTest extends TestCase {
                 loadXmlDoc(TestUtils.sourceFile(getClass(), "testApplicationInvalidOrder"), input);
 
         MergingReport.Builder mergingReportBuilder = new MergingReport.Builder(mILogger);
-        PostValidator.validate(xmlDocument, mergingReportBuilder);
+        PostValidator.validate(xmlDocument, mergingReportBuilder, ImmutableList.of());
 
         // ensure activity-alias is after activity.
         checkAliases(xmlDocument, "com.example.lib3.aliasOne");
@@ -205,7 +206,7 @@ public class PostValidatorTest extends TestCase {
                 loadXmlDoc(TestUtils.sourceFile(getClass(), "testApplicationInvalidOrder"), input);
 
         MergingReport.Builder mergingReportBuilder = new MergingReport.Builder(mILogger);
-        PostValidator.validate(xmlDocument, mergingReportBuilder);
+        PostValidator.validate(xmlDocument, mergingReportBuilder, ImmutableList.of());
 
         // ensure activity-alias is after activity.
         checkAliases(xmlDocument, "com.example.lib3.aliasOne");
@@ -245,7 +246,7 @@ public class PostValidatorTest extends TestCase {
                 loadXmlDoc(TestUtils.sourceFile(getClass(), "testApplicationInvalidOrder"), input);
 
         MergingReport.Builder mergingReportBuilder = new MergingReport.Builder(mILogger);
-        PostValidator.validate(xmlDocument, mergingReportBuilder);
+        PostValidator.validate(xmlDocument, mergingReportBuilder, ImmutableList.of());
         System.out.println(xmlDocument.prettyPrint());
 
         // ensure activity-alias is after activity.
@@ -278,7 +279,7 @@ public class PostValidatorTest extends TestCase {
                 loadXmlDoc(TestUtils.sourceFile(getClass(), "testApplicationInvalidOrder"), input);
 
         MergingReport.Builder mergingReportBuilder = new MergingReport.Builder(mILogger);
-        PostValidator.validate(xmlDocument, mergingReportBuilder);
+        PostValidator.validate(xmlDocument, mergingReportBuilder, ImmutableList.of());
 
         // ensure activity-alias is after activity.
         String aliasName = "com.example.lib3.aliasOne";
@@ -322,7 +323,7 @@ public class PostValidatorTest extends TestCase {
                 loadXmlDoc(TestUtils.sourceFile(getClass(), "testApplicationInvalidOrder"), input);
 
         MergingReport.Builder mergingReportBuilder = new MergingReport.Builder(mILogger);
-        PostValidator.validate(xmlDocument, mergingReportBuilder);
+        PostValidator.validate(xmlDocument, mergingReportBuilder, ImmutableList.of());
 
         // ensure activity-alias is after activity.
         checkAliases(xmlDocument, "com.example.lib3.aliasOne");
@@ -350,7 +351,7 @@ public class PostValidatorTest extends TestCase {
                 loadXmlDoc(TestUtils.sourceFile(getClass(), "testApplicationInvalidOrder"), input);
 
         MergingReport.Builder mergingReportBuilder = new MergingReport.Builder(mILogger);
-        PostValidator.validate(xmlDocument, mergingReportBuilder);
+        PostValidator.validate(xmlDocument, mergingReportBuilder, ImmutableList.of());
 
         // ensure activity-alias is after activity.
         checkAliases(xmlDocument, "com.example.lib3.aliasOne");
@@ -379,7 +380,7 @@ public class PostValidatorTest extends TestCase {
                 loadXmlDoc(TestUtils.sourceFile(getClass(), "testApplicationInvalidOrder"), input);
 
         MergingReport.Builder mergingReportBuilder = new MergingReport.Builder(mILogger);
-        PostValidator.validate(xmlDocument, mergingReportBuilder);
+        PostValidator.validate(xmlDocument, mergingReportBuilder, ImmutableList.of());
 
         // ensure activity-alias is after activity.
         checkAliases(xmlDocument, "com.example.lib3.aliasOne");
@@ -475,7 +476,7 @@ public class PostValidatorTest extends TestCase {
                 loadXmlDoc(TestUtils.sourceFile(getClass(), "testApplicationInvalidOrder"), input);
 
         MergingReport.Builder mergingReportBuilder = new MergingReport.Builder(mILogger);
-        PostValidator.validate(xmlDocument, mergingReportBuilder);
+        PostValidator.validate(xmlDocument, mergingReportBuilder, ImmutableList.of());
         // ensure application element is last.
         Node lastChild = xmlDocument.getRootNode().getXml().getLastChild();
         while(lastChild.getNodeType() != Node.ELEMENT_NODE) {
@@ -507,7 +508,7 @@ public class PostValidatorTest extends TestCase {
                 loadXmlDoc(TestUtils.sourceFile(getClass(), "testApplicationInvalidOrder"), input);
 
         MergingReport.Builder mergingReportBuilder = new MergingReport.Builder(mILogger);
-        PostValidator.validate(xmlDocument, mergingReportBuilder);
+        PostValidator.validate(xmlDocument, mergingReportBuilder, ImmutableList.of());
         System.out.println(xmlDocument.prettyPrint());
         // ensure application element is last.
         Node lastChild = xmlDocument.getRootNode().getXml().getLastChild();
@@ -541,7 +542,7 @@ public class PostValidatorTest extends TestCase {
                 loadXmlDoc(TestUtils.sourceFile(getClass(), "testApplicationValidOrder"), input);
 
         MergingReport.Builder mergingReportBuilder = new MergingReport.Builder(mILogger);
-        PostValidator.validate(xmlDocument, mergingReportBuilder);
+        PostValidator.validate(xmlDocument, mergingReportBuilder, ImmutableList.of());
         // ensure application element is last.
         Node lastChild = xmlDocument.getRootNode().getXml().getLastChild();
         while(lastChild.getNodeType() != Node.ELEMENT_NODE) {
@@ -573,7 +574,7 @@ public class PostValidatorTest extends TestCase {
                 loadXmlDoc(TestUtils.sourceFile(getClass(), "testUsesSdkInvalidOrder"), input);
 
         MergingReport.Builder mergingReportBuilder = new MergingReport.Builder(mILogger);
-        PostValidator.validate(xmlDocument, mergingReportBuilder);
+        PostValidator.validate(xmlDocument, mergingReportBuilder, ImmutableList.of());
         // ensure uses-sdk element is first.
         Node firstChild = xmlDocument.getRootNode().getXml().getFirstChild();
         while(firstChild.getNodeType() != Node.ELEMENT_NODE) {
@@ -606,7 +607,7 @@ public class PostValidatorTest extends TestCase {
                 loadXmlDoc(TestUtils.sourceFile(getClass(), "testUsesSdkInvalidOrder"), input);
 
         MergingReport.Builder mergingReportBuilder = new MergingReport.Builder(mILogger);
-        PostValidator.validate(xmlDocument, mergingReportBuilder);
+        PostValidator.validate(xmlDocument, mergingReportBuilder, ImmutableList.of());
         System.out.println(xmlDocument.prettyPrint());
         // ensure uses-sdk element is first.
         Node firstChild = xmlDocument.getRootNode().getXml().getFirstChild();
@@ -641,7 +642,7 @@ public class PostValidatorTest extends TestCase {
                 loadXmlDoc(TestUtils.sourceFile(getClass(), "testUsesSdkValidOrder"), input);
 
         MergingReport.Builder mergingReportBuilder = new MergingReport.Builder(mILogger);
-        PostValidator.validate(xmlDocument, mergingReportBuilder);
+        PostValidator.validate(xmlDocument, mergingReportBuilder, ImmutableList.of());
         // ensure uses-sdk element is first.
         Node firstChild = xmlDocument.getRootNode().getXml().getFirstChild();
         while(firstChild.getNodeType() != Node.ELEMENT_NODE) {
@@ -671,7 +672,7 @@ public class PostValidatorTest extends TestCase {
                 loadXmlDoc(TestUtils.sourceFile(getClass(), "testApplicationInvalidOrder"), input);
 
         MergingReport.Builder mergingReportBuilder = new MergingReport.Builder(mILogger);
-        PostValidator.validate(xmlDocument, mergingReportBuilder);
+        PostValidator.validate(xmlDocument, mergingReportBuilder, ImmutableList.of());
         // ensure application element is last.
         String attribute = xmlDocument.getRootNode().getXml().getAttribute("xmlns:android");
         assertEquals(SdkConstants.ANDROID_URI, attribute);
@@ -696,7 +697,7 @@ public class PostValidatorTest extends TestCase {
                 loadXmlDoc(TestUtils.sourceFile(getClass(), "testApplicationInvalidOrder"), input);
 
         MergingReport.Builder mergingReportBuilder = new MergingReport.Builder(mILogger);
-        PostValidator.validate(xmlDocument, mergingReportBuilder);
+        PostValidator.validate(xmlDocument, mergingReportBuilder, ImmutableList.of());
         // ensure application element is last.
         String attribute = xmlDocument.getRootNode().getXml().getAttribute("xmlns:A");
         assertEquals(SdkConstants.ANDROID_URI, attribute);
@@ -717,7 +718,7 @@ public class PostValidatorTest extends TestCase {
                 loadXmlDoc(TestUtils.sourceFile(getClass(), "testApplicationInvalidOrder"), input);
 
         MergingReport.Builder mergingReportBuilder = new MergingReport.Builder(mILogger);
-        PostValidator.validate(xmlDocument, mergingReportBuilder);
+        PostValidator.validate(xmlDocument, mergingReportBuilder, ImmutableList.of());
         // ensure application element is last.
         String attribute = xmlDocument.getRootNode().getXml().getAttribute("xmlns:android");
         assertEquals(SdkConstants.ANDROID_URI, attribute);
@@ -805,7 +806,7 @@ public class PostValidatorTest extends TestCase {
         XmlDocument xmlDocument =
                 loadXmlDoc(TestUtils.sourceFile(getClass(), "testIgnoreWarningAttribute"), input);
         MergingReport.Builder mergingReportBuilder = new MergingReport.Builder(mILogger);
-        PostValidator.validate(xmlDocument, mergingReportBuilder);
+        PostValidator.validate(xmlDocument, mergingReportBuilder, ImmutableList.of());
         for (MergingReport.Record record : mergingReportBuilder.build().getLoggingRecords()) {
             if (record.getSeverity() == MergingReport.Record.Severity.WARNING) {
                 fail("testWithIgnoreWarningAttribute is failed");
@@ -834,7 +835,7 @@ public class PostValidatorTest extends TestCase {
         XmlDocument xmlDocument =
                 loadXmlDoc(TestUtils.sourceFile(getClass(), "testIgnoreWarningAttribute"), input);
         MergingReport.Builder mergingReportBuilder = new MergingReport.Builder(mILogger);
-        PostValidator.validate(xmlDocument, mergingReportBuilder);
+        PostValidator.validate(xmlDocument, mergingReportBuilder, ImmutableList.of());
         assertFalse(PostValidator.checkIgnoreWarning(xmlDocument.getRootNode()));
     }
 
@@ -858,7 +859,7 @@ public class PostValidatorTest extends TestCase {
         XmlDocument xmlDocument =
                 loadXmlDoc(TestUtils.sourceFile(getClass(), "testIgnoreWarningAttribute"), input);
         MergingReport.Builder mergingReportBuilder = new MergingReport.Builder(mILogger);
-        PostValidator.validate(xmlDocument, mergingReportBuilder);
+        PostValidator.validate(xmlDocument, mergingReportBuilder, ImmutableList.of());
         int warningCount = 0;
         for (MergingReport.Record record : mergingReportBuilder.build().getLoggingRecords()) {
             if (record.getSeverity() == MergingReport.Record.Severity.WARNING
@@ -938,7 +939,7 @@ public class PostValidatorTest extends TestCase {
         XmlDocument xmlDocument =
                 loadXmlDoc(TestUtils.sourceFile(getClass(), "testMultipleUsesSdk"), input);
         MergingReport.Builder mergingReportBuilder = new MergingReport.Builder(mILogger);
-        PostValidator.validate(xmlDocument, mergingReportBuilder);
+        PostValidator.validate(xmlDocument, mergingReportBuilder, ImmutableList.of());
         if (expectMergeError) {
             assertTrue(mergingReportBuilder.hasErrors());
             assertTrue(

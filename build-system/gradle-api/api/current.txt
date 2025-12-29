@@ -1517,6 +1517,7 @@ package com.android.build.api.dsl {
     method public void setMinSdkPreview(String?);
     method public void setNamespace(String?);
     method public void setTestNamespace(String?);
+    method public void testCoverage(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.TestCoverage,kotlin.Unit> action);
     method public void useLibrary(String name);
     method public void useLibrary(String name, boolean required);
     method public void withDeviceTest(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.KotlinMultiplatformAndroidDeviceTest,kotlin.Unit> action);
@@ -3472,11 +3473,11 @@ package com.android.build.api.variant {
     method public void configureTestTasks(kotlin.jvm.functions.Function2<? super org.gradle.api.tasks.testing.Test,? super com.android.build.api.dsl.TestTaskContext,kotlin.Unit> action);
     method @org.gradle.api.Incubating public org.gradle.api.provider.Property<java.lang.Boolean> getCodeCoverage();
     method @org.gradle.api.Incubating public com.android.build.api.variant.JUnitEngineSpec getJunitEngineSpec();
-    method @org.gradle.api.Incubating public java.util.Collection<com.android.build.api.variant.TestSuiteSource> getSources();
+    method @org.gradle.api.Incubating public java.util.Collection<com.android.build.api.variant.TestSuiteSourceSet> getSources();
     method public java.util.Map<java.lang.String,com.android.build.api.variant.TestSuiteTarget> getTargets();
     property @org.gradle.api.Incubating public abstract org.gradle.api.provider.Property<java.lang.Boolean> codeCoverage;
     property @org.gradle.api.Incubating public abstract com.android.build.api.variant.JUnitEngineSpec junitEngineSpec;
-    property @org.gradle.api.Incubating public abstract java.util.Collection<com.android.build.api.variant.TestSuiteSource> sources;
+    property @org.gradle.api.Incubating public abstract java.util.Collection<com.android.build.api.variant.TestSuiteSourceSet> sources;
     property public abstract java.util.Map<java.lang.String,com.android.build.api.variant.TestSuiteTarget> targets;
   }
 
@@ -3490,11 +3491,43 @@ package com.android.build.api.variant {
     property public abstract java.util.Map<java.lang.String,com.android.build.api.variant.TestSuiteTargetBuilder> targets;
   }
 
-  @org.gradle.api.Incubating public interface TestSuiteSource extends org.gradle.api.Named {
+  @org.gradle.api.Incubating public interface TestSuiteSourceSet extends org.gradle.api.Named {
     method @org.gradle.api.Incubating public com.android.build.api.dsl.AgpTestSuiteDependencies? getDependencies();
     method @org.gradle.api.Incubating public com.android.build.api.variant.TestSuiteSourceType getType();
     property @org.gradle.api.Incubating public abstract com.android.build.api.dsl.AgpTestSuiteDependencies? dependencies;
     property @org.gradle.api.Incubating public abstract com.android.build.api.variant.TestSuiteSourceType type;
+  }
+
+  @org.gradle.api.Incubating public static interface TestSuiteSourceSet.Assets extends com.android.build.api.variant.TestSuiteSourceSet {
+    method @org.gradle.api.Incubating public com.android.build.api.variant.SourceDirectories.Flat get();
+    method @org.gradle.api.Incubating public default com.android.build.api.variant.TestSuiteSourceType getType();
+    property @org.gradle.api.Incubating public default com.android.build.api.variant.TestSuiteSourceType type;
+  }
+
+  @org.gradle.api.Incubating public static interface TestSuiteSourceSet.HostJar extends com.android.build.api.variant.TestSuiteSourceSet {
+    method @org.gradle.api.Incubating public com.android.build.api.variant.SourceDirectories.Flat? getJava();
+    method @org.gradle.api.Incubating public com.android.build.api.variant.SourceDirectories.Flat? getKotlin();
+    method @org.gradle.api.Incubating public java.io.File? getManifestFile();
+    method @org.gradle.api.Incubating public com.android.build.api.variant.SourceDirectories.Flat getResources();
+    method @org.gradle.api.Incubating public default com.android.build.api.variant.TestSuiteSourceType getType();
+    property @org.gradle.api.Incubating public abstract com.android.build.api.variant.SourceDirectories.Flat? java;
+    property @org.gradle.api.Incubating public abstract com.android.build.api.variant.SourceDirectories.Flat? kotlin;
+    property @org.gradle.api.Incubating public abstract java.io.File? manifestFile;
+    property @org.gradle.api.Incubating public abstract com.android.build.api.variant.SourceDirectories.Flat resources;
+    property @org.gradle.api.Incubating public default com.android.build.api.variant.TestSuiteSourceType type;
+  }
+
+  @org.gradle.api.Incubating public static interface TestSuiteSourceSet.TestApk extends com.android.build.api.variant.TestSuiteSourceSet {
+    method @org.gradle.api.Incubating public com.android.build.api.variant.SourceDirectories.Flat? getJava();
+    method @org.gradle.api.Incubating public com.android.build.api.variant.SourceDirectories.Flat? getKotlin();
+    method @org.gradle.api.Incubating public java.io.File? getManifestFile();
+    method @org.gradle.api.Incubating public com.android.build.api.variant.SourceDirectories.Flat getResources();
+    method @org.gradle.api.Incubating public default com.android.build.api.variant.TestSuiteSourceType getType();
+    property @org.gradle.api.Incubating public abstract com.android.build.api.variant.SourceDirectories.Flat? java;
+    property @org.gradle.api.Incubating public abstract com.android.build.api.variant.SourceDirectories.Flat? kotlin;
+    property @org.gradle.api.Incubating public abstract java.io.File? manifestFile;
+    property @org.gradle.api.Incubating public abstract com.android.build.api.variant.SourceDirectories.Flat resources;
+    property @org.gradle.api.Incubating public default com.android.build.api.variant.TestSuiteSourceType type;
   }
 
   @org.gradle.api.Incubating public enum TestSuiteSourceType {

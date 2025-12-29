@@ -21,19 +21,12 @@ package com.android.build.gradle.tasks
 import com.android.build.api.artifact.MultipleArtifact
 import com.android.build.api.component.impl.AnnotationProcessorImpl
 import com.android.build.gradle.internal.LoggerWrapper
-import com.android.build.gradle.internal.component.ComponentCreationConfig
-import com.android.build.gradle.internal.component.KmpComponentCreationConfig
 import com.android.build.gradle.internal.dependency.CONFIG_NAME_ANDROID_JDK_IMAGE
 import com.android.build.gradle.internal.dependency.JDK_IMAGE_OUTPUT_DIR
 import com.android.build.gradle.internal.dependency.JRT_FS_JAR
 import com.android.build.gradle.internal.dependency.getJdkImageFromTransform
 import com.android.build.gradle.internal.profile.AnalyticsConfiguratorService
 import com.android.build.gradle.internal.profile.AnalyticsService
-import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactScope.EXTERNAL
-import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactScope.PROJECT
-import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactType.JAR
-import com.android.build.gradle.internal.publishing.AndroidArtifacts.ConsumedConfigType.ANNOTATION_PROCESSOR
-import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.services.getBuildService
 import com.android.build.gradle.internal.tasks.creationconfig.JavaCompileCreationConfig
 import com.android.build.gradle.options.BooleanOption
@@ -158,17 +151,6 @@ fun JavaCompile.configurePropertiesForAnnotationProcessing(
         it.lock()
         compileOptions.compilerArgumentProviders.addAll(it)
     }
-}
-
-fun ComponentCreationConfig.getAnnotationProcessorJars(): FileCollection {
-    // Optimization: For project jars, query for JAR instead of PROCESSED_JAR as project jars are
-    // currently considered already processed (unlike external jars).
-    val projectJars = variantDependencies
-        .getArtifactFileCollection(ANNOTATION_PROCESSOR, PROJECT, JAR)
-    val externalJars = variantDependencies
-        .getArtifactFileCollection(ANNOTATION_PROCESSOR, EXTERNAL, global.aarOrJarTypeToConsume.jar)
-
-    return projectJars.plus( externalJars)
 }
 
 data class SerializableArtifact(

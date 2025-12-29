@@ -17,12 +17,14 @@
 package com.android.manifmerger;
 
 import static com.android.manifmerger.Actions.ActionType;
+import static com.android.manifmerger.ManifestMerger2.Invoker.Feature.DISABLE_REPLACE_WARNING;
 
 import com.android.SdkConstants;
 import com.android.utils.XmlUtils;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableList;
 
 import org.jetbrains.annotations.NotNull;
 import org.w3c.dom.Element;
@@ -58,7 +60,8 @@ public class PostValidator {
      */
     public static void validate(
             @NotNull XmlDocument xmlDocument,
-            @NotNull MergingReport.Builder mergingReport) {
+            @NotNull MergingReport.Builder mergingReport,
+            @NotNull ImmutableList<ManifestMerger2.Invoker.Feature> optionalFeatures) {
 
         Preconditions.checkNotNull(xmlDocument);
         Preconditions.checkNotNull(mergingReport);
@@ -67,7 +70,8 @@ public class PostValidator {
         validate(
                 xmlDocument.getRootNode(),
                 mergingReport.getActionRecorder().build(),
-                mergingReport);
+                mergingReport,
+                optionalFeatures);
         checkOnlyOneUsesSdk(xmlDocument, mergingReport);
     }
 
@@ -246,13 +250,14 @@ public class PostValidator {
      *
      * @param xmlElement xml element to validate.
      * @param actions the actions recorded during the merging activities.
-     * @param mergingReport report for errors and warnings.
-     * instructions were applied once or {@link MergingReport.Result#WARNING} otherwise.
+     * @param mergingReport report for errors and warnings. instructions were applied once or {@link
+     *     MergingReport.Result#WARNING} otherwise.
      */
     private static void validate(
             @NotNull XmlElement xmlElement,
             @NotNull Actions actions,
-            @NotNull MergingReport.Builder mergingReport) {
+            @NotNull MergingReport.Builder mergingReport,
+            @NotNull ImmutableList<ManifestMerger2.Invoker.Feature> optionalFeatures) {
 
         NodeOperationType operationType = xmlElement.getOperationType();
         boolean ignoreWarning = checkIgnoreWarning(xmlElement);
@@ -260,6 +265,7 @@ public class PostValidator {
             case REPLACE:
                 // we should find at least one rejected twin.
                 if (!ignoreWarning
+                        && !optionalFeatures.contains(DISABLE_REPLACE_WARNING)
                         && !isNodeOperationPresent(xmlElement, actions, ActionType.REJECTED)) {
                     mergingReport.addMessage(
                             xmlElement,
@@ -289,10 +295,10 @@ public class PostValidator {
                 }
                 break;
         }
-        validateAttributes(xmlElement, actions, mergingReport, ignoreWarning);
+        validateAttributes(xmlElement, actions, mergingReport, optionalFeatures, ignoreWarning);
         validateAndroidAttributes(xmlElement, mergingReport);
         for (XmlElement child : xmlElement.getMergeableElements()) {
-            validate(child, actions, mergingReport);
+            validate(child, actions, mergingReport, optionalFeatures);
         }
     }
 
@@ -301,6 +307,7 @@ public class PostValidator {
             @NotNull XmlElement xmlElement,
             @NotNull Actions actions,
             @NotNull MergingReport.Builder mergingReport,
+            @NotNull ImmutableList<ManifestMerger2.Invoker.Feature> optionalFeatures,
             boolean ignoreWarning) {
 
         @NotNull Collection<Map.Entry<XmlNode.NodeName, AttributeOperationType>> attributeOperations
@@ -326,6 +333,7 @@ public class PostValidator {
                     break;
                 case REPLACE:
                     if (!ignoreWarning
+                            && !optionalFeatures.contains(DISABLE_REPLACE_WARNING)
                             && !isAttributeOperationPresent(
                                     xmlElement, attributeOperation, actions, ActionType.REJECTED)) {
                         mergingReport.addMessage(

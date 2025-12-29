@@ -187,6 +187,7 @@ public class AndroidArtifacts {
 
     private static final String TYPE_NAVIGATION_JSON = "android-navigation-json";
     private static final String TYPE_NAVIGATION_XML = "android-navigation-xml";
+    private static final String TYPE_CODE_COVERAGE_DATA = "android-code-coverage-data";
 
     private static final String TYPE_PREFAB_PACKAGE = "android-prefab";
     private static final String TYPE_PREFAB_PACKAGE_CONFIGURATION = "android-prefab-configuration";
@@ -655,7 +656,8 @@ public class AndroidArtifacts {
         MERGED_TEST_ONLY_NATIVE_LIBS(TYPE_MERGED_TEST_ONLY_NATIVE_LIBS),
 
         NAVIGATION_XML(TYPE_NAVIGATION_XML),
-        ;
+
+        CODE_COVERAGE_DATA(TYPE_CODE_COVERAGE_DATA);
 
         @NonNull private final String type;
         @Nullable private final ArtifactCategory category;

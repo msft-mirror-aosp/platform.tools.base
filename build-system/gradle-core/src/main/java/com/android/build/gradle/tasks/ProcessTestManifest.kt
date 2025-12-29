@@ -297,7 +297,8 @@ abstract class ProcessTestManifest : ManifestProcessorTask() {
                             ManifestMerger2.Invoker.Feature.CHECK_IF_PACKAGE_IN_MAIN_MANIFEST,
                             ManifestMerger2.Invoker.Feature.USES_SDK_IN_MANIFEST_LENIENT_HANDLING.takeUnless {
                                 disallowSdkVersionsInUsesSdkInManifest.get()
-                            }
+                            },
+                            ManifestMerger2.Invoker.Feature.DISABLE_REPLACE_WARNING,
                         ).toTypedArray()
                     )
 

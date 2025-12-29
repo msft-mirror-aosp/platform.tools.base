@@ -452,7 +452,6 @@ com.android.tools.apkparser:binary-resources
   pomName=Binary Resources parser
   description=Library for parsing the resources.arsc file
   dependencies:
-    com.android.tools:annotations (runtime)
     com.google.guava:guava (runtime)
 
 com.android.tools.build:aapt2

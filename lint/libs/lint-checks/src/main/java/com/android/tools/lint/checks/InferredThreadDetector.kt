@@ -16,7 +16,6 @@
 package com.android.tools.lint.checks
 
 import com.android.tools.lint.checks.InferredThreadDetector.Thread
-import com.android.tools.lint.checks.ThreadConstraintDetector.ThreadConstraintLattice.Companion.assumeCommonJavaAndKotlinSignatures
 import com.android.tools.lint.checks.fx.AssumptionTableBuilder.Companion.build
 import com.android.tools.lint.detector.api.Category
 import com.android.tools.lint.detector.api.Implementation

@@ -1,23 +1,8 @@
-/*
- * Copyright 2016 Google Inc. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package com.google.devrel.gmscore.tools.apk.arsc;
 
-import com.android.annotations.Nullable;
+import com.google.common.base.Preconditions;
 
+import javax.annotation.Nullable;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -66,9 +51,18 @@ public class XmlResourceMapChunk extends Chunk {
     return result;
   }
 
-  /** Returns the resource ID that this {@code attributeId} maps to. */
+  /**
+   * Returns the resource ID that {@code attributeId} maps to iff {@link #hasResourceId} returns
+   * true for the given {@code attributeId}.
+   */
   public ResourceIdentifier getResourceId(int attributeId) {
+    Preconditions.checkArgument(hasResourceId(attributeId), "Attribute ID is not a valid index.");
     return ResourceIdentifier.create(resources.get(attributeId));
+  }
+
+  /** Returns true if a resource ID exists for the given {@code attributeId}. */
+  public boolean hasResourceId(int attributeId) {
+    return attributeId >= 0 && resources.size() > attributeId;
   }
 
   @Override
@@ -77,9 +71,9 @@ public class XmlResourceMapChunk extends Chunk {
   }
 
   @Override
-  protected void writePayload(DataOutput output, ByteBuffer header, boolean shrink)
+  protected void writePayload(DataOutput output, ByteBuffer header, int options)
       throws IOException {
-    super.writePayload(output, header, shrink);
+    super.writePayload(output, header, options);
     for (Integer resource : resources) {
       output.writeInt(resource);
     }

@@ -153,6 +153,10 @@ InternalArtifactType<T : FileSystemLocation>(
     object DEVICE_PROVIDER_CODE_COVERAGE: InternalArtifactType<Directory>(DIRECTORY, Category.OUTPUTS)
     // The jacoco code coverage from the managed device instrumentation test tasks.
     object MANAGED_DEVICE_CODE_COVERAGE: InternalArtifactType<Directory>(DIRECTORY, Category.OUTPUTS)
+    // The variant specific jacoco code coverage data collected from unit tests, instrumentation tests and test suites
+    object VARIANT_CODE_COVERAGE_DATA: InternalArtifactType<Directory>(DIRECTORY, Category.INTERMEDIATES), Replaceable
+    // The directory where the code coverage html report is generated
+    object CODE_COVERAGE_HTML_REPORT: InternalArtifactType<Directory>(DIRECTORY, Category.REPORTS), Replaceable
     // The automatically generated jacoco config file
     object JACOCO_CONFIG_RESOURCES: InternalArtifactType<Directory>(DIRECTORY)
 

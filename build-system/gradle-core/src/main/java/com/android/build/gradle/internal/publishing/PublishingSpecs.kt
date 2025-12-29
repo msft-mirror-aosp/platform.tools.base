@@ -180,6 +180,7 @@ class PublishingSpecs {
                 runtime(LINT_MODEL, ArtifactType.BASE_MODULE_LINT_MODEL)
                 api(SYMBOL_LIST_WITH_PACKAGE_NAME, ArtifactType.APP_SYMBOL_LIST_FOR_DATA_BINDING)
                 api(MERGED_TEST_ONLY_NATIVE_LIBS, ArtifactType.MERGED_TEST_ONLY_NATIVE_LIBS)
+                runtime(InternalArtifactType.VARIANT_CODE_COVERAGE_DATA, ArtifactType.CODE_COVERAGE_DATA)
             }
 
             variantSpec(ComponentTypeImpl.OPTIONAL_APK) {
@@ -283,6 +284,7 @@ class PublishingSpecs {
                 runtime(InternalArtifactType.LIBRARY_ART_PROFILE, ArtifactType.ART_PROFILE)
                 runtime(SUPPORTED_LOCALE_LIST, ArtifactType.SUPPORTED_LOCALE_LIST)
                 runtime(InternalArtifactType.SOURCE_JAR, ArtifactType.SOURCES_JAR)
+                runtime(InternalArtifactType.VARIANT_CODE_COVERAGE_DATA, ArtifactType.CODE_COVERAGE_DATA)
 
                 // Publish lint artifacts to API_AND_RUNTIME_ELEMENTS to support compileOnly module
                 // dependencies.

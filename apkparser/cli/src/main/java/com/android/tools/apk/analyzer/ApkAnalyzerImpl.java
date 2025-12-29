@@ -244,7 +244,7 @@ public class ApkAnalyzerImpl {
             ResourceTableChunk resourceTableChunk = (ResourceTableChunk) chunks.get(0);
             Optional<PackageChunk> packageChunk;
             if (packageName != null) {
-                packageChunk = Optional.ofNullable(resourceTableChunk.getPackage(packageName));
+                packageChunk = resourceTableChunk.getPackages(packageName).stream().findFirst();
             } else {
                 packageChunk = resourceTableChunk.getPackages().stream().findFirst();
             }
@@ -296,7 +296,7 @@ public class ApkAnalyzerImpl {
             StringPoolChunk stringPoolChunk = resourceTableChunk.getStringPool();
             Optional<PackageChunk> packageChunk;
             if (packageName != null) {
-                packageChunk = Optional.ofNullable(resourceTableChunk.getPackage(packageName));
+                packageChunk = resourceTableChunk.getPackages(packageName).stream().findFirst();
             } else {
                 packageChunk = resourceTableChunk.getPackages().stream().findFirst();
             }
@@ -363,7 +363,7 @@ public class ApkAnalyzerImpl {
             ResourceTableChunk resourceTableChunk = (ResourceTableChunk) chunks.get(0);
             Optional<PackageChunk> packageChunk;
             if (packageName != null) {
-                packageChunk = Optional.ofNullable(resourceTableChunk.getPackage(packageName));
+                packageChunk = resourceTableChunk.getPackages(packageName).stream().findFirst();
             } else {
                 packageChunk = resourceTableChunk.getPackages().stream().findFirst();
             }

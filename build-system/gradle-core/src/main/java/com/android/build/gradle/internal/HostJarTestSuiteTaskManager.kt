@@ -18,8 +18,8 @@ package com.android.build.gradle.internal
 
 import com.android.build.api.artifact.impl.ArtifactsImpl
 import com.android.build.api.variant.impl.FlatSourceDirectoriesImpl
-import com.android.build.api.variant.impl.TestSuiteSourceContainer
-import com.android.build.gradle.internal.api.TestSuiteSourceSet
+import com.android.build.gradle.internal.api.HostJarTestSuiteSourceSet
+import com.android.build.gradle.internal.testsuites.impl.TestSuiteSourceContainer
 import com.android.build.gradle.internal.scope.MutableTaskContainer
 import com.android.build.gradle.internal.services.TaskCreationServices
 import com.android.build.gradle.internal.tasks.ProcessJavaResTask
@@ -33,19 +33,20 @@ import org.gradle.api.tasks.TaskProvider
 
 /**
  * Task manager responsible for creating all tasks necessary to process a
- * [TestSuiteSourceSet.HostJar] source set.
+ * [com.android.build.api.variant.TestSuiteSourceSet.HostJar] source set.
  */
 class HostJarTestSuiteTaskManager {
 
     /**
-     * Creates all necessary tasks to process a [TestSuiteSourceSet.HostJar] type of source set.
+     * Creates all necessary tasks to process a
+     * [com.android.build.api.variant.TestSuiteSourceSet.HostJar] type of source set.
      *
      * @return the final [TaskProvider] that can be used as a dependent of the
      * [com.android.build.gradle.tasks.TestSuiteTestTask].
      */
-    fun createTasks(
+    internal fun createTasks(
         sourceContainer: TestSuiteSourceContainer,
-        source: TestSuiteSourceSet.HostJar,
+        source: HostJarTestSuiteSourceSet,
         taskFactory: TaskFactory,
         taskCreationServices: TaskCreationServices
     ): TaskProvider<out Task> {
@@ -61,7 +62,7 @@ class HostJarTestSuiteTaskManager {
             override val annotationProcessorConfiguration: Configuration?
                 get() = null
             override val sources: FlatSourceDirectoriesImpl
-                get() = source.resources()
+                get() = source.resources as FlatSourceDirectoriesImpl
 
             override fun setJavaResTask(task: TaskProvider<out Sync>) {}
 

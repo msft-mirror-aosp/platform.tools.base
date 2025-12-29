@@ -50,7 +50,7 @@ import com.android.build.api.variant.impl.HasTestSuitesCreationConfig
 import com.android.build.api.variant.impl.HostTestBuilderImpl
 import com.android.build.api.variant.impl.InternalVariantBuilder
 import com.android.build.api.variant.impl.TestSuiteImpl
-import com.android.build.api.variant.impl.TestSuiteSourceContainer
+import com.android.build.gradle.internal.testsuites.impl.TestSuiteSourceContainer
 import com.android.build.api.variant.impl.capitalizeFirstChar
 import com.android.build.gradle.BaseExtension
 import com.android.build.gradle.internal.api.DefaultAndroidSourceSet
@@ -100,6 +100,7 @@ import com.android.build.gradle.internal.tasks.SigningConfigUtils.Companion.crea
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfig
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfigImpl.Companion.toExecutionEnum
 import com.android.build.api.variant.HasTestSuitesBuilder
+import com.android.build.gradle.internal.services.BuiltInKotlinSupportMode
 import com.android.build.gradle.internal.testsuites.TestSuiteSourceCreationConfig
 import com.android.build.gradle.internal.testsuites.impl.TestSuiteBuilderImpl
 import com.android.build.gradle.internal.testsuites.impl.TestSuiteDependenciesBuilder
@@ -122,7 +123,6 @@ import com.google.common.collect.Maps
 import com.google.wireless.android.sdk.stats.ApiVersion
 import com.google.wireless.android.sdk.stats.GradleBuildVariant
 import org.gradle.api.Project
-import org.gradle.api.artifacts.Dependency
 import org.gradle.api.attributes.Attribute
 import org.gradle.api.internal.GeneratedSubclass
 import org.gradle.api.plugins.ExtensionAware
@@ -986,9 +986,13 @@ class VariantManager<
                                 project,
                                 variantBuilder.name,
                                 testSuiteSource.name,
-                                testSuiteSource.createTestSuiteSourceSet(variantServices),
-                                variantSpecificDependencies,
-                                TestSuiteDependenciesBuilder(
+                                source = testSuiteSource.createTestSuiteSourceSet(
+                                    variantServices,
+                                    true, // so far, java is always enabled.
+                                    variantInfo.variant.builtInKotlinSupportMode is BuiltInKotlinSupportMode.Supported
+                                ),
+                                dependencies = variantSpecificDependencies,
+                                suiteSourceClasspath = TestSuiteDependenciesBuilder(
                                     project,
                                     dslServices.projectOptions,
                                     projectServices.issueReporter,
