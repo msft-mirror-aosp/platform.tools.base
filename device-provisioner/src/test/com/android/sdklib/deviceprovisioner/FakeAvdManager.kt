@@ -178,10 +178,10 @@ fun makeAvdInfo(
   tag: IdDisplay = SystemImageTags.DEFAULT_TAG,
 ): AvdInfo {
   return AvdInfo(
-    iniFile = avdRoot.resolve("fake_avd_${index}.ini"),
-    dataFolderPath = avdRoot.resolve("fake_avd_${index}.avd"),
-    systemImage = null,
-    properties =
+      iniFile = avdRoot.resolve("fake_avd_${index}.ini"),
+      dataFolderPath = avdRoot.resolve("fake_avd_${index}.avd"),
+      systemImage = null,
+      properties =
       mapOf(
         ConfigKey.DEVICE_MANUFACTURER to LocalEmulatorProvisionerPluginTest.MANUFACTURER,
         ConfigKey.DEVICE_NAME to LocalEmulatorProvisionerPluginTest.MODEL,
@@ -191,6 +191,8 @@ fun makeAvdInfo(
         ConfigKey.PLAYSTORE_ENABLED to hasPlayStore.toString(),
         ConfigKey.TAG_ID to tag.id,
         ConfigKey.TAG_DISPLAY to tag.display,
+        ConfigKey.TAG_IDS to tag.id,
+        ConfigKey.TAG_DISPLAYNAMES to tag.display,
       ),
     status = avdStatus,
   )

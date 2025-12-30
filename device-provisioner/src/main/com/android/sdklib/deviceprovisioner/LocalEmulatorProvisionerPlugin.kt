@@ -898,6 +898,7 @@ data class LocalEmulatorProperties(
   val displayName: String,
   val hasPlayStore: Boolean,
   val avdConfigProperties: ImmutableMap<String, String>,
+  val isAiGlassesCompatible: Boolean,
 ) : DeviceProperties {
 
   override fun toBuilder(): Builder = Builder().apply { copyFrom(this@LocalEmulatorProperties) }
@@ -920,6 +921,7 @@ data class LocalEmulatorProperties(
     var displayName: String? = null
     var hasPlayStore: Boolean = false
     val avdConfigProperties: MutableMap<String, String> = mutableMapOf()
+    var isAiGlassesCompatible: Boolean = false
 
     fun copyFrom(properties: LocalEmulatorProperties) {
       super.copyFrom(properties)
@@ -929,6 +931,7 @@ data class LocalEmulatorProperties(
       hasPlayStore = properties.hasPlayStore
       avdConfigProperties.clear()
       avdConfigProperties.putAll(properties.avdConfigProperties)
+      isAiGlassesCompatible = properties.isAiGlassesCompatible
     }
 
     fun isPairable(): Boolean {
@@ -968,6 +971,7 @@ data class LocalEmulatorProperties(
           avdInfo.deviceName == "resizable"
       preferredAbi = avdInfo.userSettings[PREFERRED_ABI]
       avdConfigProperties.putAll(avdInfo.properties)
+      isAiGlassesCompatible = avdInfo.isAiGlassesCompatibleDevice
     }
 
     override fun build() =
@@ -997,6 +1001,7 @@ data class LocalEmulatorProperties(
         pairedPhoneId = pairedPhoneId,
         pairedGlassesId = pairedGlassesId,
         avdConfigProperties = avdConfigProperties.toImmutableMap(),
+        isAiGlassesCompatible = isAiGlassesCompatible,
       )
   }
 }

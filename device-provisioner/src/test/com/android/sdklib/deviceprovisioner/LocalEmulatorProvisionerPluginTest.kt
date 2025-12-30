@@ -100,7 +100,17 @@ class LocalEmulatorProvisionerPluginTest {
 
   @Test
   fun propertiesEquality() {
-    val props = buildProperties(avdManager.makeAvdInfo(1, AndroidVersion(29), hasPlayStore = true))
+    // This should have non-default values for all fields specific to LocalEmulatorProperties
+    val props =
+      buildProperties(
+        avdManager.makeAvdInfo(
+          1,
+          AndroidVersion(29),
+          hasPlayStore = true,
+          tag = SystemImageTags.AI_GLASSES_COMPATIBLE_TAG,
+        )
+      )
+
     val builder = props.toBuilder()
 
     val newProps = builder.build()
