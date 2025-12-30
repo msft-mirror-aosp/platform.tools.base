@@ -3636,7 +3636,7 @@ method?.isConstructor: true
 method?.containingClass?.qualifiedName: com.klib.LibClass
 method?.returnType?.canonicalText: null
 params:
-UCallExpression.classReference: null
+UCallExpression.classReference: com.klib.LibClass
 
 Info for: containingClass:
 cls?.supers?.joinToString():

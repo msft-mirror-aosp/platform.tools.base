@@ -938,7 +938,7 @@ class UastTest : TestCase() {
         )
         .indented()
 
-    val expType = if (useFirUast()) " : PsiType:ScheduledFuture<Boolean>" else ""
+    val expType = if (useFirUast()) " : PsiType:ScheduledFuture<Boolean>" else " : PsiType:ScheduledFuture<? extends Object>"
 
     check(source) { file ->
       assertEquals(

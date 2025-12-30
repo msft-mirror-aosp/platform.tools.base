@@ -24,8 +24,8 @@ import com.intellij.openapi.vfs.VirtualFileVisitor
 import com.intellij.psi.PsiManager
 import com.intellij.psi.PsiNameIdentifierOwner
 import com.intellij.util.indexing.FileContentImpl
-import org.jetbrains.kotlin.analysis.decompiler.konan.K2KotlinNativeMetadataDecompiler
 import org.jetbrains.kotlin.analysis.decompiler.konan.KlibMetaFileType
+import org.jetbrains.kotlin.analysis.decompiler.konan.KotlinKlibMetadataDecompiler
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.psi.stubs.impl.KotlinClassStubImpl
 import org.jetbrains.kotlin.psi.stubs.impl.KotlinFileStubImpl
@@ -52,7 +52,7 @@ internal fun klibMetaFiles(root: VirtualFile): Collection<VirtualFile> {
 
 internal fun buildStubByVirtualFile(file: VirtualFile): KotlinFileStubImpl? {
   val fileContent = FileContentImpl.createByFile(file)
-  return K2KotlinNativeMetadataDecompiler().stubBuilder.buildFileStub(fileContent)
+  return KotlinKlibMetadataDecompiler().stubBuilder.buildFileStub(fileContent)
     as? KotlinFileStubImpl
 }
 

@@ -944,8 +944,11 @@ com/android/tools/external/com-intellij/intellij-core
   DebugProbesKt.bin
   META-INF/
   META-INF/AL2.0
+  META-INF/Analysis.xml
+  META-INF/AnalysisImpl.xml
   META-INF/Core.xml
   META-INF/CoreImpl.xml
+  META-INF/JavaIndexingPlugin.xml
   META-INF/LGPL2.1
   META-INF/LICENSE
   META-INF/LICENSE.txt
@@ -1044,9 +1047,21 @@ com/android/tools/external/com-intellij/intellij-core
   META-INF/proguard/coroutines.pro
   META-INF/proguard/kotlinx-serialization-common.pro
   META-INF/services/
+  META-INF/services/com.intellij.platform.jps.model.resolver.JpsDependencyResolverConfigurationService
   META-INF/services/javax.xml.stream.XMLEventFactory
   META-INF/services/javax.xml.stream.XMLInputFactory
   META-INF/services/javax.xml.stream.XMLOutputFactory
+  META-INF/services/org.jetbrains.jps.model.JpsElementFactory
+  META-INF/services/org.jetbrains.jps.model.JpsEncodingConfigurationService
+  META-INF/services/org.jetbrains.jps.model.artifact.JpsArtifactService
+  META-INF/services/org.jetbrains.jps.model.artifact.elements.JpsPackagingElementFactory
+  META-INF/services/org.jetbrains.jps.model.ex.JpsExElementFactory
+  META-INF/services/org.jetbrains.jps.model.fileTypes.FileNameMatcherFactory
+  META-INF/services/org.jetbrains.jps.model.jarRepository.JpsRemoteRepositoryService
+  META-INF/services/org.jetbrains.jps.model.java.JdkVersionDetector
+  META-INF/services/org.jetbrains.jps.model.java.JpsJavaExtensionService
+  META-INF/services/org.jetbrains.jps.service.JpsServiceManager
+  META-INF/services/org.jetbrains.jps.service.SharedThreadPool
   META-INF/services/reactor.blockhound.integration.BlockHoundIntegration
   META-INF/versions/
   META-INF/versions/16/
@@ -1088,6 +1103,7 @@ com/android/tools/external/com-intellij/intellij-core
   com/intellij/codeInsight/codeFragment/
   com/intellij/codeInsight/completion/
   com/intellij/codeInsight/completion/command/
+  com/intellij/codeInsight/completion/group/
   com/intellij/codeInsight/completion/impl/
   com/intellij/codeInsight/completion/ml/
   com/intellij/codeInsight/completion/proc/
@@ -1140,6 +1156,7 @@ com/android/tools/external/com-intellij/intellij-core
   com/intellij/codeInspection/dataFlow/types/
   com/intellij/codeInspection/dataFlow/value/
   com/intellij/codeInspection/ex/
+  com/intellij/codeInspection/inspection-black-list.txt
   com/intellij/codeInspection/lang/
   com/intellij/codeInspection/options/
   com/intellij/codeInspection/reference/
@@ -1201,6 +1218,7 @@ com/android/tools/external/com-intellij/intellij-core
   com/intellij/java/frontback/psi/impl/syntax/
   com/intellij/java/syntax/
   com/intellij/java/syntax/element/
+  com/intellij/java/syntax/element/lazyParser/
   com/intellij/java/syntax/lexer/
   com/intellij/java/syntax/parser/
   com/intellij/java/workspace/
@@ -1236,6 +1254,7 @@ com/android/tools/external/com-intellij/intellij-core
   com/intellij/lexer/
   com/intellij/mock/
   com/intellij/modcommand/
+  com/intellij/modcompletion/
   com/intellij/model/
   com/intellij/model/presentation/
   com/intellij/model/psi/
@@ -1347,6 +1366,7 @@ com/android/tools/external/com-intellij/intellij-core
   com/intellij/platform/syntax/tree/
   com/intellij/platform/syntax/util/
   com/intellij/platform/syntax/util/cancellation/
+  com/intellij/platform/syntax/util/language/
   com/intellij/platform/syntax/util/lexer/
   com/intellij/platform/syntax/util/log/
   com/intellij/platform/syntax/util/parser/
@@ -1616,6 +1636,22 @@ com/android/tools/external/com-intellij/intellij-core
   intellij.java.psi.impl.xml
   intellij.java.psi.xml
   intellij.java.syntax.xml
+  intellij.libraries.aalto.xml.xml
+  intellij.libraries.asm.xml
+  intellij.libraries.automaton.xml
+  intellij.libraries.commons.codec.xml
+  intellij.libraries.commons.compress.xml
+  intellij.libraries.commons.io.xml
+  intellij.libraries.commons.lang3.xml
+  intellij.libraries.fastutil.xml
+  intellij.libraries.guava.xml
+  intellij.libraries.jaxen.xml
+  intellij.libraries.kotlinx.collections.immutable.xml
+  intellij.libraries.kotlinx.serialization.core.xml
+  intellij.libraries.kotlinx.serialization.json.xml
+  intellij.libraries.lz4.xml
+  intellij.libraries.oro.matcher.xml
+  intellij.libraries.stream.xml
   intellij.platform.syntax.psi.xml
   io/
   io/opentelemetry/
@@ -1731,8 +1767,13 @@ com/android/tools/external/com-intellij/intellij-core
   kotlinx/serialization/json/internal/
   kotlinx/serialization/modules/
   messages/
+  messages/AnalysisBundle.properties
+  messages/CommonQuickFixBundle.properties
   messages/CoreBundle.properties
   messages/CoreDeprecatedMessagesBundle.properties
+  messages/FindBundle.properties
+  messages/InspectionsBundle.properties
+  messages/InspectionsDeprecatedMessagesBundle.properties
   messages/JavaErrorBundle.properties
   messages/JavaOptionBundle.properties
   messages/JavaPsiBundle.properties
@@ -2093,7 +2134,6 @@ com/android/tools/external/com-intellij/kotlin-compiler
   META-INF/analysis-api/symbol-light-classes.xml
   META-INF/analysis-internal-utils.kotlin_module
   META-INF/arguments.common.kotlin_module
-  META-INF/backend-common.kotlin_module
   META-INF/backend.common.jvm.kotlin_module
   META-INF/backend.jvm.codegen.kotlin_module
   META-INF/backend.jvm.entrypoint.kotlin_module
@@ -2101,6 +2141,7 @@ com/android/tools/external/com-intellij/kotlin-compiler
   META-INF/backend.jvm.lower.kotlin_module
   META-INF/backend.kotlin_module
   META-INF/base.kotlin_module
+  META-INF/binary-options.kotlin_module
   META-INF/cfg.kotlin_module
   META-INF/checkers.js.kotlin_module
   META-INF/checkers.jvm.kotlin_module
@@ -2157,6 +2198,7 @@ com/android/tools/external/com-intellij/kotlin-compiler
   META-INF/ir.psi2ir.kotlin_module
   META-INF/ir.serialization.common.kotlin_module
   META-INF/ir.tree.kotlin_module
+  META-INF/ir.validation.kotlin_module
   META-INF/jandex.idx
   META-INF/jps-common.kotlin_module
   META-INF/js.ast.kotlin_module
@@ -2257,10 +2299,14 @@ com/android/tools/external/com-intellij/kotlin-compiler
   META-INF/native-image/org.jline/jline-terminal/native-image.properties
   META-INF/native-image/org.jline/jline-terminal/reflection-config.json
   META-INF/native-image/org.jline/jline-terminal/resource-config.json
+  META-INF/parser.kotlin_module
   META-INF/plugin-api.kotlin_module
   META-INF/plugin-utils.kotlin_module
   META-INF/providers.kotlin_module
-  META-INF/psi.kotlin_module
+  META-INF/psi-api.kotlin_module
+  META-INF/psi-frontend-utils.kotlin_module
+  META-INF/psi-impl.kotlin_module
+  META-INF/psi-utils.kotlin_module
   META-INF/psi2fir.kotlin_module
   META-INF/raw-fir.common.kotlin_module
   META-INF/resolution.common.jvm.kotlin_module
@@ -2385,6 +2431,7 @@ com/android/tools/external/com-intellij/kotlin-compiler
   org/jetbrains/kotlin/analysis/api/fir/
   org/jetbrains/kotlin/analysis/api/fir/annotations/
   org/jetbrains/kotlin/analysis/api/fir/components/
+  org/jetbrains/kotlin/analysis/api/fir/components/compilation/
   org/jetbrains/kotlin/analysis/api/fir/contracts/
   org/jetbrains/kotlin/analysis/api/fir/diagnostics/
   org/jetbrains/kotlin/analysis/api/fir/evaluate/
@@ -2518,12 +2565,14 @@ com/android/tools/external/com-intellij/kotlin-compiler
   org/jetbrains/kotlin/analysis/low/level/api/fir/resolver/
   org/jetbrains/kotlin/analysis/low/level/api/fir/services/
   org/jetbrains/kotlin/analysis/low/level/api/fir/sessions/
+  org/jetbrains/kotlin/analysis/low/level/api/fir/sessions/structure/
   org/jetbrains/kotlin/analysis/low/level/api/fir/state/
   org/jetbrains/kotlin/analysis/low/level/api/fir/statistics/
   org/jetbrains/kotlin/analysis/low/level/api/fir/statistics/domains/
   org/jetbrains/kotlin/analysis/low/level/api/fir/stubBased/
   org/jetbrains/kotlin/analysis/low/level/api/fir/stubBased/deserialization/
   org/jetbrains/kotlin/analysis/low/level/api/fir/symbolProviders/
+  org/jetbrains/kotlin/analysis/low/level/api/fir/symbolProviders/caches/
   org/jetbrains/kotlin/analysis/low/level/api/fir/symbolProviders/combined/
   org/jetbrains/kotlin/analysis/low/level/api/fir/symbolProviders/factories/
   org/jetbrains/kotlin/analysis/low/level/api/fir/transformers/
@@ -2555,8 +2604,6 @@ com/android/tools/external/com-intellij/kotlin-compiler
   org/jetbrains/kotlin/backend/common/
   org/jetbrains/kotlin/backend/common/actualizer/
   org/jetbrains/kotlin/backend/common/actualizer/checker/
-  org/jetbrains/kotlin/backend/common/bridges/
-  org/jetbrains/kotlin/backend/common/checkers/
   org/jetbrains/kotlin/backend/common/diagnostics/
   org/jetbrains/kotlin/backend/common/linkage/
   org/jetbrains/kotlin/backend/common/linkage/issues/
@@ -2571,7 +2618,6 @@ com/android/tools/external/com-intellij/kotlin-compiler
   org/jetbrains/kotlin/backend/common/serialization/metadata/
   org/jetbrains/kotlin/backend/common/serialization/proto/
   org/jetbrains/kotlin/backend/common/serialization/signature/
-  org/jetbrains/kotlin/backend/js/
   org/jetbrains/kotlin/backend/jvm/
   org/jetbrains/kotlin/backend/jvm/caches/
   org/jetbrains/kotlin/backend/jvm/codegen/
@@ -2594,9 +2640,13 @@ com/android/tools/external/com-intellij/kotlin-compiler
   org/jetbrains/kotlin/build/report/statistics/file/
   org/jetbrains/kotlin/buildtools/
   org/jetbrains/kotlin/buildtools/api/
+  org/jetbrains/kotlin/buildtools/api/arguments/
+  org/jetbrains/kotlin/buildtools/api/arguments/enums/
   org/jetbrains/kotlin/buildtools/api/internal/
   org/jetbrains/kotlin/buildtools/api/internal/wrappers/
   org/jetbrains/kotlin/buildtools/api/jvm/
+  org/jetbrains/kotlin/buildtools/api/jvm/operations/
+  org/jetbrains/kotlin/buildtools/api/trackers/
   org/jetbrains/kotlin/buildtools/internal/
   org/jetbrains/kotlin/builtins/
   org/jetbrains/kotlin/builtins/functions/
@@ -2664,11 +2714,11 @@ com/android/tools/external/com-intellij/kotlin-compiler
   org/jetbrains/kotlin/codegen/serialization/
   org/jetbrains/kotlin/codegen/signature/
   org/jetbrains/kotlin/codegen/state/
-  org/jetbrains/kotlin/codegen/when/
   org/jetbrains/kotlin/compiler/
   org/jetbrains/kotlin/compiler/plugin/
   org/jetbrains/kotlin/compilerRunner/
   org/jetbrains/kotlin/config/
+  org/jetbrains/kotlin/config/nativeBinaryOptions/
   org/jetbrains/kotlin/config/phaser/
   org/jetbrains/kotlin/constant/
   org/jetbrains/kotlin/container/
@@ -2864,6 +2914,13 @@ com/android/tools/external/com-intellij/kotlin-compiler
   org/jetbrains/kotlin/ir/types/
   org/jetbrains/kotlin/ir/types/impl/
   org/jetbrains/kotlin/ir/util/
+  org/jetbrains/kotlin/ir/validation/
+  org/jetbrains/kotlin/ir/validation/checkers/
+  org/jetbrains/kotlin/ir/validation/checkers/context/
+  org/jetbrains/kotlin/ir/validation/checkers/declaration/
+  org/jetbrains/kotlin/ir/validation/checkers/expression/
+  org/jetbrains/kotlin/ir/validation/checkers/symbol/
+  org/jetbrains/kotlin/ir/validation/checkers/type/
   org/jetbrains/kotlin/ir/visitors/
   org/jetbrains/kotlin/js/
   org/jetbrains/kotlin/js/analyze/
@@ -2905,6 +2962,7 @@ com/android/tools/external/com-intellij/kotlin-compiler
   org/jetbrains/kotlin/konan/properties/
   org/jetbrains/kotlin/konan/target/
   org/jetbrains/kotlin/konan/util/
+  org/jetbrains/kotlin/lang/
   org/jetbrains/kotlin/lexer/
   org/jetbrains/kotlin/library/
   org/jetbrains/kotlin/library/abi/
@@ -2978,12 +3036,14 @@ com/android/tools/external/com-intellij/kotlin-compiler
   org/jetbrains/kotlin/psi/codeFragmentUtil/
   org/jetbrains/kotlin/psi/debugText/
   org/jetbrains/kotlin/psi/findDocComment/
+  org/jetbrains/kotlin/psi/impl/
   org/jetbrains/kotlin/psi/psiUtil/
   org/jetbrains/kotlin/psi/stubs/
   org/jetbrains/kotlin/psi/stubs/elements/
   org/jetbrains/kotlin/psi/stubs/impl/
   org/jetbrains/kotlin/psi/synthetics/
   org/jetbrains/kotlin/psi/typeRefHelpers/
+  org/jetbrains/kotlin/psi/utils/
   org/jetbrains/kotlin/psi2ir/
   org/jetbrains/kotlin/psi2ir/descriptors/
   org/jetbrains/kotlin/psi2ir/generators/
@@ -3019,6 +3079,7 @@ com/android/tools/external/com-intellij/kotlin-compiler
   org/jetbrains/kotlin/resolve/calls/tower/
   org/jetbrains/kotlin/resolve/calls/util/
   org/jetbrains/kotlin/resolve/checkers/
+  org/jetbrains/kotlin/resolve/codegen/
   org/jetbrains/kotlin/resolve/constants/
   org/jetbrains/kotlin/resolve/constants/evaluate/
   org/jetbrains/kotlin/resolve/deprecation/
@@ -3079,6 +3140,7 @@ com/android/tools/external/com-intellij/kotlin-compiler
   org/jetbrains/kotlin/serialization/deserialization/descriptors/
   org/jetbrains/kotlin/serialization/js/
   org/jetbrains/kotlin/serialization/js/ast/
+  org/jetbrains/kotlin/stats/
   org/jetbrains/kotlin/storage/
   org/jetbrains/kotlin/synthetic/
   org/jetbrains/kotlin/type/
@@ -3180,9 +3242,9 @@ com/android/tools/external/org-jetbrains/uast
   META-INF/
   META-INF/MANIFEST.MF
   META-INF/intellij.java.uast.kotlin_module
+  META-INF/intellij.kotlin.uast.kotlin_module
   META-INF/intellij.platform.uast.kotlin_module
   META-INF/kotlin.uast.uast-kotlin-base.kotlin_module
-  META-INF/kotlin.uast.uast-kotlin.k2.kotlin_module
   META-INF/kotlin.uast.uast-kotlin.kotlin_module
   NOTICE
   __index__

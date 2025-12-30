@@ -408,7 +408,7 @@ internal object KlibLightElementProvider : FirKotlinUastLibraryPsiProviderServic
     // TODO: log on failure?
     @Suppress("UNCHECKED_CAST")
     val key =
-      cls.get().keys.firstOrNull { it.toString().contains("\$getOwnInnerClasses$") }
+      cls.getUserMap().keys.firstOrNull { it.toString().contains("\$getOwnInnerClasses$") }
         as? Key<PsiParameterizedCachedValue.Soft<List<SymbolLightClassBase>, PsiElement>> ?: return
 
     @Suppress("UNCHECKED_CAST")

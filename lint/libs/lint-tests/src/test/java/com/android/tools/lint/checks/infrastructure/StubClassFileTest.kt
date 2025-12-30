@@ -33,10 +33,13 @@ import com.intellij.psi.JavaRecursiveElementVisitor
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiClassType
 import com.intellij.psi.PsiField
+import com.intellij.psi.PsiJavaFile
 import com.intellij.psi.PsiLiteral
 import com.intellij.psi.PsiMethod
 import com.intellij.psi.PsiModifier
+import com.intellij.psi.PsiModifierList
 import com.intellij.psi.PsiModifierListOwner
+import com.intellij.psi.PsiPackage
 import com.intellij.psi.PsiType
 import com.intellij.psi.PsiTypeParameter
 import java.io.File
@@ -108,8 +111,7 @@ class StubClassFileTest {
           }
         }
 
-        private fun appendModifiers(owner: PsiModifierListOwner) {
-          val modifierList = owner.modifierList ?: return
+        private fun appendAnnotations(modifierList: PsiModifierList) {
           val annotations = modifierList.annotations
           for (annotation in annotations) {
             sb.append('@').append(annotation.qualifiedName)
@@ -121,6 +123,11 @@ class StubClassFileTest {
             }
             sb.append(' ')
           }
+        }
+
+        private fun appendModifiers(owner: PsiModifierListOwner) {
+          val modifierList = owner.modifierList ?: return
+          appendAnnotations(modifierList)
 
           if (modifierList.hasModifierProperty(PsiModifier.PUBLIC)) {
             sb.append("public ")
@@ -232,6 +239,14 @@ class StubClassFileTest {
 
         override fun visitClass(aClass: PsiClass) {
           indent(depth)
+          val containingFile = aClass.containingFile
+          if (aClass.name == PsiPackage.PACKAGE_INFO_CLASS && containingFile is PsiJavaFile) {
+            // Since 2025.3 commit d411c7c81c, package annotations moved into the package statement.
+            val packageAnnotations = containingFile.packageStatement?.annotationList
+            if (packageAnnotations != null) {
+              appendAnnotations(packageAnnotations)
+            }
+          }
           appendModifiers(aClass)
           if (aClass.isAnnotation()) {
             sb.append("@interface")

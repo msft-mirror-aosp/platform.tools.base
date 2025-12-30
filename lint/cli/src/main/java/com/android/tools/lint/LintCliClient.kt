@@ -103,10 +103,10 @@ import java.util.Collections
 import java.util.IdentityHashMap
 import org.jetbrains.jps.model.java.impl.JavaSdkUtil
 import org.jetbrains.kotlin.analysis.api.KaNonPublicApi
-import org.jetbrains.kotlin.cli.common.CLIConfigurationKeys.PERF_MANAGER
 import org.jetbrains.kotlin.config.JVMConfigurationKeys
 import org.jetbrains.kotlin.config.LanguageVersionSettings
 import org.jetbrains.kotlin.config.languageVersionSettings
+import org.jetbrains.kotlin.config.perfManager
 import org.jetbrains.kotlin.light.classes.symbol.withMultiplatformLightClassSupport
 import org.jetbrains.kotlin.platform.jvm.JvmPlatforms
 import org.jetbrains.kotlin.util.PerformanceCounter.Companion.resetAllCounters
@@ -1457,7 +1457,7 @@ open class LintCliClient : LintClient {
       )
     config.javaLanguageLevel = maxLevel
     config.addModules(allModules, bootClassPaths)
-    config.kotlinCompilerConfig.putIfNotNull(PERF_MANAGER, kotlinPerformanceManager)
+    kotlinPerformanceManager?.let { config.kotlinCompilerConfig.perfManager = it }
     jdkHome?.let {
       config.kotlinCompilerConfig.put(JVMConfigurationKeys.JDK_HOME, it)
       config.kotlinCompilerConfig.put(JVMConfigurationKeys.NO_JDK, false)
@@ -1898,7 +1898,7 @@ open class LintCliClient : LintClient {
         }
       }
       sb.append(".txt")
-      dumpPerformanceReport(File(sb.toString()))
+      dumpPerformanceReport(sb.toString())
     }
 
     init {

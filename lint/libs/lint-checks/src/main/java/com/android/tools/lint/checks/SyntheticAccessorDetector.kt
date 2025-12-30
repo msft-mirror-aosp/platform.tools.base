@@ -103,7 +103,7 @@ class SyntheticAccessorDetector : Detector(), SourceCodeScanner {
         val containingClass = node.getContainingUClass() ?: return
 
         val method = node.resolve()
-        if (method == null) {
+        if (method == null || method.isDefaultConstructor) {
           // default constructor
           val classRef = node.classReference ?: return
           val target = classRef.resolve() as? PsiClass ?: return

@@ -1011,7 +1011,7 @@ internal class AnnotationHandler(
     // Implicit, generated, default constructors resolve to null, but we still want to check
     // this case using the class's annotations. So thus, check a null if it represents
     // a constructor call.
-    if (method == null) {
+    if (method == null || method.isDefaultConstructor) {
       // KotlinUObjectLiteralExpression is resolved to its super type, which is revisited as a call
       // of KtSuperTypeCallEntry
       // To avoid duplicate issues---one on `object : SuperType(...) { }` and the other on
