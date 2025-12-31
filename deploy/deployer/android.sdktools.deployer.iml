@@ -14,7 +14,7 @@
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="module" module-name="android.sdktools.common" />
     <orderEntry type="module" module-name="android.sdktools.ddmlib-studio" />
-    <orderEntry type="module" module-name="android.sdktools.binary-resources" />
+    <orderEntry type="library" name="libbinary-resources" level="project" />
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>

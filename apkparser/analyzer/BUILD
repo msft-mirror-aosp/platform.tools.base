@@ -29,7 +29,7 @@ iml_module(
         "//prebuilts/tools/common/archive-patcher:shared",
         "//tools/adt/idea/.idea/libraries:google-dexlib2",
         "//tools/adt/idea/.idea/libraries:google-baksmali",
-        "//tools/base/apkparser:studio.android.sdktools.binary-resources",
+        "//tools/adt/idea/.idea/libraries:libbinary-resources",
         "//tools/base/sdk-common:studio.android.sdktools.sdk-common",
         "//tools/base/zipflinger:studio.android.sdktools.zipflinger",
     ],

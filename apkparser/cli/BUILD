@@ -9,9 +9,9 @@ iml_module(
     iml_files = ["android.sdktools.apkparser-cli.iml"],
     # do not sort: must match IML order
     test_deps = [
-        "//tools/adt/idea/.idea/libraries:junit4",
         "//tools/adt/idea/.idea/libraries:mockito",
         "//tools/base/testutils:studio.android.sdktools.testutils",
+        "//tools/adt/idea/.idea/libraries:junit4",
     ],
     test_resources = ["src/test/resources"],
     test_srcs = ["src/test/java"],
@@ -24,7 +24,7 @@ iml_module(
         "//tools/base/apkparser/analyzer:studio.android.sdktools.analyzer",
         "//tools/base/sdk-common:studio.android.sdktools.sdk-common",
         "//tools/adt/idea/.idea/libraries:google-dexlib2",
-        "//tools/base/apkparser:studio.android.sdktools.binary-resources",
+        "//tools/adt/idea/.idea/libraries:libbinary-resources",
         "//prebuilts/tools/common/m2:jopt-simple-4.9",
     ],
 )
