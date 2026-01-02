@@ -71,7 +71,7 @@ _ARTIFACTS = [
     ('tools/adt/idea/studio/android-studio-metadata.json', 'artifacts'),
     ('tools/adt/idea/studio/updater_deploy.jar', 'artifacts/android-studio-updater.jar'),
     ('tools/adt/idea/native/installer/android-studio-bundle-data.zip', 'artifacts'),
-    ('tools/profiler/sherlock-plugin/sherlock_linux.tar.gz', 'artifacts'),
+    ('tools/profiler/sherlock-plugin/sherlock_linux.zip', 'artifacts'),
     ('tools/profiler/sherlock-plugin/sherlock_windows.zip', 'artifacts'),
     ('tools/profiler/sherlock-plugin/sherlock_darwin.zip', 'artifacts'),
     ('tools/vendor/google/adrt/android-studio-cros-skeleton.zip', 'artifacts'),
