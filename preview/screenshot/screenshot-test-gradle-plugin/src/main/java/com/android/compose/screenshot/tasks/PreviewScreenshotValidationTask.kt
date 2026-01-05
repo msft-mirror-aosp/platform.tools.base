@@ -61,6 +61,19 @@ abstract class PreviewScreenshotValidationTask : Test() {
 
     @TaskAction
     override fun executeTests() {
+        // Per b/405923412: Force sequential execution at execution time. This is done here
+        // to override any global parallel execution settings that may have been configured.
+        // Our custom report generation logic can overwrite the same XML report file
+        // if multiple JVMs run in parallel.
+        if (this.maxParallelForks > 1) {
+            logger.warn(
+                "Preview Screenshot Testing does not support parallel execution. " +
+                "Overriding maxParallelForks to 1. " +
+                "To suppress this warning, explicitly set maxParallelForks = 1 for the 'validateScreenshotTest' task."
+            )
+            this.maxParallelForks = 1
+        }
+
         analyticsService.get().recordTaskAction(path) {
             var testCount = 0
             addTestListener(object : TestListener {
