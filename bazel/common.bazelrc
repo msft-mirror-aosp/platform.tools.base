@@ -136,7 +136,6 @@ build:release --copt=-w
 build:_remote_base --bes_timeout=240s
 build:_remote_base --grpc_keepalive_time=30s
 build:_remote_base --build_event_upload_max_retries=10
-build:_remote_base --google_default_credentials
 build:_remote_base --remote_cache=remotebuildexecution.googleapis.com
 build:_remote_base --remote_instance_name=projects/google.com:android-studio-alphasource/instances/default_instance
 # Input file attribute affects the output of zipper. It should always run
@@ -206,6 +205,7 @@ common:dl-ci --downloader_config=tools/base/bazel/ci/data/downloader.cfg
 # The downloader.cfg requires a --credential_helper for certain domains, and
 # is added by tools/base/bazel/ci/ci and ci.cmd scripts.
 common:ci --config=dl-ci
+build:ci --google_default_credentials
 build:ci --config=_remote_base
 build:ci --config=sponge
 build:ci --config=release
