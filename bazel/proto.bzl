@@ -463,12 +463,24 @@ def kotlin_proto_library(
     java_proto_name = "%s_partial_java_internal" % name
     java_proto_label = ":" + java_proto_name
 
+    grpc_java_deps = [
+        "@maven//:io.grpc.grpc-api",
+        "@maven//:io.grpc.grpc-auth",
+        "@maven//:io.grpc.grpc-context",
+        "@maven//:io.grpc.grpc-core",
+        "@maven//:io.grpc.grpc-netty",
+        "@maven//:io.grpc.grpc-netty-shaded",
+        "@maven//:io.grpc.grpc-protobuf",
+        "@maven//:io.grpc.grpc-protobuf-lite",
+        "@maven//:io.grpc.grpc-stub",
+    ]
+
     # Generate a java_proto_library target implicitly as a dependency of the kotlin target.
     java_proto_library(
         name = java_proto_name,
         srcs = srcs,
         proto_deps = proto_deps,
-        java_deps = deps + ["@intellij//:intellij.libraries.grpc"] if grpc_support else [],
+        java_deps = deps + grpc_java_deps if grpc_support else [],
         visibility = visibility,
         grpc_support = grpc_support,
         protoc_version = protoc_version,
@@ -499,7 +511,6 @@ def kotlin_proto_library(
     # As an alternative, we add the jar of "io.grpc.grpc-kotlin-stub" and its dependencies.
     grpc_extra_deps = [
         "@//prebuilts/tools/common/m2:io.grpc.grpc-kotlin-stub." + protoc_kotlin_grpc_version,
-        "@intellij//:org.jetbrains.kotlin",
         "@maven//:io.grpc.grpc-all",
         "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-core",
     ]
