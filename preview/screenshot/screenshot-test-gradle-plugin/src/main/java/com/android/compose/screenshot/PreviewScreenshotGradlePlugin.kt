@@ -237,7 +237,7 @@ class PreviewScreenshotGradlePlugin : Plugin<Project> {
                             it.showStandardStreams = true
                         }
                         task.isScanForTestClasses = false
-
+                        task.systemProperty("java.awt.headless", "true")
                         task.classpath.from(
                             task.project.configurations.getByName(previewScreenshotTestEngineConfigurationName),
                             componentsExtension.sdkComponents.bootClasspath,  // Needed for test discovery
@@ -270,6 +270,7 @@ class PreviewScreenshotGradlePlugin : Plugin<Project> {
                             it.showStandardStreams = true
                         }
                         task.isScanForTestClasses = false
+                        task.systemProperty("java.awt.headless", "true")
                         task.reports {
                             // TODO(b/325320710): Use the standard test report when extension points
                             //  for adding custom information become available. As a short-term
