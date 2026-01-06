@@ -61,21 +61,6 @@ abstract class CodeCoverageReportTask: NonIncrementalGlobalTask() {
     ): BaseCoverageReportCreationAction(creationConfig) {
         override val name = "createAggregatedCoverageReport"
         override val artifactType = InternalMultipleArtifactType.AGGREGATED_CODE_COVERAGE_DATA
-    }
-
-    class CoverageReportCreationAction(
-        creationConfig: GlobalTaskCreationConfig
-    ): BaseCoverageReportCreationAction(creationConfig) {
-        override val name = "createCoverageReport"
-        override val artifactType = InternalMultipleArtifactType.CODE_COVERAGE_DATA
-    }
-
-    abstract class BaseCoverageReportCreationAction(
-        val creationConfig: GlobalTaskCreationConfig
-    ): GlobalTaskCreationAction<CodeCoverageReportTask>() {
-
-        abstract val artifactType: InternalMultipleArtifactType<Directory>
-        override val type = CodeCoverageReportTask::class.java
 
         override fun handleProvider(taskProvider: TaskProvider<CodeCoverageReportTask>) {
             super.handleProvider(taskProvider)
@@ -86,9 +71,35 @@ abstract class CodeCoverageReportTask: NonIncrementalGlobalTask() {
                     taskProvider,
                     CodeCoverageReportTask::htmlReportDir
                 )
-                .atLocation(creationConfig.services.projectInfo.getReportsDir())
+                .on(InternalArtifactType.AGGREGATED_CODE_COVERAGE_HTML_REPORT)
+        }
+    }
+
+    class CoverageReportCreationAction(
+        creationConfig: GlobalTaskCreationConfig
+    ): BaseCoverageReportCreationAction(creationConfig) {
+        override val name = "createCoverageReport"
+        override val artifactType = InternalMultipleArtifactType.CODE_COVERAGE_DATA
+
+        override fun handleProvider(taskProvider: TaskProvider<CodeCoverageReportTask>) {
+            super.handleProvider(taskProvider)
+
+            creationConfig
+                .globalArtifacts
+                .setInitialProvider(
+                    taskProvider,
+                    CodeCoverageReportTask::htmlReportDir
+                )
                 .on(InternalArtifactType.CODE_COVERAGE_HTML_REPORT)
         }
+    }
+
+    abstract class BaseCoverageReportCreationAction(
+        val creationConfig: GlobalTaskCreationConfig
+    ): GlobalTaskCreationAction<CodeCoverageReportTask>() {
+
+        abstract val artifactType: InternalMultipleArtifactType<Directory>
+        override val type = CodeCoverageReportTask::class.java
 
         override fun configure(task: CodeCoverageReportTask) {
             super.configure(task)
