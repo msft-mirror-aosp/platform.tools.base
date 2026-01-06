@@ -109,8 +109,13 @@ abstract class JoinEffectDetector<FX : Any>(
 
   protected abstract val effectEncoder: Encoder<FX>
 
+  /** Optional path to directory storing partial results */
+  protected open val externalAssumptionsDir: String?
+    get() = null
+
   final override fun beforeCheckEachProject(context: Context) {
     super.beforeCheckEachProject(context)
+    externalAssumptionsDir?.let(::loadPartialResults)
     maybeLoadPartialResults(context)
   }
 
@@ -212,10 +217,13 @@ abstract class JoinEffectDetector<FX : Any>(
     for (dependentProject in context.project.allLibraries) {
       val libDir =
         getPartialResultDir(dependentProject, createIfAbsent = false)?.absolutePath ?: continue
-      val classIds =
-        classIdListEncoder.decodeFromDir(libDir, methodIdEncoder, Encoder.internedString)
-      for (c in classIds) knownResults.toBeLoaded[c] = libDir
+      loadPartialResults(libDir)
     }
+  }
+
+  private fun loadPartialResults(libDir: String) {
+    val classIds = classIdListEncoder.decodeFromDir(libDir, methodIdEncoder, Encoder.internedString)
+    for (c in classIds) knownResults.toBeLoaded[c] = libDir
   }
 
   override fun checkPartialResults(context: Context, partialResults: PartialResult) {}
