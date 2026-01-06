@@ -220,7 +220,7 @@ class CodeCoverageReportTest {
             APP_EXPECTED_COVERED_BRANCH_AGGREGATED,
             APP_EXPECTED_MISSED_BRANCH_AGGREGATED)
         verifyProperties(aggregatedCoverageReportXml,
-            "app",
+            ":app",
             "Aggregated",
             "debug")
         verifySources(aggregatedCoverageReportXml, "app")
@@ -237,7 +237,7 @@ class CodeCoverageReportTest {
             APP_EXPECTED_COVERED_BRANCH_UNIT_TEST,
             APP_EXPECTED_MISSED_BRANCH_UNIT_TEST)
         verifyProperties(unitTestCoverageReportXml,
-            "app",
+            ":app",
             "UnitTest",
             "debug")
         verifySources(unitTestCoverageReportXml, "app")
@@ -253,7 +253,7 @@ class CodeCoverageReportTest {
             APP_EXPECTED_COVERED_BRANCH_ANDROID_TEST,
             APP_EXPECTED_MISSED_BRANCH_ANDROID_TEST)
         verifyProperties(androidTestCoverageReportXml,
-            "app",
+            ":app",
             "AndroidTest",
             "debug")
         verifySources(androidTestCoverageReportXml, "app")
@@ -297,7 +297,7 @@ class CodeCoverageReportTest {
             APP_EXPECTED_COVERED_BRANCH_AGGREGATED,
             APP_EXPECTED_MISSED_BRANCH_AGGREGATED)
         verifyProperties(aggregatedCoverageReportXml,
-            "app",
+            ":app",
             "Aggregated",
             "debug")
         verifySources(aggregatedCoverageReportXml, "app")
@@ -313,7 +313,7 @@ class CodeCoverageReportTest {
             LIB_EXPECTED_COVERED_BRANCH_AGGREGATED,
             LIB_EXPECTED_MISSED_BRANCH_AGGREGATED)
         verifyProperties(aggregatedCoverageReportXmlLibModule,
-            "lib",
+            ":lib",
             "Aggregated",
             "debug")
         verifySources(aggregatedCoverageReportXmlLibModule, "lib")
@@ -329,7 +329,7 @@ class CodeCoverageReportTest {
             APP_EXPECTED_COVERED_BRANCH_UNIT_TEST,
             APP_EXPECTED_MISSED_BRANCH_UNIT_TEST)
         verifyProperties(unitTestCoverageReportXml,
-            "app",
+            ":app",
             "UnitTest",
             "debug")
         verifySources(unitTestCoverageReportXml, "app")
@@ -345,7 +345,7 @@ class CodeCoverageReportTest {
             APP_EXPECTED_COVERED_BRANCH_ANDROID_TEST,
             APP_EXPECTED_MISSED_BRANCH_ANDROID_TEST)
         verifyProperties(androidTestCoverageReportXml,
-            "app",
+            ":app",
             "AndroidTest",
             "debug")
         verifySources(androidTestCoverageReportXml, "app")
@@ -361,7 +361,7 @@ class CodeCoverageReportTest {
             LIB_EXPECTED_COVERED_BRANCH_UNIT_TEST,
             LIB_EXPECTED_MISSED_BRANCH_UNIT_TEST)
         verifyProperties(unitTestCoverageReportXmlLibModule,
-            "lib",
+            ":lib",
             "UnitTest",
             "debug")
         verifySources(unitTestCoverageReportXmlLibModule, "lib")
@@ -377,7 +377,7 @@ class CodeCoverageReportTest {
             LIB_EXPECTED_COVERED_BRANCH_ANDROID_TEST,
             LIB_EXPECTED_MISSED_BRANCH_ANDROID_TEST)
         verifyProperties(androidTestCoverageReportXmlLibModule,
-            "lib",
+            ":lib",
             "AndroidTest",
             "debug")
         verifySources(androidTestCoverageReportXmlLibModule, "lib")
@@ -412,7 +412,7 @@ class CodeCoverageReportTest {
             LIB_EXPECTED_COVERED_BRANCH_AGGREGATED,
             LIB_EXPECTED_MISSED_BRANCH_AGGREGATED)
         verifyProperties(aggregatedCoverageReportXmlLibModule2,
-            "lib",
+            ":lib",
             "Aggregated",
             "debug")
         verifySources(aggregatedCoverageReportXmlLibModule2, "lib")
@@ -428,7 +428,7 @@ class CodeCoverageReportTest {
             LIB_EXPECTED_COVERED_BRANCH_UNIT_TEST,
             LIB_EXPECTED_MISSED_BRANCH_UNIT_TEST)
         verifyProperties(unitTestCoverageReportXmlLibModule2,
-            "lib",
+            ":lib",
             "UnitTest",
             "debug")
         verifySources(unitTestCoverageReportXmlLibModule2, "lib")
@@ -444,7 +444,7 @@ class CodeCoverageReportTest {
             LIB_EXPECTED_COVERED_BRANCH_ANDROID_TEST,
             LIB_EXPECTED_MISSED_BRANCH_ANDROID_TEST)
         verifyProperties(androidTestCoverageReportXmlLibModule2,
-            "lib",
+            ":lib",
             "AndroidTest",
             "debug")
         verifySources(androidTestCoverageReportXmlLibModule2, "lib")
