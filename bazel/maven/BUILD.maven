@@ -73798,23 +73798,6 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "com.google.protobuf.protobuf-java-util_4.29.3",
-    pom = "repository/com/google/protobuf/protobuf-java-util/4.29.3/protobuf-java-util-4.29.3.pom",
-    repo_root_path = "repository",
-    repo_path = "com/google/protobuf/protobuf-java-util/4.29.3",
-    parent = "com.google.protobuf.protobuf-parent_4.29.3",
-    deps = [
-        "com.google.protobuf.protobuf-java_4.29.3",
-        "com.google.code.findbugs.jsr305_3.0.2",
-        "com.google.code.gson.gson_2.8.9",
-        "com.google.errorprone.error_prone_annotations_2.18.0",
-        "com.google.guava.guava_32.0.1-jre",
-        "com.google.j2objc.j2objc-annotations_2.8",
-    ],
-    visibility = ["//visibility:public"],
-)
-
-maven_artifact(
     name = "com.google.protobuf.protobuf-java-util_4.33.2",
     pom = "repository/com/google/protobuf/protobuf-java-util/4.33.2/protobuf-java-util-4.33.2.pom",
     repo_root_path = "repository",
@@ -73979,15 +73962,6 @@ maven_artifact(
     repo_root_path = "repository",
     repo_path = "com/google/protobuf/protobuf-java/4.28.3",
     parent = "com.google.protobuf.protobuf-parent_4.28.3",
-    visibility = ["//visibility:public"],
-)
-
-maven_artifact(
-    name = "com.google.protobuf.protobuf-java_4.29.3",
-    pom = "repository/com/google/protobuf/protobuf-java/4.29.3/protobuf-java-4.29.3.pom",
-    repo_root_path = "repository",
-    repo_path = "com/google/protobuf/protobuf-java/4.29.3",
-    parent = "com.google.protobuf.protobuf-parent_4.29.3",
     visibility = ["//visibility:public"],
 )
 
@@ -95588,13 +95562,6 @@ maven_artifact(
     pom = "repository/com/google/protobuf/protobuf-parent/4.28.3/protobuf-parent-4.28.3.pom",
     repo_root_path = "repository",
     repo_path = "com/google/protobuf/protobuf-parent/4.28.3",
-)
-
-maven_artifact(
-    name = "com.google.protobuf.protobuf-parent_4.29.3",
-    pom = "repository/com/google/protobuf/protobuf-parent/4.29.3/protobuf-parent-4.29.3.pom",
-    repo_root_path = "repository",
-    repo_path = "com/google/protobuf/protobuf-parent/4.29.3",
 )
 
 maven_artifact(

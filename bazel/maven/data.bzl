@@ -908,13 +908,11 @@ DATA = [
     "com.google.protobuf:protobuf-java:3.24.4",
     "com.google.protobuf:protobuf-java:3.25.5",
     "com.google.protobuf:protobuf-java:4.27.2",
-    "com.google.protobuf:protobuf-java:4.29.3",
     "com.google.protobuf:protobuf-java:4.33.2",
     "com.google.protobuf:protobuf-java-util:3.19.3",
     "com.google.protobuf:protobuf-java-util:3.22.3",
     "com.google.protobuf:protobuf-java-util:3.24.4",
     "com.google.protobuf:protobuf-java-util:4.27.2",
-    "com.google.protobuf:protobuf-java-util:4.29.3",
     "com.google.protobuf:protobuf-java-util:4.33.2",
     "com.google.protobuf:protobuf-javalite:4.28.2",  # XR template
     "com.google.protobuf:protobuf-kotlin:3.24.4",
