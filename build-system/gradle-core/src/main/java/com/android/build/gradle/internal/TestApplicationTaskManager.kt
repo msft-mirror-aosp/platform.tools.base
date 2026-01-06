@@ -69,9 +69,6 @@ class TestApplicationTaskManager(
             testVariantProperties,
             testingApk,
             testVariantProperties.testedApks,
-            null,
-            null,
-            null,
             testVariantProperties
                 .services
                 .projectOptions

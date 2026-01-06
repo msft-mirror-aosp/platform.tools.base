@@ -258,13 +258,6 @@ class ManagedDeviceInstrumentationTestTaskTest {
         // Needed to ensure the ExecutionEnum
         whenever(creationConfig.global.testOptionExecutionEnum)
             .thenReturn(TestOptions.Execution.ANDROIDX_TEST_ORCHESTRATOR)
-        whenever(creationConfig
-                .services
-                .projectOptions
-                .get(BooleanOption.PRIVACY_SANDBOX_SDK_SUPPORT)).thenReturn(true)
-
-        whenever(testData.privacySandboxSdkApks)
-                .thenReturn(project.objects.fileCollection())
         val config = ManagedDeviceInstrumentationTestTask.CreationAction(
             creationConfig,
             managedDevice,
@@ -328,7 +321,6 @@ class ManagedDeviceInstrumentationTestTaskTest {
             additionalInstallOptions = any(),
             helperApks = any(),
             logger = any(),
-            dependencyApks = any()
         )
         println("TestRunner: $testRunner")
 
@@ -357,7 +349,6 @@ class ManagedDeviceInstrumentationTestTaskTest {
             additionalInstallOptions = eq(listOf()),
             helperApks = any(),
             logger = any(),
-            dependencyApks = any()
         )
         verifyNoMoreInteractions(testRunner)
     }
@@ -379,7 +370,6 @@ class ManagedDeviceInstrumentationTestTaskTest {
             additionalInstallOptions = any(),
             helperApks = any(),
             logger = any(),
-            dependencyApks = any()
         )
 
         doReturn(FakeGradleProperty<Int>()).whenever(runnerFactory).testShardsSize
@@ -416,7 +406,6 @@ class ManagedDeviceInstrumentationTestTaskTest {
             additionalInstallOptions = eq(listOf()),
             helperApks = any(),
             logger = any(),
-            dependencyApks = any()
         )
         verifyNoMoreInteractions(testRunner)
     }
@@ -438,7 +427,6 @@ class ManagedDeviceInstrumentationTestTaskTest {
             additionalInstallOptions = any(),
             helperApks = any(),
             logger = any(),
-            dependencyApks = any()
         )
 
         doReturn(FakeGradleProperty<Int>()).whenever(runnerFactory).testShardsSize

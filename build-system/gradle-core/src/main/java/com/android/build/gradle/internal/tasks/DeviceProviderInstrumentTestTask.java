@@ -443,17 +443,10 @@ public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTas
         return deviceProvider.use(
                 () -> {
                     try {
-                        boolean devicesSupportPrivacySandbox =
-                                deviceProvider.getDevices().stream()
-                                        .allMatch(DeviceConnector::getSupportsPrivacySandbox);
-
                         return testRunner.runTests(
                                 projectPath,
                                 staticTestData.getFlavorName(),
                                 staticTestData,
-                                devicesSupportPrivacySandbox
-                                        ? privacySandboxSdkApkFiles
-                                        : Collections.emptySet(),
                                 buddyApkFiles,
                                 getFilteredDevices(deviceProvider, targetSerials),
                                 deviceProvider.getTimeoutInMs(),
@@ -999,11 +992,6 @@ public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTas
                                                         .RUNTIME_CLASSPATH));
             }
             task.getRClasses().disallowChanges();
-            if (testData.getPrivacySandboxSdkApks() != null) {
-                task.getPrivacySandboxSdkApksFiles().setFrom(testData.getPrivacySandboxSdkApks());
-            }
-            task.getPrivacySandboxSdkApksFiles().disallowChanges();
-
             task.getRunWithBuiltInPlatform().set(
                     projectOptions.getProvider(BooleanOption.ANDROID_BUILTIN_TEST_PLATFORM));
             task.getRunWithBuiltInPlatform().disallowChanges();

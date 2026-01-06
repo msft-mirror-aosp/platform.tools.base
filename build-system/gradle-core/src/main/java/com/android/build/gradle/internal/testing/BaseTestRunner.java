@@ -21,7 +21,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.api.variant.impl.VariantApiExtensionsKt;
-import com.android.build.gradle.internal.testing.utp.PrivacySandboxSdkInstallBundle;
 import com.android.builder.internal.InstallUtils;
 import com.android.builder.testing.api.DeviceConfigProvider;
 import com.android.builder.testing.api.DeviceConfigProviderImpl;
@@ -37,7 +36,6 @@ import com.android.utils.ILogger;
 import com.google.common.collect.ImmutableList;
 
 import java.io.File;
-import java.nio.file.Path;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -120,7 +118,6 @@ public abstract class BaseTestRunner implements TestRunner {
             @NonNull String projectName,
             @NonNull String variantName,
             @NonNull StaticTestData testData,
-            @NonNull Set<File> dependencyApks,
             @NonNull Set<File> helperApks,
             @NonNull List<? extends DeviceConnector> deviceList,
             int timeoutInMs,
@@ -135,7 +132,6 @@ public abstract class BaseTestRunner implements TestRunner {
         int totalDevices = deviceList.size();
         int unauthorizedDevices = 0;
         Map<DeviceConnector, ImmutableList<File>> apksForDevice = new HashMap<>();
-        Map<DeviceConnector, List<List<Path>>> dependencyApkMap = new HashMap<>();
         for (DeviceConnector device : deviceList) {
             if (device.getState() != IDevice.DeviceState.UNAUTHORIZED) {
                 if (InstallUtils.checkDeviceApiLevel(
@@ -165,13 +161,6 @@ public abstract class BaseTestRunner implements TestRunner {
                         }
                     }
                     apksForDevice.put(device, ImmutableList.copyOf(testedApks));
-                    dependencyApks.forEach(
-                            apk -> {
-                                dependencyApkMap.put(
-                                        device,
-                                        testData.getPrivacySandboxInstallBundlesFinder()
-                                                .invoke(deviceConfigProvider));
-                            });
                 }
             } else {
                 unauthorizedDevices++;
@@ -188,14 +177,11 @@ public abstract class BaseTestRunner implements TestRunner {
                         projectName, variantName, resultsDir, logger, unauthorizedDevices);
             }
 
-            PrivacySandboxSdkInstallBundle privacySandboxSdkInstallBundle =
-                    new PrivacySandboxSdkInstallBundle(dependencyApks, dependencyApkMap);
             boolean allTestsPassed = scheduleTests(
                     projectName,
                     variantName,
                     testData,
                     apksForDevice,
-                    privacySandboxSdkInstallBundle,
                     helperApks,
                     timeoutInMs,
                     installOptions,
@@ -222,7 +208,6 @@ public abstract class BaseTestRunner implements TestRunner {
             @NonNull String variantName,
             @NonNull StaticTestData testData,
             @NonNull Map<DeviceConnector, ImmutableList<File>> apksForDevice,
-            @NonNull PrivacySandboxSdkInstallBundle privacySandboxSdkInstallBundle,
             @NonNull Set<File> helperApks,
             int timeoutInMs,
             @NonNull Collection<String> installOptions,

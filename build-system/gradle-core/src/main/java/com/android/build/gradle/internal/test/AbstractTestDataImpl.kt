@@ -54,40 +54,8 @@ abstract class AbstractTestDataImpl(
     @get:PathSensitive(PathSensitivity.RELATIVE)
     @get:Optional
     val testedApksDir: Provider<Directory>?,
-    @get:InputFiles
-    @get:PathSensitive(PathSensitivity.NONE)
-    @get:Optional
-    val privacySandboxSdkApks: FileCollection?,
-    @get:InputDirectory
-    @get:PathSensitive(PathSensitivity.RELATIVE)
-    @get:Optional
-    val privacySandboxCompatSdkApks: Provider<Directory>?,
-    @get:InputFiles
-    @get:PathSensitive(PathSensitivity.NONE)
-    @get:Optional
-    val additionalSdkSupportedSplitApks: Provider<Directory>?,
     extraInstrumentationTestRunnerArgs: Provider<Map<String, String>>
 ) : TestData {
-
-    @get:Internal
-    val privacyInstallBundlesFinder: ApkBundlesFinder
-        get() = _privacyInstallBundlesFinder ?:
-            object: ApkBundlesFinder {
-                val privacySandboxApks: Set<File>? = privacySandboxSdkApks?.files
-
-                override fun findBundles(
-                    deviceConfigProvider: DeviceConfigProvider
-                ): List<List<Path>> {
-                    privacySandboxApks ?: return emptyList()
-                    val privacySandboxInstallBundles = privacySandboxApks
-                        .mapNotNull {  BuiltArtifactsLoaderImpl().load { it } }
-                        .map { artifacts -> artifacts.elements.map { Path.of(it.outputFile) }
-                    }
-                    return privacySandboxInstallBundles
-                }
-            }.also { _privacyInstallBundlesFinder = it }
-
-    private var _privacyInstallBundlesFinder: ApkBundlesFinder? = null
 
     @get:Input
     abstract val supportedAbis: Set<String>
@@ -97,20 +65,6 @@ abstract class AbstractTestDataImpl(
         get() = _testedApksFinder ?:
             TestedApksFinder(
                 testedApksDir?.let { BuiltArtifactsLoaderImpl().load(it) },
-                privacySandboxCompatSdkApks?.let {
-                    if (it.isPresent) {
-                        BuiltArtifactsLoaderImpl().load(it)
-                    } else {
-                        null
-                    }
-                },
-                additionalSdkSupportedSplitApks?.let {
-                    if (it.isPresent) {
-                        BuiltArtifactsLoaderImpl().load(it)
-                    } else {
-                        null
-                    }
-                },
                 supportedAbis
             ).also {
                 _testedApksFinder = it
@@ -120,8 +74,6 @@ abstract class AbstractTestDataImpl(
 
     internal class TestedApksFinder(
         private val testedApkBuiltArtifacts: BuiltArtifactsImpl?,
-        private val privacySandboxCompatSdkApksBuiltArtifacts: BuiltArtifactsImpl?,
-        private val additionalSdkSupportApkSplitsBuiltArtifacts: BuiltArtifactsImpl?,
         private val supportedAbis: Set<String>
     ) : ApksFinder {
 
@@ -129,16 +81,6 @@ abstract class AbstractTestDataImpl(
             testedApkBuiltArtifacts ?: return emptyList()
             val apks = mutableListOf<File>()
             apks += computeBestOutput(deviceConfigProvider.abis, testedApkBuiltArtifacts, supportedAbis)
-            // Add additional splits
-            if (deviceConfigProvider.supportsPrivacySandbox) {
-                additionalSdkSupportApkSplitsBuiltArtifacts?.let {
-                    apks += it.elements.map { File(it.outputFile) }
-                }
-            } else {
-                privacySandboxCompatSdkApksBuiltArtifacts?.let {
-                    apks += it.elements.map { File(it.outputFile) }
-                }
-            }
             return apks
         }
     }
@@ -198,8 +140,7 @@ abstract class AbstractTestDataImpl(
                 flavorName.get(),
                 getTestApk().get(),
                 testDirectories.files.toList(),
-                testedApksFinder,
-                privacyInstallBundlesFinder
+                testedApksFinder
         )
     }
 
@@ -258,8 +199,4 @@ abstract class AbstractTestDataImpl(
 
     override fun findTestedApks(deviceConfigProvider: DeviceConfigProvider): List<File> =
         testedApksFinder.findApks(deviceConfigProvider)
-
-    override fun privacySandboxInstallBundlesFinder(
-        deviceConfigProvider: DeviceConfigProvider): List<List<Path>> =
-        privacyInstallBundlesFinder.findBundles(deviceConfigProvider)
 }

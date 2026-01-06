@@ -74,6 +74,8 @@ interface RunUtpWorkParameters : WorkParameters {
         val targetApkConfigBundle: Property<TargetApkConfigBundle>
         /** Additional options for APK installation. */
         val additionalInstallOptions: ListProperty<String>
+        /** Dependency APKs to be installed. */
+        val dependencyApks: ListProperty<FileCollection>
         /** Helper APKs to be installed. */
         val helperApks: ConfigurableFileCollection
         /** Whether to uninstall incompatible APKs. */
@@ -94,8 +96,6 @@ interface RunUtpWorkParameters : WorkParameters {
         val additionalTestOutputOnDeviceDir: Property<String>
         /** Timeout for APK installation in seconds. */
         val installApkTimeout: Property<Int>
-        /** Extracted Privacy Sandbox SDK APKs. */
-        val extractedSdkApks: ListProperty<FileCollection>
         /** Whether to uninstall APKs after the test run. */
         val uninstallApksAfterTest: Property<Boolean>
         /** Whether to reinstall incompatible APKs before the test. */
