@@ -17,10 +17,8 @@
 package com.android.build.gradle.internal.privaysandboxsdk
 
 import com.android.build.api.artifact.impl.ArtifactsImpl
-import com.android.build.api.dsl.Lint
 import com.android.build.api.dsl.PrivacySandboxSdkExtension
 import com.android.build.api.dsl.SigningConfig
-import com.android.build.gradle.internal.dependency.PluginConfigurations
 import com.android.build.gradle.internal.dsl.PrivacySandboxSdkBundleImpl
 import com.android.build.gradle.internal.dsl.PrivacySandboxSdkOptimizationImpl
 import com.android.build.gradle.internal.publishing.AarOrJarTypeToConsume
@@ -35,7 +33,6 @@ import com.android.build.api.variant.AndroidVersion
 import com.android.build.api.variant.impl.AndroidVersionImpl
 import com.android.sdklib.SdkVersionInfo
 import org.gradle.api.Project
-import org.gradle.api.artifacts.Configuration
 import org.gradle.api.file.ProjectLayout
 import org.gradle.api.file.RegularFile
 import org.gradle.api.provider.MapProperty
@@ -55,7 +52,7 @@ class PrivacySandboxSdkVariantScopeImpl(
 
     override val layout: ProjectLayout = project.layout
     override val artifacts: ArtifactsImpl = ArtifactsImpl(project, "single")
-    override val name: String = PrivacySandboxSdkConstants.DEFAULT_VARIANT_NAME
+    override val name: String = "main"
 
     override val extension: PrivacySandboxSdkExtension by lazy {
         extensionProvider.invoke()

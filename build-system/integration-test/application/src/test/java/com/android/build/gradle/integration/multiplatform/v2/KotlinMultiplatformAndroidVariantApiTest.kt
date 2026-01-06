@@ -234,7 +234,6 @@ class KotlinMultiplatformAndroidVariantApiTest {
                                 .setApiLevel(34)
                                 .setCodeName("")
                                 .setAbis(listOf())
-                                .setSupportsPrivacySandbox(false)
                                 .build())
                         }
                     }
