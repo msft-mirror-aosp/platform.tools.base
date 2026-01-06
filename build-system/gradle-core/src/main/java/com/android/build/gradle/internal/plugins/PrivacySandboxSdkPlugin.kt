@@ -22,8 +22,6 @@ import com.android.build.gradle.internal.dsl.InternalPrivacySandboxSdkExtension
 import com.android.build.gradle.internal.dsl.PrivacySandboxSdkExtensionImpl
 import com.android.build.gradle.internal.fusedlibrary.configureTransformsForFusedLibrary
 import com.android.build.gradle.internal.fusedlibrary.getDslServices
-import com.android.build.gradle.internal.privaysandboxsdk.PrivacySandboxSdkVariantScope
-import com.android.build.gradle.internal.privaysandboxsdk.PrivacySandboxSdkVariantScopeImpl
 import com.android.build.gradle.internal.services.Aapt2DaemonBuildService
 import com.android.build.gradle.internal.services.Aapt2ThreadPoolBuildService
 import com.android.build.gradle.internal.services.DslServices
@@ -52,42 +50,6 @@ class PrivacySandboxSdkPlugin @Inject constructor(
     val dslServices: DslServices by lazy(LazyThreadSafetyMode.NONE) {
         withProject("dslServices") { project ->
             getDslServices(project, projectServices)
-        }
-    }
-
-    private val versionedSdkLoaderService: VersionedSdkLoaderService by lazy(LazyThreadSafetyMode.NONE) {
-        withProject("versionedSdkLoaderService") { project ->
-            VersionedSdkLoaderService(
-                    dslServices,
-                    project,
-                    { variantScope.compileSdkVersion },
-                    {
-                        Revision.parseRevision(extension.buildToolsVersion,
-                                Revision.Precision.MICRO)
-                    },
-            )
-        }
-    }
-
-    // so far, there is only one variant.
-    private val variantScope: PrivacySandboxSdkVariantScope by lazy {
-        withProject("variantScope") { project ->
-            PrivacySandboxSdkVariantScopeImpl(
-                    project,
-                    dslServices,
-                    projectServices,
-                    { extension },
-                    {
-                        BootClasspathConfigImpl(
-                                project,
-                                projectServices,
-                                versionedSdkLoaderService,
-                                libraryRequests = listOf(),
-                                isJava8Compatible = { true },
-                                returnDefaultValuesForMockableJar = { false },
-                                forUnitTest = false
-                        )
-                    })
         }
     }
 

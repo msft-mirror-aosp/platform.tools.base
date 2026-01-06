@@ -26,7 +26,6 @@ import com.android.build.gradle.internal.cxx.stripping.SymbolStripExecutableFind
 import com.android.build.gradle.internal.cxx.stripping.createSymbolStripExecutableFinder
 import com.android.build.gradle.internal.errors.SyncIssueReporterImpl
 import com.android.build.gradle.internal.ndk.NdkHandler
-import com.android.build.gradle.internal.privaysandboxsdk.PrivacySandboxSdkVariantScope
 import com.android.build.gradle.internal.services.AndroidLocationsBuildService
 import com.android.build.gradle.internal.services.ServiceRegistrationAction
 import com.android.build.gradle.internal.services.getBuildService
@@ -469,14 +468,6 @@ fun AndroidJarInput.initialize(task: Task, creationConfig: ComponentCreationConf
     initializeSdkComponentsBuildService(task)
     this.compileSdkVersion.setDisallowChanges(creationConfig.global.compileSdkHashString)
     this.buildToolsRevision.setDisallowChanges(creationConfig.global.buildToolsRevision)
-}
-
-fun AndroidJarInput.initialize(task: Task, creationConfig: PrivacySandboxSdkVariantScope) {
-    initializeSdkComponentsBuildService(task)
-    this.compileSdkVersion.setDisallowChanges(creationConfig.compileSdkVersion)
-    this.buildToolsRevision.setDisallowChanges(
-            Revision.parseRevision(creationConfig.extension.buildToolsVersion)
-    )
 }
 
 /** This can be used by tasks requiring build-tools executables as input with [org.gradle.api.tasks.Nested]. */
