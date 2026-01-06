@@ -421,7 +421,6 @@ class PreviewScreenshotGradlePlugin : Plugin<Project> {
         val dependencies = project.dependencies
         if (container.findByName(previewScreenshotTestEngineConfigurationName) == null) {
             container.create(previewScreenshotTestEngineConfigurationName).apply {
-                isVisible = false
                 isTransitive = true
                 isCanBeConsumed = false
                 description = "A configuration to resolve screenshot test engine dependencies."
@@ -439,7 +438,6 @@ class PreviewScreenshotGradlePlugin : Plugin<Project> {
         val dependencies = project.dependencies
         if (container.findByName(layoutlibJarConfigurationName) == null) {
             container.create(layoutlibJarConfigurationName).apply {
-                isVisible = false
                 isTransitive = true
                 isCanBeConsumed = false
                 description = "A configuration to resolve layoutlib jar dependencies."
@@ -461,7 +459,6 @@ class PreviewScreenshotGradlePlugin : Plugin<Project> {
         val dependencies = project.dependencies
         if (container.findByName(layoutlibResourcesConfigurationName) == null) {
             container.create(layoutlibResourcesConfigurationName).apply {
-                isVisible = false
                 isTransitive = true
                 isCanBeConsumed = false
                 description = "A configuration to resolve render CLI tool dependencies."
