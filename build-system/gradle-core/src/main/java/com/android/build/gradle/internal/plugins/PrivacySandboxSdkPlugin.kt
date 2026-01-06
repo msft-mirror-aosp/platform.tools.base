@@ -16,10 +16,7 @@
 
 package com.android.build.gradle.internal.plugins
 
-import com.android.build.api.dsl.PrivacySandboxSdkExtension
 import com.android.build.gradle.internal.crash.afterEvaluate
-import com.android.build.gradle.internal.dsl.InternalPrivacySandboxSdkExtension
-import com.android.build.gradle.internal.dsl.PrivacySandboxSdkExtensionImpl
 import com.android.build.gradle.internal.fusedlibrary.configureTransformsForFusedLibrary
 import com.android.build.gradle.internal.fusedlibrary.getDslServices
 import com.android.build.gradle.internal.services.Aapt2DaemonBuildService
@@ -28,9 +25,6 @@ import com.android.build.gradle.internal.services.DslServices
 import com.android.build.gradle.internal.services.R8D8ThreadPoolBuildService
 import com.android.build.gradle.internal.services.R8MaxParallelTasksBuildService
 import com.android.build.gradle.internal.services.SymbolTableBuildService
-import com.android.build.gradle.internal.services.VersionedSdkLoaderService
-import com.android.build.gradle.internal.tasks.factory.BootClasspathConfigImpl
-import com.android.repository.Revision
 import com.google.wireless.android.sdk.stats.GradleBuildProject
 import org.gradle.api.GradleException
 import org.gradle.api.Plugin
@@ -53,13 +47,6 @@ class PrivacySandboxSdkPlugin @Inject constructor(
         }
     }
 
-    private val extension: PrivacySandboxSdkExtension by lazy(LazyThreadSafetyMode.NONE)
-    {
-        withProject("extension") { project ->
-            instantiateExtension(project)
-        }
-    }
-
     override fun configureProject(project: Project) {
         // workaround for https://github.com/gradle/gradle/issues/20145
         project.plugins.apply(JvmEcosystemPlugin::class.java)
@@ -74,32 +61,12 @@ class PrivacySandboxSdkPlugin @Inject constructor(
     }
 
     override fun configureExtension(project: Project) {
-        extension
     }
 
     override fun apply(project: Project) {
         throw GradleException(
             "Privacy Sandbox SDK Plugin has been phased out.\n" +
                     "Check https://privacysandbox.com/news/update-on-plans-for-privacy-sandbox-technologies for full details"
-        )
-    }
-
-    private fun instantiateExtension(project: Project): PrivacySandboxSdkExtension {
-
-        val sdkLibraryExtensionImpl = dslServices.newDecoratedInstance(
-                PrivacySandboxSdkExtensionImpl::class.java,
-                dslServices,
-        )
-
-        abstract class Extension(
-                val publicExtensionImpl: PrivacySandboxSdkExtensionImpl,
-        ): InternalPrivacySandboxSdkExtension by publicExtensionImpl
-
-        return project.extensions.create(
-                PrivacySandboxSdkExtension::class.java,
-                "android",
-                Extension::class.java,
-                sdkLibraryExtensionImpl
         )
     }
 

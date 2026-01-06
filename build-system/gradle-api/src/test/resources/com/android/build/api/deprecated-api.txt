@@ -130,10 +130,6 @@ Deprecated from AGP 8.0.0
   * com.android.build.api.dsl.Packaging.merge: void (java.lang.String)
   * com.android.build.api.dsl.Packaging.pickFirst: void (java.lang.String)
 Deprecated from AGP 7.4.0
-  * com.android.build.api.dsl.PrivacySandboxSdkBundle.getPackageName: java.lang.String ()
-  * com.android.build.api.dsl.PrivacySandboxSdkBundle.setPackageName: void (java.lang.String)
-  * com.android.build.api.dsl.PrivacySandboxSdkExtension.getNamespace: java.lang.String ()
-  * com.android.build.api.dsl.PrivacySandboxSdkExtension.setNamespace: void (java.lang.String)
   * com.android.build.api.variant.Variant.getTargetSdkVersion: com.android.build.api.variant.AndroidVersion ()
   * com.android.build.api.variant.VariantBuilder.getTargetSdk: java.lang.Integer ()
   * com.android.build.api.variant.VariantBuilder.getTargetSdkPreview: java.lang.String ()
