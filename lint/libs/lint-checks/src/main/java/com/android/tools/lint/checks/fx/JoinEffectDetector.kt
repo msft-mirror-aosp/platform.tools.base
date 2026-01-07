@@ -76,6 +76,7 @@ import kotlinx.collections.immutable.persistentMapOf
 import kotlinx.collections.immutable.persistentSetOf
 import kotlinx.collections.immutable.plus
 import kotlinx.collections.immutable.toPersistentSet
+import org.jetbrains.annotations.VisibleForTesting
 import org.jetbrains.kotlin.incremental.createDirectory
 import org.jetbrains.kotlin.psi.KtNamedFunction
 import org.jetbrains.uast.UClass
@@ -203,13 +204,21 @@ abstract class JoinEffectDetector<FX : Any>(
     if (context.isGlobalAnalysis()) return
     val dirPath =
       getPartialResultDir(context.project, createIfAbsent = true)?.absolutePath ?: return
-    summaryEncoder.encodeToDir(
-      resultList(program, summariesCache),
-      dirPath,
-      methodIdEncoder,
-      Encoder.internedString,
-    )
+    savePartialResults(dirPath, resultList(program, summariesCache))
   }
+
+  @VisibleForTesting
+  fun savePartialResults(dirPath: String, results: AssumptionTable<FX> = knownResults.loaded) {
+    val entries = results.toList()
+    val keys = entries.map { it.first }
+    val vals = entries.map { it.second }
+    return savePartialResults(dirPath, keys to vals)
+  }
+
+  private fun savePartialResults(
+    dirPath: String,
+    results: Pair<List<ClassId>, List<PersistentMap<MethodId, ResultTemplate<FX>>>>,
+  ) = summaryEncoder.encodeToDir(results, dirPath, methodIdEncoder, Encoder.internedString)
 
   private fun maybeLoadPartialResults(context: Context) {
     if (context.isGlobalAnalysis()) return
