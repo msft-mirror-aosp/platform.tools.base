@@ -589,7 +589,6 @@ com.android.build.gradle.integration.resources.ConditionalKeepRulesTest
 com.android.build.gradle.integration.resources.DisableLibraryResourcesTest
 com.android.build.gradle.integration.resources.LibraryNoPrecompiledResourcesTest
 com.android.build.gradle.integration.resources.MacroTagTest
-com.android.build.gradle.integration.resources.MergeJavaResourceTaskTest
 com.android.build.gradle.integration.resources.NonTransitiveAppRClassesTest
 com.android.build.gradle.integration.resources.NonTransitiveCompileRClassFlowTest
 com.android.build.gradle.integration.resources.OverlayableResourcesTest
