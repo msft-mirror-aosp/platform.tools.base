@@ -15,8 +15,12 @@
  */
 package com.android.tools.lint.checks
 
+import com.android.tools.lint.checks.fx.AssumptionTableBuilder.Companion.build
+import com.android.tools.lint.checks.fx.result.Type
+import com.android.tools.lint.checks.fx.result.Type.MethodRef.Companion.static
 import com.android.tools.lint.checks.infrastructure.TestLintTask
 import com.android.tools.lint.checks.infrastructure.TestMode
+import com.google.common.truth.Truth
 
 @Suppress("LintDocExample")
 class BlockingDetectorTest : AbstractCheckTest() {
@@ -119,6 +123,65 @@ class BlockingDetectorTest : AbstractCheckTest() {
           override fun doAnnotatedNonBlocking() = block() // ERROR
                                                   ~~~~~~~
         1 error
+        """
+          .trimIndent()
+      )
+  }
+
+  fun `test external assumptions available`() {
+    getTempDir().absolutePath.let { assumptionsPath ->
+      System.setProperty(BlockingDetector.ASSUMPTIONS_PATH, assumptionsPath)
+      Truth.assertThat(System.getProperty(BlockingDetector.ASSUMPTIONS_PATH))
+        .isEqualTo(assumptionsPath)
+
+      val assumptions =
+        BlockingDetector.statusLattice.build {
+          static<Long>(Thread::sleep) assumedAs
+            given(Type.Long) { concreteEffect = BlockingDetector.Status.MaybeBlocking }
+        }
+      detector.savePartialResults(assumptionsPath, assumptions)
+    }
+
+    lint()
+      .files(
+        kotlin(
+            """
+          annotation class NonBlocking // TODO get rid of
+
+          @NonBlocking
+          fun nonBlocking1() {
+              doSomethingThenSleep()
+          }
+
+          @NonBlocking
+          fun nonBlocking2(): Int = 42.also {
+              doSomethingThenSleep()
+          }
+
+          @NonBlocking
+          fun nonBlocking3() {
+              val t = ::doSomethingThenSleep // ok
+              println("Done")
+          }
+
+          fun doSomethingThenSleep() {
+              Thread.sleep(10)
+          }
+          """
+              .trimIndent()
+          )
+          .indented()
+      )
+      .run()
+      .expect(
+        """
+        src/NonBlocking.kt:5: Error: Call blocks in a context not allowed to block [BlockingMethod]
+            doSomethingThenSleep()
+            ~~~~~~~~~~~~~~~~~~~~~~
+        src/NonBlocking.kt:9: Error: Call blocks in a context not allowed to block [BlockingMethod]
+        fun nonBlocking2(): Int = 42.also {
+                                     ^
+        2 errors
         """
           .trimIndent()
       )
