@@ -203,8 +203,7 @@ TEST_F(TraceCommandsTest, StopUnspecifiedTraceCommandsTest) {
   auto* stop = command.mutable_stop_trace();
   stop->mutable_configuration()->CopyFrom(trace_config_);
   stop->set_profiler_type(ProfilerType::UNSPECIFIED);
-  StopTrace::Create(command, trace_manager_.get(), SessionsManager::Instance(),
-                    false)
+  StopTrace::Create(command, trace_manager_.get(), SessionsManager::Instance())
       ->ExecuteOn(daemon_.get());
 
   {
@@ -222,7 +221,7 @@ TEST_F(TraceCommandsTest, StopUnspecifiedTraceCommandsTest) {
             TraceStopStatus::NO_TRACE_TYPE_SPECIFIED_STOP);
 }
 
-TEST_F(TraceCommandsTest, StopTraceCommandEndsSessionInTaskBasedUx) {
+TEST_F(TraceCommandsTest, StopTraceCommandEndsSessionIfExplicitlySpecified) {
   proto::Command command;
   command.set_type(proto::Command::START_TRACE);
   auto* start = command.mutable_start_trace();
@@ -259,11 +258,11 @@ TEST_F(TraceCommandsTest, StopTraceCommandEndsSessionInTaskBasedUx) {
 
   // Execute the end command
   command.set_type(proto::Command::STOP_TRACE);
+  command.set_should_end_session(true);
   auto* stop = command.mutable_stop_trace();
   stop->set_profiler_type(ProfilerType::CPU);
   stop->mutable_configuration()->CopyFrom(trace_config_);
-  StopTrace::Create(command, trace_manager_.get(), SessionsManager::Instance(),
-                    true)
+  StopTrace::Create(command, trace_manager_.get(), SessionsManager::Instance())
       ->ExecuteOn(daemon_.get());
 
   {
@@ -330,8 +329,7 @@ TEST_F(TraceCommandsTest, CpuCommandsGeneratesEvents) {
   auto* stop = command.mutable_stop_trace();
   stop->set_profiler_type(ProfilerType::CPU);
   stop->mutable_configuration()->CopyFrom(trace_config_);
-  StopTrace::Create(command, trace_manager_.get(), SessionsManager::Instance(),
-                    false)
+  StopTrace::Create(command, trace_manager_.get(), SessionsManager::Instance())
       ->ExecuteOn(daemon_.get());
 
   {
@@ -394,8 +392,7 @@ TEST_F(TraceCommandsTest, MemoryCommandsGeneratesEvents) {
   auto* stop = command.mutable_stop_trace();
   stop->set_profiler_type(ProfilerType::MEMORY);
   stop->mutable_configuration()->CopyFrom(trace_config_);
-  StopTrace::Create(command, trace_manager_.get(), SessionsManager::Instance(),
-                    false)
+  StopTrace::Create(command, trace_manager_.get(), SessionsManager::Instance())
       ->ExecuteOn(daemon_.get());
 
   {
@@ -458,7 +455,7 @@ TEST_F(TraceCommandsTest, ApiInitiatedCpuCommandsGeneratesEvents) {
   proto::Command stop_command;
   BuildApiStopTraceCommand(0, 0, "fake_app", "foo", &stop_command);
   StopTrace::Create(stop_command, trace_manager_.get(),
-                    SessionsManager::Instance(), false)
+                    SessionsManager::Instance())
       ->ExecuteOn(daemon_.get());
 
   {

@@ -91,6 +91,8 @@ message Command {
   // The session id if the command needs one. This session id will be used to
   // end the session when the respective recording/task is stopped. Unset otherwise.
   int64 session_id = 5;
+  // If true, the session will be ended.
+  bool should_end_session = 6;
 
   oneof union {
     // General transport commands starts at 10.

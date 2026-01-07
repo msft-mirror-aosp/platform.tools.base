@@ -118,7 +118,7 @@ TEST_F(HeapDumpTest, CommandsGeneratesEvents) {
   clock_.SetCurrentTime(10);
   proto::Command command;
   command.set_type(proto::Command::HEAP_DUMP);
-  HeapDump::Create(command, dump_.get(), SessionsManager::Instance(), false)
+  HeapDump::Create(command, dump_.get(), SessionsManager::Instance())
       ->ExecuteOn(daemon_.get());
 
   std::mutex mutex;
@@ -164,7 +164,8 @@ TEST_F(HeapDumpTest, CommandsGeneratesEventsInTaskBasedUX) {
   clock_.SetCurrentTime(10);
   proto::Command command;
   command.set_type(proto::Command::HEAP_DUMP);
-  HeapDump::Create(command, dump_.get(), SessionsManager::Instance(), true)
+  command.set_should_end_session(true);
+  HeapDump::Create(command, dump_.get(), SessionsManager::Instance())
       ->ExecuteOn(daemon_.get());
   std::mutex mutex;
   {

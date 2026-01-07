@@ -38,8 +38,7 @@ constexpr char kCacheLocation[] = "cache/complete/";
 // Helper function to stop the tracing. This function works in the async
 // environment because it doesn't require a |profiler::StopTrace| object.
 void Stop(Daemon* daemon, const profiler::proto::Command command_data,
-          TraceManager* trace_manager, SessionsManager* sessions_manager,
-          bool is_task_based_ux_enabled) {
+          TraceManager* trace_manager, SessionsManager* sessions_manager) {
   auto& stop_command = command_data.stop_trace();
   auto profiler_type = stop_command.profiler_type();
   const std::string& app_name = stop_command.configuration().app_name();
@@ -66,7 +65,7 @@ void Stop(Daemon* daemon, const profiler::proto::Command command_data,
 
     // In the Task-Based UX, if stopping the trace fails, we want to also end
     // the session wrapping such capture.
-    if (is_task_based_ux_enabled) {
+    if (command_data.should_end_session()) {
       sessions_manager->EndSession(daemon, command_data.session_id());
     }
     return;
@@ -144,7 +143,7 @@ void Stop(Daemon* daemon, const profiler::proto::Command command_data,
   // In the Task-Based UX, when the trace is complete, as indicated by he
   // CPU_TRACE or MEMORY_TRACE event, we want to also end the session wrapping
   // such capture.
-  if (is_task_based_ux_enabled) {
+  if (command_data.should_end_session()) {
     sessions_manager->EndSession(daemon, command_data.session_id());
   }
 }
@@ -162,12 +161,9 @@ Status StopTrace::ExecuteOn(Daemon* daemon) {
   profiler::proto::Command command_data = command();
   TraceManager* trace_manager = trace_manager_;
   SessionsManager* sessions_manager = sessions_manager_;
-  bool is_task_based_ux_enabled = is_task_based_ux_enabled_;
-  std::thread worker([daemon, command_data, trace_manager, sessions_manager,
-                      is_task_based_ux_enabled]() {
+  std::thread worker([daemon, command_data, trace_manager, sessions_manager]() {
     SetThreadName("Studio:StopTrace");
-    Stop(daemon, command_data, trace_manager, sessions_manager,
-         is_task_based_ux_enabled);
+    Stop(daemon, command_data, trace_manager, sessions_manager);
   });
   worker.detach();
   return Status::OK;

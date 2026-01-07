@@ -98,19 +98,15 @@ int Perfd::Initialize(Daemon* daemon) {
       });
 
   daemon->RegisterCommandHandler(
-      proto::Command::STOP_TRACE,
-      [is_task_based_ux_enabled](proto::Command command) {
+      proto::Command::STOP_TRACE, [](proto::Command command) {
         return StopTrace::Create(command, &trace_manager,
-                                 SessionsManager::Instance(),
-                                 is_task_based_ux_enabled);
+                                 SessionsManager::Instance());
       });
 
   daemon->RegisterCommandHandler(
-      proto::Command::HEAP_DUMP,
-      [is_task_based_ux_enabled](proto::Command command) {
+      proto::Command::HEAP_DUMP, [](proto::Command command) {
         return HeapDump::Create(command, &heap_dumper,
-                                SessionsManager::Instance(),
-                                is_task_based_ux_enabled);
+                                SessionsManager::Instance());
       });
 
   return 0;

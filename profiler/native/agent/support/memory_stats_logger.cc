@@ -154,10 +154,8 @@ void EnqueueAllocationInfoEvents(const proto::Command& command,
   // If the session is 0, this indicates that its value was not set and thus
   // we do not have a valid session to end. Only when we have a valid session
   // to end do we issue an END_SESSION command.
-  bool is_task_based_ux_enabled =
-      Agent::Instance().agent_config().common().profiler_task_based_ux();
   if (!is_start_command && command.session_id() != 0 &&
-      is_task_based_ux_enabled) {
+      command.should_end_session()) {
     Agent::Instance().SubmitAgentTasks(
         {[command, request_timestamp](AgentService::Stub& stub,
                                       ClientContext& ctx) {
