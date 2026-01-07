@@ -29,6 +29,7 @@ import com.android.adblib.withPrefix
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.takeWhile
 import kotlinx.coroutines.launch
 
 internal class AppProcessTrackerImpl(
@@ -61,13 +62,20 @@ internal class AppProcessTrackerImpl(
         }
 
     private suspend fun trackProcesses() {
-        val processMap = ProcessMap<AppProcessImpl>()
-        device.trackApp.stateFlow.collect { appProcessEntryList ->
-            updateProcessMap(processMap, appProcessEntryList)
-            processMap.values.toList().also {
-                logger.verbose { "Emitting new list of App processes: $it" }
-                processesMutableFlow.emit(AppProcessList(it, appProcessEntryList.flowStatus))
-            }
+        try {
+            val processMap = ProcessMap<AppProcessImpl>()
+            device.trackApp.stateFlow
+                .takeWhile { appProcessEntries -> !appProcessEntries.flowStatus.isEndOfFlow }
+                .collect { appProcessEntries ->
+                    updateProcessMap(processMap, appProcessEntries)
+                    processMap.values.toList().also {
+                        logger.verbose { "Emitting new list of App processes: $it" }
+                        processesMutableFlow.emit(AppProcessList(it, appProcessEntries.flowStatus))
+                    }
+                }
+        } finally {
+            processesMutableFlow.value =
+                AppProcessList(emptyList(), StateFlowStatus.endOfFlow)
         }
     }
 
