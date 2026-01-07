@@ -114,12 +114,11 @@ class KotlinSourcesModelTest {
             }
         """.trimIndent())
 
-        TestFileUtils.appendToFile(
-            project.gradlePropertiesFile,
-            "${BooleanOption.BUILT_IN_KOTLIN.propertyName}=false"
-        )
         val basicProject =
-            project.modelV2().fetchModels().container.singleProjectInfo.basicAndroidProject
+            project.modelV2()
+                .with(BooleanOption.BUILT_IN_KOTLIN, false)
+                .with(BooleanOption.USE_NEW_DSL, false)
+                .fetchModels().container.singleProjectInfo.basicAndroidProject
         assertThat(basicProject?.mainSourceSet?.sourceProvider?.kotlinDirectories)
             .containsExactly(
                 project.file("src/main/kotlinDir"),
@@ -157,13 +156,11 @@ class KotlinSourcesModelTest {
             """.trimIndent()
         )
 
-        TestFileUtils.appendToFile(
-            project.gradlePropertiesFile,
-            "${BooleanOption.BUILT_IN_KOTLIN.propertyName}=false"
-        )
         val basicProject =
             project.modelV2()
                 .withFailOnWarning(false) // b/455891987
+                .with(BooleanOption.BUILT_IN_KOTLIN, false)
+                .with(BooleanOption.USE_NEW_DSL, false)
                 .fetchModels().container.singleProjectInfo.basicAndroidProject!!
         val deviceTestsKotlinDirs = basicProject.mainSourceSet!!
             .deviceTestSourceProviders[ComponentTypeImpl.ANDROID_TEST.artifactName]!!
