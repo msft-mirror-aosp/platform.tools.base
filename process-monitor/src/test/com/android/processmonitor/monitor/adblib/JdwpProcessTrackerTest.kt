@@ -20,6 +20,7 @@ import com.android.adblib.ConnectedDevice
 import com.android.adblib.connectedDevicesTracker
 import com.android.adblib.serialNumber
 import com.android.adblib.testing.FakeAdbLoggerFactory
+import com.android.adblib.testingutils.CoroutineTestUtils.runBlockingWithTimeout
 import com.android.adblib.testingutils.CoroutineTestUtils.yieldUntil
 import com.android.adblib.testingutils.FakeAdbServerProviderRule
 import com.android.fakeadbserver.DeviceState.DeviceStatus.ONLINE
@@ -41,6 +42,7 @@ import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.withTimeout
 import org.junit.Rule
 import org.junit.Test
 import java.time.Duration
@@ -174,6 +176,25 @@ class JdwpProcessTrackerTest {
         assertThat(allEvents).containsExactly(
             ProcessAdded(pid = 101, "packageName1", "processName1"),
         )
+    }
+
+    @Test
+    fun trackProcesses_throwsEOFException_whenDeviceDisconnects() = runBlockingWithTimeout {
+        val device = setupDevice("device1", 33)
+        val connectedDevice = adbSession.waitForDevice("device1")
+        val tracker = JdwpProcessTracker(connectedDevice, logger)
+
+        device.startClient(101, 1, "processName1", "packageName1", false)
+
+        val result = runCatching {
+            tracker.trackProcesses().collect {
+                // We disconnect the device from the flow collector, so that we know the
+                // flow is active.
+                fakeAdbRule.fakeAdb.disconnectDevice(device.deviceId)
+            }
+        }
+
+        assertThat(result.exceptionOrNull()).isInstanceOf(java.io.EOFException::class.java)
     }
 
     private fun setupDevice(serialNumber: String, sdk: Int) =
