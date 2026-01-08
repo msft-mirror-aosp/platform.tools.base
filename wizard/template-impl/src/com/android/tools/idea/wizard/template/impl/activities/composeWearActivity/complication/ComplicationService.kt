@@ -18,10 +18,8 @@ package com.android.tools.idea.wizard.template.impl.activities.composeWearActivi
 
 import com.android.tools.idea.wizard.template.escapeKotlinIdentifier
 
-fun complicationServiceKt(
-    complicationServiceKt: String,
-    packageName: String
-) = """
+fun complicationServiceKt(complicationServiceKt: String, packageName: String) =
+  """
 package ${escapeKotlinIdentifier(packageName)}.complication
 
 import androidx.wear.watchface.complications.data.ComplicationData
@@ -51,7 +49,7 @@ class $complicationServiceKt : SuspendingComplicationDataSourceService() {
             Calendar.TUESDAY -> createComplicationData("Tue", "Tuesday")
             Calendar.WEDNESDAY -> createComplicationData("Wed", "Wednesday")
             Calendar.THURSDAY -> createComplicationData("Thu", "Thursday")
-            Calendar.FRIDAY -> createComplicationData("Fri!", "Friday!")
+            Calendar.FRIDAY -> createComplicationData("Fri", "Friday")
             Calendar.SATURDAY -> createComplicationData("Sat", "Saturday")
             else -> throw IllegalArgumentException("too many days")
         }

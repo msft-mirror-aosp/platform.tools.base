@@ -32,14 +32,9 @@ import com.android.sdklib.internal.avd.BootSnapshot
 import com.android.sdklib.internal.avd.ColdBoot
 import com.android.sdklib.internal.avd.ConfigKey
 import com.android.sdklib.repository.IdDisplay
-import java.awt.Component
 import java.nio.file.Path
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
 
-class FakeAvdManager(val session: FakeAdbSession, val avdRoot: Path) :
-  LocalEmulatorProvisionerPlugin.AvdManager {
+class FakeAvdManager(val session: FakeAdbSession, val avdRoot: Path) {
   val avds = mutableListOf<AvdInfo>()
   val runningDevices = mutableSetOf<FakeEmulatorConsole>()
   var avdIndex = 1
@@ -48,11 +43,10 @@ class FakeAvdManager(val session: FakeAdbSession, val avdRoot: Path) :
       properties = avdInfo.properties + (ConfigKey.DISPLAY_NAME to avdInfo.displayName + " Edited")
     )
   }
-  override val runningAvdsFlow: StateFlow<Map<Path, RunningAvd>> = MutableStateFlow(mapOf())
 
-  override suspend fun rescanAvds(): List<AvdInfo> = synchronized(avds) { avds.toList() }
+  fun rescanAvds(): List<AvdInfo> = synchronized(avds) { avds.toList() }
 
-  override suspend fun createAvd(parent: Component?): Boolean {
+  fun createAvd(): Boolean {
     createAvd(makeAvdInfo(avdIndex++))
     return true
   }
@@ -69,7 +63,7 @@ class FakeAvdManager(val session: FakeAdbSession, val avdRoot: Path) :
     synchronized(avds) { avds += avdInfo }
   }
 
-  override suspend fun editAvd(parent: Component?, avdInfo: AvdInfo): Boolean =
+  fun editAvd(avdInfo: AvdInfo): Boolean =
     synchronized(avds) {
       avds.remove(avdInfo)
       val newAvdInfo = avdEditor(avdInfo)
@@ -77,7 +71,7 @@ class FakeAvdManager(val session: FakeAdbSession, val avdRoot: Path) :
       return true
     }
 
-  override suspend fun startAvd(avdInfo: AvdInfo, bootMode: BootMode) {
+  fun startAvd(avdInfo: AvdInfo, bootMode: BootMode) {
     avdInfo.properties[LAUNCH_EXCEPTION_MESSAGE]?.let { throw DeviceActionException(it) }
 
     val device =
@@ -97,14 +91,6 @@ class FakeAvdManager(val session: FakeAdbSession, val avdRoot: Path) :
     updateDevices()
   }
 
-  override suspend fun unpairGlasses(handle: LocalEmulatorDeviceHandle) {}
-
-  override suspend fun pairGlasses(
-    parent: Component?,
-    glassesHandle: LocalEmulatorDeviceHandle,
-    deviceHandleFlow: Flow<List<LocalEmulatorDeviceHandle>>,
-  ) {}
-
   fun finishBoot(device: ConnectedDevice) {
     session.deviceServices.configureDeviceProperties(
       DeviceSelector.fromSerialNumber(device.serialNumber),
@@ -112,20 +98,8 @@ class FakeAvdManager(val session: FakeAdbSession, val avdRoot: Path) :
     )
   }
 
-  override suspend fun stopAvd(avdInfo: AvdInfo) {
+  fun stopAvd(avdInfo: AvdInfo) {
     doStopAvd(avdInfo)
-  }
-
-  override suspend fun showOnDisk(avdInfo: AvdInfo) {
-    // no-op
-  }
-
-  override suspend fun duplicateAvd(parent: Component?, avdInfo: AvdInfo) {
-    // not used
-  }
-
-  override suspend fun wipeData(avdInfo: AvdInfo) {
-    // not used
   }
 
   private fun doStopAvd(avdInfo: AvdInfo) {
@@ -133,11 +107,11 @@ class FakeAvdManager(val session: FakeAdbSession, val avdRoot: Path) :
     updateDevices()
   }
 
-  override suspend fun deleteAvd(avdInfo: AvdInfo) {
+  fun deleteAvd(avdInfo: AvdInfo) {
     synchronized(avds) { avds.remove(avdInfo) }
   }
 
-  override suspend fun downloadAvdSystemImage(avdInfo: AvdInfo) {
+  fun downloadAvdSystemImage(avdInfo: AvdInfo) {
     avds[avds.indexOf(avdInfo)] = avdInfo.copy(status = AvdInfo.AvdStatus.OK)
   }
 
@@ -191,6 +165,8 @@ fun makeAvdInfo(
         ConfigKey.PLAYSTORE_ENABLED to hasPlayStore.toString(),
         ConfigKey.TAG_ID to tag.id,
         ConfigKey.TAG_DISPLAY to tag.display,
+        ConfigKey.TAG_IDS to tag.id,
+        ConfigKey.TAG_DISPLAYNAMES to tag.display,
       ),
     status = avdStatus,
   )

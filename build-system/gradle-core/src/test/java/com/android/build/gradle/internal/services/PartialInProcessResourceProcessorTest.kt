@@ -56,7 +56,7 @@ class PartialInProcessResourceProcessorTest {
             CompileResourceRequest(
                 inputFile = from,
                 outputDirectory = to,
-                resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable
+                resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable("Test")
             ), logger
         )
 
@@ -64,8 +64,7 @@ class PartialInProcessResourceProcessorTest {
         assertThat(to.resolve(
             Aapt2RenamingConventions.compilationRename(
                 from
-            )
-        )).exists()
+            )        )).exists()
     }
 
     @Test
@@ -82,7 +81,7 @@ class PartialInProcessResourceProcessorTest {
             inputFile = from,
             outputDirectory = to,
             isPngCrunching = true,
-            resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable
+            resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable("Test")
         )
         processor.compile(request, logger)
         verify(aapt2).compile(eq(request), eq(logger))

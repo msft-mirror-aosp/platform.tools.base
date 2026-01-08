@@ -74,7 +74,7 @@ class Aapt2DaemonManagerTest {
                             inputFile = File("in1"),
                             outputDirectory = File("out1"),
                             inputDirectoryName = "values",
-                            resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable
+                            resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable(justification = "Test")
                     ),
                     NoErrorsOrWarningsLogger())
             manager.maintain()
@@ -167,7 +167,7 @@ class Aapt2DaemonManagerTest {
                                     inputFile = File("in1"),
                                     outputDirectory = File("out1"),
                                     inputDirectoryName = "values",
-                                    resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable
+                                    resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable(justification = "Test")
                             ),
                             logger)
                     daemonsReady.release()
@@ -177,7 +177,7 @@ class Aapt2DaemonManagerTest {
                                     inputFile = File("in2"),
                                     outputDirectory = File("out1"),
                                     inputDirectoryName = "values",
-                                    resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable
+                                    resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable(justification = "Test")
                             ),
                             logger)
                 }
@@ -235,7 +235,7 @@ class Aapt2DaemonManagerTest {
                         inputFile = File("in1"),
                         outputDirectory = File("out1"),
                         inputDirectoryName = "values",
-                        resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable
+                        resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable(justification = "Test")
                 ), NoErrorsOrWarningsLogger())
             }
             assertThat(exception.message).contains("Compile")

@@ -31,7 +31,6 @@ import com.android.adblib.tools.debugging.JdwpProcessProperties
 import com.android.adblib.tools.debugging.externalJdwpProcessPropertiesCollectorFactoryList
 import com.android.adblib.tools.debugging.getOrDefault
 import com.android.adblib.tools.debugging.getOrNull
-import com.android.adblib.tools.debugging.jdwpProcessFlow
 import com.android.adblib.tools.debugging.jdwpProcessTracker
 import com.android.adblib.tools.debugging.processinventory.server.ProcessInventoryServerConfiguration
 import com.android.adblib.tools.debugging.propertiesFlow
@@ -347,7 +346,7 @@ class ProcessInventoryJdwpProcessPropertiesCollectorFactoryTest {
 
     private fun CoroutineScope.fetchProcessPropertiesAsync(device: ConnectedDevice, pid: Int) =
         async {
-            val process = device.jdwpProcessFlow.mapNotNull {
+            val process = device.jdwpProcessTracker.processesFlow.mapNotNull {
                 it.firstOrNull { process -> process.pid == pid }
             }.first()
 

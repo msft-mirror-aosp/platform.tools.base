@@ -17,16 +17,11 @@ package com.android.adblib.tools.debugging
 
 import com.android.adblib.ConnectedDevice
 import com.android.adblib.CoroutineScopeCache
-import com.android.adblib.DeviceState
-import com.android.adblib.flowWhenOnline
 import com.android.adblib.property
-import com.android.adblib.scope
-import com.android.adblib.tools.AdbLibToolsProperties.JDWP_PROCESS_TRACKER_RETRY_DELAY
 import com.android.adblib.tools.AdbLibToolsProperties.JDWP_PROCESS_TRACKER_SHOULD_USE_TRACK_APP_IF_AVAILABLE
 import com.android.adblib.tools.debugging.impl.JdwpProcessTrackerImpl
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 
 /**
@@ -107,22 +102,8 @@ private val jdwpProcessTrackerKey = CoroutineScopeCache.Key<JdwpProcessTracker>(
 /**
  * The default [JdwpProcessTracker] for this device, giving access to the list of [JdwpProcess]
  * currently active on the device (through a [StateFlow]).
- *
- * See also [ConnectedDevice.jdwpProcessFlow] to access a more user-friendly version of
- * the [StateFlow], i.e. a [Flow] that tracks the lifetime of the [ConnectedDevice].
  */
 val ConnectedDevice.jdwpProcessTracker: JdwpProcessTracker
     get() = this.cache.getOrPut(jdwpProcessTrackerKey) {
         JdwpProcessTracker.create(this)
-    }
-
-/**
- * The [Flow] of [processes][JdwpProcess] currently active on the device.
- *
- * The [Flow] starts when the device becomes [DeviceState.ONLINE] and ends
- * when the device is disconnected [DeviceState.DISCONNECTED].
- */
-val ConnectedDevice.jdwpProcessFlow : Flow<List<JdwpProcess>>
-    get() = flowWhenOnline(session.property(JDWP_PROCESS_TRACKER_RETRY_DELAY)) {
-        it.jdwpProcessTracker.processesFlow
     }

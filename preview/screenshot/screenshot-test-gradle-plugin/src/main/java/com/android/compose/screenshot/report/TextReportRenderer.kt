@@ -16,12 +16,12 @@
 
 package com.android.compose.screenshot.report
 
-import org.gradle.api.UncheckedIOException
 import java.io.BufferedWriter
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
 import java.io.OutputStreamWriter
+import java.io.UncheckedIOException
 import java.io.Writer
 
 /**
@@ -50,12 +50,19 @@ abstract class TextReportRenderer<T> {
                     writeTo(model, it)
                 }
             }
-        } catch (var8: java.lang.Exception) {
+        } catch (e: IOException) {
             throw UncheckedIOException(
                 String.format(
                     "Could not write to file '%s'.",
                     file
-                ), var8
+                ), e
+            )
+        } catch (e: Exception) {
+            throw RuntimeException(
+                String.format(
+                    "Could not write to file '%s'.",
+                    file
+                ), e
             )
         }
     }

@@ -131,6 +131,8 @@ public class AndroidArtifacts {
             "android-exploded-aar-or-asar-interface-descriptor";
     private static final String TYPE_AAR_ClASS_LIST_AND_RES_SYMBOLS =
             "aar-class-list-and-res-symbols";
+    private static final String TYPE_ANDROID_RES_SOURCE_SET_MAPPING =
+            "android-res-source-set-mapping";
     private static final String TYPE_JAR_ClASS_LIST = "jar-class-list";
     private static final String TYPE_COMPILED_DEPENDENCIES_RESOURCES =
             "android-compiled-dependencies-resources";
@@ -613,6 +615,11 @@ public class AndroidArtifacts {
 
         // A file containing unique resource symbols from ANDROID_RES.
         ANDROID_RES_SYMBOLS(TYPE_AAR_ClASS_LIST_AND_RES_SYMBOLS),
+        /**
+         * Text file containing resource source set IDs and the absolute paths of the resource
+         * source sets.
+         */
+        ANDROID_RES_SOURCE_SET_MAPPING(TYPE_ANDROID_RES_SOURCE_SET_MAPPING),
         // A file containing classpaths from CLASSES_JAR.
         JAR_CLASS_LIST(TYPE_JAR_ClASS_LIST),
 

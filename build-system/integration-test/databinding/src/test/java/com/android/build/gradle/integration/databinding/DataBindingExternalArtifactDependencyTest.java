@@ -53,22 +53,18 @@ public class DataBindingExternalArtifactDependencyTest {
         String useX = BooleanOption.USE_ANDROID_X.getPropertyName() + "=" + Boolean.TRUE;
         String enableJetifier =
                 BooleanOption.ENABLE_JETIFIER.getPropertyName() + "=" + Boolean.TRUE;
-        String enablePrivacySandbox =
-                BooleanOption.PRIVACY_SANDBOX_SDK_SUPPORT.getPropertyName() + "=" + Boolean.FALSE;
         this.useNonTransitiveR = useNonTransitiveR;
 
         library =
                 GradleTestProject.builder()
                         .fromDataBindingIntegrationTest("IndependentLibrary", true)
                         .addGradleProperties(useX)
-                        .addGradleProperties(enablePrivacySandbox)
                         .create();
         app =
                 GradleTestProject.builder()
                         .fromDataBindingIntegrationTest("MultiModuleTestApp", true)
                         .addGradleProperties(useX)
                         .addGradleProperties(enableJetifier)
-                        .addGradleProperties(enablePrivacySandbox)
                         .create();
     }
 

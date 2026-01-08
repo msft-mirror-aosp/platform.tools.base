@@ -36,6 +36,7 @@ import java.net.InetAddress
 import java.net.InetSocketAddress
 import java.net.URI
 import java.nio.ByteBuffer
+import java.nio.file.FileSystemNotFoundException
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -330,13 +331,17 @@ internal class ReverseForwardStream(
       val devRoot = ClassLoader.getSystemResource(".")
       var result: Path? = null
       if (devRoot != null) {
-        val pluginDir = Paths.get(devRoot.toURI())
-        val devPath =
-          pluginDir.resolve(
-            "../../../../../../bazel-bin/tools/base/adb-proxy/reverse-daemon/reverse_daemon.dex"
-          )
-        if (Files.exists(devPath)) {
-          result = devPath
+        try {
+          val pluginDir = Paths.get(devRoot.toURI())
+          val devPath =
+            pluginDir.resolve(
+              "../../../../../../bazel-bin/tools/base/adb-proxy/reverse-daemon/reverse_daemon.dex"
+            )
+          if (Files.exists(devPath)) {
+            result = devPath
+          }
+        } catch (e: FileSystemNotFoundException) {
+          logger.info("Couldn't find reverse_daemon.dex from devRoot: ${e.message}")
         }
       }
       if (result == null) {

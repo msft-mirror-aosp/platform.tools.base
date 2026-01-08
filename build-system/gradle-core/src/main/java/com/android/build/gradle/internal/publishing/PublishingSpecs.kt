@@ -17,7 +17,6 @@
 package com.android.build.gradle.internal.publishing
 
 import com.android.build.api.artifact.Artifact
-import com.android.build.api.artifact.SingleArtifact
 import com.android.build.api.artifact.SingleArtifact.APK
 import com.android.build.api.artifact.SingleArtifact.ASSETS
 import com.android.build.api.artifact.SingleArtifact.MERGED_MANIFEST
@@ -37,6 +36,7 @@ import com.android.build.gradle.internal.scope.InternalArtifactType.AAR_METADATA
 import com.android.build.gradle.internal.scope.InternalArtifactType.AIDL_PARCELABLE
 import com.android.build.gradle.internal.scope.InternalArtifactType.ANDROID_TEST_LINT_MODEL
 import com.android.build.gradle.internal.scope.InternalArtifactType.ANDROID_TEST_LINT_PARTIAL_RESULTS
+import com.android.build.gradle.internal.scope.InternalArtifactType.APKS_FROM_BUNDLE
 import com.android.build.gradle.internal.scope.InternalArtifactType.APK_ZIP
 import com.android.build.gradle.internal.scope.InternalArtifactType.BASE_MODULE_METADATA
 import com.android.build.gradle.internal.scope.InternalArtifactType.COMPILED_LOCAL_RESOURCES
@@ -54,8 +54,10 @@ import com.android.build.gradle.internal.scope.InternalArtifactType.FEATURE_RESO
 import com.android.build.gradle.internal.scope.InternalArtifactType.FEATURE_SET_METADATA
 import com.android.build.gradle.internal.scope.InternalArtifactType.FULL_JAR
 import com.android.build.gradle.internal.scope.InternalArtifactType.GLOBAL_SYNTHETICS_MERGED
+import com.android.build.gradle.internal.scope.InternalArtifactType.JAVA_DOC_JAR
 import com.android.build.gradle.internal.scope.InternalArtifactType.JAVA_RES
 import com.android.build.gradle.internal.scope.InternalArtifactType.LIBRARY_AND_LOCAL_JARS_JNI
+import com.android.build.gradle.internal.scope.InternalArtifactType.LIBRARY_ART_PROFILE
 import com.android.build.gradle.internal.scope.InternalArtifactType.LIBRARY_JNI
 import com.android.build.gradle.internal.scope.InternalArtifactType.LINT_MODEL
 import com.android.build.gradle.internal.scope.InternalArtifactType.LINT_MODEL_METADATA
@@ -87,12 +89,15 @@ import com.android.build.gradle.internal.scope.InternalArtifactType.RUNTIME_LIBR
 import com.android.build.gradle.internal.scope.InternalArtifactType.RUNTIME_LIBRARY_CLASSES_JAR
 import com.android.build.gradle.internal.scope.InternalArtifactType.SIGNING_CONFIG_DATA
 import com.android.build.gradle.internal.scope.InternalArtifactType.SIGNING_CONFIG_VERSIONS
+import com.android.build.gradle.internal.scope.InternalArtifactType.SOURCE_JAR
+import com.android.build.gradle.internal.scope.InternalArtifactType.ANDROID_RES_SOURCE_SET_PATH_MAP
 import com.android.build.gradle.internal.scope.InternalArtifactType.SUPPORTED_LOCALE_LIST
 import com.android.build.gradle.internal.scope.InternalArtifactType.SYMBOL_LIST_WITH_PACKAGE_NAME
 import com.android.build.gradle.internal.scope.InternalArtifactType.TEST_FIXTURES_LINT_MODEL
 import com.android.build.gradle.internal.scope.InternalArtifactType.TEST_FIXTURES_LINT_PARTIAL_RESULTS
 import com.android.build.gradle.internal.scope.InternalArtifactType.UNIT_TEST_LINT_MODEL
 import com.android.build.gradle.internal.scope.InternalArtifactType.UNIT_TEST_LINT_PARTIAL_RESULTS
+import com.android.build.gradle.internal.scope.InternalArtifactType.VARIANT_CODE_COVERAGE_DATA
 import com.android.build.gradle.internal.utils.toImmutableSet
 import com.android.builder.core.ComponentType
 import com.android.builder.core.ComponentTypeImpl
@@ -161,7 +166,7 @@ class PublishingSpecs {
                 runtime(APK, ArtifactType.APK)
                 publish(APK_ZIP, ArtifactType.APK_ZIP)
 
-                runtime(InternalArtifactType.APKS_FROM_BUNDLE, ArtifactType.APKS_FROM_BUNDLE)
+                runtime(APKS_FROM_BUNDLE, ArtifactType.APKS_FROM_BUNDLE)
                 runtime(PACKAGED_DEPENDENCIES, ArtifactType.PACKAGED_DEPENDENCIES)
 
                 runtime(NAVIGATION_JSON, ArtifactType.NAVIGATION_JSON)
@@ -180,7 +185,7 @@ class PublishingSpecs {
                 runtime(LINT_MODEL, ArtifactType.BASE_MODULE_LINT_MODEL)
                 api(SYMBOL_LIST_WITH_PACKAGE_NAME, ArtifactType.APP_SYMBOL_LIST_FOR_DATA_BINDING)
                 api(MERGED_TEST_ONLY_NATIVE_LIBS, ArtifactType.MERGED_TEST_ONLY_NATIVE_LIBS)
-                runtime(InternalArtifactType.VARIANT_CODE_COVERAGE_DATA, ArtifactType.CODE_COVERAGE_DATA)
+                runtime(VARIANT_CODE_COVERAGE_DATA, ArtifactType.CODE_COVERAGE_DATA)
             }
 
             variantSpec(ComponentTypeImpl.OPTIONAL_APK) {
@@ -241,8 +246,8 @@ class PublishingSpecs {
             variantSpec(ComponentTypeImpl.LIBRARY) {
                 publish(com.android.build.api.artifact.SingleArtifact.AAR, ArtifactType.AAR)
 
-                source(InternalArtifactType.SOURCE_JAR, ArtifactType.SOURCES_JAR)
-                javaDoc(InternalArtifactType.JAVA_DOC_JAR, ArtifactType.JAVA_DOC_JAR)
+                source(SOURCE_JAR, ArtifactType.SOURCES_JAR)
+                javaDoc(JAVA_DOC_JAR, ArtifactType.JAVA_DOC_JAR)
 
                 api(AIDL_PARCELABLE, ArtifactType.AIDL)
                 api(RENDERSCRIPT_HEADERS, ArtifactType.RENDERSCRIPT)
@@ -281,10 +286,11 @@ class PublishingSpecs {
                 runtime(LIBRARY_JNI, ArtifactType.JNI)
                 runtime(COMPILED_LOCAL_RESOURCES, ArtifactType.COMPILED_DEPENDENCIES_RESOURCES)
                 runtime(AAR_METADATA, ArtifactType.AAR_METADATA)
-                runtime(InternalArtifactType.LIBRARY_ART_PROFILE, ArtifactType.ART_PROFILE)
+                runtime(LIBRARY_ART_PROFILE, ArtifactType.ART_PROFILE)
                 runtime(SUPPORTED_LOCALE_LIST, ArtifactType.SUPPORTED_LOCALE_LIST)
-                runtime(InternalArtifactType.SOURCE_JAR, ArtifactType.SOURCES_JAR)
-                runtime(InternalArtifactType.VARIANT_CODE_COVERAGE_DATA, ArtifactType.CODE_COVERAGE_DATA)
+                runtime(SOURCE_JAR, ArtifactType.SOURCES_JAR)
+                runtime(VARIANT_CODE_COVERAGE_DATA, ArtifactType.CODE_COVERAGE_DATA)
+                runtime(ANDROID_RES_SOURCE_SET_PATH_MAP, ArtifactType.ANDROID_RES_SOURCE_SET_MAPPING)
 
                 // Publish lint artifacts to API_AND_RUNTIME_ELEMENTS to support compileOnly module
                 // dependencies.
@@ -336,6 +342,7 @@ class PublishingSpecs {
                 runtime(UPDATED_NAVIGATION_XML, ArtifactType.NAVIGATION_XML)
                 runtime(COMPILED_LOCAL_RESOURCES, ArtifactType.COMPILED_DEPENDENCIES_RESOURCES)
                 runtime(AAR_METADATA, ArtifactType.AAR_METADATA)
+                runtime(ANDROID_RES_SOURCE_SET_PATH_MAP, ArtifactType.ANDROID_RES_SOURCE_SET_MAPPING)
                 // Publish LOCAL_AAR_FOR_LINT to API_AND_RUNTIME_ELEMENTS to support compileOnly
                 // module dependencies.
                 output(LOCAL_AAR_FOR_LINT, ArtifactType.LOCAL_AAR_FOR_LINT)
@@ -369,7 +376,8 @@ class PublishingSpecs {
                 runtime(CONSUMER_PROGUARD_DIR, ArtifactType.UNFILTERED_PROGUARD_RULES)
                 runtime(LIBRARY_AND_LOCAL_JARS_JNI, ArtifactType.JNI)
                 runtime(COMPILED_LOCAL_RESOURCES, ArtifactType.COMPILED_DEPENDENCIES_RESOURCES)
-                runtime(InternalArtifactType.LIBRARY_ART_PROFILE, ArtifactType.ART_PROFILE)
+                runtime(ANDROID_RES_SOURCE_SET_PATH_MAP, ArtifactType.ANDROID_RES_SOURCE_SET_MAPPING)
+                runtime(LIBRARY_ART_PROFILE, ArtifactType.ART_PROFILE)
 
                 // Publish lint artifacts to API_AND_RUNTIME_ELEMENTS to support compileOnly module
                 // dependencies.

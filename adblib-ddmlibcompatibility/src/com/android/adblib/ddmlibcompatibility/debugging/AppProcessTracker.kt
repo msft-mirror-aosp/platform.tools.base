@@ -20,10 +20,12 @@ import com.android.adblib.ConnectedDevice
 import com.android.adblib.adbLogger
 import com.android.adblib.scope
 import com.android.adblib.tools.debugging.AppProcess
-import com.android.adblib.tools.debugging.appProcessFlow
+import com.android.adblib.tools.debugging.StateFlowStatus
+import com.android.adblib.tools.debugging.appProcessTracker
 import com.android.ddmlib.Client
 import com.android.ddmlib.IDevice
 import com.android.ddmlib.ProfileableClient
+import kotlinx.coroutines.flow.takeWhile
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
@@ -45,8 +47,9 @@ internal class AppProcessTracker(private val trackerHost: ProcessTrackerHost) {
             logger.debug { "Starting app process tracking for device $iDevice" }
             val processEntryMap = mutableMapOf<Int, AdblibProfileableClientWrapper>()
             try {
-                // Run the 'track-app' service and collect processes info
-                device.appProcessFlow
+                // Collect app process updates
+                device.appProcessTracker.appProcessFlow
+                    .takeWhile { it.flowStatus != StateFlowStatus.endOfFlow }
                     .collect { appProcessList ->
                         updateAppProcessList(processEntryMap, appProcessList)
                     }

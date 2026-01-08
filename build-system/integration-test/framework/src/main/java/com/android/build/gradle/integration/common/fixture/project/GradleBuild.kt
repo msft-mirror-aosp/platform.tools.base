@@ -74,12 +74,7 @@ interface GradleBuild {
      * Queries for a privacy sandbox sdk via its gradle path.
      * The project must exist and be a Privacy Sandbox SDK.
      */
-    fun privacySandboxSdk(path: String): PrivacySandboxSdkProject
-    /**
-     * Queries for an AndroidX privacy sandbox library via its gradle path.
-     * The project must exist and be a Privacy Sandbox Library.
-     */
-    fun androidXPrivacySandboxLibrary(path:String): AndroidLibraryProject
+
     /**
      * Queries for an AI pack project via its gradle path.
      * The project must exist and be an AI Pack project
@@ -220,30 +215,6 @@ internal abstract class BaseGradleBuildImpl : GradleBuild {
             """
                 Project with path '$path' is not an Android test project.
                 Possible options are ${getProjectListByType<AndroidTestImpl>()}
-            """.trimIndent()
-        )
-    }
-
-    override fun privacySandboxSdk(path: String): PrivacySandboxSdkProject {
-        val project = subProject(path)
-        if (project is PrivacySandboxSdkProject) return project
-
-        throw RuntimeException(
-            """
-                Project with path '$path' is not a privacy sandbox SDK project.
-                Possible options are ${getProjectListByType<PrivacySandboxSdkImpl>()}
-            """.trimIndent()
-        )
-    }
-
-    override fun androidXPrivacySandboxLibrary(path: String): AndroidLibraryProject {
-        val project = subProject(path)
-        if (project is AndroidLibraryProject) return project
-
-        throw RuntimeException(
-            """
-                Project with path '$path' is not an Androids Privacy Sandbox Library or Android Library project.
-                Possible options are ${getProjectListByType<AndroidLibraryImpl>()}
             """.trimIndent()
         )
     }

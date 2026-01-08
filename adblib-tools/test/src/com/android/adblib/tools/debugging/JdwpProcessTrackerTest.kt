@@ -45,6 +45,7 @@ import org.junit.Rule
 import org.junit.Test
 import java.util.concurrent.CopyOnWriteArrayList
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 
 class JdwpProcessTrackerTest {
 
@@ -265,7 +266,7 @@ class JdwpProcessTrackerTest {
     }
 
     @Test
-    fun testJdwpProcessTrackerFlowStopsWhenDeviceDisconnects(): Unit = runBlockingWithTimeout {
+    fun testJdwpProcessTrackerClearsProcesses_whenDeviceDisconnects(): Unit = runBlockingWithTimeout {
         val deviceID = "1234"
         val fakeDevice =
             fakeAdb.connectDevice(
@@ -294,14 +295,19 @@ class JdwpProcessTrackerTest {
         }
 
         jdwpTracker.scope.launch {
-            jdwpTracker.processesFlow.collect {
-                listOfProcessList.add(it)
+            jdwpTracker.processesFlow.collect { processList ->
+                if (processList.isNotEmpty()) {
+                    listOfProcessList.add(processList)
+                }
             }
         }.join()
+        // Wait for the tracker's scope to fully complete to ensure cancellation is fully processed
+        jdwpTracker.scope.coroutineContext[Job]?.join()
 
-        // Assert
-        // We don't assert anything, the fact we reached this point means the
-        // flow was cancelled when the device was disconnected.
+        // Assert: After the tracker's scope is cancelled (due to device disconnect), its cleanup
+        // `processesFlow` is reset to an empty list
+        assertTrue(jdwpTracker.processesFlow.value.isEmpty())
+        assertTrue(jdwpTracker.processesFlow.value.flowStatus.isEndOfFlow)
     }
 
     @Test

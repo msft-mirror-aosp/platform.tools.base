@@ -55,11 +55,10 @@ class GradlePropertiesTest {
             .with(BooleanOption.USE_ANDROID_X, true)
             .with(BooleanOption.ENABLE_JETIFIER, false)
             .run("assembleDebug")
-        result.stdout.use {
-            ScannerSubject.assertThat(it).contains(
-                "Calculating task graph as configuration cache cannot be reused because " +
-                        "Gradle property 'android.enableJetifier' has changed")
-        }
+        result.assertOutputContains(
+            "Calculating task graph as configuration cache cannot be reused because " +
+                    "Gradle property 'android.enableJetifier' has changed"
+        )
     }
 
     @Test
@@ -68,7 +67,9 @@ class GradlePropertiesTest {
         val result = executor()
             .withArgument("-Pandroid.testInstrumentationRunnerArguments.size=medium")
             .run("assembleDebug")
-        result.assertConfigurationCacheHit()
+        result.assertOutputContains(
+                "Calculating task graph as configuration cache cannot be reused " +
+                        "because the set of Gradle properties has changed: 'android.testInstrumentationRunnerArguments.size' was added")
     }
 
     @Test
@@ -79,7 +80,10 @@ class GradlePropertiesTest {
         val result = executor()
             .withArgument("-Pandroid.testInstrumentationRunnerArguments.foo=changed")
             .run("assembleDebug")
-        result.assertConfigurationCacheHit()
+        result.assertOutputContains(
+                "Calculating task graph as configuration cache cannot be reused " +
+                        "because the set of Gradle properties has changed: the value of "+
+                        "'android.testInstrumentationRunnerArguments.foo' was changed.")
     }
 
     private fun executor(): GradleTaskExecutor = project.executor()

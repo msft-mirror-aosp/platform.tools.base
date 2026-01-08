@@ -108,6 +108,25 @@ class KotlinMultiplatformAndroidVariantApiTest {
     }
 
     @Test
+    fun testBeforeVariantsAPI() {
+        TestFileUtils.appendToFile(
+            project.getSubproject("kmpFirstLib").ktsBuildFile,
+            """
+                androidComponents {
+                    beforeVariants {
+                        // beforeVariants for KMP is not supported test so this block should not
+                        // be invoked. Once support is added, having this exception will force
+                        // testing it properly here.
+                        throw RuntimeException("I should not be invoked !")
+                    }
+                }
+            """.trimIndent()
+        )
+        val result = executor().run(":kmpFirstLib:assemble")
+        result.assertOutputContains("beforeVariants() API is not supported yet for KMP modules and will be ignored")
+    }
+
+    @Test
     fun testInstrumentedTestDependencySubstitution() {
         TestFileUtils.appendToFile(
             project.getSubproject("kmpFirstLib").ktsBuildFile,
@@ -234,7 +253,6 @@ class KotlinMultiplatformAndroidVariantApiTest {
                                 .setApiLevel(34)
                                 .setCodeName("")
                                 .setAbis(listOf())
-                                .setSupportsPrivacySandbox(false)
                                 .build())
                         }
                     }

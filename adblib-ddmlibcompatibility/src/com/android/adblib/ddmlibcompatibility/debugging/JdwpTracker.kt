@@ -20,8 +20,10 @@ import com.android.adblib.ConnectedDevice
 import com.android.adblib.adbLogger
 import com.android.adblib.scope
 import com.android.adblib.tools.debugging.JdwpProcess
-import com.android.adblib.tools.debugging.jdwpProcessFlow
+import com.android.adblib.tools.debugging.StateFlowStatus
+import com.android.adblib.tools.debugging.jdwpProcessTracker
 import com.android.ddmlib.IDevice
+import kotlinx.coroutines.flow.takeWhile
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
@@ -43,8 +45,9 @@ internal class JdwpTracker(private val trackerHost: ProcessTrackerHost) {
             logger.debug { "Starting process tracking for device $iDevice" }
             val processEntryMap = mutableMapOf<Int, AdblibClientWrapper>()
             try {
-                // Run the 'jdwp-track' service and collect PIDs
-                device.jdwpProcessFlow
+                // Collect debuggable PIDs
+                device.jdwpProcessTracker.processesFlow
+                    .takeWhile { it.flowStatus != StateFlowStatus.endOfFlow }
                     .collect { processList ->
                         updateJdwpProcessList(processEntryMap, processList)
                     }

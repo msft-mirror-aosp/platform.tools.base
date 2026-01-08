@@ -49,6 +49,7 @@ import com.android.build.gradle.options.ProjectOptions
 import com.android.build.gradle.options.StringOption
 import com.android.build.gradle.options.SyncOptions
 import com.android.builder.errors.IssueReporter.Type
+import com.android.ide.common.repository.AgpVersion
 import com.google.common.base.CharMatcher
 import com.google.wireless.android.sdk.stats.GradleBuildProfileSpan.ExecutionType
 import com.google.wireless.android.sdk.stats.GradleBuildProject
@@ -312,9 +313,17 @@ abstract class AndroidPluginBaseServices(
         throw StopExecutionException(message)
     }
 
+    private fun minRequiredJavaVersion(): JavaVersion {
+        // See https://issuetracker.google.com/474041329
+        projectServices.projectOptions.simulatedAGPVersion?.let { simulatedAgpVersion ->
+            if (simulatedAgpVersion > AgpVersion.parse("10.0.0-alpha01")) return JavaVersion.VERSION_21
+        }
+        return JavaVersion.VERSION_17
+    }
+
     protected open fun checkMinJvmVersion() {
         val current: JavaVersion = JavaVersion.current()
-        val minRequired: JavaVersion = JavaVersion.VERSION_17
+        val minRequired: JavaVersion = minRequiredJavaVersion()
         if (!current.isCompatibleWith(minRequired)) {
             syncIssueReporter.reportError(
                 Type.AGP_USED_JAVA_VERSION_TOO_LOW,

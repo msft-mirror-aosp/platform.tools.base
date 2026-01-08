@@ -16,8 +16,6 @@
 package com.android.adblib.tools.debugging
 
 import com.android.adblib.InstructionSet
-import com.android.adblib.connectedDevicesTracker
-import com.android.adblib.serialNumber
 import com.android.adblib.testingutils.CoroutineTestUtils
 import com.android.adblib.testingutils.CoroutineTestUtils.yieldUntil
 import com.android.adblib.testingutils.FakeAdbServerProviderRule
@@ -25,12 +23,10 @@ import com.android.adblib.tools.testutils.waitForOnlineConnectedDevice
 import com.android.fakeadbserver.DeviceState
 import com.android.sdklib.AndroidApiLevel
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.takeWhile
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -41,7 +37,6 @@ import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
-import java.time.Duration
 import java.util.concurrent.CancellationException
 import java.util.concurrent.CopyOnWriteArrayList
 
@@ -283,52 +278,6 @@ class AppProcessTrackerTest {
 
             // Assert
             Assert.assertEquals(exception.message, "My Test Exception")
-        }
-
-    @Test
-    fun testAppProcessFlowStartsWhenDeviceIsOnline(): Unit =
-        CoroutineTestUtils.runBlockingWithTimeout {
-            // Prepare
-            val deviceID = "1234"
-            val fakeDevice =
-                fakeAdb.connectDevice(
-                    deviceID,
-                    "test1",
-                    "test2",
-                    "model",
-                    AndroidApiLevel(31), // SDK >= 31 is required for track_app feature.
-                    DeviceState.HostConnectionType.USB
-                )
-            fakeDevice.deviceStatus = DeviceState.DeviceStatus.OFFLINE
-            val connectedDevice =
-                hostServices.session.connectedDevicesTracker.connectedDevices
-                    .mapNotNull { connectedDevices ->
-                        connectedDevices.firstOrNull { device ->
-                            device.serialNumber == fakeDevice.deviceId
-                        }
-                    }.first()
-
-            // Act
-            var appProcesses: List<AppProcess>? = null
-            launch {
-                appProcesses = connectedDevice.appProcessFlow.first()
-            }
-
-            // Device is in OFFLINE state and so the processes are not being tracked yet
-            delay(1000)
-            // Assert
-            Assert.assertNull(appProcesses)
-
-            // Act: Bring device ONLINE and confirm that the `ConnectedDevice.appProcessFlow`
-            // is now emitting values
-            fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
-            yieldUntil(Duration.ofSeconds(5)) {
-                appProcesses == listOf<AppProcess>()
-            }
-
-            // Assert
-            Assert.assertNotNull(appProcesses)
-            Assert.assertTrue(appProcesses!!.isEmpty())
         }
 
     @Test

@@ -84,6 +84,7 @@ sealed interface ResourcePathEncoding {
 
     /* Writes absolute path to the compiled resource. This is problematic for relocatability and caching.
      * Only use for testing.
+     * @param justification Explanation why absolute paths are used rather than [Relative].
     */
-    object AbsoluteNotRelocatable : ResourcePathEncoding
+    data class AbsoluteNotRelocatable(val justification: String) : ResourcePathEncoding
 }

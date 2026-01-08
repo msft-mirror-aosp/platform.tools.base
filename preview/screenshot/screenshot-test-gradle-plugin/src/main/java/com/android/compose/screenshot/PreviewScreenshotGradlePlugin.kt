@@ -237,7 +237,7 @@ class PreviewScreenshotGradlePlugin : Plugin<Project> {
                             it.showStandardStreams = true
                         }
                         task.isScanForTestClasses = false
-
+                        task.systemProperty("java.awt.headless", "true")
                         task.classpath.from(
                             task.project.configurations.getByName(previewScreenshotTestEngineConfigurationName),
                             componentsExtension.sdkComponents.bootClasspath,  // Needed for test discovery
@@ -270,6 +270,7 @@ class PreviewScreenshotGradlePlugin : Plugin<Project> {
                             it.showStandardStreams = true
                         }
                         task.isScanForTestClasses = false
+                        task.systemProperty("java.awt.headless", "true")
                         task.reports {
                             // TODO(b/325320710): Use the standard test report when extension points
                             //  for adding custom information become available. As a short-term
@@ -421,7 +422,6 @@ class PreviewScreenshotGradlePlugin : Plugin<Project> {
         val dependencies = project.dependencies
         if (container.findByName(previewScreenshotTestEngineConfigurationName) == null) {
             container.create(previewScreenshotTestEngineConfigurationName).apply {
-                isVisible = false
                 isTransitive = true
                 isCanBeConsumed = false
                 description = "A configuration to resolve screenshot test engine dependencies."
@@ -439,7 +439,6 @@ class PreviewScreenshotGradlePlugin : Plugin<Project> {
         val dependencies = project.dependencies
         if (container.findByName(layoutlibJarConfigurationName) == null) {
             container.create(layoutlibJarConfigurationName).apply {
-                isVisible = false
                 isTransitive = true
                 isCanBeConsumed = false
                 description = "A configuration to resolve layoutlib jar dependencies."
@@ -461,7 +460,6 @@ class PreviewScreenshotGradlePlugin : Plugin<Project> {
         val dependencies = project.dependencies
         if (container.findByName(layoutlibResourcesConfigurationName) == null) {
             container.create(layoutlibResourcesConfigurationName).apply {
-                isVisible = false
                 isTransitive = true
                 isCanBeConsumed = false
                 description = "A configuration to resolve render CLI tool dependencies."

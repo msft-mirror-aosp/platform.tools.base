@@ -19,7 +19,6 @@ package com.android.build.gradle.integration.common.fixture.project.builder
 import com.android.Version
 import com.android.build.api.dsl.Lint
 import com.android.build.gradle.integration.common.fixture.project.builder.kotlin.KotlinExtension
-import com.android.build.gradle.internal.privaysandboxsdk.PrivacySandboxSdkConstants.androidxPrivacySandboxLibraryPluginVersion
 import com.android.build.gradle.internal.utils.ANDROID_BUILT_IN_KOTLIN_PLUGIN_ID
 import com.android.build.gradle.internal.utils.KOTLIN_ANDROID_PLUGIN_ID
 import com.android.testutils.TestUtils
@@ -81,7 +80,6 @@ sealed class PluginType(
     object ANDROID_TEST: AgpPlugin("com.android.test")
     object ANDROID_DYNAMIC_FEATURE: AgpPlugin("com.android.dynamic-feature")
     object FUSED_LIBRARY: AgpPlugin("com.android.fused-library")
-    object PRIVACY_SANDBOX_SDK: AgpPlugin("com.android.privacy-sandbox-sdk")
     object ANDROID_ASSET_PACK: AgpPlugin("com.android.asset-pack")
     object ANDROID_AI_PACK: AgpPlugin("com.android.ai-pack")
     object ANDROID_ASSET_PACK_BUNDLE: AgpPlugin("com.android.asset-pack-bundle")
@@ -103,15 +101,6 @@ sealed class PluginType(
         isSettings = true,
         artifact = "com.android.tools.build:gradle-settings",
         version = Version.ANDROID_GRADLE_PLUGIN_VERSION
-    )
-
-    // -----------
-    // AndroidX plugins
-    object ANDROIDX_PRIVACY_SANDBOX_LIBRARY: PluginType(
-        id = "androidx.privacysandbox.library",
-        isAndroid = true,
-        artifact = "androidx.privacysandbox.plugins:plugins-privacysandbox-library",
-        version = androidxPrivacySandboxLibraryPluginVersion,
     )
 
     /**

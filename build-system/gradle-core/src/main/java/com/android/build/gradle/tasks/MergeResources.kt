@@ -68,9 +68,9 @@ import com.android.ide.common.resources.ResourcePathEncoding
 import com.android.ide.common.resources.ResourcePreprocessor
 import com.android.ide.common.resources.ResourceSet
 import com.android.ide.common.resources.SingleFileProcessor
-import com.android.ide.common.resources.getIdentifiedSourceSetMap
 import com.android.ide.common.vectordrawable.ResourcesNotSupportedException
 import com.android.ide.common.workers.WorkerExecutorFacade
+import com.android.ide.common.resources.getRelativeSourceSetMap
 import com.android.resources.Density
 import com.android.utils.FileUtils
 import com.android.utils.ILogger
@@ -285,7 +285,15 @@ abstract class MergeResources : NewIncrementalTask() {
                     }
                     val publicFile = if (publicFile.isPresent) publicFile.get().asFile else null
                     val sourceSetPaths =
-                        getRelativeSourceSetMap(resourceSets, destinationDir, incrementalFolder)
+                        getRelativeSourceSetMap(
+                            namespace.get(),
+                            projectPath.get(),
+                            resourceSets.flatMap { it.sourceFiles },
+                            destinationDir,
+                            incrementalFolder,
+                            mergedNotCompiledResourcesOutputDirectory.orNull?.asFile,
+                            generatedPngsOutputDir.orNull?.asFile
+                        )
                     val writer = MergedResourceWriter(
                         MergedResourceWriterRequest(
                             workerExecutor = workerExecutorFacade,
@@ -445,7 +453,15 @@ abstract class MergeResources : NewIncrementalTask() {
                     val publicFile = if (publicFile.isPresent) publicFile.get().asFile else null
                     val destinationDir = outputDir.get().asFile
                     val sourceSetPaths =
-                        getRelativeSourceSetMap(resourceSets, destinationDir, incrementalFolder)
+                        getRelativeSourceSetMap(
+                            namespace.get(),
+                            projectPath.get(),
+                            resourceSets.flatMap { it.sourceFiles },
+                            destinationDir,
+                            incrementalFolder,
+                            mergedNotCompiledResourcesOutputDirectory.orNull?.asFile,
+                            generatedPngsOutputDir.orNull?.asFile
+                        )
                     val writer = MergedResourceWriter(
                         MergedResourceWriterRequest(
                             workerExecutorFacade,
@@ -523,25 +539,6 @@ abstract class MergeResources : NewIncrementalTask() {
             }
         }
         return true
-    }
-
-    private fun getRelativeSourceSetMap(
-        resourceSets: List<ResourceSet>, destinationDir: File, incrementalFolder: File
-    ): Map<String, String> {
-        val sourceSets = resourceSets.flatMap { it.sourceFiles }.toMutableList()
-
-        if (generatedPngsOutputDir.isPresent) {
-            sourceSets.add(generatedPngsOutputDir.get().asFile)
-        }
-        mergedNotCompiledResourcesOutputDirectory.orNull?.asFile?.let {
-            if (it.exists()) {
-                sourceSets.add(it)
-            }
-        }
-        sourceSets.add(destinationDir)
-        sourceSets.add(FileUtils.join(incrementalFolder, SdkConstants.FD_MERGED_DOT_DIR))
-        sourceSets.add(FileUtils.join(incrementalFolder, SdkConstants.FD_STRIPPED_DOT_DIR))
-        return getIdentifiedSourceSetMap(sourceSets, namespace.get(), projectPath.get())
     }
 
     private fun maybeCreateLayoutProcessor(): SingleFileProcessor? {

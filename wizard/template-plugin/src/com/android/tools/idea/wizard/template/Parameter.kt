@@ -62,8 +62,6 @@ enum class Constraint {
   URI_AUTHORITY,
   /** The associated value should represent a package-level Kotlin function. */
   KOTLIN_FUNCTION,
-  /** The associated value should represent a valid Journeys file name. */
-  JOURNEY,
 }
 
 /**

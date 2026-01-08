@@ -24,7 +24,6 @@ import com.android.build.gradle.internal.lint.AndroidLintWorkAction.Companion.ER
 import com.android.build.gradle.internal.lint.AndroidLintWorkAction.Companion.maybeThrowException
 import com.android.build.gradle.internal.lint.LintTaskManager.Companion.isLintStderr
 import com.android.build.gradle.internal.lint.LintTaskManager.Companion.isLintStdout
-import com.android.build.gradle.internal.privaysandboxsdk.PrivacySandboxSdkVariantScope
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.services.TaskCreationServices
 import com.android.build.gradle.internal.services.getBuildService

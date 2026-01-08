@@ -56,18 +56,21 @@ internal fun mergeResourcesWithCompilationService(
     aaptWorkerFacade.use { workerExecutorFacade ->
         resCompilerService.use { resCompilationService ->
             val mergeResourcesWriterRequest = MergedResourceWriterRequest(
-                    workerExecutor = workerExecutorFacade,
-                    rootFolder = mergedResourcesDir,
-                    publicFile = null,
-                    blameLog = getCleanBlameLog(blameLogOutputFolder),
-                    preprocessor = null,
-                    resourceCompilationService = resCompilationService,
-                    temporaryDirectory = incrementalMergedResources,
-                    dataBindingExpressionRemover = null,
-                    notCompiledOutputDirectory = null,
-                    pseudoLocalesEnabled = false,
-                    crunchPng = false,
-                    relativePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable
+                workerExecutor = workerExecutorFacade,
+                rootFolder = mergedResourcesDir,
+                publicFile = null,
+                blameLog = getCleanBlameLog(blameLogOutputFolder),
+                preprocessor = null,
+                resourceCompilationService = resCompilationService,
+                temporaryDirectory = incrementalMergedResources,
+                dataBindingExpressionRemover = null,
+                notCompiledOutputDirectory = null,
+                pseudoLocalesEnabled = false,
+                crunchPng = false,
+                relativePathEncoding =
+                    ResourcePathEncoding
+                        .AbsoluteNotRelocatable(
+                            justification = "Fused Library does not contain local resources requiring compilation.")
             )
             val writer = MergedResourceWriter(mergeResourcesWriterRequest)
             resourceMerger.mergeData(writer, true)

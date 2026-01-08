@@ -78,7 +78,7 @@ class MessageRewriteTest {
             it.writeText(it.readText().replace("@string/lib_string", "@string/agloe"))
             TestUtils.waitForFileSystemTick()
         }
-        project.executor().expectFailure().run("assembleDebug").let { result ->
+        project.executor().expectFailure().run(":app:assembleDebug").let { result ->
             // b/206624424 - Errors in libraries currently (and incorrectly) rewrite as
             // the packaged res for full builds and merged intermediate filepaths for incremental
             // builds.

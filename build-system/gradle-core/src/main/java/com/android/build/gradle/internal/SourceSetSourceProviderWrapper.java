@@ -84,18 +84,6 @@ public class SourceSetSourceProviderWrapper implements SourceProvider {
 
     @NonNull
     @Override
-    public Collection<File> getCDirectories() {
-        return ImmutableList.of();
-    }
-
-    @NonNull
-    @Override
-    public Collection<File> getCppDirectories() {
-        return ImmutableList.of();
-    }
-
-    @NonNull
-    @Override
     public Collection<File> getResDirectories() {
         return ImmutableList.of();
     }

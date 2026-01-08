@@ -18,7 +18,6 @@ package com.android.build.gradle.internal.tasks.factory
 
 import com.android.build.gradle.internal.component.ComponentCreationConfig
 import com.android.build.gradle.internal.component.TaskCreationConfig
-import com.android.build.gradle.internal.privaysandboxsdk.PrivacySandboxSdkConstants
 import com.android.build.gradle.internal.tasks.AndroidVariantTask
 import com.android.build.gradle.internal.tasks.BaseTask
 import com.android.build.gradle.internal.tasks.GlobalTask
@@ -103,7 +102,7 @@ abstract class AndroidVariantTaskCreationAction<TaskT: AndroidVariantTask>(
 
 /** [TaskCreationAction] for a PrivacySandboxSdkTask. */
 abstract class PrivacySandboxSdkVariantTaskCreationAction<TaskT>
-    : AndroidVariantTaskCreationAction<TaskT>(PrivacySandboxSdkConstants.DEFAULT_VARIANT_NAME)
+    : AndroidVariantTaskCreationAction<TaskT>("main")
         where TaskT: AndroidVariantTask
 
 /** [TaskCreationAction] for a [GlobalTask]. */

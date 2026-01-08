@@ -58,11 +58,6 @@ object AdbLibToolsProperties {
         defaultValue = Duration.ofSeconds(2)
     )
 
-    val APP_PROCESS_TRACKER_RETRY_DELAY = AdbSessionHost.DurationProperty(
-        name = "$NAME_PREFIX.app.process.tracker.retry.delay",
-        defaultValue = Duration.ofSeconds(2)
-    )
-
     /**
      * Delay between the time [AdbDeviceServices.trackJdwp] (or [AdbDeviceServices.trackApp]) is
      * notified of a process termination and the time the corresponding [AbstractJdwpProcess.close]

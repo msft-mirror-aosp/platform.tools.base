@@ -25,6 +25,7 @@ import com.android.build.gradle.internal.services.Aapt2Input
 import com.android.build.gradle.internal.tasks.BuildAnalyzer
 import com.android.build.gradle.internal.tasks.NewIncrementalTask
 import com.android.build.gradle.internal.tasks.factory.VariantTaskCreationAction
+import com.android.build.gradle.internal.utils.fromDisallowChanges
 import com.android.build.gradle.internal.utils.setDisallowChanges
 import com.android.buildanalyzer.common.TaskCategory
 import com.android.builder.files.SerializableInputChanges
@@ -32,6 +33,7 @@ import com.android.builder.internal.aapt.v2.Aapt2RenamingConventions
 import com.android.ide.common.resources.CompileResourceRequest
 import com.android.ide.common.resources.FileStatus
 import com.android.ide.common.resources.ResourcePathEncoding
+import com.android.ide.common.resources.readFromSourceSetPathsFile
 import com.android.utils.FileUtils
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.DirectoryProperty
@@ -50,6 +52,8 @@ import org.gradle.work.InputChanges
 import org.gradle.workers.WorkerExecutor
 import java.io.File
 import javax.inject.Inject
+import org.gradle.api.file.RegularFileProperty
+import org.gradle.api.tasks.Internal
 
 /**
  * Compile navigation XMLs for APK taken from application and libraries.
@@ -67,6 +71,10 @@ abstract class CompileNavigationXmlTask : NewIncrementalTask() {
 
     @get:Input
     abstract val pseudoLocalesEnabled: Property<Boolean>
+
+    // Required for resource path resolution error messaging.
+    @get:Internal
+    abstract val resSourceSetMap: RegularFileProperty
 
     @get:OutputDirectory
     abstract val outputDir: DirectoryProperty
@@ -95,6 +103,7 @@ abstract class CompileNavigationXmlTask : NewIncrementalTask() {
                 parameters.inputDirectories.from(inputDirectories)
                 parameters.partialRDirectory.set(partialRDirectory)
                 parameters.pseudoLocalize.set(pseudoLocalesEnabled)
+                parameters.resSourceSet.set(resSourceSetMap)
             }
     }
 
@@ -108,6 +117,7 @@ abstract class CompileNavigationXmlTask : NewIncrementalTask() {
         abstract val inputDirectories: ConfigurableFileCollection
         abstract val partialRDirectory: DirectoryProperty
         abstract val pseudoLocalize: Property<Boolean>
+        abstract val resSourceSet: RegularFileProperty
     }
 
     protected abstract class CompileNavigationResourcesAction :
@@ -168,13 +178,14 @@ abstract class CompileNavigationXmlTask : NewIncrementalTask() {
         ) {
             val dir = File(parameters.outputDirectory.asFile.get(), FD_RES_NAVIGATION)
             dir.mkdir()
+            val resPaths = readFromSourceSetPathsFile(parameters.resSourceSet.get().asFile)
             val request = CompileResourceRequest(
                 file,
                 parameters.outputDirectory.asFile.get(),
                 partialRFile = computePartialR(file),
                 isPseudoLocalize = parameters.pseudoLocalize.get(),
                 isPngCrunching = false,
-                resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable,
+                resourcePathEncoding = ResourcePathEncoding.Relative(resPaths),
             )
             compilationService.submitCompile(request)
         }
@@ -250,6 +261,11 @@ abstract class CompileNavigationXmlTask : NewIncrementalTask() {
 
             creationConfig.services.initializeAapt2Input(task.aapt2, task)
             task.partialRDirectory.disallowChanges()
+
+            val sourceSetMap =
+                creationConfig.artifacts.get(InternalArtifactType.ANDROID_RES_SOURCE_SET_PATH_MAP)
+            task.resSourceSetMap.setDisallowChanges(sourceSetMap)
+            task.dependsOn(sourceSetMap)
         }
     }
 }

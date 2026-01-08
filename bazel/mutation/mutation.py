@@ -36,9 +36,12 @@ from tools.base.bazel.mutation.proto import mutation_pb2
 from google.protobuf import text_format
 
 # Default paths for picking files
-DEFAULT_PATHS = ["tools/adt/idea", "tools/base", "tools/vendor/google", "tools/vendor/google3"]
+DEFAULT_PATHS = ["tools/base/adblib", "tools/base/adblib-tools"]
 DEFAULT_IGNORE_PATHS = [
     re.compile(r".*build-system/.*"),
+    re.compile(r"(?i).*/test/.*"),
+    re.compile(r"Test\.(kt|java)$"),
+    re.compile(r".*/(testSrc|testData)/.*"),
 ]
 
 # Allowed file format for mutation
@@ -122,7 +125,6 @@ def get_all_source_files(workspace_directory: str, allowed_paths: List[str], ign
                 # Ensure the file has valid extension and is not a test file or a part of ignored_paths
                 if (
                         full_file_path.endswith(ALLOWED_FILE_FORMAT)
-                        and not is_test(full_file_path)
                         and not is_part_of_ignored_paths(path=rel_path, ignore_paths=ignore_paths)
                     ):
                     # Appending relative path to the workspace directory
@@ -272,13 +274,6 @@ def mutate(source: str, content: str) -> Optional[List[MutationChange]]:
                 )
 
     return possible_mutations_list
-
-def is_test(source: str) -> bool:
-    if "/testSrc/" in source or "/testData/" in source:
-        return True
-    if source.endswith("Test.kt") or source.endswith("Test.java"):
-        return True
-    return False
 
 def main(args):
     build_workspace_directory = os.environ.get("BUILD_WORKSPACE_DIRECTORY")

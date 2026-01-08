@@ -65,7 +65,7 @@ class Aapt2DaemonImplInternalErrorHandlingTest {
                     CompileResourceRequest(
                             inputFile = File("values/does_not_matter.xml"),
                             outputDirectory = compiledDir,
-                            resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable
+                            resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable("Test")
                     ),
                     logger)
         }
@@ -98,7 +98,7 @@ class Aapt2DaemonImplInternalErrorHandlingTest {
                 CompileResourceRequest(
                     inputFile = File("values/does_not_matter.xml"),
                     outputDirectory = compiledDir,
-                    resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable
+                    resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable(justification = "Test")
                 ),
                 logger)
         }
@@ -137,7 +137,7 @@ class Aapt2DaemonImplInternalErrorHandlingTest {
                 CompileResourceRequest(
                     inputFile = File("values/does_not_matter.xml"),
                     outputDirectory = compiledDir,
-                    resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable
+                    resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable(justification = "Test")
                 ),
                 logger)
         }
@@ -172,7 +172,7 @@ class Aapt2DaemonImplInternalErrorHandlingTest {
                     CompileResourceRequest(
                             inputFile = File("values/does_not_matter.xml"),
                             outputDirectory = compiledDir,
-                            resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable
+                            resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable("Test")
                     ),
                     logger)
         }
@@ -201,7 +201,7 @@ class Aapt2DaemonImplInternalErrorHandlingTest {
             val request = CompileResourceRequest(
                 inputFile = inputFile,
                 outputDirectory =  outputFile,
-                resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable
+                resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable(justification = "Test")
             )
             daemon.compile(request, logger)
         }
