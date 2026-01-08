@@ -62,11 +62,7 @@ class ImageVerifier(private val imageDiffer: ImageDiffer) {
         }
 
         // Extract percentDiff from the diff result
-        val diffPercentValue: Double? = when (diff) {
-            is ImageDiffer.DiffResult.Similar -> diff.percentDiff
-            is ImageDiffer.DiffResult.Different -> diff.percentDiff
-            else -> null
-        }
+        val diffPercentValue: Double? = diff.percentDiff
         return VerificationResult(diff, diffPercentValue)
     }
 
