@@ -25,6 +25,7 @@ import com.android.build.api.variant.KotlinMultiplatformAndroidVariant
 import com.android.build.api.variant.KotlinMultiplatformAndroidVariantBuilder
 import com.android.build.api.variant.VariantSelector
 import com.android.build.gradle.internal.services.DslServices
+import com.android.builder.errors.IssueReporter
 import org.gradle.api.Action
 import org.gradle.api.artifacts.Configuration
 import javax.inject.Inject
@@ -48,14 +49,20 @@ open class KotlinMultiplatformAndroidComponentsExtensionImpl@Inject constructor(
         selector: VariantSelector,
         callback: (KotlinMultiplatformAndroidVariantBuilder) -> Unit
     ) {
-        throw RuntimeException("not supported yet")
+        dslServices.issueReporter.reportWarning(
+            IssueReporter.Type.GENERIC,
+            "beforeVariants() API is not supported yet for KMP modules and will be ignored"
+        )
     }
 
     override fun beforeVariants(
         selector: VariantSelector,
         callback: Action<KotlinMultiplatformAndroidVariantBuilder>
     ) {
-        throw RuntimeException("not supported yet")
+        dslServices.issueReporter.reportWarning(
+            IssueReporter.Type.GENERIC,
+            "beforeVariants() API is not supported yet for KMP modules and will be ignored"
+        )
     }
 
     override fun registerConfigurations(lowercaseAffix: String, useLegacyPrefix: Boolean) {
