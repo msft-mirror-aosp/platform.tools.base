@@ -43,6 +43,9 @@ class DaggerHiltFlavoredTest {
 
     @Test
     fun doBuild() {
-        project.executor().run(":app:assembleMinApi21DemoDebug")
+        project.executor()
+            .with(BooleanOption.BUILT_IN_KOTLIN, false)
+            .with(BooleanOption.USE_NEW_DSL, false)
+            .run(":app:assembleMinApi21DemoDebug")
     }
 }
