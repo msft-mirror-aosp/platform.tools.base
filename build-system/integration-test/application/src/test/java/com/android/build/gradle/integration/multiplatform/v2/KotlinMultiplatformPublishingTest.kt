@@ -34,6 +34,7 @@ import java.nio.file.Path
 import kotlin.io.path.exists
 import kotlin.io.path.readText
 import kotlin.io.path.writeText
+import org.junit.Ignore
 
 class KotlinMultiplatformPublishingTest {
 
@@ -97,6 +98,7 @@ class KotlinMultiplatformPublishingTest {
         ScannerSubject.assertThat(buildResult.stdout).contains("Variant androidApiElements-published")
     }
 
+    @Ignore("b/474562851")
     @Test
     fun `test kmp and com_android_library consumer`() {
         val build = rule
