@@ -164,6 +164,16 @@ gradle_connected_test(
 )
 
 gradle_connected_test(
+    name = "CodeCoverageReportTest",
+    srcs = "src/test/java/com/android/build/gradle/integration/connected/application/",
+    avd = "//tools/base/bazel/avd:avd_32",
+    data = TEST_DATA + ["//tools/base/build-system/integration-test:test-projects/reportAggregation"],
+    maven_repo_zips = MAVEN_REPO_ZIPS,
+    maven_repos = TEST_MAVEN_REPOS,
+    deps = TEST_DEPS,
+)
+
+gradle_connected_test(
     name = "LibraryAndroidTestWithViewTest",
     srcs = "src/test/java/com/android/build/gradle/integration/connected/application/",
     avd = "//tools/base/bazel/avd:avd_32",
@@ -803,6 +813,7 @@ maven_repository(
         "@maven//:com.squareup.kotlinpoet_2.1.0",
         "@maven//:org.codehaus.mojo.animal-sniffer-annotations_1.19",
         "@maven//:org.hamcrest.hamcrest-library_1.3",
+        "@maven//:org.jdeferred.jdeferred-android-aar_1.2.3",
         "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-android_1.6.4",
         "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-core-common_1.3.6",
         "@maven//:org.tensorflow.tensorflow-lite-metadata_0.2.0",
