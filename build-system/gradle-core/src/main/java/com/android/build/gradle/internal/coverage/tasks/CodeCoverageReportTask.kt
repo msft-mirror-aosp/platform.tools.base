@@ -25,9 +25,12 @@ import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfig
 import com.android.buildanalyzer.common.TaskCategory
 import org.gradle.api.file.Directory
 import org.gradle.api.file.DirectoryProperty
+import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.ListProperty
+import org.gradle.api.provider.Property
 import org.gradle.api.tasks.CacheableTask
 import org.gradle.api.tasks.InputFiles
+import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
@@ -45,14 +48,20 @@ abstract class CodeCoverageReportTask: NonIncrementalGlobalTask() {
     @get:OutputDirectory
     abstract val htmlReportDir: DirectoryProperty
 
+    @get:Internal
+    abstract val rootProjectName: Property<String>
+
+    @get:Internal
+    abstract val rootProjectDir: RegularFileProperty
+
     override fun doTaskAction() {
         val inputDirectories: List<File> = coverageXmlReports.get().map { it.asFile }
 
         CodeCoverageReportOrchestrator.orchestrate(
             inputDirectories,
             htmlReportDir,
-            project.rootProject.name,
-            project.rootProject.rootDir
+            rootProjectName.get(),
+            rootProjectDir.get().asFile
         )
     }
 
@@ -105,6 +114,8 @@ abstract class CodeCoverageReportTask: NonIncrementalGlobalTask() {
             super.configure(task)
 
             task.coverageXmlReports.set(creationConfig.globalArtifacts.getAll(artifactType))
+            task.rootProjectName.set(creationConfig.services.projectInfo.rootProjectName)
+            task.rootProjectDir.set(creationConfig.services.projectInfo.rootDir)
         }
     }
 }

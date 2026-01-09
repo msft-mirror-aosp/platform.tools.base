@@ -450,6 +450,62 @@ class CodeCoverageReportTest {
         verifySources(androidTestCoverageReportXmlLibModule2, "lib")
     }
 
+    @Test
+    fun testCreateCoverageReportTask() {
+        val build = rule.build
+        build.executor.run(":app:createCoverageReport")
+
+        val appBuildDir = build
+            .androidApplication(":app")
+            .buildDir.toFile()
+
+        val taskOutputDir = FileUtils.join(
+            appBuildDir,
+            "reports",
+            "code_coverage_html_report",
+            "global",
+        )
+
+        PathSubject.assertThat(taskOutputDir).exists()
+        PathSubject.assertThat(taskOutputDir).isDirectory()
+
+        val indexFile = FileUtils.join(
+            taskOutputDir,
+            "index.html"
+        )
+
+        PathSubject.assertThat(indexFile).exists()
+        PathSubject.assertThat(indexFile).isFile()
+    }
+
+    @Test
+    fun testCreateAggregatedCoverageReportTask() {
+        val build = rule.build
+        build.executor.run(":app:createAggregatedCoverageReport")
+
+        val appBuildDir = build
+            .androidApplication(":app")
+            .buildDir.toFile()
+
+        val taskOutputDir = FileUtils.join(
+            appBuildDir,
+            "reports",
+            "aggregated_code_coverage_html_report",
+            "global",
+        )
+
+        PathSubject.assertThat(taskOutputDir).exists()
+        PathSubject.assertThat(taskOutputDir).isDirectory()
+
+        val indexFile = FileUtils.join(
+            taskOutputDir,
+            "index.html"
+        )
+
+        PathSubject.assertThat(indexFile).exists()
+        PathSubject.assertThat(indexFile).isFile()
+    }
+
     /**
      * Verifies that the report file has the expected name, and the report name inside the XML matches the expected report name.
      */
