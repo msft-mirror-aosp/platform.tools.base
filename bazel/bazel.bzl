@@ -468,7 +468,6 @@ def iml_module(
         exec_properties = {},
         kotlin_use_compose = False,
         kotlin_use_serialization = False,
-        generate_k1_tests = False,
         generate_coverage_baseline = True):
     """A macro corresponding to an IntelliJ module.
 
@@ -536,7 +535,6 @@ def iml_module(
         exec_properties: See https://bazel.build/reference/be/common-definitions#common.exec_properties
         kotlin_use_compose: See impl.
         kotlin_use_serialization: See impl.
-        generate_k1_tests: Creates an additional test target to use the kotlin K1 plugin.
     """
     srcs = split_srcs(srcs, resources, exclude)
     split_test_srcs = split_srcs(test_srcs, test_resources, exclude)
@@ -649,29 +647,6 @@ def iml_module(
             visibility = visibility,
             target_compatible_with = target_compatible_with,
         )
-
-        # Android Studio has switched to Kotlin K2 mode by default (b/373746515),
-        # but we still want to avoid regressions in K1 support for a little while.
-        if generate_k1_tests:
-            _gen_tests(
-                name = name + "_k1",
-                split_test_targets = split_test_targets,
-                test_flaky = test_flaky,
-                test_shard_count = test_shard_count,
-                test_tags = (test_tags or []) + ["kotlin-plugin-k1"],
-                test_data = test_data,
-                runtime_deps = [":" + name + "_testlib"] + test_utils,
-                jvm_flags = test_jvm_flags + [
-                    "-Dtest.suite.jar=" + name + "_test.jar",
-                    "-Didea.kotlin.plugin.use.k1=true",
-                ],
-                main_class = test_main_class,
-                test_class = test_class,
-                timeout = test_timeout,
-                exec_properties = exec_properties,
-                visibility = visibility,
-                target_compatible_with = target_compatible_with,
-            )
 
     else:
         if test_tags:
