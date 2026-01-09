@@ -19,9 +19,12 @@ package com.android.build.gradle.internal.dependency
 import com.android.build.gradle.internal.LoggerWrapper
 import com.android.build.gradle.internal.component.ApkCreationConfig
 import com.android.build.gradle.internal.component.ComponentCreationConfig
+import com.android.build.gradle.internal.component.features.DexingCreationConfig
 import com.android.build.gradle.internal.errors.MessageReceiverImpl
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
 import com.android.build.gradle.internal.scope.Java8LangSupport
+import com.android.build.gradle.internal.services.BaseServices
+import com.android.build.gradle.internal.tasks.creationconfig.DexMergingCreationConfig
 import com.android.build.gradle.internal.utils.DesugarConfigJson.Companion.combineFileContents
 import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.options.SyncOptions.ErrorFormatMode
@@ -482,6 +485,21 @@ object DexingRegistration {
         val componentIfUsingFullClasspath: String? // Not-null iff useFullClasspath == true
     ) {
 
+        constructor(creationConfig: DexMergingCreationConfig) : this(
+            minSdkVersion = creationConfig.dexing.minSdkVersionForDexing,
+            debuggable = creationConfig.debuggable,
+            enableCoreLibraryDesugaring = creationConfig.dexing.isCoreLibraryDesugaringEnabled,
+            enableGlobalSynthetics = creationConfig.enableGlobalSynthetics,
+            enableApiModeling = creationConfig.enableApiModeling,
+            dependenciesClassesAreInstrumented = creationConfig.instrumentationCreationConfig?.dependenciesClassesAreInstrumented == true,
+            asmTransformComponent = creationConfig.name.takeIf { creationConfig.instrumentationCreationConfig?.dependenciesClassesAreInstrumented == true },
+            useJacocoTransformInstrumentation = creationConfig.requiresJacocoTransformation,
+            enableDesugaring = needsDesugaring(creationConfig.dexing),
+            needsClasspath = needsClasspath(creationConfig.dexing),
+            useFullClasspath = useFullClasspath(creationConfig.dexing, creationConfig.services),
+            componentIfUsingFullClasspath = creationConfig.name.takeIf { useFullClasspath(creationConfig.dexing, creationConfig.services) }
+        )
+
         constructor(creationConfig: ApkCreationConfig) : this(
             minSdkVersion = creationConfig.dexing.minSdkVersionForDexing,
             debuggable = creationConfig.debuggable,
@@ -491,24 +509,24 @@ object DexingRegistration {
             dependenciesClassesAreInstrumented = creationConfig.instrumentationCreationConfig?.dependenciesClassesAreInstrumented == true,
             asmTransformComponent = creationConfig.name.takeIf { creationConfig.instrumentationCreationConfig?.dependenciesClassesAreInstrumented == true },
             useJacocoTransformInstrumentation = creationConfig.requiresJacocoTransformation,
-            enableDesugaring = needsDesugaring(creationConfig),
-            needsClasspath = needsClasspath(creationConfig),
-            useFullClasspath = useFullClasspath(creationConfig),
-            componentIfUsingFullClasspath = creationConfig.name.takeIf { useFullClasspath(creationConfig) }
+            enableDesugaring = needsDesugaring(creationConfig.dexing),
+            needsClasspath = needsClasspath(creationConfig.dexing),
+            useFullClasspath = useFullClasspath(creationConfig.dexing, creationConfig.services),
+            componentIfUsingFullClasspath = creationConfig.name.takeIf { useFullClasspath(creationConfig.dexing, creationConfig.services) }
         )
 
         companion object {
 
-            private fun needsDesugaring(creationConfig: ApkCreationConfig): Boolean =
-                creationConfig.dexing.java8LangSupportType == Java8LangSupport.D8
+            private fun needsDesugaring(dexing: DexingCreationConfig): Boolean =
+                dexing.java8LangSupportType == Java8LangSupport.D8
 
-            private fun needsClasspath(creationConfig: ApkCreationConfig): Boolean =
-                needsDesugaring(creationConfig) &&
-                        creationConfig.dexing.minSdkVersionForDexing < 24
+            private fun needsClasspath(dexing: DexingCreationConfig): Boolean =
+                needsDesugaring(dexing) &&
+                        dexing.minSdkVersionForDexing < 24
 
-            private fun useFullClasspath(creationConfig: ApkCreationConfig): Boolean =
+            private fun useFullClasspath(creationConfig: DexingCreationConfig, services: BaseServices): Boolean =
                 needsClasspath(creationConfig) &&
-                        creationConfig.services.projectOptions.get(BooleanOption.USE_FULL_CLASSPATH_FOR_DEXING_TRANSFORM)
+                       services.projectOptions.get(BooleanOption.USE_FULL_CLASSPATH_FOR_DEXING_TRANSFORM)
 
         }
 
@@ -518,7 +536,7 @@ object DexingRegistration {
          * These attributes will be used when registering the transforms and when consuming the
          * artifacts to ensure correct artifact production/consumption.
          */
-        fun getAttributes() =
+        fun getAttributes(): AndroidAttributes =
             AndroidAttributes(
                 Attribute.of("dexing-component-attributes", String::class.java) to this.toString()
             ) + asmTransformComponent?.let {
