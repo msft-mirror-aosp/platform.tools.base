@@ -938,15 +938,11 @@ com/android/tools/emulator/proto
   waterfall.proto
 
 com/android/tools/external/com-intellij/intellij-core
-  .pseudoCommonKotlinSourceSet
   DebugProbesKt.bin
   META-INF/
   META-INF/AL2.0
-  META-INF/Analysis.xml
-  META-INF/AnalysisImpl.xml
   META-INF/Core.xml
   META-INF/CoreImpl.xml
-  META-INF/JavaIndexingPlugin.xml
   META-INF/LGPL2.1
   META-INF/LICENSE
   META-INF/LICENSE.txt
@@ -1045,21 +1041,9 @@ com/android/tools/external/com-intellij/intellij-core
   META-INF/proguard/coroutines.pro
   META-INF/proguard/kotlinx-serialization-common.pro
   META-INF/services/
-  META-INF/services/com.intellij.platform.jps.model.resolver.JpsDependencyResolverConfigurationService
   META-INF/services/javax.xml.stream.XMLEventFactory
   META-INF/services/javax.xml.stream.XMLInputFactory
   META-INF/services/javax.xml.stream.XMLOutputFactory
-  META-INF/services/org.jetbrains.jps.model.JpsElementFactory
-  META-INF/services/org.jetbrains.jps.model.JpsEncodingConfigurationService
-  META-INF/services/org.jetbrains.jps.model.artifact.JpsArtifactService
-  META-INF/services/org.jetbrains.jps.model.artifact.elements.JpsPackagingElementFactory
-  META-INF/services/org.jetbrains.jps.model.ex.JpsExElementFactory
-  META-INF/services/org.jetbrains.jps.model.fileTypes.FileNameMatcherFactory
-  META-INF/services/org.jetbrains.jps.model.jarRepository.JpsRemoteRepositoryService
-  META-INF/services/org.jetbrains.jps.model.java.JdkVersionDetector
-  META-INF/services/org.jetbrains.jps.model.java.JpsJavaExtensionService
-  META-INF/services/org.jetbrains.jps.service.JpsServiceManager
-  META-INF/services/org.jetbrains.jps.service.SharedThreadPool
   META-INF/services/reactor.blockhound.integration.BlockHoundIntegration
   META-INF/versions/
   META-INF/versions/16/
@@ -1076,6 +1060,8 @@ com/android/tools/external/com-intellij/intellij-core
   META-INF/versions/9/one/util/streamex/
   NOTICE
   _COROUTINE/
+  __index__
+  build-data.properties
   com/
   com/fasterxml/
   com/fasterxml/aalto/
@@ -1151,10 +1137,8 @@ com/android/tools/external/com-intellij/intellij-core
   com/intellij/codeInspection/dataFlow/types/
   com/intellij/codeInspection/dataFlow/value/
   com/intellij/codeInspection/ex/
-  com/intellij/codeInspection/inspection-black-list.txt
   com/intellij/codeInspection/lang/
   com/intellij/codeInspection/options/
-  com/intellij/codeInspection/package.html
   com/intellij/codeInspection/reference/
   com/intellij/codeInspection/ui/
   com/intellij/codeInspection/ui/util/
@@ -1198,7 +1182,6 @@ com/android/tools/external/com-intellij/intellij-core
   com/intellij/ide/highlighter/custom/tokens/
   com/intellij/ide/lightEdit/
   com/intellij/ide/plugins/
-  com/intellij/ide/plugins/.editorconfig
   com/intellij/ide/plugins/cl/
   com/intellij/ide/presentation/
   com/intellij/ide/scratch/
@@ -1223,7 +1206,6 @@ com/android/tools/external/com-intellij/intellij-core
   com/intellij/l10n/
   com/intellij/lang/
   com/intellij/lang/annotation/
-  com/intellij/lang/annotation/package.html
   com/intellij/lang/documentation/
   com/intellij/lang/folding/
   com/intellij/lang/impl/
@@ -1268,7 +1250,6 @@ com/android/tools/external/com-intellij/intellij-core
   com/intellij/openapi/command/
   com/intellij/openapi/command/impl/
   com/intellij/openapi/command/undo/
-  com/intellij/openapi/command/undo/package.html
   com/intellij/openapi/components/
   com/intellij/openapi/diagnostic/
   com/intellij/openapi/editor/
@@ -1305,11 +1286,9 @@ com/android/tools/external/com-intellij/intellij-core
   com/intellij/openapi/util/
   com/intellij/openapi/util/coroutines/
   com/intellij/openapi/util/io/
-  com/intellij/openapi/util/io/package.html
   com/intellij/openapi/util/objectTree/
   com/intellij/openapi/util/registry/
   com/intellij/openapi/util/text/
-  com/intellij/openapi/util/text/package.html
   com/intellij/openapi/util/userData/
   com/intellij/openapi/vfs/
   com/intellij/openapi/vfs/encoding/
@@ -1329,7 +1308,6 @@ com/android/tools/external/com-intellij/intellij-core
   com/intellij/openapi/wm/
   com/intellij/openapi/wm/ex/
   com/intellij/packageDependencies/
-  com/intellij/packageDependencies/package.html
   com/intellij/patterns/
   com/intellij/patterns/compiler/
   com/intellij/platform/
@@ -1456,9 +1434,7 @@ com/android/tools/external/com-intellij/intellij-core
   com/intellij/psi/text/
   com/intellij/psi/tree/
   com/intellij/psi/tree/java/
-  com/intellij/psi/tree/package.html
   com/intellij/psi/util/
-  com/intellij/psi/util/package.html
   com/intellij/refactoring/
   com/intellij/refactoring/listeners/
   com/intellij/refactoring/rename/
@@ -1482,22 +1458,18 @@ com/android/tools/external/com-intellij/intellij-core
   com/intellij/util/containers/
   com/intellij/util/containers/hash/
   com/intellij/util/containers/intcaches/
-  com/intellij/util/containers/package.html
   com/intellij/util/containers/prefixTree/
   com/intellij/util/containers/prefixTree/map/
   com/intellij/util/containers/prefixTree/set/
   com/intellij/util/diff/
-  com/intellij/util/diff/package.html
   com/intellij/util/download/
   com/intellij/util/download/impl/
   com/intellij/util/execution/
   com/intellij/util/fastutil/
-  com/intellij/util/fastutil/Readme.md
   com/intellij/util/fastutil/ints/
   com/intellij/util/fmap/
   com/intellij/util/graph/
   com/intellij/util/graph/impl/
-  com/intellij/util/graph/package.html
   com/intellij/util/indexing/
   com/intellij/util/indexing/containers/
   com/intellij/util/indexing/flavor/
@@ -1525,13 +1497,11 @@ com/android/tools/external/com-intellij/intellij-core
   com/intellij/util/system/
   com/intellij/util/text/
   com/intellij/util/text/minimatch/
-  com/intellij/util/text/package.html
   com/intellij/util/ui/
   com/intellij/util/ui/classpath/
   com/intellij/util/xml/
   com/intellij/util/xml/dom/
   com/intellij/util/xmlb/
-  com/intellij/util/xmlb/.editorconfig
   com/intellij/util/xmlb/annotations/
   com/intellij/webcore/
   com/intellij/webcore/packaging/
@@ -1758,13 +1728,8 @@ com/android/tools/external/com-intellij/intellij-core
   kotlinx/serialization/json/internal/
   kotlinx/serialization/modules/
   messages/
-  messages/AnalysisBundle.properties
-  messages/CommonQuickFixBundle.properties
   messages/CoreBundle.properties
   messages/CoreDeprecatedMessagesBundle.properties
-  messages/FindBundle.properties
-  messages/InspectionsBundle.properties
-  messages/InspectionsDeprecatedMessagesBundle.properties
   messages/JavaErrorBundle.properties
   messages/JavaOptionBundle.properties
   messages/JavaPsiBundle.properties
@@ -3213,9 +3178,12 @@ com/android/tools/external/org-jetbrains/uast
   META-INF/MANIFEST.MF
   META-INF/intellij.java.uast.kotlin_module
   META-INF/intellij.platform.uast.kotlin_module
-  META-INF/lint-psi_kotlinUastBaseSrc.kotlin_module
-  META-INF/lint-psi_kotlinUastSrc.kotlin_module
+  META-INF/kotlin.uast.uast-kotlin-base.kotlin_module
+  META-INF/kotlin.uast.uast-kotlin.k2.kotlin_module
+  META-INF/kotlin.uast.uast-kotlin.kotlin_module
   NOTICE
+  __index__
+  build-data.properties
   org/
   org/jetbrains/
   org/jetbrains/uast/
