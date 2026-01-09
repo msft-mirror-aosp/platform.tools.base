@@ -16,7 +16,6 @@
 
 package com.android.build.gradle.internal.component
 
-import com.android.build.api.variant.AndroidVersion
 import com.android.build.api.variant.ApkPackaging
 import com.android.build.api.variant.impl.AndroidResourcesImpl
 import com.android.build.api.variant.impl.BundleConfigImpl
@@ -26,9 +25,7 @@ import com.android.build.gradle.internal.component.features.DexingCreationConfig
 /**
  * Interface for properties common to all variant generating APKs
  */
-interface ApkCreationConfig: ConsumableCreationConfig {
-    val targetSdk: AndroidVersion
-    val targetSdkOverride: AndroidVersion?
+interface ApkCreationConfig: ConsumableCreationConfig, TargetSdkAwareConfig {
 
     // TODO: move to a non variant object (GlobalTaskScope?)
     val testOnlyApk: Boolean

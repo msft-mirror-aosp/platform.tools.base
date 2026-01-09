@@ -49,6 +49,7 @@ import com.android.build.gradle.internal.component.ComponentCreationConfig
 import com.android.build.gradle.internal.component.ConsumableCreationConfig
 import com.android.build.gradle.internal.component.DeviceTestCreationConfig
 import com.android.build.gradle.internal.component.LibraryCreationConfig
+import com.android.build.gradle.internal.component.TargetSdkAwareConfig
 import com.android.build.gradle.internal.component.TestSuiteCreationConfig
 import com.android.build.gradle.internal.component.TestSuiteTargetCreationConfig
 import com.android.build.gradle.internal.component.TestVariantCreationConfig
@@ -1255,11 +1256,13 @@ class ModelBuilder<ExtensionT : CommonExtension>(
 
         val minSdkVersion =
                 ApiVersionImpl(component.minSdk.apiLevel, component.minSdk.codename)
-        val targetSdkVersionOverride = when (component) {
-            is ApkCreationConfig -> component.targetSdkOverride
-            is LibraryCreationConfig -> component.targetSdkOverride
-            else -> null
-        }?.let { ApiVersionImpl(it.apiLevel, it.codename) }
+        val targetSdkVersionOverride =
+            (component as? TargetSdkAwareConfig)?.targetSdkOverride?.let {
+                ApiVersionImpl(
+                    it.apiLevel,
+                    it.codename
+                )
+            }
         val maxSdkVersion =
                 if (component is VariantCreationConfig) component.maxSdk else null
 

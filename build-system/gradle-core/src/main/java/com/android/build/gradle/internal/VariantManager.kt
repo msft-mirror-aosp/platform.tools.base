@@ -100,6 +100,7 @@ import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfig
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfigImpl.Companion.toExecutionEnum
 import com.android.build.api.variant.HasTestSuitesBuilder
 import com.android.build.api.variant.impl.TestSuiteSourceContainer
+import com.android.build.gradle.internal.component.TargetSdkAwareConfig
 import com.android.build.gradle.internal.manifest.ManifestDataProvider
 import com.android.build.gradle.internal.services.BuiltInKotlinSupportMode
 import com.android.build.gradle.internal.testsuites.TestSuiteSourceCreationConfig
@@ -878,8 +879,7 @@ class VariantManager<
         val variantBuilder = variantInfo.variantBuilder
         val minSdkVersion = variant.minSdk
         val targetSdkVersion = when (variant) {
-            is ApkCreationConfig -> variant.targetSdk
-            is LibraryCreationConfig -> variant.targetSdk
+            is TargetSdkAwareConfig -> variant.targetSdk
             else -> minSdkVersion
         }
         if (buildTypeData.buildType.isDebuggable && buildTypeData.buildType.isMinifyEnabled) {

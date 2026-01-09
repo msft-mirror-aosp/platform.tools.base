@@ -26,6 +26,7 @@ import com.android.build.gradle.internal.component.DeviceTestCreationConfig
 import com.android.build.gradle.internal.component.HostTestCreationConfig
 import com.android.build.gradle.internal.component.InstrumentedTestCreationConfig
 import com.android.build.gradle.internal.component.LibraryCreationConfig
+import com.android.build.gradle.internal.component.TargetSdkAwareConfig
 import com.android.build.gradle.internal.component.TaskCreationConfig
 import com.android.build.gradle.internal.component.TestCreationConfig
 import com.android.build.gradle.internal.component.TestSuiteCreationConfig
@@ -128,17 +129,14 @@ fun forTestSuite(
     sourceContainer: TestSuiteSourceContainer,
     source: TestSuiteSourceSet.TestApk,
 ): ProcessTestManifestCreationConfig? {
-    return when (val variant = creationConfig.testedVariant) {
-        is ApplicationCreationConfig ->
-            object : TestSuiteProcessTestManifestCreationConfig(creationConfig, sourceContainer, source) {
-                override val targetSdkVersion: String = variant.targetSdk.getApiString()
-            }
-        is LibraryCreationConfig ->
-            // TODO we'll need to extract `targetSdk` in common interface to avoid branching logic
-            object : TestSuiteProcessTestManifestCreationConfig(creationConfig, sourceContainer, source) {
-                override val targetSdkVersion: String = variant.targetSdk.getApiString()
-            }
-        else -> null
+    return (creationConfig.testedVariant as? TargetSdkAwareConfig)?.let { variant ->
+        object : TestSuiteProcessTestManifestCreationConfig(
+            creationConfig,
+            sourceContainer,
+            source
+        ) {
+            override val targetSdkVersion: String = variant.targetSdk.getApiString()
+        }
     }
 }
 

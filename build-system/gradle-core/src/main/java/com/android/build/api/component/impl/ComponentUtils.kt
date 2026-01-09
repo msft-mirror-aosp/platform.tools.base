@@ -23,6 +23,7 @@ import com.android.build.gradle.internal.component.ApkCreationConfig
 import com.android.build.gradle.internal.component.ComponentCreationConfig
 import com.android.build.gradle.internal.component.LibraryCreationConfig
 import com.android.build.gradle.internal.component.NestedComponentCreationConfig
+import com.android.build.gradle.internal.component.TargetSdkAwareConfig
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.options.BooleanOption
@@ -78,9 +79,8 @@ internal fun<T> ComponentCreationConfig.warnAboutAccessingVariantApiValueForDisa
 }
 
 internal fun NestedComponentCreationConfig.getMainTargetSdkVersion(): AndroidVersion =
-    when (mainVariant) {
-        is ApkCreationConfig -> (mainVariant as ApkCreationConfig).targetSdk
-        is LibraryCreationConfig -> (mainVariant as LibraryCreationConfig).targetSdk
+    when (val variant = mainVariant) {
+        is TargetSdkAwareConfig -> variant.targetSdk
         else -> minSdk
     }
 
