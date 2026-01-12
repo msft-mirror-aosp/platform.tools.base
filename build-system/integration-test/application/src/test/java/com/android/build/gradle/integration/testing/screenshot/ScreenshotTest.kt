@@ -79,6 +79,17 @@ class ScreenshotTest {
     @Rule
     val temporaryFolder = TemporaryFolder()
 
+    class ConfigureMaxParallelForksCallback : GenericCallback {
+        override fun handleProject(project: Project) {
+            project.afterEvaluate {
+                project.tasks.withType(com.android.compose.screenshot.tasks.PreviewScreenshotValidationTask::class.java) {
+                    println("Forcibly setting maxParallelForks to 4 for task ${it.path}")
+                    it.maxParallelForks = 4
+                }
+            }
+        }
+    }
+
     private fun AndroidProjectDefinition<out CommonExtension>.setupProject(addEmptyJarToClassPath: Boolean = true) {
         setupProjectNoScreenshotTestSource()
 
@@ -917,5 +928,49 @@ class ScreenshotTest {
         val result = build.sstExecutor().run(":app:validateDebugScreenshotTest")
 
         result.assertOutputDoesNotContain("Could not load font")
+    }
+
+    @Test
+    fun runPreviewScreenshotTestInParallel() {
+        val build = rule.build
+        updateReferenceImage()
+        build.sstExecutor()
+            .withArguments(listOf("--parallel", "--max-workers=4"))
+            .run(":app:validateDebugScreenshotTest")
+        val appProject = build.androidApplication()
+        val indexHtmlReport =
+            appProject.buildDir.resolve("reports/screenshotTest/preview/debug/index.html")
+        assertThat(indexHtmlReport).exists()
+        val classHtmlReport =
+            appProject.buildDir.resolve("reports/screenshotTest/preview/debug/pkg.name.ExampleTest.html")
+        assertThat(classHtmlReport).exists()
+        val class2HtmlReport =
+            appProject.buildDir.resolve("reports/screenshotTest/preview/debug/pkg.name.TopLevelPreviewTestKt.html")
+        assertThat(class2HtmlReport).exists()
+        assertThat(classHtmlReport.readText()).contains("""<h3 class="success">simpleComposableTest_simpleComposable</h3>""")
+        assertThat(class2HtmlReport.readText()).contains("""<h3 class="success">simpleComposableTest_3</h3>""")
+    }
+
+    @Test
+    fun runValidation_whenMaxParallelForksIsConfiguredGlobally() {
+        val build = rule.build {
+            androidApplication {
+                pluginCallbacks += ConfigureMaxParallelForksCallback::class.java
+            }
+        }
+        val appProject = build.androidApplication()
+
+        updateReferenceImage()
+
+        val result = build.sstExecutor().run(":app:validateDebugScreenshotTest")
+
+        assertThat(result.stdout).contains("Forcibly setting maxParallelForks to 4 for task :app:validateDebugScreenshotTest")
+
+        val indexHtmlReport = appProject.buildDir.resolve("reports/screenshotTest/preview/debug/index.html")
+        assertThat(indexHtmlReport).exists()
+
+        val classHtmlReport = appProject.buildDir.resolve("reports/screenshotTest/preview/debug/pkg.name.ExampleTest.html")
+        assertThat(classHtmlReport).exists()
+        assertThat(classHtmlReport.readText()).contains("""<h3 class="success">simpleComposableTest_simpleComposable</h3>""")
     }
 }
