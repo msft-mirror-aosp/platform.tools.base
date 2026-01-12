@@ -112,7 +112,7 @@ class ClientProcessTrackerTest {
         val fakeAdbAdapter = FakeAdbAdapter()
         val device = mockDevice("device")
         val tracker = ClientProcessTracker(device, fakeAdbAdapter, logger)
-        val sharedTracker = SharedProcessTracker(this, tracker)
+        val sharedTracker = SharedProcessTracker(this, tracker, logger)
 
         val job = launch { sharedTracker.trackProcesses().collect() }
         advanceUntilIdle()

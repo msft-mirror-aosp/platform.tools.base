@@ -16,6 +16,7 @@
 package com.android.processmonitor.monitor
 
 import com.android.adblib.AdbLogger
+import com.android.adblib.utils.logIOCompletionErrors
 import com.android.processmonitor.common.ProcessEvent.ProcessAdded
 import com.android.processmonitor.common.ProcessEvent.ProcessRemoved
 import com.android.processmonitor.common.ProcessTracker
@@ -48,11 +49,15 @@ internal class PerDeviceMonitor(
 
     fun start() {
         scope.launch {
-            processTracker.trackProcesses().collect {
-                when (it) {
-                    is ProcessRemoved -> handleProcessRemoved(it)
-                    is ProcessAdded -> handleProcessAdded(it)
+            runCatching {
+                processTracker.trackProcesses().collect {
+                    when (it) {
+                        is ProcessRemoved -> handleProcessRemoved(it)
+                        is ProcessAdded -> handleProcessAdded(it)
+                    }
                 }
+            }.onFailure { throwable ->
+                logger.logIOCompletionErrors(throwable)
             }
         }
     }
