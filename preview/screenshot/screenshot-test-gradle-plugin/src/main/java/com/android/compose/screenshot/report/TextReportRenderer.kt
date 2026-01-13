@@ -52,17 +52,13 @@ abstract class TextReportRenderer<T> {
             }
         } catch (e: IOException) {
             throw UncheckedIOException(
-                String.format(
-                    "Could not write to file '%s'.",
-                    file
-                ), e
+                "Failed to write text report to file '${file.absolutePath}'.",
+                e
             )
         } catch (e: Exception) {
             throw RuntimeException(
-                String.format(
-                    "Could not write to file '%s'.",
-                    file
-                ), e
+                "Unexpected error while rendering report to '${file.absolutePath}'.",
+                e
             )
         }
     }
