@@ -61,6 +61,7 @@ kotlin_test(
         "//tools/base/journeys/journeys-protos:journeys-java-proto",
         "//tools/base/testutils:tools.testutils",
         "@maven//:com.google.auth.google-auth-library-oauth2-http",
+        "@maven//:com.google.oauth-client.google-oauth-client",
         "@maven//:com.google.protobuf.protobuf-java",
         "@maven//:io.grpc.grpc-core",
         "@maven//:io.grpc.grpc-netty",

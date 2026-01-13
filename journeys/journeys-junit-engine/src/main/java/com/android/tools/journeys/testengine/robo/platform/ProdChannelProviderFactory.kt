@@ -52,10 +52,16 @@ class ProductionChannelProviderFactory : ChannelProviderFactory {
             impersonated.refresh()
             return impersonated
         } catch (e: Exception) {
+            val errorMessage = if (accessTokenPath.isNotBlank()) {
+                "Failed to obtain credentials for establishing connection with backend. " +
+                        "Please check your network connection and ensure you are logged in to Gemini in Android Studio."
+            } else {
+                "Failed to obtain Application Default Credentials (ADC). " +
+                        "Please check your network connection and ensure ADC is configured correctly. You can configure ADC by running 'gcloud auth application-default login' " +
+                        "or by setting the GOOGLE_APPLICATION_CREDENTIALS environment variable."
+            }
             throw JourneyExecutionException(
-                "Failed to obtain credentials for establishing connection with backend. "
-                        + "Make sure you are logged in to Android Studio and are "
-                        + "connected to a network before re-trying.",
+                errorMessage,
                 cause = e,
                 reason = JourneyFailureReason.AUTHENTICATION_FAILED);
         }
