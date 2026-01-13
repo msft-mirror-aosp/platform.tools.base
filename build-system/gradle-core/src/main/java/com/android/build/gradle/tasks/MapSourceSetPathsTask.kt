@@ -81,10 +81,6 @@ abstract class MapSourceSetPathsTask : NonIncrementalTask() {
     @get:PathSensitive(PathSensitivity.RELATIVE)
     abstract val localResources: ConfigurableFileCollection
 
-    @get:InputFiles
-    @get:PathSensitive(PathSensitivity.RELATIVE)
-    abstract val librarySourceSets: ConfigurableFileCollection
-
     @get:Input
     abstract val allGeneratedRes: ListProperty<String>
 
@@ -119,7 +115,6 @@ abstract class MapSourceSetPathsTask : NonIncrementalTask() {
             getPathIfPresentOrNull(packagedResDir, emptyList())
         )
         return localResources.files.asSequence()
-            .plus(librarySourceSets.files)
             .plus(uncreatedSourceSets.map(::File))
             .plus(additionalSourceSets.map(::File))
             .plus(generatedSourceSets.map(::File)).toList()
