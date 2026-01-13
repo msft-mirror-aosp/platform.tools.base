@@ -41,6 +41,7 @@ import org.mockito.Mockito.`when`
  * Unit tests for [PreviewScreenshotGradlePlugin]
  */
 class PreviewScreenshotGradlePluginTest {
+
     @get:Rule
     val mockitoJUnitRule: MockitoRule = MockitoJUnit.rule()
     @Mock(answer = Answers.RETURNS_DEEP_STUBS)
