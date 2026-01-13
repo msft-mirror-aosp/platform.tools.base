@@ -11698,6 +11698,79 @@ maven_import(
 )
 
 maven_artifact(
+    name = "org.jetbrains.exposed.exposed-core_1.0.0-rc-4",
+    pom = "repository/org/jetbrains/exposed/exposed-core/1.0.0-rc-4/exposed-core-1.0.0-rc-4.pom",
+    repo_root_path = "repository",
+    repo_path = "org/jetbrains/exposed/exposed-core/1.0.0-rc-4",
+    deps = [
+        "org.jetbrains.kotlin.kotlin-stdlib_2.1.0",
+        "org.jetbrains.kotlin.kotlin-reflect_2.1.0",
+        "org.jetbrains.kotlinx.kotlinx-coroutines-core-jvm_1.10.2",
+        "org.jetbrains.kotlinx.kotlinx-datetime-jvm_0.7.1-0.6.x-compat",
+        "org.slf4j.slf4j-api_2.0.9",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_import(
+    name = "org.jetbrains.exposed.exposed-core",
+    classifiers = [],
+    jars = [
+        "repository/org/jetbrains/exposed/exposed-core/1.0.0-rc-4/exposed-core-1.0.0-rc-4.jar"
+    ],
+    exports = [
+        "org.jetbrains.kotlin.kotlin-stdlib",
+        "org.jetbrains.kotlin.kotlin-reflect",
+        "org.jetbrains.kotlinx.kotlinx-coroutines-core-jvm",
+        "org.jetbrains.kotlinx.kotlinx-datetime-jvm",
+        "org.slf4j.slf4j-api",
+    ],
+    original_deps = [
+        "org.jetbrains.kotlin.kotlin-stdlib_2.1.0",
+        "org.jetbrains.kotlin.kotlin-reflect_2.1.0",
+        "org.jetbrains.kotlinx.kotlinx-coroutines-core-jvm_1.10.2",
+        "org.jetbrains.kotlinx.kotlinx-datetime-jvm_0.7.1-0.6.x-compat",
+        "org.slf4j.slf4j-api_2.0.9",
+    ],
+    pom = "repository/org/jetbrains/exposed/exposed-core/1.0.0-rc-4/exposed-core-1.0.0-rc-4.pom",
+    repo_root_path = "repository",
+    repo_path = "org/jetbrains/exposed/exposed-core/1.0.0-rc-4",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.jetbrains.exposed.exposed-jdbc_1.0.0-rc-4",
+    pom = "repository/org/jetbrains/exposed/exposed-jdbc/1.0.0-rc-4/exposed-jdbc-1.0.0-rc-4.pom",
+    repo_root_path = "repository",
+    repo_path = "org/jetbrains/exposed/exposed-jdbc/1.0.0-rc-4",
+    deps = [
+        "org.jetbrains.exposed.exposed-core_1.0.0-rc-4",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.1.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_import(
+    name = "org.jetbrains.exposed.exposed-jdbc",
+    classifiers = [],
+    jars = [
+        "repository/org/jetbrains/exposed/exposed-jdbc/1.0.0-rc-4/exposed-jdbc-1.0.0-rc-4.jar"
+    ],
+    exports = [
+        "org.jetbrains.exposed.exposed-core",
+        "org.jetbrains.kotlin.kotlin-stdlib",
+    ],
+    original_deps = [
+        "org.jetbrains.exposed.exposed-core_1.0.0-rc-4",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.1.0",
+    ],
+    pom = "repository/org/jetbrains/exposed/exposed-jdbc/1.0.0-rc-4/exposed-jdbc-1.0.0-rc-4.pom",
+    repo_root_path = "repository",
+    repo_path = "org/jetbrains/exposed/exposed-jdbc/1.0.0-rc-4",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "org.jetbrains.intellij.deps.asm-all_8.0.1",
     pom = "repository/org/jetbrains/intellij/deps/asm-all/8.0.1/asm-all-8.0.1.pom",
     repo_root_path = "repository",
@@ -13125,7 +13198,7 @@ maven_artifact(
     deps = [
         "org.jetbrains.kotlinx.kotlinx-coroutines-core-jvm_1.7.1",
         "org.jetbrains.kotlin.kotlin-stdlib-jdk8_1.8.20",
-        "org.jetbrains.kotlinx.kotlinx-coroutines-bom_1.9.0",
+        "org.jetbrains.kotlinx.kotlinx-coroutines-bom_1.10.2",
     ],
     visibility = ["//visibility:public"],
 )
@@ -13143,7 +13216,7 @@ maven_import(
     original_deps = [
         "org.jetbrains.kotlinx.kotlinx-coroutines-core-jvm_1.7.1",
         "org.jetbrains.kotlin.kotlin-stdlib-jdk8_1.8.20",
-        "org.jetbrains.kotlinx.kotlinx-coroutines-bom_1.9.0",
+        "org.jetbrains.kotlinx.kotlinx-coroutines-bom_1.10.2",
     ],
     pom = "repository/org/jetbrains/kotlinx/kotlinx-coroutines-android/1.7.1/kotlinx-coroutines-android-1.7.1.pom",
     repo_root_path = "repository",
@@ -13152,10 +13225,10 @@ maven_import(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlinx.kotlinx-coroutines-bom_1.9.0",
-    pom = "repository/org/jetbrains/kotlinx/kotlinx-coroutines-bom/1.9.0/kotlinx-coroutines-bom-1.9.0.pom",
+    name = "org.jetbrains.kotlinx.kotlinx-coroutines-bom_1.10.2",
+    pom = "repository/org/jetbrains/kotlinx/kotlinx-coroutines-bom/1.10.2/kotlinx-coroutines-bom-1.10.2.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlinx/kotlinx-coroutines-bom/1.9.0",
+    repo_path = "org/jetbrains/kotlinx/kotlinx-coroutines-bom/1.10.2",
     visibility = ["//visibility:public"],
 )
 
@@ -13163,21 +13236,21 @@ maven_import(
     name = "org.jetbrains.kotlinx.kotlinx-coroutines-bom",
     classifiers = [],
     original_deps = [],
-    pom = "repository/org/jetbrains/kotlinx/kotlinx-coroutines-bom/1.9.0/kotlinx-coroutines-bom-1.9.0.pom",
+    pom = "repository/org/jetbrains/kotlinx/kotlinx-coroutines-bom/1.10.2/kotlinx-coroutines-bom-1.10.2.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlinx/kotlinx-coroutines-bom/1.9.0",
+    repo_path = "org/jetbrains/kotlinx/kotlinx-coroutines-bom/1.10.2",
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlinx.kotlinx-coroutines-core-jvm_1.9.0",
-    pom = "repository/org/jetbrains/kotlinx/kotlinx-coroutines-core-jvm/1.9.0/kotlinx-coroutines-core-jvm-1.9.0.pom",
+    name = "org.jetbrains.kotlinx.kotlinx-coroutines-core-jvm_1.10.2",
+    pom = "repository/org/jetbrains/kotlinx/kotlinx-coroutines-core-jvm/1.10.2/kotlinx-coroutines-core-jvm-1.10.2.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlinx/kotlinx-coroutines-core-jvm/1.9.0",
+    repo_path = "org/jetbrains/kotlinx/kotlinx-coroutines-core-jvm/1.10.2",
     deps = [
         "org.jetbrains.annotations_23.0.0",
-        "org.jetbrains.kotlin.kotlin-stdlib_2.0.0",
-        "org.jetbrains.kotlinx.kotlinx-coroutines-bom_1.9.0",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.1.0",
+        "org.jetbrains.kotlinx.kotlinx-coroutines-bom_1.10.2",
     ],
     visibility = ["//visibility:public"],
 )
@@ -13186,7 +13259,7 @@ maven_import(
     name = "org.jetbrains.kotlinx.kotlinx-coroutines-core-jvm",
     classifiers = [],
     jars = [
-        "repository/org/jetbrains/kotlinx/kotlinx-coroutines-core-jvm/1.9.0/kotlinx-coroutines-core-jvm-1.9.0.jar"
+        "repository/org/jetbrains/kotlinx/kotlinx-coroutines-core-jvm/1.10.2/kotlinx-coroutines-core-jvm-1.10.2.jar"
     ],
     exports = [
         "org.jetbrains.annotations",
@@ -13194,12 +13267,12 @@ maven_import(
     ],
     original_deps = [
         "org.jetbrains.annotations_23.0.0",
-        "org.jetbrains.kotlin.kotlin-stdlib_2.0.0",
-        "org.jetbrains.kotlinx.kotlinx-coroutines-bom_1.9.0",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.1.0",
+        "org.jetbrains.kotlinx.kotlinx-coroutines-bom_1.10.2",
     ],
-    pom = "repository/org/jetbrains/kotlinx/kotlinx-coroutines-core-jvm/1.9.0/kotlinx-coroutines-core-jvm-1.9.0.pom",
+    pom = "repository/org/jetbrains/kotlinx/kotlinx-coroutines-core-jvm/1.10.2/kotlinx-coroutines-core-jvm-1.10.2.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlinx/kotlinx-coroutines-core-jvm/1.9.0",
+    repo_path = "org/jetbrains/kotlinx/kotlinx-coroutines-core-jvm/1.10.2",
     exclusions_for_parents = {
         "org.jetbrains.kotlin.kotlin-compiler-embeddable": [
             "*.*",
@@ -13248,7 +13321,7 @@ maven_artifact(
         "org.jetbrains.kotlinx.kotlinx-coroutines-core-jvm_1.6.4",
         "com.google.guava.guava_31.0.1-jre",
         "org.jetbrains.kotlin.kotlin-stdlib-jdk8_1.6.21",
-        "org.jetbrains.kotlinx.kotlinx-coroutines-bom_1.9.0",
+        "org.jetbrains.kotlinx.kotlinx-coroutines-bom_1.10.2",
     ],
     visibility = ["//visibility:public"],
 )
@@ -13268,7 +13341,7 @@ maven_import(
         "org.jetbrains.kotlinx.kotlinx-coroutines-core-jvm_1.6.4",
         "com.google.guava.guava_31.0.1-jre",
         "org.jetbrains.kotlin.kotlin-stdlib-jdk8_1.6.21",
-        "org.jetbrains.kotlinx.kotlinx-coroutines-bom_1.9.0",
+        "org.jetbrains.kotlinx.kotlinx-coroutines-bom_1.10.2",
     ],
     pom = "repository/org/jetbrains/kotlinx/kotlinx-coroutines-guava/1.6.4/kotlinx-coroutines-guava-1.6.4.pom",
     repo_root_path = "repository",
@@ -13285,7 +13358,7 @@ maven_artifact(
         "org.jetbrains.kotlin.kotlin-stdlib-jdk8_1.6.21",
         "org.jetbrains.kotlinx.kotlinx-coroutines-core-jvm_1.6.4",
         "org.jetbrains.kotlin.kotlin-stdlib-common_1.6.21",
-        "org.jetbrains.kotlinx.kotlinx-coroutines-bom_1.9.0",
+        "org.jetbrains.kotlinx.kotlinx-coroutines-bom_1.10.2",
         "org.jetbrains.kotlinx.kotlinx-coroutines-bom_1.6.4",
     ],
     visibility = ["//visibility:public"],
@@ -13306,12 +13379,41 @@ maven_import(
         "org.jetbrains.kotlin.kotlin-stdlib-jdk8_1.6.21",
         "org.jetbrains.kotlinx.kotlinx-coroutines-core-jvm_1.6.4",
         "org.jetbrains.kotlin.kotlin-stdlib-common_1.6.21",
-        "org.jetbrains.kotlinx.kotlinx-coroutines-bom_1.9.0",
+        "org.jetbrains.kotlinx.kotlinx-coroutines-bom_1.10.2",
     ],
     pom = "repository/org/jetbrains/kotlinx/kotlinx-coroutines-test-jvm/1.6.4/kotlinx-coroutines-test-jvm-1.6.4.pom",
     repo_root_path = "repository",
     repo_path = "org/jetbrains/kotlinx/kotlinx-coroutines-test-jvm/1.6.4",
     srcjar = "repository/org/jetbrains/kotlinx/kotlinx-coroutines-test-jvm/1.6.4/kotlinx-coroutines-test-jvm-1.6.4-sources.jar",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.jetbrains.kotlinx.kotlinx-datetime-jvm_0.7.1-0.6.x-compat",
+    pom = "repository/org/jetbrains/kotlinx/kotlinx-datetime-jvm/0.7.1-0.6.x-compat/kotlinx-datetime-jvm-0.7.1-0.6.x-compat.pom",
+    repo_root_path = "repository",
+    repo_path = "org/jetbrains/kotlinx/kotlinx-datetime-jvm/0.7.1-0.6.x-compat",
+    deps = [
+        "org.jetbrains.kotlin.kotlin-stdlib_2.1.20",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_import(
+    name = "org.jetbrains.kotlinx.kotlinx-datetime-jvm",
+    classifiers = [],
+    jars = [
+        "repository/org/jetbrains/kotlinx/kotlinx-datetime-jvm/0.7.1-0.6.x-compat/kotlinx-datetime-jvm-0.7.1-0.6.x-compat.jar"
+    ],
+    exports = [
+        "org.jetbrains.kotlin.kotlin-stdlib",
+    ],
+    original_deps = [
+        "org.jetbrains.kotlin.kotlin-stdlib_2.1.20",
+    ],
+    pom = "repository/org/jetbrains/kotlinx/kotlinx-datetime-jvm/0.7.1-0.6.x-compat/kotlinx-datetime-jvm-0.7.1-0.6.x-compat.pom",
+    repo_root_path = "repository",
+    repo_path = "org/jetbrains/kotlinx/kotlinx-datetime-jvm/0.7.1-0.6.x-compat",
     visibility = ["//visibility:public"],
 )
 
@@ -91103,14 +91205,6 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlinx.kotlinx-coroutines-bom_1.10.2",
-    pom = "repository/org/jetbrains/kotlinx/kotlinx-coroutines-bom/1.10.2/kotlinx-coroutines-bom-1.10.2.pom",
-    repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlinx/kotlinx-coroutines-bom/1.10.2",
-    visibility = ["//visibility:public"],
-)
-
-maven_artifact(
     name = "org.jetbrains.kotlinx.kotlinx-coroutines-bom_1.6.1",
     pom = "repository/org/jetbrains/kotlinx/kotlinx-coroutines-bom/1.6.1/kotlinx-coroutines-bom-1.6.1.pom",
     repo_root_path = "repository",
@@ -91175,6 +91269,14 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "org.jetbrains.kotlinx.kotlinx-coroutines-bom_1.9.0",
+    pom = "repository/org/jetbrains/kotlinx/kotlinx-coroutines-bom/1.9.0/kotlinx-coroutines-bom-1.9.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/jetbrains/kotlinx/kotlinx-coroutines-bom/1.9.0",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "org.jetbrains.kotlinx.kotlinx-coroutines-core-common_1.0.1",
     pom = "repository/org/jetbrains/kotlinx/kotlinx-coroutines-core-common/1.0.1/kotlinx-coroutines-core-common-1.0.1.pom",
     repo_root_path = "repository",
@@ -91192,19 +91294,6 @@ maven_artifact(
     repo_path = "org/jetbrains/kotlinx/kotlinx-coroutines-core-common/1.3.6",
     deps = [
         "org.jetbrains.kotlin.kotlin-stdlib-common_1.3.71",
-    ],
-    visibility = ["//visibility:public"],
-)
-
-maven_artifact(
-    name = "org.jetbrains.kotlinx.kotlinx-coroutines-core-jvm_1.10.2",
-    pom = "repository/org/jetbrains/kotlinx/kotlinx-coroutines-core-jvm/1.10.2/kotlinx-coroutines-core-jvm-1.10.2.pom",
-    repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlinx/kotlinx-coroutines-core-jvm/1.10.2",
-    deps = [
-        "org.jetbrains.annotations_23.0.0",
-        "org.jetbrains.kotlin.kotlin-stdlib_2.1.0",
-        "org.jetbrains.kotlinx.kotlinx-coroutines-bom_1.10.2",
     ],
     visibility = ["//visibility:public"],
 )
@@ -91347,6 +91436,19 @@ maven_artifact(
         "org.jetbrains.annotations_23.0.0",
         "org.jetbrains.kotlin.kotlin-stdlib_1.9.21",
         "org.jetbrains.kotlinx.kotlinx-coroutines-bom_1.8.1",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.jetbrains.kotlinx.kotlinx-coroutines-core-jvm_1.9.0",
+    pom = "repository/org/jetbrains/kotlinx/kotlinx-coroutines-core-jvm/1.9.0/kotlinx-coroutines-core-jvm-1.9.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/jetbrains/kotlinx/kotlinx-coroutines-core-jvm/1.9.0",
+    deps = [
+        "org.jetbrains.annotations_23.0.0",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.0.0",
+        "org.jetbrains.kotlinx.kotlinx-coroutines-bom_1.9.0",
     ],
     visibility = ["//visibility:public"],
 )

@@ -187,6 +187,8 @@ ARTIFACTS = [
     "org.jacoco:org.jacoco.core:0.8.13",
     "org.jacoco:org.jacoco.report:0.8.13",
     "org.jetbrains.dokka:dokka-core:1.4.32",
+    "org.jetbrains.exposed:exposed-core:1.0.0-rc-4",
+    "org.jetbrains.exposed:exposed-jdbc:1.0.0-rc-4",
     "org.jetbrains.intellij.deps:asm-all:8.0.1",
     "org.jetbrains.kotlin:compose-compiler-gradle-plugin:2.2.10",  # AGP dependencies
     "org.jetbrains.kotlin.jvm:org.jetbrains.kotlin.jvm.gradle.plugin:pom:2.2.10",  # AGP dependencies
