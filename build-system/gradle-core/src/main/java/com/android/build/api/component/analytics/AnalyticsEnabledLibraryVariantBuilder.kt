@@ -29,7 +29,7 @@ import javax.inject.Inject
  * Shim object for [LibraryVariantBuilder] that records all mutating accesses to the analytics.
  */
 open class AnalyticsEnabledLibraryVariantBuilder @Inject constructor(
-    final override val delegate: LibraryVariantBuilder,
+    override val delegate: LibraryVariantBuilder,
     stats: GradleBuildVariant.Builder
 ) : AnalyticsEnabledVariantBuilder(delegate, stats),
     LibraryVariantBuilder {
@@ -66,17 +66,14 @@ open class AnalyticsEnabledLibraryVariantBuilder @Inject constructor(
             delegate.isMinifyEnabled = value
         }
 
-    private val _androidTest =
-        AnalyticsEnabledAndroidTestBuilder(
-            delegate.androidTest,
-            stats
-        )
-
     override val androidTest: AndroidTestBuilder
         get() {
             stats.variantApiAccessBuilder.addVariantAccessBuilder().type =
                 VariantMethodType.ANDROID_TEST_BUILDER_VALUE
-            return _androidTest
+            return AnalyticsEnabledAndroidTestBuilder(
+                delegate.androidTest,
+                stats
+            )
         }
     override val deviceTests: Map<String, DeviceTestBuilder>
         get() {
