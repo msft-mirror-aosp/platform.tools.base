@@ -19,9 +19,8 @@ package com.android.build.gradle.integration.testing
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.SUPPORT_LIB_MIN_SDK
 import com.android.build.gradle.integration.common.fixture.model.ModelComparator
-import com.android.build.gradle.integration.common.truth.TruthHelper
+import com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk
 import com.android.build.gradle.integration.common.utils.TestFileUtils
-import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.apk.Apk
 import org.junit.Before
 import org.junit.Rule
@@ -32,7 +31,6 @@ class SeparateTestWithAarDependencyTest : ModelComparator() {
     @get:Rule
     val project = GradleTestProject.builder()
         .fromTestProject("separateTestModule")
-        .addGradleProperties("${BooleanOption.USE_ANDROID_X.propertyName}=true")
         .disableBuiltInKotlin()
         .create()
 
@@ -55,8 +53,6 @@ class SeparateTestWithAarDependencyTest : ModelComparator() {
                     }
                 }
             """.trimIndent())
-
-        project.executor().run("clean", "assemble")
     }
 
     @Test
@@ -70,26 +66,21 @@ class SeparateTestWithAarDependencyTest : ModelComparator() {
     }
 
     @Test
-    fun checkAppDoesntContainTestAppCode() {
+    fun checkTestApk() {
+        project.executor().run("assembleDebug")
         val apk: Apk = project.getSubproject("test").getApk(GradleTestProject.ApkType.DEBUG)
-        TruthHelper.assertThatApk(apk).doesNotContainClass("Lcom/android/tests/basic/Main;")
-    }
 
-    @Test
-    fun checkAppDoesntContainTestAppLayout() {
-        val apk: Apk = project.getSubproject("test").getApk(GradleTestProject.ApkType.DEBUG)
-        TruthHelper.assertThatApk(apk).doesNotContainResource("layout/main.xml")
-    }
-
-    @Test
-    fun checkAppDoesntContainTestAppDependencyLibCode() {
-        val apk = project.getSubproject("test").getApk(GradleTestProject.ApkType.DEBUG)
-        TruthHelper.assertThatApk(apk).doesNotContainClass("Landroid/support/v7/app/ActionBar;")
-    }
-
-    @Test
-    fun checkAppDoesNotContainTestAppDependencyLibResources() {
-        val apk = project.getSubproject("test").getApk(GradleTestProject.ApkType.DEBUG)
-        TruthHelper.assertThatApk(apk).doesNotContainResource("layout/abc_action_bar_title_item.xml")
+        assertThatApk(apk)
+            .named("Test app shouldn't contain app code")
+            .doesNotContainClass("Lcom/android/tests/basic/Main;")
+        assertThatApk(apk)
+            .named("Test app shouldn't contain app layout")
+            .doesNotContainResource("layout/main.xml")
+        assertThatApk(apk)
+            .named("Test app shouldn't contain app dependency code")
+            .doesNotContainClass("Landroid/support/v7/app/ActionBar;")
+        assertThatApk(apk)
+            .named("Test app shouldn't contain app dependency resources")
+            .doesNotContainResource("layout/abc_action_bar_title_item.xml")
     }
 }
