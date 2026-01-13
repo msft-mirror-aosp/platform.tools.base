@@ -17,11 +17,9 @@ package com.android.adblib.tools
 
 import com.android.adblib.AdbChannel
 import com.android.adblib.AdbSession
-import com.android.adblib.testing.FakeAdbSession
 import com.android.adblib.toChannelReader
 import com.android.adblib.utils.ResizableBuffer
 import com.android.adblib.utils.closeOnException
-import kotlinx.coroutines.runBlocking
 import java.net.InetAddress
 import java.net.InetSocketAddress
 import java.nio.channels.AsynchronousCloseException
@@ -209,16 +207,5 @@ fun localConsoleAddress(port: Int) =
 
 private fun String.trimQuotes() =
     substringAfter('\'').substringBeforeLast('\'')
-
-/** Simple wrapper around EmulatorConsole for manual integration testing. */
-fun main(args: Array<String>) {
-    runBlocking {
-        FakeAdbSession().openEmulatorConsole(localConsoleAddress(args[0].toInt())).use {
-            println("Connected to emulator")
-            println("AVD name: ${it.avdName()}")
-            println("AVD path: ${it.avdPath()}")
-        }
-    }
-}
 
 class EmulatorCommandException(error: String, cause: Throwable? = null) : Exception(error, cause)
