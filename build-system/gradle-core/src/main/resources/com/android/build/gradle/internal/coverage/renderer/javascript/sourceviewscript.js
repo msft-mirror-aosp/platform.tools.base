@@ -141,7 +141,7 @@ const SourceViewApp = {
                      <a href="#" class="breadcrumb-link" data-level="root">Project</a>`;
 
         if (moduleName) html += `<span> / </span><span class="text-gray-500">${moduleName}</span>`;
-        if (testSuiteName) html += `<span> / </span><span class="text-gray-500">${testSuiteName}</span>`;
+        if (testSuiteName!=="Aggregated") html += `<span> / </span><span class="text-gray-500">${testSuiteName}</span>`;
         if (packageName) html += `<span> / </span><span class="text-gray-500">${packageName}</span>`;
         html += `<span> / </span><span class="font-semibold text-gray-800">${sourceFileName}</span>`;
 
