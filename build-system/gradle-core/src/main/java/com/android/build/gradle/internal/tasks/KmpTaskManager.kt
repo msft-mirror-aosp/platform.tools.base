@@ -130,7 +130,7 @@ class KmpTaskManager(
         )
 
         if (variant.buildFeatures.androidResources) {
-            taskFactory.register(MapSourceSetPathsTask.CreateAction(variant, true))
+            taskFactory.register(MapSourceSetPathsTask.CreateAction(variant))
 
             createPackageResourcesTask(
                 creationConfig = variant,

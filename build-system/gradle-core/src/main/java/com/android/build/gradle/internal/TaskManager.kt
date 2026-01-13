@@ -501,7 +501,7 @@ abstract class TaskManager(
                 flags,
                 null /*configCallback*/)
         taskFactory.register(
-                MapSourceSetPathsTask.CreateAction(creationConfig, includeDependencies))
+                MapSourceSetPathsTask.CreateAction(creationConfig))
     }
 
     /** Defines the merge type for [.basicCreateMergeResourcesTask]  */

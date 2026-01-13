@@ -134,8 +134,7 @@ abstract class MapSourceSetPathsTask : NonIncrementalTask() {
     }
 
     internal class CreateAction(
-        creationConfig: ComponentCreationConfig,
-        val includeDependencies: Boolean
+        creationConfig: ComponentCreationConfig
     ) : VariantTaskCreationAction<MapSourceSetPathsTask, ComponentCreationConfig>(creationConfig),
         AndroidResourcesTaskCreationAction by AndroidResourcesTaskCreationActionImpl(
             creationConfig
@@ -191,15 +190,6 @@ abstract class MapSourceSetPathsTask : NonIncrementalTask() {
             )
 
             task.namespace.setDisallowChanges(creationConfig.namespace)
-            if (includeDependencies) {
-                task.librarySourceSets.setFrom(
-                    creationConfig.variantDependencies.getArtifactCollection(
-                        AndroidArtifacts.ConsumedConfigType.RUNTIME_CLASSPATH,
-                        AndroidArtifacts.ArtifactScope.ALL,
-                        AndroidArtifacts.ArtifactType.ANDROID_RES
-                    ).artifactFiles
-                )
-            }
 
             if (creationConfig is AarCreationConfig) {
                 task.packagedResDir.setDisallowChanges(
