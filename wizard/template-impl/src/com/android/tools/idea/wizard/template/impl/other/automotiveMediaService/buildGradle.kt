@@ -19,6 +19,7 @@ package com.android.tools.idea.wizard.template.impl.other.automotiveMediaService
 import com.android.ide.common.repository.AgpVersion
 import com.android.sdklib.AndroidMajorVersion
 import com.android.sdklib.AndroidVersion
+import com.android.tools.idea.wizard.template.common.AGP_VERSION_WITH_BUILT_IN_KOTLIN
 import com.android.tools.idea.wizard.template.getMaterialComponentName
 import com.android.tools.idea.wizard.template.impl.compileSdk
 import com.android.tools.idea.wizard.template.impl.minSdk
@@ -32,12 +33,12 @@ fun buildGradle(
   generateKotlin: Boolean,
   minApi: AndroidMajorVersion,
   targetApi: AndroidMajorVersion,
-  useAndroidX: Boolean
+  useAndroidX: Boolean,
 ): String {
   return """
 plugins {
     id 'com.android.library'
-    ${renderIf(generateKotlin) {"    id 'org.jetbrains.kotlin.android'"}}
+    ${renderIf(generateKotlin && agpVersion < AGP_VERSION_WITH_BUILT_IN_KOTLIN) {"    id 'org.jetbrains.kotlin.android'"}}
 }
 android {
     namespace '$packageName'
