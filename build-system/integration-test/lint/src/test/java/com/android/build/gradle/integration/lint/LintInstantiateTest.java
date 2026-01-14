@@ -33,7 +33,6 @@ public class LintInstantiateTest {
     public final GradleTestProject project =
             GradleTestProject.builder()
                     .fromTestProject("lintInstantiate")
-                    .disableBuiltInKotlin()
                     .create();
 
     @Test

@@ -16,7 +16,6 @@
 
 
 apply plugin: 'com.android.application'
-apply plugin: 'kotlin-android'
 
 android {
     namespace = "com.example.myapplication"
@@ -39,10 +38,6 @@ android {
         ignoreTestSources = true
         abortOnError = true
         sarifOutput = file("$buildDir/reports/lint-results.sarif")
-    }
-
-    kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_11
     }
 }
 
