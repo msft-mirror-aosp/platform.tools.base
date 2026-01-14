@@ -70,7 +70,6 @@ public class LintBaselineTest {
     public final GradleTestProject project =
             GradleTestProject.builder()
                     .fromTestProject("lintBaseline")
-                    .disableBuiltInKotlin()
                     .create();
 
     @Test
