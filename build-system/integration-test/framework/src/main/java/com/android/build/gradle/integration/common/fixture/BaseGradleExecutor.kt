@@ -354,6 +354,9 @@ abstract class BaseGradleExecutor<T : BaseGradleExecutor<T>> internal constructo
             jvmArguments.add("-XX:+LogVMOutput")
             jvmArguments.add("-XX:LogFile=" + jvmLogDir.resolve("java_log.log").toString())
         }
+        if (jvmArguments.none { it.startsWith("-XX:+Use") && it.endsWith("GC") }) {
+            jvmArguments.add("-XX:+UseParallelGC")
+        }
 
         launcher.setJvmArguments(*Iterables.toArray(jvmArguments, String::class.java))
     }
