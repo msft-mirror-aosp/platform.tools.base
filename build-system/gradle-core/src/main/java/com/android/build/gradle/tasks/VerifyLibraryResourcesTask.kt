@@ -49,6 +49,7 @@ import com.android.ide.common.resources.FileStatus
 import com.android.ide.common.resources.ResourceCompilationService
 import com.android.ide.common.resources.ResourcePathEncoding
 import com.android.ide.common.resources.mergeIdentifiedSourceSetFiles
+import com.android.ide.common.resources.readFromSourceSetPathsFile
 import com.android.utils.FileUtils
 import com.google.common.annotations.VisibleForTesting
 import com.google.common.collect.ImmutableSet
@@ -61,11 +62,9 @@ import org.gradle.api.logging.Logging
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.CacheableTask
-import org.gradle.api.tasks.Classpath
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.Nested
-import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
@@ -76,7 +75,6 @@ import org.gradle.workers.WorkerExecutor
 import java.io.File
 import java.nio.file.Files
 import javax.inject.Inject
-import org.gradle.api.file.FileCollection
 
 @CacheableTask
 @BuildAnalyzer(primaryTaskCategory = TaskCategory.VERIFICATION, secondaryTaskCategories = [TaskCategory.ANDROID_RESOURCES])
@@ -114,7 +112,10 @@ abstract class VerifyLibraryResourcesTask : NewIncrementalTask() {
     abstract val mergeBlameFolder: DirectoryProperty
 
     @get:Internal
-    abstract val sourceSetMaps: ConfigurableFileCollection
+    abstract val localResSourceMap: RegularFileProperty
+
+    @get:Internal
+    abstract val dependencyResSourceMaps: ConfigurableFileCollection
 
     @get:Nested
     abstract val androidJarInput: AndroidJarInput
@@ -136,7 +137,8 @@ abstract class VerifyLibraryResourcesTask : NewIncrementalTask() {
             params.manifestMergeBlameFile.set(manifestMergeBlameFile)
             params.compiledDirectory.set(compiledDirectory)
             params.mergeBlameFolder.set(mergeBlameFolder)
-            params.sourceSetMaps.setFrom(sourceSetMaps)
+            params.localResSourceSetMap.set(localResSourceMap)
+            params.dependencyResSourceSetMaps.setFrom(dependencyResSourceMaps)
         }
     }
 
@@ -150,7 +152,8 @@ abstract class VerifyLibraryResourcesTask : NewIncrementalTask() {
         abstract val manifestMergeBlameFile: RegularFileProperty
         abstract val compiledDirectory: DirectoryProperty
         abstract val mergeBlameFolder: DirectoryProperty
-        abstract val sourceSetMaps: ConfigurableFileCollection
+        abstract val localResSourceSetMap: RegularFileProperty
+        abstract val dependencyResSourceSetMaps: ConfigurableFileCollection
     }
 
     /**
@@ -167,9 +170,8 @@ abstract class VerifyLibraryResourcesTask : NewIncrementalTask() {
             Files.createDirectories(compiledResources.toPath())
 
             val aapt2Input = parameters.aapt2.get()
-            val resSourceSetMap =
-                mergeIdentifiedSourceSetFiles(parameters.sourceSetMaps.files.toList())
-            val relativeResourcesPathEncoding = ResourcePathEncoding.Relative(resSourceSetMap)
+            val moduleOnlyResSourceSetMap =
+                readFromSourceSetPathsFile(parameters.localResSourceSetMap.get().asFile)
             WorkerExecutorResourceCompilationService(
                 projectPath = parameters.projectPath,
                 taskOwner = parameters.taskOwner.get(),
@@ -183,19 +185,24 @@ abstract class VerifyLibraryResourcesTask : NewIncrementalTask() {
                     outDirectory = compiledResources,
                     compilationService = compilationService,
                     mergeBlameFolder = parameters.mergeBlameFolder.get().asFile,
-                    resourcePathEncoding = relativeResourcesPathEncoding
+                    resourcePathEncoding = ResourcePathEncoding.Relative(moduleOnlyResSourceSetMap)
                 )
             }
+
+            val resSourceSetMap =
+                mergeIdentifiedSourceSetFiles(
+                    parameters.dependencyResSourceSetMaps.files.toList()
+                ) + moduleOnlyResSourceSetMap
 
             val compiledDependenciesResourcesDirs =
                 parameters.compiledDependenciesResources.reversed()
             val linkedApk = tempOutput.resolve("linked.apk")
             val config = buildAaptPackageConfig(
-                    linkedApk,
-                    compiledDependenciesResourcesDirs,
-                    compiledResources,
-                    relativeResourcesPathEncoding
-                )
+                linkedApk,
+                compiledDependenciesResourcesDirs,
+                compiledResources,
+                ResourcePathEncoding.Relative(resSourceSetMap)
+            )
 
             workerExecutor.await() // All compilation must be done before linking.
             try {
@@ -292,7 +299,7 @@ abstract class VerifyLibraryResourcesTask : NewIncrementalTask() {
                     ALL,
                     ArtifactType.ANDROID_RES_SOURCE_SET_MAPPING,
                 )
-                task.sourceSetMaps.from(dependencySourceMaps)
+                task.dependencyResSourceMaps.setFrom(dependencySourceMaps)
                 task.dependsOn(dependencySourceMaps)
             }
 
@@ -301,7 +308,7 @@ abstract class VerifyLibraryResourcesTask : NewIncrementalTask() {
 
             val sourceSetMap =
                 creationConfig.artifacts.get(InternalArtifactType.ANDROID_RES_SOURCE_SET_PATH_MAP)
-            task.sourceSetMaps.fromDisallowChanges(sourceSetMap)
+            task.localResSourceMap.setDisallowChanges(sourceSetMap)
             task.dependsOn(sourceSetMap)
         }
     }
