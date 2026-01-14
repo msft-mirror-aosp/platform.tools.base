@@ -120,6 +120,9 @@ class KmpVariantDslInfoImpl(
     override val enableAndroidTest: Boolean
         get() = (extension as KotlinMultiplatformAndroidLibraryExtensionImpl).androidTestOnDeviceOptions != null
 
+    override val androidTestMultiDexEnabled: Boolean?
+        get() = (extension as KotlinMultiplatformAndroidLibraryExtensionImpl).androidTestOnDeviceOptions?.multidex?.enable
+
     // not supported
     override val targetSdkVersion: MutableAndroidVersion? = null
 

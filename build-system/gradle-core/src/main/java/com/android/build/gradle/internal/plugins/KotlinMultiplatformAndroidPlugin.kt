@@ -40,9 +40,11 @@ import com.android.build.api.variant.KotlinMultiplatformAndroidVariantBuilder
 import com.android.build.api.variant.impl.FileBasedDirectoryEntryImpl
 import com.android.build.api.variant.impl.FlatSourceDirectoriesImpl
 import com.android.build.api.variant.impl.KmpAndroidCompilationType
+import com.android.build.api.variant.impl.KmpGlobalVariantBuilderConfigImpl
 import com.android.build.api.variant.impl.KmpVariantImpl
 import com.android.build.api.variant.impl.KotlinMultiplatformAndroidCompilationImpl
 import com.android.build.api.variant.impl.KotlinMultiplatformAndroidLibraryTargetImpl
+import com.android.build.api.variant.impl.KotlinMultiplatformAndroidVariantBuilderImpl
 import com.android.build.gradle.internal.AvdComponentsBuildService
 import com.android.build.gradle.internal.CompileOptions
 import com.android.build.gradle.internal.DependencyConfigurator
@@ -94,6 +96,7 @@ import com.android.build.gradle.internal.services.StringCachingBuildService
 import com.android.build.gradle.internal.services.SymbolTableBuildService
 import com.android.build.gradle.internal.services.TaskCreationServices
 import com.android.build.gradle.internal.services.TaskCreationServicesImpl
+import com.android.build.gradle.internal.services.VariantBuilderServicesImpl
 import com.android.build.gradle.internal.services.VariantServices
 import com.android.build.gradle.internal.services.VariantServicesImpl
 import com.android.build.gradle.internal.services.VersionedSdkLoaderService
@@ -560,7 +563,17 @@ class KotlinMultiplatformAndroidPlugin @Inject constructor(
             KmpAndroidCompilationType.MAIN.defaultCompilationName
         ) as KotlinMultiplatformAndroidCompilationImpl
 
+        val variantBuilder = dslServices
+            .newInstance(
+                KotlinMultiplatformAndroidVariantBuilderImpl::class.java,
+                KmpGlobalVariantBuilderConfigImpl(androidExtension),
+                dslInfo,
+                dslInfo.componentIdentity,
+                VariantBuilderServicesImpl(projectServices)
+            )
+
         return KmpVariantImpl(
+            variantBuilder = variantBuilder,
             dslInfo = dslInfo,
             internalServices = variantServices,
             buildFeatures = KotlinMultiplatformBuildFeaturesValuesImpl(
