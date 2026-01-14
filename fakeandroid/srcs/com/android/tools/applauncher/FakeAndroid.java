@@ -20,6 +20,7 @@ import android.app.Activity;
 import android.app.ActivityThread;
 import android.os.Looper;
 import android.tools.SimpleWebServer;
+
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -166,7 +167,11 @@ public class FakeAndroid implements SimpleWebServer.RequestHandler {
                             Class clazz = Class.forName(param.getValue(), true, loader);
                             if (clazz != null && Activity.class.isAssignableFrom(clazz)) {
                                 ActivityThread.currentActivityThread()
-                                        .putActivity((Activity) clazz.newInstance(), false);
+                                        .putActivity(
+                                                (Activity)
+                                                        clazz.getDeclaredConstructor()
+                                                                .newInstance(),
+                                                false);
                                 found = true;
                                 currentActivityClassLoader = loader;
                             }
@@ -177,7 +182,10 @@ public class FakeAndroid implements SimpleWebServer.RequestHandler {
                     if (!found) {
                         return "Class not found: " + param.getValue();
                     }
-                } catch (InstantiationException | IllegalAccessException ex) {
+                } catch (InstantiationException
+                        | IllegalAccessException
+                        | NoSuchMethodException
+                        | InvocationTargetException ex) {
                     return ex.toString();
                 }
             }
