@@ -120,6 +120,28 @@ class KotlinMultiplatformAndroidComponentsExtensionTest {
     }
 
     @Test
+    fun testCallingBeforeVariants() {
+        val variantBuilder = mock<KotlinMultiplatformAndroidVariantBuilder>()
+        val componentsExtension = KotlinMultiplatformAndroidComponentsExtensionImpl(
+            dslServices,
+            sdkComponents,
+            managedDeviceRegistry,
+            variantApiOperationsRegistrar,
+            extension,
+            mockProvider
+        )
+
+        var called = false
+        componentsExtension.beforeVariants {
+            Truth.assertThat(it).isEqualTo(variantBuilder)
+            called = true
+        }
+
+        variantApiOperationsRegistrar.variantBuilderOperations.executeOperations(variantBuilder)
+        Truth.assertThat(called).isTrue()
+    }
+
+    @Test
     fun testDslFinalizationBlock() {
         val componentsExtension = KotlinMultiplatformAndroidComponentsExtensionImpl(
             dslServices,

@@ -19,6 +19,7 @@ package com.android.build.gradle.integration.multiplatform.v2
 import com.android.build.gradle.integration.common.fixture.GradleTestProjectBuilder
 import com.android.build.gradle.integration.common.fixture.project.AarSelector
 import com.android.build.gradle.integration.common.fixture.project.ApkSelector
+import com.android.build.gradle.integration.common.truth.ScannerSubject
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.utils.FileUtils
 import org.junit.Rule
@@ -105,25 +106,6 @@ class KotlinMultiplatformAndroidVariantApiTest {
         val result = executor().run(":kmpFirstLib:assemble")
 
         result.assertOutputContains("androidMain:1")
-    }
-
-    @Test
-    fun testBeforeVariantsAPI() {
-        TestFileUtils.appendToFile(
-            project.getSubproject("kmpFirstLib").ktsBuildFile,
-            """
-                androidComponents {
-                    beforeVariants {
-                        // beforeVariants for KMP is not supported test so this block should not
-                        // be invoked. Once support is added, having this exception will force
-                        // testing it properly here.
-                        throw RuntimeException("I should not be invoked !")
-                    }
-                }
-            """.trimIndent()
-        )
-        val result = executor().run(":kmpFirstLib:assemble")
-        result.assertOutputContains("beforeVariants() API is not supported yet for KMP modules and will be ignored")
     }
 
     @Test
@@ -297,6 +279,54 @@ class KotlinMultiplatformAndroidVariantApiTest {
         }
     }
 
+    @Test
+    fun testSettingPropertiesInBeforeVariants() {
+        TestFileUtils.appendToFile(
+            project.getSubproject("kmpFirstLib").ktsBuildFile,
+            // language=kotlin
+            """
+                kotlin.android {
+                    minSdk = 22
+                }
+
+                androidComponents {
+                    beforeVariants { variant ->
+                        variant.minSdk = 23
+                    }
+                    onVariants { variant ->
+                        if (variant.minSdk.apiLevel != 23) {
+                            throw RuntimeException("unexpected minSdk version " + variant.minSdk.apiLevel)
+                        }
+                    }
+                }
+            """.trimIndent()
+        )
+
+        executor().run(":kmpFirstLib:assemble")
+    }
+
+    @Test
+    fun testDisablingVariant() {
+        TestFileUtils.appendToFile(
+            project.getSubproject("kmpFirstLib").ktsBuildFile,
+            // language=kotlin
+            """
+                androidComponents {
+                    beforeVariants { variant ->
+                        variant.enable = false
+                    }
+                }
+            """.trimIndent()
+        )
+
+        val result = project.executor()
+            .expectFailure()
+            .run(":kmpFirstLib:assemble")
+
+        ScannerSubject.assertThat(result.stderr).contains(
+            "Android Kotlin multiplatform plugin has a single variant (androidMain). Disabling that variant is not permitted."
+        )
+    }
 
     private fun executor() = project.executor().withFailOnWarning(false) // b/455891987
 }
