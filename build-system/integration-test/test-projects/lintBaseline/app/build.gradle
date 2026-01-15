@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 apply plugin: 'com.android.application'
-apply plugin: 'kotlin-android'
 
 android {
     namespace = "com.example.android.lint.kotlin"
@@ -37,10 +36,6 @@ android {
         error += 'SyntheticAccessor'
         warningsAsErrors = true
         baseline = file('lint-baseline.xml')
-    }
-
-    kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_11
     }
 }
 

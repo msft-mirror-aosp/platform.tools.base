@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package com.android.tools.utp.gradle
+package com.android.tools.utp.plugins.result.listener.gradle
 
+import com.google.common.truth.Truth
 import com.google.common.truth.Truth.assertThat
 import org.gradle.api.logging.Logger
 import org.junit.Before
@@ -43,7 +44,6 @@ class TestResultProgressTrackerTest  {
     }
 
     private fun timerFactory(delay: Long, action: () -> Unit): Timer {
-
         capturedDelay = delay
         capturedAction = action
 
@@ -53,7 +53,6 @@ class TestResultProgressTrackerTest  {
 
     @Test
     fun testSuiteStatus_getStatus() {
-
         val status = TestResultProgressTracker.TestSuiteStatus("myDevice")
 
         status.scheduleTests(10)
@@ -88,11 +87,11 @@ class TestResultProgressTrackerTest  {
             ::timerFactory
         )
 
-        assertThat(capturedDelay).isEqualTo(null)
+        Truth.assertThat(capturedDelay).isEqualTo(null)
 
         progressTracker.onTestSuiteStarted(10)
 
-        assertThat(capturedDelay).isEqualTo(200L)
+        Truth.assertThat(capturedDelay).isEqualTo(200L)
         assertThat(progressTracker.status.getStatus()).isEqualTo(
             "testDevice Tests 0/10 completed. (0 skipped) (0 failed)"
         )

@@ -17,7 +17,6 @@
 package com.android.build.gradle.internal.testsuites.impl
 
 import com.android.build.api.dsl.AgpTestSuiteDependencies
-import com.android.build.api.variant.SourceDirectories
 import com.android.build.api.variant.TestSuiteSourceSet
 import com.android.build.api.variant.TestSuiteSourceType
 import com.android.build.api.variant.impl.FileBasedDirectoryEntryImpl
@@ -52,7 +51,7 @@ internal class AssetsTestSuiteSourceSet(
         )
     }
 
-    override fun get(): SourceDirectories.Flat = assetsSourcesFolder
+    override fun get(): FlatSourceDirectoriesImpl = assetsSourcesFolder
 
     override val type: TestSuiteSourceType
         get() = TestSuiteSourceType.ASSETS

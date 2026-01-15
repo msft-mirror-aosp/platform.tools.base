@@ -106,7 +106,5 @@ class DefaultDeviceApkOutput(
 
 data class ApkSources(
     val mainApkArtifacts: Provider<List<Directory>>,
-    val additionalSupportedSdkApkSplits: Provider<Directory>?,
-    val privacySandboxSdkSplitApksForLegacy: Provider<Directory>?,
     val dexMetadataDirectory: Provider<Directory>? = null
 )

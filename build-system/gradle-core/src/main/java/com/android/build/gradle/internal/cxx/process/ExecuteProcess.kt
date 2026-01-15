@@ -145,6 +145,7 @@ fun createJavaExecuteProcessCommand(
     javaExe: File = File(System.getProperty("java.home")).resolve("bin/java")
 ) = createExecuteProcessCommand(javaExe)
     .copy(useScript = true)
+    .addArgs("--enable-native-access", "ALL-UNNAMED") // b/469503601
     .addArgs("--class-path", classPath, main)
 
 /**

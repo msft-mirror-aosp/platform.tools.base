@@ -20,6 +20,7 @@ import com.android.build.api.dsl.TestTaskContext
 import org.gradle.api.Incubating
 import org.gradle.api.Named
 import org.gradle.api.provider.Property
+import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.testing.Test
 
 /**
@@ -31,8 +32,8 @@ import org.gradle.api.tasks.testing.Test
 interface TestSuite: Named {
 
     /**
-     * Return the list of sourcesets associated with this test suite. Sources are added through the
-     * DSL using one of the following methods:
+     * Return the list of sourcesets associated with this test suite. Sourcesets are added through
+     * the DSL using one of the following methods:
      *  - [com.android.build.api.dsl.AgpTestSuite.assets]
      *  - [com.android.build.api.dsl.AgpTestSuite.hostJar]
      *  - [com.android.build.api.dsl.AgpTestSuite.testApk]
@@ -96,4 +97,12 @@ interface TestSuite: Named {
      */
     @get:Incubating
     val codeCoverage: Property<Boolean>
+
+    /**
+     * The instrumentationRunner to use to run the tests.
+     *
+     * @return the instrumentation test runner name
+     */
+    @Incubating
+    fun instrumentationRunner(source: TestSuiteSourceSet.TestApk): Provider<String>
 }

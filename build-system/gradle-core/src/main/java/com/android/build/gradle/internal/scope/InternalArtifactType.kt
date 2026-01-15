@@ -157,6 +157,8 @@ InternalArtifactType<T : FileSystemLocation>(
     object VARIANT_CODE_COVERAGE_DATA: InternalArtifactType<Directory>(DIRECTORY, Category.INTERMEDIATES), Replaceable
     // The directory where the code coverage html report is generated
     object CODE_COVERAGE_HTML_REPORT: InternalArtifactType<Directory>(DIRECTORY, Category.REPORTS), Replaceable
+    // The directory where the aggregated code coverage html report is generated
+    object AGGREGATED_CODE_COVERAGE_HTML_REPORT: InternalArtifactType<Directory>(DIRECTORY, Category.REPORTS), Replaceable
     // The automatically generated jacoco config file
     object JACOCO_CONFIG_RESOURCES: InternalArtifactType<Directory>(DIRECTORY)
 

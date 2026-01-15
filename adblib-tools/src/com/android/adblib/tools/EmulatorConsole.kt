@@ -16,12 +16,10 @@
 package com.android.adblib.tools
 
 import com.android.adblib.AdbChannel
-import com.android.adblib.AdbServerChannelProvider
 import com.android.adblib.AdbSession
-import com.android.adblib.testing.FakeAdbSession
 import com.android.adblib.toChannelReader
 import com.android.adblib.utils.ResizableBuffer
-import kotlinx.coroutines.runBlocking
+import com.android.adblib.utils.closeOnException
 import java.net.InetAddress
 import java.net.InetSocketAddress
 import java.nio.channels.AsynchronousCloseException
@@ -176,35 +174,32 @@ private const val EMULATOR_CONSOLE_NEWLINE = "\r\n"
  * @throws EmulatorCommandException if authentication fails
  */
 suspend fun AdbSession.openEmulatorConsole(address: InetSocketAddress): EmulatorConsole {
-    val channelProvider =
-        AdbServerChannelProvider.createConnectAddresses(host) {
-            listOf(address)
-        }
-
-    val console = EmulatorConsole(channelProvider.createChannel())
-
-    val result = console.readResponse().throwOnError()
-    if (result.outputLines.any { it.contains(AUTH_REQUIRED) }) {
-        // The following lines are output by the emulator, and expected to remain stable:
-        // Android Console: Authentication required
-        // Android Console: type 'auth <auth_token>' to authenticate
-        // Android Console: you can find your <auth_token> in
-        // '/<path-to-home>/.emulator_console_auth_token'
-        // OK
-        val authTokenPromptIdx =
-            result.outputLines.indexOfFirst { it.contains("you can find your <auth_token> in") }
-        if (authTokenPromptIdx >= 0 && authTokenPromptIdx < result.outputLines.size - 1) {
-            val authTokenPath = Path.of(result.outputLines[authTokenPromptIdx + 1].trimQuotes())
-            val authToken =
-                channelFactory.openFile(authTokenPath).use {
-                    it.toChannelReader().readLine()?.trim() ?: ""
+    return EmulatorConsole(channelFactory.connectSocket(address))
+        .closeOnException { console ->
+            val result = console.readResponse().throwOnError()
+            if (result.outputLines.any { it.contains(AUTH_REQUIRED) }) {
+                // The following lines are output by the emulator, and expected to remain stable:
+                // Android Console: Authentication required
+                // Android Console: type 'auth <auth_token>' to authenticate
+                // Android Console: you can find your <auth_token> in
+                // '/<path-to-home>/.emulator_console_auth_token'
+                // OK
+                val authTokenPromptIdx =
+                    result.outputLines.indexOfFirst { it.contains("you can find your <auth_token> in") }
+                if (authTokenPromptIdx >= 0 && authTokenPromptIdx < result.outputLines.size - 1) {
+                    val authTokenPath =
+                        Path.of(result.outputLines[authTokenPromptIdx + 1].trimQuotes())
+                    val authToken =
+                        channelFactory.openFile(authTokenPath).use {
+                            it.toChannelReader().readLine()?.trim() ?: ""
+                        }
+                    console.authenticate(authToken).throwOnError()
+                } else {
+                    throw EmulatorCommandException("Unable to authenticate to emulator: auth token location not provided by emulator")
                 }
-            console.authenticate(authToken).throwOnError()
-        } else {
-            throw EmulatorCommandException("Unable to authenticate to emulator: auth token location not provided by emulator")
+            }
+            console
         }
-    }
-    return console
 }
 
 fun localConsoleAddress(port: Int) =
@@ -212,16 +207,5 @@ fun localConsoleAddress(port: Int) =
 
 private fun String.trimQuotes() =
     substringAfter('\'').substringBeforeLast('\'')
-
-/** Simple wrapper around EmulatorConsole for manual integration testing. */
-fun main(args: Array<String>) {
-    runBlocking {
-        FakeAdbSession().openEmulatorConsole(localConsoleAddress(args[0].toInt())).use {
-            println("Connected to emulator")
-            println("AVD name: ${it.avdName()}")
-            println("AVD path: ${it.avdPath()}")
-        }
-    }
-}
 
 class EmulatorCommandException(error: String, cause: Throwable? = null) : Exception(error, cause)

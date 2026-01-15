@@ -93,7 +93,7 @@ interface TestSuiteSourceSet: Named {
     @Incubating
     interface TestApk: TestSuiteSourceSet {
         @get:Incubating
-        val manifestFile: File?
+        val manifestFile: File
         @get:Incubating
         val java: SourceDirectories.Flat?
         @get:Incubating

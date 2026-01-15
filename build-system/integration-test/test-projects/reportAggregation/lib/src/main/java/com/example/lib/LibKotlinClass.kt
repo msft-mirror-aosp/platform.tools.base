@@ -18,4 +18,14 @@ package com.example.lib
 
 class LibKotlinClass {
     val name get() = javaClass.simpleName
+
+    fun calculate(n1: Int, n2: Int, operator: String): Int? {
+        if(operator == "add") {
+            return n1+n2
+        } else if(operator == "subtract") {
+            return n1-n2
+        } else {
+            return null
+        }
+    }
 }

@@ -44,6 +44,11 @@ class AppKotlinUnitTest {
     }
 
     @Test
+    fun testCalculate() {
+        assertEquals(4, AppKotlinClass().calculate(2, 2, "add"))
+    }
+
+    @Test
     fun mockFinalMethod() {
         val activity = mock(Activity::class.java)
         val app = mock(Application::class.java)

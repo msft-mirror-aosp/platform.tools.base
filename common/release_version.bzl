@@ -1,6 +1,6 @@
 #buildifier: disable=module-docstring
-BASE_VERSION = "32.1.0-alpha04"
-BUILD_VERSION = "9.1.0-alpha04"
+BASE_VERSION = "32.1.0-alpha05"
+BUILD_VERSION = "9.1.0-alpha05"
 COMMANDLINE_TOOLS_VERSION = "21.0-alpha01"
 
 # These are used for nightly releases

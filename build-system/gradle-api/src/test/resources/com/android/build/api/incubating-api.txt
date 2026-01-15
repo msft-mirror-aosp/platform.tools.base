@@ -207,47 +207,6 @@ https://issuetracker.google.com/328748857
 https://issuetracker.google.com/328748858
   * com.android.build.api.variant.CanMinifyAndroidResources
   * com.android.build.api.variant.CanMinifyAndroidResources.getShrinkResources: boolean ()
-https://issuetracker.google.com/328748877
-  * com.android.build.api.dsl.PrivacySandboxKeepRules implements com.android.build.api.dsl.ConfigurableFiles
-  * com.android.build.api.dsl.PrivacySandboxKeepRules.getIgnoreFrom: java.util.Set<java.lang.String> ()
-  * com.android.build.api.dsl.PrivacySandboxKeepRules.getIgnoreFromAllExternalDependencies: boolean ()
-  * com.android.build.api.dsl.PrivacySandboxKeepRules.setIgnoreFromAllExternalDependencies: void (boolean)
-  * com.android.build.api.dsl.PrivacySandboxSdkBundle
-  * com.android.build.api.dsl.PrivacySandboxSdkBundle.getApplicationId: java.lang.String ()
-  * com.android.build.api.dsl.PrivacySandboxSdkBundle.getCompatSdkProviderClassName: java.lang.String ()
-  * com.android.build.api.dsl.PrivacySandboxSdkBundle.getPackageName: java.lang.String ()
-  * com.android.build.api.dsl.PrivacySandboxSdkBundle.getSdkProviderClassName: java.lang.String ()
-  * com.android.build.api.dsl.PrivacySandboxSdkBundle.setApplicationId: void (java.lang.String)
-  * com.android.build.api.dsl.PrivacySandboxSdkBundle.setCompatSdkProviderClassName: void (java.lang.String)
-  * com.android.build.api.dsl.PrivacySandboxSdkBundle.setPackageName: void (java.lang.String)
-  * com.android.build.api.dsl.PrivacySandboxSdkBundle.setSdkProviderClassName: void (java.lang.String)
-  * com.android.build.api.dsl.PrivacySandboxSdkBundle.setVersion: void (int, int, int)
-  * com.android.build.api.dsl.PrivacySandboxSdkExtension
-  * com.android.build.api.dsl.PrivacySandboxSdkExtension.bundle: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.PrivacySandboxSdkBundle, kotlin.Unit>)
-  * com.android.build.api.dsl.PrivacySandboxSdkExtension.getBuildToolsVersion: java.lang.String ()
-  * com.android.build.api.dsl.PrivacySandboxSdkExtension.getBundle: com.android.build.api.dsl.PrivacySandboxSdkBundle ()
-  * com.android.build.api.dsl.PrivacySandboxSdkExtension.getCompileSdk: java.lang.Integer ()
-  * com.android.build.api.dsl.PrivacySandboxSdkExtension.getCompileSdkExtension: java.lang.Integer ()
-  * com.android.build.api.dsl.PrivacySandboxSdkExtension.getCompileSdkPreview: java.lang.String ()
-  * com.android.build.api.dsl.PrivacySandboxSdkExtension.getExperimentalProperties: java.util.Map<java.lang.String, java.lang.Object> ()
-  * com.android.build.api.dsl.PrivacySandboxSdkExtension.getMinSdk: java.lang.Integer ()
-  * com.android.build.api.dsl.PrivacySandboxSdkExtension.getMinSdkPreview: java.lang.String ()
-  * com.android.build.api.dsl.PrivacySandboxSdkExtension.getNamespace: java.lang.String ()
-  * com.android.build.api.dsl.PrivacySandboxSdkExtension.getOptimization: com.android.build.api.dsl.PrivacySandboxSdkOptimization ()
-  * com.android.build.api.dsl.PrivacySandboxSdkExtension.getSigningConfig: com.android.build.api.dsl.SigningConfig ()
-  * com.android.build.api.dsl.PrivacySandboxSdkExtension.getTargetSdk: java.lang.Integer ()
-  * com.android.build.api.dsl.PrivacySandboxSdkExtension.optimization: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.PrivacySandboxSdkOptimization, kotlin.Unit>)
-  * com.android.build.api.dsl.PrivacySandboxSdkExtension.setBuildToolsVersion: void (java.lang.String)
-  * com.android.build.api.dsl.PrivacySandboxSdkExtension.setCompileSdk: void (java.lang.Integer)
-  * com.android.build.api.dsl.PrivacySandboxSdkExtension.setCompileSdkExtension: void (java.lang.Integer)
-  * com.android.build.api.dsl.PrivacySandboxSdkExtension.setCompileSdkPreview: void (java.lang.String)
-  * com.android.build.api.dsl.PrivacySandboxSdkExtension.setMinSdk: void (java.lang.Integer)
-  * com.android.build.api.dsl.PrivacySandboxSdkExtension.setMinSdkPreview: void (java.lang.String)
-  * com.android.build.api.dsl.PrivacySandboxSdkExtension.setNamespace: void (java.lang.String)
-  * com.android.build.api.dsl.PrivacySandboxSdkExtension.setTargetSdk: void (java.lang.Integer)
-  * com.android.build.api.dsl.PrivacySandboxSdkExtension.signingConfig: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.SigningConfig, kotlin.Unit>)
-  * com.android.build.api.dsl.PrivacySandboxSdkOptimization
-  * com.android.build.api.dsl.PrivacySandboxSdkOptimization.getKeepRules: com.android.build.api.dsl.PrivacySandboxKeepRules ()
 https://issuetracker.google.com/328748918
   * com.android.build.api.dsl.NdkBuildFlags
   * com.android.build.api.dsl.NdkBuildFlags.abiFilters: void (java.lang.String[])
@@ -563,9 +522,6 @@ https://issuetracker.google.com/362941219
   * com.android.build.api.variant.DeviceSpec.getSupportsPrivacySandbox: boolean ()
   * com.android.build.api.variant.DeviceSpec.hashCode: int ()
   * com.android.build.api.variant.DeviceSpec.toString: java.lang.String ()
-https://issuetracker.google.com/368059518
-  * com.android.build.api.dsl.PrivacySandboxSdkExtension.getLint: com.android.build.api.dsl.Lint ()
-  * com.android.build.api.dsl.PrivacySandboxSdkExtension.lint: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.Lint, kotlin.Unit>)
 https://issuetracker.google.com/368426598
   * com.android.build.api.dsl.AndroidSourceSet.jni: void (kotlin.jvm.functions.Function1)
 https://issuetracker.google.com/369698074
@@ -644,6 +600,7 @@ https://issuetracker.google.com/392162853
   * com.android.build.api.testsuites.TestSuiteExecutionClient.getInputParameter: java.lang.String (java.lang.String)
   * com.android.build.api.testsuites.TestSuiteExecutionClient.getInputParameters: java.util.Collection<com.android.build.api.testsuites.TestEngineInputProperty> ()
   * com.android.build.api.variant.TestSuite.getSources: java.util.Collection<com.android.build.api.variant.TestSuiteSourceSet> ()
+  * com.android.build.api.variant.TestSuite.instrumentationRunner: org.gradle.api.provider.Provider<java.lang.String> (com.android.build.api.variant.TestSuiteSourceSet$TestApk)
   * com.android.build.api.variant.TestSuiteSourceSet implements org.gradle.api.Named
   * com.android.build.api.variant.TestSuiteSourceSet$Assets implements com.android.build.api.variant.TestSuiteSourceSet
   * com.android.build.api.variant.TestSuiteSourceSet$Assets$DefaultImpls.getType: com.android.build.api.variant.TestSuiteSourceType (com.android.build.api.variant.TestSuiteSourceSet$Assets)

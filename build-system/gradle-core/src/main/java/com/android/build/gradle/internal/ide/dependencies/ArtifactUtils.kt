@@ -19,7 +19,7 @@
 package com.android.build.gradle.internal.ide.dependencies
 
 import com.android.build.api.attributes.AgpVersionAttr
-import com.android.build.gradle.internal.testsuites.impl.TestSuiteSourceContainer
+import com.android.build.api.variant.impl.TestSuiteSourceContainer
 import com.android.build.gradle.internal.component.ComponentCreationConfig
 import com.android.build.gradle.internal.dependency.VariantDependencies
 import com.android.build.gradle.internal.ide.DependencyFailureHandler

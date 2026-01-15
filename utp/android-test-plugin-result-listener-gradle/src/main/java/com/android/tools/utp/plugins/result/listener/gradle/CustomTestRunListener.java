@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.android.tools.utp.gradle;
+package com.android.tools.utp.plugins.result.listener.gradle;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
@@ -23,6 +23,7 @@ import com.android.ddmlib.testrunner.TestResult;
 import com.android.ddmlib.testrunner.XmlTestRunListener;
 import com.android.utils.FileUtils;
 import com.android.utils.ILogger;
+
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -32,24 +33,21 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.Set;
 
-/**
- * Custom version of {@link com.android.ddmlib.testrunner.ITestRunListener}.
- */
+/** Custom version of {@link com.android.ddmlib.testrunner.ITestRunListener}. */
 public class CustomTestRunListener extends XmlTestRunListener {
 
-    @NonNull
-    private final String mDeviceName;
-    @NonNull
-    private final String mProjectPath;
-    @NonNull
-    private final String mFlavorName;
+    @NonNull private final String mDeviceName;
+    @NonNull private final String mProjectPath;
+    @NonNull private final String mFlavorName;
     private final ILogger mLogger;
     private final Set<TestIdentifier> mFailedTests = Sets.newHashSet();
 
     @NonNull private final TestResultProgressTracker mProgressTracker;
 
-    public CustomTestRunListener(@NonNull String deviceName,
-            @NonNull String projectPath, @NonNull String flavorName,
+    public CustomTestRunListener(
+            @NonNull String deviceName,
+            @NonNull String projectPath,
+            @NonNull String flavorName,
             @Nullable ILogger logger) {
         mDeviceName = deviceName;
         mProjectPath = projectPath;
@@ -83,7 +81,8 @@ public class CustomTestRunListener extends XmlTestRunListener {
     @NonNull
     @Override
     protected Map<String, String> getPropertiesAttributes() {
-        Map<String, String> propertiesAttributes = Maps.newLinkedHashMap(super.getPropertiesAttributes());
+        Map<String, String> propertiesAttributes =
+                Maps.newLinkedHashMap(super.getPropertiesAttributes());
         propertiesAttributes.put("device", mDeviceName);
         propertiesAttributes.put("flavor", mFlavorName);
         propertiesAttributes.put("project", mProjectPath);
@@ -108,7 +107,8 @@ public class CustomTestRunListener extends XmlTestRunListener {
     @Override
     public void testFailed(TestIdentifier test, String trace) {
         if (mLogger != null) {
-            mLogger.warning("\n%1$s > %2$s[%3$s] \033[31mFAILED \033[0m",
+            mLogger.warning(
+                    "\n%1$s > %2$s[%3$s] \033[31mFAILED \033[0m",
                     test.getClassName(), test.getTestName(), mDeviceName);
             mLogger.warning(getModifiedTrace(trace));
         }
@@ -122,7 +122,8 @@ public class CustomTestRunListener extends XmlTestRunListener {
     @Override
     public void testAssumptionFailure(TestIdentifier test, String trace) {
         if (mLogger != null) {
-            mLogger.warning("\n%1$s > %2$s[%3$s] \033[33mSKIPPED \033[0m\n%4$s",
+            mLogger.warning(
+                    "\n%1$s > %2$s[%3$s] \033[33mSKIPPED \033[0m\n%4$s",
                     test.getClassName(), test.getTestName(), mDeviceName, getModifiedTrace(trace));
         }
         mProgressTracker.onTestSkipped();
@@ -134,7 +135,8 @@ public class CustomTestRunListener extends XmlTestRunListener {
         if (!mFailedTests.remove(test)) {
             // if wasn't present in the list, then the test succeeded.
             if (mLogger != null) {
-                mLogger.verbose("\n%1$s > %2$s[%3$s] \033[32mSUCCESS \033[0m",
+                mLogger.verbose(
+                        "\n%1$s > %2$s[%3$s] \033[32mSUCCESS \033[0m",
                         test.getClassName(), test.getTestName(), mDeviceName);
             }
             mProgressTracker.onTestPassed();
@@ -153,7 +155,8 @@ public class CustomTestRunListener extends XmlTestRunListener {
     @Override
     public void testIgnored(TestIdentifier test) {
         if (mLogger != null) {
-            mLogger.warning("\n%1$s > %2$s[%3$s] \033[33mSKIPPED \033[0m",
+            mLogger.warning(
+                    "\n%1$s > %2$s[%3$s] \033[33mSKIPPED \033[0m",
                     test.getClassName(), test.getTestName(), mDeviceName);
         }
         mProgressTracker.onTestSkipped();

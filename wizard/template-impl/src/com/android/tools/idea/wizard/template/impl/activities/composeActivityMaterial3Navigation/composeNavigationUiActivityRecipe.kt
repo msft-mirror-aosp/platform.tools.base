@@ -33,7 +33,7 @@ fun RecipeExecutor.composeNavigationUiActivityRecipe(
   packageName: String,
   isLauncher: Boolean,
   greeting: String,
-  defaultPreview: String
+  defaultPreview: String,
 ) {
   val (_, srcOut, resOut, _) = moduleData
   addAllKotlinDependencies(moduleData)
@@ -42,7 +42,7 @@ fun RecipeExecutor.composeNavigationUiActivityRecipe(
   addDependency(mavenCoordinate = "androidx.activity:activity-compose:+")
 
   // Add Compose dependencies, using the BOM to set versions
-  addComposeDependencies(moduleData)
+  addComposeDependencies(moduleData, composeBomVersion = "2025.07.00")
 
   addDependency(mavenCoordinate = "androidx.compose.material3:material3")
   addDependency(mavenCoordinate = "androidx.compose.material3:material3-adaptive-navigation-suite")
@@ -54,7 +54,7 @@ fun RecipeExecutor.composeNavigationUiActivityRecipe(
     packageName = packageName,
     isLauncher = isLauncher,
     hasNoActionBar = true,
-    generateActivityTitle = true
+    generateActivityTitle = true,
   )
   // It doesn't have to create separate themes.xml for light and night because the default
   // status bar color is same between them at this moment
@@ -62,7 +62,10 @@ fun RecipeExecutor.composeNavigationUiActivityRecipe(
   // this themes.xml exists just for settings the status bar color.
   // Thus, themeName follows the non-Compose project convention.
   // (E.g. Theme.MyApplication) as opposed to the themeName variable below (E.g. MyApplicationTheme)
-  mergeXml(themesXml(themeName = moduleData.themesData.main.name), resOut.resolve("values/themes.xml"))
+  mergeXml(
+    themesXml(themeName = moduleData.themesData.main.name),
+    resOut.resolve("values/themes.xml"),
+  )
 
   val themeName = "${moduleData.themesData.appName}Theme"
   val appComposableName = "${moduleData.themesData.appName}App"
@@ -73,9 +76,9 @@ fun RecipeExecutor.composeNavigationUiActivityRecipe(
       greeting,
       packageName,
       themeName,
-      appComposableName
+      appComposableName,
     ),
-    srcOut.resolve("${activityClass}.kt")
+    srcOut.resolve("${activityClass}.kt"),
   )
   val uiThemeFolder = "ui/theme"
   save(colorKt(packageName), srcOut.resolve("$uiThemeFolder/Color.kt"))

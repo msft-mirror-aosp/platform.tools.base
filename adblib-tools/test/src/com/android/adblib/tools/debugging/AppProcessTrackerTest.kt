@@ -39,6 +39,7 @@ import org.junit.Rule
 import org.junit.Test
 import java.util.concurrent.CancellationException
 import java.util.concurrent.CopyOnWriteArrayList
+import kotlinx.coroutines.Job
 
 class AppProcessTrackerTest {
 
@@ -171,7 +172,7 @@ class AppProcessTrackerTest {
     }
 
     @Test
-    fun testAppProcessTrackerFlowStopsWhenDeviceDisconnects(): Unit =
+    fun testAppProcessTrackerClearsProcesses_whenDeviceDisconnects(): Unit =
         CoroutineTestUtils.runBlockingWithTimeout {
             // Prepare
             val deviceID = "1234"
@@ -202,14 +203,19 @@ class AppProcessTrackerTest {
             }
 
             appTracker.scope.launch {
-                appTracker.appProcessFlow.collect {
-                    listOfProcessList.add(it)
+                appTracker.appProcessFlow.collect {processList ->
+                    if (processList.isNotEmpty()) {
+                        listOfProcessList.add(processList)
+                    }
                 }
             }.join()
+            // Wait for the tracker's scope to fully complete to ensure cancellation is fully processed
+            appTracker.scope.coroutineContext[Job]?.join()
 
-            // Assert
-            // We don't assert anything, the fact we reached this point means the
-            // flow was cancelled when the device was disconnected.
+            // Assert: After the tracker's scope is cancelled (due to device disconnect), its cleanup
+            // `processesFlow` is reset to an empty list
+            assertTrue(appTracker.appProcessFlow.value.isEmpty())
+            assertTrue(appTracker.appProcessFlow.value.flowStatus.isEndOfFlow)
         }
 
     @Test

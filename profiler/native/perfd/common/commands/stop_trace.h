@@ -27,18 +27,15 @@ class SessionsManager;
 class StopTrace : public CommandT<StopTrace> {
  public:
   StopTrace(const proto::Command& command, TraceManager* trace_manager,
-            SessionsManager* sessions_manager, bool is_task_based_ux_enabled)
+            SessionsManager* sessions_manager)
       : CommandT(command),
         trace_manager_(trace_manager),
-        sessions_manager_(sessions_manager),
-        is_task_based_ux_enabled_(is_task_based_ux_enabled) {}
+        sessions_manager_(sessions_manager) {}
 
   static Command* Create(const proto::Command& command,
                          TraceManager* trace_manager,
-                         SessionsManager* sessions_manager,
-                         bool is_task_based_ux_enabled) {
-    return new StopTrace(command, trace_manager, sessions_manager,
-                         is_task_based_ux_enabled);
+                         SessionsManager* sessions_manager) {
+    return new StopTrace(command, trace_manager, sessions_manager);
   }
 
   virtual grpc::Status ExecuteOn(Daemon* daemon) override;
@@ -46,7 +43,6 @@ class StopTrace : public CommandT<StopTrace> {
  private:
   TraceManager* trace_manager_;
   SessionsManager* sessions_manager_;
-  bool is_task_based_ux_enabled_;
 };
 
 }  // namespace profiler

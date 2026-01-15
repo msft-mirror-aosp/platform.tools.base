@@ -25,9 +25,12 @@ import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfig
 import com.android.buildanalyzer.common.TaskCategory
 import org.gradle.api.file.Directory
 import org.gradle.api.file.DirectoryProperty
+import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.ListProperty
+import org.gradle.api.provider.Property
 import org.gradle.api.tasks.CacheableTask
 import org.gradle.api.tasks.InputFiles
+import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
@@ -45,14 +48,20 @@ abstract class CodeCoverageReportTask: NonIncrementalGlobalTask() {
     @get:OutputDirectory
     abstract val htmlReportDir: DirectoryProperty
 
+    @get:Internal
+    abstract val rootProjectName: Property<String>
+
+    @get:Internal
+    abstract val rootProjectDir: RegularFileProperty
+
     override fun doTaskAction() {
         val inputDirectories: List<File> = coverageXmlReports.get().map { it.asFile }
 
         CodeCoverageReportOrchestrator.orchestrate(
             inputDirectories,
             htmlReportDir,
-            project.rootProject.name,
-            project.rootProject.rootDir
+            rootProjectName.get(),
+            rootProjectDir.get().asFile
         )
     }
 
@@ -61,21 +70,6 @@ abstract class CodeCoverageReportTask: NonIncrementalGlobalTask() {
     ): BaseCoverageReportCreationAction(creationConfig) {
         override val name = "createAggregatedCoverageReport"
         override val artifactType = InternalMultipleArtifactType.AGGREGATED_CODE_COVERAGE_DATA
-    }
-
-    class CoverageReportCreationAction(
-        creationConfig: GlobalTaskCreationConfig
-    ): BaseCoverageReportCreationAction(creationConfig) {
-        override val name = "createCoverageReport"
-        override val artifactType = InternalMultipleArtifactType.CODE_COVERAGE_DATA
-    }
-
-    abstract class BaseCoverageReportCreationAction(
-        val creationConfig: GlobalTaskCreationConfig
-    ): GlobalTaskCreationAction<CodeCoverageReportTask>() {
-
-        abstract val artifactType: InternalMultipleArtifactType<Directory>
-        override val type = CodeCoverageReportTask::class.java
 
         override fun handleProvider(taskProvider: TaskProvider<CodeCoverageReportTask>) {
             super.handleProvider(taskProvider)
@@ -86,14 +80,42 @@ abstract class CodeCoverageReportTask: NonIncrementalGlobalTask() {
                     taskProvider,
                     CodeCoverageReportTask::htmlReportDir
                 )
-                .atLocation(creationConfig.services.projectInfo.getReportsDir())
+                .on(InternalArtifactType.AGGREGATED_CODE_COVERAGE_HTML_REPORT)
+        }
+    }
+
+    class CoverageReportCreationAction(
+        creationConfig: GlobalTaskCreationConfig
+    ): BaseCoverageReportCreationAction(creationConfig) {
+        override val name = "createCoverageReport"
+        override val artifactType = InternalMultipleArtifactType.CODE_COVERAGE_DATA
+
+        override fun handleProvider(taskProvider: TaskProvider<CodeCoverageReportTask>) {
+            super.handleProvider(taskProvider)
+
+            creationConfig
+                .globalArtifacts
+                .setInitialProvider(
+                    taskProvider,
+                    CodeCoverageReportTask::htmlReportDir
+                )
                 .on(InternalArtifactType.CODE_COVERAGE_HTML_REPORT)
         }
+    }
+
+    abstract class BaseCoverageReportCreationAction(
+        val creationConfig: GlobalTaskCreationConfig
+    ): GlobalTaskCreationAction<CodeCoverageReportTask>() {
+
+        abstract val artifactType: InternalMultipleArtifactType<Directory>
+        override val type = CodeCoverageReportTask::class.java
 
         override fun configure(task: CodeCoverageReportTask) {
             super.configure(task)
 
             task.coverageXmlReports.set(creationConfig.globalArtifacts.getAll(artifactType))
+            task.rootProjectName.set(creationConfig.services.projectInfo.rootProjectName)
+            task.rootProjectDir.set(creationConfig.services.projectInfo.rootDir)
         }
     }
 }

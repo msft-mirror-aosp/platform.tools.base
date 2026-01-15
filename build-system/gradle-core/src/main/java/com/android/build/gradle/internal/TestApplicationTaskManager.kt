@@ -20,6 +20,7 @@ import com.android.build.api.variant.TestVariantBuilder
 import com.android.build.gradle.internal.component.*
 import com.android.build.gradle.internal.tasks.DeviceProviderInstrumentTestTask
 import com.android.build.gradle.internal.tasks.SigningConfigVersionsWriterTask
+import com.android.build.gradle.internal.tasks.creationconfig.forTestComponent
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfig
 import com.android.build.gradle.internal.tasks.factory.TaskManagerConfig
 import com.android.build.gradle.internal.tasks.factory.dependsOn
@@ -135,7 +136,7 @@ class TestApplicationTaskManager(
         creationConfig: ApkCreationConfig
     ): TaskProvider<out ManifestProcessorTask> {
         val taskConfig =
-            createProcessTestManifestConfig(creationConfig as TestVariantCreationConfig)
+            forTestComponent(creationConfig as TestVariantCreationConfig)
 
         return taskFactory.register(
             ProcessTestManifest.CreationAction(taskConfig)

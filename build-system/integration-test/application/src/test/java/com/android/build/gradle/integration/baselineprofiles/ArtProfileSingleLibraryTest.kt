@@ -27,6 +27,7 @@ import com.android.testutils.truth.PathSubject
 import com.android.tools.profgen.ArtProfile
 import com.android.tools.profgen.HumanReadableProfile
 import com.android.utils.FileUtils
+import com.google.common.truth.StringSubject
 import com.google.common.truth.Truth
 import org.junit.Assert.fail
 import org.junit.Rule
@@ -124,10 +125,18 @@ class ArtProfileSingleLibraryTest {
         val library = project.getSubproject(":lib")
         val androidAssets = library.mainSrcDir.parentFile
         androidAssets.mkdir()
-        val libraryFileContent =
+        val libraryBaselineProfileContent =
             """
                 HSPLcom/google/Foo;->method(II)I
                 HSPLcom/google/Foo;->method-name-with-hyphens(II)I
+            """.trimIndent()
+        val libraryFolderFileContent1 =
+            """
+                HSPLcom/google/Bar;->method(II)I
+            """.trimIndent()
+        val libraryFolderFileContent2 =
+            """
+                HSPLcom/google/Bar;->method-name-with-hyphens(II)I
             """.trimIndent()
 
         if (useGeneratedSource) {
@@ -143,11 +152,15 @@ class ArtProfileSingleLibraryTest {
             )
             FileUtils.createFile(
                 library.file("src/release/generated/baselineProfiles/baseline-prof.txt"),
-                libraryFileContent
+                libraryFolderFileContent1
+            )
+            FileUtils.createFile(
+                library.file("src/release/generated/baselineProfiles/myCustomProfName.txt"),
+                libraryFolderFileContent2
             )
         }
 
-        File(androidAssets, SdkConstants.FN_ART_PROFILE).writeText(libraryFileContent)
+        File(androidAssets, SdkConstants.FN_ART_PROFILE).writeText(libraryBaselineProfileContent)
 
         val result = project.executor()
                 .run(":lib:bundleReleaseAar", ":app:assembleRelease", ":app:makeApkFromBundleForRelease")
@@ -162,17 +175,21 @@ class ArtProfileSingleLibraryTest {
             SdkConstants.FN_ART_PROFILE
         )
 
-        val expectedLibraryContent = if (useGeneratedSource) {
-            "$libraryFileContent\n$libraryFileContent"
+        val parts = if (useGeneratedSource) {
+            listOf(
+                libraryBaselineProfileContent,
+                libraryFolderFileContent1,
+                libraryFolderFileContent2
+            )
         } else {
-            libraryFileContent
+            listOf(libraryBaselineProfileContent)
         }
 
-        Truth.assertThat(libFile.readText()).isEqualTo(expectedLibraryContent)
-
+        Truth.assertThat(libFile.readText()).checkContains(parts)
+        val libraryContent = libFile.readText()
         // check packaging.
         project.getSubproject(":lib").assertAar(AarSelector.RELEASE) {
-            textFile(aarEntryName).isEqualTo(expectedLibraryContent)
+            textFile(aarEntryName).checkContains(parts)
         }
 
         val mergedFile = FileUtils.join(
@@ -184,8 +201,8 @@ class ArtProfileSingleLibraryTest {
                 SdkConstants.FN_ART_PROFILE,
         )
         val expectedContent = if (addApplicationProfile) {
-            "$expectedLibraryContent\n$applicationFileContent"
-        } else expectedLibraryContent
+            "$libraryContent\n$applicationFileContent"
+        } else libraryContent
 
         Truth.assertThat(mergedFile.readText()).isEqualTo(expectedContent)
         Truth.assertThat(
@@ -276,5 +293,9 @@ class ArtProfileSingleLibraryTest {
             }
         }
         Truth.assertThat(found).containsExactly("assets/dexopt/baseline.prof", "assets/dexopt/baseline.profm")
+    }
+
+    fun StringSubject.checkContains(entries:List<String>){
+        entries.forEach { this.contains(it) }
     }
 }

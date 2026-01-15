@@ -39,7 +39,9 @@ import java.net.ServerSocket
 import java.net.Socket
 import java.nio.file.Files
 import java.nio.file.Paths
+import java.util.concurrent.CountDownLatch
 import java.util.concurrent.LinkedBlockingQueue
+import java.util.concurrent.TimeUnit
 import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.io.path.absolutePathString
 
@@ -69,6 +71,7 @@ class EmulatorConsoleTest {
 
         val inputQueue = LinkedBlockingQueue<String>()
         val outputQueue = LinkedBlockingQueue<String>()
+        val connectionClosed = CountDownLatch(1)
 
         fun start() {
             Thread(this, "FakeEmulator").start()
@@ -83,14 +86,16 @@ class EmulatorConsoleTest {
                 output.write(outputQueue.take())
                 output.flush()
                 while (true) {
-                    val line = input.readLine() ?: return
+                    val line = input.readLine() ?: break
                     inputQueue.add(line)
                     val response = outputQueue.take()
                     output.write(response)
                     output.flush()
                 }
-            } catch (e: IOException) {
+            } catch (_: IOException) {
                 // Ignore socket closing
+            } finally {
+                connectionClosed.countDown()
             }
         }
 
@@ -209,13 +214,20 @@ class EmulatorConsoleTest {
         fakeEmulator.start()
         val nonExistentPath = folder.root.toPath().resolve("this_file_does_not_exist.txt")
         fakeEmulator.outputQueue.put(authPrompt(nonExistentPath.absolutePathString()))
-        exceptionRule.expect(IOException::class.java)
 
         // Act
-        FakeAdbSession().openEmulatorConsole(localConsoleAddress(fakeEmulator.port))
+        try {
+            FakeAdbSession().openEmulatorConsole(localConsoleAddress(fakeEmulator.port))
+            fail("Should not reach")
+        } catch (_: IOException) {
+            // Expected
+        }
 
         // Assert
-        fail("Should not reach")
+        assertTrue(
+            "Emulator console connection should be closed",
+            fakeEmulator.connectionClosed.await(5, TimeUnit.SECONDS)
+        )
     }
 
     private fun <T> runBlockingWithTimeout(block: suspend CoroutineScope.() -> T) =

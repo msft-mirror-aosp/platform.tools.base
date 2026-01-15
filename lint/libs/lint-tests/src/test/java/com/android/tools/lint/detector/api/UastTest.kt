@@ -2325,6 +2325,62 @@ class UastTest : TestCase() {
     assertEquals(3, count)
   }
 
+  fun testPsiNewExpressionMultiResolve() {
+    // b/469501865
+    val source =
+      java(
+        """
+          package com.example
+
+          public class Message {
+            public int what;
+          }
+
+          class Looper {}
+
+          class Handler {
+            public interface Callback {
+              boolean handleMessage(Message msg);
+            }
+
+            public Handler() {}
+
+            public Handler(Callback callback) {}
+
+            public Handler(Looper looper) {}
+          }
+
+          final class MyClass {
+            public static void foo() {
+              Handler handler =
+                  new Handler(
+                      msg -> {
+                        switch (msg.what) {
+                          case 1:
+                            return true;
+                          default:
+                            return false;
+                        }
+                      });
+            }
+          }
+        """
+      )
+    check(source) { file ->
+      file.accept(
+        object : AbstractUastVisitor() {
+          override fun visitLambdaExpression(node: ULambdaExpression): Boolean {
+            assertEquals(
+              "com.example.Handler.Callback",
+              node.functionalInterfaceType?.canonicalText,
+            )
+            return super.visitLambdaExpression(node)
+          }
+        }
+      )
+    }
+  }
+
   fun testSealedClassPermit_java() {
     val testFiles =
       arrayOf(

@@ -101,6 +101,9 @@ class EmptyActivityProjectBuilder {
             .withConfigurationCaching(withConfigurationCaching)
 
         rootProjectBuilder.withKotlinGradlePlugin(useKotlin || kotlinUsedInLibrarySubprojects)
+        if (!builtInKotlin && (useKotlin || kotlinUsedInLibrarySubprojects)) {
+            rootProjectBuilder.addGradleProperty(BooleanOption.USE_NEW_DSL, false)
+        }
 
         rootProjectBuilder
             .addGradleProperties(BooleanOption.USE_ANDROID_X.propertyName + "=true")

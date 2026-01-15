@@ -31,6 +31,7 @@ import java.nio.file.Path
 import java.nio.file.attribute.FileTime
 import java.time.Duration
 import java.util.concurrent.TimeoutException
+import kotlinx.coroutines.flow.map
 
 /**
  * Abstraction over a device currently connected to ADB. An instance of [ConnectedDevice] is
@@ -100,17 +101,22 @@ suspend fun ConnectedDevice.waitUntilOnline() {
 }
 
 /**
- * Waits until the device state is [state].
+ * Waits until the device state is [targetState].
  *
  * @throws IOException if the device disconnects while waiting for a state other than
  * [DeviceState.DISCONNECTED].
  */
-suspend fun ConnectedDevice.waitUntilState(state: DeviceState) {
-    deviceInfoFlow.first { deviceInfo ->
-        if (state != DeviceState.DISCONNECTED && deviceInfo.deviceState == DeviceState.DISCONNECTED) {
-            throw IOException("Device $serialNumber is disconnected")
+suspend fun ConnectedDevice.waitUntilState(targetState: DeviceState) {
+    val reachedState = deviceInfoFlow
+        .map { it.deviceState }
+        .first { state ->
+            state == targetState || state == DeviceState.DISCONNECTED
         }
-        deviceInfo.deviceState == state
+
+    // If we stopped waiting because the device disconnected (and we were not waiting
+    // for the disconnect), throw an exception.
+    if (reachedState == DeviceState.DISCONNECTED && targetState != DeviceState.DISCONNECTED) {
+        throw IOException("Device $serialNumber disconnected while waiting for '$targetState'")
     }
 }
 

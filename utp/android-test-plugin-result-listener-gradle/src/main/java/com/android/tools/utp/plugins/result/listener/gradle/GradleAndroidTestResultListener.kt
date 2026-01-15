@@ -17,56 +17,31 @@
 package com.android.tools.utp.plugins.result.listener.gradle
 
 import com.android.tools.utp.plugins.result.listener.gradle.proto.GradleAndroidTestResultListenerConfigProto.GradleAndroidTestResultListenerConfig
-import com.android.tools.utp.plugins.result.listener.gradle.proto.GradleAndroidTestResultListenerProto.RecordTestResultEventResponse
 import com.android.tools.utp.plugins.result.listener.gradle.proto.GradleAndroidTestResultListenerProto.TestResultEvent
 import com.android.tools.utp.plugins.result.listener.gradle.proto.GradleAndroidTestResultListenerProto.TestResultEvent.TestSuiteStarted
-import com.android.tools.utp.plugins.result.listener.gradle.proto.GradleAndroidTestResultListenerServiceGrpc
-import com.android.tools.utp.plugins.result.listener.gradle.proto.GradleAndroidTestResultListenerServiceGrpc.GradleAndroidTestResultListenerServiceStub
 import com.google.protobuf.Any
 import com.google.testing.platform.api.config.Configurable
 import com.google.testing.platform.api.config.ProtoConfig
 import com.google.testing.platform.api.context.Context
 import com.google.testing.platform.api.result.TestResultListener
-import com.google.testing.platform.lib.logging.jvm.getLogger
 import com.google.testing.platform.proto.api.core.TestCaseProto
 import com.google.testing.platform.proto.api.core.TestResultProto
 import com.google.testing.platform.proto.api.core.TestSuiteResultProto
-import io.grpc.ManagedChannel
-import io.grpc.Status
-import io.grpc.StatusRuntimeException
-import io.grpc.netty.GrpcSslContexts
-import io.grpc.netty.NettyChannelBuilder
-import io.grpc.stub.StreamObserver
+import org.gradle.api.logging.Logging
 import java.io.File
-import java.util.concurrent.TimeUnit
+import java.util.Base64
 
 /**
- * A UTP Android test result listener plugin which reports the results
- * to AGP through gRPC service.
+ * A UTP Android test result listener plugin which reports the results to AGP.
  */
 class GradleAndroidTestResultListener(
-        private val channelFactory: (GradleAndroidTestResultListenerConfig) -> ManagedChannel = { config ->
-            val sslContext = GrpcSslContexts.forClient().apply {
-                trustManager(File(config.trustCertCollectionFilePath))
-                keyManager(
-                        File(config.resultListenerClientCertFilePath),
-                        File(config.resultListenerClientPrivateKeyFilePath))
-            }.build()
-            NettyChannelBuilder
-                    .forAddress("localhost", config.resultListenerServerPort)
-                    .sslContext(sslContext)
-                    .maxInboundMessageSize(Integer.MAX_VALUE)
-                    .build()
-        }) : TestResultListener, Configurable {
-    companion object {
-        @JvmStatic
-        private val logger = getLogger()
-    }
+    private val onTestResultEventFunc: GradleAndroidTestResultListener.(TestResultEvent) -> Unit
+    = GradleAndroidTestResultListener::onTestResultEvent) : TestResultListener, Configurable {
 
     private lateinit var deviceId: String
-    private lateinit var channel: ManagedChannel
-    private lateinit var grpcServiceStub: GradleAndroidTestResultListenerServiceStub
-    private lateinit var requestObserver: StreamObserver<TestResultEvent>
+    private lateinit var ddmlibTestResultAdapter: DdmlibTestResultAdapter
+    private var enableUtpTestReportingForAndroidStudio: Boolean = false
+    private lateinit var utpResultProtoOutputFilePath: String
 
     override fun configure(context: Context) {
         val config = context[Context.CONFIG_KEY] as ProtoConfig
@@ -74,27 +49,17 @@ class GradleAndroidTestResultListener(
                 config.configProto!!.value)
 
         deviceId = pluginConfig.deviceId
-        channel = channelFactory(pluginConfig)
-        grpcServiceStub = GradleAndroidTestResultListenerServiceGrpc.newStub(channel)
-
-        val responseObserver = object: StreamObserver<RecordTestResultEventResponse> {
-            override fun onNext(response: RecordTestResultEventResponse) {
-            }
-
-            override fun onError(error: Throwable) {
-                // A CANCELLED status typically occurs if the user aborts the Gradle build.
-                // We handle this case explicitly to avoid logging a confusing generic error.
-                if (error is StatusRuntimeException && error.status.code == Status.CANCELLED.code) {
-                    return
-                }
-                logger.severe("GradleAndroidTestResultListenerService failed with an error: $error")
-            }
-
-            override fun onCompleted() {
-            }
-        }
-
-        requestObserver = grpcServiceStub.recordTestResultEvent(responseObserver)
+        ddmlibTestResultAdapter = DdmlibTestResultAdapter(
+            pluginConfig.deviceName,
+            CustomTestRunListener(
+                pluginConfig.deviceShardName,
+                pluginConfig.gradleProjectPath,
+                pluginConfig.variantName,
+                LoggerWrapper(Logging.getLogger(GradleAndroidTestResultListener::class.java)),
+            ).apply { setReportDir(File(pluginConfig.xmlTestReportOutputDirectoryPath)) }
+        )
+        enableUtpTestReportingForAndroidStudio = pluginConfig.enableUtpTestReportingForAndroidStudio
+        utpResultProtoOutputFilePath = pluginConfig.utpResultProtoOutputFilePath
     }
 
     override fun beforeTestSuite(testSuiteMetaData: TestSuiteResultProto.TestSuiteMetaData?) {
@@ -106,7 +71,8 @@ class GradleAndroidTestResultListener(
         val event = createTestResultEvent().apply {
             testSuiteStarted = suiteStarted
         }.build()
-        requestObserver.onNext(event)
+
+        onTestResultEventFunc(event)
     }
 
     override fun beforeTest(testCase: TestCaseProto.TestCase?) {
@@ -118,7 +84,8 @@ class GradleAndroidTestResultListener(
         val event = createTestResultEvent().apply {
             this.testCaseStarted = testCaseStarted
         }.build()
-        requestObserver.onNext(event)
+
+        onTestResultEventFunc(event)
     }
 
     override fun afterTest(testResult: TestResultProto.TestResult) {
@@ -128,7 +95,8 @@ class GradleAndroidTestResultListener(
         val event = createTestResultEvent().apply {
             this.testCaseFinished = testCaseFinished
         }.build()
-        requestObserver.onNext(event)
+
+        onTestResultEventFunc(event)
     }
 
     override fun afterTestSuite(testSuiteResult: TestSuiteResultProto.TestSuiteResult) {
@@ -138,16 +106,25 @@ class GradleAndroidTestResultListener(
         val event = createTestResultEvent().apply {
             this.testSuiteFinished = testSuiteFinished
         }.build()
-        requestObserver.onNext(event)
 
-        requestObserver.onCompleted()
+        onTestResultEventFunc(event)
 
-        channel.shutdown().awaitTermination(1, TimeUnit.MINUTES)
+        File(utpResultProtoOutputFilePath).outputStream().use { outputFileStream ->
+            testSuiteResult.writeTo(outputFileStream)
+        }
     }
 
     private fun createTestResultEvent(): TestResultEvent.Builder {
         return TestResultEvent.newBuilder().apply {
             deviceId = this@GradleAndroidTestResultListener.deviceId
         }
+    }
+
+    private fun onTestResultEvent(testResultEvent: TestResultEvent) {
+        if (enableUtpTestReportingForAndroidStudio) {
+            val encodedEvent = Base64.getEncoder().encodeToString(testResultEvent.toByteArray())
+            println("<UTP_TEST_RESULT_ON_TEST_RESULT_EVENT>$encodedEvent</UTP_TEST_RESULT_ON_TEST_RESULT_EVENT>")
+        }
+        ddmlibTestResultAdapter.onTestResultEvent(testResultEvent)
     }
 }

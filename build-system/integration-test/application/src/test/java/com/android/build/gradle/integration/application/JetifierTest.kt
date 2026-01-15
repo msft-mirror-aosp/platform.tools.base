@@ -37,45 +37,83 @@ import java.io.IOException
  * Integration test for the Jetifier feature.
  */
 @RunWith(FilterableParameterized::class)
-class JetifierTest(private val withKotlin: Boolean) {
+class JetifierTest(private val withKotlin: Boolean, private val withBuiltInKotlin: Boolean) {
 
     companion object {
 
-        @Parameterized.Parameters(name = "withKotlin_{0}")
+        @Parameterized.Parameters(name = "withKotlin_{0}_withBuiltInKotlin_{1}")
         @JvmStatic
         fun parameters() = listOf(
-            arrayOf(true),
-            arrayOf(false)
+            arrayOf(true, true),
+            arrayOf(true, false),
+            arrayOf(false, false)
         )
     }
 
     @get:Rule
     val project = GradleTestProject.builder()
         .fromTestProject("jetifier")
-        .withKotlinGradlePlugin(withKotlin)
-        .disableBuiltInKotlin()
+        .withKotlinGradlePlugin(withKotlin && !withBuiltInKotlin)
+        .apply {
+            if (!withBuiltInKotlin) {
+                disableBuiltInKotlin()
+                addGradleProperty(BooleanOption.USE_NEW_DSL, false)
+            }
+        }
         .create()
 
     @Before
     @Throws(IOException::class)
     fun setUp() {
         if (withKotlin) {
-            TestFileUtils.searchAndReplace(
-                project.getSubproject(":app").buildFile,
-                "apply plugin: 'com.android.application'",
-                "apply plugin: 'com.android.application'\n" +
-                        "apply plugin: 'kotlin-android'\n" +
-                        "apply plugin: 'kotlin-kapt'"
-            )
+            if (withBuiltInKotlin) {
+                TestFileUtils.prependToFile(
+                    project.buildFile,
+                    """
+                    apply from: "../commonHeader.gradle"
+                    buildscript {
+                        apply from: "../commonBuildScript.gradle"
+                        dependencies {
+                            classpath "com.android.tools.build:gradle-kotlin:${'$'}{libs.versions.buildVersion.get()}"
+                        }
+                    }
+                    """.trimIndent()
+                )
+                TestFileUtils.searchAndReplace(
+                    project.getSubproject(":app").buildFile,
+                    "apply plugin: 'com.android.application'",
+                    """
+                    apply plugin: 'com.android.application'
+                    apply plugin: 'com.android.legacy-kapt'
+                    """.trimIndent()
+                )
+
+            } else {
+                TestFileUtils.searchAndReplace(
+                    project.getSubproject(":app").buildFile,
+                    "apply plugin: 'com.android.application'",
+                    "apply plugin: 'com.android.application'\n" +
+                            "apply plugin: 'kotlin-android'\n" +
+                            "apply plugin: 'kotlin-kapt'"
+                )
+            }
             TestFileUtils.searchAndReplace(
                 project.getSubproject(":app").buildFile,
                 "annotationProcessor 'com.example.annotationprocessor:annotationProcessor:1.0'",
                 "kapt 'com.example.annotationprocessor:annotationProcessor:1.0'"
             )
+            if (withBuiltInKotlin) {
+                TestFileUtils.appendToFile(
+                    project.getSubproject(":app").buildFile,
+                    "kotlin.compilerOptions.jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11\n"
+                )
+            } else {
+                TestFileUtils.appendToFile(
+                    project.getSubproject(":app").buildFile, "android.kotlinOptions.jvmTarget = '11'\n")
+            }
             TestFileUtils.appendToFile(
                 project.getSubproject(":app").buildFile,
                 """
-                android.kotlinOptions.jvmTarget = '11'
                 tasks.withType(org.jetbrains.kotlin.gradle.tasks.KaptGenerateStubs.class).configureEach {
                     compilerOptions {
                         jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11)

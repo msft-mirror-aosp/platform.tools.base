@@ -161,33 +161,58 @@ class TestSuiteWithAddedSourcesViaVariantAPITest {
         Truth.assertThat(result).isNotNull()
         val models = result.container.getProject(":app")
 
-        // verify the test suite model
-        val testSuites = models.basicAndroidProject?.testSuites
-            ?: throw AssertionFailedError("no test suites defined in the project")
+        // verify the test suite model for static folders.
+        val basicTestSuites = models.basicAndroidProject?.testSuites
+            ?: throw AssertionFailedError("no test suites defined in the BasicAndroidProject")
+        Truth.assertThat(basicTestSuites).hasSize(2)
+        val basicFirstTestSuite = basicTestSuites.first { it.name == "first" }
+        val basicFirstSources = basicFirstTestSuite.hostJars.single()
+        Truth.assertThat(basicFirstSources.type).isEqualTo(
+            SourceType.HOST_JAR
+        )
+        val basicFirstTestSuiteResources = basicFirstSources.resources
+
+        Truth.assertThat(basicFirstTestSuiteResources).containsExactly(
+            project.subProject(":app").resolve("src/first/resources").toFile(),
+            project.subProject(":app").resolve("src/test/shared").toFile(),
+        )
+
+        // and verify the test suite model for generated folders.
+        val testSuites = models.androidProject?.testSuites
+            ?: throw AssertionFailedError("no test suites defined in the AndroidProject")
         Truth.assertThat(testSuites).hasSize(2)
         val firstTestSuite = testSuites.first { it.name == "first" }
-        val firstSources = firstTestSuite.hostJars.single()
+        val firstSources = firstTestSuite.generatedHostJars.single()
         Truth.assertThat(firstSources.type).isEqualTo(
             SourceType.HOST_JAR
         )
         val firstTestSuiteResources = firstSources.resources
 
         Truth.assertThat(firstTestSuiteResources).containsExactly(
-            project.subProject(":app").resolve("src/first/resources").toFile(),
-            project.subProject(":app").resolve("src/test/shared").toFile(),
             project.subProject(":app").resolve("build/generated/first/firstTestSuiteGeneratorTask").toFile()
         )
 
+        // repeat both static and generated checks for the testApk test suite.
+        val basicSecondTestSuite = basicTestSuites.first { it.name == "second" }
+        val basicSecondSources = basicSecondTestSuite.testApks.single()
+        Truth.assertThat(basicSecondSources.type).isEqualTo(
+            SourceType.TEST_APK
+        )
+        val basicSecondTestSuiteResources = basicSecondSources.sourceProvider.resourcesDirectories
+
+        Truth.assertThat(basicSecondTestSuiteResources).containsExactly(
+            project.subProject(":app").resolve("src/second/resources").toFile(),
+            project.subProject(":app").resolve("src/test/shared").toFile(),
+        )
+
         val secondTestSuite = testSuites.first { it.name == "second" }
-        val secondSources = secondTestSuite.testApks.single()
+        val secondSources = secondTestSuite.generatedTestApks.single()
         Truth.assertThat(secondSources.type).isEqualTo(
             SourceType.TEST_APK
         )
         val secondTestSuiteResources = secondSources.sourceProvider.resourcesDirectories
 
         Truth.assertThat(secondTestSuiteResources).containsExactly(
-            project.subProject(":app").resolve("src/second/resources").toFile(),
-            project.subProject(":app").resolve("src/test/shared").toFile(),
             project.subProject(":app").resolve("build/generated/second/secondTestSuiteGeneratorTask").toFile()
         )
     }

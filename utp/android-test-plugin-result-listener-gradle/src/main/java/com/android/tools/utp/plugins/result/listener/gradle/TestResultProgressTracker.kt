@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.android.tools.utp.gradle
+package com.android.tools.utp.plugins.result.listener.gradle
 
 import org.gradle.api.logging.Logging
 import org.gradle.api.logging.Logger

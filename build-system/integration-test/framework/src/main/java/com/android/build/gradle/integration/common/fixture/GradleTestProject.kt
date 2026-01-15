@@ -187,7 +187,6 @@ open class GradleTestProject @JvmOverloads constructor(
         const val DEFAULT_TEST_PROJECT_NAME = "project"
 
         internal val AGP_9_OPT_OUTS = mapOf(
-            DEFAULT_TARGET_SDK_TO_COMPILE_SDK_IF_UNSET to false,
             // TODO(b/418804641): Migrate to the new DSL
             USE_NEW_DSL to false
         )

@@ -37,7 +37,6 @@ TEST_DEPS = [
     "@maven//:com.android.tools.smali.smali-dexlib2",
     "@maven//:com.google.code.gson.gson",
     "@maven//:com.google.devtools.ksp.symbol-processing-gradle-plugin",
-    "@maven//:com.google.testing.platform.core-proto",
     "@maven//:commons-io.commons-io",
     "@maven//:org.codehaus.groovy.groovy-all",
     "@maven//:org.jetbrains.dokka.dokka-core",

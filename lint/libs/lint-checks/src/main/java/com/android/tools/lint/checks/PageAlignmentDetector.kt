@@ -17,9 +17,9 @@ package com.android.tools.lint.checks
 
 import com.android.SdkConstants.FD_JNI
 import com.android.ide.common.gradle.Version
+import com.android.ide.common.pagealign.AlignmentProblem
 import com.android.ide.common.pagealign.hasElfMagicNumber
-import com.android.ide.common.pagealign.is16kAligned
-import com.android.ide.common.pagealign.readElfMinimumLoadSectionAlignment
+import com.android.ide.common.pagealign.readElfAlignmentProblems
 import com.android.tools.lint.detector.api.Category
 import com.android.tools.lint.detector.api.Implementation
 import com.android.tools.lint.detector.api.Incident
@@ -180,9 +180,10 @@ class PageAlignmentDetector : DependencyDetector<PageAlignmentDetector.PageAlign
             val input = sharedLibrary.inputStream().buffered()
             input.use {
               if (hasElfMagicNumber(input)) {
-                val minimumLoadSectionAlignment = readElfMinimumLoadSectionAlignment(input)
+                val alignmentProblems = readElfAlignmentProblems(input)
                 if (
-                  minimumLoadSectionAlignment != -1L && !is16kAligned(minimumLoadSectionAlignment)
+                  alignmentProblems != null &&
+                    alignmentProblems.any { it is AlignmentProblem.LoadSectionNotAligned }
                 ) {
                   // TODO: consider reporting multiple
                   return listOf(

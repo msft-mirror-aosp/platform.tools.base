@@ -20,7 +20,7 @@ kotlin_library(
     visibility = ["//tools/base/utp:__subpackages__"],
     deps = [
         "//tools/base/common:tools.common",
-        "@maven//:com.google.testing.platform.launcher",
+        "//tools/base/utp:com.google.testing.platform.launcher",
         "@maven//:org.jetbrains.kotlin.kotlin-stdlib-jdk8",
     ],
 )
@@ -39,7 +39,7 @@ kotlin_test(
         "//tools/base/sdk-common:tools.sdk-common",
         "//tools/base/sdklib:tools.sdklib",
         "//tools/base/testutils:tools.testutils",
-        "@maven//:com.google.testing.platform.launcher",
+        "//tools/base/utp:com.google.testing.platform.launcher",
         "@maven//:com.google.truth.truth",
         "@maven//:junit.junit",
         "@maven//:org.mockito.mockito-core",

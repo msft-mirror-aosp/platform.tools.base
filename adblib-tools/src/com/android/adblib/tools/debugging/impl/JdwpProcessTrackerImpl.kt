@@ -32,6 +32,7 @@ import com.android.adblib.withPrefix
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.takeWhile
 import kotlinx.coroutines.launch
 
 internal class JdwpProcessTrackerImpl(
@@ -48,12 +49,7 @@ internal class JdwpProcessTrackerImpl(
     private val trackProcessesJob: Job by lazy(LazyThreadSafetyMode.SYNCHRONIZED) {
         scope.launch {
             runCatching {
-                try {
-                    trackProcesses()
-                } finally {
-                    processesMutableFlow.value =
-                        JdwpProcessList(emptyList(), StateFlowStatus.endOfFlow)
-                }
+                trackProcesses()
             }.onFailure { throwable ->
                 logger.logIOCompletionErrors(throwable, "JdwpProcessTracker")
             }
@@ -70,23 +66,33 @@ internal class JdwpProcessTrackerImpl(
         }
 
     private suspend fun trackProcesses() {
-        val useTrackApp = if (useTrackAppIfAvailable) {
-            device.waitUntilOnline()
-            device.isTrackAppSupported()
-        } else {
-            false
-        }
+        try {
+            val useTrackApp = if (useTrackAppIfAvailable) {
+                device.waitUntilOnline()
+                device.isTrackAppSupported()
+            } else {
+                false
+            }
 
-        if (useTrackApp) {
-            device.trackApp.stateFlow.collect { appProcessEntries ->
-                val processIds = appProcessEntries.filter { it.debuggable }.map { it.pid }.toSet()
-                emitJdwpProcessList(processIds, appProcessEntries.flowStatus)
+            if (useTrackApp) {
+                device.trackApp.stateFlow
+                    .takeWhile { appProcessEntries -> !appProcessEntries.flowStatus.isEndOfFlow }
+                    .collect { appProcessEntries ->
+                        val processIds =
+                            appProcessEntries.filter { it.debuggable }.map { it.pid }.toSet()
+                        emitJdwpProcessList(processIds, appProcessEntries.flowStatus)
+                    }
+            } else {
+                device.trackJdwp.stateFlow
+                    .takeWhile { jdwpProcessIdList -> !jdwpProcessIdList.flowStatus.isEndOfFlow }
+                    .collect { jdwpProcessIdList ->
+                        val processIds = jdwpProcessIdList.toSet()
+                        emitJdwpProcessList(processIds, jdwpProcessIdList.flowStatus)
+                    }
             }
-        } else {
-            device.trackJdwp.stateFlow.collect { jdwpProcessIdList ->
-                val processIds = jdwpProcessIdList.toSet()
-                emitJdwpProcessList(processIds, jdwpProcessIdList.flowStatus)
-            }
+        } finally {
+            processesMutableFlow.value =
+                JdwpProcessList(emptyList(), StateFlowStatus.endOfFlow)
         }
     }
 

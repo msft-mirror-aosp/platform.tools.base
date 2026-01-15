@@ -71,8 +71,10 @@ interface ApplicationBuildType :
      * Application build type is preferable place to define optimization block
      */
     @get:Incubating
+    @Suppress("DEPRECATION", "OVERRIDE_DEPRECATION")
     override val optimization: Optimization
 
     @Incubating
+    @Suppress("DEPRECATION", "OVERRIDE_DEPRECATION")
     override fun optimization(action: Optimization.() -> Unit)
 }

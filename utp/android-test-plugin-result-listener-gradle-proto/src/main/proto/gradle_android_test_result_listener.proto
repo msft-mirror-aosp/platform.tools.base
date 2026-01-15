@@ -23,12 +23,6 @@ import "google/protobuf/any.proto";
 option java_package = 'com.android.tools.utp.plugins.result.listener.gradle.proto';
 option java_outer_classname = 'GradleAndroidTestResultListenerProto';
 
-service GradleAndroidTestResultListenerService {
-    // RPC for recording test results. Android Gradle plugin starts this gRPC
-    // server and UTP calls this RPC to record results in AGP.
-    rpc RecordTestResultEvent (stream TestResultEvent) returns (RecordTestResultEventResponse);
-}
-
 // Information about test progress and results.
 message TestResultEvent {
     // Represents a state of the test suite and test case execution.
@@ -70,6 +64,3 @@ message TestResultEvent {
     // A device ID of which the test has executed on.
     string deviceId = 5;
 }
-
-// Information about the result of the record test result rpc call.
-message RecordTestResultEventResponse {}

@@ -144,7 +144,7 @@ abstract class CodeCoverageCollectionTask : NonIncrementalTask() {
         ) {
             super.configure(task)
 
-            task.projectName.set(creationConfig.services.projectInfo.name)
+            task.projectName.set(creationConfig.services.projectInfo.path)
             task.projectRoot.set(task.project.rootDir)
             task.jacocoClasspath.setFrom(jacocoAntConfiguration)
 
@@ -247,49 +247,67 @@ abstract class CodeCoverageCollectionTask : NonIncrementalTask() {
         override fun execute() {
 
             try {
-                val generateReport: (Collection<File>, String, String) -> Unit = { coverageFiles, reportName, testSuiteName ->
-                    val xmlReportName = "${reportName}XmlReport"
+                val usedXmlFileNames = mutableSetOf<String>()
+                val formattedName = formatProjectName(parameters.projectName.get())
 
-                    generateReport(
-                        coverageFiles = coverageFiles,
-                        reportDir = parameters.reportOutputDir.asFile.get(),
-                        classFolders = parameters.classFolders.files,
-                        sourceFolders = parameters.sourceFolders.files,
-                        tabWidth = 4,
-                        reportName = reportName,
-                        logger = logger,
-                        reportTypes = listOf(ReportType.XML),
-                        xmlReportName = xmlReportName
-                    )
+                val generateXmlReport = {
+                        coverageFiles: Collection<File>,
+                        testSuiteName: String ->
 
-                    val xmlFile = File(parameters.reportOutputDir.asFile.get().absolutePath, "${xmlReportName}.xml")
-                    val rootDir = parameters.projectRoot.get().asFile
+                    if (coverageFiles.isNotEmpty()) {
+                        val baseReportName =
+                            "${parameters.variantName.get()}${formattedName}${testSuiteName}"
+                        var xmlReportFileName = "${baseReportName}XmlReport"
 
-                    injectMetadataInXmlReport(
-                        xmlFile,
-                        mapOf(
-                            "moduleName" to parameters.projectName.get(),
-                            "testSuiteName" to testSuiteName,
-                            "testedVariantName" to parameters.variantName.get()
-                        ),
-                        sourceFolders = parameters.sourceFolders.files.map { it.relativeTo(rootDir).path }
-                    )
+                        if (usedXmlFileNames.contains(xmlReportFileName)) {
+                            //In case of a collision of XML resolved names, adding timestamp for differentiation.
+                            xmlReportFileName = "${xmlReportFileName}_${System.currentTimeMillis()}"
+                        }
+                        usedXmlFileNames.add(xmlReportFileName)
+
+                        generateReport(
+                            coverageFiles = coverageFiles,
+                            reportDir = parameters.reportOutputDir.asFile.get(),
+                            classFolders = parameters.classFolders.files,
+                            sourceFolders = parameters.sourceFolders.files,
+                            tabWidth = 4,
+                            reportName = baseReportName,
+                            logger = logger,
+                            reportTypes = listOf(ReportType.XML),
+                            xmlReportName = xmlReportFileName
+                        )
+
+                        val xmlFile =
+                            File(
+                                parameters.reportOutputDir.asFile.get().absolutePath,
+                                "${xmlReportFileName}.xml"
+                            )
+                        val rootDir = parameters.projectRoot.get().asFile
+
+                        injectMetadataInXmlReport(
+                            xmlFile,
+                            mapOf(
+                                "moduleName" to parameters.projectName.get(),
+                                "testSuiteName" to testSuiteName,
+                                "testedVariantName" to parameters.variantName.get()
+                            ),
+                            sourceFolders = parameters.sourceFolders.files.map {
+                                it.relativeTo(
+                                    rootDir
+                                ).path
+                            }
+                        )
+                    }
                 }
 
                 val unitTestCoverageFile = parameters.unitTestCoverageFile.files.filter { it.exists() }
-                if(unitTestCoverageFile.isNotEmpty()) {
-                    generateReport(unitTestCoverageFile, "${parameters.variantName.get()}${parameters.projectName.get().toCamelCase()}UnitTest", "UnitTest")
-                }
+                generateXmlReport(unitTestCoverageFile, "UnitTest")
 
                 val connectedTestCoverageFile = parameters.connectedTestCoverageDirectory.asFileTree.files.filter(File::isFile)
-                if(connectedTestCoverageFile.isNotEmpty()) {
-                    generateReport(connectedTestCoverageFile, "${parameters.variantName.get()}${parameters.projectName.get().toCamelCase()}AndroidTest", "AndroidTest")
-                }
+                generateXmlReport(connectedTestCoverageFile, "AndroidTest")
 
                 val mergedCoverageFiles = connectedTestCoverageFile + unitTestCoverageFile
-                if(mergedCoverageFiles.isNotEmpty()) {
-                    generateReport(mergedCoverageFiles, "${parameters.variantName.get()}${parameters.projectName.get().toCamelCase()}Aggregated", "Aggregated")
-                }
+                generateXmlReport(mergedCoverageFiles, "Aggregated")
 
                 parameters.dependentModuleCoverageData.asFileTree.forEach { xmlFile ->
                     val targetFile = parameters.reportOutputDir.asFile.get().resolve(xmlFile.name)
@@ -304,6 +322,21 @@ abstract class CodeCoverageCollectionTask : NonIncrementalTask() {
             val logger = Logging.getLogger(
                 CodeCoverageCollectionWorkerAction::class.java
             )
+
+            /**
+             * Formats a Gradle project name like ":app" or ":core:datastore" into a
+             * capitalized, CamelCase string like "App" or "CoreDatastore".
+             *
+             * @param projectName The Gradle project path.
+             * @return The formatted name.
+             */
+            fun formatProjectName(projectName: String): String {
+                return projectName.split(':')
+                    .filter { it.isNotEmpty() }
+                    .joinToString("") { part ->
+                        part.replaceFirstChar { it.uppercase() }
+                    }
+            }
 
             /**
              * Injects metadata into the generated Jacoco XML report.

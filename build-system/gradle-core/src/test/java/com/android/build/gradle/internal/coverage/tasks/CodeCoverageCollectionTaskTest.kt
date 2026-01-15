@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,13 +14,11 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.internal.coverage
+package com.android.build.gradle.internal.coverage.tasks
 
 import com.android.build.gradle.internal.coverage.tasks.CodeCoverageCollectionTask.CodeCoverageCollectionWorkerAction
 import com.android.testutils.truth.PathSubject.assertThat
 import com.android.utils.FileUtils
-import com.google.common.io.Files
-import com.google.common.io.Resources
 import com.google.common.truth.Truth.assertThat
 import org.junit.Rule
 import org.junit.Test
@@ -35,6 +33,20 @@ class CodeCoverageCollectionTaskTest {
 
     @get:Rule
     var mTemporaryFolder: TemporaryFolder = TemporaryFolder()
+
+    @Test
+    fun testFormatProjectName() {
+        assertThat(CodeCoverageCollectionWorkerAction.formatProjectName(":app"))
+            .isEqualTo("App")
+        assertThat(CodeCoverageCollectionWorkerAction.formatProjectName(":core:datastore"))
+            .isEqualTo("CoreDatastore")
+        assertThat(CodeCoverageCollectionWorkerAction.formatProjectName("app"))
+            .isEqualTo("App")
+        assertThat(CodeCoverageCollectionWorkerAction.formatProjectName(""))
+            .isEqualTo("")
+        assertThat(CodeCoverageCollectionWorkerAction.formatProjectName(":"))
+            .isEqualTo("")
+    }
 
     @Test
     fun testInjectMetadataInXmlReport() {
@@ -94,10 +106,15 @@ class CodeCoverageCollectionTaskTest {
 
     @Throws(IOException::class)
     private fun copyResourceToFolder(fileName: String, folder: File?): File {
-        val resource = Resources.asByteSource(Resources.getResource(fileName))
+        val inputStream = javaClass.classLoader.getResourceAsStream(fileName)
+            ?: throw IOException("Resource not found: $fileName")
+
         val file = File(folder, fileName)
         FileUtils.mkdirs(file.getParentFile())
-        resource.copyTo(Files.asByteSink(file))
+
+        file.outputStream().use { fileOut ->
+            inputStream.use { it.copyTo(fileOut) }
+        }
         return file
     }
 }

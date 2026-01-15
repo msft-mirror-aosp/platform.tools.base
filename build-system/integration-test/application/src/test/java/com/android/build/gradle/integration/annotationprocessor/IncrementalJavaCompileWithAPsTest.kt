@@ -47,19 +47,24 @@ import java.io.File
  */
 @RunWith(FilterableParameterized::class)
 class IncrementalJavaCompileWithAPsTest(
+    private val withBuiltInKotlin: Boolean,
     private val withKapt: Boolean,
     private val withIncrementalAPs: Boolean
 ) {
 
     companion object {
 
-        @Parameterized.Parameters(name = "kapt_{0}_incrementalAPs_{1}")
+        @Parameterized.Parameters(name = "builtinKotlin_{0}_kapt_{1}_incrementalAPs_{2}")
         @JvmStatic
         fun parameters() = listOf(
-            arrayOf(false, false),
-            arrayOf(false, true),
-            arrayOf(true, false),
-            arrayOf(true, true)
+            arrayOf(false, false, false),
+            arrayOf(false, false, true),
+            arrayOf(false, true, false),
+            arrayOf(false, true, true),
+            arrayOf(true, false, false),
+            arrayOf(true, false, true),
+            arrayOf(true, true, false),
+            arrayOf(true, true, true)
         )
 
         private const val APP_MODULE = ":app"
@@ -101,10 +106,15 @@ class IncrementalJavaCompileWithAPsTest(
 
     @get:Rule
     val project = GradleTestProject.builder().fromTestApp(setUpTestProject())
-            .withKotlinGradlePlugin(withKapt)
-            .addGradleProperties("${BooleanOption.USE_ANDROID_X.propertyName}=true")
-            .disableBuiltInKotlin()
-            .create()
+        .withKotlinGradlePlugin(withKapt && !withBuiltInKotlin)
+        .addGradleProperties("${BooleanOption.USE_ANDROID_X.propertyName}=true")
+        .apply {
+            if (!withBuiltInKotlin) {
+                addGradleProperty(BooleanOption.USE_NEW_DSL, false)
+                addGradleProperty(BooleanOption.BUILT_IN_KOTLIN, false)
+            }
+        }
+        .create()
 
     private fun setUpTestProject(): TestProject {
         return MultiModuleTestProject.builder()
@@ -457,20 +467,50 @@ class IncrementalJavaCompileWithAPsTest(
                 File("$appDir/$COMPILED_CLASSES_DIR/$generatedPackagePath/$ANNOTATION_2_GENERATED_CLASS.class")
 
         if (withKapt) {
-            TestFileUtils.searchAndReplace(
-                appBuildFile,
-                "apply plugin: 'com.android.application'",
-                """
-                apply plugin: 'com.android.application'
-                apply plugin: 'kotlin-android'
-                apply plugin: 'kotlin-kapt'
-                """.trimIndent()
-            )
+            if (withBuiltInKotlin) {
+                TestFileUtils.prependToFile(
+                    project.buildFile,
+                    """
+                    apply from: "../commonHeader.gradle"
+                    buildscript {
+                        apply from: "../commonBuildScript.gradle"
+                        dependencies {
+                            classpath "com.android.tools.build:gradle-kotlin:${'$'}{libs.versions.buildVersion.get()}"
+                        }
+                    }
+                    """.trimIndent()
+                                            )
+                TestFileUtils.searchAndReplace(
+                    appBuildFile,
+                    "apply plugin: 'com.android.application'",
+                    """
+                    apply plugin: 'com.android.application'
+                    apply plugin: 'com.android.legacy-kapt'
+                    """.trimIndent()
+                )
+            } else {
+                TestFileUtils.searchAndReplace(
+                    appBuildFile,
+                    "apply plugin: 'com.android.application'",
+                    """
+                    apply plugin: 'com.android.application'
+                    apply plugin: 'kotlin-android'
+                    apply plugin: 'kotlin-kapt'
+                    """.trimIndent()
+                )
+            }
             TestFileUtils.searchAndReplace(appBuildFile, "annotationProcessor", "kapt")
+            if (withBuiltInKotlin) {
+                TestFileUtils.appendToFile(
+                    appBuildFile,
+                    "kotlin.compilerOptions.jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11\n"
+                )
+            } else {
+                TestFileUtils.appendToFile(appBuildFile, "android.kotlinOptions.jvmTarget = '11'\n")
+            }
             TestFileUtils.appendToFile(
                 appBuildFile,
                 """
-                android.kotlinOptions.jvmTarget = '11'
                 tasks.withType(org.jetbrains.kotlin.gradle.tasks.KaptGenerateStubs.class).configureEach {
                     compilerOptions {
                         jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11)

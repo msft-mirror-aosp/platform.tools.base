@@ -19,9 +19,15 @@ package com.android.build.gradle.internal.ide.v2
 import com.android.builder.model.v2.AndroidModel
 import com.android.builder.model.v2.ide.JUnitEngineInfo
 import com.android.builder.model.v2.ide.TestSuite
+import com.android.builder.model.v2.models.AssetsTestSuiteSource
+import com.android.builder.model.v2.models.HostJarTestSuiteSource
+import com.android.builder.model.v2.models.TestApkTestSuiteSource
 import java.io.Serializable
 
 class TestSuiteImpl(
     override val name: String,
-    override val junitEngineInfo: JUnitEngineInfo
+    override val junitEngineInfo: JUnitEngineInfo,
+    override val generatedAssets: Collection<AssetsTestSuiteSource>,
+    override val generatedHostJars: Collection<HostJarTestSuiteSource>,
+    override val generatedTestApks: Collection<TestApkTestSuiteSource>
 ): TestSuite, AndroidModel, Serializable
