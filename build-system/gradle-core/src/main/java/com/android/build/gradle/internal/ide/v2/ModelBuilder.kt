@@ -474,6 +474,7 @@ class ModelBuilder<ExtensionT : CommonExtension>(
             aidlDirectories = null,
             renderscriptDirectories = null,
             baselineProfileDirectories = null,
+            keepRulesDirectories = null,
             resDirectories = null,
             assetsDirectories = null,
             jniLibsDirectories = listOf(),

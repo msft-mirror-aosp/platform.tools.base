@@ -65,6 +65,18 @@ open class AnalyticsEnabledSources @Inject constructor(
             )
         }
 
+    override val keepRules: SourceDirectories.Flat?
+        get() = delegate.keepRules?.let {
+            stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
+                VariantPropertiesMethodType.SOURCES_KEEP_RULES_ACCESS_VALUE
+            return objectFactory.newInstance(
+                AnalyticsEnabledFlat::class.java,
+                it,
+                stats,
+                objectFactory
+            )
+        }
+
     override val res: SourceDirectories.Layered?
         get() {
             return delegate.res?.let {

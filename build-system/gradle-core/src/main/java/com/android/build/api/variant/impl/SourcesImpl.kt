@@ -102,6 +102,21 @@ class SourcesImpl(
                 }
             }
 
+    override val keepRules = FlatSourceDirectoriesImpl(
+        SourceType.KEEP_RULES.folder,
+        variantServices,
+        null
+    ).also { sourceDirectoriesImpl ->
+
+        defaultSourceProvider.getKeepRules(sourceDirectoriesImpl).run {
+            sourceDirectoriesImpl.addStaticOrGeneratedSources(this)
+        }
+        updateSourceDirectories(
+            sourceDirectoriesImpl,
+            variantSourceProvider?.keepRules as DefaultAndroidSourceDirectorySet?
+        )
+    }
+
     override val res =
         ResSourceDirectoriesImpl(
             SourceType.RES.folder,
@@ -245,6 +260,11 @@ class SourcesImpl(
     override fun baselineProfiles(action: (FlatSourceDirectoriesImpl) -> Unit) {
         action(baselineProfiles)
     }
+
+    override fun keepRules(action: (FlatSourceDirectoriesImpl) -> Unit) {
+        action(keepRules)
+    }
+
     override fun res(action: (LayeredSourceDirectoriesImpl) -> Unit) { res?.let(action) }
     override fun assets(action: (LayeredSourceDirectoriesImpl) -> Unit) { action(assets) }
     override fun jniLibs(action: (LayeredSourceDirectoriesImpl) -> Unit) { action(jniLibs) }

@@ -675,3 +675,6 @@ https://issuetracker.google.com/444699160
   * com.android.build.api.variant.HostTestBuilder.setIncludeAndroidResources: void (boolean)
 https://issuetracker.google.com/467692785
   * com.android.build.api.KotlinMultiplatformHierarchyDsl.withAndroid: void (org.jetbrains.kotlin.gradle.plugin.KotlinHierarchyBuilder)
+https://issuetracker.google.com/476099690
+  * com.android.build.api.dsl.AndroidSourceSet.getKeepRules: com.android.build.api.dsl.AndroidSourceDirectorySet ()
+  * com.android.build.api.dsl.AndroidSourceSet.keepRules: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.AndroidSourceDirectorySet, kotlin.Unit>)

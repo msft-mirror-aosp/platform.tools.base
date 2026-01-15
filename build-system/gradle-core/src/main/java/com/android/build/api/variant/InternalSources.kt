@@ -37,7 +37,7 @@ interface InternalSources: Sources {
     override val aidl: FlatSourceDirectoriesImpl?
     override val renderscript: FlatSourceDirectoriesImpl?
     override val baselineProfiles: FlatSourceDirectoriesImpl?
-
+    override val keepRules: FlatSourceDirectoriesImpl?
     /**
      * runs [action] passing the [Sources.java] internal representation if not null.
      * If null, action is not run.
@@ -73,6 +73,12 @@ interface InternalSources: Sources {
      * If null, action is not run.
      */
     fun baselineProfiles(action: (FlatSourceDirectoriesImpl) -> Unit)
+
+    /**
+     * runs [action] passing the [Sources.keepRules] internal representation if not null.
+     * If null, action is not run.
+     */
+    fun keepRules(action: (FlatSourceDirectoriesImpl) -> Unit)
 
     /**
      * runs [action] passing the [Sources.res] internal representation if not null.

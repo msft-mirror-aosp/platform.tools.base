@@ -28,4 +28,5 @@ enum class SourceType(val folder: String) {
     SHADERS("shaders"),
     JAVA_RESOURCES("resources"),
     BASELINE_PROFILES("baselineProfiles"),
+    KEEP_RULES("keepRules"),
 }

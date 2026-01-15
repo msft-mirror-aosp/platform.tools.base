@@ -46,6 +46,7 @@ public final class SourceProviderHelper {
     private String aidlDir;
     private String renderscriptDir;
     private String baselineProfileDir;
+    private String keepRulesDir;
     private String jniDir;
 
     public SourceProviderHelper(
@@ -121,6 +122,12 @@ public final class SourceProviderHelper {
     @NonNull
     public SourceProviderHelper setBaselineProfileDir(String baselineProfileDir) {
         this.baselineProfileDir = baselineProfileDir;
+        return this;
+    }
+
+    @NonNull
+    public SourceProviderHelper setKeepRulesDir(String baseKeepRulesDir) {
+        this.keepRulesDir = baseKeepRulesDir;
         return this;
     }
 

@@ -219,6 +219,8 @@ internal fun DefaultAndroidSourceSet.convert(
         renderscriptDirectories = if (features.renderScript) renderscriptDirectories else null,
         baselineProfileDirectories = ((baselineProfiles as DefaultAndroidSourceDirectorySet).srcDirs
                 + variantSourcesForList(mixin.mapNotNull { it.sources.baselineProfiles })).toSet(),
+        keepRulesDirectories =  ((keepRules as DefaultAndroidSourceDirectorySet).srcDirs
+                + variantSourcesForList(mixin.mapNotNull { it.sources.keepRules })).toSet(),
         resDirectories = if (features.androidResources) resDirectories else null,
         assetsDirectories = (assetsDirectories + variantSourcesForList(mixin.mapNotNull { it.sources.assets })).toSet(),
         jniLibsDirectories = (jniLibsDirectories + variantSourcesForList(mixin.mapNotNull { it.sources.jniLibs })).toSet(),
@@ -241,6 +243,7 @@ internal fun DefaultAndroidSourceSet.convert(
     aidlDirectories = variantSourcesForModel(sources.aidl),
     renderscriptDirectories = variantSourcesForModel(sources.renderscript),
     baselineProfileDirectories = variantSourcesForModel(sources.baselineProfiles),
+    keepRulesDirectories = variantSourcesForModel(sources.keepRules),
     resDirectories = variantSourcesForModel(sources.res),
     assetsDirectories = variantSourcesForModel(sources.assets),
     jniLibsDirectories = variantSourcesForModel(sources.jniLibs),

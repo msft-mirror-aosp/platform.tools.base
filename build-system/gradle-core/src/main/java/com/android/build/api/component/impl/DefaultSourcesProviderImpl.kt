@@ -88,6 +88,9 @@ class DefaultSourcesProviderImpl(
     override fun getBaselineProfiles(lateAdditionsDelegate: FlatSourceDirectoriesImpl): List<DirectoryEntry> =
         flattenSourceProviders(lateAdditionsDelegate, AndroidSourceSet::baselineProfiles )
 
+    override fun getKeepRules(lateAdditionsDelegate: FlatSourceDirectoriesImpl): List<DirectoryEntry> =
+        flattenSourceProviders(lateAdditionsDelegate, AndroidSourceSet::keepRules )
+
     override val artProfile: File
         get() = variantSources.artProfile
 

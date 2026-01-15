@@ -50,6 +50,7 @@ open class DefaultAndroidSourceSet @Inject constructor(
     final override val aidl: AndroidSourceDirectorySet
     final override val renderscript: AndroidSourceDirectorySet
     final override val baselineProfiles: com.android.build.api.dsl.AndroidSourceDirectorySet
+    final override val keepRules: com.android.build.api.dsl.AndroidSourceDirectorySet
     @Deprecated("Unused")
     final override val jni: AndroidSourceDirectorySet
     final override val jniLibs: AndroidSourceDirectorySet
@@ -107,6 +108,15 @@ open class DefaultAndroidSourceSet @Inject constructor(
             SourceArtifactType.BASELINE_PROFILES
         )
         baselineProfiles.filter.include("**/*.txt")
+
+        keepRules = DefaultAndroidSourceDirectorySet(
+            displayName,
+            "keepRules",
+            project,
+            SourceArtifactType.KEEP_RULES
+        )
+        baselineProfiles.filter.include("**/*.keep")
+
 
         jni = DefaultAndroidSourceDirectorySet(
             displayName, "jni", project, SourceArtifactType.JNI
@@ -273,6 +283,10 @@ open class DefaultAndroidSourceSet @Inject constructor(
         action.invoke(baselineProfiles)
     }
 
+    override fun keepRules(action: com.android.build.api.dsl.AndroidSourceDirectorySet.() -> Unit) {
+        action.invoke(keepRules)
+    }
+
     override fun setRoot(path: String): AndroidSourceSet {
         return initRoot(path)
     }
@@ -287,6 +301,7 @@ open class DefaultAndroidSourceSet @Inject constructor(
         aidl.setSrcDirs(listOf("$path/aidl"))
         renderscript.setSrcDirs(listOf("$path/rs"))
         baselineProfiles.setSrcDirs(listOf("$path/baselineProfiles"))
+        keepRules.setSrcDirs(listOf("$path/keepRules"))
         jni.setSrcDirs(listOf("$path/jni"))
         jniLibs.setSrcDirs(listOf("$path/jniLibs"))
         shaders.setSrcDirs(listOf("$path/shaders"))

@@ -117,6 +117,14 @@ class AnalyticsEnabledSourcesTest {
     }
 
     @Test
+    fun getKeepRules() {
+        testAnalytics<SourceDirectories.Flat>(
+            Sources::keepRules,
+            VariantPropertiesMethodType.SOURCES_KEEP_RULES_ACCESS_VALUE
+        )
+    }
+
+    @Test
     fun getResources() {
         testAnalytics<SourceDirectories.Flat>(
             Sources::resources,
@@ -131,6 +139,7 @@ class AnalyticsEnabledSourcesTest {
         Truth.assertThat(proxy.mlModels).isNull()
         Truth.assertThat(proxy.aidl).isNull()
         Truth.assertThat(proxy.baselineProfiles).isNull()
+        Truth.assertThat(proxy.keepRules).isNull()
         Truth.assertThat(proxy.jniLibs).isNull()
         Truth.assertThat(proxy.shaders).isNull()
         Truth.assertThat(proxy.renderscript).isNull()
