@@ -98,7 +98,6 @@ class KotlinMultiplatformPublishingTest {
         ScannerSubject.assertThat(buildResult.stdout).contains("Variant androidApiElements-published")
     }
 
-    @Ignore("b/474562851")
     @Test
     fun `test kmp and com_android_library consumer`() {
         val build = rule
@@ -129,7 +128,7 @@ class KotlinMultiplatformPublishingTest {
             .withFailOnWarning(false) // b/455891987
             .run(
             ":oldKmpConsumer:dependencyInsight",
-            "--configuration", "androidDebugCompileClasspath",
+            "--configuration", "debugCompileClasspath",
             "--dependency", "com.example.producer:producer:1.0"
         )
         ScannerSubject.assertThat(buildResult.stdout).contains("Variant androidApiElements-published")
@@ -139,7 +138,7 @@ class KotlinMultiplatformPublishingTest {
             .withFailOnWarning(false) // b/455891987
             .run(
             ":oldKmpConsumer:dependencyInsight",
-            "--configuration", "androidDebugCompileClasspath",
+            "--configuration", "debugCompileClasspath",
             "--dependency", "com.example.producer:producer:1.0"
         )
         ScannerSubject.assertThat(buildResult.stdout).contains("Variant androidApiElements-published")
