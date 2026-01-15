@@ -29,3 +29,7 @@ interface KotlinMultiplatformAndroidLibraryTarget :
   /** Enables compilation of java sources. */
   fun withJava()
 }
+
+/** @suppress */
+@Deprecated(message = "The 'androidLibrary' block is deprecated. Please use 'android' instead.", replaceWith = ReplaceWith("android"))
+interface DeprecatedKotlinMultiplatformAndroidLibraryTarget : KotlinMultiplatformAndroidLibraryTarget

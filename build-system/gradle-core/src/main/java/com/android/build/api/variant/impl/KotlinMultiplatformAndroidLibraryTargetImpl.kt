@@ -19,6 +19,7 @@ package com.android.build.api.variant.impl
 import com.android.build.api.dsl.AarMetadata
 import com.android.build.api.dsl.CompileSdkSpec
 import com.android.build.api.dsl.DependencySelection
+import com.android.build.api.dsl.DeprecatedKotlinMultiplatformAndroidLibraryTarget
 import com.android.build.api.dsl.HasConfigurableValue
 import com.android.build.api.dsl.KmpOptimization
 import com.android.build.api.dsl.KotlinMultiplatformAndroidCompilation
@@ -54,6 +55,7 @@ constructor(
   androidExtension: KotlinMultiplatformAndroidLibraryExtensionImpl,
 ) :
   DecoratedExternalKotlinTarget(delegate),
+  DeprecatedKotlinMultiplatformAndroidLibraryTarget,
   KotlinMultiplatformAndroidLibraryTarget,
   KotlinMultiplatformAndroidLibraryExtension by androidExtension {
 
