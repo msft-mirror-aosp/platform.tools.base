@@ -38,6 +38,7 @@ import com.android.testutils.truth.PathSubject.assertThat
 import com.android.tools.build.gradle.internal.profile.GradleTaskExecutionType
 import com.android.utils.usLocaleCapitalize
 import com.google.common.truth.Truth.assertThat
+import com.sun.management.HotSpotDiagnosticMXBean
 import org.gradle.api.Project
 import org.gradle.api.tasks.testing.TestDescriptor
 import org.gradle.api.tasks.testing.TestListener
@@ -46,7 +47,15 @@ import org.gradle.api.tasks.testing.TestOutputListener
 import org.gradle.api.tasks.testing.TestResult
 import org.junit.Rule
 import org.junit.Test
+import org.junit.platform.engine.TestExecutionResult
+import org.junit.platform.launcher.TestExecutionListener
+import org.junit.platform.launcher.TestIdentifier
 import org.junit.rules.TemporaryFolder
+import java.io.File
+import java.lang.management.ManagementFactory
+import java.text.DecimalFormat
+import java.text.SimpleDateFormat
+import java.util.Date
 import java.util.UUID
 import kotlin.io.path.listDirectoryEntries
 import kotlin.io.path.name
@@ -59,6 +68,12 @@ class ScreenshotTest {
     @get:Rule
     val rule = GradleRule.configure()
         .withProfileOutput()
+        .withMavenRepository {
+            jar("com.mytest.memory-printer:memory-printer:1.0")
+                .addClasses(MemoryPrinter::class.java)
+                .addClasses(CheckMemoryUsage::class.java)
+                .addTextFile("META-INF/services/org.junit.platform.launcher.TestExecutionListener", CheckMemoryUsage::class.java.name)
+        }
         .from {
             androidApplication {
                 setupProject()
@@ -999,29 +1014,6 @@ class ScreenshotTest {
                         import androidx.compose.ui.tooling.preview.Preview
                         import androidx.compose.ui.unit.dp
                         import com.android.tools.screenshot.PreviewTest
-                        import java.lang.management.ManagementFactory
-                        import java.text.DecimalFormat
-
-                        object MemoryPrinter {
-                            private val decimalFormat = DecimalFormat("#,###.## MB")
-                            private const val MB = 1024.0 * 1024.0
-
-                            /**
-                             * Prints standard memory usage stats (Heap/Non-Heap/Pools)
-                             */
-                            fun printMemoryUsage() {
-                                repeat(3) { System.gc() }
-
-                                val memoryBean = ManagementFactory.getMemoryMXBean()
-                                val heapUsage = memoryBean.heapMemoryUsage
-
-                                println("HEAP: Used: ${'$'}{format(heapUsage.used)} | Committed: ${'$'}{format(heapUsage.committed)} | Max: ${'$'}{format(heapUsage.max)}")
-                            }
-
-                            private fun format(bytes: Long): String {
-                                return decimalFormat.format(bytes / MB)
-                            }
-                        }
 
                         ${
                             List(30) {
@@ -1038,21 +1030,24 @@ class ScreenshotTest {
                             ) {
                                 Text(text)
                             }
-
-                            MemoryPrinter.printMemoryUsage()
                         }
                                 """
                             }.joinToString("\n\n")
                         }
                         """.trimIndent()
                     )
+                    add(
+                        "src/screenshotTest/resources/junit-platform.properties",
+                        "junit.platform.execution.listeners.automatic.enabled=true")
                 }
 
                 pluginCallbacks += CheckMemoryUsageCallback::class.java
             }
         }
 
-        updateReferenceImage().assertErrorDoesNotContain(UNUSUAL_HEAP_MEMORY_GROWTH_ERROR_MESSAGE)
+        val result = updateReferenceImage()
+        result.assertOutputContains("HEAP: Used:")
+        result.assertErrorDoesNotContain(UNUSUAL_HEAP_MEMORY_GROWTH_ERROR_MESSAGE)
     }
 
     class CheckMemoryUsageCallback: GenericCallback {
@@ -1063,6 +1058,12 @@ class ScreenshotTest {
         }
 
         override fun handleProject(project: Project) {
+            project.configurations.findByName("_internal-screenshot-validation-junit-engine")?.let {
+                project.dependencies.add(
+                    "_internal-screenshot-validation-junit-engine",
+                    "com.mytest.memory-printer:memory-printer:1.0"
+                )
+            }
             project.tasks.withType(org.gradle.api.tasks.testing.Test::class.java) {
                 it.addTestOutputListener(object: TestOutputListener {
 
@@ -1089,6 +1090,80 @@ class ScreenshotTest {
                     }
                 })
             }
+        }
+    }
+
+    class CheckMemoryUsage : TestExecutionListener {
+        override fun executionFinished(
+            testIdentifier: TestIdentifier,
+            testExecutionResult: TestExecutionResult
+        ) {
+            MemoryPrinter.printMemoryUsage()
+
+            // Dump heap after all test execution finished.
+            if (testIdentifier.parentId.isEmpty) {
+                MemoryPrinter.dumpHeap()
+            }
+        }
+    }
+
+    object MemoryPrinter {
+        private val decimalFormat = DecimalFormat("#,###.## MB")
+        private const val MB = 1024.0 * 1024.0
+        private const val HOTSPOT_BEAN_NAME = "com.sun.management:type=HotSpotDiagnostic"
+
+        /**
+         * Prints standard memory usage stats.
+         */
+        fun printMemoryUsage() {
+            repeat(3) { System.gc() }
+
+            val memoryBean = ManagementFactory.getMemoryMXBean()
+            val heapUsage = memoryBean.heapMemoryUsage
+
+            println("HEAP: Used: ${format(heapUsage.used)} | Committed: ${format(heapUsage.committed)} | Max: ${format(heapUsage.max)}")
+        }
+
+        /**
+         * Dumps the heap to the system temp directory in .hprof format.
+         *
+         * @param live If true, dump only live objects (reachable).
+         * This forces a Full GC before dumping.
+         */
+        fun dumpHeap(live: Boolean = true) {
+            repeat(3) { System.gc() }
+            try {
+                // Locate the HotSpot Diagnostic MXBean
+                val server = ManagementFactory.getPlatformMBeanServer()
+                val mxBean = ManagementFactory.newPlatformMXBeanProxy(
+                    server,
+                    HOTSPOT_BEAN_NAME,
+                    HotSpotDiagnosticMXBean::class.java
+                )
+
+                val tempDir = System.getenv("TEST_UNDECLARED_OUTPUTS_DIR") ?: System.getProperty("java.io.tmpdir")
+                val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss").format(Date())
+                val actualFileName = "heap_dump_$timestamp.hprof"
+                val file = File(tempDir, actualFileName)
+                val filePath = file.absolutePath
+                if (file.exists()) {
+                    println("Warning: File $filePath already exists. Deleting it...")
+                    file.delete()
+                }
+
+                println("Attempting to dump heap to: $filePath")
+                println("Freezing application for heap dump... (This may take a moment)")
+
+                mxBean.dumpHeap(filePath, live)
+                println("Successfully dumped heap to: $filePath")
+            } catch (e: Exception) {
+                println("Failed to dump heap: ${e.message}")
+                e.printStackTrace()
+            }
+        }
+
+        private fun format(bytes: Long): String {
+            return decimalFormat.format(bytes / MB)
         }
     }
 }
