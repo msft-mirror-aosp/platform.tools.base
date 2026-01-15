@@ -5,8 +5,9 @@
 # http://g3doc/wireless/android/build_tools/g3doc/public/buildbot#environment-variables
 BUILD_NUMBER="${BUILD_NUMBER:-SNAPSHOT}"
 
-readonly script_dir="$(dirname "$0")"
-readonly root_dir="${script_dir}/../../../.."
+readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+readonly ROOT_DIR="$(realpath "${SCRIPT_DIR}/../../../..")"
 
-pushd "${root_dir}"/tools/profiler/sherlock-plugin
+export JAVA_HOME="${ROOT_DIR}/prebuilts/studio/jdk/jdk17/linux/"
+pushd "${ROOT_DIR}/tools/profiler/sherlock-plugin"
 ./gradlew test -Pverbose.test.logging=true
