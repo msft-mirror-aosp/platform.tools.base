@@ -17,7 +17,6 @@
 package com.android.build.gradle.integration.testing.screenshot
 
 import com.android.build.api.dsl.CommonExtension
-import com.android.build.api.dsl.TestExtension
 import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
 import com.android.build.gradle.integration.common.fixture.GradleBuildResult
 import com.android.build.gradle.integration.common.fixture.GradleTaskExecutor
@@ -30,6 +29,7 @@ import com.android.build.gradle.integration.common.fixture.project.builder.Plugi
 import com.android.build.gradle.integration.common.fixture.project.plugins.GenericCallback
 import com.android.build.gradle.integration.common.truth.ScannerSubject.Companion.assertThat
 import com.android.build.gradle.integration.common.truth.forEachLine
+import com.android.build.gradle.integration.testing.screenshot.ScreenshotTest.CheckMemoryUsageCallback.Companion.UNUSUAL_HEAP_MEMORY_GROWTH_ERROR_MESSAGE
 import com.android.build.gradle.internal.TaskManager
 import com.android.build.gradle.options.BooleanOption
 import com.android.compose.screenshot.gradle.ScreenshotTestOptions
@@ -41,6 +41,8 @@ import com.google.common.truth.Truth.assertThat
 import org.gradle.api.Project
 import org.gradle.api.tasks.testing.TestDescriptor
 import org.gradle.api.tasks.testing.TestListener
+import org.gradle.api.tasks.testing.TestOutputEvent
+import org.gradle.api.tasks.testing.TestOutputListener
 import org.gradle.api.tasks.testing.TestResult
 import org.junit.Rule
 import org.junit.Test
@@ -49,6 +51,8 @@ import java.util.UUID
 import kotlin.io.path.listDirectoryEntries
 import kotlin.io.path.name
 import kotlin.io.path.readText
+import kotlin.math.max
+import kotlin.math.min
 
 class ScreenshotTest {
 
@@ -972,5 +976,119 @@ class ScreenshotTest {
         val classHtmlReport = appProject.buildDir.resolve("reports/screenshotTest/preview/debug/pkg.name.ExampleTest.html")
         assertThat(classHtmlReport).exists()
         assertThat(classHtmlReport.readText()).contains("""<h3 class="success">simpleComposableTest_simpleComposable</h3>""")
+    }
+
+    @Test
+    fun previewScreenshotTestDoesNotLeakMemory() {
+        rule.build {
+            androidApplication {
+                files {
+                    add(
+                        "src/screenshotTest/java/com/ExampleLargeNumberOfComposables.kt",
+                        """
+                        package pkg.name
+
+                        import androidx.compose.foundation.background
+                        import androidx.compose.foundation.layout.Box
+                        import androidx.compose.foundation.layout.size
+                        import androidx.compose.material.Text
+                        import androidx.compose.runtime.Composable
+                        import androidx.compose.ui.Alignment
+                        import androidx.compose.ui.Modifier
+                        import androidx.compose.ui.graphics.Color
+                        import androidx.compose.ui.tooling.preview.Preview
+                        import androidx.compose.ui.unit.dp
+                        import com.android.tools.screenshot.PreviewTest
+                        import java.lang.management.ManagementFactory
+                        import java.text.DecimalFormat
+
+                        object MemoryPrinter {
+                            private val decimalFormat = DecimalFormat("#,###.## MB")
+                            private const val MB = 1024.0 * 1024.0
+
+                            /**
+                             * Prints standard memory usage stats (Heap/Non-Heap/Pools)
+                             */
+                            fun printMemoryUsage() {
+                                repeat(3) { System.gc() }
+
+                                val memoryBean = ManagementFactory.getMemoryMXBean()
+                                val heapUsage = memoryBean.heapMemoryUsage
+
+                                println("HEAP: Used: ${'$'}{format(heapUsage.used)} | Committed: ${'$'}{format(heapUsage.committed)} | Max: ${'$'}{format(heapUsage.max)}")
+                            }
+
+                            private fun format(bytes: Long): String {
+                                return decimalFormat.format(bytes / MB)
+                            }
+                        }
+
+                        ${
+                            List(30) {
+                                """
+                        @Preview
+                        @PreviewTest
+                        @Composable
+                        fun SimpleComposable_$it(text: String = "Hello World $it") {
+                            Box(
+                                modifier = Modifier
+                                    .size(width = 1280.dp, height = 720.dp)
+                                    .background(Color.White),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Text(text)
+                            }
+
+                            MemoryPrinter.printMemoryUsage()
+                        }
+                                """
+                            }.joinToString("\n\n")
+                        }
+                        """.trimIndent()
+                    )
+                }
+
+                pluginCallbacks += CheckMemoryUsageCallback::class.java
+            }
+        }
+
+        updateReferenceImage().assertErrorDoesNotContain(UNUSUAL_HEAP_MEMORY_GROWTH_ERROR_MESSAGE)
+    }
+
+    class CheckMemoryUsageCallback: GenericCallback {
+
+        companion object {
+            const val UNUSUAL_HEAP_MEMORY_GROWTH_ERROR_MESSAGE = "Unusual heap memory usage growth detected"
+            const val HEAP_MEMORY_GROWTH_THRESHOLD_MB = 30.0
+        }
+
+        override fun handleProject(project: Project) {
+            project.tasks.withType(org.gradle.api.tasks.testing.Test::class.java) {
+                it.addTestOutputListener(object: TestOutputListener {
+
+                    var minHeapUsage: Double = Double.MAX_VALUE
+                    var maxHeapUsage: Double = 0.0
+
+                    override fun onOutput(
+                        testDescriptor: TestDescriptor,
+                        outputEvent: TestOutputEvent
+                    ) {
+                        val currentUsedHeapSizeMb = extractHeapUsed(outputEvent.message) ?: return
+                        minHeapUsage = min(minHeapUsage, currentUsedHeapSizeMb)
+                        maxHeapUsage = max(maxHeapUsage, currentUsedHeapSizeMb)
+                        if (maxHeapUsage - minHeapUsage > HEAP_MEMORY_GROWTH_THRESHOLD_MB) {
+                            System.err.println(UNUSUAL_HEAP_MEMORY_GROWTH_ERROR_MESSAGE)
+                            System.err.println("Heap memory usage was grown from $minHeapUsage MB to $maxHeapUsage MB")
+                        }
+                    }
+
+                    fun extractHeapUsed(input: String): Double? {
+                        val regex = """HEAP:.*?Used:\s+([0-9.]+)""".toRegex()
+                        val matchResult = regex.find(input)
+                        return matchResult?.groupValues?.get(1)?.toDoubleOrNull()
+                    }
+                })
+            }
+        }
     }
 }
