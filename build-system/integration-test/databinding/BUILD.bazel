@@ -1,6 +1,7 @@
 load("//tools/base/bazel:coverage.bzl", "coverage_java_test")
 load("//tools/base/bazel:kotlin.bzl", "kotlin_library")
 load("//tools/base/bazel:maven.bzl", "maven_repository")
+load("//tools/base/build-system/integration-test:common-dependencies.bzl", "BUILT_IN_KOTLIN_VERSION")
 
 #keep sorted
 TEST_DEPS = [
@@ -190,7 +191,7 @@ maven_repository(
         "@maven//:com.android.support.constraint.constraint-layout_1.0.2",
         "@maven//:com.android.support.test.espresso.espresso-core_3.0.1",
         "@maven//:com.android.support.test.runner_1.0.1",
-        "@maven//:org.jetbrains.kotlin.kotlin-annotation-processing-gradle_2.2.10",
+        "@maven//:org.jetbrains.kotlin.kotlin-annotation-processing-gradle_" + BUILT_IN_KOTLIN_VERSION,
         "@maven//:org.jetbrains.kotlin.kotlin-compiler-embeddable_1.7.10",
         "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-android_1.4.1",
     ],
