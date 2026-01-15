@@ -17,22 +17,16 @@
 package com.android.build.gradle.integration.fusedlibrary
 
 import com.android.build.gradle.integration.common.fixture.DEFAULT_MIN_SDK_VERSION
-import com.android.build.gradle.integration.common.fixture.DESUGAR_NIO_DEPENDENCY_VERSION
 import com.android.build.gradle.integration.common.fixture.project.AarSelector
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
-import com.android.build.gradle.integration.common.fixture.project.plugins.GenericCallback
 import com.android.build.gradle.integration.common.output.JarSubject
 import com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
 import com.android.build.gradle.integration.fusedlibrary.FusedLibraryTestConstants.FUSED_LIBRARY_ARTIFACT_NAME
 import com.android.build.gradle.integration.fusedlibrary.FusedLibraryTestConstants.FUSED_LIBRARY_GROUP
 import com.android.build.gradle.integration.fusedlibrary.FusedLibraryTestConstants.FUSED_LIBRARY_REPO_NAME
 import com.android.build.gradle.integration.fusedlibrary.FusedLibraryTestConstants.FUSED_LIBRARY_VERSION
-import com.android.build.gradle.options.BooleanOption
-import com.google.common.truth.Truth
+
 import java.util.zip.ZipEntry
-import org.gradle.api.Project
-import org.gradle.api.publish.PublishingExtension
-import org.gradle.api.publish.maven.MavenPublication
 import org.junit.Rule
 import org.junit.Test
 import java.util.zip.ZipFile
@@ -190,7 +184,7 @@ class FusedLibraryTest {
                         "com.remotedep.remoteaar.b:remoteaar-b:1.0 scope:runtime"
                     )
                 )
-                Truth.assertThat(publicationDir.resolve("module.json").isRegularFile()).isTrue()
+                assertThat(publicationDir.resolve("module.json").isRegularFile()).isTrue()
             }
 
         fusedLibrary.buildDir.resolve(FUSED_LIBRARY_REPO_NAME).also { repoPath ->
@@ -266,7 +260,7 @@ class FusedLibraryTest {
         val buildDir = build.fusedLibrary(":empty-fused-library").buildDir
             .resolve("outputs/aar/empty-fused-library.aar")
         ZipFile(buildDir.toFile()).use {
-            Truth.assertThat(it.entries().asSequence().map(ZipEntry::getName).toList()).containsExactly(
+            assertThat(it.entries().asSequence().map(ZipEntry::getName).toList()).containsExactly(
                 "META-INF/",
                 "META-INF/MANIFEST.MF",
                 "classes.jar", // Included as Java Resources merging always packages a 'base.jar'.
@@ -291,35 +285,6 @@ class FusedLibraryTest {
                 coreLibraryDesugaringEnabled().isEqualTo("false")
                 // desugarJdkLib is not set in any dependencies
                 desugarJdkLibId().isEqualTo(null)
-            }
-        }
-    }
-}
-
-object FusedLibraryTestConstants {
-    const val FUSED_LIBRARY_GROUP = "my-company"
-    const val FUSED_LIBRARY_ARTIFACT_NAME = "my-fused-library"
-    const val FUSED_LIBRARY_VERSION = "1.0"
-    const val FUSED_LIBRARY_REPO_NAME = "repo"
-}
-class FusedLibPublicationCallback: GenericCallback {
-    override fun handleProject(project: Project) {
-        project.plugins.apply("maven-publish")
-
-        val publishing = project.extensions.findByType(PublishingExtension::class.java)
-            ?: throw RuntimeException("Could not find extension of type PublishingExtension")
-        publishing.apply {
-            publications.create("release", MavenPublication::class.java) {
-                it.groupId = FUSED_LIBRARY_GROUP
-                it.artifactId = FUSED_LIBRARY_ARTIFACT_NAME
-                it.version = FUSED_LIBRARY_VERSION
-                it.from(project.components.getByName("fusedLibraryComponent"))
-            }
-            repositories {
-                it.maven {
-                    it.name = "myrepo"
-                    it.url = project.uri(project.layout.buildDirectory.dir(FUSED_LIBRARY_REPO_NAME))
-                }
             }
         }
     }

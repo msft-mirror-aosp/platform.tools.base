@@ -646,11 +646,31 @@ single_gradle_integration_test_per_source(
     deps = TEST_DEPS,
 )
 
-gradle_integration_test(
+kotlin_library(
+    name = "fused_library_testing_utils_lib",
+    srcs = ["src/test/java/com/android/build/gradle/integration/fusedlibrary/FusedLibraryTestingUtils.kt"],
+    visibility = ["//tools/base/build-system/integration-test/application:__subpackages__"],
+    deps = [
+        "//tools/base/build-system:gradle-api",
+        "//tools/base/build-system/gradle-common-api",
+        "//tools/base/build-system/integration-test/framework",
+        "//tools/base/common:tools.common",
+        "@maven//:com.google.guava.guava",
+        "@maven//:com.google.truth.truth",
+        "@maven//:junit.junit",
+        "@maven//:org.jetbrains.kotlin.kotlin-stdlib",
+    ],
+)
+
+single_gradle_integration_test_per_source(
     name = "fused-library-tests",
+    package_name = "tools/base/build-system/integration-test/application",
     srcs = glob(
         [
             "src/test/java/com/android/build/gradle/integration/fusedlibrary/*.kt",
+        ],
+        exclude = [
+            "src/test/java/com/android/build/gradle/integration/fusedlibrary/FusedLibraryTestingUtils.kt",
         ],
     ),
     data = TEST_DATA,
@@ -663,7 +683,9 @@ gradle_integration_test(
         "//tools/base/build-system/integration-test/application:prebuilts",
     ],
     resources = glob(["src/test/resources/**"]),
-    deps = TEST_DEPS,
+    deps = TEST_DEPS + [
+        ":fused_library_testing_utils_lib",
+    ],
 )
 
 gradle_integration_test(
