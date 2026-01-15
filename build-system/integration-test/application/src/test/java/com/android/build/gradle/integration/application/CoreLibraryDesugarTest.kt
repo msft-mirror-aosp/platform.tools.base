@@ -16,7 +16,6 @@
 
 package com.android.build.gradle.integration.application
 
-import com.android.build.gradle.integration.common.fixture.Adb
 import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor.ConfigurationCaching.OFF
 import com.android.build.gradle.integration.common.fixture.DESUGAR_DEPENDENCY_VERSION
 import com.android.build.gradle.integration.common.fixture.DESUGAR_NIO_DEPENDENCY_VERSION
@@ -90,9 +89,6 @@ class CoreLibraryDesugarTest {
         .fromTestApp(setUpTestProject())
         .disableBuiltInKotlin()
         .create()
-
-    @get:Rule
-    var adb = Adb()
 
     private lateinit var app: GradleTestProject
     private lateinit var library: GradleTestProject
