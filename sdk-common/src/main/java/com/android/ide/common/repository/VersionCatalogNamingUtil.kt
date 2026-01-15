@@ -120,7 +120,7 @@ fun pickLibraryVariableName(
 
 private val obfuscateReservedWords: (String) -> String =
     setOf(
-        "as", "as?", "break", "class", "continue", "do", "else", "false",
+        "as", "as?", "break", "class", "continue", "do", "else", "extensions", "false",
         "for", "fun", "if", "in", "!in", "interface", "is", "!is",
         "null", "object", "package", "return", "super", "this", "throw",
         "true", "try", "typealias", "typeof", "val", "var", "when", "while"

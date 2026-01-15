@@ -81,6 +81,7 @@ class VersionCatalogNamingUtilTest {
         libraryName("foo-object1", "com.google:foo-object:1.0")
         libraryName("class1-foo", "com.google:class-foo:1.0")
         libraryName("object1-foo", "com.google:object-foo:1.0")
+        libraryName("extensions1-xr", "com.android.extensions.xr:extensions-xr:1.0")
     }
 
     @Test
@@ -187,6 +188,7 @@ class VersionCatalogNamingUtilTest {
         libraryName("fooObject", "com.google:foo-object:1.0", "aFoo")
         libraryName("classFoo", "com.google:class-foo:1.0", "aFoo")
         libraryName("objectFoo", "com.google:object-foo:1.0", "aFoo")
+        libraryName("extensionsXr", "com.android.extensions.xr:extensions-xr:1.0", "aFoo")
     }
 
     @Test
