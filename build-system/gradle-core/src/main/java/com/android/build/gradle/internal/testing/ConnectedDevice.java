@@ -395,12 +395,4 @@ public class ConnectedDevice extends DeviceConnector {
         return iDevice.getVersion().isAtLeast(34)
                 && iDevice.services().containsKey("sdk_sandbox");
     }
-
-    /**
-     * Returns the corresponding {@link IDevice}. Used in packages common to Studio and the Plugin.
-     */
-    @NonNull
-    public IDevice getIDevice() {
-        return iDevice;
-    }
 }
