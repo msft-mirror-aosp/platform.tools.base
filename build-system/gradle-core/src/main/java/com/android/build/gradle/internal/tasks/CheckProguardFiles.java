@@ -27,6 +27,7 @@ import com.android.buildanalyzer.common.TaskCategory;
 import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
+
 import org.gradle.api.InvalidUserDataException;
 import org.gradle.api.file.DirectoryProperty;
 import org.gradle.api.file.RegularFile;
@@ -106,16 +107,18 @@ public abstract class CheckProguardFiles extends NonIncrementalTask {
         @Override
         public void configure(@NonNull CheckProguardFiles task) {
             super.configure(task);
-
+            // don't need to add keepRules source set here as check does not make sense
             task.getProguardFiles()
                     .set(creationConfig.getOptimizationCreationConfig().getProguardFiles());
+            task.getProguardFiles().disallowChanges();
+
             task.getExtractedProguardFile()
                     .set(
                             creationConfig
                                     .getGlobal()
                                     .getGlobalArtifacts()
                                     .get(InternalArtifactType.DEFAULT_PROGUARD_FILES.INSTANCE));
-            task.getProguardFiles().disallowChanges();
+            task.getExtractedProguardFile().disallowChanges();
             HasConfigurableValuesKt.setDisallowChanges(
                     task.getBuildDirectory(), task.getProject().getLayout().getBuildDirectory());
         }

@@ -572,10 +572,12 @@ abstract class R8Task @Inject constructor(
                 |""".trimMargin()
             )
 
-        val finalListOfConfigurationFiles = projectLayout.files(
+        val finalListOfConfigurationFiles =
+            projectLayout.files(
                 configurationFiles,
                 generatedProguardFile.asFileTree,
-        )
+                keepRulesDirectories.asFileTree
+            )
 
         // If inputArtProfile exists but artProfileRewriting is false, we need to copy it over
         // to outputArtProfile.

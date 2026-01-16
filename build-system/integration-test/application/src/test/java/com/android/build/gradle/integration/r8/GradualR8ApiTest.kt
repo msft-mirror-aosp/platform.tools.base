@@ -290,6 +290,35 @@ class GradualR8ApiTest {
     }
 
     @Test
+    fun `test gradual r8 full optimization with keepRules source set`() {
+        val build = rule.build {
+            androidApplication {
+                android {
+                    buildTypes {
+                        named("release") {
+                            it.optimization {
+                                packageScope.add("**")
+                            }
+                        }
+                    }
+                }
+            }.files {
+                add("src/main/keepRules/keep.keep", "-keep class com.example.androidlib2.ClassInAndroidLib2 { *; }")
+            }
+        }
+        build.executor.run(":app:assembleRelease")
+        build.androidApplication().assertApk(ApkSelector.RELEASE) {
+            // keep this class
+            classes().subPackage("com/example/androidlib2").containsExactly("ClassInAndroidLib2")
+            // optimize everything else
+            classes().subPackage("com/example/androidlib").containsExactly(listOf())
+            classes().subPackage("com/example/javalib").containsExactly(listOf())
+        }
+        checkMappingFiles(build)
+
+    }
+
+    @Test
     fun `test gradual r8 default optimization`() {
         val build = rule.build
         build.executor.run(":app:assembleRelease")

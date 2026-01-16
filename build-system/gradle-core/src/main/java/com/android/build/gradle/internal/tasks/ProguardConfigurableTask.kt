@@ -22,14 +22,11 @@ import com.android.build.api.artifact.impl.InternalScopedArtifact
 import com.android.build.api.artifact.impl.InternalScopedArtifacts
 import com.android.build.api.variant.ScopedArtifacts.Scope
 import com.android.build.gradle.ProguardFiles
-import com.android.build.gradle.internal.PostprocessingFeatures
 import com.android.build.gradle.internal.component.ApplicationCreationConfig
 import com.android.build.gradle.internal.component.ConsumableCreationConfig
 import com.android.build.gradle.internal.component.TestComponentCreationConfig
 import com.android.build.gradle.internal.component.VariantCreationConfig
 import com.android.build.gradle.internal.dependency.AarToRClassTransform
-import com.android.build.gradle.internal.dsl.ModulePropertyKey
-import com.android.build.gradle.internal.fusedlibrary.FusedLibraryInternalArtifactType
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
 import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactScope.ALL
 import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactScope.PROJECT
@@ -40,7 +37,6 @@ import com.android.build.gradle.internal.publishing.AndroidArtifacts.ConsumedCon
 import com.android.build.gradle.internal.publishing.AndroidArtifacts.ConsumedConfigType.RUNTIME_CLASSPATH
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.scope.InternalArtifactType.GENERATED_PROGUARD_FILE
-import com.android.build.gradle.internal.tasks.factory.AndroidVariantTaskCreationAction
 import com.android.build.gradle.internal.tasks.factory.VariantTaskCreationAction
 import com.android.build.gradle.internal.tasks.factory.features.OptimizationTaskCreationAction
 import com.android.build.gradle.internal.tasks.factory.features.OptimizationTaskCreationActionImpl
@@ -48,7 +44,6 @@ import com.android.build.gradle.internal.utils.fromDisallowChanges
 import com.android.build.gradle.options.BooleanOption
 import com.android.buildanalyzer.common.TaskCategory
 import com.android.builder.core.ComponentType
-import com.android.builder.core.ComponentTypeImpl
 import com.google.common.base.Preconditions
 import org.gradle.api.artifacts.ArtifactCollection
 import org.gradle.api.artifacts.transform.TransformParameters
@@ -132,6 +127,11 @@ abstract class ProguardConfigurableTask(
     @get:InputFiles
     @get:PathSensitive(PathSensitivity.RELATIVE)
     abstract val configurationFiles: ConfigurableFileCollection
+
+    @get:Optional
+    @get:InputFiles
+    @get:PathSensitive(PathSensitivity.RELATIVE)
+    abstract val keepRulesDirectories: ConfigurableFileCollection
 
     @get:Internal
     lateinit var libraryKeepRules: ArtifactCollection
@@ -540,6 +540,9 @@ abstract class ProguardConfigurableTask(
             task.configurationFiles.apply {
                 from(optimizationCreationConfig.proguardFiles)
                 from(task.libraryKeepRulesFileCollection)
+            }
+            creationConfig.sources.keepRules {
+                task.keepRulesDirectories.from(it.getAsFileTrees())
             }
         }
 
