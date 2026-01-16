@@ -44,9 +44,6 @@ class DataBindingKotlinAppTest(useAndroidX: Boolean) {
                         + "="
                         + useAndroidX
             )
-            // see b/477573058
-            .disableBuiltInKotlin()
-            .addGradleProperty(BooleanOption.USE_NEW_DSL, false)
             .create()
 
     companion object {

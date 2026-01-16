@@ -45,6 +45,7 @@ import com.android.build.gradle.internal.tasks.CheckJetifierTask
 import com.android.build.gradle.internal.tasks.SigningReportTask
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfig
 import com.android.build.gradle.internal.tasks.factory.TaskManagerConfig
+import com.android.build.gradle.internal.utils.ANDROID_BUILT_IN_KAPT_PLUGIN_ID
 import com.android.build.gradle.internal.utils.ANDROID_BUILT_IN_KOTLIN_PLUGIN_ID
 import com.android.build.gradle.internal.utils.KOTLIN_KAPT_PLUGIN_ID
 import com.android.build.gradle.internal.utils.addComposeArgsToKotlinCompile
@@ -481,6 +482,10 @@ abstract class VariantTaskManager<VariantBuilderT : VariantBuilder, VariantT : V
 
             project.pluginManager
                 .withPlugin(KOTLIN_KAPT_PLUGIN_ID) {
+                    configureKotlinKaptTasksForDataBinding(project, version)
+                }
+            project.pluginManager
+                .withPlugin(ANDROID_BUILT_IN_KAPT_PLUGIN_ID) {
                     configureKotlinKaptTasksForDataBinding(project, version)
                 }
         }

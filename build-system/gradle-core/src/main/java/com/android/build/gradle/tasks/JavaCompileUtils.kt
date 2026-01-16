@@ -129,27 +129,27 @@ fun JavaCompile.configureProperties(creationConfig: JavaCompileCreationConfig) {
 fun JavaCompile.configurePropertiesForAnnotationProcessing(
     creationConfig: JavaCompileCreationConfig
 ) {
+    // Set up the annotation processor classpath even when Kapt is used (b/130531986)
+    options.annotationProcessorPath = creationConfig.annotationProcessorPath
+
+    // Lock the annotation processor arguments so they can't be modified anymore
     val processorOptions = creationConfig.annotationProcessor
-    val compileOptions = this.options
+    processorOptions.arguments.disallowChanges()
+    (processorOptions as AnnotationProcessorImpl).argumentProviders.lock()
+
+    // Add annotation processor arguments to javac
     if (creationConfig.useBuiltInKaptSupport) {
-        // When KAPT is enabled, it runs annotation processing. This option disables annotation
-        // processing for javac.
-        compileOptions.compilerArgs.add("-proc:none")
-    }
-
-    compileOptions.annotationProcessorPath = creationConfig.annotationProcessorPath
-
-    compileOptions.compilerArgumentProviders.add(
-        CommandLineArgumentProviderAdapter(
-            (processorOptions as AnnotationProcessorImpl).finalListOfClassNames,
-            processorOptions.arguments
+        // When Kapt is used, we should disable annotation processing for javac.
+        // Note that the `kotlin-kapt` plugin already handles this, so here we only need to
+        // take care of built-in Kapt.
+        options.compilerArgs.add("-proc:none")
+    } else {
+        options.compilerArgumentProviders.add(
+            CommandLineArgumentProviderAdapter(
+                processorOptions.finalListOfClassNames, processorOptions.arguments
+            )
         )
-    )
-
-    processorOptions.argumentProviders.let {
-        // lock the list so arguments provides cannot be added from the Variant API any longer.
-        it.lock()
-        compileOptions.compilerArgumentProviders.addAll(it)
+        options.compilerArgumentProviders.addAll(processorOptions.argumentProviders)
     }
 }
 
