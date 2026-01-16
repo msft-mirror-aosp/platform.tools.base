@@ -70,10 +70,8 @@ import com.android.ddmlib.log.LogReceiver
 import com.android.sdklib.AndroidVersion
 import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
+import com.google.common.util.concurrent.SettableFuture
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.async
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.guava.asListenableFuture
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
@@ -260,9 +258,19 @@ internal class AdblibIDeviceWrapper(
             if (avdData != null) {
                 return@logUsage Futures.immediateFuture(avdData.getOrThrow())
             }
-            connectedDevice.scope.async {
-                createOrGetCachedAvdData()
-            }.asListenableFuture()
+
+            // We rely on SettableFuture, because we want to avoid returning a failed future
+            // if the device disconnects or if there is an error. In this case we
+            // just don't set the future value, so it never completes.
+            val future = SettableFuture.create<AvdData?>()
+            connectedDevice.scope.launch {
+                try {
+                    future.set(createOrGetCachedAvdData())
+                } catch (_: IOException) {
+                    logger.debug { "IOException due to device disconnect" }
+                }
+            }
+            future
         }
 
     private suspend fun createOrGetCachedAvdData(): AvdData? {
@@ -272,7 +280,7 @@ internal class AdblibIDeviceWrapper(
             }
 
             // Wait until the device goes online before creating avd data.
-            // Note that extra care should be taken when using `connectedDevice.deviceInfoFlow.deviceState`
+            // Note that extra care should be taken when relying on `connectedDevice` state
             // instead of `AdblibIDeviceWrapper.deviceStateProvider`. In this case it's ok to use
             // the former as all we care about is populating avd data as soon as possible.
             connectedDevice.waitUntilOnline()

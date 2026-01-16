@@ -27,7 +27,6 @@ import com.android.fakeadbserver.DeviceFileState
 import com.android.fakeadbserver.DeviceState
 import com.android.sdklib.AndroidApiLevel
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import org.hamcrest.CoreMatchers
 import org.junit.Assert.assertArrayEquals
@@ -200,6 +199,31 @@ class AdblibIDeviceWrapperTest {
     }
 
     @Test
+    fun getAvdDataDoesNotThrow_whenDeviceDisconnects() = runBlockingWithTimeout {
+        // Prepare
+        val (connectedDevice, _) = createConnectedDevice(
+            "device1", DeviceState.DeviceStatus.OFFLINE
+        )
+        val adblibIDeviceWrapper = createAdblibIDeviceWrapper(connectedDevice, bridge)
+
+        // Assert: AvdData `ListenableFuture` doesn't get set while device is not online
+        val avdDataFuture = adblibIDeviceWrapper.avdData
+        delay(50)
+        assertFalse(avdDataFuture.isDone)
+        assertNull(adblibIDeviceWrapper.avdName)
+        assertNull(adblibIDeviceWrapper.avdPath)
+
+        // Act
+        fakeAdb.disconnectDevice("device1")
+        delay(50)
+        // Assert
+        assertFalse(avdDataFuture.isDone)
+        assertFalse(adblibIDeviceWrapper.avdData.isDone)
+        assertNull(adblibIDeviceWrapper.avdName)
+        assertNull(adblibIDeviceWrapper.avdPath)
+    }
+
+    @Test
     fun avdIsQueriedOnlyWhenDeviceGoesOnline() = runBlockingWithTimeout {
         // Prepare
         val (connectedDevice, fakeDevice) = createConnectedDevice(
@@ -212,14 +236,15 @@ class AdblibIDeviceWrapperTest {
                 deviceState = { connectedDevice.deviceInfo.deviceState })
 
         // Assert: AvdData `ListenableFuture` doesn't get set while device is not online
+        val avdDataFuture = adblibIDeviceWrapper.avdData
         delay(50)
-        assertFalse(adblibIDeviceWrapper.avdData.isDone)
+        assertFalse(avdDataFuture.isDone)
         assertNull(adblibIDeviceWrapper.avdName)
         assertNull(adblibIDeviceWrapper.avdPath)
 
         // Act / Assert
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
-        yieldUntil { adblibIDeviceWrapper.avdData.isDone }
+        yieldUntil { avdDataFuture.isDone }
         assertNull(adblibIDeviceWrapper.avdData.get())
         assertNull(adblibIDeviceWrapper.avdName)
         assertNull(adblibIDeviceWrapper.avdPath)
