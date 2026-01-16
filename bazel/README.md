@@ -227,6 +227,12 @@ If you are making changes to the list of artifacts, it is also useful to run
 `tools/base/bazel/maven/maven_clean.sh` as well to ensure that unused dependencies
 are removed and the prebuilts are cleaned up before uploading.
 
+**Important:** If you run `maven_clean.sh`, you *must* follow it up with
+`maven_fetch.sh`. This is crucial because `maven_clean.sh` can be overly
+aggressive and remove an entire dependency if it considers the JAR
+artifact to be orphaned, even when the associated `sources` artifact is
+still explicitly required in the `DATA` or `ARTIFACTS` sections.
+
 See the `toplevel.WORKSPACE` file for examples on how to express non-jar dependency
 types and classifiers (e.g., `linux-x86_64`).
 
