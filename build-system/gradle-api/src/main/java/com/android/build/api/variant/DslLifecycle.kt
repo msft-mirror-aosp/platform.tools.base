@@ -18,7 +18,7 @@ package com.android.build.api.variant
 
 import org.gradle.api.Action
 
-interface DslLifecycle<T> {
+interface DslLifecycle<T: Any> {
 
     /**
      * API to customize the DSL Objects programmatically after they have been evaluated from the
