@@ -150,6 +150,7 @@ public class Project {
     protected List<File> manifestFiles;
     protected List<File> javaSourceFolders;
     protected List<File> generatedSourceFolders;
+    protected List<File> keepRulesFolders;
     protected List<File> javaClassFolders;
     protected List<File> nonProvidedJavaLibraries;
     protected List<File> javaLibraries;
@@ -546,6 +547,20 @@ public class Project {
 
         return javaSourceFolders;
     }
+
+  /**
+   * Returns the list of source folders for keepRules files
+   *
+   * @return a list of source folders to search for .keep files
+   */
+  @NonNull
+  public List<File> getKeepRulesSourceFolders() {
+    if (keepRulesFolders == null) {
+      keepRulesFolders = client.getKeepRulesSourceFolders(this);
+    }
+
+    return keepRulesFolders;
+  }
 
     /**
      * Returns whether this Project is a test project. For example, this Project might just contain

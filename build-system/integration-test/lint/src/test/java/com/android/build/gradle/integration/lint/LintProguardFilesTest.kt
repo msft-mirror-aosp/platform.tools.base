@@ -22,11 +22,6 @@ import org.junit.Rule
 import org.junit.Test
 import java.io.File
 
-/**
- * Integration test testing that lint reports issues with proguard files.
- *
- * Regression test for b/67156629
- */
 class LintProguardFilesTest {
 
     @get:Rule
@@ -61,6 +56,7 @@ class LintProguardFilesTest {
     }
 
 
+    // regression for b/67156629
     @Test
     fun testIssueFromProguardFile() {
         val build = appRule.build {
@@ -82,6 +78,21 @@ class LintProguardFilesTest {
         )
     }
 
+    @Test
+    fun testIssueFromProguardFileInSourceSet() {
+        val build = appRule.build {
+            androidApplication(":appProject") {}
+                .files {
+                    add("src/main/keepRules/proguard-rules.keep", "foo.\ufeffbar")
+                }
+        }
+        build.executor.run("lintRelease")
+        assertThat(build.directory.resolve("appProject/lint-results.txt")).contains(
+            "proguard-rules.keep:1: Error: Found byte-order-mark in the middle of a file"
+        )
+    }
+
+    // regression for b/67156629
     @Test
     fun testIssueFromConsumerProguardFile() {
         val build = libRule.build {

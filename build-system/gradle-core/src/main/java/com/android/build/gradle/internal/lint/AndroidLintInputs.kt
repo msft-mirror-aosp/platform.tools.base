@@ -1515,6 +1515,10 @@ abstract class SourceProviderInput {
     @get:PathSensitive(PathSensitivity.RELATIVE)
     abstract val assetsDirectories: ConfigurableFileCollection
 
+    @get:InputFiles
+    @get:PathSensitive(PathSensitivity.RELATIVE)
+    abstract val keepRulesDirectories: ConfigurableFileCollection
+
     // Without javaDirectoriesClasspath, the lint analysis task would be UP-TO-DATE after a change
     // in the *order* of java source directories, which would be incorrect. We can't get rid of
     // javaDirectories entirely because without javaDirectories, the lint analysis task would be
@@ -1603,6 +1607,8 @@ abstract class SourceProviderInput {
         sources.assets?.getFilteredSourceProviders(assetsDirectories)
         assetsDirectories.disallowChanges()
 
+        sources.keepRules?.getFilteredSourceProviders(keepRulesDirectories)
+        keepRulesDirectories.disallowChanges()
 
         if (lintMode == LintMode.ANALYSIS) {
             this.javaDirectoriesClasspath.from(javaDirectories)
@@ -1713,6 +1719,7 @@ abstract class SourceProviderInput {
                 javaDirectories = javaDirectories.files.toList(),
                 resDirectories = resDirectories.files.toList(),
                 assetsDirectories = assetsDirectories.files.toList(),
+                keepRulesDirectories = keepRulesDirectories.files.toList(),
                 debugOnly = debugOnly.get(),
                 unitTestOnly = unitTestOnly.get(),
                 instrumentationTestOnly = instrumentationTestOnly.get(),
@@ -1868,14 +1875,14 @@ abstract class AndroidArtifactInput : ArtifactInput() {
         )
 
         val coreLibDesugaring = (creationConfig as? ConsumableCreationConfig)?.isCoreLibraryDesugaringEnabledLintCheck
-                ?: false
+            ?: false
         desugaredMethodsFiles.from(
-                getDesugaredMethods(
-                        creationConfig.services,
-                        coreLibDesugaring,
-                        creationConfig.minSdk,
-                        creationConfig.global
-                )
+            getDesugaredMethods(
+                creationConfig.services,
+                coreLibDesugaring,
+                creationConfig.minSdk,
+                creationConfig.global
+            )
         ).disallowChanges()
 
         return this
@@ -2698,7 +2705,7 @@ class LintFromMaven(val files: FileCollection, val version: String) {
                     "com.android.tools.lint",
                     "lint-gradle",
                     lintVersion,
-                    )
+                )
             )
             config.isTransitive = true
             config.isCanBeConsumed = false

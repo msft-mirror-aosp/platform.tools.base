@@ -14,7 +14,8 @@
         manifests="src/main/AndroidManifest.xml"
         javaDirectories="src/main/java:src/debug/java:src/main/kotlin:src/debug/kotlin"
         resDirectories="src/main/res:src/debug/res"
-        assetsDirectories="src/main/assets:src/debug/assets"/>
+        assetsDirectories="src/main/assets:src/debug/assets"
+        keepRulesDirectories="src/main/keepRules:src/debug/keepRules"/>
   </sourceProviders>
   <testSourceProviders>
   </testSourceProviders>

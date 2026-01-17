@@ -41,6 +41,7 @@ import com.google.common.collect.Lists
 import com.google.common.io.Files
 import java.io.File
 import java.io.IOException
+import kotlin.sequences.forEach
 import org.w3c.dom.Document
 
 /**
@@ -156,10 +157,25 @@ open class LintModelModuleProject(
 
   override fun getProguardFiles(): List<File> {
     if (proguardFiles == null) {
-      proguardFiles = variant.proguardFiles + variant.consumerProguardFiles
+      proguardFiles = Lists.newArrayList()
+      proguardFiles.addAll(variant.proguardFiles)
+      proguardFiles.addAll(variant.consumerProguardFiles)
       // proguardFiles.addAll(container.config.getTestProguardFiles())
     }
     return proguardFiles
+  }
+
+  override fun getKeepRulesSourceFolders(): List<File> {
+    if (keepRulesFolders == null) {
+      keepRulesFolders = Lists.newArrayList()
+      sourceProviders.forEach { provider ->
+        provider.keepRulesDirectories
+          .asSequence()
+          .filter { it.exists() }
+          .forEach { keepRulesFolders.add(it) }
+      }
+    }
+    return keepRulesFolders
   }
 
   override fun getResourceFolders(): List<File> {
