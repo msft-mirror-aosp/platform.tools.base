@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,17 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.android.processmonitor.monitor.ddmlib
+package com.android.processmonitor.monitor.adblib
 
 import com.android.processmonitor.common.DeviceEvent
 import com.android.processmonitor.common.DeviceTracker
+import java.io.Closeable
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.consumeAsFlow
-import java.io.Closeable
 
 /**
- * A test implementation of [DeviceTracker]
+ * A test implementation of [com.android.processmonitor.common.DeviceTracker]
  */
 internal class FakeDeviceTracker : DeviceTracker<String>, Closeable {
 
