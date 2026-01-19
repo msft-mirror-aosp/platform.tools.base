@@ -494,6 +494,8 @@ const CoverageReportApp = {
 
         this.updateSummaryCards(dataToRender);
         this.renderTable(dataToRender);
+
+        this.updateTooltipsForOverflow();
     },
 
     updateActiveTabs() {
@@ -657,6 +659,18 @@ const CoverageReportApp = {
         }
     },
 
+    updateTooltipsForOverflow() {
+        const cells = this.elements.coverageData.querySelectorAll('.sticky-name');
+
+        cells.forEach(cell => {
+            const isOverflowing = cell.scrollWidth > cell.clientWidth;
+
+            if (!isOverflowing) {
+                cell.removeAttribute('title');
+            }
+        });
+    },
+
     getCoverageClass(percentage) {
         if (percentage === '--') return 'text-gray-500';
         if (percentage >= 80) return 'text-green-600';
@@ -770,7 +784,7 @@ const CoverageReportApp = {
             const rowClasses = `table-row border-b border-gray-200 hover:bg-gray-50 ${level > 0 && !isSearching ? 'child-row hidden' : 'child-row'}`;
 
             return `<tr class="${rowClasses}" data-id="${item.name}" data-parent-id="${parentId}">
-                <td class="py-3 px-6 sticky-name"><div class="flex items-center gap-2 cursor-pointer" style="padding-left: ${level * 1.5}rem;">${chevron}${nameContent}</div></td>
+                <td class="py-3 px-6 sticky-name" title="${item.name}"><div class="flex items-center gap-2 cursor-pointer" style="padding-left: ${level * 1.5}rem;">${chevron}${nameContent}</div></td>
                 ${coverageCells}
             </tr>`;
         };
@@ -817,19 +831,19 @@ const CoverageReportApp = {
             let nameCell;
              switch (this.state.currentView) {
                 case 'packages':
-                    nameCell = `<td class="py-3 px-6 sticky-name font-medium text-blue-700 hover:underline cursor-pointer" data-name="${item.name}" data-type="${item.type}" data-module-name="${item.moduleName}" data-test-suite-name="${item.testSuiteName || ''}">${item.name}</td><td class="py-3 px-6">${this.state.currentHierarchy === 'tests' ? item.testSuiteName : item.moduleName}</td>`;
+                    nameCell = `<td class="py-3 px-6 sticky-name font-medium text-blue-700 hover:underline cursor-pointer" title="${item.name}" data-name="${item.name}" data-type="${item.type}" data-module-name="${item.moduleName}" data-test-suite-name="${item.testSuiteName || ''}">${item.name}</td><td class="py-3 px-6">${this.state.currentHierarchy === 'tests' ? item.testSuiteName : item.moduleName}</td>`;
                     break;
                 case 'classes':
-                    nameCell = `<td class="py-3 px-6 sticky-name"><a href="#" class="font-medium text-blue-700 hover:underline class-link" data-class-name="${item.name}" data-module-name="${item.moduleName}" data-package-name="${item.packageName}" data-test-suite-name="${item.testSuiteName || ''}">${item.name}</a></td><td class="py-3 px-6">${item.packageName}</td>`;
+                    nameCell = `<td class="py-3 px-6 sticky-name" title="${item.name}"><a href="#" class="font-medium text-blue-700 hover:underline class-link" data-class-name="${item.name}" data-module-name="${item.moduleName}" data-package-name="${item.packageName}" data-test-suite-name="${item.testSuiteName || ''}">${item.name}</a></td><td class="py-3 px-6">${item.packageName}</td>`;
                     if (this.state.currentHierarchy === 'tests') {
                         nameCell += `<td class="py-3 px-6">${item.testSuiteName || ''}</td>`;
                     }
                     break;
                 case 'testSuites':
-                    nameCell = `<td class="py-3 px-6 sticky-name font-medium text-blue-700 hover:underline cursor-pointer" data-name="${item.name}" data-type="${item.type}" data-module-name="${item.moduleName}">${item.name}</td><td class="py-3 px-6">${item.moduleName}</td>`;
+                    nameCell = `<td class="py-3 px-6 sticky-name font-medium text-blue-700 hover:underline cursor-pointer" title="${item.name}" data-name="${item.name}" data-type="${item.type}" data-module-name="${item.moduleName}">${item.name}</td><td class="py-3 px-6">${item.moduleName}</td>`;
                     break;
                 default:
-                    nameCell = `<td class="py-3 px-6 sticky-name font-medium text-blue-700 hover:underline cursor-pointer" data-name="${item.name}" data-type="${item.type}" data-module-name="${item.moduleName}">${item.name}</td>`;
+                    nameCell = `<td class="py-3 px-6 sticky-name font-medium text-blue-700 hover:underline cursor-pointer" title="${item.name}" data-name="${item.name}" data-type="${item.type}" data-module-name="${item.moduleName}">${item.name}</td>`;
             }
             return `<tr class="table-row border-b border-gray-200 hover:bg-gray-50">${nameCell}${coverageCells}</tr>`;
         }).join('');
