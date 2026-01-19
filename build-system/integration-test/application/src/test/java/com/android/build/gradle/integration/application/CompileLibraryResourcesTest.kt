@@ -149,8 +149,7 @@ class CompileLibraryResourcesTest {
 
     @Test
     fun testResourcesAreCompiledAndProcessed() {
-        project.executor().with(BooleanOption.PRECOMPILE_DEPENDENCIES_RESOURCES, true)
-            .run(":app:assembleDebug")
+        project.executor().run(":app:assembleDebug")
 
         checkCompiledLibraryResourcesDir(
             setOf(
@@ -184,7 +183,7 @@ class CompileLibraryResourcesTest {
 
     @Test
     fun testIncrementalResourceChange() {
-        project.executor().with(BooleanOption.PRECOMPILE_DEPENDENCIES_RESOURCES, true)
+        project.executor()
             .run(":app:assembleDebug")
 
         val filesLastModified = FileUtils.join(
@@ -207,8 +206,7 @@ class CompileLibraryResourcesTest {
             ), "test2"
         )
 
-        project.executor().with(BooleanOption.PRECOMPILE_DEPENDENCIES_RESOURCES, true)
-            .run(":app:assembleDebug")
+        project.executor().run(":app:assembleDebug")
 
         FileUtils.join(
             project.getSubproject(":library").intermediatesDir,
@@ -251,8 +249,7 @@ class CompileLibraryResourcesTest {
                     """.trimIndent()
         )
 
-        project.executor().with(BooleanOption.PRECOMPILE_DEPENDENCIES_RESOURCES, true)
-            .run(":app:assembleDebug")
+        project.executor().run(":app:assembleDebug")
 
         // check the file doesn't exist in the compiled library resources
 
@@ -278,8 +275,7 @@ class CompileLibraryResourcesTest {
 
     @Test
     fun testIntegrationWithResourceShrinker() {
-        project.executor().with(BooleanOption.PRECOMPILE_DEPENDENCIES_RESOURCES, true)
-            .run(":app:assembleRelease")
+        project.executor().run(":app:assembleRelease")
 
         val compressed = InternalArtifactType.SHRUNK_RESOURCES_PROTO_FORMAT
             .getOutputDir(project.getSubproject(":app").buildDir)
