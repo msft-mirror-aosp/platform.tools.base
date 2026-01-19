@@ -15,5 +15,8 @@ export JAVA_HOME="${ROOT_DIR}/prebuilts/studio/jdk/jdk17/linux/"
 export PYTHON3_DIR="${ROOT_DIR}/prebuilts/python/linux-x86/bin/"
 export PATH="${PYTHON3_DIR}:${PATH}"
 
+# Building Sherlock APK requires Android SDK.
+export ANDROID_HOME="${ROOT_DIR}/prebuilts/studio/sdk/linux/"
+
 pushd "${ROOT_DIR}/tools/profiler/sherlock-plugin"
-./gradlew test -Pverbose.test.logging=true
+./gradlew --info test -Pverbose.test.logging=true
