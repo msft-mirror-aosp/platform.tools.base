@@ -92,14 +92,6 @@ abstract class CheckAarMetadataTask : NonIncrementalTask() {
   val aarMetadataFiles: FileCollection
     get() = aarMetadataArtifacts.artifactFiles
 
-  @VisibleForTesting @get:Internal internal var disallowedAsarArtifacts: ArtifactCollection? = null
-
-  @get:InputFiles
-  @get:PathSensitive(PathSensitivity.NAME_ONLY)
-  @get:Optional
-  val disallowedAsarFiles: FileCollection?
-    get() = disallowedAsarArtifacts?.artifactFiles
-
   @get:Input abstract val aarFormatVersion: Property<String>
 
   @get:Input abstract val aarMetadataVersion: Property<String>
@@ -150,7 +142,6 @@ abstract class CheckAarMetadataTask : NonIncrementalTask() {
           it.desugarJdkVersion.set(id.version)
         }
       }
-      it.disallowedAsarArtifacts.addAll(disallowedAsarArtifacts?.map { artifact -> artifact.userFacingName } ?: listOf())
     }
   }
 
@@ -208,14 +199,6 @@ abstract class CheckAarMetadataTask : NonIncrementalTask() {
       )
 
       task.disableCompileSdkChecks.setDisallowChanges(creationConfig.services.projectOptions[BooleanOption.DISABLE_COMPILE_SDK_CHECKS])
-      if (creationConfig.privacySandboxCreationConfig == null) {
-        task.disallowedAsarArtifacts =
-          creationConfig.variantDependencies.getArtifactCollection(
-            AndroidArtifacts.ConsumedConfigType.RUNTIME_CLASSPATH,
-            AndroidArtifacts.ArtifactScope.ALL,
-            AndroidArtifacts.ArtifactType.ANDROID_PRIVACY_SANDBOX_SDK_ARCHIVE,
-          )
-      }
     }
   }
 }

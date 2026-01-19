@@ -25,7 +25,6 @@ import com.android.build.api.dsl.ComposeOptions
 import com.android.build.api.dsl.DependenciesInfo
 import com.android.build.api.dsl.Lint
 import com.android.build.api.dsl.Packaging
-import com.android.build.api.dsl.PrivacySandbox
 import com.android.build.api.dsl.TestCoverage
 import com.android.build.gradle.internal.CompileOptions as CompileOptionsImpl
 import com.android.build.gradle.internal.coverage.JacocoOptions as JacocoOptionsImpl
@@ -102,6 +101,4 @@ interface InternalApplicationExtension : ApplicationExtension, InternalTestedExt
   fun packagingOptions(action: Action<PackagingImpl>)
 
   fun publishing(action: Action<ApplicationPublishing>)
-
-  fun privacySandbox(action: Action<PrivacySandbox>)
 }

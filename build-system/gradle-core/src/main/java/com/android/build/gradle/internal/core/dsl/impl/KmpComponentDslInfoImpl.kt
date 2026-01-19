@@ -19,7 +19,6 @@ package com.android.build.gradle.internal.core.dsl.impl
 import com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryExtension
 import com.android.build.api.variant.impl.MutableAndroidVersion
 import com.android.build.gradle.internal.core.dsl.KmpComponentDslInfo
-import com.android.build.gradle.internal.core.dsl.features.PrivacySandboxDslInfo
 import com.android.build.gradle.internal.dsl.DependencySelectionImpl
 import com.android.build.gradle.internal.dsl.KotlinMultiplatformAndroidLibraryExtensionImpl
 import com.android.build.gradle.internal.services.VariantServices
@@ -45,13 +44,6 @@ abstract class KmpComponentDslInfoImpl(
 
   override val buildTypeMatchingFallbacks: List<String>
     get() = extension.localDependencySelection.selectBuildTypeFrom.get()
-
-  override val privacySandboxDsl: PrivacySandboxDslInfo
-    get() =
-      object : PrivacySandboxDslInfo {
-        override val enable: Boolean
-          get() = false // TODO(b/312469467)
-      }
 
   // For KMP, Kotlin is always enabled
   override val enableKotlin: Boolean = true

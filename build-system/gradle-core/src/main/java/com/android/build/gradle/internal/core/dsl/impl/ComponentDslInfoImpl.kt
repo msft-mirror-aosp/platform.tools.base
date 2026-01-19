@@ -31,9 +31,7 @@ import com.android.build.gradle.internal.core.dsl.AgpTestSuiteDslInfo
 import com.android.build.gradle.internal.core.dsl.ComponentDslInfo
 import com.android.build.gradle.internal.core.dsl.MultiVariantComponentDslInfo
 import com.android.build.gradle.internal.core.dsl.features.AndroidResourcesDslInfo
-import com.android.build.gradle.internal.core.dsl.features.PrivacySandboxDslInfo
 import com.android.build.gradle.internal.core.dsl.impl.features.AndroidResourcesDslInfoImpl
-import com.android.build.gradle.internal.core.dsl.impl.features.PrivacySandboxDslInfoImpl
 import com.android.build.gradle.internal.dsl.AgpTestSuiteImpl
 import com.android.build.gradle.internal.dsl.AgpTestSuiteTargetImpl
 import com.android.build.gradle.internal.dsl.DefaultConfig
@@ -72,8 +70,6 @@ internal constructor(
   }
 
   final override val javaCompileOptionsSetInDSL = MergedJavaCompileOptions()
-
-  override val privacySandboxDsl: PrivacySandboxDslInfo = PrivacySandboxDslInfoImpl(extension)
 
   override val enableKotlin: Boolean
     get() = extension.enableKotlin

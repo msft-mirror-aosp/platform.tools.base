@@ -489,9 +489,4 @@ interface ApplicationExtension : CommonExtension, ApkExtension, TestedExtension 
    * since 2.2.0
    */
   fun externalNativeBuild(action: ExternalNativeBuild.() -> Unit)
-
-  /** Options related to the consumption of privacy sandbox libraries */
-  val privacySandbox: PrivacySandbox
-
-  fun privacySandbox(action: PrivacySandbox.() -> Unit)
 }

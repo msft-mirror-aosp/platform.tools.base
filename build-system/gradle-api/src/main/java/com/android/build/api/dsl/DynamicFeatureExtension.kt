@@ -459,8 +459,4 @@ interface DynamicFeatureExtension : CommonExtension, ApkExtension, TestedExtensi
    * since 2.2.0
    */
   fun externalNativeBuild(action: ExternalNativeBuild.() -> Unit)
-
-  val privacySandbox: PrivacySandbox
-
-  fun privacySandbox(action: PrivacySandbox.() -> Unit)
 }

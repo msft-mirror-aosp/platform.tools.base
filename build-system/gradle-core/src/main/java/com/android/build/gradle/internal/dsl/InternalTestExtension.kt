@@ -19,7 +19,6 @@ package com.android.build.gradle.internal.dsl
 import com.android.build.api.dsl.ComposeOptions
 import com.android.build.api.dsl.Lint
 import com.android.build.api.dsl.Packaging
-import com.android.build.api.dsl.PrivacySandbox
 import com.android.build.api.dsl.TestAndroidResources
 import com.android.build.api.dsl.TestBuildFeatures
 import com.android.build.api.dsl.TestCoverage
@@ -85,6 +84,4 @@ interface InternalTestExtension : TestExtension, InternalCommonExtension {
   fun packaging(action: Action<Packaging>)
 
   fun packagingOptions(action: Action<PackagingImpl>)
-
-  fun privacySandbox(action: Action<PrivacySandbox>)
 }

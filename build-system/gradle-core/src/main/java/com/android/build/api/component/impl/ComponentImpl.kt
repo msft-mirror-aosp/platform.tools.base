@@ -21,7 +21,6 @@ import com.android.build.api.artifact.impl.ArtifactsImpl
 import com.android.build.api.component.impl.features.AndroidResourcesCreationConfigImpl
 import com.android.build.api.component.impl.features.InstrumentationCreationConfigImpl
 import com.android.build.api.component.impl.features.ManifestPlaceholdersCreationConfigImpl
-import com.android.build.api.component.impl.features.PrivacySandboxCreationConfigImpl
 import com.android.build.api.component.impl.features.ResValuesCreationConfigImpl
 import com.android.build.api.dsl.AndroidResources
 import com.android.build.api.instrumentation.AsmClassVisitorFactory
@@ -41,7 +40,6 @@ import com.android.build.gradle.internal.component.ComponentCreationConfig
 import com.android.build.gradle.internal.component.features.AndroidResourcesCreationConfig
 import com.android.build.gradle.internal.component.features.InstrumentationCreationConfig
 import com.android.build.gradle.internal.component.features.ManifestPlaceholdersCreationConfig
-import com.android.build.gradle.internal.component.features.PrivacySandboxCreationConfig
 import com.android.build.gradle.internal.component.features.ResValuesCreationConfig
 import com.android.build.gradle.internal.component.legacy.OldVariantApiLegacySupport
 import com.android.build.gradle.internal.core.ProductFlavor
@@ -326,13 +324,6 @@ abstract class ComponentImpl<DslInfoT : ComponentDslInfo>(
 
   internal fun getAndroidResources(androidResources: AndroidResources): AndroidResourcesImpl =
     initializeAaptOptionsFromDsl(androidResources, buildFeatures, internalServices)
-
-  override val privacySandboxCreationConfig: PrivacySandboxCreationConfig? by
-    lazy(LazyThreadSafetyMode.PUBLICATION) {
-      if (dslInfo.privacySandboxDsl.enable) {
-        PrivacySandboxCreationConfigImpl()
-      } else null
-    }
 
   override fun finalizeAndLock() {
     artifacts.finalizeAndLock()

@@ -26,7 +26,6 @@ import com.android.build.gradle.internal.component.features.AndroidResourcesCrea
 import com.android.build.gradle.internal.component.features.BuildConfigCreationConfig
 import com.android.build.gradle.internal.component.features.InstrumentationCreationConfig
 import com.android.build.gradle.internal.component.features.ManifestPlaceholdersCreationConfig
-import com.android.build.gradle.internal.component.features.PrivacySandboxCreationConfig
 import com.android.build.gradle.internal.component.features.ResValuesCreationConfig
 import com.android.build.gradle.internal.component.legacy.OldVariantApiLegacySupport
 import com.android.build.gradle.internal.core.ProductFlavor
@@ -110,7 +109,6 @@ interface ComponentCreationConfig : ComponentIdentity, TaskCreationConfig {
   val buildConfigCreationConfig: BuildConfigCreationConfig?
   val instrumentationCreationConfig: InstrumentationCreationConfig?
   val manifestPlaceholdersCreationConfig: ManifestPlaceholdersCreationConfig?
-  val privacySandboxCreationConfig: PrivacySandboxCreationConfig?
 
   /**
    * android resources can be null for components like KMP that do not support android resources. Having a non null instance does not mean

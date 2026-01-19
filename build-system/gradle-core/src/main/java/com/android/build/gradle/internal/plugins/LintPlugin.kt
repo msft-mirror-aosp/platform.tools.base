@@ -126,7 +126,7 @@ abstract class LintPlugin : Plugin<Project> {
     val customLintChecksConfig = BasePlugin.createCustomLintChecksConfig(project)
     val customLintChecks = getLocalCustomLintChecks(customLintChecksConfig)
     registerTasks(project, javaExtension, customLintChecks, dslOperationsRegistrar)
-    ModelArtifactCompatibilityRule.setUp(project.dependencies.attributesSchema, false)
+    ModelArtifactCompatibilityRule.setUp(project.dependencies.attributesSchema)
   }
 
   private fun registerTasks(

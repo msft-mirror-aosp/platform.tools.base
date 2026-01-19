@@ -327,8 +327,7 @@ constructor(listenerRegistry: BuildEventsListenerRegistry, private val buildFeat
 
     mainVariant = createVariant(project, global, variantServices, taskServices, kotlinMultiplatformHandler.getAndroidTarget())
 
-    val sandboxConsumptionEnabled = mainVariant.privacySandboxCreationConfig != null
-    configureDisambiguationRules(project, sandboxConsumptionEnabled)
+    configureDisambiguationRules(project)
 
     val unitTest = createUnitTestComponent(project, global, variantServices, taskServices, kotlinMultiplatformHandler.getAndroidTarget())
     unitTest?.let { mainVariant.addTestComponent(HostTestBuilder.UNIT_TEST_TYPE, it as HostTestCreationConfig) }
@@ -624,7 +623,7 @@ constructor(listenerRegistry: BuildEventsListenerRegistry, private val buildFeat
     )
   }
 
-  private fun configureDisambiguationRules(project: Project, supportPrivacySandboxSdkConsumption: Boolean) {
+  private fun configureDisambiguationRules(project: Project) {
     project.dependencies.attributesSchema { schema ->
       val buildTypesToMatch = androidExtension.localDependencySelection.selectBuildTypeFrom.get()
       schema.attribute(BuildTypeAttr.ATTRIBUTE).disambiguationRules.add(SingleVariantBuildTypeRule::class.java) { config ->
@@ -638,7 +637,7 @@ constructor(listenerRegistry: BuildEventsListenerRegistry, private val buildFeat
       }
 
       schema.attribute(AgpVersionAttr.ATTRIBUTE).compatibilityRules.add(AgpVersionCompatibilityRule::class.java)
-      setUp(schema, supportPrivacySandboxSdkConsumption)
+      setUp(schema)
     }
   }
 

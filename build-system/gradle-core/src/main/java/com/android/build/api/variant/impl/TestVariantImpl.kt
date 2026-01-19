@@ -122,20 +122,6 @@ constructor(
 
   override val allTestedApks: Provider<List<Directory>> by lazy { getTestedModuleAllDirectoryArtifacts(AndroidArtifacts.ArtifactType.APK) }
 
-  override val privacySandboxCompatApks: Provider<Directory>? by lazy {
-    if (!privacySandboxEnabled) {
-      return@lazy null
-    }
-    return@lazy getTestedModuleDirectoryArtifact(AndroidArtifacts.ArtifactType.ANDROID_PRIVACY_SANDBOX_SDK_COMPAT_SPLIT_APKS)
-  }
-
-  override val usesSdkLibrarySplitForLocalDeployment: Provider<Directory>? by lazy {
-    if (!privacySandboxEnabled) {
-      return@lazy null
-    }
-    return@lazy getTestedModuleDirectoryArtifact(AndroidArtifacts.ArtifactType.USES_SDK_LIBRARY_SPLIT_FOR_LOCAL_DEPLOYMENT)
-  }
-
   private fun getTestedModuleDirectoryArtifact(artifactType: AndroidArtifacts.ArtifactType): Provider<Directory> =
     getTestedModuleAllDirectoryArtifacts(artifactType).map { it.firstOrNull() }
 
@@ -146,8 +132,6 @@ constructor(
       .elements
       .map { elements -> elements.map { element -> projectDirectory.dir(element.asFile.absolutePath) } }
   }
-
-  override val privacySandboxEnabled: Boolean = dslInfo.privacySandboxDsl.enable
 
   override val dexing: DexingCreationConfig by
     lazy(LazyThreadSafetyMode.NONE) {

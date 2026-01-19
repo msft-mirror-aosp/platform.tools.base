@@ -624,13 +624,12 @@ To learn more, go to https://d.android.com/r/tools/java-8-support-message.html
         taskManagerConfig,
       )
     taskManager.createTasks(variantFactory.componentType, createVariantModel(globalConfig))
-    val anyVariantSupportsSdkConsumption = variants.any { it.privacySandboxCreationConfig != null }
     DependencyConfigurator(project, projectServices)
       .configureDependencySubstitutions()
       .configureDependencyChecks()
       .configureGeneralTransforms(globalConfig.aarOrJarTypeToConsume)
       .configureVariantTransforms(variants, variantManager.nestedComponents, globalConfig)
-      .configureAttributeMatchingStrategies(variantInputModel, anyVariantSupportsSdkConsumption)
+      .configureAttributeMatchingStrategies(variantInputModel)
       .configureCalculateStackFramesTransforms(globalConfig)
       .apply {
         // Registering Jacoco transforms causes the jacoco configuration to be created.
