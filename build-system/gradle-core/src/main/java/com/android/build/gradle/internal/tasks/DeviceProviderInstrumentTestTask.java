@@ -300,7 +300,6 @@ public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTas
                     testsFound(),
                     getWorkerExecutor(),
                     getObjectFactory(),
-                    getPrivacySandboxSdkApksFiles().getFiles(),
                     getExecutorServiceAdapter(),
                     dependencies);
         }
@@ -326,7 +325,6 @@ public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTas
             boolean testsFound,
             WorkerExecutor workerExecutor,
             ObjectFactory objectFactory,
-            Set<File> privacySandboxSdkApkFiles,
             ExecutorServiceAdapter executorServiceAdapter,
             ArtifactCollection dependencies)
             throws IOException, ExecutionException, DeviceException {
@@ -387,7 +385,6 @@ public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTas
                             logger,
                             useAdditionalTargetOutputDir,
                             enableCoverage,
-                            privacySandboxSdkApkFiles,
                             dependencies,
                             targetSerials,
                             testRunnerFactory.getExecutionEnum().get()
@@ -435,7 +432,6 @@ public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTas
             @NonNull Logger logger,
             @NonNull Boolean useAdditionalTargetOutputDir,
             @NonNull Boolean enableCoverage,
-            @NonNull Set<File> privacySandboxSdkApkFiles,
             @NonNull ArtifactCollection dependencies,
             List<String> targetSerials,
             Execution execution

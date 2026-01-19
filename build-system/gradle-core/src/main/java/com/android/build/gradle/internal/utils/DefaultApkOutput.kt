@@ -37,19 +37,12 @@ class DefaultApkOutput(variant: VariantCreationConfig, val deviceSpec: DeviceSpe
         val minSdk = variant.minSdk.toSharedAndroidVersion()
         val variantName = variant.baseName
         val projectPath = variant.services.projectInfo.path
-        val privacySandboxApks: FileCollection = variant.variantDependencies
-            .getArtifactFileCollection(
-                AndroidArtifacts.ConsumedConfigType.RUNTIME_CLASSPATH,
-                AndroidArtifacts.ArtifactScope.ALL,
-                AndroidArtifacts.ArtifactType.ANDROID_PRIVACY_SANDBOX_EXTRACTED_SDK_APKS)
-
         val useViaBundleFlow = !skipApksViaBundle || hasDynamicFeatures
         deviceApkOutput = if (useViaBundleFlow) {
             val apkBundle = variant.artifacts.get(InternalArtifactType.APKS_FROM_BUNDLE)
             ViaBundleDeviceApkOutput(
                 apkBundle,
                 minSdk,
-                privacySandboxApks,
                 variantName,
                 projectPath
             )
@@ -57,7 +50,7 @@ class DefaultApkOutput(variant: VariantCreationConfig, val deviceSpec: DeviceSpe
             val supportedAbis = variant.nativeBuildCreationConfig?.supportedAbis
 
             DefaultDeviceApkOutput(
-                getApkSources(variant, privacySandboxApks), supportedAbis, minSdk,
+                getApkSources(variant), supportedAbis, minSdk,
                 variantName, projectPath)
         }
     }
@@ -70,7 +63,7 @@ class DefaultApkOutput(variant: VariantCreationConfig, val deviceSpec: DeviceSpe
         deviceApkOutput.setInputs(inputs, deviceSpec)
     }
 
-    private fun getApkSources(variant: VariantCreationConfig, privacySandboxApks: FileCollection): ApkSources {
+    private fun getApkSources(variant: VariantCreationConfig): ApkSources {
         return ApkSources(
             mainApkArtifacts = variant.artifacts.get(SingleArtifact.APK).map { listOf(it) },
             dexMetadataDirectory = variant.artifacts.get(InternalArtifactType.DEX_METADATA_DIRECTORY)
