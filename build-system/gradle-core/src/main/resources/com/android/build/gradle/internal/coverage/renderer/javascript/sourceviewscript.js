@@ -300,8 +300,8 @@ const SourceViewApp = {
     },
 
     getTextClass(percent) {
-        if (percent === 100) return 'text-green-600';
-        if (percent >= 80) return 'text-yellow-600';
+        if (percent >=80) return 'text-green-600';
+        if (percent >= 60) return 'text-yellow-600';
         return 'text-red-600';
     },
 

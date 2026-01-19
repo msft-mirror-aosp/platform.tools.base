@@ -659,8 +659,8 @@ const CoverageReportApp = {
 
     getCoverageClass(percentage) {
         if (percentage === '--') return 'text-gray-500';
-        if (percentage >= 90) return 'text-green-600';
-        if (percentage >= 70) return 'text-yellow-600';
+        if (percentage >= 80) return 'text-green-600';
+        if (percentage >= 60) return 'text-yellow-600';
         return 'text-red-600';
     },
 
