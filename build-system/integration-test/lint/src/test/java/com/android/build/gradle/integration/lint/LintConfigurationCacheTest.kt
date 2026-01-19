@@ -18,6 +18,7 @@ package com.android.build.gradle.integration.lint
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.MinimalSubProject
+import com.android.build.gradle.options.BooleanOption
 import org.junit.Rule
 import org.junit.Test
 
@@ -60,6 +61,7 @@ class LintConfigurationCacheTest {
                         """.trimIndent()
                     )
             )
+            .addGradleProperty(BooleanOption.USE_NEW_DSL, false)
             .create()
 
     /** Regression test for b/285320724. */
