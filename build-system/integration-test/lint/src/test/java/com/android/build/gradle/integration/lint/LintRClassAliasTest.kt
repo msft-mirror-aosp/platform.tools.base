@@ -89,38 +89,10 @@ class LintRClassAliasTest {
                     .dependency(lib1, lib2)
                     .build()
             )
-            .disableBuiltInKotlin()
             .create()
 
     @Before
     fun setUp() {
-        // apply kotlin plugin to lib1 project
-        TestFileUtils.appendToFile(
-            project.buildFile,
-            """
-                buildscript {
-                    apply from: "../commonHeader.gradle"  // for kotlinVersion
-                    dependencies {
-                        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${"\$rootProject"}.kotlinVersion"
-                    }
-                }
-            """.trimIndent()
-        )
-        TestFileUtils.searchAndReplace(
-            project.getSubproject(":lib1").buildFile,
-            "apply plugin: 'com.android.library'",
-            """
-                apply plugin: 'com.android.library'
-                apply plugin: 'kotlin-android'
-
-                android {
-                    kotlinOptions {
-                        jvmTarget = JavaVersion.VERSION_11
-                    }
-                }
-            """.trimIndent()
-        )
-
         // Set android.nonTransitiveRClass=true
         TestFileUtils.appendToFile(
             project.gradlePropertiesFile,

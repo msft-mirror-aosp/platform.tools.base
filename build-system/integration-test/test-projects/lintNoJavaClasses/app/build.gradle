@@ -16,7 +16,6 @@
 
 
 apply plugin: 'com.android.application'
-apply plugin: 'kotlin-android'
 
 android {
     namespace = "com.example.android.lint.kotlin"
@@ -35,9 +34,6 @@ android {
         textReport = true
         textOutput = file("lint-results.txt")
         checkOnly 'MissingClass'
-    }
-    kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_11
     }
 }
 
