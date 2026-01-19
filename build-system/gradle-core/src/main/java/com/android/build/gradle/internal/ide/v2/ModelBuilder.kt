@@ -1145,7 +1145,6 @@ class ModelBuilder<ExtensionT : CommonExtension>(
       classesFolders = classesFolders,
       assembleTaskOutputListingFile =
         if (component.componentType.isApk) component.artifacts.get(InternalArtifactType.APK_IDE_REDIRECT_FILE).get().asFile else null,
-      privacySandboxSdkInfo = null,
       desugaredMethodsFiles = getDesugaredMethods(component.services, coreLibDesugaring, component.minSdk, component.global).files.toList(),
       generatedClassPaths = generatedClassPaths,
       bytecodeTransformations = getBytecodeTransformations(component),
