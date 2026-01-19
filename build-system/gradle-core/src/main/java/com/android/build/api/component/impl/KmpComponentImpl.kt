@@ -37,6 +37,7 @@ import com.android.build.api.variant.impl.DirectoryEntries
 import com.android.build.api.variant.impl.DirectoryEntry
 import com.android.build.api.variant.impl.FileBasedDirectoryEntryImpl
 import com.android.build.api.variant.impl.FlatSourceDirectoriesImpl
+import com.android.build.api.variant.impl.KotlinMultiplatformFlatSourceDirectoriesForJavaImpl
 import com.android.build.api.variant.impl.KotlinMultiplatformFlatSourceDirectoriesImpl
 import com.android.build.api.variant.impl.LayeredSourceDirectoriesImpl
 import com.android.build.api.variant.impl.ManifestFilesImpl
@@ -258,7 +259,7 @@ abstract class KmpComponentImpl<DslInfoT : KmpComponentDslInfo>(
 
     override val java =
       if (dslInfo.withJava) {
-        KotlinMultiplatformFlatSourceDirectoriesImpl(
+        KotlinMultiplatformFlatSourceDirectoriesForJavaImpl(
           name = SourceType.JAVA.folder,
           variantServices = variantServices,
           variantDslFilters = PatternSet().also { filter -> filter.include("**/*.java") },
@@ -268,7 +269,7 @@ abstract class KmpComponentImpl<DslInfoT : KmpComponentDslInfo>(
       }
 
     override val kotlin =
-      KotlinMultiplatformFlatSourceDirectoriesImpl(
+      KotlinMultiplatformFlatSourceDirectoriesForJavaImpl(
         name = SourceType.KOTLIN.folder,
         variantServices = variantServices,
         variantDslFilters = PatternSet().also { filter -> filter.include("**/*.kt", "**/*.kts") },

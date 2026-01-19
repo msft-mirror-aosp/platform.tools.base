@@ -22,12 +22,12 @@ import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.util.PatternFilterable
 
 /**
- * Specialization of [FlatSourceDirectoriesImpl] for Java source set.
+ * Specialization of [FlatSourceDirectoriesImpl] for Java and Kotlin source set.
  *
  * The KAPT and KSP generators need to be stored in dedicated storage so we can provide all user's source generated folders without creating
  * a circular dependency.
  */
-class FlatSourceDirectoriesForJavaImpl(name: String, variantServices: VariantServices, variantDslFilters: PatternFilterable?) :
+open class FlatSourceDirectoriesForJavaImpl(name: String, variantServices: VariantServices, variantDslFilters: PatternFilterable?) :
   FlatSourceDirectoriesImpl(name, variantServices, variantDslFilters) {
 
   /**
