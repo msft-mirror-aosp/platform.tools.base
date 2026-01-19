@@ -23,8 +23,11 @@ import com.android.flags.overrides.PropertyOverrides;
 
 import org.jetbrains.annotations.VisibleForTesting;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -101,8 +104,8 @@ public final class Flags {
     @VisibleForTesting
     public Flags(FlagValueProvider... immutableOverrides) {
         this(
-                new InMemoryFlagValueContainer(),
-                new InMemoryFlagValueContainer(),
+                new InMemoryFlagValueContainer("fileBasedDefault"),
+                new InMemoryFlagValueContainer("user_overrides"),
                 immutableOverrides);
     }
 
@@ -173,5 +176,66 @@ public final class Flags {
         for (Flag<?> flag : registeredFlags.values()) {
             flag.validate();
         }
+    }
+
+    /**
+     * Useful for debugging, reflects the getValue implementation, but keeping shadowed overrides,
+     * and also recording the source of the override.
+     */
+    public String toString() {
+        return toString("Flags");
+    }
+
+    public String toString(String name) {
+        // Map of override source -> (map of flag to overridden value)
+        Map<FlagValueProvider, Map<Flag<?>, String>> overrides = new HashMap<>();
+        for (Flag<?> flag : registeredFlags.values()) {
+            String flagValue = userOverrides.get(flag);
+            if (flagValue != null) {
+                overrides
+                        .computeIfAbsent(userOverrides, item -> new HashMap<>())
+                        .put(flag, flagValue);
+            }
+            for (FlagValueProvider flagOverrides : fallbackProviders) {
+                flagValue = flagOverrides.get(flag);
+                if (flagValue != null) {
+                    overrides
+                            .computeIfAbsent(flagOverrides, item -> new HashMap<>())
+                            .put(flag, flagValue);
+                }
+            }
+        }
+
+        if (overrides.values().stream().allMatch(Map::isEmpty)) {
+            return name + ": No current overrides";
+        }
+
+        StringBuilder builder = new StringBuilder(name).append(" with current overrides:");
+        Map<Flag<?>, FlagValueProvider> seen = new HashMap<>();
+
+        List<FlagValueProvider> displayOrder = new ArrayList<>();
+        displayOrder.add(userOverrides);
+        Collections.addAll(displayOrder, fallbackProviders);
+
+        for (FlagValueProvider valueProvider : displayOrder) {
+            builder.append("\n  ").append(valueProvider.toString()).append(":");
+            Map<Flag<?>, String> thisProvidersOverrides = overrides.get(valueProvider);
+            if (thisProvidersOverrides == null) continue;
+            for (Flag<?> flag :
+                    thisProvidersOverrides.keySet().stream()
+                            .sorted(Comparator.comparing(Flag::getId))
+                            .toList()) {
+                builder.append("\n    ");
+                FlagValueProvider overriddenBy = seen.putIfAbsent(flag, valueProvider);
+                if (overriddenBy != null) {
+                    builder.append("(");
+                }
+                builder.append(flag.getId()).append("=").append(thisProvidersOverrides.get(flag));
+                if (overriddenBy != null) {
+                    builder.append(" overridden above by ").append(overriddenBy).append(")");
+                }
+            }
+        }
+        return builder.toString();
     }
 }

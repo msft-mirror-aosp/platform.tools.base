@@ -9,7 +9,7 @@ import org.junit.Test;
 public class FlagValueContainerTest {
     @Test
     public void testAddingAndRemovingOverrides() throws Exception {
-        FlagValueContainer flagOverrides = new InMemoryFlagValueContainer();
+        FlagValueContainer flagOverrides = new InMemoryFlagValueContainer("test");
 
         Flags flags = new Flags(flagOverrides);
         FlagGroup group = new FlagGroup(flags, "test", "Dummy");
@@ -30,5 +30,6 @@ public class FlagValueContainerTest {
 
         flagOverrides.remove(flagB);
         assertThat(flagOverrides.get(flagB)).isNull();
+        assertThat(flagOverrides.toString()).isEqualTo("InMemoryFlagValueContainer(test)");
     }
 }
