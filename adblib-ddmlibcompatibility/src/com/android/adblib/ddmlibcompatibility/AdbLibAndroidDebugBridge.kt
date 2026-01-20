@@ -44,7 +44,6 @@ import com.android.ddmlib.Log
 import com.android.ddmlib.TimeoutRemainder
 import com.android.ddmlib.clientmanager.ClientManager
 import com.android.ddmlib.idevicemanager.IDeviceManager
-import com.android.ddmlib.idevicemanager.IDeviceManagerFactory
 import com.google.common.base.Preconditions
 import com.google.common.base.Throwables
 import com.google.common.collect.ImmutableMap
@@ -125,12 +124,6 @@ class AdbLibAndroidDebugBridge(
     /** Don't automatically manage ADB server.  */
     private var isUserManagedAdbMode: Boolean = false
 
-    private var isClientSupport: Boolean = false
-
-    private var clientManager: ClientManager? = null
-
-    private var iDeviceManagerFactory: IDeviceManagerFactory? = null
-
     private var iDeviceUsageTracker: IDeviceUsageTracker? = null
 
     private var adbEnvVars: Map<String, String> = emptyMap()
@@ -178,25 +171,10 @@ class AdbLibAndroidDebugBridge(
                     !initialized, "AndroidDebugBridge.init() has already been called."
                 )
                 initialized = true
-                iDeviceManagerFactory = options.iDeviceManagerFactory
                 iDeviceUsageTracker = options.iDeviceUsageTracker
                 adbDelegateUsageTracker = options.adbDelegateUsageTracker
-                isClientSupport = options.clientSupport
-                clientManager = options.clientManager
-                if (clientManager != null) {
-                    // A custom client manager is not compatible with "client support"
-                    isClientSupport = false
-                }
-                if (iDeviceManagerFactory != null) {
-                    // A custom "IDevice" manager is not compatible with a "Client" manager
-                    clientManager = null
-                    isClientSupport = false
-                }
                 adbEnvVars = options.adbEnvVars
                 isUserManagedAdbMode = options.userManagedAdbMode
-                DdmPreferences.enableJdwpProxyService(options.useJdwpProxyService)
-                DdmPreferences.enableDdmlibCommandService(options.useDdmlibCommandService)
-                DdmPreferences.setsJdwpMaxPacketSize(options.maxJdwpPacketSize)
 
                 // Determine port and instantiate socket address.
                 initAdbPort(options.userManagedAdbPort)
@@ -229,15 +207,11 @@ class AdbLibAndroidDebugBridge(
     }
 
     override fun getClientSupport(): Boolean {
-        return logUsage(AdbDelegateUsageTracker.Method.GET_CLIENT_SUPPORT) {
-            isClientSupport
-        }
+        unsupportedMethod()
     }
 
     override fun getClientManager(): ClientManager? {
-        return logUsage(AdbDelegateUsageTracker.Method.GET_CLIENT_MANAGER) {
-            clientManager
-        }
+        unsupportedMethod()
     }
 
     override fun createBridge(): AndroidDebugBridge? {
