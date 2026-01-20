@@ -2,6 +2,10 @@ module(
     name = "android_studio",
 )
 
+bazel_dep(name = "bazel_features", version = "1.4.1", repo_name = "io_bazel_rules_go_bazel_features")
+version = use_extension("@io_bazel_rules_go_bazel_features//private:extensions.bzl", "version_extension")
+use_repo(version, "bazel_features_globals", "bazel_features_version")
+
 bazel_dep(name = "platforms", version = "0.0.10")
 bazel_dep(name = "zlib", version = "1.3.1.bcr.5")
 single_version_override(
@@ -27,7 +31,7 @@ single_version_override(
     patch_strip = 1,
 )
 bazel_dep(name = "rules_jvm_external", version = "6.8")
-bazel_dep(name = "rules_java", version = "8.6.3")
+bazel_dep(name = "rules_java", version = "8.13.0")
 bazel_dep(name = "rules_pkg", version = "1.0.1")
 compat = use_extension("@rules_java//java:rules_java_deps.bzl", "compatibility_proxy")
 use_repo(compat, "compatibility_proxy")
@@ -63,15 +67,17 @@ bazel_dep(name = "protoc-gen-validate", version = "1.0.4.bcr.2")
 bazel_dep(name = "abseil-py", version = "2.1.0", repo_name = "absl-py")
 bazel_dep(name = "abseil-cpp", version = "20250127.0", repo_name = "com_google_absl")
 
-bazel_dep(name = "rules_android", version = "0.6.0")
+bazel_dep(name = "rules_android", version = "0.6.5")
 single_version_override(
     module_name = "rules_android",
-    version = "0.6.0",
+    version = "0.6.5",
     patches = [
         # Disables ImportDepsChecker for //prebuilts/tools/common/m2:androidx-monitor
         # See https://github.com/bazelbuild/rules_android/issues/332
         "//tools/base/bazel/bzlmod:rules_android_aar_import_fallback.patch",
-        "//tools/base/bazel/bzlmod:rules_android_fix_maven_lock_file.patch",
+        # Lock maven_install so rules_android does not call out to coursier for
+        # maven resolution.
+        "//tools/base/bazel/bzlmod:rules_android_lock_maven_install.patch",
     ],
     patch_strip = 1,
 )
