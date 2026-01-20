@@ -26,9 +26,9 @@ intellij.remote_platform(
 )
 intellij.remote_platform(
     name = "intellij_ce_2025_2",
-    sha256 = "fc76fe8b6693b18d5d7385bb005f415287dbd5897b313287b9ef56dd0df9d5bd",
-    top_level_dir = "idea-IC-252.25557.131",
-    url = "https://download.jetbrains.com/idea/ideaIC-2025.2.1.tar.gz",
+    sha256 = "3c152de654fa948e12e5fba4c04ed0200e472556a8081ddc2d4c22e5831d6020",
+    top_level_dir = "idea-IC-252.27397.103",
+    url = "https://download.jetbrains.com/idea/ideaIC-2025.2.4.tar.gz",
 )
 intellij.remote_platform(
     name = "intellij_2025_3",
