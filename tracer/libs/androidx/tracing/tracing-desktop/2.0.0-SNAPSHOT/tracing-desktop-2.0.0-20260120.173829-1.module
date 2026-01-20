@@ -1,9 +1,9 @@
 {
   "formatVersion": "1.1",
   "component": {
-    "url": "../../tracing-wire/2.0.0-SNAPSHOT/tracing-wire-2.0.0-SNAPSHOT.module",
+    "url": "../../tracing/2.0.0-SNAPSHOT/tracing-2.0.0-SNAPSHOT.module",
     "group": "androidx.tracing",
-    "module": "tracing-wire",
+    "module": "tracing",
     "version": "2.0.0-SNAPSHOT",
     "attributes": {
       "org.gradle.status": "integration"
@@ -34,20 +34,6 @@
           }
         },
         {
-          "group": "androidx.tracing",
-          "module": "tracing",
-          "version": {
-            "requires": "2.0.0-SNAPSHOT"
-          }
-        },
-        {
-          "group": "com.squareup.wire",
-          "module": "wire-runtime",
-          "version": {
-            "requires": "5.4.0"
-          }
-        },
-        {
           "group": "org.jetbrains.kotlin",
           "module": "kotlin-stdlib",
           "version": {
@@ -65,30 +51,30 @@
       "dependencyConstraints": [
         {
           "group": "androidx.tracing",
-          "module": "tracing",
-          "version": {
-            "requires": "2.0.0-SNAPSHOT"
-          },
-          "reason": "tracing-wire is in atomic group androidx.tracing"
-        },
-        {
-          "group": "androidx.tracing",
           "module": "tracing-ktx",
           "version": {
             "requires": "2.0.0-SNAPSHOT"
           },
-          "reason": "tracing-wire is in atomic group androidx.tracing"
+          "reason": "tracing is in atomic group androidx.tracing"
+        },
+        {
+          "group": "androidx.tracing",
+          "module": "tracing-wire",
+          "version": {
+            "requires": "2.0.0-SNAPSHOT"
+          },
+          "reason": "tracing is in atomic group androidx.tracing"
         }
       ],
       "files": [
         {
-          "name": "tracing-wire-desktop-2.0.0-SNAPSHOT.jar",
-          "url": "tracing-wire-desktop-2.0.0-SNAPSHOT.jar",
-          "size": 154651,
-          "sha512": "7d0ce0e2257045ec1dd13f8d422c888bb451fed7ffb302ebff56e537c461fa122f821fce4d476a3e3023fb46e9b79ecafb51ecb34fa30cb04fdaf8bfbdae3d85",
-          "sha256": "530bf9c17d05e018704aced19b4859c81e6d3edb832ac1fc67f26ca2455ea5ba",
-          "sha1": "ba61373db27752ee21d86f4100d81891fdcfc272",
-          "md5": "b3daa3bb081ab081051ade963d5afebe"
+          "name": "tracing-desktop-2.0.0-SNAPSHOT.jar",
+          "url": "tracing-desktop-2.0.0-SNAPSHOT.jar",
+          "size": 115020,
+          "sha512": "0c902064fa4f3f71168ec5e58580381cbadfbc8821497c25103e4ad73c4256eff365292ff569d664339f48b26c024b33e06460d8c4f6da4494c428fdef85c3db",
+          "sha256": "db53442d64d1ba44fa5dd7eed2bd76c47df7f7628e00ea20e9a316fdc35d2f5e",
+          "sha1": "9d9c2d5463230f47acfcc471d30c43b693f30254",
+          "md5": "bdede74754307fbc9ab82f216c0a55cd"
         }
       ]
     },
@@ -110,24 +96,10 @@
           }
         },
         {
-          "group": "androidx.tracing",
-          "module": "tracing",
+          "group": "androidx.collection",
+          "module": "collection",
           "version": {
-            "requires": "2.0.0-SNAPSHOT"
-          }
-        },
-        {
-          "group": "com.squareup.okio",
-          "module": "okio",
-          "version": {
-            "requires": "3.9.1"
-          }
-        },
-        {
-          "group": "com.squareup.wire",
-          "module": "wire-runtime",
-          "version": {
-            "requires": "5.4.0"
+            "requires": "1.4.5"
           }
         },
         {
@@ -148,30 +120,30 @@
       "dependencyConstraints": [
         {
           "group": "androidx.tracing",
-          "module": "tracing",
-          "version": {
-            "requires": "2.0.0-SNAPSHOT"
-          },
-          "reason": "tracing-wire is in atomic group androidx.tracing"
-        },
-        {
-          "group": "androidx.tracing",
           "module": "tracing-ktx",
           "version": {
             "requires": "2.0.0-SNAPSHOT"
           },
-          "reason": "tracing-wire is in atomic group androidx.tracing"
+          "reason": "tracing is in atomic group androidx.tracing"
+        },
+        {
+          "group": "androidx.tracing",
+          "module": "tracing-wire",
+          "version": {
+            "requires": "2.0.0-SNAPSHOT"
+          },
+          "reason": "tracing is in atomic group androidx.tracing"
         }
       ],
       "files": [
         {
-          "name": "tracing-wire-desktop-2.0.0-SNAPSHOT.jar",
-          "url": "tracing-wire-desktop-2.0.0-SNAPSHOT.jar",
-          "size": 154651,
-          "sha512": "7d0ce0e2257045ec1dd13f8d422c888bb451fed7ffb302ebff56e537c461fa122f821fce4d476a3e3023fb46e9b79ecafb51ecb34fa30cb04fdaf8bfbdae3d85",
-          "sha256": "530bf9c17d05e018704aced19b4859c81e6d3edb832ac1fc67f26ca2455ea5ba",
-          "sha1": "ba61373db27752ee21d86f4100d81891fdcfc272",
-          "md5": "b3daa3bb081ab081051ade963d5afebe"
+          "name": "tracing-desktop-2.0.0-SNAPSHOT.jar",
+          "url": "tracing-desktop-2.0.0-SNAPSHOT.jar",
+          "size": 115020,
+          "sha512": "0c902064fa4f3f71168ec5e58580381cbadfbc8821497c25103e4ad73c4256eff365292ff569d664339f48b26c024b33e06460d8c4f6da4494c428fdef85c3db",
+          "sha256": "db53442d64d1ba44fa5dd7eed2bd76c47df7f7628e00ea20e9a316fdc35d2f5e",
+          "sha1": "9d9c2d5463230f47acfcc471d30c43b693f30254",
+          "md5": "bdede74754307fbc9ab82f216c0a55cd"
         }
       ]
     },
@@ -189,30 +161,30 @@
       "dependencyConstraints": [
         {
           "group": "androidx.tracing",
-          "module": "tracing",
-          "version": {
-            "requires": "2.0.0-SNAPSHOT"
-          },
-          "reason": "tracing-wire is in atomic group androidx.tracing"
-        },
-        {
-          "group": "androidx.tracing",
           "module": "tracing-ktx",
           "version": {
             "requires": "2.0.0-SNAPSHOT"
           },
-          "reason": "tracing-wire is in atomic group androidx.tracing"
+          "reason": "tracing is in atomic group androidx.tracing"
+        },
+        {
+          "group": "androidx.tracing",
+          "module": "tracing-wire",
+          "version": {
+            "requires": "2.0.0-SNAPSHOT"
+          },
+          "reason": "tracing is in atomic group androidx.tracing"
         }
       ],
       "files": [
         {
-          "name": "tracing-wire-desktop-2.0.0-SNAPSHOT-sources.jar",
-          "url": "tracing-wire-desktop-2.0.0-SNAPSHOT-sources.jar",
-          "size": 45331,
-          "sha512": "97849f85131148f31022e3a796a4880e5e3e7a18ea1b0be7cbc973fc1caa007f13e2e8fa748f547e8cf8efd2806d239265f4b652d21ca3ce884c73b6b627d869",
-          "sha256": "39cc6239769954a34559007e645c56fdaca6d5d41376213d6d70e2ba3e4bf78c",
-          "sha1": "4606874965ae97ce294e6e009f1dda95b5126113",
-          "md5": "d5c1d51d7bfbab4eb137ea8ada44c61a"
+          "name": "tracing-desktop-2.0.0-SNAPSHOT-sources.jar",
+          "url": "tracing-desktop-2.0.0-SNAPSHOT-sources.jar",
+          "size": 56924,
+          "sha512": "05b81c064c09bca4331b8b572db700c7679d6b79b52427d113447318d150c1701a51740945d79fee9ca6c14805b6e69ab1a8c5cd3d69e0ca02cee542e4764994",
+          "sha256": "ed84eb191d1f9125f6eee48f64fed5f6f2e55adbdae34508ff1137de0c3fc85f",
+          "sha1": "9c67916296e7fad56e8cd39254653bacf68925f2",
+          "md5": "2b974ddb1e5a74c65c1b534c7539c671"
         }
       ]
     }
