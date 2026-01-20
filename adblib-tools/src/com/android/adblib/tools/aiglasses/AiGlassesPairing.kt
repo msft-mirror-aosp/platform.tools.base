@@ -237,8 +237,18 @@ class AiGlassesPairing(val session: AdbSession) {
     // Max time to retry polling if it fails (returns null) continuously
     private val POLLING_TIMEOUT = 30.seconds
 
+    // All possible terminal states for the pairing process
     val TERMINAL_STATES =
-      setOf("ERROR", "PAIRED", "POLLING_FAILED", "UI_CDM_FAILED", "WORKER_BOND_FAILED", "WORKER_CONNECTION_FAILED", "WORKER_CANCELLED")
+      setOf(
+        "ERROR",
+        "PAIRED",
+        "POLLING_FAILED",
+        "UI_CDM_ASSOCIATION_FAILED",
+        "WORKER_BOND_FAILED",
+        "WORKER_CONNECTION_FAILED",
+        "WORKER_GLASSES_CORE_CONNECTION_FAILED",
+        "WORKER_CANCELLED",
+      )
   }
 }
 
