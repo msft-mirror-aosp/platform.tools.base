@@ -193,7 +193,7 @@ class ManagedDeviceInstrumentationTestSetupTaskTest {
         assertThat(error.message).isEqualTo(
             """
                 ARM translation is not available for x86 system images.
-                An x86 image was selected as the image was available for the
+                An x86 image was selected because the image was available for the
                 given sdkVersion and require64Bit = false for someDeviceName.
                 This configuration may be intentional as someDeviceName may be configured for
                 testing on a different machine.
@@ -217,14 +217,14 @@ class ManagedDeviceInstrumentationTestSetupTaskTest {
 
         assertThat(wrongSourceError.message).isEqualTo(
             """
-                ARM translation is only available for google apis or playstore images
-                with an api level of 30 or higher.
+                ARM translation is only available for Google APIs or Play Store images
+                with an API level of 30 or higher.
                 someDeviceName has a systemImageSource = "google-atd"
                 and sdkVersion = 35
                 This may be intentional as someDeviceName may be configured for
                 testing on an ARM system and not an x86_64 system.
-                If ARM is not the intended abi for this device, set testedAbi = "x86_64"
-                If Ndk Translation is intended for this device, set
+                If ARM is not the intended ABI for this device, set testedAbi = "x86_64"
+                If NDK translation is intended for this device, set
                 systemImageSource = "google" and set the sdkVersion to 30 or higher.
             """.trimIndent()
         )
@@ -239,14 +239,14 @@ class ManagedDeviceInstrumentationTestSetupTaskTest {
 
         assertThat(wrongSdkVersionError.message).isEqualTo(
             """
-                ARM translation is only available for google apis or playstore images
-                with an api level of 30 or higher.
+                ARM translation is only available for Google APIs or Play Store images
+                with an API level of 30 or higher.
                 someDeviceName has a systemImageSource = "google"
                 and sdkVersion = 29
                 This may be intentional as someDeviceName may be configured for
                 testing on an ARM system and not an x86_64 system.
-                If ARM is not the intended abi for this device, set testedAbi = "x86_64"
-                If Ndk Translation is intended for this device, set
+                If ARM is not the intended ABI for this device, set testedAbi = "x86_64"
+                If NDK translation is intended for this device, set
                 systemImageSource = "google" and set the sdkVersion to 30 or higher.
             """.trimIndent()
         )
@@ -284,12 +284,12 @@ class ManagedDeviceInstrumentationTestSetupTaskTest {
 
         verify(task.logger).warn(
             """
-                someDeviceName has an unspecified testedAbi. This presently defaults to
-                "x86_64". However, in 9.0 this will change to "arm64-v8a"
+                The device "someDeviceName" does not specify a "testedAbi".
+                This currently defaults to "x86_64", but will change to "arm64-v8a" in AGP 10.0.
 
-                This device will use NDK translation for native code during testing. To continue
-                running tests using the current configuration and not use NDK translation,
-                set testedAbi = "x86_64"
+                In AGP 10.0, this device will rely on NDK translation to run tests.
+                To keep the current behavior (avoiding NDK translation),
+                explicitly set the ABI: testedAbi = "x86_64"
             """.trimIndent()
         )
 
@@ -301,14 +301,14 @@ class ManagedDeviceInstrumentationTestSetupTaskTest {
 
         verify(task.logger).warn(
             """
-                someDeviceName has an unspecified testedAbi. This presently defaults to
-                "x86_64". However, in 9.0 this will change to "arm64-v8a"
+                The device "someDeviceName" does not specify a "testedAbi".
+                This currently defaults to "x86_64", but will change to "arm64-v8a" in AGP 10.0.
 
-                someDeviceName specifies a system image that that does not support NDK translation,
-                and will no longer be able to run tests in this environment. This
-                device will wtill be able to run on ARM machines.
-                To continue running tests with the current configuration, and not use
-                NDK translation set testedAbi = "x86_64"
+                The system image configured for "someDeviceName" does not support NDK translation,
+                so it will be unable to run tests built for "arm64-v8a".
+
+                To keep the current behavior and prevent test failures in AGP 10.0,
+                explicitly set the ABI: testedAbi = "x86_64"
             """.trimIndent()
         )
 
