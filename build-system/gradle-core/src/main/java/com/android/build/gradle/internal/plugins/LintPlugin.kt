@@ -51,6 +51,7 @@ import com.android.build.gradle.internal.profile.NoOpAnalyticsService
 import com.android.build.gradle.internal.projectIsolationActive
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
 import com.android.build.gradle.internal.publishing.getAttributes
+import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.scope.InternalMultipleArtifactType
 import com.android.build.gradle.internal.scope.InternalMultipleArtifactType.LINT_REPORT_LINT_MODEL
 import com.android.build.gradle.internal.scope.InternalMultipleArtifactType.LINT_VITAL_REPORT_LINT_MODEL
@@ -279,11 +280,16 @@ abstract class LintPlugin : Plugin<Project> {
                     it,
                     artifacts
                 )
-                AndroidLintTask.SingleVariantCreationAction.registerLintReportArtifacts(
+                AndroidLintTask.VariantCreationAction.registerLintReportArtifacts(
                     it,
                     artifacts,
                     null,
-                    projectServices.projectInfo.buildDirectory.dir("reports")
+                    projectServices.projectInfo.buildDirectory.dir("reports"),
+                    "lint-results",
+                    InternalArtifactType.LINT_TEXT_REPORT,
+                    InternalArtifactType.LINT_HTML_REPORT,
+                    InternalArtifactType.LINT_XML_REPORT,
+                    InternalArtifactType.LINT_SARIF_REPORT
                 )
             }
 
