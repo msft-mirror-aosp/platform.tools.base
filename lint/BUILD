@@ -162,6 +162,8 @@ iml_module(
     name = "studio.android.sdktools.lint-checks",
     srcs = ["libs/lint-checks/src/main/java"],
     iml_files = ["libs/lint-checks/android.sdktools.lint-checks.iml"],
+    # b/477302340 - Fix BoxedPrimitiveEquality errors.
+    javacopts = ["-Xep:BoxedPrimitiveEquality:OFF"],
     lint_baseline = "libs/lint-checks/lint_baseline.xml",
     resources = ["libs/lint-checks/src/main/resources"],
     visibility = ["//visibility:public"],
@@ -185,6 +187,8 @@ maven_library(
     ]),
     coordinates = "com.android.tools.lint:lint-checks",
     description = "Checks for Android Lint",
+    # b/477302340 - Fix BoxedPrimitiveEquality errors.
+    javacopts = ["-Xep:BoxedPrimitiveEquality:OFF"],
     kotlinc_opts = [
         # Needed to use the Kotlin K2 analysis API (b/308454624)
         "-Xcontext-receivers",
@@ -354,6 +358,8 @@ iml_module(
     name = "studio.android.sdktools.lint.studio-checks",
     srcs = ["studio-checks/src/main/java"],
     iml_files = ["studio-checks/android.sdktools.lint.studio-checks.iml"],
+    # b/477302340 - Fix BoxedPrimitiveEquality errors.
+    javacopts = ["-Xep:BoxedPrimitiveEquality:OFF"],
     visibility = ["//visibility:public"],
     # do not sort: must match IML order
     deps = [
