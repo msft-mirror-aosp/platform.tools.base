@@ -392,7 +392,7 @@ const SourceViewApp = {
                     <div>${headerTitle}</div>
                     <div class="flex items-baseline gap-2 mt-1">
                         <span class="font-bold ${colorClass}">${percent}%</span>
-                        <span class="text-xs text-gray-500 font-normal">${covered}/${total} Instructions</span>
+                        <span class="text-xs text-gray-500 font-normal">${covered}/${total} Lines</span>
                     </div>
                 </div>
                 <div class="code-container">
