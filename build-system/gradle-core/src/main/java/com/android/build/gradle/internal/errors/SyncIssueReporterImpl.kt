@@ -33,6 +33,7 @@ import org.gradle.api.logging.Logger
 import org.gradle.api.logging.Logging
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
+import org.gradle.api.provider.SetProperty
 import org.gradle.api.services.BuildService
 import org.gradle.api.services.BuildServiceParameters
 import javax.annotation.concurrent.GuardedBy
@@ -41,7 +42,8 @@ class SyncIssueReporterImpl(
     private val mode: EvaluationMode,
     errorFormatMode: ErrorFormatMode,
     logger: Logger,
-    private val problemReporter: AndroidProblemsReporter
+    private val problemReporter: AndroidProblemsReporter,
+    private val suppressedSyncIssues: Set<String> = emptySet()
 ) : SyncIssueReporter() {
 
     @GuardedBy("this")
@@ -101,6 +103,9 @@ class SyncIssueReporterImpl(
             severity: Severity,
             exception: EvalIssueException) {
         val issue = SyncIssueImpl(type, severity, exception)
+        if (severity == Severity.WARNING && suppressedSyncIssues.contains(type.name)){
+            return
+        }
         if (syncIssueKeyFrom(issue) !in _syncIssues) {
             problemReporter.reportSyncIssue(type, severity, exception)
         }
@@ -140,13 +145,15 @@ class SyncIssueReporterImpl(
             val mode: Property<EvaluationMode>
             val errorFormatMode: Property<ErrorFormatMode>
             val androidProblemReporterProviderService: Property<AndroidProblemReporterProvider>
+            val suppressedSyncIssues: SetProperty<String>
         }
 
         private val reporter = SyncIssueReporterImpl(
             parameters.mode.get(),
             parameters.errorFormatMode.get(),
             Logging.getLogger(GlobalSyncIssueService::class.java),
-            parameters.androidProblemReporterProviderService.get().reporter()
+            parameters.androidProblemReporterProviderService.get().reporter(),
+            parameters.suppressedSyncIssues.get()
         )
 
         /**
@@ -171,7 +178,8 @@ class SyncIssueReporterImpl(
             project: Project,
             private val evaluationMode: EvaluationMode,
             private val errorFormatMode: ErrorFormatMode,
-            private val androidProblemReporterProviderService: Provider<AndroidProblemReporterProvider>
+            private val androidProblemReporterProviderService: Provider<AndroidProblemReporterProvider>,
+            private val suppressedSyncIssues: Set<String> = emptySet()
         ) : ServiceRegistrationAction<GlobalSyncIssueService, Parameters>(
             project,
             GlobalSyncIssueService::class.java
@@ -181,6 +189,7 @@ class SyncIssueReporterImpl(
                 parameters.mode.set(evaluationMode)
                 parameters.errorFormatMode.set(errorFormatMode)
                 parameters.androidProblemReporterProviderService.set(androidProblemReporterProviderService)
+                parameters.suppressedSyncIssues.set(suppressedSyncIssues)
             }
         }
     }

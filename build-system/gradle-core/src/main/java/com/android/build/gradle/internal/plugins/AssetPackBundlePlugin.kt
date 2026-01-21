@@ -94,7 +94,8 @@ abstract class AssetPackBundlePlugin : Plugin<Project> {
             SyncOptions.getModelQueryMode(projectOptions),
             SyncOptions.getErrorFormatMode(projectOptions),
             project.logger,
-            androidProblemsReporter
+            androidProblemsReporter,
+            SyncOptions.getSyncWarningSuppression(projectOptions)
         )
 
         val deprecationReporter =
@@ -157,8 +158,8 @@ abstract class AssetPackBundlePlugin : Plugin<Project> {
             project,
             SyncOptions.getModelQueryMode(projectOptions),
             SyncOptions.getErrorFormatMode(projectOptions),
-            AndroidProblemReporterProvider.RegistrationAction(project, projectOptions)
-                .execute()
+            AndroidProblemReporterProvider.RegistrationAction(project, projectOptions).execute(),
+            SyncOptions.getSyncWarningSuppression(projectOptions)
         )
             .execute()
         AndroidLocationsBuildService.RegistrationAction(project).execute()

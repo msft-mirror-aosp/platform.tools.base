@@ -904,7 +904,8 @@ abstract class LintPlugin : Plugin<Project> {
                         SyncOptions.getModelQueryMode(projectOptions),
                         SyncOptions.getErrorFormatMode(projectOptions),
                         logger,
-                        androidProblemsReporter
+                        androidProblemsReporter,
+                        SyncOptions.getSyncWarningSuppression(projectOptions)
                 )
         val deprecationReporter =
             DeprecationReporterImpl(syncIssueReporter, projectOptions, projectPath)
@@ -976,8 +977,8 @@ abstract class LintPlugin : Plugin<Project> {
                 project,
                 SyncOptions.getModelQueryMode(projectServices.projectOptions),
                 SyncOptions.getErrorFormatMode(projectServices.projectOptions),
-                androidProblemReporterProvider
-
+                androidProblemReporterProvider,
+                SyncOptions.getSyncWarningSuppression(projectServices.projectOptions)
         ).execute()
 
         AndroidLocationsBuildService.RegistrationAction(project).execute()

@@ -164,6 +164,14 @@ enum class StringOption(
      */
     TEST_SUITE_TEST_TASK_ADDITIONAL_INPUTS_FILE("android.testSuite.testTaskAdditionalInputsFile", ApiStage.Experimental),
 
+    /**
+     * A comma-separated list of AGP sync warning IDs that should be suppressed.
+     *
+     * When specified, warnings matching these IDs will not be reported during sync.
+     * e.g. android.sync.suppressAgpWarnings=GENERIC,DEPRECATED_DSL
+     */
+    SUPPRESS_AGP_SYNC_WARNINGS("android.sync.suppressAgpWarnings", ApiStage.Experimental),
+
     /* ---------------
      * DEPRECATED APIs
      */

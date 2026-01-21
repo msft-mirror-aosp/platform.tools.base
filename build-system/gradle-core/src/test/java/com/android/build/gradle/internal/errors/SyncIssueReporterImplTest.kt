@@ -19,11 +19,13 @@ package com.android.build.gradle.internal.errors
 import com.android.build.gradle.internal.fixtures.FakeAndroidProblemsReporter
 import com.android.build.gradle.internal.fixtures.FakeAndroidProblemsReporter.ReportedIssue
 import com.android.build.gradle.internal.fixtures.FakeGradleProperty
+import com.android.build.gradle.internal.fixtures.FakeObjectFactory
 import com.android.build.gradle.options.SyncOptions
 import com.android.builder.errors.EvalIssueException
 import com.android.builder.errors.IssueReporter
 import com.google.common.truth.Truth.assertThat
 import org.gradle.api.provider.Property
+import org.gradle.api.provider.SetProperty
 import org.junit.Before
 import org.junit.Test
 import org.mockito.kotlin.mock
@@ -46,6 +48,9 @@ class SyncIssueReporterImplTest {
                         get() = FakeGradleProperty(SyncOptions.ErrorFormatMode.HUMAN_READABLE)
                     override val androidProblemReporterProviderService: Property<AndroidProblemReporterProvider>
                         get() = FakeGradleProperty(androidProblemsReporterProviderService)
+                    override val suppressedSyncIssues: SetProperty<String>
+                        get() = FakeObjectFactory.factory.setProperty(String::class.java).value(
+                            setOf(Type.GRADLE_TOO_OLD.name))
                 }
             }
         }
@@ -135,5 +140,18 @@ class SyncIssueReporterImplTest {
             ReportedIssue(IssueReporter.Type.BUILD_TOOLS_TOO_LOW, IssueReporter.Severity.ERROR, ""),
             ReportedIssue(IssueReporter.Type.BUILD_TOOLS_TOO_LOW, IssueReporter.Severity.ERROR, "")
         ))
+    }
+
+    @Test
+    fun testIgnoreWarnings() {
+        issueReporter.reportError(IssueReporter.Type.GRADLE_TOO_OLD, RuntimeException("Error 1"))
+        issueReporter.reportWarning(IssueReporter.Type.GRADLE_TOO_OLD, RuntimeException("Warning 1"))
+        issueReporter.reportError(IssueReporter.Type.GENERIC, RuntimeException("Error 2"))
+        issueReporter.reportWarning(IssueReporter.Type.GENERIC, RuntimeException("Warning 2"))
+
+        assertThat(issueReporter.getAllIssuesAndClear().map { it.severity }).containsExactly(
+            IssueReporter.Severity.ERROR.severity, IssueReporter.Severity.ERROR.severity,
+            IssueReporter.Severity.WARNING.severity
+        )
     }
 }

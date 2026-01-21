@@ -85,7 +85,8 @@ abstract class AndroidPluginBaseServices(
                 SyncOptions.getModelQueryMode(optionService.projectOptions),
                 SyncOptions.getErrorFormatMode(optionService.projectOptions),
                 it.logger,
-                androidProblemReporterProviderService.get().reporter()
+                androidProblemReporterProviderService.get().reporter(),
+                SyncOptions.getSyncWarningSuppression(optionService.projectOptions)
             )
         }
     }
@@ -155,7 +156,8 @@ abstract class AndroidPluginBaseServices(
             project,
             SyncOptions.getModelQueryMode(projectOptions),
             SyncOptions.getErrorFormatMode(projectOptions),
-            androidProblemReporterProviderService
+            androidProblemReporterProviderService,
+            SyncOptions.getSyncWarningSuppression(projectOptions)
         ).execute()
 
         registerDependencyCheck(project, projectOptions)
