@@ -42,7 +42,7 @@ class OptimizationCreationConfigImpl(
   private val dslInfo: OptimizationDslInfo,
   private val minifyCodeBuilder: CanMinifyCodeBuilder?,
   private val minifyAndroidResourcesBuilder: CanMinifyAndroidResourcesBuilder?,
-  internalServices: VariantServices,
+  private val internalServices: VariantServices,
   baseModuleMetadata: Provider<ModuleMetadata>? = null,
 ) : OptimizationCreationConfig {
 
@@ -54,10 +54,11 @@ class OptimizationCreationConfigImpl(
           dslInfo.gatherProguardFiles(ProguardFileType.TEST, testProguardFiles)
           it.addAll(testProguardFiles)
         } else {
-          dslInfo.getProguardFiles(it)
+          dslInfo.getProguardFiles(it, dslInfo.optimizationEnabled, includeDefaultRules)
         }
       }
     }
+  override val includeDefaultRules: Boolean = dslInfo.includeDefaultRules
 
   override val consumerProguardFiles: ListProperty<RegularFile> by
     lazy(LazyThreadSafetyMode.NONE) {

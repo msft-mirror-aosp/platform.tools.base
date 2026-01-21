@@ -80,8 +80,14 @@ class OptimizationDslInfoImpl(
   override val includePackages: Set<String>
     get() = if (componentType == BASE_APK) mergedOptimization.packageScope else setOf()
 
+  override val optimizationEnabled: Boolean
+    get() = mergedOptimization.enable
+
   override val keepRuleFiles: Set<File>
     get() = mergedOptimization.keepRuleFiles
+
+  override val includeDefaultRules: Boolean
+    get() = mergedOptimization.includeDefault
 
   override val postProcessingOptions: PostProcessingOptions by lazy {
     object : PostProcessingOptions {

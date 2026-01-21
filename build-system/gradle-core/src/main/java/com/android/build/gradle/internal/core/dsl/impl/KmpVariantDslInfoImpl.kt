@@ -152,6 +152,9 @@ class KmpVariantDslInfoImpl(
     override val ignoreFromAllExternalDependenciesInBaselineProfile: Boolean
       get() = false
 
+    override val includeDefaultRules: Boolean
+      get() = false
+
     override val postProcessingOptions: PostProcessingOptions by lazy {
       object : PostProcessingOptions {
         override fun getDefaultProguardFiles(): List<File> =
@@ -182,6 +185,9 @@ class KmpVariantDslInfoImpl(
       }
     }
     override val applicationOptimizationEnabled: Boolean
+      get() = false
+
+    override val optimizationEnabled: Boolean
       get() = false
 
     override val includePackages: Set<String>

@@ -1386,11 +1386,14 @@ package com.android.build.api.dsl {
 
   @org.gradle.api.Incubating public interface KeepRules {
     method @org.gradle.api.Incubating public org.gradle.api.provider.SetProperty<java.io.File> getFiles();
+    method @org.gradle.api.Incubating public boolean getIncludeDefault();
     method @Deprecated @org.gradle.api.Incubating public void ignoreAllExternalDependencies(boolean ignore);
     method @Deprecated @org.gradle.api.Incubating public void ignoreExternalDependencies(java.lang.String... ids);
     method @org.gradle.api.Incubating public void ignoreFrom(java.lang.String... ids);
     method @org.gradle.api.Incubating public void ignoreFromAllExternalDependencies(boolean ignore);
+    method @org.gradle.api.Incubating public void setIncludeDefault(boolean);
     property @org.gradle.api.Incubating public abstract org.gradle.api.provider.SetProperty<java.io.File> files;
+    property @org.gradle.api.Incubating public abstract boolean includeDefault;
   }
 
   @org.gradle.api.Incubating public interface KmpOptimization {
