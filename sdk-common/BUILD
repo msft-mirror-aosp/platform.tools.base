@@ -11,6 +11,8 @@ iml_module(
     name = "studio.android.sdktools.sdk-common",
     srcs = ["src/main/java"],
     iml_files = ["android.sdktools.sdk-common.iml"],
+    # b/477303448 - Fix BoxedPrimitiveEquality error
+    javacopts = ["-Xep:BoxedPrimitiveEquality:OFF"],
     jvm_target = "8",
     lint_baseline = "lint_baseline.xml",
     resources = ["src/main/resources"],
@@ -76,6 +78,8 @@ maven_library(
     ],
     coordinates = "com.android.tools:sdk-common",
     description = "sdk-common library used by other Android tools libraries.",
+    # b/477303448 - Fix BoxedPrimitiveEquality error
+    javacopts = ["-Xep:BoxedPrimitiveEquality:OFF"],
     module_name = "sdk-common",
     notice = "NOTICE",
     resource_strip_prefix = "tools/base/sdk-common",
