@@ -783,7 +783,7 @@ abstract class AndroidLintTask : NonIncrementalTask() {
             task.lintTool.initialize(creationConfig.services, task)
             if (autoFix) {
                 task.outputs.upToDateWhen {
-                    it.logger.debug("Lint fix task potentially modifies sources so cannot be up-to-date")
+                    it.logger.debug(LINT_FIX_UP_TO_DATE_MESSAGE)
                     false
                 }
             }
@@ -959,7 +959,7 @@ abstract class AndroidLintTask : NonIncrementalTask() {
             autoFix -> {
                 this.textReportToStdOut.setDisallowChanges(true)
                 this.outputs.upToDateWhen {
-                    it.logger.debug("Lint fix task potentially modifies sources so cannot be up-to-date")
+                    it.logger.debug(LINT_FIX_UP_TO_DATE_MESSAGE)
                     false
                 }
             }
@@ -1003,6 +1003,7 @@ abstract class AndroidLintTask : NonIncrementalTask() {
     companion object {
         private const val LINT_PRINT_STACKTRACE_ENVIRONMENT_VARIABLE = "LINT_PRINT_STACKTRACE"
         private const val ANDROID_LINT_JARS_ENVIRONMENT_VARIABLE = "ANDROID_LINT_JARS"
+        private const val LINT_FIX_UP_TO_DATE_MESSAGE = "Lint fix task potentially modifies sources so cannot be up-to-date"
 
         /**
          * Return whether [newBaselineFile] has different content than [originalBaselineFileLines],
