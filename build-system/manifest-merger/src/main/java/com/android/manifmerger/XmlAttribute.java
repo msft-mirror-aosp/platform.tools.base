@@ -19,14 +19,17 @@ package com.android.manifmerger;
 import com.android.SdkConstants;
 import com.android.ide.common.blame.SourceFile;
 import com.android.ide.common.blame.SourcePosition;
+
 import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableSet;
-import java.util.Optional;
+
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.Attr;
+
+import java.util.Optional;
 
 /**
  * Defines an XML attribute inside a {@link XmlElement}.
@@ -324,7 +327,7 @@ public class XmlAttribute extends XmlNode {
         }
 
         // everything else should be merged, duplicates should be eliminated.
-        @NotNull Splitter splitter = Splitter.on(',');
+        @NotNull Splitter splitter = Splitter.on(',').trimResults();
         @NotNull ImmutableSet.Builder<String> targetValues = ImmutableSet.builder();
         targetValues.addAll(splitter.split(higherPriority.getValue()));
         targetValues.addAll(splitter.split(getValue()));
@@ -461,9 +464,9 @@ public class XmlAttribute extends XmlNode {
             error =
                     String.format(
                             "Attribute %1$s value=(%2$s) from %3$s\n"
-                                    + "\tis also present at %4$s value=(%5$s).\n"
-                                    + "\tSuggestion: add 'tools:replace=\"%6$s\"' to <%7$s> element "
-                                    + "at %8$s to override.",
+                                + "\tis also present at %4$s value=(%5$s).\n"
+                                + "\tSuggestion: add 'tools:replace=\"%6$s\"' to <%7$s> element at"
+                                + " %8$s to override.",
                             higherPriority.getId(),
                             higherPriority.getValue(),
                             attributeRecord != null
