@@ -16,6 +16,7 @@ import com.android.build.gradle.internal.tasks.LintModelMetadataTask
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfig
 import com.android.build.gradle.internal.tasks.factory.TaskFactory
 import com.android.build.gradle.internal.utils.createTargetSdkVersion
+import com.android.build.gradle.options.BooleanOption
 import com.android.builder.core.ComponentType
 import com.android.builder.core.ComponentTypeImpl
 import com.android.builder.errors.IssueReporter
@@ -176,8 +177,21 @@ class LintTaskManager(
       }
       val updateLintBaselineTask = taskFactory.register(AndroidLintTask.UpdateBaselineCreationAction(variantWithTests))
       val variantLintTask =
-        taskFactory.register(AndroidLintTask.SingleVariantCreationAction(variantWithTests)).also {
-          it.configure { task -> task.mustRunAfter(updateLintBaselineTask) }
+        if (globalTaskCreationConfig.services.projectOptions.get(BooleanOption.LINT_REPORT_AGGREGATION)) {
+          val localLintReportTask =
+            taskFactory.register(AndroidLintTask.LocalLintReportCreationAction(variantWithTests)).also {
+              it.configure { task -> task.mustRunAfter(updateLintBaselineTask) }
+            }
+          val aggregatedLintReportTask =
+            taskFactory.register(AndroidLintTask.AggregatedLintReportCreationAction(variantWithTests)).also {
+              it.configure { task -> task.mustRunAfter(updateLintBaselineTask) }
+            }
+          variantLintTextOutputTask?.configure { it.dependsOn(aggregatedLintReportTask) }
+          localLintReportTask
+        } else {
+          taskFactory.register(AndroidLintTask.SingleVariantCreationAction(variantWithTests)).also {
+            it.configure { task -> task.mustRunAfter(updateLintBaselineTask) }
+          }
         }
 
       if (needsCopyReportTask) {
