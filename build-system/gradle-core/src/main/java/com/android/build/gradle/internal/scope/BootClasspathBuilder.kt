@@ -87,7 +87,7 @@ object BootClasspathBuilder {
                     )
 
                     // add annotations.jar if needed.
-                    if (target.apiLevel <= 15) {
+                    if (target.androidApiLevel.majorVersion <= 15) {
                         files.add(annotationsJar.flatMap { it: File ->
                             services.projectInfo.buildDirectory.file(it.absolutePath)
                         })
