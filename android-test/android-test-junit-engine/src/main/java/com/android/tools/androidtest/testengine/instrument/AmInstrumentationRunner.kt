@@ -14,13 +14,12 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.internal.testing.androidtest.instrument
+package com.android.tools.androidtest.testengine.instrument
 
 import com.android.utils.GrabProcessOutput
-import org.gradle.api.logging.Logger
-import org.gradle.api.logging.Logging
 import java.io.File
 import java.util.concurrent.TimeUnit
+import java.util.logging.Logger
 
 /**
  * Executes Android instrumentation tests on a given device via the `am instrument` command.
@@ -33,6 +32,7 @@ import java.util.concurrent.TimeUnit
  * @param instrumentationRunnerClass The fully qualified name of the instrumentation runner
  * (e.g., `androidx.test.runner.AndroidJUnitRunner`).
  * @param instrumentationTargetPackageId The package ID of the application to be instrumented.
+ * @param listeners A set of [AmInstrumentationListener]s to receive test events.
  * @param logger An optional [Logger] for recording command outputs and warnings.
  * @param processBuilder A factory for creating [ProcessBuilder] instances, primarily
  * exposed for testing purposes to allow mocking of process execution.
@@ -42,7 +42,8 @@ class AmInstrumentationRunner(
   private val deviceSerial: String,
   private val instrumentationRunnerClass: String,
   private val instrumentationTargetPackageId: String,
-  private val logger: Logger = Logging.getLogger(AmInstrumentationRunner::class.java),
+  private val listeners: Set<AmInstrumentationListener> = emptySet(),
+  private val logger: Logger = Logger.getLogger(AmInstrumentationRunner::class.java.name),
   private val processBuilder: (command: List<String>) -> ProcessBuilder = { ProcessBuilder(it) }
 ) {
 
@@ -56,10 +57,10 @@ class AmInstrumentationRunner(
   fun runAmInstrumentCommand() {
     val command = getAmInstrumentCmd()
     val process = processBuilder(command).start()
-    val parser = AmInstrumentationParser()
+    val parser = AmInstrumentationParser(listeners = listeners)
     val handler = object: GrabProcessOutput.IProcessOutput {
       override fun out(line: String?) { line?.let { parser.parse(it) } }
-      override fun err(line: String?) { line?.let { logger.warn(line) } }
+      override fun err(line: String?) { line?.let { logger.warning(line) } }
     }
 
     GrabProcessOutput.grabProcessOutput(

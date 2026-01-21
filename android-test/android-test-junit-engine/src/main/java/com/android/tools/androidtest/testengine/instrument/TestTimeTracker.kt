@@ -14,18 +14,17 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.internal.testing.androidtest.instrument
+package com.android.tools.androidtest.testengine.instrument
 
-import com.google.protobuf.Timestamp
-import org.gradle.api.logging.Logging
 import java.time.Instant
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.logging.Logger
 
 /** Keeps track of when Instrumentation tests were run. */
 class TestTimeTracker(private val now: () -> Instant =  { Instant.now() }) {
 
   companion object {
-    private val logger = Logging.getLogger(TestTimeTracker::class.java)
+    private val logger = Logger.getLogger(TestTimeTracker::class.java.name)
   }
 
   private val hasStarted: AtomicBoolean = AtomicBoolean(false)
@@ -35,7 +34,7 @@ class TestTimeTracker(private val now: () -> Instant =  { Instant.now() }) {
   private var endTime = -1L
 
   /**
-   * Returns a [TestTimingData] instance with start and end times represented by [Timestamp] protos.
+   * Returns a [TestTimingData] instance with start and end times.
    */
   val testTimingData: TestTimingData
     get() {
@@ -59,7 +58,7 @@ class TestTimeTracker(private val now: () -> Instant =  { Instant.now() }) {
   /** Call when a test has finished. Sets the end time in the tracker to now. */
   fun testEnd() {
     if (!hasStarted.get()) {
-      logger.warn(
+      logger.warning(
         """TestTimeTracker.testEnd() was called before TestTimeTracker.testStart(). The test may not
           |have run. Check the test logs for details.""".trimMargin()
       )
@@ -86,37 +85,4 @@ data class TestTimingData(
    * Milliseconds from epoch when test ended.
    */
   val endTime: Long
-) {
-  /**
-   * Milliseconds from epoch when test started, converted to [Timestamp].
-   */
-  val startTimeToProto: Timestamp
-    get() = timeToProto(startTime)
-
-  /**
-   * Milliseconds from epoch when test ended, converted to [Timestamp].
-   */
-  val endTimeToProto: Timestamp
-    get() = timeToProto(endTime)
-
-  private companion object {
-    /**
-     * Converts milliseconds into a [Timestamp] proto.
-     *
-     * @param millis the number of milliseconds to convert
-     *
-     * @return a [Timestamp] proto, where the sum of seconds (if converted to nanos) and nanos is
-     * (about) the total number of nanos since epoch
-     */
-    fun timeToProto(millis: Long): Timestamp {
-      // The sum of the two times in the [Timestamp] is the time since epoch.
-      return with(Timestamp.newBuilder()) {
-        // 1 second is 1000 milliseconds
-        seconds = millis / 1000
-        // 1 millisecond is 1000000 nanoseconds
-        nanos = ((millis % 1000) * 1000000).toInt()
-        build()
-      }
-    }
-  }
-}
+)

@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.internal.testing.androidtest
+package com.android.tools.androidtest.testengine
 
-import com.android.build.gradle.internal.testing.androidtest.AdbApkInstaller.InstallOptions
-import com.android.build.gradle.internal.testing.androidtest.instrument.AmInstrumentationRunner
+import com.android.tools.androidtest.testengine.AdbApkInstaller.InstallOptions
+import com.android.tools.androidtest.testengine.instrument.AmInstrumentationRunner
 import org.junit.Assert.assertEquals
 import org.junit.Assert.fail
 import org.junit.Before

@@ -14,10 +14,9 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.internal.testing.androidtest
+package com.android.tools.androidtest.testengine
 
 import com.google.common.truth.Truth.assertThat
-import org.gradle.api.logging.Logger
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -27,6 +26,7 @@ import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import java.io.File
+import java.util.logging.Logger
 import kotlin.test.assertFailsWith
 
 /**
@@ -266,7 +266,7 @@ class AdbApkInstallerTest {
         helper.uninstallApk(apk1)
 
         assertThat(executedCommands).doesNotContainKey("uninstall")
-        verify(mockLogger).warn("Could not get package name from ${apk1.path} to uninstall.")
+        verify(mockLogger).warning("Could not get package name from ${apk1.path} to uninstall.")
     }
 
     @Test

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.internal.testing.androidtest.instrument
+package com.android.tools.androidtest.testengine.instrument
 
 import java.time.Instant
 

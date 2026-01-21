@@ -1,3 +1,4 @@
+load("//tools/base/bazel:kotlin.bzl", "kotlin_test")
 load("//tools/base/bazel:maven.bzl", "maven_library")
 
 maven_library(
@@ -17,5 +18,25 @@ maven_library(
         "//tools/base/common:tools.common",
         "@maven//:org.jetbrains.kotlin.kotlin-stdlib-jdk8",
         "@maven//:org.junit.platform.junit-platform-engine",
+    ],
+)
+
+kotlin_test(
+    name = "tests",
+    srcs = glob([
+        "src/test/java/**/*.kt",
+        "src/test/java/**/*.java",
+    ]),
+    jvm_flags = ["-Dtest.suite.jar=tests.jar"],
+    resources = glob(["src/test/resources/**"]),
+    test_class = "com.android.testutils.JarTestSuite",
+    deps = [
+        ":android-test-test-engine",
+        "//tools/base/testutils:tools.testutils",
+        "@maven//:com.google.truth.truth",
+        "@maven//:junit.junit",
+        "@maven//:org.jetbrains.kotlin.kotlin-test",
+        "@maven//:org.mockito.kotlin.mockito-kotlin",
+        "@maven//:org.mockito.mockito-core",
     ],
 )

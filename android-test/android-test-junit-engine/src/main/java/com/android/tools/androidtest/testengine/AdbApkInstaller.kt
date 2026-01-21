@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,14 +14,13 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.internal.testing.androidtest
+package com.android.tools.androidtest.testengine
 
 import com.android.utils.GrabProcessOutput
-import org.gradle.api.logging.Logger
-import org.gradle.api.logging.Logging
 import java.io.File
 import java.time.Duration
 import java.util.concurrent.TimeUnit
+import java.util.logging.Logger
 
 /**
  * A helper for executing Android Debug Bridge (adb) commands for a specific device.
@@ -45,7 +44,7 @@ class AdbApkInstaller(
     private val deviceSerial: String,
     private val deviceApiLevel: Int,
     private val installTimeoutMs: Long,
-    private val logger: Logger = Logging.getLogger(AdbApkInstaller::class.java),
+    private val logger: Logger = Logger.getLogger(AdbApkInstaller::class.java.name),
     private val processBuilder: (command: List<String>) -> ProcessBuilder = { ProcessBuilder(it) }
 ) {
 
@@ -103,12 +102,12 @@ class AdbApkInstaller(
         if (deviceApiLevel < MinFeatureApiLevel.USER_ID.apiLevel) return@lazy null
         val result = runAdbShellCommand(listOf("am", "get-current-user"))
         if (result.exitCode != 0) {
-            logger.warn("Failed to get current user ID from device $deviceSerial.")
+            logger.warning("Failed to get current user ID from device $deviceSerial.")
             return@lazy null
         }
         val userId = result.output.trim()
         return@lazy if (userId.toIntOrNull() != null) userId else {
-            logger.warn("Unexpected output from 'get-current-user': $userId")
+            logger.warning("Unexpected output from 'get-current-user': $userId")
             null
         }
     }
@@ -128,7 +127,7 @@ class AdbApkInstaller(
         if (deviceApiLevel >= MinFeatureApiLevel.SET_DEBUG_APP.apiLevel) {
             val result = runAdbShellCommand(listOf("am", "set-debug-app", instrumentationTargetPackageId))
             if (result.exitCode != 0) {
-                logger.warn(
+                logger.warning(
                     "Failed to set debug app '$instrumentationTargetPackageId'. " +
                             "Output: ${result.output} \n Error Output: ${result.errorOutput}")
             }
@@ -215,7 +214,7 @@ class AdbApkInstaller(
     fun uninstallApk(apk: File) {
         getPackageNameFromApk(apk.absolutePath)?.let { packageName ->
             uninstallPackage(packageName)
-        } ?: logger.warn("Could not get package name from ${apk.path} to uninstall.")
+        } ?: logger.warning("Could not get package name from ${apk.path} to uninstall.")
     }
 
     /** Uninstalls the specified package from the device using `adb uninstall`. */
@@ -223,7 +222,7 @@ class AdbApkInstaller(
         logger.info("Uninstalling $packageName from device $deviceSerial.")
         val result = runAdbCommand(listOf("uninstall", packageName))
         if (result.exitCode != 0) {
-            logger.warn(
+            logger.warning(
                 "Failed to uninstall package $packageName. " +
                         "Output: ${result.output} \n Error Output: ${result.errorOutput}")
         }
@@ -324,7 +323,7 @@ class AdbApkInstaller(
     private fun forceCompilationApk(apk: File, mode: ForceCompilation) {
         getPackageNameFromApk(apk.absolutePath)?.let { packageName ->
             forceCompilationPackage(packageName, mode)
-        } ?: logger.warn("Could not get package name from ${apk.path} to force compilation.")
+        } ?: logger.warning("Could not get package name from ${apk.path} to force compilation.")
     }
 
     /** Runs the `cmd package compile` shell command for a given package and compilation mode. */

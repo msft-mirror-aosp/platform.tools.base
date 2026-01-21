@@ -14,10 +14,9 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.internal.testing.androidtest.instrument
+package com.android.tools.androidtest.testengine.instrument
 
 import com.google.common.truth.Truth.assertThat
-import org.gradle.api.logging.Logger
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -29,6 +28,7 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import java.io.File
+import java.util.logging.Logger
 
 /**
  * Unit tests for [AmInstrumentationRunner].
@@ -107,7 +107,7 @@ class AmInstrumentationRunnerTest {
 
     // Verify that stderr was logged as a warning.
     val warningCaptor = argumentCaptor<String>()
-    verify(mockLogger).warn(warningCaptor.capture())
+    verify(mockLogger).warning(warningCaptor.capture())
     assertThat(warningCaptor.firstValue).isEqualTo(stderr)
   }
 }

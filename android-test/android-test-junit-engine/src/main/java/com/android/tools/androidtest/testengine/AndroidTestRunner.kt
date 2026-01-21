@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,10 +14,9 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.internal.testing.androidtest
+package com.android.tools.androidtest.testengine
 
-import com.android.build.gradle.internal.testing.androidtest.AdbApkInstaller.InstallOptions
-import com.android.build.gradle.internal.testing.androidtest.instrument.AmInstrumentationRunner
+import com.android.tools.androidtest.testengine.instrument.AmInstrumentationRunner
 import java.io.File
 
 /**
@@ -54,7 +53,7 @@ class AndroidTestRunner(
      * This method orchestrates the following steps:
      * 1. Installs the main application APK(s).
      * 2. Installs any required test utility APKs.
-     * 3. Runs the `am instrument` command to execute the tests (Note: this part is not yet implemented).
+     * 3. Runs the `am instrument` command to execute the tests.
      * 4. Performs cleanup, which is guaranteed to run even if setup or the test itself fails.
      * Cleanup includes uninstalling all installed APKs if [uninstallApksAfterTests] is true.
      */
@@ -63,18 +62,18 @@ class AndroidTestRunner(
             if (testedApks.size == 1) {
                 adbApkInstaller.installApk(
                     testedApks.first(),
-                    InstallOptions(extraArgs = apkInstallOptions)
+                    AdbApkInstaller.InstallOptions(extraArgs = apkInstallOptions)
                 )
             } else if (testedApks.size > 1) {
                 adbApkInstaller.installSplitApk(
                     testedApks,
-                    InstallOptions(extraArgs = apkInstallOptions)
+                    AdbApkInstaller.InstallOptions(extraArgs = apkInstallOptions)
                 )
             }
             testUtilApks.forEach { apk ->
                 adbApkInstaller.installApk(
                     apk,
-                    InstallOptions(grantPermissions = true, forceQueryable = true)
+                    AdbApkInstaller.InstallOptions(grantPermissions = true, forceQueryable = true)
                 )
             }
 

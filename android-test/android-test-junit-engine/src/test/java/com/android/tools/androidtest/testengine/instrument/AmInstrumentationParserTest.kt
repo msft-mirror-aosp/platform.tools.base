@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.internal.testing.androidtest.instrument
+package com.android.tools.androidtest.testengine.instrument
 
-import com.android.build.gradle.internal.testing.androidtest.instrument.AmInstrumentationParser.Companion.STATUS_CODE_ASSUMPTION_FAILURE
-import com.android.build.gradle.internal.testing.androidtest.instrument.AmInstrumentationParser.Companion.STATUS_CODE_ERROR
-import com.android.build.gradle.internal.testing.androidtest.instrument.AmInstrumentationParser.Companion.STATUS_CODE_FAILURE
-import com.android.build.gradle.internal.testing.androidtest.instrument.AmInstrumentationParser.Companion.STATUS_CODE_IGNORED
-import com.android.build.gradle.internal.testing.androidtest.instrument.AmInstrumentationParser.Companion.STATUS_CODE_OK
+import com.android.tools.androidtest.testengine.instrument.AmInstrumentationParser.Companion.STATUS_CODE_ASSUMPTION_FAILURE
+import com.android.tools.androidtest.testengine.instrument.AmInstrumentationParser.Companion.STATUS_CODE_ERROR
+import com.android.tools.androidtest.testengine.instrument.AmInstrumentationParser.Companion.STATUS_CODE_FAILURE
+import com.android.tools.androidtest.testengine.instrument.AmInstrumentationParser.Companion.STATUS_CODE_IGNORED
+import com.android.tools.androidtest.testengine.instrument.AmInstrumentationParser.Companion.STATUS_CODE_OK
 import com.google.common.truth.Truth.assertThat
 import org.junit.Before
 import org.junit.Test

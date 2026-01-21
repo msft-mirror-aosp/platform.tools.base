@@ -16,7 +16,6 @@
 
 package com.android.build.gradle.internal.testing.androidtest
 
-import com.android.build.gradle.internal.testing.androidtest.instrument.AmInstrumentationRunner
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.ListProperty
@@ -27,6 +26,7 @@ import org.gradle.workers.WorkParameters
 /**
  * A Gradle work action to run Android instrumentation tests.
  */
+// TODO(b/476442048): Delete this work action in favor of JUnit test engine.
 abstract class AndroidTestWorkAction : WorkAction<AndroidTestWorkAction.Parameters> {
     interface Parameters : WorkParameters {
         val adbExecutable: RegularFileProperty
@@ -42,31 +42,5 @@ abstract class AndroidTestWorkAction : WorkAction<AndroidTestWorkAction.Paramete
         val uninstallApksAfterTests: Property<Boolean>
     }
 
-    override fun execute() {
-        val adb = parameters.adbExecutable.get().asFile
-        val aaptExecutable = parameters.aaptExecutable.get().asFile
-        val deviceSerial = parameters.deviceSerial.get()
-        val deviceApiLevel = parameters.deviceApiLevel.get()
-        val testedApks = parameters.testedApks.toList()
-        val testUtilApks = parameters.testUtilApks.toList()
-        val uninstallApksAfterTests = parameters.uninstallApksAfterTests.get()
-        val apkInstallTimeOutInMs = parameters.apkInstallTimeOutInMs.get().toLong()
-        val apkInstallOptions = parameters.apkInstallOptions.get()
-        val adbApkInstaller = AdbApkInstaller(
-            adb, aaptExecutable, deviceSerial, deviceApiLevel,
-            apkInstallTimeOutInMs)
-        val instrumentationRunnerClass = parameters.instrumentationRunnerClass.get()
-        val instrumentationTargetPackageId = parameters.instrumentationTargetPackageId.get()
-        val instrumentationRunner = AmInstrumentationRunner(
-            adb, deviceSerial, instrumentationRunnerClass, instrumentationTargetPackageId)
-
-        AndroidTestRunner(
-            adbApkInstaller,
-            instrumentationRunner,
-            testedApks,
-            apkInstallOptions,
-            testUtilApks,
-            uninstallApksAfterTests,
-            ).run()
-    }
+    override fun execute() {}
 }
