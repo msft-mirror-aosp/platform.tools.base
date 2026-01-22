@@ -789,14 +789,16 @@ open class ControlFlowGraph<T : Any> private constructor() {
           return false
         }
 
+        if (isSafePrimitiveOperator(method)) {
+          return true
+        }
+
         val name = method.name
         when (name) {
           "emptyList",
           "isEmpty",
           "listOf",
-          "equals",
-          "inc",
-          "dec" -> return true
+          "equals" -> return true
         }
 
         if (isScopingFunction(method)) {
@@ -826,8 +828,8 @@ open class ControlFlowGraph<T : Any> private constructor() {
           is UastEmptyExpression -> return true
           is UPolyadicExpression -> {
             if (element is UBinaryExpression) {
-              val opClass = element.resolveOperator()?.containingClass?.qualifiedName
-              if (opClass != null && getPrimitiveType(opClass) == null) {
+              val op = element.resolveOperator()
+              if (op != null && !isSafePrimitiveOperator(op)) {
                 // Might be unsafe if this is an overloaded (non-primitive) operator function.
                 return false
               }
@@ -861,6 +863,28 @@ open class ControlFlowGraph<T : Any> private constructor() {
           // the side of caution instead.
 
           else -> return false
+        }
+      }
+
+      private fun isSafePrimitiveOperator(method: PsiMethod): Boolean {
+        return when (method.name) {
+          // From https://kotlinlang.org/docs/operator-overloading.html.
+          // Excludes "div" (for example) since it might throw an exception when dividing by 0.
+          "equals",
+          "compareTo",
+          "inc",
+          "dec",
+          "plus",
+          "minus",
+          "times",
+          "rangeTo",
+          "rangeUntil",
+          "plusAssign",
+          "minusAssign",
+          "timesAssign" -> {
+            method.containingClass?.qualifiedName?.let(::getPrimitiveType) != null
+          }
+          else -> false
         }
       }
 
