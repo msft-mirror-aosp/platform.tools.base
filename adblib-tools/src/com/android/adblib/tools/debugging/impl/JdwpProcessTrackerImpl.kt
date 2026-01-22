@@ -16,9 +16,9 @@
 package com.android.adblib.tools.debugging.impl
 
 import com.android.adblib.ConnectedDevice
+import com.android.adblib.StateFlowStatus
 import com.android.adblib.adbLogger
 import com.android.adblib.scope
-import com.android.adblib.tools.debugging.StateFlowStatus
 import com.android.adblib.tools.debugging.JdwpProcessList
 import com.android.adblib.tools.debugging.JdwpProcessTracker
 import com.android.adblib.tools.debugging.isTrackAppSupported

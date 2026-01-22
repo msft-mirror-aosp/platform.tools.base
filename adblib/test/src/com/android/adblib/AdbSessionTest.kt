@@ -149,9 +149,9 @@ class AdbSessionTest {
         // Ensure the connected device shows in the stateFlow.value property even
         // if nobody is consuming the flow
         yieldUntil {
-            session.trackDevices().value.devices.isNotEmpty()
+            session.trackDevices().value.isNotEmpty()
         }
-        val device = session.trackDevices().value.devices.first()
+        val device = session.trackDevices().value.first()
 
         // Assert
         Assert.assertEquals("1234", device.serialNumber)
@@ -187,9 +187,9 @@ class AdbSessionTest {
         fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
 
         yieldUntil {
-            session.trackDevices().value.devices.isNotEmpty()
+            session.trackDevices().value.isNotEmpty()
         }
-        val device = session.trackDevices().value.devices.first()
+        val device = session.trackDevices().value.first()
 
         Assert.assertEquals("deviceID", device.serialNumber)
         Assert.assertEquals(com.android.adblib.DeviceState.ONLINE, device.deviceState)
@@ -225,12 +225,12 @@ class AdbSessionTest {
             flow.collect { trackedDeviceList ->
                 hostServices.session.host.logger.debug { "Collected: $trackedDeviceList" }
                 deviceListArray.add(trackedDeviceList)
-                if (trackedDeviceList.devices.size > 0) {
-                    if (deviceListArray.count { it.devices.isNotEmpty() } == 1) {
+                if (trackedDeviceList.size > 0) {
+                    if (deviceListArray.count { it.isNotEmpty() } == 1) {
                         // Simulate ADB server killed and restarted
                         fakeAdb.restart()
                     }
-                    if (deviceListArray.count { it.devices.isNotEmpty() } == 2) {
+                    if (deviceListArray.count { it.isNotEmpty() } == 2) {
                         // Cancel
                         currentCoroutineContext().cancel()
                     }
@@ -245,7 +245,7 @@ class AdbSessionTest {
         // however if we collect empty device list, we know for sure they should be one of these
         // states.
         Assert.assertTrue(deviceListArray.size >= 2)
-        Assert.assertEquals(2, deviceListArray.count { it.devices.isNotEmpty() })
+        Assert.assertEquals(2, deviceListArray.count { it.isNotEmpty() })
         var previousConnectionId: Int? = null
         var isTrackerDisconnectedSeen = false
         deviceListArray.forEach { deviceList ->
@@ -254,7 +254,7 @@ class AdbSessionTest {
             }
             previousConnectionId = deviceList.connectionId
             Assert.assertNotNull(deviceList)
-            if (deviceList.devices.isEmpty()) {
+            if (deviceList.isEmpty()) {
                 Assert.assertTrue(deviceList.isTrackerConnecting || deviceList.isTrackerDisconnected)
                 if (deviceList.isTrackerConnecting) {
                     Assert.assertFalse(isTrackerDisconnectedSeen)
@@ -262,9 +262,9 @@ class AdbSessionTest {
                     isTrackerDisconnectedSeen = true
                 }
             } else {
-                Assert.assertEquals(1, deviceList.devices.size)
-                Assert.assertEquals(0, deviceList.devices.errors.size)
-                deviceList.devices[0].let { device ->
+                Assert.assertEquals(1, deviceList.size)
+                Assert.assertEquals(0, deviceList.errors.size)
+                deviceList[0].let { device ->
                     Assert.assertEquals("1234", device.serialNumber)
                     Assert.assertEquals(com.android.adblib.DeviceState.ONLINE, device.deviceState)
                     Assert.assertEquals("test1", device.product)
@@ -305,7 +305,7 @@ class AdbSessionTest {
             return scope.launch {
                 flow.collect { trackedDeviceList ->
                     hostServices.session.host.logger.debug { "Collected: $trackedDeviceList" }
-                    if (trackedDeviceList.devices.size == 1) {
+                    if (trackedDeviceList.size == 1) {
                         started[index] = true
                         // Wait for the other collector
                         waitAllStarted()
@@ -368,7 +368,7 @@ class AdbSessionTest {
                     try {
                         flow.collect { trackedDeviceList ->
                             hostServices.session.host.logger.debug { "Collected: $trackedDeviceList" }
-                            if (trackedDeviceList.devices.size == 1) {
+                            if (trackedDeviceList.size == 1) {
                                 // Wait for the other collectors so we all remain active
                                 started[index] = true
                                 waitAllStarted()
@@ -803,4 +803,3 @@ class AdbSessionTest {
         }
     }
 }
-

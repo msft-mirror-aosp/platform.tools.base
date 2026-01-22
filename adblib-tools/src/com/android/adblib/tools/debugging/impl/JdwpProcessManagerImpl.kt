@@ -19,6 +19,7 @@ import com.android.adblib.AdbSession
 import com.android.adblib.ConnectedDevice
 import com.android.adblib.CoroutineScopeCache
 import com.android.adblib.ProcessIdList
+import com.android.adblib.StateFlowStatus
 import com.android.adblib.adbLogger
 import com.android.adblib.connectedDevicesTracker
 import com.android.adblib.emptyProcessIdList
@@ -30,7 +31,6 @@ import com.android.adblib.tools.AdbLibToolsProperties.JDWP_PROCESS_MANAGER_REFRE
 import com.android.adblib.tools.AdbLibToolsProperties.JDWP_PROCESS_TRACKER_RETRY_DELAY
 import com.android.adblib.tools.debugging.JdwpProcessIdList
 import com.android.adblib.tools.debugging.SharedJdwpSession
-import com.android.adblib.tools.debugging.StateFlowStatus
 import com.android.adblib.tools.debugging.isTrackAppSupported
 import com.android.adblib.tools.debugging.trackApp
 import com.android.adblib.tools.debugging.trackJdwp

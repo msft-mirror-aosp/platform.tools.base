@@ -18,8 +18,10 @@ package com.android.adblib.impl
 import com.android.adblib.AdbFeatures
 import com.android.adblib.AdbHostServices
 import com.android.adblib.AdbSession
-import com.android.adblib.DeviceList
+import com.android.adblib.DeviceInfo
 import com.android.adblib.ErrorLine
+import com.android.adblib.ListWithErrors
+import com.android.adblib.StateFlowStatus
 import com.android.adblib.TrackedDeviceList
 import com.android.adblib.warningsTracker
 import com.android.adblib.adbLogger
@@ -68,7 +70,7 @@ internal class SessionDeviceTracker(
                         .logInfo(logger) {
                             "trackDevices() succeeded after a previous failure"
                         }
-                    TrackedDeviceList(connectionId, deviceList, null)
+                    TrackedDeviceList(connectionId, deviceList, StateFlowStatus.active)
                 }
                 .retryWhen { throwable, _ ->
                     if (throwable is CancellationException) {
@@ -91,14 +93,14 @@ internal class SessionDeviceTracker(
                                 }
                         }
                         // emit TrackerDisconnected state while we wait to retry the collection
-                        emit(TrackedDeviceList(connectionId, TrackerDisconnected.instance, throwable))
+                        emit(TrackedDeviceList(connectionId, emptyDeviceList, StateFlowStatus.retrying(throwable)))
                         delay(retryDelay.toMillis())
                         true
                     }
                 }.stateIn(
                     session.scope,
                     SharingStarted.Eagerly,
-                    TrackedDeviceList(connectionId, TrackerConnecting.instance, null)
+                    TrackedDeviceList(connectionId, emptyDeviceList, StateFlowStatus.startOfFlow)
                 )
     }
 
@@ -119,16 +121,8 @@ internal class SessionDeviceTracker(
     private suspend fun supportsDevicesListBinaryProto() : Boolean {
         return session.hostServices.hostFeatures().contains(AdbFeatures.DEVICE_LIST_BINARY_PROTO)
     }
-}
 
-internal object TrackerDisconnected {
-
-    private val error = ErrorLine("Device tracking session has been disconnected from ADB", 0, "")
-    val instance = DeviceList(emptyList(), listOf(error))
-}
-
-internal object TrackerConnecting {
-
-    private val error = ErrorLine("Device tracking session has not started yet", 0, "")
-    val instance = DeviceList(emptyList(), listOf(error))
+    companion object {
+        private val emptyDeviceList = ListWithErrors(emptyList<DeviceInfo>(), emptyList<ErrorLine>())
+    }
 }
