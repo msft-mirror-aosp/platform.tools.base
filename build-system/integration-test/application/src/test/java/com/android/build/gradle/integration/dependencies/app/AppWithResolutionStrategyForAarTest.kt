@@ -42,8 +42,8 @@ class AppWithResolutionStrategyForAarTest : ModelComparator() {
                     debugImplementation project(":library")
                     releaseImplementation project(":library")
                 }
-                android.applicationVariants.all { variant ->
-                  if (variant.buildType.name == "debug") {
+                androidComponents {
+                  onVariants(selector().withBuildType("debug")) { variant ->
                     variant.getCompileConfiguration().resolutionStrategy {
                       eachDependency { DependencyResolveDetails details ->
                         if (details.requested.name == "jdeferred-android-aar") {

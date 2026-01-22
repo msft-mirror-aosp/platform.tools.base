@@ -9,16 +9,6 @@ from tools.base.bazel.mutation import mutation
 class MutationScriptTest(parameterized.TestCase):
 
     @parameterized.named_parameters(
-        ('testSrc_in_path', 'path/to/testSrc/some/File1.kt', True),
-        ('testData_in_path', 'path/to/testData/some/File2.java', True),
-        ('test_suffix_in_path', 'path/to/LinuxTest.kt', True ),
-        ('test_non_test_path_1', 'path/to/production/File3.kt', False),
-        ('test_non_test_path_2', 'path/to/production/File4.java', False)
-    )
-    def test_is_test(self, path: str, expected_return_value: bool):
-        self.assertEqual(mutation.is_test(path), expected_return_value)
-
-    @parameterized.named_parameters(
         (
                 'path_is_a_subdirectory_of_ignored_path',
                 "tools/base/ignored/file.kt",
@@ -35,6 +25,30 @@ class MutationScriptTest(parameterized.TestCase):
                 'path_is_an_exact_match_of_ignored_path',
                 "prebuilts/special.jar",
                 ["tools/base/ignored", "prebuilts/"],
+                True
+        ),
+        (
+                'path_has_testSrc_in_path',
+                "path/to/testSrc/some/File1.kt",
+                mutation.DEFAULT_IGNORE_PATHS,
+                True
+        ),
+        (
+                'path_has_testData_in_path',
+                "path/to/testData/some/File2.java",
+                mutation.DEFAULT_IGNORE_PATHS,
+                True
+        ),
+        (
+                'path_is_under_test_dir',
+                "adblib/test/src/com/android/adblib/AdbDeviceSyncServicesTest.kt",
+                mutation.DEFAULT_IGNORE_PATHS,
+                True
+        ),
+        (
+                'test_suffix_in_path',
+                "path/to/LinuxTest.kt",
+                mutation.DEFAULT_IGNORE_PATHS,
                 True
         )
     )
@@ -81,6 +95,7 @@ class MutationScriptTest(parameterized.TestCase):
         workspace_dir = self.create_tempdir()
         allowed_path = "src"
         ignored_path_prefix = "src/ignored"
+        ignore_paths_list = mutation.DEFAULT_IGNORE_PATHS + [ignored_path_prefix]
 
         # Create a directory structure
         os.makedirs(os.path.join(workspace_dir, ignored_path_prefix))
@@ -97,7 +112,7 @@ class MutationScriptTest(parameterized.TestCase):
         sources = mutation.get_all_source_files(
             workspace_directory=workspace_dir.full_path,
             allowed_paths=[allowed_path],
-            ignore_paths=[ignored_path_prefix]
+            ignore_paths=ignore_paths_list
         )
 
         # We expect only the two production files

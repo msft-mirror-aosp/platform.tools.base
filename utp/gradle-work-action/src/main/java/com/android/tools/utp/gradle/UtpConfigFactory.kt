@@ -78,6 +78,10 @@ private const val TEST_LOG_DIR = "testlog"
  */
 fun createRunnerConfigProtoForLocalDevice(
     deviceId: String,
+    deviceName: String,
+    deviceShardName: String,
+    projectPath: String,
+    variantName: String,
     deviceSerialNumber: String,
     testData: TestData,
     targetApkConfigBundle: TargetApkConfigBundle,
@@ -102,7 +106,9 @@ fun createRunnerConfigProtoForLocalDevice(
     uninstallApksAfterTest: Boolean,
     reinstallIncompatibleApksBeforeTest: Boolean,
     shardConfig: ShardConfig?,
-    serverMetadata: UtpTestResultListenerServerMetadata,
+    enableUtpTestReportingForAndroidStudio: Boolean,
+    xmlTestReportOutputDirectory: File,
+    utpResultProtoOutputFile: File,
 ): RunnerConfigProto.RunnerConfig {
     return RunnerConfigProto.RunnerConfig.newBuilder().apply {
         val grpcInfo = findGrpcInfo(deviceSerialNumber)
@@ -135,7 +141,10 @@ fun createRunnerConfigProtoForLocalDevice(
             )
         )
         singleDeviceExecutor = createSingleDeviceExecutor(deviceSerialNumber, shardConfig)
-        addTestResultListenerPlugin(utpDependencies, serverMetadata, deviceId)
+        addTestResultListenerPlugin(
+            utpDependencies, deviceId, deviceName, deviceShardName, projectPath, variantName,
+            enableUtpTestReportingForAndroidStudio, xmlTestReportOutputDirectory,
+            utpResultProtoOutputFile)
         cancellationConfigBuilder.apply {
             pluginCleanupTimeoutMs = 1.seconds.toLong(DurationUnit.MILLISECONDS)
             executorCancellationTimeoutMs = 1.seconds.toLong(DurationUnit.MILLISECONDS)
@@ -146,18 +155,27 @@ fun createRunnerConfigProtoForLocalDevice(
 
 private fun RunnerConfigProto.RunnerConfig.Builder.addTestResultListenerPlugin(
     utpDependencies: UtpDependencies,
-    serverMetadata: UtpTestResultListenerServerMetadata,
     deviceId: String,
+    deviceName: String,
+    deviceShardName: String,
+    projectPath: String,
+    variantName: String,
+    enableUtpTestReportingForAndroidStudio: Boolean,
+    xmlTestReportOutputDirectory: File,
+    utpResultProtoOutputFile: File,
 ) {
     addTestResultListener(
         UtpDependency.ANDROID_TEST_PLUGIN_RESULT_LISTENER_GRADLE.toExtensionProto(
         utpDependencies, GradleAndroidTestResultListenerConfig::newBuilder
     ) {
-        resultListenerServerPort = serverMetadata.serverPort
-        resultListenerClientCertFilePath = serverMetadata.clientCert.absolutePath
-        resultListenerClientPrivateKeyFilePath = serverMetadata.clientPrivateKey.absolutePath
-        trustCertCollectionFilePath = serverMetadata.serverCert.absolutePath
         this.deviceId = deviceId
+        this.deviceName = deviceName
+        this.deviceShardName = deviceShardName
+        this.gradleProjectPath = projectPath
+        this.variantName = variantName
+        this.enableUtpTestReportingForAndroidStudio = enableUtpTestReportingForAndroidStudio
+        this.xmlTestReportOutputDirectoryPath = xmlTestReportOutputDirectory.absolutePath
+        this.utpResultProtoOutputFilePath = utpResultProtoOutputFile.absolutePath
     })
 }
 
@@ -406,7 +424,6 @@ private fun createTestDriver(
     utpDependencies: UtpDependencies,
     useOrchestrator: Boolean,
     additionalTestOutputOnDeviceDir: String?,
-    // TODO(b/201577913): remove
     shardConfig: ShardConfig?,
     additionalTestParams: Map<String, String> = mapOf(),
 ): Extension {
@@ -445,7 +462,6 @@ private fun createTestDriver(
                     putArgsMap("additionalTestOutputDir", additionalTestOutputOnDeviceDir)
                 }
 
-                // TODO(b/201577913): remove
                 if (shardConfig != null) {
                     require(
                         !testData.instrumentationRunnerArguments.containsKey("numShards") &&

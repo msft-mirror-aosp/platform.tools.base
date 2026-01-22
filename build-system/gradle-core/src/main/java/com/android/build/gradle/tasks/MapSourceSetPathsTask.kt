@@ -1,6 +1,7 @@
 package com.android.build.gradle.tasks
 
 import com.android.SdkConstants
+import com.android.build.gradle.internal.component.AarCreationConfig
 import com.android.build.gradle.internal.component.ComponentCreationConfig
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
 import com.android.build.gradle.internal.scope.InternalArtifactType
@@ -42,11 +43,19 @@ abstract class MapSourceSetPathsTask : NonIncrementalTask() {
 
     @get:Input
     @get:Optional
+    abstract val generatedLocaleIncrementalDir: Property<String>
+
+    @get:Input
+    @get:Optional
     abstract val generatedPngsOutputDir: Property<String>
 
     @get:Input
     @get:Optional
     abstract val mergedNotCompiledDir: Property<String>
+
+    @get:Input
+    @get:Optional
+    abstract val packagedResDir: Property<String>
 
     @get:Input
     @get:Optional
@@ -72,10 +81,6 @@ abstract class MapSourceSetPathsTask : NonIncrementalTask() {
     @get:PathSensitive(PathSensitivity.RELATIVE)
     abstract val localResources: ConfigurableFileCollection
 
-    @get:InputFiles
-    @get:PathSensitive(PathSensitivity.RELATIVE)
-    abstract val librarySourceSets: ConfigurableFileCollection
-
     @get:Input
     abstract val allGeneratedRes: ListProperty<String>
 
@@ -84,6 +89,7 @@ abstract class MapSourceSetPathsTask : NonIncrementalTask() {
 
     override fun doTaskAction() {
         val uncreatedSourceSets = listOfNotNull(
+            generatedLocaleIncrementalDir.orNull,
             generatedPngsOutputDir.orNull,
             generatedResDir.orNull,
             renderscriptResOutputDir.orNull,
@@ -106,9 +112,9 @@ abstract class MapSourceSetPathsTask : NonIncrementalTask() {
         val uncreatedSourceSets = listOfNotNull(
             getPathIfPresentOrNull(incrementalMergedDir, listOf(SdkConstants.FD_MERGED_DOT_DIR)),
             getPathIfPresentOrNull(incrementalMergedDir, listOf(SdkConstants.FD_STRIPPED_DOT_DIR)),
+            getPathIfPresentOrNull(packagedResDir, emptyList())
         )
         return localResources.files.asSequence()
-            .plus(librarySourceSets.files)
             .plus(uncreatedSourceSets.map(::File))
             .plus(additionalSourceSets.map(::File))
             .plus(generatedSourceSets.map(::File)).toList()
@@ -123,8 +129,7 @@ abstract class MapSourceSetPathsTask : NonIncrementalTask() {
     }
 
     internal class CreateAction(
-        creationConfig: ComponentCreationConfig,
-        val includeDependencies: Boolean
+        creationConfig: ComponentCreationConfig
     ) : VariantTaskCreationAction<MapSourceSetPathsTask, ComponentCreationConfig>(creationConfig),
         AndroidResourcesTaskCreationAction by AndroidResourcesTaskCreationActionImpl(
             creationConfig
@@ -140,7 +145,7 @@ abstract class MapSourceSetPathsTask : NonIncrementalTask() {
                 taskProvider,
                 MapSourceSetPathsTask::filepathMappingFile
             ).withName("file-map${SdkConstants.DOT_TXT}")
-                .on(InternalArtifactType.SOURCE_SET_PATH_MAP)
+                .on(InternalArtifactType.ANDROID_RES_SOURCE_SET_PATH_MAP)
         }
 
         override fun configure(task: MapSourceSetPathsTask) {
@@ -174,14 +179,19 @@ abstract class MapSourceSetPathsTask : NonIncrementalTask() {
                         it.asFile.absolutePath
                     }
             )
+            task.generatedLocaleIncrementalDir.setDisallowChanges(
+                (creationConfig.artifacts.get(InternalArtifactType.GENERATED_LOCALE_CONFIG_INCREMENTAL_DIR)
+                        as FileSystemLocationProperty).locationOnly.map { it.asFile.absolutePath }
+            )
+
             task.namespace.setDisallowChanges(creationConfig.namespace)
-            if (includeDependencies) {
-                task.librarySourceSets.setFrom(
-                    creationConfig.variantDependencies.getArtifactCollection(
-                        AndroidArtifacts.ConsumedConfigType.RUNTIME_CLASSPATH,
-                        AndroidArtifacts.ArtifactScope.ALL,
-                        AndroidArtifacts.ArtifactType.ANDROID_RES
-                    ).artifactFiles
+
+            if (creationConfig is AarCreationConfig) {
+                task.packagedResDir.setDisallowChanges(
+                    (creationConfig.artifacts.get(InternalArtifactType.PACKAGED_RES)
+                            as FileSystemLocationProperty).locationOnly.map {
+                        it.asFile.absolutePath
+                    }
                 )
             }
 

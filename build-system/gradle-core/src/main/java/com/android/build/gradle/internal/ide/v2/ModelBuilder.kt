@@ -27,23 +27,24 @@ import com.android.build.api.dsl.CommonExtension
 import com.android.build.api.dsl.TestExtension
 import com.android.build.api.variant.ScopedArtifacts.Scope.ALL
 import com.android.build.api.variant.ScopedArtifacts.Scope.PROJECT
+import com.android.build.api.variant.TestSuiteSourceSet
 import com.android.build.api.variant.TestSuiteSourceType
-import com.android.build.api.variant.impl.BuiltArtifactsImpl
 import com.android.build.api.variant.impl.HasDeviceTestsCreationConfig
 import com.android.build.api.variant.impl.HasHostTestsCreationConfig
 import com.android.build.api.variant.impl.HasTestFixtures
 import com.android.build.api.variant.impl.HasTestSuitesCreationConfig
 import com.android.build.api.variant.impl.ManifestFilesImpl
+import com.android.build.api.variant.impl.SourceDirectoriesImpl
 import com.android.build.api.variant.impl.TestSuiteSourceContainer
 import com.android.build.gradle.BaseExtension
 import com.android.build.gradle.internal.BuildTypeData
 import com.android.build.gradle.internal.ProductFlavorData
 import com.android.build.gradle.internal.VariantDimensionData
 import com.android.build.gradle.internal.api.DefaultAndroidSourceSet
-import com.android.build.gradle.internal.api.TestSuiteSourceSet
+import com.android.build.gradle.internal.api.HostJarTestSuiteSourceSet
+import com.android.build.gradle.internal.api.TestApkTestSuiteSourceSet
 import com.android.build.gradle.internal.attributes.VariantAttr
 import com.android.build.gradle.internal.component.ApkCreationConfig
-import com.android.build.gradle.internal.component.ApplicationCreationConfig
 import com.android.build.gradle.internal.component.ComponentCreationConfig
 import com.android.build.gradle.internal.component.ConsumableCreationConfig
 import com.android.build.gradle.internal.component.DeviceTestCreationConfig
@@ -82,6 +83,7 @@ import com.android.build.gradle.internal.services.getBuildService
 import com.android.build.gradle.internal.tasks.AnchorTaskNames
 import com.android.build.gradle.internal.tasks.DeviceProviderInstrumentTestTask
 import com.android.build.gradle.internal.tasks.getPublishedCustomLintChecks
+import com.android.build.gradle.internal.testsuites.impl.AssetsTestSuiteSourceSet
 import com.android.build.gradle.internal.utils.getDesugarLibConfigFile
 import com.android.build.gradle.internal.utils.getDesugaredMethods
 import com.android.build.gradle.internal.utils.toImmutableSet
@@ -120,6 +122,7 @@ import com.android.builder.model.v2.models.SourceType
 import com.android.builder.model.v2.models.TestApkTestSuiteSource
 import com.android.builder.model.v2.models.TestSuiteDependencies
 import com.android.builder.model.v2.models.TestSuiteDependenciesAdjacencyList
+import com.android.builder.model.v2.models.TestSuiteSource
 import com.android.builder.model.v2.models.VariantDependencies
 import com.android.builder.model.v2.models.VariantDependenciesAdjacencyList
 import com.android.builder.model.v2.models.VariantDependenciesFlatList
@@ -140,6 +143,7 @@ import javax.xml.namespace.QName
 import javax.xml.stream.XMLInputFactory
 import javax.xml.stream.XMLStreamException
 import javax.xml.stream.events.EndElement
+import kotlin.collections.map
 import com.android.build.gradle.internal.dsl.BuildType as InternalBuildType
 import com.android.build.gradle.internal.dsl.ProductFlavor as InternalFlavor
 
@@ -279,7 +283,7 @@ class ModelBuilder<ExtensionT : CommonExtension>(
          * method not called by current versions of Studio, the MINIMUM_MODEL_CONSUMER version must
          * be increased to exclude all older versions of Studio that called that method.
          */
-        val modelProducer = VersionImpl(21, 0, humanReadable = "Android Gradle Plugin 9.0")
+        val modelProducer = VersionImpl(21, 1, humanReadable = "Android Gradle Plugin 9.1")
         /**
          * The minimum required model consumer version, to allow AGP to control support for older
          * versions of Android Studio.
@@ -374,41 +378,16 @@ class ModelBuilder<ExtensionT : CommonExtension>(
         // gather test suites
         val testSuites: List<BasicTestSuiteImpl> = testSuiteBuilders
             .map { testSuiteBuilder ->
-                val assetsSources = mutableListOf<AssetsTestSuiteSource>()
-                val hostJarSources = mutableListOf<HostJarTestSuiteSource>()
-                val testApkSources = mutableListOf<TestApkTestSuiteSource>()
-
-                testSuiteBuilder.suite.sources.forEach { suiteSourceContainer ->
-                    when(val sourceSet = suiteSourceContainer.source) {
-                        is TestSuiteSourceSet.Assets -> {
-                            assetsSources.add(
-                                AssetsTestSuiteSourceImpl(
-                                    name = suiteSourceContainer.name,
-                                    directories = sourceSet.get().all.get().map { it.asFile }
-                                )
-                            )
-                        }
-                        is TestSuiteSourceSet.HostJar -> {
-                            hostJarSources.add(
-                                HostJarTestSuiteSourceImpl(
-                                    name = suiteSourceContainer.name,
-                                    java = sourceSet.java()?.all?.get()?.map { it.asFile } ?: emptyList(),
-                                    kotlin = sourceSet.kotlin()?.all?.get()?.map { it.asFile } ?: emptyList(),
-                                    resources = sourceSet.resources().all.get().map { it.asFile },
-                                )
-                            )
-                        }
-                        is TestSuiteSourceSet.TestApk -> {
-                            throw RuntimeException("Not Supported ")
-                        }
-                    }
-                }
+                val testSuiteSourcesModel = getTestSuiteSources(
+                    sourceSets = testSuiteBuilder.suite.sources,
+                    isGenerated = false
+                )
 
                 BasicTestSuiteImpl(
                     name = testSuiteBuilder.suite.name,
-                    assets = assetsSources.toList(),
-                    hostJars = hostJarSources.toList(),
-                    testApks = testApkSources.toList(),
+                    assets = testSuiteSourcesModel.assets,
+                    hostJars = testSuiteSourcesModel.hostJar,
+                    testApks = testSuiteSourcesModel.testApk,
                     targetsByVariant = testSuiteBuilder.variantsTargets.map { testSuiteVariantBuilder ->
                         TestSuiteVariantTargetImpl(
                             testSuiteVariantBuilder.targetedVariant,
@@ -442,6 +421,72 @@ class ModelBuilder<ExtensionT : CommonExtension>(
             bootClasspath = bootClasspath,
         )
     }
+
+    data class TestSuiteSources(
+        val assets: List<AssetsTestSuiteSource>,
+        val hostJar: List<HostJarTestSuiteSource>,
+        val testApk: List<TestApkTestSuiteSource>
+    )
+
+    private fun getTestSuiteSources(
+        sourceSets: Collection<TestSuiteSourceSet>,
+        isGenerated: Boolean,
+    ): TestSuiteSources {
+        // Separate by type and map to model in one go
+        val assets = sourceSets.filterIsInstance<AssetsTestSuiteSourceSet>()
+            .map { it.toModel(isGenerated) }
+
+        val hostJar = sourceSets.filterIsInstance<HostJarTestSuiteSourceSet>()
+            .map { it.toModel(isGenerated) }
+
+        val testApk = sourceSets.filterIsInstance<TestApkTestSuiteSourceSet>()
+            .map { it.toModel(isGenerated) }
+
+        return TestSuiteSources(assets, hostJar, testApk)
+    }
+
+    // Extension functions to translate variant instances into model ones.
+    private fun AssetsTestSuiteSourceSet.toModel(isGenerated: Boolean) = AssetsTestSuiteSourceImpl(
+        name = this.name,
+        directories = variantSourcesForModel(this.get(), isGenerated)
+    )
+
+    private fun HostJarTestSuiteSourceSet.toModel(isGenerated: Boolean) = HostJarTestSuiteSourceImpl(
+        name = name,
+        defaultTopLevel = defaultTopLevelFolder,
+        java = variantSourcesForModel(java, isGenerated),
+        kotlin = variantSourcesForModel(kotlin, isGenerated),
+        resources = variantSourcesForModel(resources, isGenerated),
+        // the IDE always want a manifest file path even if it does not
+        // exist.
+        manifestFile = manifestFileCandidate
+    )
+
+    private fun TestApkTestSuiteSourceSet.toModel(isGenerated: Boolean) = TestApkTestSuiteSourceImpl(
+        name = name,
+        sourceProvider = SourceProviderImpl(
+            name,
+            manifestFile,
+            variantSourcesForModel(java, isGenerated),
+            variantSourcesForModel(kotlin, isGenerated),
+            variantSourcesForModel(resources, isGenerated),
+            aidlDirectories = null,
+            renderscriptDirectories = null,
+            baselineProfileDirectories = null,
+            resDirectories = null,
+            assetsDirectories = null,
+            jniLibsDirectories = listOf(),
+            shadersDirectories = null,
+            mlModelsDirectories = null,
+            customDirectories = null
+        )
+    )
+
+    private fun variantSourcesForModel(sourceDirectories: SourceDirectoriesImpl?, isGenerated: Boolean) =
+        // TODO : restrict list to non generated sources once model is updated.
+        sourceDirectories?.variantSourcesForModel {
+            it.shouldBeAddedToIdeModel && it.isGenerated == isGenerated
+        } ?: emptyList()
 
     /**
      * Intermediary data structure to hold the suite and all its associated targets built from the
@@ -686,14 +731,38 @@ class ModelBuilder<ExtensionT : CommonExtension>(
         else
             listOf()
 
-        val suites = variantModel.testSuites.map {
+        val testSuiteBuilders: Collection<TestSuiteModelBuilder> = gatherTestSuites(variantModel.testSuites)
+
+        val suites = testSuiteBuilders.map { testSuiteBuilder ->
+            val testSuiteSourcesModel = getTestSuiteSources(
+                sourceSets = testSuiteBuilder.suite.sources,
+                isGenerated = true
+            )
             TestSuiteImpl(
-                it.name,
+                name = testSuiteBuilder.suite.name,
                 junitEngineInfo = JUnitEngineInfoImpl(
-                    it.junitEngineSpec.includeEngines
-                )
+                    testSuiteBuilder.suite.junitEngineSpec.includeEngines
+                ),
+                generatedAssets = testSuiteSourcesModel.assets,
+                generatedHostJars = testSuiteSourcesModel.hostJar,
+                generatedTestApks = testSuiteSourcesModel.testApk
             )
         }
+//        val suites = variantModel.testSuites.map { testSuite ->
+//            val testSuiteSourcesModel = getTestSuiteSources(
+//                sourceSets = testSuite.sources,
+//                isGenerated = true
+//            )
+//            TestSuiteImpl(
+//                name = testSuite.name,
+//                junitEngineInfo = JUnitEngineInfoImpl(
+//                    testSuite.junitEngineSpec.includeEngines
+//                ),
+//                generatedAssets = testSuiteSourcesModel.assets,
+//                generatedHostJars = testSuiteSourcesModel.hostJar,
+//                generatedTestApks = testSuiteSourcesModel.testApk
+//            )
+//        }
 
         val oldVariantApiInUse = oldExtension?.hasOldVariantApiUsage() ?: false
 
@@ -1350,9 +1419,9 @@ class ModelBuilder<ExtensionT : CommonExtension>(
         testSuite: TestSuiteCreationConfig,
         libraryServices: LibraryService,
     ) = TestSuiteDependenciesImpl(
-        testSuite.sources.map { testSuiteSourceContainer ->
+        testSuite.sourceContainers.map { testSuiteSourceContainer ->
                     TestSuiteSourceDependenciesImpl(
-                        testSuiteSourceContainer.name,
+                        testSuiteSourceContainer.identifier,
                         createTestSuiteType(testSuiteSourceContainer.source.type),
                         getGraphBuilder(testSuiteSourceContainer, libraryServices).build()
                     )
@@ -1380,9 +1449,9 @@ class ModelBuilder<ExtensionT : CommonExtension>(
         graphEdgeCache: GraphEdgeCache,
         dontBuildRuntimeClasspath: Boolean
     ) = TestSuiteDependenciesAdjacencyListImpl(
-            testSuite.sources.map { testSuiteSourceContainer ->
+            testSuite.sourceContainers.map { testSuiteSourceContainer ->
                 TestSuiteSourceDependenciesAdjacencyListImpl(
-                    testSuiteSourceContainer.name,
+                    testSuiteSourceContainer.identifier,
                     createTestSuiteType(testSuiteSourceContainer.source.type),
                     getGraphBuilder(
                         testSuiteSourceContainer,
@@ -1408,11 +1477,7 @@ class ModelBuilder<ExtensionT : CommonExtension>(
         dontBuildRuntimeClasspath
     )
 
-    private fun getGraphBuilder(
-        testSuiteSourceContainer: TestSuiteSourceContainer,
-        libraryService: LibraryService,
-        graphEdgeCache: GraphEdgeCache? = null,
-    ) = FullDependencyGraphBuilder(
+    private fun getGraphBuilder(testSuiteSourceContainer: TestSuiteSourceContainer, libraryService: LibraryService, graphEdgeCache: GraphEdgeCache? = null) = FullDependencyGraphBuilder(
         artifactsProvider = { configType, root -> getArtifactsForModelBuilder(testSuiteSourceContainer, configType) },
         projectPath = project.path,
 
@@ -1677,6 +1742,10 @@ class ModelBuilder<ExtensionT : CommonExtension>(
             flags.put(
                 BooleanFlag.OLD_VARIANT_API_IN_USE,
                 oldVariantApiInUse
+            )
+            flags.put(
+                BooleanFlag.R8_GRADUAL_API,
+                projectOptions[BooleanOption.R8_GRADUAL_API]
             )
 
             return AndroidGradlePluginProjectFlagsImpl(flags.build())

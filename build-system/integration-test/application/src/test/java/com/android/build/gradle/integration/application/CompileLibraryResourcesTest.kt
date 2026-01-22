@@ -140,7 +140,12 @@ class CompileLibraryResourcesTest {
             .build()
 
     @get:Rule
-    val project = GradleTestProject.builder().fromTestApp(testApp).create()
+    val project = GradleTestProject.builder().fromTestApp(testApp).withName("project1").create()
+
+    // Second project, for testing reliability of compiled resources i.e. compiled resources should
+    // be identical despite differing file locations.
+    @get:Rule
+    val projectCopy = GradleTestProject.builder().fromTestApp(testApp).withName("project2").create()
 
     @Test
     fun testResourcesAreCompiledAndProcessed() {
@@ -294,6 +299,32 @@ class CompileLibraryResourcesTest {
         }
     }
 
+    // TODO(lukeedgar) Move test to own test.
+    // Test for b/278255388
+    @Test
+    fun testCompiledResourceContentsDoNotChangeOnProjectRelocation() {
+        // Check that the compiled resources are identical i.e. not impacted by their parent directories
+        project.executor().run("assembleDebug")
+        val originalCompiledLibResourcesDir =
+            project.getSubproject("library").intermediatesDir
+                .resolve("compiled_local_resources/debug/compileDebugLibraryResources/out/")
+
+        val originalDirectoryCompiledResources =
+            originalCompiledLibResourcesDir.listFiles().associate {
+                it.name to it.readBytes().toList()
+            }
+        projectCopy.executor().run("assembleDebug")
+        val newCompiledLibResourcesDir =
+            projectCopy.getSubproject("library").intermediatesDir
+                .resolve("compiled_local_resources/debug/compileDebugLibraryResources/out/")
+        val newDirectoryCompiledResources = newCompiledLibResourcesDir.listFiles().associate {
+            it.name to it.readBytes().toList()
+        }
+        assertThat(newDirectoryCompiledResources.keys)
+            .containsExactlyElementsIn(originalDirectoryCompiledResources.keys)
+        assertThat(newDirectoryCompiledResources.values)
+            .containsExactlyElementsIn(originalDirectoryCompiledResources.values)
+    }
 
     @Test
     fun testPackageResourcesNotExecutedForNewEmptyDirectoriesIncrementally() {
@@ -331,7 +362,7 @@ class CompileLibraryResourcesTest {
 
     private fun checkOnlyValuesWasMerged() {
         val mergedResDir = File(MERGED_RES.getOutputDir(project.getSubproject(":app").buildDir),
-            "debug" + File.separatorChar + "mergeDebugResources")
+                                "debug" + File.separatorChar + "mergeDebugResources")
 
         assertThat(mergedResDir.listFiles()!!.map { it.name }.toSet()).containsExactlyElementsIn(
             setOf(

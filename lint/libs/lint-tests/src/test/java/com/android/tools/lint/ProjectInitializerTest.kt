@@ -1334,7 +1334,7 @@ class ProjectInitializerTest {
                         return switch (duration) {
                             // Missing LENGTH_INDEFINITE handling
                             case LENGTH_SHORT, LENGTH_LONG -> true;
-                            default -> false;
+                            default -> throw new IllegalStateException("Unexpected");
                         };
                     }
                 }

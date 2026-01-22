@@ -156,9 +156,6 @@ class FusedLibraryTest {
                     include("com.remotedep.remoteaar.a:remoteaar-a:1.0")
                 }
             }
-            gradleProperties {
-                add(BooleanOption.FUSED_LIBRARY_SUPPORT, true)
-            }
         }
 
     @Test

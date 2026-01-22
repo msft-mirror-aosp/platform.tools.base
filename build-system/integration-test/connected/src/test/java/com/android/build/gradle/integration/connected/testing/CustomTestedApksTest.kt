@@ -160,6 +160,17 @@ class CustomTestedApksTest {
                 """.trimIndent()
         )
         addFile(aarUser("com.example.app.benchmark"))
+        replaceFile(
+            "src/main/AndroidManifest.xml",
+            //language=xml
+            """
+            <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+                <!-- Required for API level 30+ devices -->
+                <queries>
+                    <package android:name="com.example.app" />
+                </queries>
+            </manifest>
+            """.trimIndent())
     }
 
     private val androidTestUtilExample =

@@ -21,7 +21,6 @@ import com.android.build.api.dsl.SigningConfig
 import com.android.build.gradle.internal.component.ApkCreationConfig
 import com.android.build.gradle.internal.packaging.createDefaultDebugStore
 import com.android.build.gradle.internal.packaging.getDefaultDebugKeystoreSigningConfig
-import com.android.build.gradle.internal.privaysandboxsdk.PrivacySandboxSdkVariantScope
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.services.AndroidLocationsBuildService
 import com.android.build.gradle.internal.services.BaseServices

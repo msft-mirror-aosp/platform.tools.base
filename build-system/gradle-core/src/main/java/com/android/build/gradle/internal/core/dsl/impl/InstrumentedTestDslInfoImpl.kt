@@ -35,21 +35,8 @@ internal class InstrumentedTestDslInfoImpl(
     override val instrumentationRunnerArguments: Map<String, String>
 ): InstrumentedTestComponentDslInfo {
 
-    override fun getInstrumentationRunner(dexingType: DexingType): Provider<String> {
-        // first check whether the DSL has the info
-        val fromFlavor =
-            productFlavorList.asSequence().map { it.testInstrumentationRunner }
-                .firstOrNull { it != null }
-                ?: defaultConfig.testInstrumentationRunner
-
-        if (fromFlavor != null) {
-            val finalFromFlavor: String = fromFlavor
-            return services.provider{ finalFromFlavor }
-        }
-
-        // else return the value from the Manifest
-        return computeInstrumentationTestRunner(dataProvider.manifestData, services, dexingType)
-    }
+    override fun getInstrumentationRunner(dexingType: DexingType): Provider<String> =
+        getInstrumentationRunner(productFlavorList, defaultConfig, dataProvider, dexingType, services)
 
     override val handleProfiling: Provider<Boolean>
         get() {

@@ -802,7 +802,6 @@ com.android.build.gradle.internal.dsl.AbstractPublishing.getDslService: com.andr
 com.android.build.gradle.internal.dsl.AbstractPublishing.getSingleVariants: java.util.List<T> ()
 com.android.build.gradle.internal.dsl.AdbOptions implements com.android.builder.model.AdbOptions, com.android.build.api.dsl.AdbOptions, com.android.build.api.dsl.Installation
 com.android.build.gradle.internal.dsl.AdbOptions.<init>: com.android.build.gradle.internal.dsl.AdbOptions (com.android.build.gradle.internal.services.DslServices)
-com.android.build.gradle.internal.dsl.AdbOptions.getDslServices: com.android.build.gradle.internal.services.DslServices ()
 com.android.build.gradle.internal.dsl.AdbOptions.getInstallOptions: java.util.List<java.lang.String> ()
 com.android.build.gradle.internal.dsl.AdbOptions.getTimeOutInMs: int ()
 com.android.build.gradle.internal.dsl.AdbOptions.setTimeOutInMs: void (int)
@@ -1686,11 +1685,6 @@ com.android.build.gradle.internal.dsl.InternalLibraryExtension.splits: void (org
 com.android.build.gradle.internal.dsl.InternalLibraryExtension.testCoverage: void (org.gradle.api.Action<com.android.build.api.dsl.TestCoverage>)
 com.android.build.gradle.internal.dsl.InternalLibraryExtension.testOptions: void (org.gradle.api.Action<com.android.build.gradle.internal.dsl.TestOptions>)
 com.android.build.gradle.internal.dsl.InternalLibraryExtension.viewBinding: void (org.gradle.api.Action<com.android.build.gradle.internal.dsl.ViewBindingOptionsImpl>)
-com.android.build.gradle.internal.dsl.InternalPrivacySandboxSdkExtension implements com.android.build.api.dsl.PrivacySandboxSdkExtension
-com.android.build.gradle.internal.dsl.InternalPrivacySandboxSdkExtension.bundle: void (org.gradle.api.Action<com.android.build.api.dsl.PrivacySandboxSdkBundle>)
-com.android.build.gradle.internal.dsl.InternalPrivacySandboxSdkExtension.lint: void (org.gradle.api.Action<com.android.build.api.dsl.Lint>)
-com.android.build.gradle.internal.dsl.InternalPrivacySandboxSdkExtension.optimization: void (org.gradle.api.Action<com.android.build.api.dsl.PrivacySandboxSdkOptimization>)
-com.android.build.gradle.internal.dsl.InternalPrivacySandboxSdkExtension.signingConfig: void (org.gradle.api.Action<com.android.build.api.dsl.SigningConfig>)
 com.android.build.gradle.internal.dsl.InternalSigningConfig implements com.android.build.api.dsl.SigningConfig, com.android.build.api.dsl.ApkSigningConfig, org.gradle.api.Named, com.android.builder.model.SigningConfig
 com.android.build.gradle.internal.dsl.InternalTestExtension implements com.android.build.api.dsl.TestExtension, com.android.build.gradle.internal.dsl.InternalCommonExtension
 com.android.build.gradle.internal.dsl.InternalTestExtension.aaptOptions: void (org.gradle.api.Action<com.android.build.gradle.internal.dsl.AaptOptions>)

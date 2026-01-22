@@ -17,26 +17,32 @@ package com.android.adblib.tools.debugging
 
 import com.android.adblib.ConnectedDevice
 import com.android.adblib.DeviceState
+import com.android.adblib.serialNumber
 import com.android.adblib.waitUntilOnline
+import java.io.EOFException
+import java.io.IOException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.flow.collectIndexed
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.transform
 import kotlinx.coroutines.launch
 
 /**
  * This flow can be used to keep track of debuggable processes.
  *
- * The [Flow] starts when the device becomes [DeviceState.ONLINE] and ends
- * when the device scope is disconnected. This flow keeps the caller informed about
- * the lifecycle of debuggable processes, notifying it when they start, stop, or
- * have their properties modified.
+ * The [Flow] starts when the device becomes [DeviceState.ONLINE] and remains active
+ * as long as the device is connected. The flow terminates with an [EOFException]
+ * when the device disconnects.
+ *
+ * This flow keeps the caller informed about the lifecycle of debuggable processes,
+ * notifying it when they start, stop, or have their properties modified.
  *
  * See [JdwpProcessChange] for more info.
+ *
+ * @throws EOFException if the device disconnects while the flow is active.
+ * @throws IOException if the device disconnects while waiting for [DeviceState.ONLINE].
  */
 val ConnectedDevice.jdwpProcessChangeFlow: Flow<JdwpProcessChange>
     get() = channelFlow {
@@ -45,11 +51,16 @@ val ConnectedDevice.jdwpProcessChangeFlow: Flow<JdwpProcessChange>
         val currentProcessTrackingJobs: MutableMap<Int, Job> = mutableMapOf()
 
         device.waitUntilOnline()
-        val flow = when (device.isTrackAppSupported()) {
-            true -> device.appProcessFlow.asJdwpProcessFlow()
-            false -> device.jdwpProcessFlow
-        }
-        flow.collect { processes ->
+        device.jdwpProcessTracker.processesFlow.collect { processes ->
+            // Do not emit if we are only initializing the flow
+            if (processes.flowStatus.isStartOfFlow) {
+                return@collect
+            }
+
+            if (processes.flowStatus.isEndOfFlow) {
+                throw EOFException("Stopping `jdwpProcessChangeFlow` as device `${device.serialNumber}` disconnected")
+            }
+
             val processesById = processes.associateBy { it.pid }
             val removedPids = currentProcesses.keys - processesById.keys
             val addedPids = processesById.keys - currentProcesses.keys
@@ -93,9 +104,6 @@ val ConnectedDevice.jdwpProcessChangeFlow: Flow<JdwpProcessChange>
             currentProcesses = processesById
         }
     }
-
-private fun Flow<List<AppProcess>>.asJdwpProcessFlow() =
-    transform { emit(it.mapNotNull { process -> process.jdwpProcess }) }
 
 /**
  * Represents a change in debuggable processes on a [ConnectedDevice]

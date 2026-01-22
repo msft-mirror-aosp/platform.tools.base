@@ -381,11 +381,14 @@ fun assertRunnerConfigProto(
           config {
             type_url: "type.googleapis.com/com.android.tools.utp.plugins.result.listener.gradle.proto.GradleAndroidTestResultListenerConfig"
             value {
-              resultListenerServerPort: 1234
-              resultListenerClientCertFilePath: "clientCert"
-              resultListenerClientPrivateKeyFilePath: "clientKey"
-              trustCertCollectionFilePath: "serverCert"
               deviceId: "mockDeviceID"
+              deviceName: "deviceName"
+              deviceShardName: "deviceShardName"
+              gradleProjectPath: "projectPath"
+              variantName: "variantName"
+              enableUtpTestReportingForAndroidStudio: true
+              xmlTestReportOutputDirectoryPath: "xmlTestReportOutputDirectory"
+              utpResultProtoOutputFilePath: "utpResultProtoOutputFile"
             }
           }
           use_single_class_loader: true

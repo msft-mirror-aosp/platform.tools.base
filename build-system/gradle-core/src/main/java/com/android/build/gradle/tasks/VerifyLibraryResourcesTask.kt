@@ -23,6 +23,9 @@ import com.android.build.gradle.internal.component.ComponentCreationConfig
 import com.android.build.gradle.internal.initialize
 import com.android.build.gradle.internal.profile.ProfileAwareWorkAction
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
+import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactScope.ALL
+import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactType
+import com.android.build.gradle.internal.publishing.AndroidArtifacts.ConsumedConfigType.RUNTIME_CLASSPATH
 import com.android.build.gradle.internal.res.processResources
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.services.Aapt2Input
@@ -73,6 +76,7 @@ import org.gradle.workers.WorkerExecutor
 import java.io.File
 import java.nio.file.Files
 import javax.inject.Inject
+import org.gradle.api.file.FileCollection
 
 @CacheableTask
 @BuildAnalyzer(primaryTaskCategory = TaskCategory.VERIFICATION, secondaryTaskCategories = [TaskCategory.ANDROID_RESOURCES])
@@ -86,6 +90,11 @@ abstract class VerifyLibraryResourcesTask : NewIncrementalTask() {
     @get:InputFiles
     @get:PathSensitive(PathSensitivity.RELATIVE)
     abstract val inputDirectory: DirectoryProperty
+
+    @get:Incremental
+    @get:InputFiles
+    @get:PathSensitive(PathSensitivity.RELATIVE)
+    abstract val navigationResources: DirectoryProperty
 
     @get:InputFiles
     @get:PathSensitive(PathSensitivity.RELATIVE)
@@ -110,11 +119,6 @@ abstract class VerifyLibraryResourcesTask : NewIncrementalTask() {
     @get:Nested
     abstract val androidJarInput: AndroidJarInput
 
-    @get:Classpath
-    @get:Optional
-    @get:Incremental
-    abstract val navigationUpdatedFolder: DirectoryProperty
-
     private lateinit var manifestMergeBlameFile: Provider<RegularFile>
 
     override fun doTaskAction(inputChanges: InputChanges) {
@@ -126,13 +130,13 @@ abstract class VerifyLibraryResourcesTask : NewIncrementalTask() {
             params.initializeFromBaseTask(this)
             params.androidJar.set(androidJarInput.getAndroidJar().get())
             params.aapt2.set(aapt2)
-            params.inputs.set(inputChanges.getChangesInSerializableForm(inputDirectory))
+            params.inputs.set(inputChanges.getChangesInSerializableForm(listOf(inputDirectory, navigationResources)))
             params.manifestFile.set(File(manifestFile))
             params.compiledDependenciesResources.from(compiledDependenciesResources)
-            params.navigationDir.set(navigationUpdatedFolder)
             params.manifestMergeBlameFile.set(manifestMergeBlameFile)
             params.compiledDirectory.set(compiledDirectory)
             params.mergeBlameFolder.set(mergeBlameFolder)
+            params.sourceSetMaps.setFrom(sourceSetMaps)
         }
     }
 
@@ -143,7 +147,6 @@ abstract class VerifyLibraryResourcesTask : NewIncrementalTask() {
         abstract val inputs: Property<SerializableInputChanges>
         abstract val manifestFile: RegularFileProperty
         abstract val compiledDependenciesResources: ConfigurableFileCollection
-        abstract val navigationDir: DirectoryProperty
         abstract val manifestMergeBlameFile: RegularFileProperty
         abstract val compiledDirectory: DirectoryProperty
         abstract val mergeBlameFolder: DirectoryProperty
@@ -164,6 +167,9 @@ abstract class VerifyLibraryResourcesTask : NewIncrementalTask() {
             Files.createDirectories(compiledResources.toPath())
 
             val aapt2Input = parameters.aapt2.get()
+            val resSourceSetMap =
+                mergeIdentifiedSourceSetFiles(parameters.sourceSetMaps.files.toList())
+            val relativeResourcesPathEncoding = ResourcePathEncoding.Relative(resSourceSetMap)
             WorkerExecutorResourceCompilationService(
                 projectPath = parameters.projectPath,
                 taskOwner = parameters.taskOwner.get(),
@@ -171,24 +177,24 @@ abstract class VerifyLibraryResourcesTask : NewIncrementalTask() {
                 workerExecutor = workerExecutor,
                 aapt2Input = aapt2Input
             ).use { compilationService ->
+
                 compileResources(
                     inputs = parameters.inputs.get(),
                     outDirectory = compiledResources,
                     compilationService = compilationService,
-                    mergeBlameFolder = parameters.mergeBlameFolder.get().asFile
+                    mergeBlameFolder = parameters.mergeBlameFolder.get().asFile,
+                    resourcePathEncoding = relativeResourcesPathEncoding
                 )
             }
 
             val compiledDependenciesResourcesDirs =
                 parameters.compiledDependenciesResources.reversed()
-            val identifiedSourceSetMap =
-                    mergeIdentifiedSourceSetFiles(parameters.sourceSetMaps.files.filterNotNull())
             val linkedApk = tempOutput.resolve("linked.apk")
             val config = buildAaptPackageConfig(
                     linkedApk,
                     compiledDependenciesResourcesDirs,
                     compiledResources,
-                    identifiedSourceSetMap
+                    relativeResourcesPathEncoding
                 )
 
             workerExecutor.await() // All compilation must be done before linking.
@@ -209,7 +215,7 @@ abstract class VerifyLibraryResourcesTask : NewIncrementalTask() {
             linkedApk: File,
             compiledDependenciesResourcesDirs: List<File>,
             compiledResources: File,
-            identifiedSourceSetMap: Map<String, String>
+            relativeResourcePathEncoding: ResourcePathEncoding.Relative
         ): AaptPackageConfig = with(parameters) {
             AaptPackageConfig.Builder()
                 .setManifestFile(manifestFile = manifestFile.get().asFile)
@@ -222,12 +228,7 @@ abstract class VerifyLibraryResourcesTask : NewIncrementalTask() {
                 .setAndroidTarget(androidJar = androidJar.get().asFile)
                 .setMergeBlameDirectory(mergeBlameFolder.get().asFile)
                 .setManifestMergeBlameFile(manifestMergeBlameFile.get().asFile)
-                .setIdentifiedSourceSetMap(identifiedSourceSetMap)
-                .apply {
-                    if (navigationDir.isPresent) {
-                        addResourceDir(navigationDir.get().asFile)
-                    }
-                }
+                .setIdentifiedSourceSetMap(relativeResourcePathEncoding.identifiedSourceSetMap)
                 .build()
         }
     }
@@ -265,6 +266,11 @@ abstract class VerifyLibraryResourcesTask : NewIncrementalTask() {
             )
 
             creationConfig.artifacts.setTaskInputToFinalProduct(
+                InternalArtifactType.UPDATED_NAVIGATION_XML,
+                task.navigationResources
+            )
+
+            creationConfig.artifacts.setTaskInputToFinalProduct(
                 InternalArtifactType.AAPT_FRIENDLY_MERGED_MANIFESTS,
                 task.manifestFiles
             )
@@ -281,22 +287,22 @@ abstract class VerifyLibraryResourcesTask : NewIncrementalTask() {
                         AndroidArtifacts.ArtifactScope.ALL,
                         AndroidArtifacts.ArtifactType.COMPILED_DEPENDENCIES_RESOURCES
                     ))
+                val dependencySourceMaps = creationConfig.variantDependencies.getArtifactFileCollection(
+                    RUNTIME_CLASSPATH,
+                    ALL,
+                    ArtifactType.ANDROID_RES_SOURCE_SET_MAPPING,
+                )
+                task.sourceSetMaps.from(dependencySourceMaps)
+                task.dependsOn(dependencySourceMaps)
             }
 
             creationConfig.services.initializeAapt2Input(task.aapt2, task)
             task.androidJarInput.initialize(task, creationConfig)
 
             val sourceSetMap =
-                    creationConfig.artifacts.get(InternalArtifactType.SOURCE_SET_PATH_MAP)
-            task.sourceSetMaps.fromDisallowChanges(
-                    creationConfig.services.fileCollection(sourceSetMap)
-            )
+                creationConfig.artifacts.get(InternalArtifactType.ANDROID_RES_SOURCE_SET_PATH_MAP)
+            task.sourceSetMaps.fromDisallowChanges(sourceSetMap)
             task.dependsOn(sourceSetMap)
-
-            creationConfig.artifacts.setTaskInputToFinalProduct(
-                InternalArtifactType.COMPILED_NAVIGATION_RES,
-                task.navigationUpdatedFolder
-            )
         }
     }
 
@@ -312,6 +318,7 @@ abstract class VerifyLibraryResourcesTask : NewIncrementalTask() {
          * @param outDirectory the directory containing compiled resources.
          * @param compilationService AAPT tool to execute the resource compiling
          * @param analyticsService the build service to record execution spans
+         * @param resourcePathEncoding Source resource path encoding to be written to resource.
          */
         @JvmStatic
         @VisibleForTesting
@@ -319,7 +326,8 @@ abstract class VerifyLibraryResourcesTask : NewIncrementalTask() {
             inputs: SerializableInputChanges,
             outDirectory: File,
             compilationService: ResourceCompilationService,
-            mergeBlameFolder: File
+            mergeBlameFolder: File,
+            resourcePathEncoding: ResourcePathEncoding
         ) {
             for (change in inputs.changes) {
                 // Accept only files in subdirectories of the merged resources directory.
@@ -342,7 +350,7 @@ abstract class VerifyLibraryResourcesTask : NewIncrementalTask() {
                                 isPseudoLocalize = false,
                                 isPngCrunching = false,
                                 mergeBlameFolder = mergeBlameFolder,
-                                resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable
+                                resourcePathEncoding = resourcePathEncoding
                             )
                             compilationService.submitCompile(request)
                         } catch (e: Exception) {

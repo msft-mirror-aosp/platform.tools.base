@@ -140,6 +140,10 @@ class UtpConfigFactoryTest {
     ): RunnerConfig {
         return createRunnerConfigProtoForLocalDevice(
             "mockDeviceID",
+            "deviceName",
+            "deviceShardName",
+            "projectPath",
+            "variantName",
             "emulator-mockDeviceSerialNumber",
             testData,
             targetApkConfigBundle,
@@ -164,12 +168,9 @@ class UtpConfigFactoryTest {
             cleanTestArtifacts,
             reinstallIncompatibleApksBeforeTest,
             shardConfig,
-            UtpTestResultListenerServerMetadata(
-                mockFile("serverCert"),
-                1234,
-                mockFile("clientCert"),
-                mockFile("clientKey"),
-            )
+            enableUtpTestReportingForAndroidStudio = true,
+            mockFile("xmlTestReportOutputDirectory"),
+            mockFile("utpResultProtoOutputFile"),
         )
     }
 
@@ -185,6 +186,10 @@ class UtpConfigFactoryTest {
     ): RunnerConfig {
         return createRunnerConfigProtoForLocalDevice(
             "mockDeviceID",
+            "deviceName",
+            "deviceShardName",
+            "projectPath",
+            "variantName",
             "emulator-mockDeviceSerialNumber",
             testData,
             targetApkConfigBundle,
@@ -209,12 +214,9 @@ class UtpConfigFactoryTest {
             uninstallApksAfterTest = false,
             reinstallIncompatibleApksBeforeTest = true,
             shardConfig,
-            UtpTestResultListenerServerMetadata(
-                mockFile("serverCert"),
-                1234,
-                mockFile("clientCert"),
-                mockFile("clientKey"),
-            ),
+            enableUtpTestReportingForAndroidStudio = true,
+            mockFile("xmlTestReportOutputDirectory"),
+            mockFile("utpResultProtoOutputFile"),
         )
     }
 

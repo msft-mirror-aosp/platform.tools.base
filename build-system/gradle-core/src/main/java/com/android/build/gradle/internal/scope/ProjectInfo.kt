@@ -70,6 +70,9 @@ class ProjectInfo(private val project: Project) {
     val rootDir: File
         get() = project.rootDir
 
+    val rootProjectName: String
+        get() = project.rootProject.name
+
     val rootBuildDirectory: DirectoryProperty
         get() = project.rootProject.layout.buildDirectory
 

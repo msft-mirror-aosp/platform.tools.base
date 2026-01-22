@@ -30,6 +30,7 @@ import com.android.tools.appinspection.database.testing.MessageFactory.createTra
 import com.android.tools.appinspection.database.testing.MessageFactory.createTrackDatabasesResponse
 import com.google.common.truth.Truth.assertThat
 import java.io.File
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.runBlocking
 import org.junit.Rule
 import org.junit.Test
@@ -600,6 +601,23 @@ class TrackDatabasesTest {
     testEnvironment.sendCommand(createTrackDatabasesCommand(ignoreFrameworkApi = true))
 
     assertThat(testEnvironment.getFrameworkHooks()).isEmpty()
+  }
+
+  @Test
+  fun test_already_open_androidx_databases(): Unit = runBlocking {
+    val open =
+      listOf(
+        testEnvironment.openAndroidXDatabase(DatabaseModel("db1")),
+        testEnvironment.openAndroidXDatabase(DatabaseModel("db2")),
+      )
+    testEnvironment.registerAlreadyOpenDatabases(open)
+
+    testEnvironment.sendCommand(createTrackDatabasesCommand()).let { response ->
+      assertThat(response).isEqualTo(createTrackDatabasesResponse())
+    }
+
+    val detected = List(open.size) { testEnvironment.receiveEvent(3.seconds).databaseOpened.path }
+    assertThat(detected).containsExactlyElementsIn(open.map { it.getDatabaseName() })
   }
 
   private val SQLiteClosable.referenceCount: Int

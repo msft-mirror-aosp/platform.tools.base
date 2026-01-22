@@ -1,87 +1,30 @@
-/*
- * Copyright 2016 Google Inc. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package com.google.devrel.gmscore.tools.apk.arsc;
 
+import com.google.auto.value.AutoValue;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.util.Objects;
 
 /** Represents an XML attribute and value. */
-public class XmlAttribute implements SerializableResource {
+@AutoValue
+public abstract class XmlAttribute implements SerializableResource {
 
   /** The serialized size in bytes of an {@link XmlAttribute}. */
-  public static final int SIZE = 12 + BinaryResourceValue.SIZE;
-
-  private final int namespaceIndex;
-  private final int nameIndex;
-  private final int rawValueIndex;
-  private final BinaryResourceValue typedValue;
-  private final XmlNodeChunk parent;
-
-  /**
-   * Creates a new {@link XmlAttribute} based on the bytes at the current {@code buffer} position.
-   *
-   * @param buffer A buffer whose position is at the start of a {@link XmlAttribute}.
-   * @param parent The parent chunk that contains this attribute; used for string lookups.
-   */
-  public static XmlAttribute create(ByteBuffer buffer, XmlNodeChunk parent) {
-    int namespace = buffer.getInt();
-    int name = buffer.getInt();
-    int rawValue = buffer.getInt();
-    BinaryResourceValue typedValue = BinaryResourceValue.create(buffer);
-    return new XmlAttribute(namespace, name, rawValue, typedValue, parent);
-  }
-
-  private XmlAttribute(int namespaceIndex,
-                      int nameIndex,
-                      int rawValueIndex,
-                      BinaryResourceValue typedValue,
-                      XmlNodeChunk parent) {
-    this.namespaceIndex = namespaceIndex;
-    this.nameIndex = nameIndex;
-    this.rawValueIndex = rawValueIndex;
-    this.typedValue = typedValue;
-    this.parent = parent;
-  }
+  public static final int SIZE = 12 + ResourceValue.SIZE;
 
   /** A string reference to the namespace URI, or -1 if not present. */
-  public int namespaceIndex() {
-    return namespaceIndex;
-  }
+  public abstract int namespaceIndex();
 
   /** A string reference to the attribute name. */
-  public int nameIndex() {
-    return nameIndex;
-  }
+  public abstract int nameIndex();
 
   /** A string reference to a string containing the character value.  */
-  public int rawValueIndex() {
-    return rawValueIndex;
-  }
+  public abstract int rawValueIndex();
 
-  /** A {@link BinaryResourceValue} instance containing the parsed value. */
-  public BinaryResourceValue typedValue() {
-    return typedValue;
-  }
+  /** A {@link ResourceValue} instance containing the parsed value. */
+  public abstract ResourceValue typedValue();
 
   /** The parent of this XML attribute; used for dereferencing the namespace and name. */
-  public XmlNodeChunk parent() {
-    return parent;
-  }
+  public abstract XmlNodeChunk parent();
 
   /** The namespace URI, or the empty string if not present. */
   public final String namespace() {
@@ -98,40 +41,42 @@ public class XmlAttribute implements SerializableResource {
     return getString(rawValueIndex());
   }
 
+  /**
+   * Creates a new {@link XmlAttribute} based on the bytes at the current {@code buffer} position.
+   *
+   * @param buffer A buffer whose position is at the start of a {@link XmlAttribute}.
+   * @param parent The parent chunk that contains this attribute; used for string lookups.
+   */
+  public static XmlAttribute create(ByteBuffer buffer, XmlNodeChunk parent) {
+    int namespace = buffer.getInt();
+    int name = buffer.getInt();
+    int rawValue = buffer.getInt();
+    ResourceValue typedValue = ResourceValue.create(buffer);
+    return create(namespace, name, rawValue, typedValue, parent);
+  }
+
+  public static XmlAttribute create(
+      int namespace, int name, int rawValue, ResourceValue typedValue, XmlNodeChunk parent) {
+    return new AutoValue_XmlAttribute(namespace, name, rawValue, typedValue, parent);
+  }
+
   private String getString(int index) {
     return parent().getString(index);
   }
 
   @Override
   public byte[] toByteArray() {
-    return toByteArray(false);
+    return toByteArray(SerializableResource.NONE);
   }
 
   @Override
-  public byte[] toByteArray(boolean shrink) {
+  public byte[] toByteArray(int options) {
     ByteBuffer buffer = ByteBuffer.allocate(SIZE).order(ByteOrder.LITTLE_ENDIAN);
     buffer.putInt(namespaceIndex());
     buffer.putInt(nameIndex());
     buffer.putInt(rawValueIndex());
-    buffer.put(typedValue().toByteArray(shrink));
+    buffer.put(typedValue().toByteArray(options));
     return buffer.array();
-  }
-
-  @Override
-  public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
-    XmlAttribute that = (XmlAttribute)o;
-    return namespaceIndex == that.namespaceIndex &&
-           nameIndex == that.nameIndex &&
-           rawValueIndex == that.rawValueIndex &&
-           Objects.equals(typedValue, that.typedValue) &&
-           Objects.equals(parent, that.parent);
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(namespaceIndex, nameIndex, rawValueIndex, typedValue, parent);
   }
 
   /**

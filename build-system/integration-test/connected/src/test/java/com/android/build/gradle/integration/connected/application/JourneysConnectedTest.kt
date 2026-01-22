@@ -189,6 +189,7 @@ class JourneysConnectedTest {
         )
         val result =
             executor.expectFailure()
+                .withEnvironmentVariables(mapOf("GEMINI_ACCESS_TOKEN_PATH" to "fake_token_path"))
                 .run(":app:testJourneysTestT1DebugTestSuite")
 
         val outputDir =
@@ -203,10 +204,15 @@ class JourneysConnectedTest {
                 ),
                 buildRunFinishedEvent(
                     Status.ERROR,
-                    "Failed to obtain credentials for establishing connection with backend. Make sure you are logged in to Android Studio and are connected to a network before re-trying. [Reason=AUTHENTICATION_FAILED]"
+                    "Failed to obtain credentials for establishing connection " +
+                            "with backend. Please check your network connection and ensure you are " +
+                            "logged in to Gemini in Android Studio. [Reason=AUTHENTICATION_FAILED]"
                 )
             )
         )
+
+        // Check that the cause of the AUTHENTICATION_FAILED error is shown in the logs
+        result.assertOutputContains("Caused by:\n        java.io.IOException:")
     }
 
     @Test

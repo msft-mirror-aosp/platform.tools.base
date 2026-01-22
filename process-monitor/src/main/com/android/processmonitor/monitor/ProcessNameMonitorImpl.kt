@@ -17,6 +17,7 @@ package com.android.processmonitor.monitor
 
 import com.android.adblib.AdbLogger
 import com.android.adblib.AdbSession
+import com.android.adblib.utils.logIOCompletionErrors
 import com.android.adblib.withPrefix
 import com.android.processmonitor.common.DeviceEvent.DeviceDisconnected
 import com.android.processmonitor.common.DeviceEvent.DeviceOnline
@@ -76,11 +77,15 @@ class ProcessNameMonitorImpl<T> @TestOnly internal constructor(
             isStarted = true
         }
         scope.launch {
-            deviceTracker.trackDevices().collect {
-                when (it) {
-                    is DeviceOnline -> addDevice(it.device)
-                    is DeviceDisconnected -> removeDevice(it.serialNumber)
+            runCatching {
+                deviceTracker.trackDevices().collect {
+                    when (it) {
+                        is DeviceOnline -> addDevice(it.device)
+                        is DeviceDisconnected -> removeDevice(it.serialNumber)
+                    }
                 }
+            }.onFailure { throwable ->
+                logger.logIOCompletionErrors(throwable)
             }
         }
     }
@@ -106,7 +111,7 @@ class ProcessNameMonitorImpl<T> @TestOnly internal constructor(
         val serialNumber = deviceTracker.getDeviceSerialNumber(device)
         logger.debug { "Adding $serialNumber" }
         val processTracker =
-            SharedProcessTracker(scope, processTrackerFactory.createProcessTracker(device))
+            SharedProcessTracker(scope, processTrackerFactory.createProcessTracker(device), logger)
         val logger = logger.withPrefix("PerDeviceMonitor: $serialNumber: ")
         devices[serialNumber] =
             PerDeviceMonitor(scope, logger, maxProcessRetention, processTracker).apply {

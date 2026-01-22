@@ -20,13 +20,14 @@ import com.android.build.api.dsl.CompileSdkSpec
 import com.android.build.api.dsl.CompileSdkVersion
 import com.android.build.api.dsl.HasConfigurableValue
 import com.android.build.api.dsl.KotlinMultiplatformAndroidCompilationBuilder
-import com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryExtension
 import com.android.build.api.dsl.KotlinMultiplatformAndroidDeviceTest
 import com.android.build.api.dsl.KotlinMultiplatformAndroidHostTest
 import com.android.build.api.dsl.LibraryAndroidResources
 import com.android.build.api.dsl.DependencySelection
+import com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryExtension
 import com.android.build.api.dsl.MinSdkSpec
 import com.android.build.api.dsl.MinSdkVersion
+import com.android.build.api.dsl.TestCoverage
 import com.android.build.api.variant.impl.KmpAndroidCompilationType
 import com.android.build.api.variant.impl.MutableAndroidVersion
 import com.android.build.gradle.internal.coverage.JacocoOptions
@@ -68,6 +69,8 @@ internal abstract class KotlinMultiplatformAndroidLibraryExtensionImpl @Inject c
     }
 
     abstract val libraryRequests: MutableList<LibraryRequest>
+
+    abstract fun setLibraryRequests(libraryRequests: List<LibraryRequest>)
 
     override fun useLibrary(name: String) {
         useLibrary(name, true)
@@ -145,6 +148,10 @@ internal abstract class KotlinMultiplatformAndroidLibraryExtensionImpl @Inject c
 
     override val testCoverage = dslServices.newInstance(JacocoOptions::class.java)
 
+    override fun testCoverage(action: TestCoverage.() -> Unit) {
+        action.invoke(testCoverage)
+    }
+
     internal var androidTestOnJvmOptions: KotlinMultiplatformAndroidHostTestImpl? = null
     internal var androidTestOnDeviceOptions: KotlinMultiplatformAndroidDeviceTestImpl? = null
     internal var androidTestOnJvmBuilder: KotlinMultiplatformAndroidCompilationBuilderImpl? = null
@@ -191,7 +198,10 @@ internal abstract class KotlinMultiplatformAndroidLibraryExtensionImpl @Inject c
 
         androidTestOnJvmBuilder!!.action()
         compilationEnabledCallback(androidTestOnJvmBuilder!!)
-        return HasConfigurableValueImpl(androidTestOnJvmOptions!!)
+        return dslServices.newInstance(
+            HasConfigurableValueImpl::class.java,
+            androidTestOnJvmOptions!!
+        ) as HasConfigurableValue<KotlinMultiplatformAndroidHostTest>
     }
 
     override fun withDeviceTest(action: KotlinMultiplatformAndroidDeviceTest.() -> Unit) {
@@ -211,6 +221,9 @@ internal abstract class KotlinMultiplatformAndroidLibraryExtensionImpl @Inject c
 
         androidTestOnDeviceBuilder!!.action()
         compilationEnabledCallback(androidTestOnDeviceBuilder!!)
-        return HasConfigurableValueImpl(androidTestOnDeviceOptions!!)
+        return dslServices.newInstance(
+            HasConfigurableValueImpl::class.java,
+            androidTestOnDeviceOptions!!
+        ) as HasConfigurableValue<KotlinMultiplatformAndroidDeviceTest>
     }
 }

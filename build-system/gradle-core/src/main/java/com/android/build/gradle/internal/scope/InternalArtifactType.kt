@@ -153,6 +153,12 @@ InternalArtifactType<T : FileSystemLocation>(
     object DEVICE_PROVIDER_CODE_COVERAGE: InternalArtifactType<Directory>(DIRECTORY, Category.OUTPUTS)
     // The jacoco code coverage from the managed device instrumentation test tasks.
     object MANAGED_DEVICE_CODE_COVERAGE: InternalArtifactType<Directory>(DIRECTORY, Category.OUTPUTS)
+    // The variant specific jacoco code coverage data collected from unit tests, instrumentation tests and test suites
+    object VARIANT_CODE_COVERAGE_DATA: InternalArtifactType<Directory>(DIRECTORY, Category.INTERMEDIATES), Replaceable
+    // The directory where the code coverage html report is generated
+    object CODE_COVERAGE_HTML_REPORT: InternalArtifactType<Directory>(DIRECTORY, Category.REPORTS), Replaceable
+    // The directory where the aggregated code coverage html report is generated
+    object AGGREGATED_CODE_COVERAGE_HTML_REPORT: InternalArtifactType<Directory>(DIRECTORY, Category.REPORTS), Replaceable
     // The automatically generated jacoco config file
     object JACOCO_CONFIG_RESOURCES: InternalArtifactType<Directory>(DIRECTORY)
 
@@ -207,7 +213,7 @@ InternalArtifactType<T : FileSystemLocation>(
 
     // File containing map between a source set identifier and an absolute resource sourceset path
     // for generating absolute paths in resource linking error messages.
-    object SOURCE_SET_PATH_MAP: InternalArtifactType<RegularFile>(FILE), Replaceable
+    object ANDROID_RES_SOURCE_SET_PATH_MAP: InternalArtifactType<RegularFile>(FILE), Replaceable
     // File to map the ordering of deviceSpec paths to the directory ordinal
     object DEVICE_SPEC_PATH_MAP: InternalArtifactType<RegularFile>(FILE), Replaceable
     // The R class jar for compile classpath use.
@@ -263,6 +269,7 @@ InternalArtifactType<T : FileSystemLocation>(
 
     // final output of the locale config generator.
     object GENERATED_LOCALE_CONFIG: InternalArtifactType<Directory>(DIRECTORY), Replaceable
+    object GENERATED_LOCALE_CONFIG_INCREMENTAL_DIR: InternalArtifactType<Directory>(DIRECTORY), Replaceable
 
     // intermediate output of the locale config generator.
     object SUPPORTED_LOCALE_LIST: InternalArtifactType<RegularFile>(FILE), Replaceable
@@ -594,6 +601,21 @@ InternalArtifactType<T : FileSystemLocation>(
 
     /** Metadata file included in the app bundle as output from R8 */
     object R8_METADATA: InternalArtifactType<RegularFile>(FILE)
+
+    object R8_MAPPING_SEEDS :
+        InternalArtifactType<RegularFile>(FILE, Category.OUTPUTS, "mapping", "seeds.txt")
+
+    object R8_MAPPING_USAGE :
+        InternalArtifactType<RegularFile>(FILE, Category.OUTPUTS, "mapping","usage.txt")
+
+    object R8_MAPPING_CONFIGURATION :
+        InternalArtifactType<RegularFile>(FILE, Category.OUTPUTS, "mapping", "configuration.txt")
+
+    object R8_MAPPING_MISSING_RULES :
+        InternalArtifactType<RegularFile>(FILE, Category.OUTPUTS, "mapping", "missing_rules.txt")
+
+    object R8_MAPPING_RESOURCES :
+        InternalArtifactType<RegularFile>(FILE, Category.OUTPUTS, "mapping", "resources.txt")
 
     // Human-readable Art profile artifacts; combines art profiles from various project sources
     object MERGED_ART_PROFILE: InternalArtifactType<RegularFile>(

@@ -274,14 +274,30 @@ com/android/tools/apkparser/apkanalyzer
 com/android/tools/apkparser/binary-resources
   META-INF/
   META-INF/MANIFEST.MF
+  META-INF/maven/
+  META-INF/maven/com.google.auto.value/
+  META-INF/maven/com.google.auto.value/auto-value-annotations/
+  META-INF/maven/com.google.auto.value/auto-value-annotations/pom.properties
+  META-INF/maven/com.google.auto.value/auto-value-annotations/pom.xml
   NOTICE
   com/
   com/google/
+  com/google/auto/
+  com/google/auto/value/
+  com/google/auto/value/extension/
+  com/google/auto/value/extension/memoized/
+  com/google/auto/value/extension/serializable/
+  com/google/auto/value/extension/toprettystring/
   com/google/devrel/
   com/google/devrel/gmscore/
   com/google/devrel/gmscore/tools/
   com/google/devrel/gmscore/tools/apk/
   com/google/devrel/gmscore/tools/apk/arsc/
+  org/
+  org/checkerframework/
+  org/checkerframework/checker/
+  org/checkerframework/checker/nullness/
+  org/checkerframework/checker/nullness/compatqual/
 
 com/android/tools/build/aapt2-proto
   Configuration.proto
@@ -525,7 +541,20 @@ com/android/tools/build/gradle
   com/android/build/gradle/internal/core/dsl/impl/
   com/android/build/gradle/internal/core/dsl/impl/features/
   com/android/build/gradle/internal/coverage/
+  com/android/build/gradle/internal/coverage/renderer/
+  com/android/build/gradle/internal/coverage/renderer/builders/
+  com/android/build/gradle/internal/coverage/renderer/css/
+  com/android/build/gradle/internal/coverage/renderer/css/style.css
+  com/android/build/gradle/internal/coverage/renderer/data/
+  com/android/build/gradle/internal/coverage/renderer/index.html
+  com/android/build/gradle/internal/coverage/renderer/javascript/
+  com/android/build/gradle/internal/coverage/renderer/javascript/codecoveragescript.js
+  com/android/build/gradle/internal/coverage/renderer/javascript/sourceviewscript.js
+  com/android/build/gradle/internal/coverage/renderer/utils/
+  com/android/build/gradle/internal/coverage/renderer/xmlparser/
+  com/android/build/gradle/internal/coverage/renderer/xmlparser/utils/
   com/android/build/gradle/internal/coverage/report/
+  com/android/build/gradle/internal/coverage/tasks/
   com/android/build/gradle/internal/crash/
   com/android/build/gradle/internal/cxx/
   com/android/build/gradle/internal/cxx/attribution/
@@ -909,24 +938,16 @@ com/android/tools/emulator/proto
   waterfall.proto
 
 com/android/tools/external/com-intellij/intellij-core
-  .pseudoCommonKotlinSourceSet
   DebugProbesKt.bin
   META-INF/
   META-INF/AL2.0
-  META-INF/Analysis.xml
-  META-INF/AnalysisImpl.xml
   META-INF/Core.xml
   META-INF/CoreImpl.xml
-  META-INF/JavaIndexingPlugin.xml
   META-INF/LGPL2.1
   META-INF/LICENSE
   META-INF/LICENSE.txt
   META-INF/MANIFEST.MF
-  META-INF/NOTICE
   META-INF/NOTICE.txt
-  META-INF/ProjectModel.xml
-  META-INF/WorkspaceModel.xml
-  META-INF/WorkspaceModelExtensions.xml
   META-INF/annotations.kotlin_module
   META-INF/com.android.tools/
   META-INF/com.android.tools/proguard/
@@ -944,15 +965,12 @@ com/android/tools/external/com-intellij/intellij-core
   META-INF/intellij.java.syntax.kotlin_module
   META-INF/intellij.platform.analysis.impl.kotlin_module
   META-INF/intellij.platform.analysis.kotlin_module
-  META-INF/intellij.platform.backend.workspace.kotlin_module
-  META-INF/intellij.platform.concurrency.kotlin_module
   META-INF/intellij.platform.core.impl.kotlin_module
   META-INF/intellij.platform.core.kotlin_module
   META-INF/intellij.platform.diagnostic.kotlin_module
   META-INF/intellij.platform.diagnostic.telemetry.kotlin_module
   META-INF/intellij.platform.extensions.kotlin_module
   META-INF/intellij.platform.plugins.parser.impl.kotlin_module
-  META-INF/intellij.platform.projectModel.kotlin_module
   META-INF/intellij.platform.syntax.extensions.kotlin_module
   META-INF/intellij.platform.syntax.i18n.kotlin_module
   META-INF/intellij.platform.syntax.kotlin_module
@@ -966,8 +984,6 @@ com/android/tools/external/com-intellij/intellij-core
   META-INF/intellij.platform.util.multiplatform.kotlin_module
   META-INF/intellij.platform.util.progress.kotlin_module
   META-INF/intellij.platform.util.xmlDom.kotlin_module
-  META-INF/intellij.platform.workspace.jps.kotlin_module
-  META-INF/intellij.platform.workspace.storage.kotlin_module
   META-INF/kotlinx-collections-immutable.kotlin_module
   META-INF/kotlinx-coroutines-core.kotlin_module
   META-INF/kotlinx-coroutines-debug.kotlin_module
@@ -976,19 +992,6 @@ com/android/tools/external/com-intellij/intellij-core
   META-INF/kotlinx_coroutines_core.version
   META-INF/kotlinx_coroutines_debug.version
   META-INF/maven/
-  META-INF/maven/com.esotericsoftware/
-  META-INF/maven/com.esotericsoftware/kryo/
-  META-INF/maven/com.esotericsoftware/kryo/pom.properties
-  META-INF/maven/com.esotericsoftware/kryo/pom.xml
-  META-INF/maven/com.esotericsoftware/kryo5/
-  META-INF/maven/com.esotericsoftware/kryo5/pom.properties
-  META-INF/maven/com.esotericsoftware/kryo5/pom.xml
-  META-INF/maven/com.esotericsoftware/minlog/
-  META-INF/maven/com.esotericsoftware/minlog/pom.properties
-  META-INF/maven/com.esotericsoftware/minlog/pom.xml
-  META-INF/maven/com.esotericsoftware/reflectasm/
-  META-INF/maven/com.esotericsoftware/reflectasm/pom.properties
-  META-INF/maven/com.esotericsoftware/reflectasm/pom.xml
   META-INF/maven/com.fasterxml/
   META-INF/maven/com.fasterxml/aalto-xml/
   META-INF/maven/com.fasterxml/aalto-xml/pom.properties
@@ -1038,27 +1041,9 @@ com/android/tools/external/com-intellij/intellij-core
   META-INF/proguard/coroutines.pro
   META-INF/proguard/kotlinx-serialization-common.pro
   META-INF/services/
-  META-INF/services/com.intellij.platform.jps.model.resolver.JpsDependencyResolverConfigurationService
-  META-INF/services/com.intellij.platform.workspace.jps.bridge.JpsModuleExtensionBridge
   META-INF/services/javax.xml.stream.XMLEventFactory
   META-INF/services/javax.xml.stream.XMLInputFactory
   META-INF/services/javax.xml.stream.XMLOutputFactory
-  META-INF/services/org.jetbrains.jps.model.JpsElementFactory
-  META-INF/services/org.jetbrains.jps.model.JpsEncodingConfigurationService
-  META-INF/services/org.jetbrains.jps.model.artifact.JpsArtifactService
-  META-INF/services/org.jetbrains.jps.model.artifact.elements.JpsPackagingElementFactory
-  META-INF/services/org.jetbrains.jps.model.ex.JpsExElementFactory
-  META-INF/services/org.jetbrains.jps.model.ex.JpsReferenceCustomFactory
-  META-INF/services/org.jetbrains.jps.model.fileTypes.FileNameMatcherFactory
-  META-INF/services/org.jetbrains.jps.model.jarRepository.JpsRemoteRepositoryService
-  META-INF/services/org.jetbrains.jps.model.java.JdkVersionDetector
-  META-INF/services/org.jetbrains.jps.model.java.JpsJavaExtensionService
-  META-INF/services/org.jetbrains.jps.model.serialization.JpsModelSerializerExtension
-  META-INF/services/org.jetbrains.jps.model.serialization.JpsPathMacroContributor
-  META-INF/services/org.jetbrains.jps.model.serialization.JpsSerializationManager
-  META-INF/services/org.jetbrains.jps.model.serialization.impl.JpsSerializationViaWorkspaceModel
-  META-INF/services/org.jetbrains.jps.service.JpsServiceManager
-  META-INF/services/org.jetbrains.jps.service.SharedThreadPool
   META-INF/services/reactor.blockhound.integration.BlockHoundIntegration
   META-INF/versions/
   META-INF/versions/16/
@@ -1075,27 +1060,9 @@ com/android/tools/external/com-intellij/intellij-core
   META-INF/versions/9/one/util/streamex/
   NOTICE
   _COROUTINE/
+  __index__
+  build-data.properties
   com/
-  com/esotericsoftware/
-  com/esotericsoftware/kryo/
-  com/esotericsoftware/kryo/kryo5/
-  com/esotericsoftware/kryo/kryo5/asm/
-  com/esotericsoftware/kryo/kryo5/io/
-  com/esotericsoftware/kryo/kryo5/minlog/
-  com/esotericsoftware/kryo/kryo5/objenesis/
-  com/esotericsoftware/kryo/kryo5/objenesis/instantiator/
-  com/esotericsoftware/kryo/kryo5/objenesis/instantiator/android/
-  com/esotericsoftware/kryo/kryo5/objenesis/instantiator/annotations/
-  com/esotericsoftware/kryo/kryo5/objenesis/instantiator/basic/
-  com/esotericsoftware/kryo/kryo5/objenesis/instantiator/gcj/
-  com/esotericsoftware/kryo/kryo5/objenesis/instantiator/perc/
-  com/esotericsoftware/kryo/kryo5/objenesis/instantiator/sun/
-  com/esotericsoftware/kryo/kryo5/objenesis/instantiator/util/
-  com/esotericsoftware/kryo/kryo5/objenesis/strategy/
-  com/esotericsoftware/kryo/kryo5/reflectasm/
-  com/esotericsoftware/kryo/kryo5/serializers/
-  com/esotericsoftware/kryo/kryo5/unsafe/
-  com/esotericsoftware/kryo/kryo5/util/
   com/fasterxml/
   com/fasterxml/aalto/
   com/fasterxml/aalto/async/
@@ -1108,11 +1075,6 @@ com/android/tools/external/com-intellij/intellij-core
   com/fasterxml/aalto/sax/
   com/fasterxml/aalto/stax/
   com/fasterxml/aalto/util/
-  com/github/
-  com/github/benmanes/
-  com/github/benmanes/caffeine/
-  com/github/benmanes/caffeine/cache/
-  com/github/benmanes/caffeine/cache/stats/
   com/intellij/
   com/intellij/analysis/
   com/intellij/application/
@@ -1175,10 +1137,8 @@ com/android/tools/external/com-intellij/intellij-core
   com/intellij/codeInspection/dataFlow/types/
   com/intellij/codeInspection/dataFlow/value/
   com/intellij/codeInspection/ex/
-  com/intellij/codeInspection/inspection-black-list.txt
   com/intellij/codeInspection/lang/
   com/intellij/codeInspection/options/
-  com/intellij/codeInspection/package.html
   com/intellij/codeInspection/reference/
   com/intellij/codeInspection/ui/
   com/intellij/codeInspection/ui/util/
@@ -1188,7 +1148,6 @@ com/android/tools/external/com-intellij/intellij-core
   com/intellij/compiler/
   com/intellij/concurrency/
   com/intellij/concurrency/client/
-  com/intellij/configurationStore/
   com/intellij/core/
   com/intellij/diagnostic/
   com/intellij/diff/
@@ -1223,7 +1182,6 @@ com/android/tools/external/com-intellij/intellij-core
   com/intellij/ide/highlighter/custom/tokens/
   com/intellij/ide/lightEdit/
   com/intellij/ide/plugins/
-  com/intellij/ide/plugins/.editorconfig
   com/intellij/ide/plugins/cl/
   com/intellij/ide/presentation/
   com/intellij/ide/scratch/
@@ -1243,15 +1201,11 @@ com/android/tools/external/com-intellij/intellij-core
   com/intellij/java/syntax/lexer/
   com/intellij/java/syntax/parser/
   com/intellij/java/workspace/
-  com/intellij/java/workspace/entities/
-  com/intellij/java/workspace/entities/README.md
-  com/intellij/java/workspace/entities/impl/
   com/intellij/java/workspace/fileIndex/
   com/intellij/jna/
   com/intellij/l10n/
   com/intellij/lang/
   com/intellij/lang/annotation/
-  com/intellij/lang/annotation/package.html
   com/intellij/lang/documentation/
   com/intellij/lang/folding/
   com/intellij/lang/impl/
@@ -1296,9 +1250,7 @@ com/android/tools/external/com-intellij/intellij-core
   com/intellij/openapi/command/
   com/intellij/openapi/command/impl/
   com/intellij/openapi/command/undo/
-  com/intellij/openapi/command/undo/package.html
   com/intellij/openapi/components/
-  com/intellij/openapi/concurrency/
   com/intellij/openapi/diagnostic/
   com/intellij/openapi/editor/
   com/intellij/openapi/editor/actionSystem/
@@ -1328,20 +1280,15 @@ com/android/tools/external/com-intellij/intellij-core
   com/intellij/openapi/project/
   com/intellij/openapi/projectRoots/
   com/intellij/openapi/roots/
-  com/intellij/openapi/roots/ex/
   com/intellij/openapi/roots/impl/
-  com/intellij/openapi/roots/impl/libraries/
-  com/intellij/openapi/roots/libraries/
   com/intellij/openapi/startup/
   com/intellij/openapi/ui/
   com/intellij/openapi/util/
   com/intellij/openapi/util/coroutines/
   com/intellij/openapi/util/io/
-  com/intellij/openapi/util/io/package.html
   com/intellij/openapi/util/objectTree/
   com/intellij/openapi/util/registry/
   com/intellij/openapi/util/text/
-  com/intellij/openapi/util/text/package.html
   com/intellij/openapi/util/userData/
   com/intellij/openapi/vfs/
   com/intellij/openapi/vfs/encoding/
@@ -1361,15 +1308,12 @@ com/android/tools/external/com-intellij/intellij-core
   com/intellij/openapi/wm/
   com/intellij/openapi/wm/ex/
   com/intellij/packageDependencies/
-  com/intellij/packageDependencies/package.html
   com/intellij/patterns/
   com/intellij/patterns/compiler/
   com/intellij/platform/
   com/intellij/platform/backend/
   com/intellij/platform/backend/navigation/
   com/intellij/platform/backend/presentation/
-  com/intellij/platform/backend/workspace/
-  com/intellij/platform/backend/workspace/impl/
   com/intellij/platform/diagnostic/
   com/intellij/platform/diagnostic/telemetry/
   com/intellij/platform/diagnostic/telemetry/helpers/
@@ -1377,9 +1321,6 @@ com/android/tools/external/com-intellij/intellij-core
   com/intellij/platform/jps/model/
   com/intellij/platform/jps/model/impl/
   com/intellij/platform/jps/model/impl/resolver/
-  com/intellij/platform/jps/model/resolver/
-  com/intellij/platform/jps/model/serialization/
-  com/intellij/platform/jps/model/serialization/resolver/
   com/intellij/platform/plugins/
   com/intellij/platform/plugins/parser/
   com/intellij/platform/plugins/parser/impl/
@@ -1415,48 +1356,6 @@ com/android/tools/external/com-intellij/intellij-core
   com/intellij/platform/util/coroutines/sync/
   com/intellij/platform/util/progress/
   com/intellij/platform/util/progress/impl/
-  com/intellij/platform/workspace/
-  com/intellij/platform/workspace/jps/
-  com/intellij/platform/workspace/jps/bridge/
-  com/intellij/platform/workspace/jps/bridge/impl/
-  com/intellij/platform/workspace/jps/bridge/impl/java/
-  com/intellij/platform/workspace/jps/bridge/impl/library/
-  com/intellij/platform/workspace/jps/bridge/impl/library/sdk/
-  com/intellij/platform/workspace/jps/bridge/impl/module/
-  com/intellij/platform/workspace/jps/bridge/impl/serialization/
-  com/intellij/platform/workspace/jps/entities/
-  com/intellij/platform/workspace/jps/entities/impl/
-  com/intellij/platform/workspace/jps/impl/
-  com/intellij/platform/workspace/jps/serialization/
-  com/intellij/platform/workspace/jps/serialization/impl/
-  com/intellij/platform/workspace/storage/
-  com/intellij/platform/workspace/storage/annotations/
-  com/intellij/platform/workspace/storage/impl/
-  com/intellij/platform/workspace/storage/impl/ReplaceBySourceAsTree.md
-  com/intellij/platform/workspace/storage/impl/cache/
-  com/intellij/platform/workspace/storage/impl/containers/
-  com/intellij/platform/workspace/storage/impl/exceptions/
-  com/intellij/platform/workspace/storage/impl/external/
-  com/intellij/platform/workspace/storage/impl/indices/
-  com/intellij/platform/workspace/storage/impl/query/
-  com/intellij/platform/workspace/storage/impl/references/
-  com/intellij/platform/workspace/storage/impl/serialization/
-  com/intellij/platform/workspace/storage/impl/serialization/registration/
-  com/intellij/platform/workspace/storage/impl/serialization/serializer/
-  com/intellij/platform/workspace/storage/impl/trace/
-  com/intellij/platform/workspace/storage/impl/url/
-  com/intellij/platform/workspace/storage/instrumentation/
-  com/intellij/platform/workspace/storage/metadata/
-  com/intellij/platform/workspace/storage/metadata/diff/
-  com/intellij/platform/workspace/storage/metadata/exceptions/
-  com/intellij/platform/workspace/storage/metadata/extensions/
-  com/intellij/platform/workspace/storage/metadata/impl/
-  com/intellij/platform/workspace/storage/metadata/model/
-  com/intellij/platform/workspace/storage/metadata/resolver/
-  com/intellij/platform/workspace/storage/metadata/utils/
-  com/intellij/platform/workspace/storage/query/
-  com/intellij/platform/workspace/storage/trace/
-  com/intellij/platform/workspace/storage/url/
   com/intellij/pom/
   com/intellij/pom/core/
   com/intellij/pom/core/impl/
@@ -1471,7 +1370,6 @@ com/android/tools/external/com-intellij/intellij-core
   com/intellij/problems/
   com/intellij/profile/
   com/intellij/profile/codeInspection/
-  com/intellij/projectModel/
   com/intellij/psi/
   com/intellij/psi/augment/
   com/intellij/psi/codeStyle/
@@ -1536,9 +1434,7 @@ com/android/tools/external/com-intellij/intellij-core
   com/intellij/psi/text/
   com/intellij/psi/tree/
   com/intellij/psi/tree/java/
-  com/intellij/psi/tree/package.html
   com/intellij/psi/util/
-  com/intellij/psi/util/package.html
   com/intellij/refactoring/
   com/intellij/refactoring/listeners/
   com/intellij/refactoring/rename/
@@ -1562,22 +1458,18 @@ com/android/tools/external/com-intellij/intellij-core
   com/intellij/util/containers/
   com/intellij/util/containers/hash/
   com/intellij/util/containers/intcaches/
-  com/intellij/util/containers/package.html
   com/intellij/util/containers/prefixTree/
   com/intellij/util/containers/prefixTree/map/
   com/intellij/util/containers/prefixTree/set/
   com/intellij/util/diff/
-  com/intellij/util/diff/package.html
   com/intellij/util/download/
   com/intellij/util/download/impl/
   com/intellij/util/execution/
   com/intellij/util/fastutil/
-  com/intellij/util/fastutil/Readme.md
   com/intellij/util/fastutil/ints/
   com/intellij/util/fmap/
   com/intellij/util/graph/
   com/intellij/util/graph/impl/
-  com/intellij/util/graph/package.html
   com/intellij/util/indexing/
   com/intellij/util/indexing/containers/
   com/intellij/util/indexing/flavor/
@@ -1605,21 +1497,14 @@ com/android/tools/external/com-intellij/intellij-core
   com/intellij/util/system/
   com/intellij/util/text/
   com/intellij/util/text/minimatch/
-  com/intellij/util/text/package.html
   com/intellij/util/ui/
   com/intellij/util/ui/classpath/
   com/intellij/util/xml/
   com/intellij/util/xml/dom/
   com/intellij/util/xmlb/
-  com/intellij/util/xmlb/.editorconfig
   com/intellij/util/xmlb/annotations/
   com/intellij/webcore/
   com/intellij/webcore/packaging/
-  com/intellij/workspaceModel/
-  com/intellij/workspaceModel/ide/
-  com/intellij/workspaceModel/ide/impl/
-  com/intellij/workspaceModel/ide/legacyBridge/
-  com/intellij/workspaceModel/ide/legacyBridge/sdk/
   com/intellij/xml/
   com/intellij/xml/util/
   com/sun/
@@ -1843,21 +1728,14 @@ com/android/tools/external/com-intellij/intellij-core
   kotlinx/serialization/json/internal/
   kotlinx/serialization/modules/
   messages/
-  messages/AnalysisBundle.properties
-  messages/CommonQuickFixBundle.properties
   messages/CoreBundle.properties
   messages/CoreDeprecatedMessagesBundle.properties
-  messages/FindBundle.properties
-  messages/InspectionsBundle.properties
-  messages/InspectionsDeprecatedMessagesBundle.properties
   messages/JavaErrorBundle.properties
   messages/JavaOptionBundle.properties
   messages/JavaPsiBundle.properties
   messages/JavaSyntaxBundle.properties
-  messages/ProjectModelBundle.properties
   messages/SyntaxRuntimeBundle.properties
   messages/UtilBundle.properties
-  messages/WorkspaceModelJpsBundle.properties
   misc/
   misc/registry.properties
   net/
@@ -2158,8 +2036,6 @@ com/android/tools/external/com-intellij/intellij-core
   org/jetbrains/jps/
   org/jetbrains/jps/model/
   org/jetbrains/jps/model/artifact/
-  org/jetbrains/jps/model/artifact/elements/
-  org/jetbrains/jps/model/artifact/elements/ex/
   org/jetbrains/jps/model/artifact/impl/
   org/jetbrains/jps/model/artifact/impl/elements/
   org/jetbrains/jps/model/ex/
@@ -2170,32 +2046,17 @@ com/android/tools/external/com-intellij/intellij-core
   org/jetbrains/jps/model/jarRepository/
   org/jetbrains/jps/model/jarRepository/impl/
   org/jetbrains/jps/model/java/
-  org/jetbrains/jps/model/java/compiler/
   org/jetbrains/jps/model/java/impl/
   org/jetbrains/jps/model/java/impl/compiler/
   org/jetbrains/jps/model/java/impl/runConfiguration/
-  org/jetbrains/jps/model/java/runConfiguration/
   org/jetbrains/jps/model/library/
   org/jetbrains/jps/model/library/impl/
   org/jetbrains/jps/model/library/impl/sdk/
-  org/jetbrains/jps/model/library/sdk/
   org/jetbrains/jps/model/module/
   org/jetbrains/jps/model/module/impl/
-  org/jetbrains/jps/model/runConfiguration/
-  org/jetbrains/jps/model/serialization/
-  org/jetbrains/jps/model/serialization/artifact/
-  org/jetbrains/jps/model/serialization/facet/
-  org/jetbrains/jps/model/serialization/impl/
-  org/jetbrains/jps/model/serialization/jarRepository/
-  org/jetbrains/jps/model/serialization/java/
-  org/jetbrains/jps/model/serialization/java/compiler/
-  org/jetbrains/jps/model/serialization/library/
-  org/jetbrains/jps/model/serialization/module/
-  org/jetbrains/jps/model/serialization/runConfigurations/
   org/jetbrains/jps/plugin/
   org/jetbrains/jps/service/
   org/jetbrains/jps/service/impl/
-  org/jetbrains/jps/util/
   org/jetbrains/org/
   org/jetbrains/org/objectweb/
   org/jetbrains/org/objectweb/asm/
@@ -2209,6 +2070,7 @@ com/android/tools/external/com-intellij/intellij-core
 
 com/android/tools/external/com-intellij/kotlin-compiler
   META-INF/
+  META-INF/LICENSE
   META-INF/MANIFEST.MF
   META-INF/analysis-api-fe10.kotlin_module
   META-INF/analysis-api-fir-standalone-base.kotlin_module
@@ -2292,6 +2154,7 @@ com/android/tools/external/com-intellij/kotlin-compiler
   META-INF/ir.psi2ir.kotlin_module
   META-INF/ir.serialization.common.kotlin_module
   META-INF/ir.tree.kotlin_module
+  META-INF/jandex.idx
   META-INF/jps-common.kotlin_module
   META-INF/js.ast.kotlin_module
   META-INF/js.config.kotlin_module
@@ -2427,6 +2290,12 @@ com/android/tools/external/com-intellij/kotlin-compiler
   META-INF/wasm.frontend.kotlin_module
   NOTICE
   com/
+  com/github/
+  com/github/benmanes/
+  com/github/benmanes/caffeine/
+  com/github/benmanes/caffeine/base/
+  com/github/benmanes/caffeine/cache/
+  com/github/benmanes/caffeine/cache/stats/
   com/google/
   com/google/gwt/
   com/google/gwt/dev/
@@ -3309,9 +3178,12 @@ com/android/tools/external/org-jetbrains/uast
   META-INF/MANIFEST.MF
   META-INF/intellij.java.uast.kotlin_module
   META-INF/intellij.platform.uast.kotlin_module
-  META-INF/lint-psi_kotlinUastBaseSrc.kotlin_module
-  META-INF/lint-psi_kotlinUastSrc.kotlin_module
+  META-INF/kotlin.uast.uast-kotlin-base.kotlin_module
+  META-INF/kotlin.uast.uast-kotlin.k2.kotlin_module
+  META-INF/kotlin.uast.uast-kotlin.kotlin_module
   NOTICE
+  __index__
+  build-data.properties
   org/
   org/jetbrains/
   org/jetbrains/uast/

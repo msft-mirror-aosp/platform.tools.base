@@ -24,12 +24,16 @@ import com.android.adblib.serialNumber
 import com.android.adblib.shellCommand
 import com.android.adblib.withLineCollector
 import com.android.adblib.withTextCollector
+import java.io.IOException
 import kotlin.time.Duration.Companion.seconds
+import kotlin.time.TimeMark
+import kotlin.time.TimeSource
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.mapNotNull
+import kotlinx.coroutines.flow.retry
 import kotlinx.coroutines.flow.single
 
 /** A set of functions to facilitate pairing AI glasses to a phone. */
@@ -185,42 +189,74 @@ class AiGlassesPairing(val session: AdbSession) {
     }
   }
 
+  /**
+   * Polls the pairing state until it returns a non-null value or the [POLLING_TIMEOUT] expires.
+   *
+   * @return The pairing state, or null if the timeout expires. Possible states include: "IDLE",
+   *   "WORKER_STARTED", "WORKER_BONDING", "UI_CDM_SCANNING", "UI_CDM_ASSOCIATING",
+   *   "UI_CDM_ASSOCIATION_FAILED", "UI_WAITING_FOR_WORKER", "WORKER_CONNECTING",
+   *   "WORKER_GLASSES_CORE_CONNECTION_FAILED", "WORKER_GLASSES_CORE_CONNECTED", "PAIRED",
+   *   "WORKER_BOND_FAILED", "WORKER_CONNECTION_FAILED", "WORKER_CANCELLED", "ERROR".
+   */
+  private suspend fun ConnectedDevice.waitForPairingState(): String? {
+    val start = TimeSource.Monotonic.markNow()
+    while (start.elapsedNow() < POLLING_TIMEOUT) {
+      val state = pollPairingState()
+      if (state != null) {
+        return state
+      }
+      delay(POLLING_INTERVAL)
+    }
+    return null
+  }
+
   fun ConnectedDevice.pairToGlasses(
     glassesBluetoothAddress: String,
     useCdm: Boolean,
-  ): Flow<String> = flow {
-    grantPermission(COMPANION_PKG, "android.permission.NEARBY_WIFI_DEVICES")
-    grantPermission(COMPANION_PKG, "android.permission.BLUETOOTH_CONNECT")
-    grantPermission(CORE_PKG, "android.permission.ACCESS_FINE_LOCATION")
+  ): Flow<String> =
+    flow {
+        grantPermission(COMPANION_PKG, "android.permission.NEARBY_WIFI_DEVICES")
+        grantPermission(COMPANION_PKG, "android.permission.BLUETOOTH_CONNECT")
+        grantPermission(CORE_PKG, "android.permission.ACCESS_FINE_LOCATION")
 
-    launchCompanionApp()
+        launchCompanionApp()
 
-    emit("POLLING")
-    while (true) {
-      val state =
-        pollPairingState()
-          ?: run {
+        emit("POLLING")
+        while (true) {
+          val state = waitForPairingState()
+
+          if (state == null) {
             emit("POLLING_FAILED")
             return@flow
           }
 
-      emit(state)
-      when (state) {
-        "IDLE" -> {
-          sendPairingCommand(glassesBluetoothAddress, useCdm)
-          delay(4.seconds)
+          emit(state)
+          when (state) {
+            "IDLE" -> {
+              sendPairingCommand(glassesBluetoothAddress, useCdm)
+              delay(PAIRING_COMMAND_DELAY)
+            }
+            in TERMINAL_STATES -> return@flow
+            else -> delay(POLLING_INTERVAL)
+          }
         }
-        in TERMINAL_STATES -> return@flow
-        else -> delay(2.seconds)
       }
-    }
-  }
+      .retry(1) { cause -> cause is IOException || cause is ShellCommandException }
 
   companion object {
 
     private const val GLASSES_PKG = "com.google.android.glasses"
     private const val COMPANION_PKG = "com.google.android.glasses.companion"
     private const val CORE_PKG = "com.google.android.glasses.core"
+
+    // Time to wait for the pairing state to change after sending the pairing command
+    private val PAIRING_COMMAND_DELAY = 4.seconds
+
+    // Time to wait between polling attempts
+    private val POLLING_INTERVAL = 2.seconds
+
+    // Max time to retry polling if it fails (returns null) continuously
+    private val POLLING_TIMEOUT = 30.seconds
 
     val TERMINAL_STATES =
       setOf(

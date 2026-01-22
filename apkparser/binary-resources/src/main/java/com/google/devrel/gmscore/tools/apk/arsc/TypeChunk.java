@@ -1,75 +1,135 @@
-/*
- * Copyright 2016 Google Inc. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package com.google.devrel.gmscore.tools.apk.arsc;
 
-import com.android.annotations.Nullable;
+import com.google.auto.value.AutoValue;
 import com.google.common.base.Preconditions;
+import com.google.common.io.Closeables;
 import com.google.common.io.LittleEndianDataOutputStream;
 import com.google.common.primitives.UnsignedBytes;
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.util.*;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.TreeMap;
+import javax.annotation.Nullable;
+import org.checkerframework.checker.nullness.compatqual.NullableType;
 
 /**
  * Represents a type chunk, which contains the resource values for a specific resource type and
- * configuration in a {@link PackageChunk}. The resource values in this chunk correspond to
- * the array of type strings in the enclosing {@link PackageChunk}.
+ * configuration in a {@link PackageChunk}. The resource values in this chunk correspond to the
+ * array of type strings in the enclosing {@link PackageChunk}.
  *
- * <p>A {@link PackageChunk} can have multiple of these chunks for different
- * (configuration, resource type) combinations.
+ * <p>A {@link PackageChunk} can have multiple of these chunks for different (configuration,
+ * resource type) combinations.
  */
-public final class TypeChunk extends Chunk {
+public class TypeChunk extends Chunk {
+
+  /**
+   * If set, the entries in this chunk are sparse and encode both the entry ID and offset into each
+   * entry. Available on platforms >= O. Note that this only changes how the {@link TypeChunk} is
+   * encoded / decoded.
+   */
+  private static final int FLAG_SPARSE = 1 << 0;
+
+  private static final int FLAG_OFFSET16 = 1 << 1;
+
+  /** The size of a TypeChunk's header in bytes. */
+  static final int HEADER_SIZE = Chunk.METADATA_SIZE + 12 + ResourceConfiguration.SIZE;
 
   /** The type identifier of the resource type this chunk is holding. */
-  private final int id;
+  private int id;
 
-  /** The number of resources of this type at creation time. */
-  private final int entryCount;
+  /** Flags for a type chunk, such as whether or not this chunk has sparse entries. */
+  private int flags;
+
+  /** The number of resources of this type. */
+  private int entryCount;
 
   /** The offset (from {@code offset}) in the original buffer where {@code entries} start. */
   private final int entriesStart;
 
   /** The resource configuration that these resource entries correspond to. */
-  private BinaryResourceConfiguration configuration;
+  private ResourceConfiguration configuration;
 
   /** A sparse list of resource entries defined by this chunk. */
-  private final Map<Integer, Entry> entries = new TreeMap<>();
+  protected final Map<Integer, Entry> entries = new TreeMap<>();
 
   protected TypeChunk(ByteBuffer buffer, @Nullable Chunk parent) {
     super(buffer, parent);
-    id = UnsignedBytes.toInt(buffer.get());
-    buffer.position(buffer.position() + 3);  // Skip 3 bytes for packing
+    id = Byte.toUnsignedInt(buffer.get());
+    flags = Byte.toUnsignedInt(buffer.get());
+    buffer.position(buffer.position() + 2); // Skip 2 bytes (reserved)
     entryCount = buffer.getInt();
     entriesStart = buffer.getInt();
-    configuration = BinaryResourceConfiguration.create(buffer);
+    configuration = ResourceConfiguration.create(buffer);
   }
 
   @Override
   protected void init(ByteBuffer buffer) {
     int offset = this.offset + entriesStart;
-    for (int i = 0; i < entryCount; ++i) {
-      Entry entry = Entry.create(buffer, offset, this);
-      if (entry != null) {
-        entries.put(i, entry);
-      }
+    if (hasSparseEntries()) {
+      initSparseEntries(buffer, offset);
+    } else {
+      initDenseEntries(buffer, offset);
     }
+  }
+
+  private void initSparseEntries(ByteBuffer buffer, int offset) {
+    for (int i = 0; i < entryCount; ++i) {
+      // Offsets are stored as (offset / 4u).
+      // (See android::ResTable_sparseTypeEntry)
+      int index = (buffer.getShort() & 0xFFFF);
+      int entryOffset = (buffer.getShort() & 0xFFFF) * 4;
+      Entry entry = Entry.create(buffer, offset + entryOffset, this, index);
+      entries.put(index, entry);
+    }
+  }
+
+  private void initDenseEntries(ByteBuffer buffer, int offset) {
+    for (int i = 0; i < entryCount; ++i) {
+      int entryOffset = entryOffset(buffer);
+      if (entryOffset == Entry.NO_ENTRY) {
+        continue;
+      }
+      Entry entry = Entry.create(buffer, offset + entryOffset, this, i);
+      entries.put(i, entry);
+    }
+  }
+
+  private int entryOffset(ByteBuffer buffer) {
+    if (has16BitOffsets()) {
+      int value = (buffer.getShort() & 0xFFFF);
+      // NO_ENTRY short representation
+      if (value == 0xFFFF) {
+        return Entry.NO_ENTRY;
+      }
+      return value * 4;
+    }
+    return buffer.getInt();
+  }
+
+  @Override
+  public String toString() {
+    StringBuilder builder = new StringBuilder();
+    builder.append("TypeChunk[id:").append(id).append(", typeName:").append(getTypeName())
+        .append(", configuration:").append(getConfiguration())
+        .append(", originalEntryCount:").append(getTotalEntryCount())
+        .append(", entries:");
+    for (Map.Entry<Integer, Entry> entry : entries.entrySet()) {
+      builder.append("<").append(entry.getKey()).append("->").append(entry.getValue()).append("> ");
+    }
+    builder.append("]");
+    return builder.toString();
+  }
+
+  public void setEntries(Map<Integer, Entry> entries, int totalCount) {
+    this.entries.clear();
+    this.entries.putAll(entries);
+    entryCount = totalCount;
   }
 
   /** Returns the (1-based) type id of the resource types that this {@link TypeChunk} is holding. */
@@ -77,17 +137,47 @@ public final class TypeChunk extends Chunk {
     return id;
   }
 
+  /**
+   * Sets the id of this chunk.
+   *
+   * @param newId The new id to use.
+   */
+  public void setId(int newId) {
+    // Ids are 1-based.
+    Preconditions.checkState(newId >= 1);
+    // Ensure that there is a type defined for this id.
+    Preconditions.checkState(
+        Preconditions.checkNotNull(getPackageChunk()).getTypeStringPool().getStringCount()
+            >= newId);
+    id = newId;
+  }
+
+  public boolean has16BitOffsets() {
+    return (flags & FLAG_OFFSET16) != 0;
+  }
+
+  /** Returns true if the entries in this chunk are encoded in a sparse array. */
+  public boolean hasSparseEntries() {
+    return (flags & FLAG_SPARSE) != 0;
+  }
+
+  /**
+   * If {@code sparseEntries} is true, this chunk's entries will be encoded in a sparse array. Else,
+   * this chunk's entries will be encoded in a dense array.
+   */
+  public void setSparseEntries(boolean sparseEntries) {
+    flags = (flags & ~FLAG_SPARSE) | (sparseEntries ? FLAG_SPARSE : 0);
+  }
+
   /** Returns the name of the type this chunk represents (e.g. string, attr, id). */
   public String getTypeName() {
     PackageChunk packageChunk = getPackageChunk();
     Preconditions.checkNotNull(packageChunk, "%s has no parent package.", getClass());
-    StringPoolChunk typePool = packageChunk.getTypeStringPool();
-    Preconditions.checkNotNull(typePool, "%s's parent package has no type pool.", getClass());
-    return typePool.getString(getId() - 1);  // - 1 here to convert to 0-based index
+    return packageChunk.getTypeString(getId());
   }
 
   /** Returns the resource configuration that these resource entries correspond to. */
-  public BinaryResourceConfiguration getConfiguration() {
+  public ResourceConfiguration getConfiguration() {
     return configuration;
   }
 
@@ -96,7 +186,7 @@ public final class TypeChunk extends Chunk {
    *
    * @param configuration The new configuration.
    */
-  public void setConfiguration(BinaryResourceConfiguration configuration) {
+  public void setConfiguration(ResourceConfiguration configuration) {
     this.configuration = configuration;
   }
 
@@ -105,13 +195,18 @@ public final class TypeChunk extends Chunk {
     return entryCount;
   }
 
+  /** Sets the total number of entries, including null entries */
+  public void setTotalEntryCount(int newEntryCount) {
+    entryCount = newEntryCount;
+  }
+
   /** Returns a sparse list of 0-based indices to resource entries defined by this chunk. */
   public Map<Integer, Entry> getEntries() {
     return Collections.unmodifiableMap(entries);
   }
 
   /** Returns true if this chunk contains an entry for {@code resourceId}. */
-  public boolean containsResource(BinaryResourceIdentifier resourceId) {
+  public boolean containsResource(ResourceIdentifier resourceId) {
     PackageChunk packageChunk = Preconditions.checkNotNull(getPackageChunk());
     int packageId = packageChunk.getId();
     int typeId = getId();
@@ -121,16 +216,17 @@ public final class TypeChunk extends Chunk {
   }
 
   /**
-   * Overrides the entries in this chunk at the given index:entry pairs in {@code entries}.
-   * For example, if the current list of entries is {0: foo, 1: bar, 2: baz}, and {@code entries}
-   * is {1: qux, 3: quux}, then the entries will be changed to {0: foo, 1: qux, 2: baz}. If an entry
-   * has an index that does not exist in the dense entry list, then it is considered a no-op for
-   * that single entry.
+   * Overrides the entries in this chunk at the given index:entry pairs in {@code entries}. For
+   * example, if the current list of entries is {0: foo, 1: bar, 2: baz}, and {@code entries} is {1:
+   * qux, 3: quux}, then the entries will be changed to {0: foo, 1: qux, 2: baz}. If an entry has an
+   * index that does not exist in the dense entry list, then it is considered a no-op for that
+   * single entry.
    *
    * @param entries A sparse list containing index:entry pairs to override.
    */
-  public void overrideEntries(Map<Integer, Entry> entries) {
-    for (Map.Entry<Integer, Entry> entry : entries.entrySet()) {
+  @SuppressWarnings("nullness") // Checker loses Entry by the time of the for loop :(
+  public void overrideEntries(Map<Integer, @NullableType Entry> entries) {
+    for (Map.Entry<Integer, @NullableType Entry> entry : entries.entrySet()) {
       int index = entry.getKey() != null ? entry.getKey() : -1;
       overrideEntry(index, entry.getValue());
     }
@@ -173,7 +269,7 @@ public final class TypeChunk extends Chunk {
     while (chunk != null && !(chunk instanceof ResourceTableChunk)) {
       chunk = chunk.getParent();
     }
-    return chunk != null ? (ResourceTableChunk) chunk : null;
+    return chunk instanceof ResourceTableChunk ? (ResourceTableChunk) chunk : null;
   }
 
   /** Returns the package enclosing this chunk, if any. Else, returns null. */
@@ -183,7 +279,7 @@ public final class TypeChunk extends Chunk {
     while (chunk != null && !(chunk instanceof PackageChunk)) {
       chunk = chunk.getParent();
     }
-    return chunk != null ? (PackageChunk) chunk : null;
+    return chunk instanceof PackageChunk ? (PackageChunk) chunk : null;
   }
 
   @Override
@@ -196,18 +292,31 @@ public final class TypeChunk extends Chunk {
     return entryCount * 4;
   }
 
-  private int writeEntries(DataOutput payload, ByteBuffer offsets, boolean shrink)
-      throws IOException {
+  @CanIgnoreReturnValue
+  private int writeEntries(DataOutput payload, ByteBuffer offsets, int options) throws IOException {
     int entryOffset = 0;
-    for (int i = 0; i < entryCount; ++i) {
-      Entry entry = entries.get(i);
-      if (entry == null) {
-        offsets.putInt(Entry.NO_ENTRY);
-      } else {
-        byte[] encodedEntry = entry.toByteArray(shrink);
+    if (hasSparseEntries()) {
+      for (Map.Entry<Integer, Entry> mapEntry : entries.entrySet()) {
+        Entry entry = mapEntry.getValue();
+        byte[] encodedEntry = entry.toByteArray(options);
         payload.write(encodedEntry);
-        offsets.putInt(entryOffset);
+        offsets.putShort((short) (mapEntry.getKey() & 0xFFFF));
+        offsets.putShort((short) (entryOffset / 4));
         entryOffset += encodedEntry.length;
+        // In order for sparse entries to work, entryOffset must always be a multiple of 4.
+        Preconditions.checkState(entryOffset % 4 == 0);
+      }
+    } else {
+      for (int i = 0; i < entryCount; ++i) {
+        Entry entry = entries.get(i);
+        if (entry == null) {
+          offsets.putInt(Entry.NO_ENTRY);
+        } else {
+          byte[] encodedEntry = entry.toByteArray(options);
+          payload.write(encodedEntry);
+          offsets.putInt(entryOffset);
+          entryOffset += encodedEntry.length;
+        }
       }
     }
     entryOffset = writePad(payload, entryOffset);
@@ -217,26 +326,32 @@ public final class TypeChunk extends Chunk {
   @Override
   protected void writeHeader(ByteBuffer output) {
     int entriesStart = getHeaderSize() + getOffsetSize();
-    output.putInt(id);  // Write an unsigned byte with 3 bytes padding
+    output.put(UnsignedBytes.checkedCast(id));
+    output.put(UnsignedBytes.checkedCast(flags));
+    output.putShort((short) 0); // Write 2 bytes for padding / reserved.
     output.putInt(entryCount);
     output.putInt(entriesStart);
-    output.put(configuration.toByteArray(false));
+    output.put(configuration.toByteArray());
   }
 
   @Override
-  protected void writePayload(DataOutput output, ByteBuffer header, boolean shrink)
+  protected void writePayload(DataOutput output, ByteBuffer header, int options)
       throws IOException {
     ByteArrayOutputStream baos = new ByteArrayOutputStream();
     ByteBuffer offsets = ByteBuffer.allocate(getOffsetSize()).order(ByteOrder.LITTLE_ENDIAN);
-    try (LittleEndianDataOutputStream payload = new LittleEndianDataOutputStream(baos)) {
-      writeEntries(payload, offsets, shrink);
+    LittleEndianDataOutputStream payload = new LittleEndianDataOutputStream(baos);
+    try {
+      writeEntries(payload, offsets, options);
+    } finally {
+      Closeables.close(payload, true);
     }
     output.write(offsets.array());
     output.write(baos.toByteArray());
   }
 
-  /** An {@link Entry} in a {@link TypeChunk}. Contains one or more {@link BinaryResourceValue}. */
-  public static class Entry implements SerializableResource {
+  /** An {@link Entry} in a {@link TypeChunk}. Contains one or more {@link ResourceValue}. */
+  @AutoValue
+  public abstract static class Entry implements SerializableResource {
 
     /** An entry offset that indicates that a given resource is not present. */
     public static final int NO_ENTRY = 0xFFFFFFFF;
@@ -244,57 +359,81 @@ public final class TypeChunk extends Chunk {
     /** Set if this is a complex resource. Otherwise, it's a simple resource. */
     private static final int FLAG_COMPLEX = 0x0001;
 
+    /** Set if this is a public resource, which allows libraries to reference it. */
+    static final int FLAG_PUBLIC = 0x0002;
+
+    /** Set if this is a compact resource. */
+    static final int FLAG_COMPACT = 0x0008;
+
     /** Size of a single resource id + value mapping entry. */
-    private static final int MAPPING_SIZE = 4 + BinaryResourceValue.SIZE;
+    private static final int MAPPING_SIZE = 4 + ResourceValue.SIZE;
 
-    private final int headerSize;
-    private final int flags;
-    private final int keyIndex;
-    private final BinaryResourceValue value;
-    private final Map<Integer, BinaryResourceValue> values;
-    private final int parentEntry;
-    private final TypeChunk parent;
+    /** Size of a simple resource */
+    public static final int SIMPLE_HEADERSIZE = 8;
 
-    private Entry(int headerSize,
-                  int flags,
-                  int keyIndex,
-                  BinaryResourceValue value,
-                  Map<Integer, BinaryResourceValue> values,
-                  int parentEntry,
-                  TypeChunk parent) {
-      this.headerSize = headerSize;
-      this.flags = flags;
-      this.keyIndex = keyIndex;
-      this.value = value;
-      this.values = values;
-      this.parentEntry = parentEntry;
-      this.parent = parent;
-    }
+    /** Size of a complex resource */
+    public static final int COMPLEX_HEADER_SIZE = 16;
 
     /** Number of bytes in the header of the {@link Entry}. */
-    public int headerSize() { return headerSize; }
+    public abstract int headerSize();
 
     /** Resource entry flags. */
-    public int flags() { return flags; }
+    public abstract int flags();
 
     /** Index into {@link PackageChunk#getKeyStringPool} identifying this entry. */
-    public int keyIndex() { return keyIndex; }
+    public abstract int keyIndex();
 
     /** The value of this resource entry, if this is not a complex entry. Else, null. */
     @Nullable
-    public BinaryResourceValue value() { return value; }
+    public abstract ResourceValue value();
 
     /** The extra values in this resource entry if this {@link #isComplex}. */
-    public Map<Integer, BinaryResourceValue> values() { return values; }
+    public abstract Map<Integer, ResourceValue> values();
 
     /**
      * Entry into {@link PackageChunk} that is the parent {@link Entry} to this entry.
      * This value only makes sense when this is complex ({@link #isComplex} returns true).
      */
-    public int parentEntry() { return parentEntry; }
+    public abstract int parentEntry();
 
     /** The {@link TypeChunk} that this resource entry belongs to. */
-    public TypeChunk parent() { return parent; }
+    public abstract TypeChunk parent();
+
+    /** The entry's index into the parent TypeChunk. */
+    public abstract int typeChunkIndex();
+
+    @AutoValue.Builder
+    abstract static class Builder {
+      abstract Builder headerSize(int h);
+      abstract Builder flags(int f);
+      abstract Builder keyIndex(int k);
+      abstract Builder value(@Nullable ResourceValue r);
+      abstract Builder values(Map<Integer, ResourceValue> v);
+      abstract Builder parentEntry(int p);
+      abstract Builder parent(TypeChunk p);
+
+      abstract Builder typeChunkIndex(int typeChunkIndex);
+
+      abstract Entry build();
+    }
+
+    public static Builder builder() {
+      return new AutoValue_TypeChunk_Entry.Builder();
+    }
+
+    public abstract Builder toBuilder();
+
+    public Entry withKeyIndex(int keyIndex) {
+      return toBuilder().keyIndex(keyIndex).build();
+    }
+
+    public Entry withValue(@Nullable ResourceValue value) {
+      return toBuilder().value(value).build();
+    }
+
+    public Entry withValues(Map<Integer, ResourceValue> values) {
+      return toBuilder().values(values).build();
+    }
 
     /** Returns the name of the type this chunk represents (e.g. string, attr, id). */
     public final String typeName() {
@@ -303,7 +442,7 @@ public final class TypeChunk extends Chunk {
 
     /** The total number of bytes that this {@link Entry} takes up. */
     public final int size() {
-      return headerSize() + (isComplex() ? values().size() * MAPPING_SIZE : BinaryResourceValue.SIZE);
+      return headerSize() + (isComplex() ? values().size() * MAPPING_SIZE : ResourceValue.SIZE);
     }
 
     /** Returns the key name identifying this resource entry. */
@@ -316,73 +455,114 @@ public final class TypeChunk extends Chunk {
       return (flags() & FLAG_COMPLEX) != 0;
     }
 
+    /** Returns true if this is a public resource. */
+    public final boolean isPublic() {
+      return (flags() & FLAG_PUBLIC) != 0;
+    }
+
     /**
-     * Creates a new {@link Entry} whose contents start at the 0-based position in
-     * {@code buffer} given by a 4-byte value read from {@code buffer} and then added to
-     * {@code baseOffset}. If the value read from {@code buffer} is equal to {@link #NO_ENTRY}, then
-     * null is returned as there is no resource at that position.
+     * Creates a new {@link Entry} whose contents start at {@code offset} in the given {@code
+     * buffer}.
      *
-     * <p>Otherwise, this position is parsed and returned as an {@link Entry}.
-     *
-     * @param buffer A buffer positioned at an offset to an {@link Entry}.
-     * @param baseOffset Offset that must be added to the value at {@code buffer}'s position.
+     * @param buffer The buffer to read {@link Entry} from.
+     * @param offset Offset into the buffer where {@link Entry} is located.
      * @param parent The {@link TypeChunk} that this resource entry belongs to.
-     * @return New {@link Entry} or null if there is no resource at this location.
+     * @param typeChunkIndex The entry's index into the parent TypeChunk.
+     * @return New {@link Entry}.
      */
-    @Nullable
-    public static Entry create(ByteBuffer buffer, int baseOffset, TypeChunk parent) {
-      int offset = buffer.getInt();
-      if (offset == NO_ENTRY) {
-        return null;
-      }
+    public static Entry create(
+        ByteBuffer buffer, int offset, TypeChunk parent, int typeChunkIndex) {
       int position = buffer.position();
-      buffer.position(baseOffset + offset);  // Set buffer position to resource entry start
-      Entry result = newInstance(buffer, parent);
+      buffer.position(offset); // Set buffer position to resource entry start
+      Entry result = newInstance(buffer, parent, typeChunkIndex);
       buffer.position(position);  // Restore buffer position
       return result;
     }
 
-    @Nullable
-    private static Entry newInstance(ByteBuffer buffer, TypeChunk parent) {
-      int headerSize = buffer.getShort() & 0xFFFF;
+    /**
+     * Can be either a normal full entry or a compact entry using only 8 bytes. This is determined
+     * by the flags, which is the second short.
+     *
+     * <p>A normal entry has:
+     *
+     * <ol>
+     *   <li>size uint16
+     *   <li>flags uint16
+     *   <li>keystring_ref uint32
+     *   <li>data depends on size and complex/non complex
+     * </ol>
+     *
+     * <p>A compact entry has:
+     *
+     * <ol>
+     *   <li>size is implicit 8 bytes
+     *   <li>key uint16
+     *   <li>flags uint16, with the upper 8 bits being the data type
+     *   <li>data uint32
+     * </ol>
+     */
+    private static Entry newInstance(ByteBuffer buffer, TypeChunk parent, int typeChunkIndex) {
+      int firstShort = buffer.getShort() & 0xFFFF;
       int flags = buffer.getShort() & 0xFFFF;
-      int keyIndex = buffer.getInt();
-      BinaryResourceValue value = null;
-      Map<Integer, BinaryResourceValue> values = new LinkedHashMap<>();
+      int headerSize;
+      int keyIndex;
+      ResourceValue value = null;
+      Map<Integer, ResourceValue> values = new LinkedHashMap<>();
       int parentEntry = 0;
-      if ((flags & FLAG_COMPLEX) != 0) {
-        parentEntry = buffer.getInt();
-        int valueCount = buffer.getInt();
-        for (int i = 0; i < valueCount; ++i) {
-          values.put(buffer.getInt(), BinaryResourceValue.create(buffer));
-        }
+      if ((flags & FLAG_COMPACT) != 0) {
+        Preconditions.checkState((flags & FLAG_COMPLEX) == 0);
+        headerSize = 8;
+        keyIndex = firstShort;
+        byte type = (byte) (flags >> 8);
+        value = ResourceValue.createCompact(buffer, type);
       } else {
-        value = BinaryResourceValue.create(buffer);
+        headerSize = firstShort;
+        keyIndex = buffer.getInt();
+        if ((flags & FLAG_COMPLEX) != 0) {
+          parentEntry = buffer.getInt();
+          int valueCount = buffer.getInt();
+          for (int i = 0; i < valueCount; ++i) {
+            values.put(buffer.getInt(), ResourceValue.create(buffer));
+          }
+        } else {
+          value = ResourceValue.create(buffer);
+        }
       }
-      return new Entry(headerSize, flags, keyIndex, value, values, parentEntry, parent);
+      return builder()
+          .headerSize(headerSize)
+          .flags(flags)
+          .keyIndex(keyIndex)
+          .value(value)
+          .values(values)
+          .parentEntry(parentEntry)
+          .parent(parent)
+          .typeChunkIndex(typeChunkIndex)
+          .build();
     }
 
     @Override
     public final byte[] toByteArray() {
-      return toByteArray(false);
+      return toByteArray(SerializableResource.NONE);
     }
 
     @Override
-    public final byte[] toByteArray(boolean shrink) {
+    public final byte[] toByteArray(int options) {
       ByteBuffer buffer = ByteBuffer.allocate(size());
       buffer.order(ByteOrder.LITTLE_ENDIAN);
       buffer.putShort((short) headerSize());
-      buffer.putShort((short) flags());
+      final int flagMask =
+          ((options & SerializableResource.PRIVATE_RESOURCES) != 0) ? ~FLAG_PUBLIC : ~0;
+      buffer.putShort((short) (flags() & flagMask));
       buffer.putInt(keyIndex());
       if (isComplex()) {
         buffer.putInt(parentEntry());
         buffer.putInt(values().size());
-        for (Map.Entry<Integer, BinaryResourceValue> entry : values().entrySet()) {
+        for (Map.Entry<Integer, ResourceValue> entry : values().entrySet()) {
           buffer.putInt(entry.getKey());
-          buffer.put(entry.getValue().toByteArray(shrink));
+          buffer.put(entry.getValue().toByteArray(options));
         }
       } else {
-        BinaryResourceValue value = value();
+        ResourceValue value = value();
         Preconditions.checkNotNull(value, "A non-complex TypeChunk entry must have a value.");
         buffer.put(value.toByteArray());
       }
@@ -391,26 +571,7 @@ public final class TypeChunk extends Chunk {
 
     @Override
     public final String toString() {
-      return String.format("Entry{key=%s}", key());
-    }
-
-    @Override
-    public boolean equals(Object o) {
-      if (this == o) return true;
-      if (o == null || getClass() != o.getClass()) return false;
-      Entry entry = (Entry)o;
-      return headerSize == entry.headerSize &&
-             flags == entry.flags &&
-             keyIndex == entry.keyIndex &&
-             parentEntry == entry.parentEntry &&
-             Objects.equals(value, entry.value) &&
-             Objects.equals(values, entry.values) &&
-             Objects.equals(parent, entry.parent);
-    }
-
-    @Override
-    public int hashCode() {
-      return Objects.hash(headerSize, flags, keyIndex, value, values, parentEntry, parent);
+      return String.format("Entry{key=%s,value=%s,values=%s}", key(), value(), values());
     }
   }
 }

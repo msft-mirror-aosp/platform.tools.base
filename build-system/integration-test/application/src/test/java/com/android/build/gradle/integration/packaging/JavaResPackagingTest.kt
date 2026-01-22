@@ -860,9 +860,3 @@ class JavaResPackagingTest {
     }
 }
 
-internal data class StringWithContent(
-    val name: String,
-    val content: String
-)
-
-internal fun String.withContent(content: String) = StringWithContent(this, content)

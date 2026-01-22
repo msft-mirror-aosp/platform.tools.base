@@ -202,6 +202,15 @@ enum class BooleanOption(
     BUILD_FEATURE_MLMODELBINDING("android.defaults.buildfeatures.mlmodelbinding", false, ApiStage.Experimental),
     ENABLE_DEFAULT_DEBUG_SIGNING_CONFIG("android.experimental.useDefaultDebugSigningConfigForProfileableBuildtypes", false, ApiStage.Experimental),
 
+    /**
+     * When enabled, manifest merger warnings will be treated as errors and fail the build.
+     */
+    TREAT_MANIFEST_MERGER_WARNINGS_AS_ERRORS(
+        "android.experimental.treatManifestMergerWarningsAsErrors",
+        false,
+        FeatureStage.Experimental
+    ),
+
 
     /* ---------------------
      * EXPERIMENTAL FEATURES
@@ -327,12 +336,6 @@ enum class BooleanOption(
     // Whether to suppress warnings about android:extractNativeLibs set to true in dependencies
     SUPPRESS_EXTRACT_NATIVE_LIBS_WARNINGS(
         "android.experimental.suppressExtractNativeLibsWarnings",
-        false,
-        FeatureStage.Experimental
-    ),
-
-    FUSED_LIBRARY_SUPPORT(
-        "android.experimental.fusedLibrarySupport",
         false,
         FeatureStage.Experimental
     ),
@@ -494,12 +497,12 @@ enum class BooleanOption(
      */
     DISALLOW_KOTLIN_SOURCE_SETS(
         propertyName = "android.disallowKotlinSourceSets",
-        defaultValue = false,
+        defaultValue = true,
         stage = FeatureStage.Experimental,
         FutureStage(
-            version = Version.VERSION_9_0,
+            version = Version.VERSION_10_0,
             defaultValue = true,
-            stage = FeatureStage.Experimental
+            stage = FeatureStage.Enforced(enforcedVersion = Version.VERSION_10_0)
         )
     ),
 
@@ -1113,6 +1116,13 @@ enum class BooleanOption(
         FeatureStage.Enforced(Version.VERSION_9_0)
     ),
 
+
+    @Suppress("unused")
+    FUSED_LIBRARY_SUPPORT(
+        "android.fusedLibrarySupport",
+        true,
+        FeatureStage.Enforced(Version.VERSION_9_0),
+    ),
 
     /* ----------------
      * REMOVED API

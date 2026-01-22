@@ -109,6 +109,8 @@ abstract class FusedLibraryReportTask : NonIncrementalGlobalTask() {
 
         override fun configure(task: FusedLibraryReportTask) {
             super.configure(task)
+            task.description =
+                "Produces a report of dependencies included in the fused aar artifact and the dependencies that must be provided."
             val includeConfiguration = task.project.configurations
                 .getByName(FusedLibraryConstants.INCLUDE_CONFIGURATION_NAME)
             val resolvableRuntimeConfiguration = task.project.configurations

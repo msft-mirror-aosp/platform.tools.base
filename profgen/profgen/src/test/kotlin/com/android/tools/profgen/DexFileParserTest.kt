@@ -21,6 +21,7 @@ import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 
 private const val STRING = "Ljava/lang/String;"
+private const val STRING_ARRAY = "[Ljava/lang/String;"
 private const val OBJECT = "Ljava/lang/Object;"
 
 class DexFileParserTest {
@@ -41,9 +42,11 @@ class DexFileParserTest {
         val objInit = DexMethod(OBJECT, "<init>", DexPrototype("V", emptyList()))
         val helloInit = DexMethod("LHello;", "<init>", DexPrototype("V", emptyList()))
 
-        assertThat(dex.methodPool).isEqualTo(listOf(
-            helloInit, intMethod, voidMethod, objInit, strLength
-        ))
+        assertThat(dex.methodPool).isEqualTo(
+            listOf(
+                helloInit, intMethod, voidMethod, objInit, strLength
+            )
+        )
     }
 
     @Test
@@ -61,7 +64,60 @@ class DexFileParserTest {
         )
     }
 
+    @Test
+    fun test040Format() {
+        val apk = Apk(TestUtils.resolveWorkspacePath(Dex040Path).toFile())
+        assertThat(apk.dexes).hasSize(1)
+        val dex = apk.dexes[0]
+
+        assertThat(dex.classDefPool).hasLength(1)
+        assertThat(dex.classDefPool[0]).isEqualTo(0)
+        assertThat(dex.typePool).isEqualTo(
+            listOf(
+                "LMain;",
+                "Ljava/io/PrintStream;",
+                "Ljava/lang/Object;",
+                "Ljava/lang/String;",
+                "Ljava/lang/System;",
+                "V",
+                "[Ljava/lang/String;"
+            )
+        )
+
+        val methodName = ("method_with_spaces_"
+                + "20 "
+                + "a0\u00a0"
+                + "1680\u1680"
+                + "2000\u2000"
+                + "2001\u2001"
+                + "2002\u2002"
+                + "2003\u2003"
+                + "2004\u2004"
+                + "2005\u2005"
+                + "2006\u2006"
+                + "2007\u2007"
+                + "2008\u2008"
+                + "2009\u2009"
+                + "200a\u200a"
+                + "202f\u202f"
+                + "205f\u205f"
+                + "3000\u3000")
+
+        val mainMain = DexMethod("LMain;", "main", DexPrototype("V", listOf(STRING_ARRAY)))
+        val mainMethodWithSpaces =
+            DexMethod("LMain;", methodName, DexPrototype("V", emptyList<String>()))
+        val printStreamPrintln =
+            DexMethod("Ljava/io/PrintStream;", "println", DexPrototype("V", listOf(STRING)))
+
+        assertThat(dex.methodPool).isEqualTo(
+            listOf(
+                mainMain, mainMethodWithSpaces, printStreamPrintln
+            )
+        )
+    }
+
     companion object {
         private const val Path = "tools/base/profgen/profgen/testData/hello.apk"
+        private const val Dex040Path = "tools/base/profgen/profgen/testData/dex040.apk"
     }
 }

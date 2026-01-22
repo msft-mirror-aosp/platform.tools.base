@@ -112,8 +112,6 @@ public abstract class InstallVariantTask extends NonIncrementalTask {
                             new DefaultDeviceApkOutput(
                                     new ApkSources(
                                             getApkDirectory().map(Collections::singletonList),
-                                            getPrivacySandboxSupportedSdkAdditionalSplitApks(),
-                                            getPrivacySandboxCompatApks(),
                                             getDexMetadataDirectory()),
                                     supportedAbis,
                                     minSdkVersion,
@@ -269,16 +267,6 @@ public abstract class InstallVariantTask extends NonIncrementalTask {
     @Optional
     public abstract ConfigurableFileCollection getPrivacySandboxSdksApksFiles();
 
-    @InputDirectory
-    @PathSensitive(PathSensitivity.RELATIVE)
-    @Optional
-    public abstract DirectoryProperty getPrivacySandboxSupportedSdkAdditionalSplitApks();
-
-    @InputFiles
-    @PathSensitive(PathSensitivity.RELATIVE)
-    @Optional
-    public abstract DirectoryProperty getPrivacySandboxCompatApks();
-
     @InputFiles
     @PathSensitive(PathSensitivity.RELATIVE)
     @Optional
@@ -329,8 +317,6 @@ public abstract class InstallVariantTask extends NonIncrementalTask {
                     .setTaskInputToFinalProduct(
                             SingleArtifact.APK.INSTANCE, task.getApkDirectory());
             task.getPrivacySandboxSdksApksFiles().disallowChanges();
-            task.getPrivacySandboxSupportedSdkAdditionalSplitApks().disallowChanges();
-            task.getPrivacySandboxCompatApks().disallowChanges();
 
             Installation installationOptions = creationConfig.getGlobal().getInstallationOptions();
             task.setTimeOutInMs(installationOptions.getTimeOutInMs());

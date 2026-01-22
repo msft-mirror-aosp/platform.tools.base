@@ -21,28 +21,15 @@ import com.android.adblib.testingutils.CoroutineTestUtils.runBlockingWithTimeout
 import com.android.adblib.testingutils.CoroutineTestUtils.yieldUntil
 import com.android.adblib.utils.createChildScope
 import com.android.sdklib.deviceprovisioner.testing.SdkFixture
-import com.android.sdklib.internal.avd.AvdInfo
-import com.android.sdklib.internal.avd.AvdManager
-import com.android.sdklib.internal.avd.BootMode
 import com.android.testutils.file.createInMemoryFileSystemAndFolder
 import com.google.common.truth.Truth.assertThat
-import com.google.common.truth.Truth.assertWithMessage
-import java.awt.Component
-import java.nio.file.Path
 import java.time.Duration
-import kotlin.reflect.KClass
-import kotlin.reflect.full.isSubclassOf
-import kotlin.reflect.full.memberProperties
 import kotlin.time.Duration.Companion.minutes
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.takeWhile
@@ -56,56 +43,21 @@ import org.junit.Test
 
 class LocalEmulatorDeviceHandleTest {
 
-  /** Verify that DeviceActions are implemented as fields rather than via getters. */
-  @Test
-  fun actionPresentationIdentity() = runTest {
-    val handle =
-      LocalEmulatorDeviceHandle(
-        testContext(this, StubAvdManager()),
-        {},
-        MutableStateFlow(emptyList()),
-        this.createChildScope(),
-        emptyList(),
-        makeAvdInfo(createInMemoryFileSystemAndFolder("avds"), 1),
-      )
-
-    for (property in LocalEmulatorDeviceHandle::class.memberProperties) {
-      val classType = property.returnType.classifier as? KClass<*> ?: continue
-      if (classType.isSubclassOf(DeviceAction::class)) {
-        val action = property.getter.call(handle) as? DeviceAction
-        assertWithMessage(property.name).that(action).isSameAs(property.getter.call(handle))
-        if (action != null) {
-          assertWithMessage("${property.name}.presentation")
-            .that(action.presentation)
-            .isSameAs(action.presentation)
-        }
-      }
-    }
-
-    handle.scope.cancel()
-  }
-
   @OptIn(ExperimentalCoroutinesApi::class)
   @Test
   fun activationTimeout() = runTest {
-    val avdManager =
-      object : StubAvdManager() {
-        override suspend fun startAvd(avdInfo: AvdInfo, bootMode: BootMode) {
-          delay(Long.MAX_VALUE)
-        }
-      }
-    val context = testContext(this, avdManager)
+    val context = testContext(this)
+
     val handle =
       LocalEmulatorDeviceHandle(
-        context,
-        {},
-        MutableStateFlow(emptyList()),
-        this.createChildScope(),
-        emptyList(),
-        makeAvdInfo(createInMemoryFileSystemAndFolder("avds"), 1),
+        context = context,
+        refreshDevices = {},
+        scope = this.createChildScope(),
+        extensions = emptyList(),
+        initialAvdInfo = makeAvdInfo(createInMemoryFileSystemAndFolder("avds"), 1),
       )
 
-    val activateJob = async(SupervisorJob()) { handle.activationAction.activate() }
+    val activateJob = async(SupervisorJob()) { handle.activate { delay(Long.MAX_VALUE) } }
 
     handle.stateFlow.takeWhile { !it.isTransitioning }.collect()
 
@@ -117,13 +69,6 @@ class LocalEmulatorDeviceHandleTest {
       .isInstanceOf(DeviceActionException::class.java)
 
     handle.scope.cancel()
-  }
-
-  class AvdManagerWrapper(val avdManager: AvdManager) : StubAvdManager() {
-    override suspend fun rescanAvds(): List<AvdInfo> {
-      avdManager.reloadAvds()
-      return avdManager.allAvds
-    }
   }
 
   /**
@@ -148,13 +93,14 @@ class LocalEmulatorDeviceHandleTest {
 
         val plugin =
           LocalEmulatorProvisionerPlugin(
-            session.scope,
-            session,
-            AvdManagerWrapper(avdManager),
-            emptyDeviceIcons,
-            TestDefaultDeviceActionPresentation,
-            Dispatchers.IO,
-            Duration.ofMillis(100),
+            scope = session.scope,
+            adbSession = session,
+            refreshAvds = {
+              avdManager.reloadAvds()
+              avdManager.allAvds
+            },
+            deviceIcons = emptyDeviceIcons,
+            rescanPeriod = Duration.ofMillis(100),
           )
 
         yieldUntil { plugin.devices.value.size == 2 }
@@ -177,48 +123,7 @@ class LocalEmulatorDeviceHandleTest {
     }
 }
 
-fun unsupportedOperation(): Nothing = throw UnsupportedOperationException()
-
-open class StubAvdManager : LocalEmulatorProvisionerPlugin.AvdManager {
-
-  override val runningAvdsFlow: StateFlow<Map<Path, RunningAvd>>
-    get() = unsupportedOperation()
-
-  override suspend fun rescanAvds(): List<AvdInfo> = unsupportedOperation()
-
-  override suspend fun createAvd(parent: Component?): Boolean = unsupportedOperation()
-
-  override suspend fun editAvd(parent: Component?, avdInfo: AvdInfo): Boolean =
-    unsupportedOperation()
-
-  override suspend fun unpairGlasses(handle: LocalEmulatorDeviceHandle) = unsupportedOperation()
-
-  override suspend fun pairGlasses(
-    parent: Component?,
-    glassesHandle: LocalEmulatorDeviceHandle,
-    deviceHandleFlow: Flow<List<LocalEmulatorDeviceHandle>>,
-  ) = unsupportedOperation()
-
-  override suspend fun startAvd(avdInfo: AvdInfo, bootMode: BootMode): Unit = unsupportedOperation()
-
-  override suspend fun stopAvd(avdInfo: AvdInfo): Unit = unsupportedOperation()
-
-  override suspend fun showOnDisk(avdInfo: AvdInfo): Unit = unsupportedOperation()
-
-  override suspend fun duplicateAvd(parent: Component?, avdInfo: AvdInfo): Unit =
-    unsupportedOperation()
-
-  override suspend fun wipeData(avdInfo: AvdInfo): Unit = unsupportedOperation()
-
-  override suspend fun deleteAvd(avdInfo: AvdInfo): Unit = unsupportedOperation()
-
-  override suspend fun downloadAvdSystemImage(avdInfo: AvdInfo): Unit = unsupportedOperation()
-}
-
-private fun testContext(
-  testScope: TestScope,
-  avdManager: LocalEmulatorProvisionerPlugin.AvdManager,
-) =
+fun testContext(testScope: TestScope) =
   LocalEmulatorContext(
     FakeAdbLoggerFactory().createClassLogger(LocalEmulatorProvisionerPlugin::class.java),
     DeviceIcons(
@@ -229,9 +134,6 @@ private fun testContext(
       EmptyIcon.DEFAULT,
       EmptyIcon.DEFAULT,
     ),
-    defaultPresentation = TestDefaultDeviceActionPresentation,
-    avdManager = avdManager,
-    diskIoDispatcher = Dispatchers.IO,
     clock =
       object : Clock {
         override fun now() = Instant.fromEpochMilliseconds(testScope.currentTime)

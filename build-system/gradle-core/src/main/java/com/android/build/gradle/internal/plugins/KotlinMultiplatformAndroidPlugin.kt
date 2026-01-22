@@ -199,10 +199,6 @@ class KotlinMultiplatformAndroidPlugin @Inject constructor(
         LibraryDependencyCacheBuildService.RegistrationAction(project, mavenCoordinatesCacheBuildService).execute()
         GlobalSyncService.RegistrationAction(project, mavenCoordinatesCacheBuildService).execute()
 
-        // enable the gradle property that enables the kgp IDE import APIs that we rely on.
-        project.extensions.extraProperties.set(
-            "kotlin.mpp.import.enableKgpDependencyResolution", "true"
-        )
         // publish the jvm target with TargetJvmEnvironment attribute so that we're able to
         // distinguish between jvm and android targets based on that attribute.
         project.extensions.extraProperties.set(
@@ -433,12 +429,6 @@ class KotlinMultiplatformAndroidPlugin @Inject constructor(
         (global.compileOptions as CompileOptions)
             .finalizeSourceAndTargetCompatibility(project, global)
 
-        dependencyConfigurator.configureVariantTransforms(
-            variants = listOf(mainVariant),
-            nestedComponents = mainVariant.nestedComponents,
-            bootClasspathConfig = global
-        )
-
         if (androidTest?.codeCoverageEnabled == true) {
             dependencyConfigurator.configureJacocoTransforms()
         }
@@ -448,6 +438,12 @@ class KotlinMultiplatformAndroidPlugin @Inject constructor(
             mainVariant,
             unitTest,
             androidTest
+        )
+
+        dependencyConfigurator.configureVariantTransforms(
+            variants = listOf(mainVariant),
+            nestedComponents = mainVariant.nestedComponents,
+            bootClasspathConfig = global
         )
 
         updateTestComponentFriendPaths(listOfNotNull(unitTest, androidTest))

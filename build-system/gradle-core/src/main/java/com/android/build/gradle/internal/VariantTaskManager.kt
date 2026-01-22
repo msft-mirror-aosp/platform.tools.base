@@ -31,6 +31,10 @@ import com.android.build.gradle.internal.component.NestedComponentCreationConfig
 import com.android.build.gradle.internal.component.TestComponentCreationConfig
 import com.android.build.gradle.internal.component.TestFixturesCreationConfig
 import com.android.build.gradle.internal.component.VariantCreationConfig
+import com.android.build.gradle.internal.coverage.JacocoConfigurations
+import com.android.build.gradle.internal.coverage.tasks.CodeCoverageCollectionTask
+import com.android.build.gradle.internal.coverage.tasks.CodeCoverageReportCreationConfigImpl
+import com.android.build.gradle.internal.coverage.tasks.CodeCoverageReportTask
 import com.android.build.gradle.internal.cxx.configure.createCxxTasks
 import com.android.build.gradle.internal.dsl.DataBindingOptions
 import com.android.build.gradle.internal.lint.LintTaskManager
@@ -95,6 +99,10 @@ abstract class VariantTaskManager<VariantBuilderT : VariantBuilder, VariantT : V
     private val screenshotTestTaskManager = ScreenshotTestTaskManager(project, globalConfig)
     private val androidTestTaskManager = AndroidTestTaskManager(project, globalConfig)
     private val testFixturesTaskManager = TestFixturesTaskManager(project, globalConfig, localConfig)
+    private val isKotlinConfigurationNecessary: Boolean
+        get() = isKotlinPluginAppliedInTheSameClassloader(project)
+                || globalConfig.services.projectOptions[BooleanOption.BUILT_IN_KOTLIN]
+                || project.pluginManager.hasPlugin(ANDROID_BUILT_IN_KOTLIN_PLUGIN_ID)
 
     /**
      * This is the main entry point into the task manager
@@ -125,9 +133,28 @@ abstract class VariantTaskManager<VariantBuilderT : VariantBuilder, VariantT : V
 
         checkMultidexDependency()
 
+        val enableTestReportAggregation =
+            globalConfig.services.projectOptions.get(BooleanOption.REPORT_AGGREGATION_SUPPORT)
+
+        if (enableTestReportAggregation) {
+            taskFactory.register(
+                CodeCoverageReportTask.CoverageReportCreationAction(globalConfig))
+            //TODO: Only register the aggregated report task if it is applicable
+            taskFactory.register(
+                CodeCoverageReportTask.AggregatedCoverageReportCreationAction(globalConfig))
+        }
+
         // Create tasks for all variants (main, testFixtures and tests)
         for (variantInfo: ComponentInfo<VariantBuilderT, VariantT> in variants) {
             createTasksForVariant(variantInfo)
+            if(enableTestReportAggregation) {
+                val jacocoAntConfiguration = JacocoConfigurations.getJacocoAntTaskConfiguration(
+                    project, variantInfo.variant.global.testCoverage.jacocoVersion)
+                taskFactory.register(CodeCoverageCollectionTask.CoverageCollectionCreationAction(jacocoAntConfiguration,
+                    CodeCoverageReportCreationConfigImpl(variantInfo.variant, testComponents)))
+                //TODO: Only register the aggregated report task if it is applicable
+                taskFactory.register(CodeCoverageCollectionTask.AggregatedCoverageCollectionCreationAction(jacocoAntConfiguration, CodeCoverageReportCreationConfigImpl(variantInfo.variant, testComponents)))
+            }
             for (testSuite in variantInfo.variant.testSuites) {
                 TestSuiteTaskManager(project, globalConfig).createTasks(testSuite)
             }
@@ -325,9 +352,7 @@ abstract class VariantTaskManager<VariantBuilderT : VariantBuilder, VariantT : V
     }
 
     private fun configureKotlinPluginTasksIfNecessary() {
-        if (!isKotlinPluginAppliedInTheSameClassloader(project)
-            && !globalConfig.services.projectOptions[BooleanOption.BUILT_IN_KOTLIN]
-            && !project.pluginManager.hasPlugin(ANDROID_BUILT_IN_KOTLIN_PLUGIN_ID)) {
+        if (!isKotlinConfigurationNecessary) {
             return
         }
 
@@ -474,7 +499,7 @@ abstract class VariantTaskManager<VariantBuilderT : VariantBuilder, VariantT : V
         val enableKtx = ktxDataBindingDslValue ?: ktxGradlePropertyValue
         if (enableKtx) {
             // Add Ktx dependency if AndroidX and Kotlin is used
-            if (useAndroidX && isKotlinPluginAppliedInTheSameClassloader(project)) {
+            if (useAndroidX && isKotlinConfigurationNecessary) {
                 project.dependencies
                     .add(
                         "api",

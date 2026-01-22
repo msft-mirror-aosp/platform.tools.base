@@ -257,7 +257,7 @@ interface HideDeviceAction : DeviceAction {
 }
 
 interface PairGlassesAction : DeviceAction {
-  suspend fun pairGlasses(parent: Component?, glassesHandle: DeviceHandle)
+  suspend fun pairGlasses(parent: Component?)
 
   override fun DefaultPresentation.fromContext() = pairGlassesAction
 }

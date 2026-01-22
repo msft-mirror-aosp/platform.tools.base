@@ -25,17 +25,9 @@ dependencies {
     compileOnly gradleApi()
     compileOnly project(':base:utp:gradle-work-action-api')
     implementation libs.com.android.tools.common
-    implementation libs.com.android.tools.sdkCommon
     implementation libs.com.android.tools.ddms.ddmlib
-    implementation libs.grpc_core
-    implementation libs.grpc_netty
-    implementation libs.grpc_protobuf
-    implementation libs.grpc_stub
-    implementation libs.grpc_inprocess
-    implementation libs.bouncycastle_pkix
-    implementation libs.tink
+    implementation "com.google.crypto.tink:tink:1.18.0"
     implementation libs.apache_commons_io
-    implementation libs.unified_test_platform
     implementation libs.com.android.tools.utp.androidDeviceProviderDdmlibProto
     implementation libs.com.android.tools.utp.androidTestPluginHostAdditionalTestOutputProto
     implementation libs.com.android.tools.utp.androidTestPluginHostApkInstallerProto
@@ -43,6 +35,9 @@ dependencies {
     implementation libs.com.android.tools.utp.androidTestPluginHostEmulatorControlProto
     implementation libs.com.android.tools.utp.androidTestPluginHostLogcatProto
     implementation libs.com.android.tools.utp.androidTestPluginResultListenerGradleProto
+    implementation libs.unified_test_platform
+    implementation libs.unified_test_platform_launcher
+    implementation "com.google.dagger:dagger:2.48"
 
     testImplementation gradleApi()
     testImplementation project(':base:utp:gradle-work-action-api')
@@ -52,7 +47,6 @@ dependencies {
     testImplementation libs.mockito_core
     testImplementation libs.mockito_kotlin
     testImplementation libs.com.android.tools.testutils
-    testImplementation libs.grpc_testing
 }
 
 project.ext.pomName = 'UTP Gradle Work Action'

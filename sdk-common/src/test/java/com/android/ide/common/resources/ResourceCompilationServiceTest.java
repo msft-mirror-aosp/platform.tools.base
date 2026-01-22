@@ -43,7 +43,7 @@ public class ResourceCompilationServiceTest {
                             input,
                             outputDir,
                             "values",
-                            ResourcePathEncoding.AbsoluteNotRelocatable.INSTANCE);
+                            new ResourcePathEncoding.AbsoluteNotRelocatable("Test"));
             File output = aapt.compileOutputFor(request);
 
             assertFalse(output.exists());

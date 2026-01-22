@@ -92,7 +92,7 @@ class NodeParser {
             var type: LeakTraceNodeType? = null
             var leakingStatus: LeakingStatus? = null
             var leakingStatusReason = ""
-            var retainedHeapByteSize: Int? = null
+            var retainedHeapSize: String? = null
             var retainedObjectCount: Int? = null
             var leakingMultiLine = false
             var isClassTypeFound = false
@@ -157,7 +157,7 @@ class NodeParser {
                         val matchResult =
                             retainingRegex.find(line.removePrefix(additionalLinesPrefix))!!
                         val (sizeString, unit, countString) = matchResult.destructured
-                        retainedHeapByteSize = getByteSize(sizeString.toDouble(), unit).toInt()
+                        retainedHeapSize = "$sizeString $unit"
                         retainedObjectCount = countString.toInt()
                     }
 
@@ -176,7 +176,7 @@ class NodeParser {
                 className,
                 leakingStatus,
                 leakingStatusReason,
-                retainedHeapByteSize,
+                retainedHeapSize,
                 retainedObjectCount,
                 notes,
                 null
@@ -191,21 +191,6 @@ class NodeParser {
             return parts.last() == LeakTraceNodeType.INSTANCE.name.lowercase()
                     || parts.last() == LeakTraceNodeType.CLASS.name.lowercase()
                     || parts.last() == LeakTraceNodeType.ARRAY.name.lowercase()
-        }
-
-        /**
-         * Converts a size value and its associated unit into a byte count.
-         */
-        private fun getByteSize(size: Double, unit: String): Double {
-            return size * when (unit.uppercase()) {
-                // To be consistent with LeakCanary, using unit as 1000
-                "KB" -> 1e3
-                "MB" -> 1e6
-                "GB" -> 1e9
-                "TB" -> 1e12
-                "PB" -> 1e15
-                else -> 1.0
-            }
         }
     }
 }

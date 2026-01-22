@@ -131,6 +131,8 @@ public class AndroidArtifacts {
             "android-exploded-aar-or-asar-interface-descriptor";
     private static final String TYPE_AAR_ClASS_LIST_AND_RES_SYMBOLS =
             "aar-class-list-and-res-symbols";
+    private static final String TYPE_ANDROID_RES_SOURCE_SET_MAPPING =
+            "android-res-source-set-mapping";
     private static final String TYPE_JAR_ClASS_LIST = "jar-class-list";
     private static final String TYPE_COMPILED_DEPENDENCIES_RESOURCES =
             "android-compiled-dependencies-resources";
@@ -187,6 +189,7 @@ public class AndroidArtifacts {
 
     private static final String TYPE_NAVIGATION_JSON = "android-navigation-json";
     private static final String TYPE_NAVIGATION_XML = "android-navigation-xml";
+    private static final String TYPE_CODE_COVERAGE_DATA = "android-code-coverage-data";
 
     private static final String TYPE_PREFAB_PACKAGE = "android-prefab";
     private static final String TYPE_PREFAB_PACKAGE_CONFIGURATION = "android-prefab-configuration";
@@ -612,6 +615,11 @@ public class AndroidArtifacts {
 
         // A file containing unique resource symbols from ANDROID_RES.
         ANDROID_RES_SYMBOLS(TYPE_AAR_ClASS_LIST_AND_RES_SYMBOLS),
+        /**
+         * Text file containing resource source set IDs and the absolute paths of the resource
+         * source sets.
+         */
+        ANDROID_RES_SOURCE_SET_MAPPING(TYPE_ANDROID_RES_SOURCE_SET_MAPPING),
         // A file containing classpaths from CLASSES_JAR.
         JAR_CLASS_LIST(TYPE_JAR_ClASS_LIST),
 
@@ -655,7 +663,8 @@ public class AndroidArtifacts {
         MERGED_TEST_ONLY_NATIVE_LIBS(TYPE_MERGED_TEST_ONLY_NATIVE_LIBS),
 
         NAVIGATION_XML(TYPE_NAVIGATION_XML),
-        ;
+
+        CODE_COVERAGE_DATA(TYPE_CODE_COVERAGE_DATA);
 
         @NonNull private final String type;
         @Nullable private final ArtifactCategory category;

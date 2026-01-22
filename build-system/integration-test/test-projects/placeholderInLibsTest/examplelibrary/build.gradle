@@ -15,11 +15,13 @@ android {
     }
 }
 
-android.testVariants.all {
-    it.mergedFlavor.manifestPlaceholders = [
-            "localApplicationId": "com.example.manifest_merger_example.flavor",
-            "myPath": "/flavor"
-    ]
+androidComponents {
+    onVariants(selector().all()) { variant ->
+        def placeholders = ["localApplicationId" : "com.example.manifest_merger_example.flavor", "myPath": "/flavor"]
+	if (variant.androidTest != null) {
+            variant.androidTest.manifestPlaceholders.putAll(placeholders)
+        }
+    }
 }
 
 dependencies {

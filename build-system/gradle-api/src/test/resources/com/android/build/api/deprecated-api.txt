@@ -3,6 +3,10 @@ Deprecated Android Gradle Plugin API.
 ATTENTION REVIEWER: If this needs to be changed, please make sure changes
 are announced on go/as-release-notes.
 -------------------------------------------------------------------------
+Deprecated from AGP 9.1.0
+  * com.android.build.api.variant.TestSuiteSourceSet$Assets$DefaultImpls.getType: com.android.build.api.variant.TestSuiteSourceType (com.android.build.api.variant.TestSuiteSourceSet$Assets)
+  * com.android.build.api.variant.TestSuiteSourceSet$HostJar$DefaultImpls.getType: com.android.build.api.variant.TestSuiteSourceType (com.android.build.api.variant.TestSuiteSourceSet$HostJar)
+  * com.android.build.api.variant.TestSuiteSourceSet$TestApk$DefaultImpls.getType: com.android.build.api.variant.TestSuiteSourceType (com.android.build.api.variant.TestSuiteSourceSet$TestApk)
 Deprecated from AGP 9.0.0
   * com.android.build.api.dsl.AndroidSourceDirectorySet.setSrcDirs: java.lang.Object (java.lang.Iterable<?>)
   * com.android.build.api.dsl.AndroidSourceDirectorySet.srcDir: java.lang.Object (java.lang.Object)
@@ -126,10 +130,6 @@ Deprecated from AGP 8.0.0
   * com.android.build.api.dsl.Packaging.merge: void (java.lang.String)
   * com.android.build.api.dsl.Packaging.pickFirst: void (java.lang.String)
 Deprecated from AGP 7.4.0
-  * com.android.build.api.dsl.PrivacySandboxSdkBundle.getPackageName: java.lang.String ()
-  * com.android.build.api.dsl.PrivacySandboxSdkBundle.setPackageName: void (java.lang.String)
-  * com.android.build.api.dsl.PrivacySandboxSdkExtension.getNamespace: java.lang.String ()
-  * com.android.build.api.dsl.PrivacySandboxSdkExtension.setNamespace: void (java.lang.String)
   * com.android.build.api.variant.Variant.getTargetSdkVersion: com.android.build.api.variant.AndroidVersion ()
   * com.android.build.api.variant.VariantBuilder.getTargetSdk: java.lang.Integer ()
   * com.android.build.api.variant.VariantBuilder.getTargetSdkPreview: java.lang.String ()

@@ -25,14 +25,11 @@ import org.gradle.api.provider.Property
 import org.gradle.workers.WorkParameters
 import java.io.File
 import java.io.Serializable
-import java.util.logging.Level
 
 /**
  * Parameters of [UtpAction].
  */
 interface RunUtpWorkParameters : WorkParameters {
-    /** The Java executable to run UTP. */
-    val jvm: RegularFileProperty
     /** UTP dependencies. */
     val utpDependencies: Property<UtpDependencies>
     /** Configurations for each UTP test run. */
@@ -105,8 +102,6 @@ interface RunUtpWorkParameters : WorkParameters {
         val reinstallIncompatibleApksBeforeTest: Property<Boolean>
         /** Sharding configuration, if any. */
         val shardConfig: Property<ShardConfig>
-        /** The logging level for the UTP run. */
-        val loggingLevel: Property<Level>
     }
 }
 

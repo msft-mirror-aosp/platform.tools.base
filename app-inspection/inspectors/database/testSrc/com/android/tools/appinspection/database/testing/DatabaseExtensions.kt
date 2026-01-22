@@ -19,12 +19,15 @@ package com.android.tools.appinspection.database.testing
 // import android.database.sqlite.SQLiteOpenHelper
 // import androidx.test.core.app.ApplicationProvider
 import android.database.sqlite.SQLiteDatabase
+import androidx.sqlite.SQLiteConnection
 import com.google.common.truth.Truth.assertThat
 import java.io.File
 
 // import org.junit.rules.TemporaryFolder
 
 fun SQLiteDatabase.addTable(table: Table) = execSQL(table.toCreateString())
+
+fun SQLiteConnection.addTable(table: Table) = prepare(table.toCreateString()).use { it.step() }
 
 val SQLiteDatabase.displayName: String
   get() =

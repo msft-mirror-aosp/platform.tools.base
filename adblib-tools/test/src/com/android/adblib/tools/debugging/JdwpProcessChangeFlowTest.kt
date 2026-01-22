@@ -24,8 +24,11 @@ import com.android.adblib.testingutils.CoroutineTestUtils.yieldUntil
 import com.android.adblib.testingutils.FakeAdbServerProviderRule
 import com.android.adblib.tools.testutils.areAllPropertiesInitialized
 import com.android.adblib.tools.testutils.waitForOnlineConnectedDevice
+import com.android.adblib.waitUntilState
 import com.android.fakeadbserver.DeviceState
 import com.android.sdklib.AndroidApiLevel
+import java.io.EOFException
+import java.io.IOException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.mapNotNull
@@ -35,6 +38,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import java.util.concurrent.CopyOnWriteArrayList
+import kotlin.test.assertFailsWith
 
 class JdwpProcessChangeFlowTest {
 
@@ -52,7 +56,7 @@ class JdwpProcessChangeFlowTest {
             val (connectedDevice, fakeDevice) = connectOnlineDevice()
             val pid10 = 10
             fakeDevice.startClient(pid10, 0, "a.b.c", true)
-            val processes = connectedDevice.appProcessFlow.first { it.isNotEmpty() }
+            val processes = connectedDevice.appProcessTracker.appProcessFlow.first { it.isNotEmpty() }
             assertEquals(1, processes.size)
             // Wait for all process properties to get populated
             yieldUntil { processes[0].jdwpProcess!!.properties.areAllPropertiesInitialized() }
@@ -138,7 +142,7 @@ class JdwpProcessChangeFlowTest {
             val (connectedDevice, fakeDevice) = connectOnlineDevice()
             val pid10 = 10
             fakeDevice.startClient(pid10, 0, "a.b.c", true)
-            val processes = connectedDevice.appProcessFlow.first { it.isNotEmpty() }
+            val processes = connectedDevice.appProcessTracker.appProcessFlow.first { it.isNotEmpty() }
             assertEquals(1, processes.size)
             // Wait for all process properties to get populated, so that we get a single
             // `JdwpProcessChange.Added` change later on. Failing to do so may result in
@@ -278,6 +282,54 @@ class JdwpProcessChangeFlowTest {
                     processUpdatesList.add(it)
                 }
             }.join()
+        }
+
+    @Test
+    fun testConnectedDeviceDebuggableProcesses_throwsOnAlreadyDisconnectedDevice(): Unit =
+        CoroutineTestUtils.runBlockingWithTimeout {
+            // Prepare
+            val deviceID = "1234"
+            val fakeDevice = fakeAdb.connectDevice(
+                deviceID,
+                "test1",
+                "test2",
+                "model",
+                AndroidApiLevel(31), // SDK >= 31 is required for track_app feature.
+                DeviceState.HostConnectionType.USB
+            )
+            val connectedDevice = hostServices.session.connectedDevicesTracker.connectedDevices
+                .mapNotNull { connectedDevices ->
+                    connectedDevices.firstOrNull { device -> device.serialNumber == deviceID }
+                }.first()
+            fakeAdb.disconnectDevice(fakeDevice.deviceId)
+            connectedDevice.waitUntilState(com.android.adblib.DeviceState.DISCONNECTED)
+
+            // Act / Assert
+            assertFailsWith<IOException> {
+                connectedDevice.jdwpProcessChangeFlow.collect { }
+            }
+        }
+
+    @Test
+    fun testConnectedDeviceDebuggableProcesses_throwsWhenDeviceDisconnects(): Unit =
+        CoroutineTestUtils.runBlockingWithTimeout {
+            // Prepare
+            val (connectedDevice, fakeDevice) = connectOnlineDevice()
+            val pid10 = 10
+            fakeDevice.startClient(pid10, 0, "a.b.c", true)
+            val processes = connectedDevice.appProcessTracker.appProcessFlow.first { it.isNotEmpty() }
+            assertEquals(1, processes.size)
+
+            // Act / Assert
+            launch {
+                delay(50)
+                fakeAdb.disconnectDevice(fakeDevice.deviceId)
+            }
+
+            assertFailsWith<EOFException> {
+                connectedDevice.jdwpProcessChangeFlow.collect {
+                }
+            }
         }
 
     private suspend fun connectOnlineDevice(): Pair<ConnectedDevice, DeviceState> {

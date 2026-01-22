@@ -35,14 +35,19 @@ import com.android.builder.internal.aapt.v2.Aapt2RenamingConventions
 import com.android.ide.common.resources.CompileResourceRequest
 import com.android.ide.common.resources.FileStatus
 import com.android.ide.common.resources.ResourcePathEncoding
+import com.android.ide.common.resources.readFromSourceSetPathsFile
 import com.android.utils.FileUtils
+import java.io.File
+import javax.inject.Inject
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.FileCollection
+import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.CacheableTask
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFiles
+import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.Nested
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputDirectory
@@ -52,8 +57,6 @@ import org.gradle.api.tasks.TaskProvider
 import org.gradle.work.Incremental
 import org.gradle.work.InputChanges
 import org.gradle.workers.WorkerExecutor
-import java.io.File
-import javax.inject.Inject
 
 @CacheableTask
 @BuildAnalyzer(primaryTaskCategory = TaskCategory.ANDROID_RESOURCES, secondaryTaskCategories = [TaskCategory.COMPILATION])
@@ -76,6 +79,11 @@ abstract class CompileLibraryResourcesTask : NewIncrementalTask() {
 
     @get:OutputDirectory
     abstract val outputDir: DirectoryProperty
+
+    // Used for writing the relocation safe resource paths, these do not require to be updated
+    // on any resource file relocation.
+    @get:Internal
+    abstract val resSourceSetsMap: RegularFileProperty
 
     @get:OutputDirectory
     @get:Optional
@@ -102,6 +110,7 @@ abstract class CompileLibraryResourcesTask : NewIncrementalTask() {
                 parameters.partialRDirectory.set(partialRDirectory)
                 parameters.pseudoLocalize.set(pseudoLocalesEnabled)
                 parameters.crunchPng.set(crunchPng)
+                parameters.resSourceSetPaths.set(resSourceSetsMap)
                 parameters.excludeValues.set(excludeValuesFiles)
             }
     }
@@ -118,6 +127,7 @@ abstract class CompileLibraryResourcesTask : NewIncrementalTask() {
         abstract val pseudoLocalize: Property<Boolean>
         abstract val crunchPng: Property<Boolean>
         abstract val excludeValues: Property<Boolean>
+        abstract val resSourceSetPaths: RegularFileProperty
     }
 
     protected abstract class CompileLibraryResourcesAction :
@@ -127,7 +137,6 @@ abstract class CompileLibraryResourcesTask : NewIncrementalTask() {
         abstract val workerExecutor: WorkerExecutor
 
         override fun run() {
-
             WorkerExecutorResourceCompilationService(
                 projectPath = parameters.projectPath,
                 taskOwner = parameters.taskOwner.get(),
@@ -159,7 +168,8 @@ abstract class CompileLibraryResourcesTask : NewIncrementalTask() {
 
         private fun handleFullRun(processor: WorkerExecutorResourceCompilationService) {
             FileUtils.deleteDirectoryContents(parameters.outputDirectory.asFile.get())
-
+            val sourceSetPaths =
+                readFromSourceSetPathsFile(parameters.resSourceSetPaths.get().asFile)
             for (inputDirectory in parameters.inputDirectories) {
                 if (!inputDirectory.isDirectory) {
                     continue
@@ -168,7 +178,11 @@ abstract class CompileLibraryResourcesTask : NewIncrementalTask() {
                     .filter { it.isDirectory && includeDirectory(it) }
                     .forEach { dir ->
                         dir.listFiles()!!.forEach { file ->
-                            submitFileToBeCompiled(file, processor)
+                            submitFileToBeCompiled(
+                                file,
+                                processor,
+                                ResourcePathEncoding.Relative(sourceSetPaths)
+                            )
                         }
                     }
             }
@@ -186,7 +200,8 @@ abstract class CompileLibraryResourcesTask : NewIncrementalTask() {
 
         private fun submitFileToBeCompiled(
             file: File,
-            compilationService: WorkerExecutorResourceCompilationService
+            compilationService: WorkerExecutorResourceCompilationService,
+            relativeResPathEncoding: ResourcePathEncoding.Relative
         ) {
             val request = CompileResourceRequest(
                 file,
@@ -194,7 +209,7 @@ abstract class CompileLibraryResourcesTask : NewIncrementalTask() {
                 partialRFile = computePartialR(file),
                 isPseudoLocalize = parameters.pseudoLocalize.get(),
                 isPngCrunching = parameters.crunchPng.get(),
-                resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable,
+                resourcePathEncoding = relativeResPathEncoding,
             )
             compilationService.submitCompile(request)
         }
@@ -202,7 +217,8 @@ abstract class CompileLibraryResourcesTask : NewIncrementalTask() {
         private fun handleModifiedFile(
             file: File,
             changeType: FileStatus,
-            compilationService: WorkerExecutorResourceCompilationService
+            compilationService: WorkerExecutorResourceCompilationService,
+            relativeResPathEncoding: ResourcePathEncoding.Relative
         ) {
             if (changeType == FileStatus.CHANGED || changeType == FileStatus.REMOVED) {
                 FileUtils.deleteIfExists(
@@ -215,20 +231,23 @@ abstract class CompileLibraryResourcesTask : NewIncrementalTask() {
 
             }
             if (changeType == FileStatus.NEW || changeType == FileStatus.CHANGED) {
-                submitFileToBeCompiled(file, compilationService)
+                submitFileToBeCompiled(file, compilationService, relativeResPathEncoding)
             }
         }
 
         private fun handleIncrementalChanges(
             fileChanges: SerializableInputChanges,
-            compilationService: WorkerExecutorResourceCompilationService
+            compilationService: WorkerExecutorResourceCompilationService,
         ) {
+            val sourceSetPaths =
+                readFromSourceSetPathsFile(parameters.resSourceSetPaths.get().asFile)
             fileChanges.changes.filter { includeDirectory(it.file.parentFile) }
                 .forEach { fileChange ->
                     handleModifiedFile(
                         fileChange.file,
                         fileChange.fileStatus,
-                        compilationService
+                        compilationService,
+                        ResourcePathEncoding.Relative(sourceSetPaths)
                     )
                 }
         }
@@ -276,6 +295,11 @@ abstract class CompileLibraryResourcesTask : NewIncrementalTask() {
             task.excludeValuesFiles.setDisallowChanges(true)
             creationConfig.services.initializeAapt2Input(task.aapt2, task)
             task.partialRDirectory.disallowChanges()
+
+            val sourceSetMap =
+                creationConfig.artifacts.get(InternalArtifactType.ANDROID_RES_SOURCE_SET_PATH_MAP)
+            task.resSourceSetsMap.setDisallowChanges(sourceSetMap)
+            task.dependsOn(sourceSetMap)
         }
     }
 

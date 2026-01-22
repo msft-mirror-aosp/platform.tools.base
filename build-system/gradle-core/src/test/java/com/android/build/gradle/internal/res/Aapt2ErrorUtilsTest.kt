@@ -52,7 +52,7 @@ class Aapt2ErrorUtilsTest {
             inputDirectoryName = "values",
             outputDirectory = temporaryFolder.newFolder(),
             originalInputFile = temporaryFolder.newFile("original"),
-            resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable
+            resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable("Test")
         )
 
         val aaptException = Aapt2Exception.create(
@@ -85,7 +85,7 @@ class Aapt2ErrorUtilsTest {
             inputDirectoryName = "values",
             outputDirectory = temporaryFolder.newFolder(),
             originalInputFile = temporaryFolder.newFile("original"),
-            resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable
+            resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable(justification = "Test")
         )
 
         val aaptException = Aapt2Exception.create(
@@ -128,7 +128,7 @@ class Aapt2ErrorUtilsTest {
             inputDirectoryName = "values",
             outputDirectory = temporaryFolder.newFolder(),
             originalInputFile = temporaryFolder.newFile("original"),
-            resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable
+            resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable(justification = "Test")
         )
 
         val aaptException = Aapt2Exception.create(

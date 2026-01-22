@@ -23,14 +23,24 @@ import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.truth.PathSubject
 import org.junit.Rule
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.junit.runners.Parameterized
 
-@Suppress("DEPRECATION")
-class BuiltInKotlinForScreenshotTestTest {
+@RunWith(Parameterized::class)
+class BuiltInKotlinForScreenshotTestTest(private val builtInKotlin: Boolean) {
+
+    companion object {
+
+        @Parameterized.Parameters(name = "builtInKotlin={0}")
+        @JvmStatic
+        fun parameters() = listOf(false, true)
+    }
 
     @get:Rule
     val rule = GradleRule.from {
         androidLibrary {
-            applyPlugin(PluginType.KOTLIN_ANDROID)
+            @Suppress("DEPRECATION")
+            if (!builtInKotlin) applyPlugin(PluginType.KOTLIN_ANDROID)
             android {
                 defaultConfig.minSdk = 21
             }
@@ -39,8 +49,8 @@ class BuiltInKotlinForScreenshotTestTest {
             }
         }
         gradleProperties {
-            add(BooleanOption.BUILT_IN_KOTLIN, false)
-            add(BooleanOption.USE_NEW_DSL, false)
+            add(BooleanOption.BUILT_IN_KOTLIN, builtInKotlin)
+            if (!builtInKotlin) add(BooleanOption.USE_NEW_DSL, false)
         }
     }
 
@@ -74,7 +84,7 @@ class BuiltInKotlinForScreenshotTestTest {
                 )
             }
             androidLibrary(":lib2") {
-                applyPlugin(PluginType.KOTLIN_ANDROID)
+                if (!builtInKotlin) applyPlugin(PluginType.KOTLIN_ANDROID)
                 kotlin {
                     jvmToolchain(17)
                 }

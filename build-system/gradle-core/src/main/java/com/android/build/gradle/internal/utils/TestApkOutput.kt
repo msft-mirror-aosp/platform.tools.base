@@ -57,18 +57,7 @@ class TestApkOutput(variant: TestVariantCreationConfig, val deviceSpec: DeviceSp
     }
 
     private fun getApkSources(variant: TestVariantCreationConfig): ApkSources {
-        val privacySandboxSdksApksFiles = variant.variantDependencies
-            .getArtifactFileCollection(
-                AndroidArtifacts.ConsumedConfigType.PROVIDED_CLASSPATH,
-                AndroidArtifacts.ArtifactScope.ALL,
-                AndroidArtifacts.ArtifactType
-                    .ANDROID_PRIVACY_SANDBOX_EXTRACTED_SDK_APKS)
-
-        return ApkSources(
-            mainApkArtifacts = variant.allTestedApks,
-            additionalSupportedSdkApkSplits = variant.usesSdkLibrarySplitForLocalDeployment,
-            privacySandboxSdkSplitApksForLegacy = variant.privacySandboxCompatApks
-        )
+        return ApkSources(variant.allTestedApks)
     }
 
 }

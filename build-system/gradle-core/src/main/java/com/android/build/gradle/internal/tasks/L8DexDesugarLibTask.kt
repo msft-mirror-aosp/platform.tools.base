@@ -22,6 +22,7 @@ import com.android.build.gradle.internal.profile.ProfileAwareWorkAction
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.scope.InternalMultipleArtifactType
+import com.android.build.api.artifact.SingleArtifact
 import com.android.build.gradle.internal.tasks.factory.VariantTaskCreationAction
 import com.android.build.gradle.internal.tasks.factory.features.DexingTaskCreationAction
 import com.android.build.gradle.internal.tasks.factory.features.DexingTaskCreationActionImpl
@@ -41,6 +42,7 @@ import org.gradle.api.provider.Property
 import org.gradle.api.tasks.CacheableTask
 import org.gradle.api.tasks.Classpath
 import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputDirectory
@@ -91,6 +93,11 @@ abstract class L8DexDesugarLibTask : NonIncrementalTask() {
     @get:PathSensitive(PathSensitivity.NONE)
     abstract val dexFiles: ConfigurableFileCollection
 
+    @get:InputFile
+    @get:PathSensitive(PathSensitivity.NAME_ONLY)
+    @get:Optional
+    abstract val inputMappingFile: RegularFileProperty
+
     @get: [InputFiles Optional PathSensitive(PathSensitivity.NAME_ONLY)]
     abstract val inputArtProfile: RegularFileProperty
 
@@ -104,6 +111,10 @@ abstract class L8DexDesugarLibTask : NonIncrementalTask() {
     @get:OutputFile
     @get:Optional
     abstract val outputArtProfile: RegularFileProperty
+
+    @get:OutputFile
+    @get:Optional
+    abstract val outputMappingFile: RegularFileProperty
 
     override fun doTaskAction() {
         workerExecutor.noIsolation().submit(
@@ -122,6 +133,8 @@ abstract class L8DexDesugarLibTask : NonIncrementalTask() {
             it.outputKeepRules.set(keepRules)
             it.inputArtProfile.set(inputArtProfile)
             it.outputArtProfile.set(outputArtProfile)
+            it.inputMappingFile.set(inputMappingFile)
+            it.outputMappingFile.set(outputMappingFile)
         }
     }
 
@@ -142,6 +155,16 @@ abstract class L8DexDesugarLibTask : NonIncrementalTask() {
             creationConfig.artifacts
                 .setInitialProvider(taskProvider, L8DexDesugarLibTask::desugarLibDex)
                 .on(InternalArtifactType.DESUGAR_LIB_DEX)
+            if (dexingCreationConfig.needsShrinkDesugarLibrary &&
+                creationConfig.optimizationCreationConfig.minifiedEnabled
+            ) {
+                creationConfig.artifacts.use(taskProvider)
+                    .wiredWithFiles(
+                        L8DexDesugarLibTask::inputMappingFile,
+                        L8DexDesugarLibTask::outputMappingFile
+                    )
+                    .toTransform(SingleArtifact.OBFUSCATION_MAPPING_FILE)
+            }
             creationConfig.artifacts.use(taskProvider).wiredWithFiles(
                 L8DexDesugarLibTask::inputArtProfile,
                 L8DexDesugarLibTask::outputArtProfile
@@ -207,6 +230,8 @@ abstract class L8DexWorkAction : ProfileAwareWorkAction<L8DexWorkAction.Params>(
         abstract val outputKeepRules: RegularFileProperty
         abstract val inputArtProfile: RegularFileProperty
         abstract val outputArtProfile: RegularFileProperty
+        abstract val inputMappingFile: RegularFileProperty
+        abstract val outputMappingFile: RegularFileProperty
     }
 
     override fun run() {
@@ -235,7 +260,9 @@ abstract class L8DexWorkAction : ProfileAwareWorkAction<L8DexWorkAction.Params>(
             parameters.debuggable.get(),
             L8OutputMode.DexIndexed,
             parameters.inputArtProfile.orNull?.asFile?.toPath(),
-            parameters.outputArtProfile.orNull?.asFile?.toPath()
+            parameters.outputArtProfile.orNull?.asFile?.toPath(),
+            parameters.inputMappingFile.orNull?.asFile?.toPath(),
+            parameters.outputMappingFile.orNull?.asFile?.toPath()
         )
     }
 }

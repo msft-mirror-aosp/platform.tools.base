@@ -21,7 +21,6 @@ import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
 import com.android.build.gradle.integration.common.fixture.project.plugins.GenericCallback
 import com.android.build.gradle.options.BooleanOption
-import com.android.testutils.TestUtils
 import org.gradle.api.Project
 import org.jetbrains.kotlin.gradle.dsl.KotlinAndroidProjectExtension
 import org.junit.Rule
@@ -53,7 +52,7 @@ class BuiltInKotlinSourceSetTest(
     val rule = GradleRule.from {
         androidApplication {
             @Suppress("DEPRECATION")
-            if (!builtInKotlin) applyPlugin(PluginType.KOTLIN_ANDROID, TestUtils.BUILT_IN_KOTLIN_VERSION)
+            if (!builtInKotlin) applyPlugin(PluginType.KOTLIN_ANDROID)
         }
         gradleProperties {
             add(BooleanOption.BUILT_IN_KOTLIN, builtInKotlin)

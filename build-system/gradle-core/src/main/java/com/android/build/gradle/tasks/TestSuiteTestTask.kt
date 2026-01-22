@@ -16,16 +16,14 @@
 
 package com.android.build.gradle.tasks
 
-import com.android.build.api.artifact.MultipleArtifact
 import com.android.build.api.artifact.SingleArtifact
 import com.android.build.api.dsl.AgpTestSuiteInputParameters
 import com.android.build.api.testsuites.TestEngineInputProperty
 import com.android.build.api.testsuites.TestSuiteExecutionClient.Companion.DEFAULT_ENV_VARIABLE
+import com.android.build.api.variant.TestSuiteSourceSet
 import com.android.build.api.variant.impl.JUnitEngineSpecImplForVariant
-import com.android.build.api.variant.impl.TestSuiteSourceContainer
 import com.android.build.gradle.internal.AvdComponentsBuildService
 import com.android.build.gradle.internal.BuildToolsExecutableInput
-import com.android.build.gradle.internal.api.TestSuiteSourceSet
 import com.android.build.gradle.internal.component.TestSuiteCreationConfig
 import com.android.build.gradle.internal.component.TestSuiteTargetCreationConfig
 import com.android.build.gradle.internal.computeAvdName
@@ -310,7 +308,7 @@ abstract class TestSuiteTestTask: Test(), GlobalTask {
             }
             task.classpath = creationConfig.services.fileCollection().also {
                 it.from(classesDir)
-                creationConfig.sources.forEach { sourceContainer: TestSuiteSourceContainer ->
+                creationConfig.sourceContainers.forEach { sourceContainer ->
                     it.from(sourceContainer.suiteSourceClasspath.runtimeClasspath)
                 }
             }
@@ -337,6 +335,7 @@ abstract class TestSuiteTestTask: Test(), GlobalTask {
             }
             task.managedDevices.disallowChanges()
 
+            val testedVariant = creationConfig.testedVariant
             val junitEngineSpec = (creationConfig.junitEngineSpec as JUnitEngineSpecImplForVariant)
             junitEngineSpec.inputs.forEach { inputParameter: AgpTestSuiteInputParameters ->
                 when (inputParameter) {
@@ -344,7 +343,7 @@ abstract class TestSuiteTestTask: Test(), GlobalTask {
                         task.engineInputParameters.add(
                             AgpTestSuiteInputParameter(
                                 AgpTestSuiteInputParameters.MERGED_MANIFEST,
-                                creationConfig.testedVariant.artifacts.get(
+                                testedVariant.artifacts.get(
                                     SingleArtifact.MERGED_MANIFEST
                                 )
                             )
@@ -355,7 +354,7 @@ abstract class TestSuiteTestTask: Test(), GlobalTask {
                         task.engineInputParameters.add(
                             AgpTestSuiteInputParameter(
                                 AgpTestSuiteInputParameters.TESTED_APKS,
-                                creationConfig.testedVariant.artifacts.get(
+                                testedVariant.artifacts.get(
                                     SingleArtifact.APK
                                 )
                             )
@@ -384,15 +383,14 @@ abstract class TestSuiteTestTask: Test(), GlobalTask {
             // add default properties.
             task.engineInputProperties.put(
                 TestEngineInputProperty.TESTED_APPLICATION_ID,
-                creationConfig.testedVariant.applicationId
+                testedVariant.applicationId
             )
 
             task.useJUnitPlatform { testFramework: JUnitPlatformOptions ->
                 testFramework.includeEngines(*creationConfig.junitEngineSpec.includeEngines.toTypedArray())
                 testFramework.excludeEngines("junit-jupiter")
             }
-            creationConfig.sources.forEach { sourceContainer: TestSuiteSourceContainer ->
-                val sourceSet =  sourceContainer.source
+            creationConfig.sources.forEach { sourceSet: TestSuiteSourceSet ->
                 when (sourceSet) {
                     is TestSuiteSourceSet.Assets -> {
                         task.sourceFolders.addAll(sourceSet.get().all)
@@ -415,23 +413,23 @@ abstract class TestSuiteTestTask: Test(), GlobalTask {
             // TODO : Improve file handling by using Artifacts APIs.
             task.engineInputPropertiesFiles.set(
                 task.project.layout.buildDirectory
-                    .file("intermediates/${creationConfig.testedVariant.name}/$name/junit_inputs.txt")
+                    .file("intermediates/${testedVariant.name}/$name/junit_inputs.txt")
             )
             task.logFile.set(
                 task.project.layout.buildDirectory
-                    .file("intermediates/${creationConfig.testedVariant.name}/$name/junit_engines_logging.txt")
+                    .file("intermediates/${testedVariant.name}/$name/junit_engines_logging.txt")
             )
             task.streamingOutputFile.set(
                 task.project.layout.buildDirectory
-                    .file("intermediates/${creationConfig.testedVariant.name}/$name/streaming.txt")
+                    .file("intermediates/${testedVariant.name}/$name/streaming.txt")
             )
             task.resultsDir.set(
                 task.project.layout.buildDirectory
-                    .dir("intermediates/${creationConfig.testedVariant.name}/$name/results")
+                    .dir("intermediates/${testedVariant.name}/$name/results")
             )
             task.coverageDir.set(
                 task.project.layout.buildDirectory
-                    .dir("intermediates/${creationConfig.testedVariant.name}/$name/coverage_data")
+                    .dir("intermediates/${testedVariant.name}/$name/coverage_data")
             )
             task.environment(DEFAULT_ENV_VARIABLE, task.engineInputPropertiesFiles.get().asFile.absolutePath)
             task.environment("junit.platform.commons.logging.level","debug")

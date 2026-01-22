@@ -1,0 +1,14 @@
+{
+  "artifacts": [
+    {
+      "file": "androidx/tracing/tracing-desktop/2.0.0-SNAPSHOT/tracing-desktop-2.0.0-SNAPSHOT.pom",
+      "repo": "https://androidx.dev/snapshots/builds/14576191/artifacts/repository",
+      "artifact": "androidx.tracing:tracing-desktop:pom:2.0.0-20251211.153948-1"
+    },
+    {
+      "file": "androidx/tracing/tracing-desktop/2.0.0-SNAPSHOT/tracing-desktop-2.0.0-SNAPSHOT.jar",
+      "repo": "https://androidx.dev/snapshots/builds/14576191/artifacts/repository",
+      "artifact": "androidx.tracing:tracing-desktop:jar:2.0.0-20251211.153948-1"
+    }
+  ]
+}

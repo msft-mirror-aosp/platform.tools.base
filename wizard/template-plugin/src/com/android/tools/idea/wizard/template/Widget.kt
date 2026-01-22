@@ -28,56 +28,41 @@ interface Widget<T>
  * Represents an UI element which has underlying [parameter].
  *
  * Usually parameters and widgets have 1-1 relationship but there are exceptions:
- *  * Some [Parameter]s may have no widget because they pass data implicitly and don't need user input.
- *  * Some [Widget]s may have no underlying [Parameter] (e.g. [Separator])
+ * * Some [Parameter]s may have no widget because they pass data implicitly and don't need user
+ *   input.
+ * * Some [Widget]s may have no underlying [Parameter] (e.g. [Separator])
  */
-sealed class ParameterWidget<T>(val parameter: Parameter<T>): Widget<T>
+sealed class ParameterWidget<T>(val parameter: Parameter<T>) : Widget<T>
 
-/**
- * An ordinary text field.
- */
-data class TextFieldWidget(val p: StringParameter): ParameterWidget<String>(p)
+/** An ordinary text field. */
+data class TextFieldWidget(val p: StringParameter) : ParameterWidget<String>(p)
 
-/**
- * An ordinary text label.
- */
-data class LabelWidget(val text: String, val icon: Icon? = null): Widget<String>
+/** An ordinary text label. */
+data class LabelWidget(val text: String, val icon: Icon? = null) : Widget<String>
 
 /**
  * Drop down menu for selecting a language (Kotlin or Java).
  *
  * Exists alongside with [EnumWidget] because it may require special treatment.
  */
-class LanguageWidget: Widget<String>
+class LanguageWidget : Widget<String>
 
 /**
  * [Widget] for selecting package.
  *
- * Looks like combination of [TextFieldWidget] and [EnumWidget] (use can both write and choose from drop down menu).
+ * Looks like combination of [TextFieldWidget] and [EnumWidget] (use can both write and choose from
+ * drop down menu).
  */
-data class PackageNameWidget(val p: StringParameter): ParameterWidget<String>(p)
+data class PackageNameWidget(val p: StringParameter) : ParameterWidget<String>(p)
 
-/**
- * Drop down menu for any kind of [Enum]. Will include all possbile enum values.
- */
-data class EnumWidget<T : Enum<T>>(val p: EnumParameter<T>): ParameterWidget<T>(p)
+/** Drop down menu for any kind of [Enum]. Will include all possible enum values. */
+data class EnumWidget<T : Enum<T>>(val p: EnumParameter<T>) : ParameterWidget<T>(p)
 
-/**
- * An ordinary checkbox.
- */
-data class CheckBoxWidget(val p: BooleanParameter): ParameterWidget<Boolean>(p)
+/** An ordinary checkbox. */
+data class CheckBoxWidget(val p: BooleanParameter) : ParameterWidget<Boolean>(p)
 
-/**
- * A Text label with a link to and external website.
- */
-data class UrlLinkWidget(val urlName:String, val urlAddress: String): Widget<String>
+/** A Text label with a link to and external website. */
+data class UrlLinkWidget(val urlName: String, val urlAddress: String) : Widget<String>
 
-/**
- * A text field that is initialised with a suggested test suite name.
- */
-data class TestSuiteWidget(val p: StringParameter) : ParameterWidget<String>(p)
-
-/**
- * Horizontal separator. Has no functionality.
- */
+/** Horizontal separator. Has no functionality. */
 object Separator : Widget<Nothing>

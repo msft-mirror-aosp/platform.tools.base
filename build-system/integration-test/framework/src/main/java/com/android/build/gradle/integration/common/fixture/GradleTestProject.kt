@@ -39,7 +39,6 @@ import com.android.build.gradle.integration.common.utils.getBundleLocation
 import com.android.build.gradle.integration.common.utils.getVariantByName
 import com.android.build.gradle.internal.TaskManager
 import com.android.build.gradle.internal.plugins.VersionCheckPlugin
-import com.android.build.gradle.internal.privaysandboxsdk.PrivacySandboxSdkConstants.androidxPrivacySandboxLibraryPluginVersion
 import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.options.BooleanOption.DEFAULT_TARGET_SDK_TO_COMPILE_SDK_IF_UNSET
 import com.android.build.gradle.options.BooleanOption.ENABLE_APP_COMPILE_TIME_R_CLASS
@@ -188,7 +187,6 @@ open class GradleTestProject @JvmOverloads constructor(
         const val DEFAULT_TEST_PROJECT_NAME = "project"
 
         internal val AGP_9_OPT_OUTS = mapOf(
-            DEFAULT_TARGET_SDK_TO_COMPILE_SDK_IF_UNSET to false,
             // TODO(b/418804641): Migrate to the new DSL
             USE_NEW_DSL to false
         )
@@ -727,8 +725,7 @@ ext {
     kotlinVersion = '%4${"$"}s'
     composeVersion = '%5${"$"}s'
     composeCompilerVersion = '%6${"$"}s'
-    androidxPrivacySandboxLibraryVersion = '%7${"$"}s'
-    kspVersion = '%8${"$"}s'
+    kspVersion = '%7${"$"}s'
 }
 """,
             DEFAULT_BUILD_TOOL_VERSION,
@@ -737,7 +734,6 @@ ext {
             kotlinVersion,
             TaskManager.COMPOSE_UI_VERSION,
             TestUtils.COMPOSE_COMPILER_FOR_TESTS,
-            androidxPrivacySandboxLibraryPluginVersion,
             TestUtils.KSP_VERSION_FOR_TESTS
         )
         if (APPLY_DEVICEPOOL_PLUGIN) {
@@ -1569,7 +1565,6 @@ buildCache {
                         + "version('kotlinVersionForCompose', '%s')%n"
                         + "version('composeVersion', '%s')%n"
                         + "version('composeCompilerVersion', '%s')%n"
-                        + "version('androidxPrivacySandboxLibraryVersion', '%s')%n"
                         + "version('kspVersion', '%s')%n",
                 Version.ANDROID_GRADLE_PLUGIN_VERSION,
                 Version.ANDROID_TOOLS_BASE_VERSION,
@@ -1585,7 +1580,6 @@ buildCache {
                 TestUtils.KOTLIN_VERSION_FOR_COMPOSE_TESTS,
                 TaskManager.COMPOSE_UI_VERSION,
                 TestUtils.COMPOSE_COMPILER_FOR_TESTS,
-                androidxPrivacySandboxLibraryPluginVersion,
                 TestUtils.KSP_VERSION_FOR_TESTS
         )
     }

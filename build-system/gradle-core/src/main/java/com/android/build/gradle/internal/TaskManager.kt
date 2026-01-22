@@ -32,10 +32,10 @@ import com.android.build.api.instrumentation.FramesComputationMode
 import com.android.build.api.variant.ScopedArtifacts
 import com.android.build.api.variant.impl.FlatSourceDirectoriesImpl
 import com.android.build.api.variant.impl.TaskProviderBasedDirectoryEntryImpl
-import com.android.build.api.variant.impl.getApiString
 import com.android.build.gradle.api.AndroidSourceSet
 import com.android.build.gradle.internal.component.ApkCreationConfig
 import com.android.build.gradle.internal.component.ApplicationCreationConfig
+import com.android.build.gradle.internal.component.ComponentBasedBuiltInKotlinCreationConfig
 import com.android.build.gradle.internal.component.ComponentCreationConfig
 import com.android.build.gradle.internal.component.ConsumableCreationConfig
 import com.android.build.gradle.internal.component.DeviceTestCreationConfig
@@ -45,7 +45,6 @@ import com.android.build.gradle.internal.component.KmpComponentCreationConfig
 import com.android.build.gradle.internal.component.TaskCreationConfig
 import com.android.build.gradle.internal.component.TestComponentCreationConfig
 import com.android.build.gradle.internal.component.TestCreationConfig
-import com.android.build.gradle.internal.component.TestVariantCreationConfig
 import com.android.build.gradle.internal.component.VariantCreationConfig
 import com.android.build.gradle.internal.coverage.JacocoConfigurations
 import com.android.build.gradle.internal.coverage.JacocoPropertiesTask
@@ -123,8 +122,10 @@ import com.android.build.gradle.internal.tasks.ValidateResourcesTask
 import com.android.build.gradle.internal.tasks.ValidateSigningTask
 import com.android.build.gradle.internal.tasks.VerifyLibraryClassesTask
 import com.android.build.gradle.internal.tasks.checkIfR8VersionMatches
-import com.android.build.gradle.internal.tasks.creationconfig.ProceedTestManifestCreationConfig
 import com.android.build.gradle.internal.tasks.creationconfig.ProcessJavaResCreationConfig
+import com.android.build.gradle.internal.tasks.creationconfig.createJavaCompileConfig
+import com.android.build.gradle.internal.tasks.creationconfig.createJavaPreCompileConfig
+import com.android.build.gradle.internal.tasks.creationconfig.forTestComponent
 import com.android.build.gradle.internal.tasks.databinding.DataBindingCompilerArguments.Companion.createArguments
 import com.android.build.gradle.internal.tasks.databinding.DataBindingGenBaseClassesTask
 import com.android.build.gradle.internal.tasks.databinding.DataBindingMergeDependencyArtifactsTask
@@ -149,9 +150,7 @@ import com.android.build.gradle.internal.utils.KgpVersion.Companion.MINIMUM_BUIL
 import com.android.build.gradle.internal.utils.getKotlinAndroidPluginVersion
 import com.android.build.gradle.internal.utils.isKotlinKaptPluginApplied
 import com.android.build.gradle.internal.utils.isKspPluginApplied
-import com.android.build.gradle.internal.utils.parseTargetHash
 import com.android.build.gradle.internal.variant.ApkVariantData
-import com.android.build.gradle.internal.variant.VariantPathHelper
 import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.tasks.AidlCompile
 import com.android.build.gradle.tasks.CompatibleScreensManifest
@@ -202,7 +201,6 @@ import org.gradle.api.logging.Logger
 import org.gradle.api.logging.Logging
 import org.gradle.api.plugins.BasePlugin
 import org.gradle.api.plugins.JavaBasePlugin
-import org.gradle.api.provider.MapProperty
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.Sync
@@ -448,7 +446,7 @@ abstract class TaskManager(
     }
 
     protected fun createProcessTestManifestTask(creationConfig: TestCreationConfig) {
-        val taskConfig = createProcessTestManifestConfig(creationConfig)
+        val taskConfig = forTestComponent(creationConfig)
 
         taskFactory.register(ProcessTestManifest.CreationAction(taskConfig))
     }
@@ -503,7 +501,7 @@ abstract class TaskManager(
                 flags,
                 null /*configCallback*/)
         taskFactory.register(
-                MapSourceSetPathsTask.CreateAction(creationConfig, includeDependencies))
+                MapSourceSetPathsTask.CreateAction(creationConfig))
     }
 
     /** Defines the merge type for [.basicCreateMergeResourcesTask]  */
@@ -960,14 +958,16 @@ abstract class TaskManager(
     ): TaskProvider<out JavaCompile> {
         val usingKapt = isKotlinKaptPluginApplied(project)
         val usingKsp = isKspPluginApplied(project)
-        taskFactory.register(JavaPreCompileTask.CreationAction(creationConfig, usingKapt, usingKsp))
+        val javaPreCompileTaskCreationConfig =
+            createJavaPreCompileConfig(creationConfig, usingKapt, usingKsp)
+        taskFactory.register(JavaPreCompileTask.CreationAction(javaPreCompileTaskCreationConfig))
+        val javaCompileConfig = createJavaCompileConfig(
+            creationConfig,
+            usingKapt
+        )
         val javacTask: TaskProvider<out JavaCompile> =
             taskFactory.register(
-                JavaCompileCreationAction(
-                    creationConfig,
-                    project.objects,
-                    usingKapt
-                )
+                JavaCompileCreationAction(javaCompileConfig)
             )
         creationConfig.attachRegisteredActionsToJavaCompileTask(javacTask)
         postJavacCreation(creationConfig)
@@ -983,8 +983,9 @@ abstract class TaskManager(
         }
         val kotlinServices = creationConfig.services.builtInKotlinServices
 
+        val builtInCreationConfig = ComponentBasedBuiltInKotlinCreationConfig(creationConfig)
         val kotlinCompileTaskProvider =
-            KotlinCompileCreationAction(creationConfig, kotlinServices).registerTask()
+            KotlinCompileCreationAction(builtInCreationConfig, kotlinServices).registerTask()
         val kaptGenerateStubsProvider =
             if (creationConfig.useBuiltInKaptSupport) {
                 if (kotlinServices.kgpVersion < KgpVersion.KGP_2_1_0) {
@@ -994,7 +995,7 @@ abstract class TaskManager(
                     creationConfig.services.projectInfo.getExtension(KaptExtensionConfig::class.java)
                 val kaptCreationAction =
                     KaptCreationAction(
-                        creationConfig,
+                        builtInCreationConfig,
                         project,
                         kotlinServices,
                         kaptExtensionConfig
@@ -1002,7 +1003,7 @@ abstract class TaskManager(
                 kaptCreationAction.registerTask()
                 val kaptStubGenerationCreationAction =
                     KaptStubGenerationCreationAction(
-                        creationConfig,
+                        builtInCreationConfig,
                         kotlinServices,
                         kotlinCompileTaskProvider,
                         kaptExtensionConfig
@@ -1018,8 +1019,8 @@ abstract class TaskManager(
             maybeCreateKotlinExtensionConfiguration()
         }
 
-        val kotlinCompilation = creationConfig.createKotlinCompilation()
-        addSubpluginOptionsForBuiltInKotlin(creationConfig, kotlinCompilation, kaptGenerateStubsProvider)
+        val kotlinCompilation = builtInCreationConfig.createKotlinCompilation()
+        addSubpluginOptionsForBuiltInKotlin(kotlinCompilation, kaptGenerateStubsProvider)
     }
 
     /**
@@ -1057,7 +1058,6 @@ abstract class TaskManager(
 
     // Similar to SubpluginEnvironment.addSubpluginOptions in KGP
     private fun addSubpluginOptionsForBuiltInKotlin(
-        creationConfig: ComponentCreationConfig,
         kotlinCompilation: KotlinCompilation<Any>,
         kaptGenerateStubsTaskProvider: TaskProvider<out KaptGenerateStubs>?
     ) {

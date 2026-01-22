@@ -62,6 +62,7 @@ message Command {
     STOP_LOGCAT_TRACKING = 802;
     CHECK_LEAKCANARY_PRESENT = 803;
     SIGNAL_HEAP_DUMP_COMPLETE = 804;
+    SEND_LEAKCANARY_ANALYSIS = 805;
 
     // Sample echo Command
     ECHO = 1000;
@@ -90,6 +91,8 @@ message Command {
   // The session id if the command needs one. This session id will be used to
   // end the session when the respective recording/task is stopped. Unset otherwise.
   int64 session_id = 5;
+  // If true, the session will be ended.
+  bool should_end_session = 6;
 
   oneof union {
     // General transport commands starts at 10.
@@ -116,6 +119,7 @@ message Command {
 
     // LeakCanary Prefix = 800
     SignalHeapDumpCompleteData signal_heap_dump_complete = 804;
+    SendLeakCanaryAnalysisData send_leakcanary_analysis = 805;
 
     // Energy Profiler Prefix = 500
     // Deprecated. Do not use.
@@ -172,4 +176,9 @@ message GetCpuCoreConfig {
 message SignalHeapDumpCompleteData {
     // The timestamp (in nanoseconds) when studio receives the heap dump completion event.
     int64 heap_dump_timestamp = 1;
+}
+
+message SendLeakCanaryAnalysisData {
+    // The string representation of the LeakCanary analysis result.
+    string data = 1;
 }

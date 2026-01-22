@@ -54,13 +54,13 @@ class PreviewScreenshotGradlePluginTest {
     fun setupMocks() {
         `when`(mockProject.extensions.getByType(eq(AndroidComponentsExtension::class.java))).thenReturn(mockAndroidPlugin)
         `when`(mockProject.extensions.getByType(eq(CommonExtension::class.java))).thenReturn(mockCommonExtension)
-        `when`(mockProject.findProperty(PreviewScreenshotGradlePlugin.ST_SOURCE_SET_ENABLED)).thenReturn(true)
+        `when`(mockProject.providers.gradleProperty(PreviewScreenshotGradlePlugin.ST_SOURCE_SET_ENABLED).getOrNull()).thenReturn("true")
     }
     private fun applyScreenshotPlugin(
         agpVersion: AndroidPluginVersion = AndroidPluginVersion(8, 7).dev(),
         validationEngineVersion: String = PreviewScreenshotGradlePlugin.SCREENSHOT_TEST_PLUGIN_VERSION) {
         `when`(mockAndroidPlugin.pluginVersion).thenReturn(agpVersion)
-        `when`(mockProject.findProperty(PreviewScreenshotGradlePlugin.VALIDATION_ENGINE_VERSION_OVERRIDE)).thenReturn(validationEngineVersion)
+        `when`(mockProject.providers.gradleProperty(PreviewScreenshotGradlePlugin.VALIDATION_ENGINE_VERSION_OVERRIDE).getOrNull()).thenReturn(validationEngineVersion)
 
         val plugin = PreviewScreenshotGradlePlugin()
         plugin.apply(mockProject)

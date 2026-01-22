@@ -16,7 +16,6 @@
 
 package com.android.build.gradle.tasks
 
-import com.android.build.gradle.internal.api.BaselineProfiles
 import com.android.build.gradle.internal.component.ComponentCreationConfig
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.tasks.BuildAnalyzer
@@ -87,8 +86,8 @@ abstract class ProcessLibraryArtProfileTask: MergeFileTask() {
             creationConfig.sources.baselineProfiles {
                 task.baselineProfileSources.fromDisallowChanges(
                     it.all.map { directories ->
-                        directories.map {directory ->
-                            directory.file(BaselineProfiles.BaselineProfileFileName)
+                        directories.map { directory ->
+                            directory.asFileTree
                         }
                     }
                 )

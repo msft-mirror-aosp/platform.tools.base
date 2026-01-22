@@ -22,7 +22,7 @@ import javax.inject.Inject
 
 /** Options for the adb tool. */
 abstract class AdbOptions @Inject constructor(
-    val dslServices: DslServices,
+    dslServices: DslServices,
 ) : com.android.builder.model.AdbOptions,
     com.android.build.api.dsl.AdbOptions,
     Installation {

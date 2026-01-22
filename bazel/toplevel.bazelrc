@@ -3,4 +3,5 @@ import %workspace%/tools/base/bazel/platform_specific.bazelrc
 
 # User-specific .bazelrc
 try-import %workspace%/user.bazelrc
+try-import %workspace%/env.bazelrc
 try-import %workspace%/ci.bazelrc

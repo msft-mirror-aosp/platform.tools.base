@@ -84,7 +84,7 @@ public class LintCustomRuleTest {
                     + File.separator
                     + "AndroidManifest.xml:10: Error: Should not specify <activity>."
                     + " [UnitTestLintCheck from LintCustomRuleTest]\n"
-                    + "        <activity android:name=\".MainActivity\">\n"
+                    + "        <activity android:name=\".MainActivity\" android:exported=\"true\">\n"
                     + "        ^\n"
                     + "\n"
                     + "   Explanation for issues of type \"UnitTestLintCheck\":\n"

@@ -28,16 +28,12 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.isActive
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert
 import org.junit.BeforeClass
@@ -145,60 +141,6 @@ class ConnectedDeviceTest {
         Assert.assertEquals(expectedStdout, commandOutput.stdout)
         Assert.assertEquals(expectedStderr, commandOutput.stderr)
         Assert.assertEquals(10, commandOutput.exitCode)
-    }
-
-    @Test
-    fun testFlowWhenOnlineWorks(): Unit = runBlockingWithTimeout {
-        // Prepare
-        val connectedDevice = addFakeConnectedDevice()
-
-        // Act
-        val valuesDeferred = CompletableDeferred<List<Int>>()
-        connectedDevice.scope.launch {
-            connectedDevice
-                .flowWhenOnline(retryDelay = Duration.ofMillis(5)) {
-                    flowOf(1, 3, 5)
-                }
-                .take(3)
-                .toList().also {
-                    valuesDeferred.complete(it)
-                }
-        }
-        val values = valuesDeferred.await()
-
-        // Assert
-        Assert.assertEquals(listOf(1, 3, 5), values)
-    }
-
-    @Test
-    fun testFlowWhenOnlineRetriesWhenException(): Unit = runBlockingWithTimeout {
-        // Prepare
-        val connectedDevice = addFakeConnectedDevice()
-
-        // Act
-        val exceptionDeferred = CompletableDeferred<Unit>()
-        val valuesDeferred = CompletableDeferred<List<Int>>()
-        var pass = 1
-        connectedDevice.scope.launch {
-            connectedDevice
-                .flowWhenOnline(retryDelay = Duration.ofMillis(5)) {
-                    if (pass++ == 1) {
-                        exceptionDeferred.complete(Unit)
-                        throw Exception("Unit Test Exception To Retry")
-                    } else {
-                        flowOf(1, 3, 5)
-                    }
-                }
-                .take(3)
-                .toList().also {
-                    valuesDeferred.complete(it)
-                }
-        }
-        awaitAll(exceptionDeferred, valuesDeferred)
-        val values = valuesDeferred.await()
-
-        // Assert
-        Assert.assertEquals(listOf(1, 3, 5), values)
     }
 
     @Test
@@ -1590,6 +1532,41 @@ class ConnectedDeviceTest {
 
         // Assert
         Assert.fail("Should not reach")
+    }
+
+    @Test
+    fun testWaitUntilStateThrowsIOExceptionWhenDeviceDisconnects(): Unit = runBlockingWithTimeout {
+        // Prepare
+        val connectedDevice = addFakeConnectedDevice()
+
+        // Act
+        val job = async {
+            connectedDevice.waitUntilState(DeviceState.AUTHORIZING)
+        }
+
+        delay(50)
+        fakeAdb.disconnectDevice(connectedDevice.serialNumber)
+
+        // Assert
+        exceptionRule.expect(IOException::class.java)
+        job.await()
+    }
+
+    @Test
+    fun testWaitUntilStateWorksWhenWaitingForDisconnected(): Unit = runBlockingWithTimeout {
+        // Prepare
+        val connectedDevice = addFakeConnectedDevice()
+
+        // Act
+        val job = async {
+            connectedDevice.waitUntilState(DeviceState.DISCONNECTED)
+        }
+
+        delay(50)
+        fakeAdb.disconnectDevice(connectedDevice.serialNumber)
+
+        // Assert
+        job.await()
     }
 
     open class TestSyncProgress : SyncProgress {

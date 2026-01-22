@@ -29,16 +29,14 @@ class GpuModeTest {
   fun testGetGpuSetting() {
     assertThat(GpuMode.AUTO.gpuSetting).isEqualTo("auto")
     assertThat(GpuMode.HOST.gpuSetting).isEqualTo("host")
-    assertThat(GpuMode.SWIFT.gpuSetting).isEqualTo("software")
-    assertThat(GpuMode.OFF.gpuSetting).isEqualTo("off")
+    assertThat(GpuMode.SOFTWARE.gpuSetting).isEqualTo("software")
   }
 
   @Test
   fun testFromGpuSetting() {
     assertThat(GpuMode.fromGpuSetting("auto")).isEqualTo(GpuMode.AUTO)
     assertThat(GpuMode.fromGpuSetting("host")).isEqualTo(GpuMode.HOST)
-    assertThat(GpuMode.fromGpuSetting("software")).isEqualTo(GpuMode.SWIFT)
-    assertThat(GpuMode.fromGpuSetting("off")).isEqualTo(GpuMode.OFF)
-    assertThat(GpuMode.fromGpuSetting("bogus")).isEqualTo(GpuMode.OFF)
+    assertThat(GpuMode.fromGpuSetting("software")).isEqualTo(GpuMode.SOFTWARE)
+    assertThat(GpuMode.fromGpuSetting("bogus")).isEqualTo(GpuMode.AUTO)
   }
 }

@@ -18,6 +18,8 @@ package com.android.build.gradle.internal.transforms
 
 import com.android.build.api.artifact.SingleArtifact
 import com.android.build.gradle.internal.component.ApplicationCreationConfig
+import com.android.build.gradle.internal.scope.InternalArtifactType
+import com.android.build.gradle.internal.scope.InternalArtifactType.R8_MAPPING_RESOURCES
 import com.android.build.gradle.internal.scope.InternalArtifactType.SHRUNK_RESOURCES_PROTO_FORMAT
 import com.android.build.gradle.internal.tasks.BuildAnalyzer
 import com.android.build.gradle.internal.tasks.NonIncrementalTask
@@ -102,12 +104,15 @@ abstract class ShrinkResourcesNewShrinkerTask : NonIncrementalTask() {
             creationConfig.artifacts.setInitialProvider(taskProvider) {
                 it.params.shrunkResourcesOutputDir
             }.on(SHRUNK_RESOURCES_PROTO_FORMAT)
+            creationConfig.artifacts.setInitialProvider(taskProvider) {
+                it.params.logFile
+            }.on(R8_MAPPING_RESOURCES)
         }
 
         override fun configure(task: ShrinkResourcesNewShrinkerTask) {
             super.configure(task)
 
-            task.params.initialize(creationConfig, task.mappingFile)
+            task.params.initialize(creationConfig)
             task.dex.from(PackageAndroidArtifact.CreationAction.getDexFolders(creationConfig))
             creationConfig.artifacts.setTaskInputToFinalProduct(
                 SingleArtifact.OBFUSCATION_MAPPING_FILE,

@@ -180,7 +180,7 @@ sealed interface Type<out FX> {
     }
 
     class Param(name: String) : Sym<Nothing> {
-      val name = name.intern()
+      val name = InterningPool.string(name)
 
       override fun equals(other: Any?) = other is Param && name === other.name
 

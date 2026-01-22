@@ -30,7 +30,6 @@ import com.android.build.api.dsl.MaxSdkSpec
 import com.android.build.api.dsl.MaxSdkVersion
 import com.android.build.api.dsl.MinSdkSpec
 import com.android.build.api.dsl.MinSdkVersion
-import com.android.build.api.dsl.PrivacySandboxSdkExtension
 import com.android.build.api.dsl.ProductFlavor
 import com.android.build.api.dsl.TargetSdkSpec
 import com.android.build.api.dsl.TargetSdkVersion
@@ -77,8 +76,7 @@ class DslProxy private constructor(
 ): InvocationHandler {
 
     private val rootExtensionProxy =
-        CommonExtension::class.java.isAssignableFrom(theInterface) ||
-                PrivacySandboxSdkExtension::class.java.isAssignableFrom(theInterface)
+        CommonExtension::class.java.isAssignableFrom(theInterface)
 
     companion object {
 

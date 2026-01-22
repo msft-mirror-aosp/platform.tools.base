@@ -18,7 +18,7 @@ package com.android.adblib.tools.debugging.impl
 import com.android.adblib.testingutils.CoroutineTestUtils.runBlockingWithTimeout
 import com.android.adblib.testingutils.CoroutineTestUtils.yieldUntil
 import com.android.adblib.tools.debugging.getOrDefault
-import com.android.adblib.tools.debugging.jdwpProcessFlow
+import com.android.adblib.tools.debugging.jdwpProcessTracker
 import com.android.adblib.tools.debugging.jdwpProxySocketServer
 import com.android.adblib.tools.debugging.packets.JdwpPacketView
 import com.android.adblib.tools.debugging.properties
@@ -59,7 +59,7 @@ class JdwpProxySocketServerTest : AdbLibToolsJdwpTestBase() {
 
         // Act
         val process =
-            connectedDevice.jdwpProcessFlow.map { processes -> processes.find { it.pid == 10 } }
+            connectedDevice.jdwpProcessTracker.processesFlow.map { processes -> processes.find { it.pid == 10 } }
                 .filterNotNull()
                 .first()
         yieldUntil {
@@ -189,7 +189,7 @@ class JdwpProxySocketServerTest : AdbLibToolsJdwpTestBase() {
         fakeDevice.startClient(pid, 0, "a.b.c", true)
 
         val process =
-            connectedDevice.jdwpProcessFlow.map { processes -> processes.find { it.pid == pid } }
+            connectedDevice.jdwpProcessTracker.processesFlow.map { processes -> processes.find { it.pid == pid } }
                 .filterNotNull()
                 .first()
         yieldUntil { process.properties.isWaitingForDebugger.getOrDefault(false) }
@@ -229,7 +229,7 @@ class JdwpProxySocketServerTest : AdbLibToolsJdwpTestBase() {
         fakeDevice.startClient(pid, 0, "a.b.c", true)
 
         val process =
-            connectedDevice.jdwpProcessFlow.map { processes -> processes.find { it.pid == pid } }
+            connectedDevice.jdwpProcessTracker.processesFlow.map { processes -> processes.find { it.pid == pid } }
                 .filterNotNull()
                 .first()
         yieldUntil { process.properties.isWaitingForDebugger.getOrDefault(false) }

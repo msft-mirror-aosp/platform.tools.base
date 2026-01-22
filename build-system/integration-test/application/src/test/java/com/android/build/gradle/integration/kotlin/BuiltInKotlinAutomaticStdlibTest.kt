@@ -114,13 +114,14 @@ class BuiltInKotlinAutomaticStdlibTest {
         result.assertOutputDoesNotContain("--- org.jetbrains.kotlin:kotlin-stdlib:$BUILT_IN_KOTLIN_VERSION")
     }
 
-    /** Regression test for b/443037365. */
+    /** Regression test for b/443037365 and b/471410336. */
     @Test
-    fun `test kotlin_stdlib_default_dependency=false and user adds kotlin-stdlib without version`() {
+    fun `test kotlin_stdlib_default_dependency=false and user adds kotlin-stdlib or kotlin-test-junit without version`() {
         val build = rule.build {
             androidApplication {
                 dependencies {
                     implementation("org.jetbrains.kotlin:kotlin-stdlib")
+                    implementation("org.jetbrains.kotlin:kotlin-test-junit")
                 }
             }
             gradleProperties {
@@ -128,7 +129,8 @@ class BuiltInKotlinAutomaticStdlibTest {
             }
         }
         val result = build.executor.run(":app:dependencies", "--configuration", "debugCompileClasspath")
-        result.assertOutputContains("--- org.jetbrains.kotlin:kotlin-stdlib -> 2.2.10")
+        result.assertOutputContains("+--- org.jetbrains.kotlin:kotlin-stdlib -> $BUILT_IN_KOTLIN_VERSION")
+        result.assertOutputContains("+--- org.jetbrains.kotlin:kotlin-test-junit -> $BUILT_IN_KOTLIN_VERSION")
     }
 
     /** Regression test for b/450851465. */

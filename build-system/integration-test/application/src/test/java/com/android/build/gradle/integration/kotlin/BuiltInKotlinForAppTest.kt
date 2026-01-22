@@ -18,10 +18,8 @@ package com.android.build.gradle.integration.kotlin
 
 import com.android.build.gradle.integration.common.fixture.project.ApkSelector
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
-import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
 import com.android.build.gradle.integration.common.fixture.project.prebuilts.HelloWorldAndroid
-import com.android.build.gradle.internal.dsl.ModulePropertyKey.BooleanWithDefault.SCREENSHOT_TEST
 import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.truth.PathSubject
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
@@ -30,40 +28,22 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 
-@Suppress("DEPRECATION")
 @RunWith(Parameterized::class)
-class BuiltInKotlinForAppTest(
-    private val builtInKotlinBooleanOption: Boolean,
-) {
+class BuiltInKotlinForAppTest(private val useLatestKgpVersion: Boolean) {
 
     companion object {
 
-        @Parameterized.Parameters(name = "builtInKotlinBooleanOption_{0}")
+        @Parameterized.Parameters(name = "useLatestKgpVersion_{0}")
         @JvmStatic
         fun parameters() = listOf(false, true)
-
-        private fun createRule(
-            builtInKotlinBooleanOption: Boolean,
-            action: GradleBuildDefinition.() -> Unit
-        ): GradleRule = if (builtInKotlinBooleanOption) {
-            GradleRule.from(configAction = action)
-        } else {
-            GradleRule.configure()
-                .disableBrokenBuiltInKotlinOptOutChecks()
-                .from(configAction = action)
-        }
     }
 
     @get:Rule
-    val rule = createRule(builtInKotlinBooleanOption) {
+    val rule = GradleRule.from {
         androidApplication {
-            applyPlugin(PluginType.ANDROID_BUILT_IN_KOTLIN)
-
             HelloWorldAndroid.setupKotlin(files)
         }
-        gradleProperties {
-            add(BooleanOption.BUILT_IN_KOTLIN, builtInKotlinBooleanOption)
-        }
+        useLatestKgpVersion = this@BuiltInKotlinForAppTest.useLatestKgpVersion
     }
 
     @Test
@@ -166,45 +146,6 @@ class BuiltInKotlinForAppTest(
                     "test-results/testDebugUnitTest/TEST-com.foo.application.test.AppFooTest.xml"
                 )
         PathSubject.assertThat(testResults).exists()
-    }
-
-    /**
-     * Test that general built-in Kotlin support is compatible with Kotlin support for screenshot
-     * testing, in contrast to [BuiltInKotlinForScreenshotTestTest], which tests Kotlin support for
-     * screenshot testing in isolation
-     */
-    @Test
-    fun testWithScreenshotTestEnabled() {
-        val build = rule.build {
-            androidApplication {
-                android.experimentalProperties[SCREENSHOT_TEST.key] = true
-
-                files {
-                    add(
-                        "src/screenshotTest/kotlin/AppScreenshotTestFoo.kt",
-                        //language=kotlin
-                        """
-                            package com.foo.application
-                            class AppScreenshotTestFoo
-                        """.trimIndent()
-                    )
-                    add(
-                        "src/main/java/com/foo/application/AppFoo.kt",
-                        //language=kotlin
-                        """
-                            package com.foo.application
-                            class AppFoo
-                        """.trimIndent()
-                    )
-                }
-            }
-            gradleProperties {
-                add(BooleanOption.ENABLE_SCREENSHOT_TEST, true)
-            }
-        }
-
-        build.executor.run(":app:compileDebugScreenshotTestKotlin")
-        build.executor.run(":app:assembleDebug")
     }
 
     @Test
@@ -334,40 +275,6 @@ class BuiltInKotlinForAppTest(
                 "org/jetbrains/"
             )
         }
-    }
-
-    @Test
-    fun `fail when built-in Kotlin plugin is applied before kotlin-android plugin`() {
-        val build = rule.build {
-            androidApplication {
-                applyPlugin(PluginType.KOTLIN_ANDROID)
-            }
-            gradleProperties {
-                add(BooleanOption.BUILT_IN_KOTLIN, false)
-                add(BooleanOption.USE_NEW_DSL, false)
-            }
-        }
-        val result = build.executor.expectFailure().run(":app:assembleDebug")
-        result.assertErrorContains(
-            "The 'org.jetbrains.kotlin.android' plugin is no longer required for Kotlin support since AGP 9.0."
-        )
-    }
-
-    @Test
-    fun `fail when built-in Kotlin plugin is applied after kotlin-android plugin`() {
-        val build = rule.build {
-            androidApplication {
-                applyPlugin(PluginType.KOTLIN_ANDROID, applyFirst = true)
-            }
-            gradleProperties {
-                add(BooleanOption.BUILT_IN_KOTLIN, false)
-                add(BooleanOption.USE_NEW_DSL, false)
-            }
-        }
-        val result = build.executor.expectFailure().run(":app:assembleDebug")
-        result.assertErrorContains(
-            "The 'org.jetbrains.kotlin.android' plugin is no longer required for Kotlin support since AGP 9.0."
-        )
     }
 
     @Test

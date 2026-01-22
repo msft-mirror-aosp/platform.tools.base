@@ -17,7 +17,6 @@
 package com.android.build.gradle.internal.tasks
 
 import com.android.build.gradle.internal.dsl.isPresent
-import com.android.build.gradle.internal.privaysandboxsdk.PrivacySandboxSdkVariantScope
 import com.android.build.gradle.internal.services.getBuildService
 import com.android.build.gradle.internal.signing.SigningConfigData
 import com.android.build.gradle.internal.signing.SigningConfigDataProvider

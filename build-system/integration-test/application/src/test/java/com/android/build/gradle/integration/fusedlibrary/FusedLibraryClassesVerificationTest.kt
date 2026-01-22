@@ -269,7 +269,6 @@ class FusedLibraryClassesVerificationTest(private val publicationOnlyMode: Boole
                 }
             }
             gradleProperties {
-                add(BooleanOption.FUSED_LIBRARY_SUPPORT, true)
                 add(BooleanOption.FUSED_LIBRARY_PUBLICATION_ONLY_MODE, publicationOnlyMode)
             }
         }

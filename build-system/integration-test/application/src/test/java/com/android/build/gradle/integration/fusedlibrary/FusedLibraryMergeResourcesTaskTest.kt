@@ -190,7 +190,6 @@ class FusedLibraryMergeResourcesTaskTest(private val publicationOnlyMode: Boolea
                 // Add a dependency on the fused library aar in the test if needed.
             }
             gradleProperties {
-                add(BooleanOption.FUSED_LIBRARY_SUPPORT, true)
                 add(BooleanOption.FUSED_LIBRARY_PUBLICATION_ONLY_MODE, publicationOnlyMode)
                 add(BooleanOption.USE_ANDROID_X, true)
             }

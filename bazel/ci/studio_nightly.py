@@ -21,6 +21,10 @@ def studio_nightly(build_env: bazel.BuildEnv) -> None:
   """Runs studio-linux target."""
   build_env.bazel_build(
       '--config=ci',
+      '--config=remote-exec',
+      f'--embed_label={build_env.build_number}',
+      f'--build_metadata=ab_build_id={build_env.build_number}',
+      f'--build_metadata=ab_target={build_env.build_target_name}',
       '//tools/adt/idea/studio:android-studio.nightly.linux.zip',
       '//tools/adt/idea/studio:android-studio.nightly.mac.zip',
       '//tools/adt/idea/studio:android-studio.nightly.mac_arm.zip',

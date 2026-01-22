@@ -69,7 +69,7 @@ class AvdBuilderTest {
       assertThat(frontCamera).isEqualTo(AvdCamera.NONE)
       assertThat(backCamera).isEqualTo(AvdCamera.NONE)
 
-      assertThat(gpuMode).isEqualTo(GpuMode.OFF)
+      assertThat(gpuMode).isEqualTo(GpuMode.AUTO)
       assertThat(enableKeyboard).isTrue()
 
       assertThat(networkLatency).isEqualTo(AvdNetworkLatency.NONE)
@@ -93,11 +93,13 @@ class AvdBuilderTest {
   fun gpuMode() {
     val builder = createPixel8Builder()
 
-    builder.gpuMode = GpuMode.OFF
-    assertThat(builder.configProperties()).containsEntry(ConfigKey.GPU_EMULATION, "no")
+    builder.gpuMode = GpuMode.SOFTWARE
+    assertThat(builder.configProperties()).containsEntry(ConfigKey.GPU_EMULATION, "yes")
+    assertThat(builder.configProperties()).containsEntry(ConfigKey.GPU_MODE, "software")
 
     builder.gpuMode = GpuMode.AUTO
     assertThat(builder.configProperties()).containsEntry(ConfigKey.GPU_EMULATION, "yes")
+    assertThat(builder.configProperties()).containsEntry(ConfigKey.GPU_MODE, "auto")
   }
 
   @Test

@@ -20,6 +20,7 @@ import com.android.build.api.dsl.TestTaskContext
 import org.gradle.api.Incubating
 import org.gradle.api.Named
 import org.gradle.api.provider.Property
+import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.testing.Test
 
 /**
@@ -31,17 +32,21 @@ import org.gradle.api.tasks.testing.Test
 interface TestSuite: Named {
 
     /**
-     * Returns the list of sources associated with this test suite. Sources are added through the
-     * DSL using one of the following methods :
+     * Return the list of sourcesets associated with this test suite. Sourcesets are added through
+     * the DSL using one of the following methods:
      *  - [com.android.build.api.dsl.AgpTestSuite.assets]
      *  - [com.android.build.api.dsl.AgpTestSuite.hostJar]
      *  - [com.android.build.api.dsl.AgpTestSuite.testApk]
+     *
+     * The returned [Collection] of [TestSuiteSourceSet] is not specific to this variant but to the
+     * related [TestSuite] instance, which may apply to multiple variants as specified through the
+     * [com.android.build.api.dsl.AgpTestSuite.targetVariants] API.
      */
     @get:Incubating
-    val sources: Collection<TestSuiteSource>
+    val sources: Collection<TestSuiteSourceSet>
 
     /**
-     * Configure the test tasks for this test target.
+     * Configures the test tasks for this test target.
      *
      * There can be one to many instances of [org.gradle.api.tasks.testing.Test] tasks for a particular test suite target. For
      * instance, if the test suite targets more than one device, AGP may decide to create one [org.gradle.api.tasks.testing.Test]
@@ -75,13 +80,13 @@ interface TestSuite: Named {
     fun configureTestTasks(action: Test.(context: TestTaskContext) -> Unit)
 
     /**
-     * Returns the [JUnitEngineSpec] for this test suite.
+     * Return the [JUnitEngineSpec] for this test suite.
      */
     @get:Incubating
     val junitEngineSpec: JUnitEngineSpec
 
     /**
-     * Returns the list of [TestSuiteTarget] for this test suite in this variant.
+     * Return the list of [TestSuiteTarget] for this test suite in this variant.
      */
     val targets: Map<String, TestSuiteTarget>
 
@@ -92,4 +97,12 @@ interface TestSuite: Named {
      */
     @get:Incubating
     val codeCoverage: Property<Boolean>
+
+    /**
+     * The instrumentationRunner to use to run the tests.
+     *
+     * @return the instrumentation test runner name
+     */
+    @Incubating
+    fun instrumentationRunner(source: TestSuiteSourceSet.TestApk): Provider<String>
 }

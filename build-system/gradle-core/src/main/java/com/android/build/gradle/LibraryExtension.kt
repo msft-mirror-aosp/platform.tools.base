@@ -48,6 +48,7 @@ import com.android.builder.core.LibraryRequest
 import com.android.repository.Revision
 import com.google.wireless.android.sdk.stats.GradleBuildProject
 import org.gradle.api.DomainObjectSet
+import org.gradle.api.Incubating
 import org.gradle.api.NamedDomainObjectContainer
 import org.gradle.api.internal.DefaultDomainObjectSet
 import org.gradle.api.plugins.ExtensionContainer
@@ -55,6 +56,7 @@ import org.gradle.declarative.dsl.model.annotations.Configuring
 import java.util.Collections
 import javax.inject.Inject
 
+@Incubating
 abstract open class LibraryExtensionInternal(
     dslServices: DslServices,
     bootClasspathConfig: BootClasspathConfig,
@@ -89,12 +91,15 @@ abstract open class LibraryExtensionInternal(
 }
 
 /**
- * The {@code android} extension for {@code com.android.library} projects.
+ * An intermediate implementation class of the previous `android` extension for the android library plugin.
  *
- * <p>Apply this plugin to your project to <a
- * href="https://developer.android.com/studio/projects/android-library.html">create an Android
- * library</a>.
+ * Replaced by [com.android.build.api.dsl.LibraryExtension].
  */
+@Deprecated(
+    message = "Replaced by com.android.build.api.dsl.LibraryExtension.\n" +
+            "This class is not used for the public extensions in AGP when android.newDsl=true, which is the default in AGP 9.0, and will be removed in AGP 10.0.",
+    replaceWith = ReplaceWith("com.android.build.api.dsl.LibraryExtension")
+)
 abstract class LibraryExtension @Inject constructor(
     dslServices: DslServices,
     bootClasspathConfig: BootClasspathConfig,

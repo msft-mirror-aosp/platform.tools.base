@@ -26,7 +26,6 @@ import com.android.build.gradle.integration.common.fixture.project.AndroidApplic
 import com.android.build.gradle.integration.common.fixture.project.AndroidDynamicFeatureDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.AndroidLibraryDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.AndroidTestDefinitionImpl
-import com.android.build.gradle.integration.common.fixture.project.AndroidXPrivacySandboxLibraryDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.AssetPackBundleDefinition
 import com.android.build.gradle.integration.common.fixture.project.AssetPackBundleDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.AssetPackDefinition
@@ -40,8 +39,6 @@ import com.android.build.gradle.integration.common.fixture.project.JavaLibraryPr
 import com.android.build.gradle.integration.common.fixture.project.JavaLibraryProjectDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.KotlinMultiplatformDefinition
 import com.android.build.gradle.integration.common.fixture.project.KotlinMultiplatformDefinitionImpl
-import com.android.build.gradle.integration.common.fixture.project.PrivacySandboxSdkDefinition
-import com.android.build.gradle.integration.common.fixture.project.PrivacySandboxSdkDefinitionImpl
 import com.android.build.gradle.integration.common.fixture.project.options.GradlePropertiesBuilder
 import com.android.build.gradle.integration.common.fixture.project.options.GradlePropertiesDelegate
 import com.android.build.gradle.integration.common.fixture.project.prebuilts.HelloWorldAndroid
@@ -72,6 +69,7 @@ internal class GradleBuildDefinitionImpl(
 
     override var buildFileType: BuildFileType = BuildFileType.GROOVY
     override var useOldPluginStyleForSeparateClassloaders: Boolean = false
+    override var useLatestKgpVersion: Boolean = false
 
     internal lateinit var globalDefinitionState: GlobalDefinitionState
 
@@ -245,50 +243,6 @@ internal class GradleBuildDefinitionImpl(
 
         project as? AndroidTestDefinitionImpl
             ?: errorOnWrongType(project, path, "Android Test")
-
-        action(project)
-
-        return project
-    }
-
-    override fun privacySandboxSdk(
-        path: String,
-        createMinimumProject: Boolean,
-        action: PrivacySandboxSdkDefinition.() -> Unit
-    ): PrivacySandboxSdkDefinition {
-        if (path == ":") throw RuntimeException("root project cannot be a privacy sandbox sdk")
-        if (!path.startsWith(":")) throw RuntimeException("Project paths must start with ':' (value: $path)")
-
-        val createMinimumProject = createMinimumProject && enableDefaultContentCreation
-
-        val project = subProjects.computeIfAbsent(path) {
-            PrivacySandboxSdkDefinitionImpl(it, createMinimumProject)
-        }
-
-        project as? PrivacySandboxSdkDefinitionImpl
-            ?: errorOnWrongType(project, path, "Android Privacy Sandbox SDK")
-
-        action(project)
-
-        return project
-    }
-
-    override fun androidXPrivacySandboxLibrary(
-        path: String,
-        createMinimumProject: Boolean,
-        action: AndroidProjectDefinition<LibraryExtension>.() -> Unit
-    ): AndroidProjectDefinition<LibraryExtension> {
-        if (path == ":") throw RuntimeException("root project cannot be a privacy sandbox library")
-        if (!path.startsWith(":")) throw RuntimeException("Project paths must start with ':' (value: $path)")
-
-        val createMinimumProject = createMinimumProject && enableDefaultContentCreation
-
-        val project = subProjects.computeIfAbsent(path) {
-            AndroidXPrivacySandboxLibraryDefinitionImpl(it, createMinimumProject)
-        }
-
-        project as? AndroidXPrivacySandboxLibraryDefinitionImpl
-            ?: errorOnWrongType(project, path, "AndroidX Privacy Sandbox Library")
 
         action(project)
 
@@ -479,7 +433,6 @@ internal class GradleBuildDefinitionImpl(
             is AndroidApplicationDefinitionImpl -> "Android Application"
             is AndroidLibraryDefinitionImpl -> "Android Library"
             is AndroidDynamicFeatureDefinitionImpl -> "Android Dynamic Feature"
-            is PrivacySandboxSdkDefinitionImpl -> "Android Privacy Sandbox SDK"
             else -> project.javaClass.name
         }
 
@@ -523,6 +476,7 @@ internal class GradleBuildDefinitionImpl(
             allPlugins,
             customPluginMap,
             useOldPluginStyleForSeparateClassloaders,
+            useLatestKgpVersion,
             projectRepositories,
             buildFileType.getNewWriter())
 

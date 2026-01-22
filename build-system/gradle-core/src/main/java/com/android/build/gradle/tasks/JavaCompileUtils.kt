@@ -21,20 +21,14 @@ package com.android.build.gradle.tasks
 import com.android.build.api.artifact.MultipleArtifact
 import com.android.build.api.component.impl.AnnotationProcessorImpl
 import com.android.build.gradle.internal.LoggerWrapper
-import com.android.build.gradle.internal.component.ComponentCreationConfig
-import com.android.build.gradle.internal.component.KmpComponentCreationConfig
 import com.android.build.gradle.internal.dependency.CONFIG_NAME_ANDROID_JDK_IMAGE
 import com.android.build.gradle.internal.dependency.JDK_IMAGE_OUTPUT_DIR
 import com.android.build.gradle.internal.dependency.JRT_FS_JAR
 import com.android.build.gradle.internal.dependency.getJdkImageFromTransform
 import com.android.build.gradle.internal.profile.AnalyticsConfiguratorService
 import com.android.build.gradle.internal.profile.AnalyticsService
-import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactScope.EXTERNAL
-import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactScope.PROJECT
-import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactType.JAR
-import com.android.build.gradle.internal.publishing.AndroidArtifacts.ConsumedConfigType.ANNOTATION_PROCESSOR
-import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.services.getBuildService
+import com.android.build.gradle.internal.tasks.creationconfig.JavaCompileCreationConfig
 import com.android.build.gradle.options.BooleanOption
 import com.android.builder.errors.DefaultIssueReporter
 import com.android.builder.errors.IssueReporter
@@ -79,12 +73,11 @@ const val DEFAULT_INCREMENTAL_COMPILATION = true
  *
  * @see [JavaCompile.configurePropertiesForAnnotationProcessing]
  */
-@SuppressWarnings("EagerGradleConfiguration")
-fun JavaCompile.configureProperties(creationConfig: ComponentCreationConfig) {
-    val compileOptions = creationConfig.global.compileOptions
+fun JavaCompile.configureProperties(creationConfig: JavaCompileCreationConfig) {
+    val compileOptions = creationConfig.compileOptions
 
     if (compileOptions.sourceCompatibility.isJava9Compatible) {
-        checkSdkCompatibility(creationConfig.global.compileSdkHashString, creationConfig.services.issueReporter)
+        checkSdkCompatibility(creationConfig.compileSdkHashString, creationConfig.services.issueReporter)
         check(this.project.configurations.names.contains(CONFIG_NAME_ANDROID_JDK_IMAGE)) {
             "The $CONFIG_NAME_ANDROID_JDK_IMAGE configuration must exist for Java 9+ sources."
         }
@@ -100,32 +93,24 @@ fun JavaCompile.configureProperties(creationConfig: ComponentCreationConfig) {
         this.classpath = project.files(
             // classes(e.g. android.jar) that were previously passed through bootstrapClasspath need to be provided
             // through classpath
-            creationConfig.global.bootClasspath,
+            creationConfig.bootClasspath,
             creationConfig.artifacts.getAll(MultipleArtifact.PRE_COMPILATION_CLASSES),
             creationConfig.compileClasspath,
-            creationConfig.getBuiltInKotlincOutput(),
-            creationConfig.getBuiltInKaptArtifact(InternalArtifactType.BUILT_IN_KAPT_CLASSES_DIR),
+            creationConfig.builtInKotlincOutput,
+            creationConfig.builtInKaptArtifact,
         )
     } else {
-        this.options.bootstrapClasspath = this.project.files(creationConfig.global.bootClasspath)
+        this.options.bootstrapClasspath = this.project.files(creationConfig.bootClasspath)
         this.classpath = project.files(
             creationConfig.artifacts.getAll(MultipleArtifact.PRE_COMPILATION_CLASSES),
             creationConfig.compileClasspath,
-            creationConfig.getBuiltInKotlincOutput(),
-            creationConfig.getBuiltInKaptArtifact(InternalArtifactType.BUILT_IN_KAPT_CLASSES_DIR),
+            creationConfig.builtInKotlincOutput,
+            creationConfig.builtInKaptArtifact,
         )
     }
 
-    if (creationConfig is KmpComponentCreationConfig) {
-        creationConfig.androidKotlinCompilation.compileTaskProvider.get()
-            .compilerOptions.jvmTarget.orNull?.target?.let { jvmTarget ->
-                this.targetCompatibility = jvmTarget
-                this.sourceCompatibility = jvmTarget
-            }
-    } else {
-        this.sourceCompatibility = compileOptions.sourceCompatibility.toString()
-        this.targetCompatibility = compileOptions.targetCompatibility.toString()
-    }
+    creationConfig.sourceCompatibility?.let{ sourceCompatibility = it }
+    creationConfig.targetCompatibility?.let{ targetCompatibility = it }
 
     this.options.encoding = compileOptions.encoding
 
@@ -142,9 +127,9 @@ fun JavaCompile.configureProperties(creationConfig: ComponentCreationConfig) {
  * @see [JavaCompile.configureProperties]
  */
 fun JavaCompile.configurePropertiesForAnnotationProcessing(
-    creationConfig: ComponentCreationConfig
+    creationConfig: JavaCompileCreationConfig
 ) {
-    val processorOptions = creationConfig.javaCompilation.annotationProcessor
+    val processorOptions = creationConfig.annotationProcessor
     val compileOptions = this.options
     if (creationConfig.useBuiltInKaptSupport) {
         // When KAPT is enabled, it runs annotation processing. This option disables annotation
@@ -152,7 +137,7 @@ fun JavaCompile.configurePropertiesForAnnotationProcessing(
         compileOptions.compilerArgs.add("-proc:none")
     }
 
-    configureAnnotationProcessorPath(creationConfig)
+    compileOptions.annotationProcessorPath = creationConfig.annotationProcessorPath
 
     compileOptions.compilerArgumentProviders.add(
         CommandLineArgumentProviderAdapter(
@@ -166,29 +151,6 @@ fun JavaCompile.configurePropertiesForAnnotationProcessing(
         it.lock()
         compileOptions.compilerArgumentProviders.addAll(it)
     }
-}
-
-/**
- * Configures the annotation processor path for a [JavaCompile] task.
- *
- * @see [JavaCompile.configurePropertiesForAnnotationProcessing]
- */
-fun JavaCompile.configureAnnotationProcessorPath(creationConfig: ComponentCreationConfig) {
-    if (creationConfig is KmpComponentCreationConfig) {
-        return
-    }
-    options.annotationProcessorPath = creationConfig.getAnnotationProcessorJars()
-}
-
-internal fun ComponentCreationConfig.getAnnotationProcessorJars(): FileCollection {
-    // Optimization: For project jars, query for JAR instead of PROCESSED_JAR as project jars are
-    // currently considered already processed (unlike external jars).
-    val projectJars = variantDependencies
-        .getArtifactFileCollection(ANNOTATION_PROCESSOR, PROJECT, JAR)
-    val externalJars = variantDependencies
-        .getArtifactFileCollection(ANNOTATION_PROCESSOR, EXTERNAL, global.aarOrJarTypeToConsume.jar)
-
-    return projectJars.plus( externalJars)
 }
 
 data class SerializableArtifact(

@@ -52,12 +52,9 @@ import com.android.utils.FileUtils
 import com.google.common.annotations.VisibleForTesting
 import org.gradle.api.GradleException
 import org.gradle.api.InvalidUserDataException
-import org.gradle.api.JavaVersion
 import org.gradle.api.artifacts.ArtifactCollection
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.DirectoryProperty
-import org.gradle.api.file.RegularFileProperty
-import org.gradle.api.logging.Logging
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.plugins.JavaBasePlugin
 import org.gradle.api.provider.ListProperty
@@ -77,7 +74,6 @@ import org.gradle.internal.logging.ConsoleRenderer
 import org.gradle.work.DisableCachingByDefault
 import org.gradle.workers.WorkerExecutor
 import java.io.File
-import java.util.logging.Level
 import javax.inject.Inject
 
 /**
@@ -88,13 +84,6 @@ import javax.inject.Inject
 abstract class ManagedDeviceInstrumentationTestTask: NonIncrementalTask(), AndroidTestTask {
 
     abstract class TestRunnerFactory {
-
-        /** Java runtime environment to run UTP in */
-        @get:Internal
-        abstract val jvmExecutable: RegularFileProperty
-
-        @get:Input
-        abstract val javaVersion: Property<JavaVersion>
 
         @get: Input
         abstract val executionEnum: Property<TestOptions.Execution>
@@ -124,9 +113,6 @@ abstract class ManagedDeviceInstrumentationTestTask: NonIncrementalTask(), Andro
         @get: Nested
         abstract val utpDependencies: UtpDependencies
 
-        @get: Internal
-        abstract val utpLoggingLevel: Property<Level>
-
         @get:Input
         @get: Optional
         abstract val installApkTimeout: Property<Int>
@@ -154,7 +140,6 @@ abstract class ManagedDeviceInstrumentationTestTask: NonIncrementalTask(), Andro
                 workerExecutor,
                 objectFactory,
                 utpDependencies,
-                jvmExecutable.get().asFile,
                 sdkBuildService.get().sdkLoader(compileSdkVersion, buildToolsRevision),
                 emulatorControlConfig.get(),
                 useOrchestrator,
@@ -163,7 +148,6 @@ abstract class ManagedDeviceInstrumentationTestTask: NonIncrementalTask(), Andro
                 avdComponents.get(),
                 installApkTimeout.getOrNull(),
                 enableEmulatorDisplay.get(),
-                utpLoggingLevel.get(),
                 getTargetIsSplitApk.getOrElse(false),
             )
         }
@@ -393,13 +377,6 @@ abstract class ManagedDeviceInstrumentationTestTask: NonIncrementalTask(), Andro
 
             task.enableEmulatorDisplay.convention(false)
 
-            task.testRunnerFactory.jvmExecutable.apply {
-                set(File(System.getProperty("java.home"), "bin/java"))
-                disallowChanges()
-            }
-
-            task.testRunnerFactory.javaVersion.setDisallowChanges(JavaVersion.current())
-
             task.testRunnerFactory.enableEmulatorDisplay.set(
                 task.enableEmulatorDisplay
             )
@@ -469,12 +446,6 @@ abstract class ManagedDeviceInstrumentationTestTask: NonIncrementalTask(), Andro
                     .resolveDependencies(task.project.configurations)
             task.testRunnerFactory.getTargetIsSplitApk.setDisallowChanges(
                     testedConfig?.componentType?.isDynamicFeature ?: false
-            )
-
-            val infoLoggingEnabled =
-                Logging.getLogger(ManagedDeviceInstrumentationTestTask::class.java).isInfoEnabled()
-            task.testRunnerFactory.utpLoggingLevel.set(
-                if (infoLoggingEnabled) Level.INFO else Level.OFF
             )
 
             task.testRunnerFactory

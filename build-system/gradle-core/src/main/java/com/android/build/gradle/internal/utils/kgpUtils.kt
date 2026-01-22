@@ -226,6 +226,13 @@ fun addComposeArgsToKotlinCompile(
     task.compilerOptions.freeCompilerArgs.add("-Xallow-unstable-dependencies")
 }
 
+/**
+ * Adds Kotlin compiler argument `-Xuse-inline-scopes-numbers` to improve the debugging experience
+ * in Android Studio (b/372264148).
+ *
+ * Note: When the Kotlin compiler enables this option by default (KT-79401), we can remove this
+ * method.
+ */
 fun maybeUseInlineScopesNumbers(
     task: KotlinCompile,
     creationConfig: ComponentCreationConfig,
@@ -234,11 +241,6 @@ fun maybeUseInlineScopesNumbers(
     // Only use -Xuse-inline-scopes-numbers for APKs. If it's used for an AAR (or any kind of
     // dependency), consumers wouldn't be able to use Kotlin < 2.0.
     if (!creationConfig.componentType.isApk || !creationConfig.debuggable) {
-        return
-    }
-
-    val kotlinVersion = getProjectKotlinPluginKotlinVersion(task.project)
-    if (kotlinVersion == null || !kotlinVersion.isVersionAtLeast(2, 0)) {
         return
     }
 
@@ -316,7 +318,8 @@ fun handleKotlinSourceSets(
                         "Using kotlin.sourceSets DSL to add Kotlin sources is not allowed with built-in Kotlin.\n" +
                                 "Kotlin source set '${androidSourceSet.name}' contains: ${kotlinSourceSet.kotlin.srcDirs}\n" +
                                 "Solution: Use android.sourceSets DSL instead.\n" +
-                                "For more information, see https://developer.android.com/r/tools/built-in-kotlin"
+                                "For more information, see https://developer.android.com/r/tools/built-in-kotlin\n" +
+                                "To suppress this error, set ${BooleanOption.DISALLOW_KOTLIN_SOURCE_SETS.propertyName}=false in gradle.properties."
                     )
                 }
 
@@ -375,74 +378,51 @@ fun handleKotlinSourceSets(
     }
 }
 
-internal fun handleKotlinStdlibDependency(
+/**
+ * Handles the case where the user adds a Kotlin dependency without a version
+ * (b/443037365, b/471410336). In that case, we will set a default version.
+ *
+ * This is similar to the `kotlin-android` plugin's behavior:
+ * https://github.com/JetBrains/kotlin/blob/1cfbb801b77eaf00a7806631d29415dfd40f2fcd/libraries/tools/kotlin-gradle-plugin/src/common/kotlin/org/jetbrains/kotlin/gradle/internal/KotlinDependenciesManagement.kt#L60-L82
+ */
+internal fun handleKotlinDependenciesWithoutVersion(
     project: Project,
     projectServices: ProjectServices,
     androidSourceSets: NamedDomainObjectContainer<out AndroidSourceSet>,
 ) {
     val defaultKotlinVersion =
         projectServices.builtInKotlinServices.kotlinAndroidProjectExtension.coreLibrariesVersion
-
-    handleKotlinStdlibWithoutVersion(project, androidSourceSets, defaultKotlinVersion)
-    maybeAddKotlinStdlib(project, androidSourceSets, defaultKotlinVersion)
-}
-
-/**
- * Handles the case where the user adds kotlin-stdlib without a version (b/443037365). In that case,
- * we will set a default version.
- *
- * This is similar to the `kotlin-android` plugin's behavior:
- * https://github.com/JetBrains/kotlin/blob/1cfbb801b77eaf00a7806631d29415dfd40f2fcd/libraries/tools/kotlin-gradle-plugin/src/common/kotlin/org/jetbrains/kotlin/gradle/internal/KotlinDependenciesManagement.kt#L60-L82
- *
- * The difference is that the `kotlin-android` plugin sets a default version for any Kotlin
- * dependency without a version ("org.jetbrains.kotlin:<any>"), whereas with built-in Kotlin we
- * intentionally do this only for kotlin-stdlib ("org.jetbrains.kotlin:kotlin-stdlib").
- */
-private fun handleKotlinStdlibWithoutVersion(
-    project: Project,
-    androidSourceSets: NamedDomainObjectContainer<out AndroidSourceSet>,
-    defaultKotlinVersion: String
-) {
     val sourceSetsConfigurations = androidSourceSets.flatMap { it.getConfigurations(project) }
+
     sourceSetsConfigurations.forEach { configuration ->
-        // Only set a default version if the user has not set a version because we don't want to
-        // change the version if the user has set a version.
-        // There are 2 ways to do this:
-        //    1. Add an unconditional dependency constraint using "prefer" instead of "require".
-        //    2. Detect that there exists a kotlin-stdlib dependency without a version and only in
-        //       that case, add a dependency constraint using "prefer" or "require".
-        // Because "prefer" does not work well with Maven publishing (b/450851465), we need to go
-        // with option 2 and use "require".
-        val hasKotlinStdlibWithoutVersion = configuration.dependencies.any {
-            it is ExternalDependency
-                    && it.group == KOTLIN_GROUP
-                    && it.name == KOTLIN_STDLIB
-                    && it.version == null
-        }
-        if (hasKotlinStdlibWithoutVersion) {
-            configuration.dependencyConstraints.add(
-                project.dependencies.constraints.create("$KOTLIN_GROUP:$KOTLIN_STDLIB") { constraint ->
-                    constraint.version {
-                        it.require(defaultKotlinVersion)
+        configuration.dependencies.forEach {
+            if (it is ExternalDependency && it.group == KOTLIN_GROUP && it.version == null) {
+                configuration.dependencyConstraints.add(
+                    project.dependencies.constraints.create("$KOTLIN_GROUP:${it.name}") { constraint ->
+                        constraint.version { versionConstraint ->
+                            // Note: We shouldn't use "versionConstraint.prefer()" because it does
+                            // not work well with Maven publishing (b/450851465).
+                            versionConstraint.require(defaultKotlinVersion)
+                        }
                     }
-                }
-            )
+                )
+            }
         }
     }
 }
 
 /**
- * Adds kotlin-stdlib dependency to the `api` configurations if it's not yet added by the user and
+ * Adds kotlin-stdlib dependency to the `api` configurations if it's not yet added by the user, and
  * they haven't set `kotlin.stdlib.default.dependency=false` (b/452246814).
  *
  * This is similar to the `kotlin-android` plugin's behavior:
  *   - https://youtrack.jetbrains.com/issue/KT-38221
      - https://github.com/JetBrains/kotlin/blob/fd1d3d967df9eab306bdc9707229bd22a2d5d1c2/libraries/tools/kotlin-gradle-plugin/src/common/kotlin/org/jetbrains/kotlin/gradle/internal/stdlibDependencyManagement.kt#L105-L111
  */
-private fun maybeAddKotlinStdlib(
+internal fun maybeAddKotlinStdlibDependency(
     project: Project,
+    projectServices: ProjectServices,
     androidSourceSets: NamedDomainObjectContainer<out AndroidSourceSet>,
-    defaultKotlinVersion: String
 ) {
 
     fun Configuration.hasKotlinStdlib(): Boolean = dependencies.any {
@@ -465,6 +445,8 @@ private fun maybeAddKotlinStdlib(
 
     // Otherwise, add kotlin-stdlib to the `api` configuration of the main source set
     val apiConfiguration = project.configurations.getByName(mainSourceSet.apiConfigurationName)
+    val defaultKotlinVersion =
+        projectServices.builtInKotlinServices.kotlinAndroidProjectExtension.coreLibrariesVersion
     apiConfiguration.dependencies.add(
         project.dependencies.create("$KOTLIN_GROUP:$KOTLIN_STDLIB:$defaultKotlinVersion")
     )

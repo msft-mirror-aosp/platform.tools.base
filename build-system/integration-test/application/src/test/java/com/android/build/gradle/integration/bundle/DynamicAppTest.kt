@@ -918,10 +918,12 @@ class DynamicAppTest {
 
         project.getSubproject(":app").buildFile.appendText(
             """
-            android.applicationVariants.all { variant ->
-                variant.outputs.each { output ->
-                    output.versionCodeOverride = 12
-                    output.versionNameOverride = "12.0"
+            androidComponents {
+                onVariants(selector().all()) { variant ->
+                    variant.outputs.each { output ->
+                        output.versionCode.set(12)
+                        output.versionName.set("12.0")
+                    }
                 }
             }
             """

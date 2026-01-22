@@ -46,12 +46,16 @@ android {
     buildFeatures {
         buildConfig = true
     }
+}
 
+androidComponents {
     // This is not part of the test per se, it tests that adding dynamic properties on the
     // flavor declaration can be retrieved later.
-    applicationVariants.all { variant ->
+    onVariants(selector().all()) { variant ->
         assert variant.productFlavors.size() == 1
-        def buildType = variant.productFlavors[0].buildType
+        def flavorName = variant.productFlavors[0].second
+        def flavorDsl = android.productFlavors.getByName(flavorName)
+        def buildType = flavorDsl.ext.buildType
         if (!"F1PROD".equals(buildType)
             && !"F2PROD".equals(buildType)) {
             throw new RuntimeException("Invalid extension property value ${buildType}")

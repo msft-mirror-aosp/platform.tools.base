@@ -68,7 +68,6 @@ import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.logging.Logging
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
-import org.gradle.api.provider.Provider
 import org.gradle.api.provider.ProviderFactory
 import org.gradle.api.provider.SetProperty
 import org.gradle.api.services.ServiceReference
@@ -178,29 +177,17 @@ abstract class R8Task @Inject constructor(
     @get:OutputFile
     abstract val outputResources: RegularFileProperty
 
-    @OutputFile
-    fun getProguardSeedsOutput(): Provider<File> =
-            mappingFile.flatMap {
-                providerFactory.provider { it.asFile.resolveSibling("seeds.txt") }
-            }
+    @get:OutputFile
+    abstract val proguardSeedsOutput: RegularFileProperty
 
-    @OutputFile
-    fun getProguardUsageOutput(): Provider<File> =
-            mappingFile.flatMap {
-                providerFactory.provider { it.asFile.resolveSibling("usage.txt") }
-            }
+    @get:OutputFile
+    abstract val proguardUsageOutput: RegularFileProperty
 
-    @OutputFile
-    fun getProguardConfigurationOutput(): Provider<File> =
-            mappingFile.flatMap {
-                providerFactory.provider { it.asFile.resolveSibling("configuration.txt") }
-            }
+    @get:OutputFile
+    abstract val proguardConfigurationOutput: RegularFileProperty
 
-    @OutputFile
-    fun getMissingKeepRulesOutput(): Provider<File> =
-            mappingFile.flatMap {
-                providerFactory.provider { it.asFile.resolveSibling("missing_rules.txt") }
-            }
+    @get:OutputFile
+    abstract val missingKeepRulesOutput: RegularFileProperty
 
     @get:Optional
     @get:OutputFile
@@ -293,6 +280,22 @@ abstract class R8Task @Inject constructor(
                 else -> error("Unexpected component type: $componentType")
             }
 
+            creationConfig.artifacts
+                .setInitialProvider(taskProvider, R8Task::proguardSeedsOutput)
+                .on(InternalArtifactType.R8_MAPPING_SEEDS)
+
+            creationConfig.artifacts
+                .setInitialProvider(taskProvider, R8Task::proguardUsageOutput)
+                .on(InternalArtifactType.R8_MAPPING_USAGE)
+
+            creationConfig.artifacts
+                .setInitialProvider(taskProvider, R8Task::proguardConfigurationOutput)
+                .on(InternalArtifactType.R8_MAPPING_CONFIGURATION)
+
+            creationConfig.artifacts
+                .setInitialProvider(taskProvider, R8Task::missingKeepRulesOutput)
+                .on(InternalArtifactType.R8_MAPPING_MISSING_RULES)
+
             creationConfig.artifacts.use(taskProvider)
                 .wiredWithFiles(R8Task::resourcesJar, R8Task::outputResources)
                 .toTransform(InternalArtifactType.MERGED_JAVA_RES)
@@ -301,6 +304,9 @@ abstract class R8Task @Inject constructor(
                 creationConfig.artifacts.setInitialProvider(taskProvider) {
                     it.resourceShrinkingParams.shrunkResourcesOutputDir
                 }.on(InternalArtifactType.SHRUNK_RESOURCES_PROTO_FORMAT)
+                creationConfig.artifacts.setInitialProvider(taskProvider) {
+                    it.resourceShrinkingParams.logFile
+                }.on(InternalArtifactType.R8_MAPPING_RESOURCES)
             }
 
             if ((creationConfig as? ApplicationCreationConfig)?.shrinkingWithDynamicFeatures == true) {
@@ -474,7 +480,7 @@ abstract class R8Task @Inject constructor(
             }
 
             if ((creationConfig as? ApplicationCreationConfig)?.runResourceShrinking() == true) {
-                task.resourceShrinkingParams.initialize(creationConfig, task.mappingFile)
+                task.resourceShrinkingParams.initialize(creationConfig)
             } else {
                 task.resourceShrinkingParams.enabled.setDisallowChanges(false)
             }
@@ -629,10 +635,10 @@ abstract class R8Task @Inject constructor(
             it.resourcesJar.set(resourcesJar)
             it.mappingFile.set(mappingFile.get().asFile)
             it.mappingPartitionFile.set(mappingPartitionFile.get().asFile)
-            it.proguardSeedsOutput.set(getProguardSeedsOutput().get())
-            it.proguardUsageOutput.set(getProguardUsageOutput().get())
-            it.proguardConfigurationOutput.set(getProguardConfigurationOutput().get())
-            it.missingKeepRulesOutput.set(getMissingKeepRulesOutput().get())
+            it.proguardSeedsOutput.set(proguardSeedsOutput.get().asFile)
+            it.proguardUsageOutput.set(proguardUsageOutput.get().asFile)
+            it.proguardConfigurationOutput.set(proguardConfigurationOutput.get().asFile)
+            it.missingKeepRulesOutput.set(missingKeepRulesOutput.get().asFile)
             it.output.set(output.get().asFile)
             it.outputResources.set(outputResources.get().asFile)
             it.featureClassJars.from(featureClassJars.toList())

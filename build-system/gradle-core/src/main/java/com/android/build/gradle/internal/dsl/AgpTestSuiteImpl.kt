@@ -109,7 +109,7 @@ abstract class AgpTestSuiteImpl @Inject constructor(
     }
 
     override fun testApk(action: TestSuiteTestApkSpec.() -> Unit) {
-        throw RuntimeException("Not yet implemented")
+        addSource<TestSuiteTestApkSpecImpl>(action)
     }
 
     fun testApk(action: Action<TestSuiteTestApkSpec>) {
@@ -139,12 +139,22 @@ abstract class AgpTestSuiteImpl @Inject constructor(
         initializationBlock: T.() -> Unit
     ) {
         if (sources.isNotEmpty()) {
-            throw RuntimeException(
-                "It is not yet possible to register multiple sources for a test suite")
+            // this may be another initialization block for the same source.
+            val existingSource = sources.single()
+            if (existingSource is T) {
+                initializationBlock.invoke(existingSource)
+                return
+            } else {
+                throw RuntimeException(
+                    "It is not yet possible to register multiple sources for a test suite"
+                )
+            }
         }
         dslServices.newInstance(
             T::class.java,
-            name
+            name,
+            dslServices.projectInfo.projectDirectory,
+            dslServices.projectInfo.buildDirectory,
         ).also { newSources ->
             sources.add(newSources)
             initializationBlock.invoke(newSources)

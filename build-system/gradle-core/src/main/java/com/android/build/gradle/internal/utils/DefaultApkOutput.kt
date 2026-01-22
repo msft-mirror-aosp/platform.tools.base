@@ -73,8 +73,6 @@ class DefaultApkOutput(variant: VariantCreationConfig, val deviceSpec: DeviceSpe
     private fun getApkSources(variant: VariantCreationConfig, privacySandboxApks: FileCollection): ApkSources {
         return ApkSources(
             mainApkArtifacts = variant.artifacts.get(SingleArtifact.APK).map { listOf(it) },
-            additionalSupportedSdkApkSplits = null,
-            privacySandboxSdkSplitApksForLegacy = null,
             dexMetadataDirectory = variant.artifacts.get(InternalArtifactType.DEX_METADATA_DIRECTORY)
         )
     }

@@ -32,16 +32,19 @@ import kotlin.test.assertNull
 @RunWith(Parameterized::class)
 class DataBindingKtxTest(
     private val useKotlin: Boolean,
+    private val useBuiltInKotlin: Boolean,
     private val useAndroidX: Boolean
 ) {
     companion object {
         @JvmStatic
-        @Parameterized.Parameters(name = "useKotlin={0}, useAndroidX={1}")
+        @Parameterized.Parameters(name = "useKotlin={0}, useBuiltInKotlin={1}, useAndroidX={2}")
         fun modes() = listOf(
-            arrayOf(true, true),
-            arrayOf(true, false),
-            arrayOf(false, true),
-            arrayOf(false, false)
+            arrayOf(true, true, true),
+            arrayOf(true, true, false),
+            arrayOf(true, false, true),
+            arrayOf(true, false, false),
+            arrayOf(false, false, true),
+            arrayOf(false, false, false)
         )
     }
 
@@ -50,7 +53,7 @@ class DataBindingKtxTest(
     } else {
         HelloWorldApp.forPlugin("com.android.application")
     }.apply {
-        if (useKotlin) {
+        if (useKotlin && !useBuiltInKotlin) {
             replaceFile(getFile("build.gradle").appendContent(
                     """
                 buildscript {
@@ -84,8 +87,12 @@ class DataBindingKtxTest(
     val project =
         GradleTestProject
             .builder()
-            .fromTestApp(app)
-            .addGradleProperty(BooleanOption.BUILT_IN_KOTLIN, false)
+            .fromTestApp(app).apply {
+                if (!useBuiltInKotlin) {
+                    addGradleProperty(BooleanOption.BUILT_IN_KOTLIN, false)
+                    addGradleProperty(BooleanOption.USE_NEW_DSL, false)
+                }
+            }
             .create()
 
     @Test

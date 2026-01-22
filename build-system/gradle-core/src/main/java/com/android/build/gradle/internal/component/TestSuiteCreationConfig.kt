@@ -21,10 +21,13 @@ import com.android.build.api.dsl.TestTaskContext
 import com.android.build.api.variant.JUnitEngineSpec
 import com.android.build.api.variant.TestSuite
 import com.android.build.api.variant.impl.TestSuiteSourceContainer
+import com.android.build.gradle.internal.manifest.ManifestDataProvider
 import com.android.build.gradle.internal.services.TaskCreationServices
+import com.android.build.gradle.internal.services.VariantServices
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfig
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.api.tasks.testing.Test
+import java.io.File
 
 interface TestSuiteCreationConfig: TestSuite {
 
@@ -55,7 +58,7 @@ interface TestSuiteCreationConfig: TestSuite {
     /**
      * Returns the sources for this test suite.
      */
-    override val sources: Collection<TestSuiteSourceContainer>
+    val sourceContainers: Collection<TestSuiteSourceContainer>
 
     /**
      * Artifacts specific to this Test suite.
@@ -66,4 +69,8 @@ interface TestSuiteCreationConfig: TestSuite {
      * Target of this test suite.
      */
     override val targets: Map<String, TestSuiteTargetCreationConfig>
+
+    val variantServices: VariantServices
+
+    val manifestDataProviderBuilder: (File) -> ManifestDataProvider
 }

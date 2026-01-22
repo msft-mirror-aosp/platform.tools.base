@@ -36,7 +36,7 @@ import com.android.adblib.tools.debugging.OptionalValue
 import com.android.adblib.tools.debugging.flow
 import com.android.adblib.tools.debugging.getOrDefault
 import com.android.adblib.tools.debugging.getOrNull
-import com.android.adblib.tools.debugging.jdwpProcessFlow
+import com.android.adblib.tools.debugging.jdwpProcessTracker
 import com.android.adblib.tools.debugging.orElse
 import com.android.adblib.tools.debugging.packets.impl.JdwpCommands
 import com.android.adblib.tools.debugging.packets.impl.MutableJdwpPacket
@@ -569,11 +569,11 @@ class JdwpProcessTest : AdbLibToolsTestBase() {
         val (_, device, process) = createJdwpProcess()
 
         // Act
-        device.jdwpProcessFlow.first { processes -> processes.isNotEmpty() }
+        device.jdwpProcessTracker.processesFlow.first { processes -> processes.isNotEmpty() }
         process.sendDdmsExit(1)
 
         // Assert
-        device.jdwpProcessFlow.first { processes -> processes.isEmpty() }
+        device.jdwpProcessTracker.processesFlow.first { processes -> processes.isEmpty() }
         Unit
     }
 

@@ -28,7 +28,6 @@ import com.android.build.gradle.integration.common.fixture.project.FusedLibraryD
 import com.android.build.gradle.integration.common.fixture.project.GenericProjectDefinition
 import com.android.build.gradle.integration.common.fixture.project.JavaLibraryProjectDefinition
 import com.android.build.gradle.integration.common.fixture.project.KotlinMultiplatformDefinition
-import com.android.build.gradle.integration.common.fixture.project.PrivacySandboxSdkDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_APP_PATH
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_FEATURE_PATH
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_LIB_PATH
@@ -71,6 +70,16 @@ interface GradleBuildDefinition {
      * [GradleProjectDefinition.buildscript] to achieve this.
      */
     var useOldPluginStyleForSeparateClassloaders: Boolean
+
+    /**
+     * Whether to modify the buildscript classpath to upgrade KGP from the version that AGP depends
+     * on to the latest version ([com.android.testutils.TestUtils.KOTLIN_VERSION_FOR_TESTS]).
+     *
+     * This is used to test AGP against the latest version of KGP.
+     *
+     * The default is `false`.
+     */
+    var useLatestKgpVersion: Boolean
 
     fun settings(action: GradleSettingsDefinition.() -> Unit)
 
@@ -161,34 +170,6 @@ interface GradleBuildDefinition {
         createMinimumProject: Boolean = true,
         action: AndroidProjectDefinition<TestExtension>.() -> Unit
     ): AndroidProjectDefinition<TestExtension>
-
-    /**
-     * Configures a subProject with the Android Privacy Sandbox SDK plugin, creating it if needed.
-     *
-     * if the project is already created, `createMinimumProject` has no effect
-     *
-     * @param path the Gradle path of the project
-     * @param createMinimumProject whether to create a minimum project (namespace, compileSdk, manifest)
-     */
-    fun privacySandboxSdk(
-        path: String,
-        createMinimumProject: Boolean = true,
-        action: PrivacySandboxSdkDefinition.() -> Unit
-    ): PrivacySandboxSdkDefinition
-
-    /**
-     * Configures a subProject with the AndroidX Privacy sandbox Library plugin.
-     *
-     * It is an extension of the Android library plugin.
-     *
-     * @param path the Gradle path of the project
-     * @param createMinimumProject whether to create a minimum project (namespace, compileSdk, manifest)
-     */
-    fun androidXPrivacySandboxLibrary(
-        path: String = DEFAULT_LIB_PATH,
-        createMinimumProject: Boolean = true,
-        action: AndroidProjectDefinition<LibraryExtension>.() -> Unit
-    ): AndroidProjectDefinition<LibraryExtension>
 
     /**
      * Configures a subProject with the Android AI Pack plugin, creating it if needed.

@@ -32,7 +32,6 @@ enum class Category {
   Widget,
   Google,
   Compose,
-  Test,
   WatchFace,
   Other,
 }
@@ -63,7 +62,6 @@ enum class TemplateConstraint {
   // Compose is used as a Constraint since it implies the need of a specific Kotlin Compiler version
   Compose,
   Aidl,
-  TestSuite,
 }
 
 /**

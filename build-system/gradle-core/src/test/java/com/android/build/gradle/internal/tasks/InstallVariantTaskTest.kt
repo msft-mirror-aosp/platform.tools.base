@@ -90,8 +90,6 @@ class InstallVariantTaskTest(private val deviceVersion: AndroidVersion) {
             ApkSources(
                 FakeGradleProvider(listOf(FakeGradleDirectory(temporaryFolder.root))),
                 null,
-                null,
-                FakeGradleDirectoryProperty(null)
             ),
             ImmutableSet.of(), AndroidVersion.DEFAULT, "variant", "project", LoggerWrapper(logger)
         )
@@ -129,8 +127,6 @@ class InstallVariantTaskTest(private val deviceVersion: AndroidVersion) {
             ApkSources(
                 FakeGradleProvider(listOf(FakeGradleDirectory(temporaryFolder.root))),
                 FakeGradleDirectoryProperty(null),
-                FakeGradleDirectoryProperty(null),
-                FakeGradleDirectoryProperty(null)
             ),
             ImmutableSet.of(), AndroidVersion.DEFAULT, "variant", "project", LoggerWrapper(logger)
         )

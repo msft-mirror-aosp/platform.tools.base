@@ -405,12 +405,12 @@ def _kotlin_library_impl(ctx):
         runtime_deps = java_info_deps,
     )
 
-    transitive_runfiles = depset(transitive = [
-        dep[DefaultInfo].default_runfiles.files
-        for dep in ctx.attr.deps + ctx.attr.exports
+    transitive_runfiles = [
+        dep[DefaultInfo].default_runfiles
+        for dep in ctx.attr.deps + ctx.attr.exports + ctx.attr.runtime_deps
         if dep[DefaultInfo].default_runfiles
-    ])
-    runfiles = ctx.runfiles(files = ctx.files.data, transitive_files = transitive_runfiles)
+    ]
+    runfiles = ctx.runfiles(files = ctx.files.data + java_info.runtime_output_jars).merge_all(transitive_runfiles)
     return [
         java_info,
         DefaultInfo(files = depset([ctx.outputs.jar]), runfiles = runfiles),

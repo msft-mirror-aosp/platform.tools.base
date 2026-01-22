@@ -16,128 +16,108 @@
 
 package com.android.build.gradle.integration.resources
 
-import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.fixture.app.MinimalSubProject
-import com.android.build.gradle.integration.common.truth.ScannerSubject.Companion.assertThat
-import com.android.build.gradle.integration.common.utils.TestFileUtils
+import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.internal.scope.InternalArtifactType
-import com.android.testutils.MavenRepoGenerator
 import com.android.testutils.TestInputsGenerator.jarWithTextEntries
-import com.android.testutils.truth.PathSubject.assertThat
 import com.android.utils.FileUtils
 import com.google.common.truth.Truth.assertThat
-import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
-import java.io.File
+import kotlin.io.path.exists
 
 /**
  * Tests related to [MergeJavaResourceTask]
  */
 class MergeJavaResourceTaskTest {
 
-    private val mavenRepo = MavenRepoGenerator(
-        listOf(
-            MavenRepoGenerator.Library(
-                "com.example:lib1:0.1",
-                jarWithTextEntries("conflict_res" to "a")
-            ),
-            MavenRepoGenerator.Library(
-                "com.example:lib2:0.1",
-                jarWithTextEntries("conflict_res" to "b")
-            ),
-            MavenRepoGenerator.Library(
-                "com.example:libWithAdditionalArtifact:0.1", // b/377366954
-                mainArtifact = jarWithTextEntries("content1" to "a"),
-                additionalArtifact = jarWithTextEntries("content2" to "a")
-            )
-        )
-    )
-
-    @Rule
-    @JvmField
-    val project = GradleTestProject.builder().fromTestApp(
-        MinimalSubProject.app("com.example.test")
-    ).withAdditionalMavenRepo(mavenRepo).create()
-
-    @Before
-    fun before() {
-        // Enable buildConfig, otherwise Javac task will be skipped.
-        TestFileUtils.appendToFile(
-            project.buildFile,
-            """
-                android {
-                    buildFeatures {
-                        buildConfig = true
-                    }
+    @get:Rule
+    val rule = GradleRule.configure().withMavenRepository {
+        jar(
+            "com.example:lib1:0.1"
+        ).addTextFile("conflict_res", "a")
+        jar(
+            "com.example:lib2:0.1"
+        ).addTextFile("conflict_res", "b")
+        jar(
+            "com.example:libWithAdditionalArtifact:0.1"
+        ).addTextFile("content1", "a")
+            .addTextFile("content2", "b")
+    }.from {
+        androidApplication {
+            android {
+                namespace = "com.example.test"
+                buildFeatures {
+                    buildConfig = true
                 }
-            """.trimIndent()
-        )
+            }
+        }
     }
 
     @Test
     fun ensureHelpfulErrorMessageOnConflict() {
-        TestFileUtils.appendToFile(
-            project.buildFile, """
-            dependencies {
-                implementation 'com.example:lib1:0.1'
-                implementation 'com.example:lib2:0.1'
+        val build = rule.build {
+            androidApplication {
+                dependencies {
+                    implementation("com.example:lib1:0.1")
+                    implementation("com.example:lib2:0.1")
+                }
             }
-        """
-        )
-        val failure = project.executor().expectFailure().run("assembleDebug")
+        }
+        val failure = build.executor.expectFailure().run("assembleDebug")
         // Ensure that the inputs are included in the stderr output.
-        assertThat(failure.stderr).contains("2 files found with path 'conflict_res' from inputs:\n - ")
+        failure.assertFailureMessage().contains("2 files found with path 'conflict_res' from inputs:\n - ")
     }
 
     @Test
     fun ensureNoJavacDependencyIfNoAnnotationProcessor() {
-        val build = project.executor().run("clean", ":mergeDebugJavaResource")
-        assertThat(build.didWorkTasks).doesNotContain(":compileDebugJavaWithJavac")
+        val build = rule.build.executor.run("clean", "app:mergeDebugJavaResource")
+        assertThat(build.didWorkTasks).doesNotContain("app:compileDebugJavaWithJavac")
     }
 
     @Test
     fun ensureJavacDependencyIfAnnotationProcessor() {
-        val emptyJar = project.file("empty.jar")
-        assertThat(emptyJar.createNewFile()).isTrue()
-        TestFileUtils.appendToFile(
-            project.buildFile,
-            "dependencies { annotationProcessor files('empty.jar') }"
-        )
-        val build = project.executor().run("clean", ":mergeDebugJavaResource")
-        if (project.getIntermediateFile(
-                InternalArtifactType.COMPILE_BUILD_CONFIG_JAR.getFolderName()).exists()) {
-            assertThat(build.didWorkTasks).doesNotContain(":compileDebugJavaWithJavac")
-        } else {
-            assertThat(build.didWorkTasks).contains(":compileDebugJavaWithJavac")
+        val build = rule.build {
+            androidApplication {
+                dependencies {
+                    add("annotationProcessor", localJar("empty.jar") { jarWithTextEntries()})
+                }
+            }
+        }
+        build.executor.run("clean", "app:mergeDebugJavaResource").also {
+            if (build.androidApplication().resolve(
+                    InternalArtifactType.COMPILE_BUILD_CONFIG_JAR).exists()) {
+                assertThat(it.didWorkTasks).doesNotContain(":app:compileDebugJavaWithJavac")
+            } else {
+                assertThat(it.didWorkTasks).contains(":app:compileDebugJavaWithJavac")
+            }
         }
     }
 
     @Test
     fun ensureJavacDependencyIfAnnotationProcessorAddedViaDefaultDependencies() {
-        val emptyJar = project.file("empty.jar")
-        assertThat(emptyJar.createNewFile()).isTrue()
-        TestFileUtils.appendToFile(
-            project.buildFile,
+        val build = rule.build
+        build.androidApplication().files.update("build.gradle").append(
             """configurations['annotationProcessor'].defaultDependencies { dependencies ->
                 |    dependencies.add(owner.project.dependencies.create(files('empty.jar')))
                 |}""".trimMargin()
         )
-        val build = project.executor().run("clean", ":mergeDebugJavaResource")
-        if (project.getIntermediateFile(
+        val gradleBuildResult = build.executor.run("clean", ":app:mergeDebugJavaResource")
+        if (build.androidApplication().resolve(
                 InternalArtifactType.COMPILE_BUILD_CONFIG_JAR.getFolderName()).exists()) {
-            assertThat(build.didWorkTasks).doesNotContain(":compileDebugJavaWithJavac")
+            assertThat(gradleBuildResult.didWorkTasks).doesNotContain("app:compileDebugJavaWithJavac")
         } else {
-            assertThat(build.didWorkTasks).contains(":compileDebugJavaWithJavac")
+            assertThat(gradleBuildResult.didWorkTasks).contains(":app:compileDebugJavaWithJavac")
         }
     }
 
     @Test
     fun ensureJavaResIsNotRunningWhenOnlyClassesChange() {
-        project.execute("assembleDebug")
-        val newSourceFile = File(project.mainSrcDir, "com/android/tests/basic/NewSourceFile.java")
-        assertThat(newSourceFile.exists()).isFalse()
-        FileUtils.writeToFile(newSourceFile, """
+        val build = rule.build {
+            androidApplication {
+                files {
+                    add(
+                        "src/main/com/android/tests/basic/NewSourceFile.java",
+                        """
             package com.android.tests.basic;
 
             class NewSourceFile {
@@ -145,88 +125,109 @@ class MergeJavaResourceTaskTest {
                     return 154;
                 }
             }
-        """.trimIndent())
-        val gradleBuildResult = project.executor().run("assembleDebug")
-        val javaResTask = gradleBuildResult.findTask(":mergeDebugJavaResource")
-        assertThat(javaResTask?.wasUpToDate()).isTrue()
+        """.trimIndent()
+                    )
+                }
+            }
+        }
+        build.executor.run("assembleDebug")
+
+        build.androidApplication().files.update("src/main/com/android/tests/basic/NewSourceFile.java").replaceWith(
+            """
+            package com.android.tests.basic;
+
+            class NewSourceFile {
+                public static int foo() {
+                    return 154;
+                }
+            }
+        """.trimIndent()
+        )
+        val gradleBuildResult = build.executor.run("assembleDebug")
+        assertThat(gradleBuildResult.upToDateTasks).contains(":app:mergeDebugJavaResource")
     }
 
     @Test
     fun ensureJavaResIsNotRunningWhenOnlyNativeLibsChange() {
-        project.execute("assembleDebug")
-        val newNativeLib = File(project.mainJniLibsDir, "x86/library.so")
-        assertThat(newNativeLib).doesNotExist()
-        FileUtils.writeToFile(newNativeLib, "some_native_lib")
-        assertThat(newNativeLib).exists()
-        val gradleBuildResult = project.executor().run("assembleDebug")
-        val javaResTask = gradleBuildResult.findTask(":mergeDebugJavaResource")
-        assertThat(javaResTask?.wasUpToDate()).isTrue()
+        val build = rule.build
+        build.executor.run("assembleDebug")
+        val newNativeLib = build.androidApplication().resolve("src/main/jniLibs/x86/library.so")
+        assertThat(newNativeLib.exists()).isFalse()
+        FileUtils.writeToFile(newNativeLib.toFile(), "some_native_lib")
+        assertThat(newNativeLib.exists()).isTrue()
+        val gradleBuildResult = build.executor.run("assembleDebug")
+        assertThat(gradleBuildResult.upToDateTasks).contains(":app:mergeDebugJavaResource")
     }
 
     @Test
     fun ensureJavaResIsRunningWhenResourcesIsAdded() {
-        project.execute("assembleDebug")
-        val newSourceFile = File(project.mainJavaResDir, "com/android/tests/app.txt")
+        val build = rule.build
+        build.executor.run("assembleDebug")
+        val newSourceFile = build.androidApplication().resolve("src/main/resources/com/android/tests/app.txt")
         assertThat(newSourceFile.exists()).isFalse()
-        FileUtils.writeToFile(newSourceFile, """does_not_matter""".trimIndent())
-        val gradleBuildResult = project.executor().run("assembleDebug")
-        val javaResTask = gradleBuildResult.findTask(":mergeDebugJavaResource")
-        assertThat(javaResTask?.wasUpToDate()).isFalse()
+        FileUtils.writeToFile(newSourceFile.toFile(), """does_not_matter""".trimIndent())
+        val gradleBuildResult = build.executor.run("assembleDebug")
+        val javaResTask = gradleBuildResult.findTask("app:mergeDebugJavaResource")
+        assertThat(gradleBuildResult.upToDateTasks).doesNotContain(":app:mergeDebugJavaResource")
     }
 
     @Test
     fun ensureJavaResIsRunningWhenResourcesIsChanged() {
-        project.execute("assembleDebug")
-        val newSourceFile = File(project.mainJavaResDir, "com/android/tests/app.txt")
+        val build = rule.build
+        build.executor.run("assembleDebug")
+        val newSourceFile = build.androidApplication().resolve("src/main/resources/com/android/tests/app.txt")
         assertThat(newSourceFile.exists()).isFalse()
-        FileUtils.writeToFile(newSourceFile, """does_not_matter""".trimIndent())
-        project.executor().run("assembleDebug")
-        FileUtils.writeToFile(newSourceFile, """does_not_matter_version_2""".trimIndent())
-        val gradleBuildResult = project.executor().run("assembleDebug")
-        val javaResTask = gradleBuildResult.findTask(":mergeDebugJavaResource")
-        assertThat(javaResTask?.wasUpToDate()).isFalse()
+        FileUtils.writeToFile(newSourceFile.toFile(), """does_not_matter""".trimIndent())
+        build.executor.run("assembleDebug")
+        FileUtils.writeToFile(newSourceFile.toFile(), """does_not_matter_version_2""".trimIndent())
+        val gradleBuildResult = build.executor.run("assembleDebug")
+        val javaResTask = gradleBuildResult.findTask("app:mergeDebugJavaResource")
+        assertThat(gradleBuildResult.upToDateTasks).doesNotContain(":app:mergeDebugJavaResource")
     }
 
     @Test
     fun ensureJavaResIsRunningWhenResourcesIsRemoved() {
-        project.execute("assembleDebug")
-        val newSourceFile = File(project.mainJavaResDir, "com/android/tests/app.txt")
+        val build = rule.build
+        build.executor.run("assembleDebug")
+        val newSourceFile = build.androidApplication().resolve("src/main/resources/com/android/tests/app/txt")
         assertThat(newSourceFile.exists()).isFalse()
-        FileUtils.writeToFile(newSourceFile, """does_not_matter""".trimIndent())
-        project.executor().run("assembleDebug")
-        assertThat(newSourceFile.delete()).isTrue()
-        val gradleBuildResult = project.executor().run("assembleDebug")
-        val javaResTask = gradleBuildResult.findTask(":mergeDebugJavaResource")
-        assertThat(javaResTask?.wasUpToDate()).isFalse()
+        FileUtils.writeToFile(newSourceFile.toFile(), """does_not_matter""".trimIndent())
+        build.executor.run("assembleDebug")
+        assertThat(newSourceFile.toFile().delete()).isTrue()
+        val gradleBuildResult = build.executor.run("assembleDebug")
+        val javaResTask = gradleBuildResult.findTask("app:mergeDebugJavaResource")
+        assertThat(gradleBuildResult.upToDateTasks).doesNotContain(":app:mergeDebugJavaResource")
     }
 
     @Test
     fun ensureJavaResIsRunningWhenDirIsAdded() {
-        project.execute(":mergeDebugJavaResource")
-        val newResourcesDir = File(project.mainJavaResDir, "com/android/tests/empty_dir")
-        assertThat(newResourcesDir).doesNotExist()
-        assertThat(newResourcesDir.mkdirs()).isTrue()
-        project.executor().run(":mergeDebugJavaResource").run {
-            assertTask(":processDebugJavaRes").didWork()
-            assertTask(":mergeDebugJavaResource").didWork()
+        val build = rule.build
+        build.executor.run(":app:mergeDebugJavaResource")
+        val newResourcesDir = build.androidApplication().resolve("src/main/resources/com/android/tests/empty_dir")
+        assertThat(newResourcesDir.exists()).isFalse()
+        assertThat(newResourcesDir.toFile().mkdirs()).isTrue()
+        build.executor.run(":app:mergeDebugJavaResource").run {
+            assertTask(":app:processDebugJavaRes").didWork()
+            assertTask(":app:mergeDebugJavaResource").didWork()
         }
     }
 
     // Regression test for b/377366954
     @Test
     fun javaResIncrementalBuildWithAdditionalArtifact() {
-        TestFileUtils.appendToFile(
-            project.buildFile,
-            """
-                dependencies {
-                    implementation 'com.example:libWithAdditionalArtifact:0.1'
+        val build = rule.build {
+            androidApplication {
+                android {
+                    dependencies {
+                        implementation("com.example:libWithAdditionalArtifact:0.1")
+                    }
                 }
-            """.trimIndent()
-        )
-        project.executor().run("clean", ":mergeDebugJavaResource")
-        val newResourceFile = File(project.mainJavaResDir, "file.txt")
+            }
+        }
+        build.executor.run("clean", "app:mergeDebugJavaResource")
+        val newResourceFile = build.androidApplication().resolve("src/main/resources/file.txt")
         assertThat(newResourceFile.exists()).isFalse()
-        FileUtils.writeToFile(newResourceFile, "resource")
-        project.executor().run(":mergeDebugJavaResource")
+        FileUtils.writeToFile(newResourceFile.toFile(), "resource")
+        build.executor.run(":app:mergeDebugJavaResource")
     }
 }

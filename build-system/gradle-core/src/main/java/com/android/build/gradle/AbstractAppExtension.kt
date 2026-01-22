@@ -12,14 +12,14 @@ import org.gradle.api.DomainObjectSet
 import org.gradle.api.NamedDomainObjectContainer
 
 /**
- * The `android` extension for application plugins.
+ * An intermediate implementation class of the previous `android` extension for application and dynamic feature plugins.
  *
- *
- * For the base module, see [com.android.build.gradle.BaseExtension]
- *
- *
- * For optional apks, this class is used directly.
+ * Replaced by [com.android.build.api.dsl.ApplicationExtension] and [com.android.build.api.dsl.DynamicFeatureExtension] in the application and dynamic-feature plugins respectively.
  */
+@Deprecated(
+    message = "Replaced by com.android.build.api.dsl.ApplicationExtension and com.android.build.api.dsl.DynamicFeatureExtension.\n" +
+            "This class is not used for the public extensions in AGP when android.newDsl=true, which is the default in AGP 9.0, and will be removed in AGP 10.0.",
+)
 abstract class AbstractAppExtension(
     dslServices: DslServices,
     bootClasspathConfig: BootClasspathConfig,

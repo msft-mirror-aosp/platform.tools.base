@@ -18,6 +18,8 @@
 
 package com.android.ide.common.resources
 
+import com.android.SdkConstants
+import com.android.utils.FileUtils
 import java.io.File
 import java.io.IOException
 import java.nio.file.FileSystem
@@ -168,4 +170,35 @@ fun getIdentifiedSourceSetMap(
  */
 fun isRelativeSourceSetResource(filepath: String) : Boolean {
     return filepath.contains(separator)
+}
+
+/**
+ * Provides a map of resource source set identifies to their respective absolute path.
+ */
+fun getRelativeSourceSetMap(
+    namespace: String,
+    projectPath: String,
+    resourceSets: List<File>,
+    destinationDir: File,
+    incrementalFolder: File?,
+    mergedNotCompileResourceSourceSetFile: File?,
+    generatedPngOutputDir: File?
+): Map<String, String> {
+    val sourceSets = resourceSets.toMutableList()
+    generatedPngOutputDir?.let {
+        if (it.exists()) {
+            sourceSets.add(it)
+        }
+    }
+    mergedNotCompileResourceSourceSetFile?.let {
+        if (it.exists()) {
+            sourceSets.add(it)
+        }
+    }
+    sourceSets.add(destinationDir)
+    incrementalFolder?.let {
+        sourceSets.add(FileUtils.join(incrementalFolder, SdkConstants.FD_MERGED_DOT_DIR))
+        sourceSets.add(FileUtils.join(incrementalFolder, SdkConstants.FD_STRIPPED_DOT_DIR))
+    }
+    return getIdentifiedSourceSetMap(sourceSets, namespace, projectPath)
 }

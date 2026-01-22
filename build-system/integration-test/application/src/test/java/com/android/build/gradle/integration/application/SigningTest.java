@@ -128,6 +128,7 @@ public class SigningTest {
                         + "        minSdkVersion "
                         + minSdkVersion
                         + "\n"
+                        + "        targetSdkVersion '29'"  // Signature scheme v1 is supported up to 29.
                         + "    }\n"
                         + "\n"
                         + "    signingConfigs {\n"
@@ -152,14 +153,6 @@ public class SigningTest {
                         + "\n"
                         + "        customSigning {\n"
                         + "            initWith release\n"
-                        + "        }\n"
-                        + "    }\n"
-                        + "\n"
-                        + "    applicationVariants.all { variant ->\n"
-                        + "        if (variant.buildType.name == \"customSigning\") {\n"
-                        + "            variant.outputsAreSigned = true\n"
-                        + "            // This usually means there is a task that generates the final outputs\n"
-                        + "            // and variant.outputs*.outputFile is set to point to these files.\n"
                         + "        }\n"
                         + "    }\n"
                         + "}"
@@ -209,9 +202,26 @@ public class SigningTest {
 
     @Test
     public void checkCustomSigning() throws Exception {
+        TestFileUtils.appendToFile(
+                project.getBuildFile(),
+                "\n"
+                        + "android {\n"
+                        + "    applicationVariants.all { variant ->\n"
+                        + "        if (variant.buildType.name == \"customSigning\") {\n"
+                        + "            variant.outputsAreSigned = true\n"
+                        + "            // This usually means there is a task that generates the final outputs\n"
+                        + "            // and variant.outputs*.outputFile is set to point to these files.\n"
+                        + "        }\n"
+                        + "    }\n"
+                        + "}\n"
+        );
+
         Collection<Variant> variants =
                 Objects.requireNonNull(
                                 project.modelV2()
+                                        // variant.outputsAreSigned is only supported in legacy DSL.
+                                        // This API will be dropped in AGP 10.0.
+                                        .with(BooleanOption.USE_NEW_DSL, false)
                                         .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
                                         .fetchModels(null, null)
                                         .getContainer()

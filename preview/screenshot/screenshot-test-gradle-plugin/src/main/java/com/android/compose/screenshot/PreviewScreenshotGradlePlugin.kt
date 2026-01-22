@@ -90,7 +90,7 @@ class PreviewScreenshotGradlePlugin : Plugin<Project> {
 
         const val MIN_VALIDATION_ENGINE_VERSION = "0.0.1-alpha03"
 
-        private const val LAYOUTLIB_VERSION = "16.1.0"
+        private const val LAYOUTLIB_VERSION = "16.1.0-jdk17"
 
         val SCREENSHOT_TEST_PLUGIN_VERSION: String by lazy {
             requireNotNull(PreviewScreenshotGradlePlugin::class.java.getResourceAsStream("/version.properties"))
@@ -137,8 +137,8 @@ class PreviewScreenshotGradlePlugin : Plugin<Project> {
                     """.trimIndent()
                 )
             }
-            val screenshotSourcesetEnabled = project.findProperty(ST_SOURCE_SET_ENABLED)
-            if (screenshotSourcesetEnabled?.toString()?.toBoolean() != true) {
+            val screenshotSourcesetEnabled = project.providers.gradleProperty(ST_SOURCE_SET_ENABLED).getOrNull()
+            if (screenshotSourcesetEnabled?.toBoolean() != true) {
                 error(
                     """
                     Please enable screenshotTest source set first to apply the screenshot test plugin.
@@ -147,11 +147,11 @@ class PreviewScreenshotGradlePlugin : Plugin<Project> {
                 )
             }
 
-            val validationEngineVersionOverride = project.findProperty(VALIDATION_ENGINE_VERSION_OVERRIDE)
-            val validationEngineVersion = if (validationEngineVersionOverride != null && validationEngineVersionOverride.toString().isNotEmpty()) {
+            val validationEngineVersionOverride = project.providers.gradleProperty(VALIDATION_ENGINE_VERSION_OVERRIDE).getOrNull()
+            val validationEngineVersion = if (validationEngineVersionOverride != null && validationEngineVersionOverride.isNotEmpty()) {
                 // Changes to the image naming format make versions 0.0.1-alpha02 and below of the
                 // test engine incompatible with the latest plugin version
-                val validationEngineOverrideString = validationEngineVersionOverride.toString()
+                val validationEngineOverrideString = validationEngineVersionOverride
                 if (validationEngineOverrideString < MIN_VALIDATION_ENGINE_VERSION && !validationEngineOverrideString.endsWith("-dev")) {
                     error(
                         """
@@ -219,7 +219,7 @@ class PreviewScreenshotGradlePlugin : Plugin<Project> {
                     val screenshotTestComponent = variant.hostTests[HostTestBuilder.SCREENSHOT_TEST_TYPE] ?: return@onVariants
                     variant.runtimeConfiguration.checkToolingPresent(screenshotTestComponent)
                     val maxHeapSize =
-                        project.findProperty(MAX_HEAP_SIZE_OVERRIDE)?.toString()
+                        project.providers.gradleProperty(MAX_HEAP_SIZE_OVERRIDE).getOrNull()
 
                     val updateTask = project.tasks.register(
                         "update${variantName.capitalized()}ScreenshotTest",
@@ -237,7 +237,7 @@ class PreviewScreenshotGradlePlugin : Plugin<Project> {
                             it.showStandardStreams = true
                         }
                         task.isScanForTestClasses = false
-
+                        task.systemProperty("java.awt.headless", "true")
                         task.classpath.from(
                             task.project.configurations.getByName(previewScreenshotTestEngineConfigurationName),
                             componentsExtension.sdkComponents.bootClasspath,  // Needed for test discovery
@@ -270,6 +270,7 @@ class PreviewScreenshotGradlePlugin : Plugin<Project> {
                             it.showStandardStreams = true
                         }
                         task.isScanForTestClasses = false
+                        task.systemProperty("java.awt.headless", "true")
                         task.reports {
                             // TODO(b/325320710): Use the standard test report when extension points
                             //  for adding custom information become available. As a short-term
@@ -421,7 +422,6 @@ class PreviewScreenshotGradlePlugin : Plugin<Project> {
         val dependencies = project.dependencies
         if (container.findByName(previewScreenshotTestEngineConfigurationName) == null) {
             container.create(previewScreenshotTestEngineConfigurationName).apply {
-                isVisible = false
                 isTransitive = true
                 isCanBeConsumed = false
                 description = "A configuration to resolve screenshot test engine dependencies."
@@ -439,7 +439,6 @@ class PreviewScreenshotGradlePlugin : Plugin<Project> {
         val dependencies = project.dependencies
         if (container.findByName(layoutlibJarConfigurationName) == null) {
             container.create(layoutlibJarConfigurationName).apply {
-                isVisible = false
                 isTransitive = true
                 isCanBeConsumed = false
                 description = "A configuration to resolve layoutlib jar dependencies."
@@ -461,7 +460,6 @@ class PreviewScreenshotGradlePlugin : Plugin<Project> {
         val dependencies = project.dependencies
         if (container.findByName(layoutlibResourcesConfigurationName) == null) {
             container.create(layoutlibResourcesConfigurationName).apply {
-                isVisible = false
                 isTransitive = true
                 isCanBeConsumed = false
                 description = "A configuration to resolve render CLI tool dependencies."

@@ -32,8 +32,6 @@ import org.junit.Assume
 import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
-import org.junit.runner.RunWith
-import org.junit.runners.Parameterized
 import org.junit.runners.Parameterized.Parameters
 import java.io.File
 import java.nio.file.Path
@@ -44,7 +42,6 @@ import kotlin.io.path.readText
  * executed against both connected check and managed devices to ensure the feature
  * parity.
  */
-@RunWith(Parameterized::class)
 abstract class UtpTestBase(val runWithBuiltInPlatform: Boolean) {
 
     companion object {
@@ -922,14 +919,14 @@ abstract class UtpTestBase(val runWithBuiltInPlatform: Boolean) {
 
         rule.build.androidApplication().reconfigure { enableForceCompilation() }
 
-        executor.run(testTaskName)
+        val result = executor.withEnableInfoLogging(true).run(testTaskName)
 
         assertThat(project.resolve(testReportPath)).exists()
         assertThat(project.resolve(testResultPbPath)).exists()
-        assertThat(project.resolve(testResultPbPath).parent.resolve("utp.0.log")).contains(
-            "INFO: Running force AOT compilation for com.example.android.kotlin")
-        assertThat(project.resolve(testResultPbPath).parent.resolve("utp.0.log")).contains(
-            "INFO: Running force AOT compilation for com.example.android.kotlin.test")
+        result.assertOutputContains(
+            "Running force AOT compilation for com.example.android.kotlin")
+        result.assertOutputContains(
+            "Running force AOT compilation for com.example.android.kotlin.test")
     }
 
     /**

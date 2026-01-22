@@ -44,7 +44,6 @@ import com.android.build.gradle.internal.ide.dependencies.ArtifactHandler
 import com.android.build.gradle.internal.ide.dependencies.MavenCoordinatesCacheBuildService
 import com.android.build.gradle.internal.ide.dependencies.UsesLibraryDependencyCacheBuildService
 import com.android.build.gradle.internal.ide.dependencies.getDependencyGraphBuilder
-import com.android.build.gradle.internal.privaysandboxsdk.PrivacySandboxSdkVariantScope
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.scope.InternalArtifactType.GENERATED_RES
@@ -468,7 +467,10 @@ abstract class ProjectInputs {
             javaSourceLevel = javaSourceLevel.get().toString(),
             compileTarget = compileTarget.get(),
             variants = listOf(),
-            neverShrinking = neverShrinking.get()
+            // lint needs to check gradualR8 API only in studio
+            // as AGP will fail build by itself requiring flag
+            highlightGradualR8Api = false,
+            neverShrinking = neverShrinking.get(),
         )
     }
 
@@ -1993,59 +1995,6 @@ abstract class AndroidArtifactInput : ArtifactInput() {
         )
         return this
     }
-
-    fun initializeForPrivacySandboxSdk(
-        project: Project,
-        variantScope: PrivacySandboxSdkVariantScope,
-        projectOptions: ProjectOptions,
-        lintMode: LintMode,
-        useModuleDependencyLintModels: Boolean,
-        fatalOnly: Boolean
-    ): AndroidArtifactInput {
-        applicationId.setDisallowChanges("")
-        generatedSourceFolders.disallowChanges()
-        generatedResourceFolders.disallowChanges()
-        desugaredMethodsFiles.disallowChanges()
-        classesOutputDirectories.fromDisallowChanges(project.objects.fileCollection())
-        warnIfProjectTreatedAsExternalDependency.setDisallowChanges(false)
-        ignoreUnexpectedArtifactTypes.setDisallowChanges(true)
-        val variantDependencies = VariantDependencies(
-            variantName = variantScope.name,
-            componentType = ComponentTypeImpl.PRIVACY_SANDBOX_SDK,
-            compileClasspath = project.configurations.getByName("includeApiClasspath"),
-            runtimeClasspath = project.configurations.getByName("includeRuntimeClasspath"),
-            lintChecksClasspath = project.configurations.getByName("includeLintChecksClasspath"),
-            sourceSetRuntimeConfigurations = listOf(),
-            sourceSetImplementationConfigurations = listOf(),
-            elements = mapOf(),
-            providedClasspath = null,
-            annotationProcessorConfiguration = null,
-            reverseMetadataValuesConfiguration = null,
-            testedVariant = null,
-            project = project,
-            projectOptions = projectOptions,
-            isSelfInstrumenting = false,
-            sourceSetConfigurationsMap = emptyMap()
-        )
-        artifactCollectionsInputs.setDisallowChanges(
-            ArtifactCollectionsInputsImpl(
-                variantDependencies = variantDependencies,
-                projectPath = project.path,
-                variantName = variantScope.name,
-                runtimeType = ArtifactCollectionsInputs.RuntimeType.FULL,
-            )
-        )
-        initializeProjectDependencyLintArtifacts(
-            useModuleDependencyLintModels,
-            variantDependencies,
-            lintMode,
-            isMainArtifact = true,
-            fatalOnly,
-            projectOptions[BooleanOption.LINT_ANALYSIS_PER_COMPONENT]
-        )
-        return this
-    }
-
     internal fun toLintModel(
         dependencyCaches: DependencyCaches,
         type: LintModelArtifactType

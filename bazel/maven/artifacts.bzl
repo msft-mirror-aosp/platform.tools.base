@@ -90,12 +90,6 @@ ARTIFACTS = [
     "com.google.protobuf:protoc:exe:windows-x86_64:3.22.3",
     "com.google.re2j:re2j:1.7",
     "com.google.testing.compile:compile-testing:0.16",
-    "com.google.testing.platform:android-device-provider-local:0.0.9-alpha03",
-    "com.google.testing.platform:android-driver-instrumentation:0.0.9-alpha03",
-    "com.google.testing.platform:android-test-plugin:0.0.9-alpha03",
-    "com.google.testing.platform:core:0.0.9-alpha03",
-    "com.google.testing.platform:core-proto:0.0.9-alpha03",
-    "com.google.testing.platform:launcher:0.0.9-alpha03",
     "com.google.truth.extensions:truth-java8-extension:0.42",
     "com.google.truth.extensions:truth-proto-extension:0.42",  # Sherlock dependency
     "com.google.truth:truth:0.42",
@@ -183,7 +177,7 @@ ARTIFACTS = [
     "org.eclipse.emf:org.eclipse.emf.ecore:2.12.0",
     "org.glassfish.jaxb:jaxb-runtime:2.3.2",
     "org.glassfish.jaxb:jaxb-xjc:2.3.2",
-    "org.gradle:gradle-tooling-api:9.1.0",
+    "org.gradle:gradle-tooling-api:9.2.1",
     "org.hamcrest:hamcrest:2.2",
     "org.hamcrest:hamcrest-core:1.3",
     "org.hamcrest:hamcrest-library:1.3",
@@ -193,6 +187,8 @@ ARTIFACTS = [
     "org.jacoco:org.jacoco.core:0.8.13",
     "org.jacoco:org.jacoco.report:0.8.13",
     "org.jetbrains.dokka:dokka-core:1.4.32",
+    "org.jetbrains.exposed:exposed-core:1.0.0-rc-4",
+    "org.jetbrains.exposed:exposed-jdbc:1.0.0-rc-4",
     "org.jetbrains.intellij.deps:asm-all:8.0.1",
     "org.jetbrains.kotlin:compose-compiler-gradle-plugin:2.2.10",  # AGP dependencies
     "org.jetbrains.kotlin.jvm:org.jetbrains.kotlin.jvm.gradle.plugin:pom:2.2.10",  # AGP dependencies

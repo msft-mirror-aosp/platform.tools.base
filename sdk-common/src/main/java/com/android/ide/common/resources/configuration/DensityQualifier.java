@@ -20,6 +20,8 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.resources.Density;
 
+import java.util.Objects;
+
 /** Resource Qualifier for Screen Pixel Density. */
 public final class DensityQualifier extends ResourceQualifier {
 
@@ -112,7 +114,7 @@ public final class DensityQualifier extends ResourceQualifier {
     public boolean equals(Object qualifier) {
         return qualifier != null
                 && qualifier.getClass() == DensityQualifier.class
-                && mValue == ((DensityQualifier) qualifier).mValue
+                && Objects.equals(mValue, ((DensityQualifier) qualifier).mValue)
                 && mDpi == ((DensityQualifier) qualifier).mDpi;
     }
 

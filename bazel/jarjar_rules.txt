@@ -1,5 +1,14 @@
 rule com.google.protobuf.** com.android.tools.idea.protobuf.@1
 rule io.grpc.** com.android.tools.idea.io.grpc.@1
 rule io.netty.** com.android.tools.idea.io.netty.@1
+rule io.perfmark.** com.android.tools.idea.io.perfmark.@1
+rule com.google.longrunning.** com.android.tools.idea.com.google.longrunning.@1
+rule com.google.api.** com.android.tools.idea.com.google.api.@1
+rule com.google.apps.** com.android.tools.idea.com.google.apps.@1
+rule com.google.cloud.** com.android.tools.idea.com.google.cloud.@1
+rule com.google.geo.** com.android.tools.idea.com.google.geo.@1
+rule com.google.logging.** com.android.tools.idea.com.google.logging.@1
+rule com.google.longrunning.** com.android.tools.idea.com.google.longrunning.@1
 rule com.google.rpc.** com.android.tools.idea.com.google.rpc.@1
+rule com.google.shopping.** com.android.tools.idea.com.google.shopping.@1
 rule com.google.type.** com.android.tools.idea.com.google.type.@1

@@ -23,6 +23,7 @@ import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.plugins.ApplicationComponentCallback
 import com.android.build.gradle.integration.common.fixture.project.plugins.LegacyApplicationCallback
 import com.android.build.gradle.internal.dsl.BaseAppModuleExtension
+import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.options.BooleanOption
 import com.google.common.truth.Truth
 import org.gradle.api.DefaultTask
@@ -171,8 +172,8 @@ class SourceSetsTest {
             .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
             .run(":app:mapDebugSourceSetPaths")
 
-        val content = build.androidApplication().intermediatesDir
-            .resolve("source_set_path_map/debug/mapDebugSourceSetPaths/file-map.txt")
+        val content = build.androidApplication().resolve(InternalArtifactType.ANDROID_RES_SOURCE_SET_PATH_MAP)
+            .resolve("debug/mapDebugSourceSetPaths/file-map.txt")
             .readText()
 
         Truth.assertThat(content).contains("tmp_test")

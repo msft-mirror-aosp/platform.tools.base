@@ -94,6 +94,7 @@ class IncrementalBuildWithOnlyEmptySrcDirsTaskStatesTest {
                             ":lib:generateDebugResValues",
                             ":lib:generateDebugResources",
                             ":lib:javaPreCompileDebug",
+                            ":lib:mapDebugSourceSetPaths",
                             ":lib:mergeDebugConsumerProguardFiles",
                             ":lib:mergeDebugGeneratedProguardFiles",
                             ":lib:mergeDebugJavaResource",

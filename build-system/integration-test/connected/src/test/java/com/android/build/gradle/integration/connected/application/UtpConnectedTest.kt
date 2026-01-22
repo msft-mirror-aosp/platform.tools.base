@@ -29,12 +29,15 @@ import com.google.common.truth.Truth.assertThat
 import org.junit.Assume
 import org.junit.ClassRule
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.junit.runners.Parameterized
 import java.io.Closeable
 import java.util.concurrent.TimeUnit
 
 /**
  * Connected tests using UTP test executor.
  */
+@RunWith(Parameterized::class)
 class UtpConnectedTest(runWithBuiltInPlatform: Boolean) : UtpTestBase(runWithBuiltInPlatform) {
     private val connectedAndroidTestWithUtpBenchmark: Benchmark = Benchmark.Builder("connectedAndroidTestWithUtp").setProject("Android Studio Gradle").build()
 
@@ -49,7 +52,6 @@ class UtpConnectedTest(runWithBuiltInPlatform: Boolean) : UtpTestBase(runWithBui
         private const val TEST_REPORT = "build/reports/androidTests/connected/debug/com.example.android.kotlin.html"
         private const val TEST_REPORT_FOR_DYNAMIC_FEATURE = "build/reports/androidTests/connected/debug/com.example.android.kotlin.feature.html"
         private const val TEST_RESULT_PB = "build/outputs/androidTest-results/connected/debug/$DEVICE_NAME/test-result.pb"
-        private const val UTP_LOG = "build/outputs/androidTest-results/connected/debug/$DEVICE_NAME/utp.0.log"
         private const val TEST_COV_XML = "build/reports/coverage/androidTest/debug/connected/report.xml"
         private const val ENABLE_UTP_TEST_REPORT_PROPERTY = "com.android.tools.utp.GradleAndroidProjectResolverExtension.enable"
         private const val TEST_ADDITIONAL_OUTPUT = "build/outputs/connected_android_test_additional_output/debugAndroidTest/connected/$DEVICE_NAME"
@@ -161,18 +163,16 @@ class UtpConnectedTest(runWithBuiltInPlatform: Boolean) : UtpTestBase(runWithBui
 
         selectModule("lib")
 
-        executor.run(testTaskName)
+        val result = executor.withEnableInfoLogging(true).run(testTaskName)
 
-        val utpLogFile = project.resolve("lib/$UTP_LOG")
-        assertThat(utpLogFile).exists()
-        assertThat(utpLogFile).contains("Uninstalling com.example.android.kotlin.library.test")
+        result.assertOutputContains("Uninstalling com.example.android.kotlin.library.test")
 
-        executor
+        val result2 = executor
             .with(BooleanOption.ANDROID_TEST_LEAVE_APKS_INSTALLED_AFTER_RUN, true)
+            .withEnableInfoLogging(true)
             .run(testTaskName)
 
-        assertThat(utpLogFile).exists()
-        assertThat(utpLogFile).doesNotContain("Uninstalling com.example.android.kotlin.library.test")
+        result2.assertOutputDoesNotContain("Uninstalling com.example.android.kotlin.library.test")
     }
 
     @Test

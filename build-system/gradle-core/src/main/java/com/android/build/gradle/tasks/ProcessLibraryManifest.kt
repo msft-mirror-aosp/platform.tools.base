@@ -34,6 +34,7 @@ import com.android.build.gradle.internal.utils.setDisallowChanges
 import com.android.build.gradle.options.BooleanOption
 import com.android.buildanalyzer.common.TaskCategory
 import com.android.manifmerger.ManifestMerger2
+import com.android.manifmerger.MergingReport
 import com.android.utils.FileUtils
 import com.google.common.base.Preconditions
 import org.gradle.api.file.DirectoryProperty
@@ -117,6 +118,7 @@ abstract class ProcessLibraryManifest : ManifestProcessorTask() {
             it.aaptFriendlyManifestOutputDirectory.set(aaptFriendlyManifestOutputDirectory)
             it.tmpDir.set(tmpDir.get())
             it.disableMinSdkVersionCheck.set(disableMinSdkVersionCheck)
+            it.warningsAsErrors.set(warningsAsErrors)
         }
     }
 
@@ -136,6 +138,7 @@ abstract class ProcessLibraryManifest : ManifestProcessorTask() {
         abstract val aaptFriendlyManifestOutputDirectory: DirectoryProperty
         abstract val tmpDir: DirectoryProperty
         abstract val disableMinSdkVersionCheck: Property<Boolean>
+        abstract val warningsAsErrors: Property<Boolean>
     }
 
     abstract class ProcessLibWorkAction : ProfileAwareWorkAction<ProcessLibParams>() {
@@ -170,6 +173,12 @@ abstract class ProcessLibraryManifest : ManifestProcessorTask() {
                 parameters.reportFile.asFile.get(),
                 LoggerWrapper.getLogger(ProcessLibraryManifest::class.java)
             )
+            if (parameters.warningsAsErrors.getOrElse(false) && mergingReport.result == MergingReport.Result.WARNING) {
+                throw RuntimeException(
+                    "Manifest merger completed with warnings, and treatManifestMergerWarningsAsErrors is enabled.\n" +
+                            mergingReport.reportString
+                )
+            }
             try {
                 outputMergeBlameContents(
                     mergingReport,
@@ -224,6 +233,9 @@ abstract class ProcessLibraryManifest : ManifestProcessorTask() {
     @get:Optional
     @get:Input
     abstract val disableMinSdkVersionCheck: Property<Boolean>
+
+    @get:Input
+    abstract val warningsAsErrors: Property<Boolean>
 
     class CreationAction(
         creationConfig: ComponentCreationConfig,
@@ -296,6 +308,9 @@ abstract class ProcessLibraryManifest : ManifestProcessorTask() {
             ))
             task.disableMinSdkVersionCheck.setDisallowChanges(
                     creationConfig.services.projectOptions[BooleanOption.DISABLE_MINSDKLIBRARY_CHECK])
+            task.warningsAsErrors.setDisallowChanges(
+                creationConfig.services.projectOptions[BooleanOption.TREAT_MANIFEST_MERGER_WARNINGS_AS_ERRORS]
+            )
         }
     }
 }

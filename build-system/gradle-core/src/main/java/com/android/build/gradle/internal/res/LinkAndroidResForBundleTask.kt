@@ -25,9 +25,12 @@ import com.android.build.gradle.internal.component.ApplicationCreationConfig
 import com.android.build.gradle.internal.component.DynamicFeatureCreationConfig
 import com.android.build.gradle.internal.initialize
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
+import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactScope.ALL
 import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactScope.PROJECT
+import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactType
 import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactType.FEATURE_RESOURCE_PKG
 import com.android.build.gradle.internal.publishing.AndroidArtifacts.ConsumedConfigType.COMPILE_CLASSPATH
+import com.android.build.gradle.internal.publishing.AndroidArtifacts.ConsumedConfigType.RUNTIME_CLASSPATH
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.services.Aapt2Input
 import com.android.build.gradle.internal.services.getErrorFormatMode
@@ -46,6 +49,7 @@ import com.android.builder.core.ComponentTypeImpl
 import com.android.builder.internal.aapt.AaptOptions
 import com.android.builder.internal.aapt.AaptPackageConfig
 import com.android.ide.common.resources.mergeIdentifiedSourceSetFiles
+import com.android.ide.common.resources.readFromSourceSetPathsFile
 import com.android.sdklib.AndroidVersion
 import com.android.utils.FileUtils
 import com.google.common.collect.ImmutableList
@@ -146,7 +150,7 @@ abstract class LinkAndroidResForBundleTask : NonIncrementalTask() {
             getCompiledDependenciesResources()?.reversed()?.toImmutableList() ?: emptyList<File>()
 
         val identifiedSourceSetMap =
-                mergeIdentifiedSourceSetFiles(sourceSetMaps.files.filterNotNull())
+                mergeIdentifiedSourceSetFiles(sourceSetMaps.files.toList())
 
         val config = AaptPackageConfig(
             androidJarPath = androidJarInput.getAndroidJar().get().absolutePath,
@@ -346,16 +350,20 @@ abstract class LinkAndroidResForBundleTask : NonIncrementalTask() {
                     AndroidArtifacts.ArtifactScope.ALL,
                     AndroidArtifacts.ArtifactType.COMPILED_DEPENDENCIES_RESOURCES
                 )
+                val dependencySourceMaps = creationConfig.variantDependencies.getArtifactFileCollection(
+                    RUNTIME_CLASSPATH,
+                    ALL,
+                    ArtifactType.ANDROID_RES_SOURCE_SET_MAPPING,
+                )
+                task.sourceSetMaps.from(dependencySourceMaps)
+                task.dependsOn(dependencySourceMaps)
             }
             creationConfig.services.initializeAapt2Input(task.aapt2, task)
             task.androidJarInput.initialize(task, creationConfig)
-
-            val sourceSetMap =
-                    creationConfig.artifacts.get(InternalArtifactType.SOURCE_SET_PATH_MAP)
-            task.sourceSetMaps.fromDisallowChanges(
-                    creationConfig.services.fileCollection(sourceSetMap)
-            )
-            task.dependsOn(sourceSetMap)
+            val resSourceSetMap =
+                creationConfig.artifacts.get(InternalArtifactType.ANDROID_RES_SOURCE_SET_PATH_MAP)
+            task.sourceSetMaps.fromDisallowChanges(resSourceSetMap)
+            task.dependsOn(resSourceSetMap)
         }
     }
 }

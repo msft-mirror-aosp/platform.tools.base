@@ -162,8 +162,7 @@ fun ApplicationCreationConfig.runOptimizedShrinking(): Boolean {
 }
 
 fun R8ResourceShrinkingParameters.initialize(
-    creationConfig: ApplicationCreationConfig,
-    mappingFile: RegularFileProperty
+    creationConfig: ApplicationCreationConfig
 ) {
     enabled.setDisallowChanges(true)
     creationConfig.artifacts.setTaskInputToFinalProduct(
@@ -190,14 +189,5 @@ fun R8ResourceShrinkingParameters.initialize(
     optimizedShrinking.setDisallowChanges(creationConfig.runOptimizedShrinking())
     nonFinalResIds.setDisallowChanges(creationConfig.services.projectOptions.getProvider(
         BooleanOption.USE_NON_FINAL_RES_IDS))
-    logFile.setDisallowChanges(
-        mappingFile.flatMap {
-            creationConfig.services.fileProvider(
-                creationConfig.services.provider {
-                    it.asFile.resolveSibling("resources.txt")
-                }
-            )
-        }
-    )
     multiOutputHandler.setDisallowChanges(MultiOutputHandler.create(creationConfig))
 }

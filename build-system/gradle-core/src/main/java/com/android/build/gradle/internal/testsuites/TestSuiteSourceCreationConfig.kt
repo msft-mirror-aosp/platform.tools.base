@@ -17,7 +17,7 @@
 package com.android.build.gradle.internal.testsuites
 
 import com.android.build.api.dsl.AgpTestSuiteDependencies
-import com.android.build.gradle.internal.api.TestSuiteSourceSet
+import com.android.build.api.variant.TestSuiteSourceSet
 import com.android.build.gradle.internal.services.VariantServices
 
 /**
@@ -36,5 +36,9 @@ interface TestSuiteSourceCreationConfig {
 
     val dependencies: AgpTestSuiteDependencies
 
-    fun createTestSuiteSourceSet(variantServices: VariantServices): TestSuiteSourceSet
+    fun createTestSuiteSourceSet(
+        variantServices: VariantServices,
+        javaEnabled: Boolean,
+        kotlinEnabled: Boolean,
+    ): TestSuiteSourceSet
 }

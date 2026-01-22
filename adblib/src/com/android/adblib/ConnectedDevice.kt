@@ -17,25 +17,21 @@ package com.android.adblib
 
 import com.android.adblib.AdbLibProperties.AM_SERVICE_RETRY_DELAY
 import com.android.adblib.AdbLibProperties.AM_SERVICE_TIMEOUT
+import java.io.IOException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.flatMapConcat
 import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.flowOn
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.retryWhen
-import kotlinx.coroutines.isActive
 import kotlinx.coroutines.withContext
 import java.nio.file.Path
 import java.nio.file.attribute.FileTime
 import java.time.Duration
 import java.util.concurrent.TimeoutException
+import kotlinx.coroutines.flow.map
 
 /**
  * Abstraction over a device currently connected to ADB. An instance of [ConnectedDevice] is
@@ -96,17 +92,32 @@ val ConnectedDevice.isOnline: Boolean
     get() = deviceInfoFlow.value.deviceState == DeviceState.ONLINE
 
 /**
- * Waits until the device is [DeviceState.ONLINE]
+ * Waits until the device is [DeviceState.ONLINE].
+ *
+ * @throws IOException if the device disconnects while waiting for the [DeviceState.ONLINE] state.
  */
 suspend fun ConnectedDevice.waitUntilOnline() {
     return waitUntilState(DeviceState.ONLINE)
 }
 
 /**
- * Waits until the device state is [state]
+ * Waits until the device state is [targetState].
+ *
+ * @throws IOException if the device disconnects while waiting for a state other than
+ * [DeviceState.DISCONNECTED].
  */
-suspend fun ConnectedDevice.waitUntilState(state: DeviceState) {
-    deviceInfoFlow.first { it.deviceState == state }
+suspend fun ConnectedDevice.waitUntilState(targetState: DeviceState) {
+    val reachedState = deviceInfoFlow
+        .map { it.deviceState }
+        .first { state ->
+            state == targetState || state == DeviceState.DISCONNECTED
+        }
+
+    // If we stopped waiting because the device disconnected (and we were not waiting
+    // for the disconnect), throw an exception.
+    if (reachedState == DeviceState.DISCONNECTED && targetState != DeviceState.DISCONNECTED) {
+        throw IOException("Device $serialNumber disconnected while waiting for '$targetState'")
+    }
 }
 
 /**
@@ -120,40 +131,6 @@ val ConnectedDevice.deviceInfo: DeviceInfo
  */
 fun ConnectedDevice.deviceProperties(): DeviceProperties =
     session.deviceServices.deviceProperties(DeviceSelector.fromSerialNumber(serialNumber))
-
-/**
- * When the device comes online, starts and returns the flow from [transform].
- * Retries the flow if an exception occurs and the device is still connected.
- */
-fun <R> ConnectedDevice.flowWhenOnline(
-    retryDelay: Duration,
-    transform: suspend (device: ConnectedDevice) -> Flow<R>
-): Flow<R> {
-    val device = this
-    return deviceInfoFlow
-        .map {
-            it.deviceState
-        }
-        .filter {
-            it == DeviceState.ONLINE
-        }
-        .distinctUntilChanged()
-        .flatMapConcat {
-            transform(device)
-        }
-        .retryWhen { throwable, _ ->
-            device.adbLogger(session).warn(
-                throwable,
-                "Device $device flow failed with error '${throwable.message}', " +
-                        "retrying in ${retryDelay.seconds} sec"
-            )
-            // We retry as long as the device is valid
-            if (device.scope.isActive) {
-                delay(retryDelay.toMillis())
-            }
-            device.scope.isActive
-        }.flowOn(session.host.ioDispatcher)
-}
 
 /**
  * Returns a [WithDeviceScopeContext] used to invoke the [action] coroutine using the

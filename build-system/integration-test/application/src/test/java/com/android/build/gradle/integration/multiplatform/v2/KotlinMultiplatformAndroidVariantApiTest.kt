@@ -53,6 +53,43 @@ class KotlinMultiplatformAndroidVariantApiTest {
     }
 
     @Test
+    fun testAsmInstrumentationVariantApi() {
+        TestFileUtils.appendToFile(
+            project.getSubproject("kmpFirstLib").ktsBuildFile,
+            // language=kotlin
+            """
+                androidComponents {
+                    onVariants { variant ->
+                        val testVariant = (variant as? com.android.build.api.variant.HasUnitTest)?.unitTest ?: return@onVariants
+                        testVariant.instrumentation.transformClassesWith(
+                            ClassVisitorFactory::class.java,
+                                    com.android.build.api.instrumentation.InstrumentationScope.ALL) {}
+
+                        testVariant.instrumentation.setAsmFramesComputationMode(com.android.build.api.instrumentation.FramesComputationMode.COMPUTE_FRAMES_FOR_INSTRUMENTED_METHODS)
+                    }
+                }
+
+                abstract class ClassVisitorFactory:
+                    com.android.build.api.instrumentation.AsmClassVisitorFactory<com.android.build.api.instrumentation.InstrumentationParameters.None> {
+                    override fun createClassVisitor(
+                        classContext: com.android.build.api.instrumentation.ClassContext,
+                        nextClassVisitor: org.objectweb.asm.ClassVisitor
+                    ): org.objectweb.asm.ClassVisitor {
+                        return object: org.objectweb.asm.ClassVisitor(instrumentationContext.apiVersion.get(), nextClassVisitor) {}
+                    }
+
+                    override fun isInstrumentable(classData: com.android.build.api.instrumentation.ClassData): Boolean {
+                        return true
+                    }
+                }
+
+            """.trimIndent()
+        )
+
+        executor().run(":kmpFirstLib:assemble")
+    }
+
+    @Test
     fun testHostTestCreationConfigExists() {
         TestFileUtils.appendToFile(
             project.getSubproject("kmpFirstLib").ktsBuildFile,
@@ -68,6 +105,25 @@ class KotlinMultiplatformAndroidVariantApiTest {
         val result = executor().run(":kmpFirstLib:assemble")
 
         result.assertOutputContains("androidMain:1")
+    }
+
+    @Test
+    fun testBeforeVariantsAPI() {
+        TestFileUtils.appendToFile(
+            project.getSubproject("kmpFirstLib").ktsBuildFile,
+            """
+                androidComponents {
+                    beforeVariants {
+                        // beforeVariants for KMP is not supported test so this block should not
+                        // be invoked. Once support is added, having this exception will force
+                        // testing it properly here.
+                        throw RuntimeException("I should not be invoked !")
+                    }
+                }
+            """.trimIndent()
+        )
+        val result = executor().run(":kmpFirstLib:assemble")
+        result.assertOutputContains("beforeVariants() API is not supported yet for KMP modules and will be ignored")
     }
 
     @Test
@@ -197,7 +253,6 @@ class KotlinMultiplatformAndroidVariantApiTest {
                                 .setApiLevel(34)
                                 .setCodeName("")
                                 .setAbis(listOf())
-                                .setSupportsPrivacySandbox(false)
                                 .build())
                         }
                     }

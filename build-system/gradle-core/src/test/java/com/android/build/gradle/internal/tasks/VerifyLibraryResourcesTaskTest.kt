@@ -70,7 +70,8 @@ class VerifyLibraryResourcesTaskTest {
             inputs = SerializableInputChanges(roots = listOf(mergedDir), changes = inputs),
             outDirectory = outputDir,
             mergeBlameFolder = temporaryFolder.newFolder(),
-            compilationService = compilationService
+            compilationService = compilationService,
+            resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable("Test")
         )
 
         val fileOut = compilationService.compileOutputFor(
@@ -78,7 +79,7 @@ class VerifyLibraryResourcesTaskTest {
                 file,
                 outputDir,
                 "values",
-                resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable
+                resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable(justification = "Test")
             )
         )
         assertTrue(fileOut.exists())
@@ -88,10 +89,9 @@ class VerifyLibraryResourcesTaskTest {
                 invalidFile,
                 outputDir,
                 mergedDir.name,
-                resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable
+                resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable(justification = "Test")
             )
         )
         assertFalse(dirOut.exists())
     }
-
 }

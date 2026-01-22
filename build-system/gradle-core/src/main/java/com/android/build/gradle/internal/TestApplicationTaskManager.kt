@@ -16,21 +16,16 @@
 package com.android.build.gradle.internal
 
 import com.android.build.api.artifact.SingleArtifact
-import com.android.build.api.artifact.impl.ArtifactsImpl
 import com.android.build.api.variant.TestVariantBuilder
-import com.android.build.api.variant.impl.getApiString
 import com.android.build.gradle.internal.component.*
-import com.android.build.gradle.internal.dependency.VariantDependencies
 import com.android.build.gradle.internal.tasks.DeviceProviderInstrumentTestTask
 import com.android.build.gradle.internal.tasks.SigningConfigVersionsWriterTask
-import com.android.build.gradle.internal.tasks.creationconfig.ProceedTestManifestCreationConfig
+import com.android.build.gradle.internal.tasks.creationconfig.forTestComponent
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfig
 import com.android.build.gradle.internal.tasks.factory.TaskManagerConfig
 import com.android.build.gradle.internal.tasks.factory.dependsOn
 import com.android.build.gradle.internal.test.SeparateTestModuleTestData
-import com.android.build.gradle.internal.utils.parseTargetHash
 import com.android.build.gradle.internal.variant.ComponentInfo
-import com.android.build.gradle.internal.variant.VariantPathHelper
 import com.android.build.gradle.tasks.CheckTestedAppObfuscation
 import com.android.build.gradle.tasks.ManifestProcessorTask
 import com.android.build.gradle.tasks.ProcessTestManifest
@@ -41,10 +36,8 @@ import org.gradle.api.DefaultTask
 import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.file.Directory
-import org.gradle.api.provider.MapProperty
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.TaskProvider
-import java.io.File
 
 /**
  * TaskManager for standalone test application that lives in a separate module from the tested
@@ -143,7 +136,7 @@ class TestApplicationTaskManager(
         creationConfig: ApkCreationConfig
     ): TaskProvider<out ManifestProcessorTask> {
         val taskConfig =
-            createProcessTestManifestConfig(creationConfig as TestVariantCreationConfig)
+            forTestComponent(creationConfig as TestVariantCreationConfig)
 
         return taskFactory.register(
             ProcessTestManifest.CreationAction(taskConfig)

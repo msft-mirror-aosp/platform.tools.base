@@ -196,7 +196,6 @@ com.android.build.gradle.integration.application.VectorDrawableTest
 com.android.build.gradle.integration.application.VectorDrawableTest_Library
 com.android.build.gradle.integration.application.WindowsSystemDependencyTest
 com.android.build.gradle.integration.attribution.BuildAttributionDataTest
-com.android.build.gradle.integration.attribution.BuildScriptDependenciesDataTest
 com.android.build.gradle.integration.automatic.CheckAll
 com.android.build.gradle.integration.baselineprofiles.ArtProfileBaselineTest
 com.android.build.gradle.integration.baselineprofiles.ArtProfileExternalDependenciesTest
@@ -590,7 +589,6 @@ com.android.build.gradle.integration.resources.ConditionalKeepRulesTest
 com.android.build.gradle.integration.resources.DisableLibraryResourcesTest
 com.android.build.gradle.integration.resources.LibraryNoPrecompiledResourcesTest
 com.android.build.gradle.integration.resources.MacroTagTest
-com.android.build.gradle.integration.resources.MergeJavaResourceTaskTest
 com.android.build.gradle.integration.resources.NonTransitiveAppRClassesTest
 com.android.build.gradle.integration.resources.NonTransitiveCompileRClassFlowTest
 com.android.build.gradle.integration.resources.OverlayableResourcesTest
@@ -631,3 +629,4 @@ com.android.build.gradle.integration.testing.unit.UnitTestingRClassLoadTest
 com.android.build.gradle.integration.testing.unit.UnitTestingSupportTest
 com.android.build.gradle.integration.testing.unit.UnitTestingTestTaskAccess
 com.android.build.gradle.integration.validation.ValidateTaskPropertiesTest
+com.android.build.gradle.integration.manifest.ProcessLibraryManifestTest

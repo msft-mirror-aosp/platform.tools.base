@@ -97,6 +97,11 @@ import java.io.File
  */
 // All the public methods are meant to be exposed in the DSL. We can't use lambdas in this class
 // (yet), because the DSL reference generator doesn't understand them.
+@Deprecated(
+    message = "Replaced by com.android.build.api.dsl.CommonExtension.\n" +
+            "This class is not used for the public extensions in AGP when android.newDsl=true, which is the default in AGP 9.0, and will be removed in AGP 10.0.",
+    replaceWith = ReplaceWith("com.android.build.api.dsl.CommonExtension")
+)
 abstract class BaseExtension protected constructor(
     protected val dslServices: DslServices,
     protected val bootClasspathConfig: BootClasspathConfig,
