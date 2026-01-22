@@ -82,36 +82,18 @@ class ControlFlowGraphTest {
   @Test
   fun checkCallChainInFunctionArgument() {
     val expectedCfg =
-      if (useFirUast()) {
-        """
-         Block:   ╭─ { foo(bar(baz("42"))) }
-      FuncCall: ╭─╰→ foo(bar(baz("42")))
-      FuncCall: ╰→╭─ bar(baz("42"))                 ─╮ Exception
-      FuncCall: ╭─╰→ baz("42")                       ┆─╮ Exception
-                ╰→   *exit*                         ←╯←╯
       """
-      } else {
-        """
          Block:   ╭─ { foo(bar(baz("42"))) }
       FuncCall: ╭─╰→ foo(bar(baz("42")))
       FuncCall: ╰→╭─ bar(baz("42"))
       FuncCall: ╭─╰→ baz("42")                      ─╮ Exception
                 ╰→   *exit*                         ←╯
       """
-      }
     val expectedPaths =
-      if (useFirUast()) {
-        """
-            foo() → bar() → baz() → exit
-            foo() → bar() → baz() → exit
-            foo() → bar() → exit
       """
-      } else {
-        """
             foo() → bar() → baz() → exit
             foo() → bar() → baz() → exit
       """
-      }
     checkAstGraph(
       kotlin(
           """
@@ -138,20 +120,7 @@ class ControlFlowGraphTest {
   @Test
   fun checkCallChainInFunctionArgument_expanded() {
     val expectedCfg =
-      if (useFirUast()) {
-        """
-              Block:   ╭─ { val i = baz(…bar(i) foo(b) }
-           FuncCall: ╭─╰→ baz("42")                      ─╮ Exception
-      LocalVariable: ╰→╭─ val i = baz("42")               ┆
-       Declarations: ╭─╰→ val i = baz("42")               ┆
-           FuncCall: ╰→╭─ bar(i)                          ┆─╮ Exception
-      LocalVariable: ╭─╰→ val b = bar(i)                  ┆ ┆
-       Declarations: ╰→╭─ val b = bar(i)                  ┆ ┆
-           FuncCall: ╭─╰→ foo(b)                          ┆ ┆
-                     ╰→   *exit*                         ←╯←╯
       """
-      } else {
-        """
               Block:   ╭─ { val i = baz(…bar(i) foo(b) }
            FuncCall: ╭─╰→ baz("42")                      ─╮ Exception
       LocalVariable: ╰→╭─ val i = baz("42")               ┆
@@ -162,20 +131,11 @@ class ControlFlowGraphTest {
            FuncCall: ╭─╰→ foo(b)                          ┆
                      ╰→   *exit*                         ←╯
       """
-      }
     val expectedPaths =
-      if (useFirUast()) {
-        """
-            baz() → bar() → foo() → exit
-            baz() → bar() → exit
-            baz() → exit
       """
-      } else {
-        """
             baz() → bar() → foo() → exit
             baz() → exit
       """
-      }
     checkAstGraph(
       kotlin(
           """

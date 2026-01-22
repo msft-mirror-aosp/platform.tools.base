@@ -36,7 +36,6 @@ class LintNoJavaClassesTest {
     val project: GradleTestProject =
         GradleTestProject.builder()
             .fromTestProject("lintNoJavaClasses")
-            .disableBuiltInKotlin()
             .create()
 
     @Test

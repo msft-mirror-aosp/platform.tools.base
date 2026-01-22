@@ -16,6 +16,7 @@
         manifests="src/testFixtures/AndroidManifest.xml"
         javaDirectories="src/testFixtures/java:src/testFixturesRelease/java:src/testFixtures/kotlin:src/testFixturesRelease/kotlin"
         assetsDirectories="src/testFixtures/assets:src/testFixturesRelease/assets"
+        keepRulesDirectories="src/testFixtures/keepRules:src/testFixturesRelease/keepRules"
         testFixture="true"/>
   </testFixturesSourceProviders>
   <artifact

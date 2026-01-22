@@ -29,18 +29,12 @@ class TestDataImpl(
     testConfig: DeviceTestCreationConfig,
     testApkDir: Provider<Directory>,
     testedApksDir: Provider<Directory>?,
-    privacySandboxSdkApks: FileCollection?,
-    privacySandboxCompatSdkApksDir: Provider<Directory>?,
-    additionalSdkSupportedApkSplits: Provider<Directory>?,
     extraInstrumentationTestRunnerArgs: Provider<Map<String, String>>
 ) : AbstractTestDataImpl(
     namespace,
     testConfig,
     testApkDir,
     testedApksDir,
-    privacySandboxSdkApks,
-    privacySandboxCompatSdkApksDir,
-    additionalSdkSupportedApkSplits,
     extraInstrumentationTestRunnerArgs
 ) {
     @get: Input

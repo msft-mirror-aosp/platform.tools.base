@@ -53,9 +53,7 @@ class UtpConfigFactoryTest {
     private val mockCoverageOutputDir: File = mock()
     private val mockTmpDir: File = mock()
     private val mockEmulatorControlConfig: EmulatorControlConfig = mock()
-    private val mockDependencyApk: File = mock()
-
-    private lateinit var testExtractedSdkApks: List<List<Path>>
+    private lateinit var mockDependencyApks: List<List<Path>>
     private lateinit var testTargetApkConfigBundle: TargetApkConfigBundle
 
     private val testData = TestData(
@@ -97,9 +95,8 @@ class UtpConfigFactoryTest {
         whenever(mockAppApk.absolutePath).thenReturn("mockAppApkPath")
         whenever(mockTestApk.absolutePath).thenReturn("mockTestApkPath")
         whenever(mockHelperApk.absolutePath).thenReturn("mockHelperApkPath")
-        whenever(mockDependencyApk.toPath()).thenReturn(mockDependencyApkPath)
 
-        testExtractedSdkApks = listOf(listOf(mockPath("mockDependencyApkPath")))
+        mockDependencyApks = listOf(listOf(mockPath("mockDependencyApkPath")))
         testTargetApkConfigBundle = TargetApkConfigBundle(
             appApks = listOf(mockAppApk, mockTestApk),
             isSplitApk = false
@@ -134,7 +131,7 @@ class UtpConfigFactoryTest {
         installApkTimeout: Int? = null,
         shardConfig: ShardConfig? = null,
         targetApkConfigBundle: TargetApkConfigBundle = testTargetApkConfigBundle,
-        extractedSdkApks: List<List<Path>> = testExtractedSdkApks,
+        dependencyApks: List<List<Path>> = mockDependencyApks,
         cleanTestArtifacts: Boolean = false,
         reinstallIncompatibleApksBeforeTest: Boolean = false,
     ): RunnerConfig {
@@ -164,7 +161,7 @@ class UtpConfigFactoryTest {
             additionalTestOutputDir,
             additionalTestOutputOnDeviceDir,
             installApkTimeout,
-            extractedSdkApks,
+            dependencyApks,
             cleanTestArtifacts,
             reinstallIncompatibleApksBeforeTest,
             shardConfig,
@@ -210,7 +207,7 @@ class UtpConfigFactoryTest {
             additionalTestOutputDir,
             additionalTestOutputOnDeviceDir,
             installApkTimeout,
-            testExtractedSdkApks,
+            mockDependencyApks,
             uninstallApksAfterTest = false,
             reinstallIncompatibleApksBeforeTest = true,
             shardConfig,
@@ -288,7 +285,7 @@ class UtpConfigFactoryTest {
 
         assertThat(mockEmulatorControlConfig.enabled).isTrue()
 
-        val runnerConfigProto = createForLocalDevice()
+        val runnerConfigProto = createForLocalDevice(dependencyApks = mockDependencyApks)
 
         val (token, jwkfile) = extractJwkFileInfo(runnerConfigProto)
 
@@ -403,7 +400,8 @@ class UtpConfigFactoryTest {
     @Test
     fun createRunnerConfigProtoForLocalDeviceWithTestCoverage() {
         val runnerConfigProto = createForLocalDevice(
-            testData = testData.copy(isTestCoverageEnabled = true)
+            testData = testData.copy(isTestCoverageEnabled = true),
+            dependencyApks = mockDependencyApks
         )
 
         val outputOnHost = "mockCoverageOutputDir${File.separator}"
@@ -425,7 +423,8 @@ class UtpConfigFactoryTest {
     fun createRunnerConfigProtoForLocalDeviceWithTestCoverageAndOrchestrator() {
         val runnerConfigProto = createForLocalDevice(
             testData = testData.copy(isTestCoverageEnabled = true),
-            useOrchestrator = true
+            useOrchestrator = true,
+            dependencyApks = mockDependencyApks
         )
 
         val outputOnHost = "mockCoverageOutputDir${File.separator}"
@@ -449,7 +448,8 @@ class UtpConfigFactoryTest {
         val runnerConfigProto = createForLocalDevice(
             testData = testData.copy(
                 isTestCoverageEnabled = true,
-                instrumentationRunnerArguments = mapOf("useTestStorageService" to "true"))
+                instrumentationRunnerArguments = mapOf("useTestStorageService" to "true")),
+            dependencyApks = mockDependencyApks
         )
 
         val outputOnHost = "mockCoverageOutputDir${File.separator}"
@@ -496,7 +496,9 @@ class UtpConfigFactoryTest {
     @Test
     fun createRunnerConfigProtoForLocalDeviceWithShardConfig() {
         val runnerConfigProto = createForLocalDevice(
-            shardConfig = ShardConfig(totalCount = 10, index = 2))
+            shardConfig = ShardConfig(totalCount = 10, index = 2),
+            dependencyApks = mockDependencyApks
+        )
         assertRunnerConfigProto(
             runnerConfigProto,
             // TODO(b/201577913): remove
@@ -514,7 +516,8 @@ class UtpConfigFactoryTest {
     @Test
     fun createRunnerConfigProtoForLocalDeviceWithUninstallIncompatibleApks() {
         val runnerConfigProto = createForLocalDevice(
-            uninstallIncompatibleApks = true
+            uninstallIncompatibleApks = true,
+            dependencyApks = mockDependencyApks
         )
         assertRunnerConfigProto(
             runnerConfigProto,
@@ -525,6 +528,7 @@ class UtpConfigFactoryTest {
     @Test
     fun createLocalDeviceRunnerConfigProtoToUninstallApksAfterTest() {
         val runnerConfigProto = createForLocalDevice(
+            dependencyApks = mockDependencyApks,
             cleanTestArtifacts = true
         )
         assertRunnerConfigProto(
@@ -570,6 +574,7 @@ class UtpConfigFactoryTest {
         val runnerConfigProto = createForLocalDevice(
             additionalTestOutputDir = mockFile("additionalTestOutputDir"),
             additionalTestOutputOnDeviceDir = onDeviceDir,
+            dependencyApks = mockDependencyApks,
         )
 
         val onHostDir = "additionalTestOutputDir${File.separator}"
@@ -612,10 +617,9 @@ class UtpConfigFactoryTest {
     fun multipleDependencyApk() {
         val mockPath1 = mockPath("mockDependencyApkPath1")
         val mockPath2 = mockPath("mockDependencyApkPath2")
-        val extractedSdkApks = listOf(listOf(mockPath1, mockPath2))
+        val dependencyApksPaths = listOf(listOf(mockPath1, mockPath2))
 
-        val runnerConfigProto = createForLocalDevice(
-            extractedSdkApks = extractedSdkApks)
+        val runnerConfigProto = createForLocalDevice(dependencyApks = dependencyApksPaths)
         assertRunnerConfigProto(
             runnerConfigProto,
             isDependencyApkSplit = true)

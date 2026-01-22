@@ -21,7 +21,6 @@ import com.android.build.api.artifact.MultipleArtifact
 import com.android.build.api.artifact.impl.InternalScopedArtifact
 import com.android.build.api.artifact.impl.InternalScopedArtifacts
 import com.android.build.gradle.internal.LoggerWrapper
-import com.android.build.gradle.internal.component.ApkCreationConfig
 import com.android.build.gradle.internal.crash.PluginCrashReporter
 import com.android.build.gradle.internal.dependency.AndroidAttributes
 import com.android.build.gradle.internal.dependency.DexingRegistration
@@ -38,6 +37,7 @@ import com.android.build.gradle.internal.tasks.DexMergingAction.MERGE_EXTERNAL_L
 import com.android.build.gradle.internal.tasks.DexMergingAction.MERGE_LIBRARY_PROJECTS
 import com.android.build.gradle.internal.tasks.DexMergingAction.MERGE_PROJECT
 import com.android.build.gradle.internal.tasks.DexMergingAction.MERGE_TRANSFORMED_CLASSES
+import com.android.build.gradle.internal.tasks.creationconfig.DexMergingCreationConfig
 import com.android.build.gradle.internal.tasks.factory.VariantTaskCreationAction
 import com.android.build.gradle.internal.tasks.factory.features.DexingTaskCreationAction
 import com.android.build.gradle.internal.tasks.factory.features.DexingTaskCreationActionImpl
@@ -66,7 +66,6 @@ import com.google.common.base.Throwables
 import com.google.common.util.concurrent.MoreExecutors
 import org.gradle.api.attributes.LibraryElements
 import org.gradle.api.file.ConfigurableFileCollection
-import org.gradle.api.file.Directory
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.FileCollection
 import org.gradle.api.file.RegularFile
@@ -259,18 +258,13 @@ abstract class DexMergingTask : NewIncrementalTask() {
     }
 
     class CreationAction @JvmOverloads constructor(
-        creationConfig: ApkCreationConfig,
-        private val action: DexMergingAction,
-        private val dexingType: DexingType,
-        private val dexingUsingArtifactTransforms: Boolean = true,
-        private val separateFileDependenciesDexingTask: Boolean = false,
-        private val outputType: InternalMultipleArtifactType<Directory> = InternalMultipleArtifactType.DEX
-    ) : VariantTaskCreationAction<DexMergingTask, ApkCreationConfig>(creationConfig),
+        creationConfig: DexMergingCreationConfig
+     ) : VariantTaskCreationAction<DexMergingTask, DexMergingCreationConfig>(creationConfig),
         DexingTaskCreationAction by DexingTaskCreationActionImpl(
-            creationConfig
+            creationConfig.dexing
         ) {
 
-        private val internalName: String = when (action) {
+        private val internalName: String = when (creationConfig.action) {
             MERGE_LIBRARY_PROJECTS -> creationConfig.computeTaskNameInternal("mergeLibDex")
             MERGE_EXTERNAL_LIBS -> creationConfig.computeTaskNameInternal("mergeExtDex")
             MERGE_PROJECT -> creationConfig.computeTaskNameInternal("mergeProjectDex")
@@ -286,16 +280,16 @@ abstract class DexMergingTask : NewIncrementalTask() {
             creationConfig.artifacts
                 .use(taskProvider)
                 .wiredWith(DexMergingTask::outputDir)
-                .toAppendTo(outputType)
+                .toAppendTo(creationConfig.outputType)
 
-            if (dexingType === LEGACY_MULTIDEX) {
+            if (creationConfig.dexingType === LEGACY_MULTIDEX) {
                 creationConfig
                     .artifacts
                     .setInitialProvider(taskProvider, DexMergingTask::mainDexListOutput)
                     .withName("mainDexList.txt")
                     .on(InternalArtifactType.LEGACY_MULTIDEX_MAIN_DEX_LIST)
             }
-            if (action == MERGE_ALL) {
+            if (creationConfig.action == MERGE_ALL) {
                 creationConfig.artifacts.setInitialProvider(
                     taskProvider, DexMergingTask::d8Metadata
                 ).on(InternalArtifactType.D8_METADATA)
@@ -306,7 +300,7 @@ abstract class DexMergingTask : NewIncrementalTask() {
             super.configure(task)
 
             val projectOptions = creationConfig.services.projectOptions
-
+            val dexingType = creationConfig.dexingType
             // Shared parameters
             task.sharedParams.dexingType.setDisallowChanges(dexingType)
             task.sharedParams.minSdkVersion.setDisallowChanges(
@@ -333,7 +327,7 @@ abstract class DexMergingTask : NewIncrementalTask() {
                 task.sharedParams.mainDexListConfig.platformMultidexProguardRules
                     .setDisallowChanges(getPlatformRules())
 
-                val bootClasspath = creationConfig.global.bootClasspath
+                val bootClasspath = creationConfig.bootClasspath
                 task.sharedParams.mainDexListConfig.libraryClasses
                     .from(bootClasspath,
                         creationConfig.artifacts.forScope(InternalScopedArtifacts.InternalScope.TESTED_CODE)
@@ -362,8 +356,8 @@ abstract class DexMergingTask : NewIncrementalTask() {
             task.numberOfBuckets.setDisallowChanges(numberOfBuckets)
 
             // Input files
-            task.dexDirs = getDexDirs(creationConfig, action)
-            if (separateFileDependenciesDexingTask) {
+            task.dexDirs = getDexDirs(creationConfig)
+            if (creationConfig.separateFileDependenciesDexingTask) {
                 creationConfig.artifacts.setTaskInputToFinalProduct(
                     InternalArtifactType.EXTERNAL_FILE_LIB_DEX_ARCHIVES,
                     task.fileDependencyDexDir
@@ -373,10 +367,7 @@ abstract class DexMergingTask : NewIncrementalTask() {
                 && dexingType != NATIVE_MULTIDEX) {
                 task.globalSynthetics.from(
                     getGlobalSyntheticsInput(
-                        creationConfig,
-                        action,
-                        dexingUsingArtifactTransforms,
-                        separateFileDependenciesDexingTask
+                        creationConfig
                     )
                 )
             }
@@ -395,8 +386,7 @@ abstract class DexMergingTask : NewIncrementalTask() {
         }
 
         private fun getDexDirs(
-            creationConfig: ApkCreationConfig,
-            action: DexMergingAction
+            creationConfig: DexMergingCreationConfig,
         ): FileCollection {
             val attributes =
                 DexingRegistration.ComponentSpecificParameters(creationConfig).getAttributes()
@@ -404,10 +394,10 @@ abstract class DexMergingTask : NewIncrementalTask() {
             fun forAction(action: DexMergingAction): FileCollection {
                 when (action) {
                     MERGE_EXTERNAL_LIBS -> {
-                        return if (dexingUsingArtifactTransforms) {
+                        return if (creationConfig.dexingUsingArtifactTransforms) {
                             // If the file dependencies are being dexed in a task, don't also include them here
                             val artifactScope: AndroidArtifacts.ArtifactScope =
-                                if (separateFileDependenciesDexingTask) {
+                                if (creationConfig.separateFileDependenciesDexingTask) {
                                     AndroidArtifacts.ArtifactScope.REPOSITORY_MODULE
                                 } else {
                                     AndroidArtifacts.ArtifactScope.EXTERNAL
@@ -426,7 +416,7 @@ abstract class DexMergingTask : NewIncrementalTask() {
                         }
                     }
                     MERGE_LIBRARY_PROJECTS -> {
-                        return if (dexingUsingArtifactTransforms) {
+                        return if (creationConfig.dexingUsingArtifactTransforms) {
                             // For incremental dexing, when requesting DEX we will need to indicate
                             // a preference for CLASSES_DIR over CLASSES_JAR, otherwise Gradle will
                             // select CLASSES_JAR by default. We do that by adding the
@@ -465,7 +455,7 @@ abstract class DexMergingTask : NewIncrementalTask() {
                         return creationConfig.services.fileCollection(
                             forAction(MERGE_PROJECT),
                             forAction(MERGE_LIBRARY_PROJECTS),
-                            if (dexingType == LEGACY_MULTIDEX) {
+                            if (creationConfig.dexingType == LEGACY_MULTIDEX) {
                                 // we have to dex it
                                 forAction(MERGE_EXTERNAL_LIBS)
                             } else {
@@ -486,11 +476,11 @@ abstract class DexMergingTask : NewIncrementalTask() {
                 }
             }
 
-            return forAction(action)
+            return forAction(creationConfig.action)
         }
 
         private fun getNumberOfBuckets(projectOptions: ProjectOptions): Int {
-            return when (action) {
+            return when (creationConfig.action) {
                 MERGE_ALL, MERGE_EXTERNAL_LIBS, MERGE_TRANSFORMED_CLASSES -> 1 // No bucketing
                 MERGE_PROJECT, MERGE_LIBRARY_PROJECTS -> {
                     val customNumberOfBuckets =
@@ -503,7 +493,7 @@ abstract class DexMergingTask : NewIncrementalTask() {
                         return customNumberOfBuckets
                     }
 
-                    getNumberOfBuckets(dexingType, dexingCreationConfig.minSdkVersionForDexing)
+                    getNumberOfBuckets(creationConfig.dexingType, dexingCreationConfig.minSdkVersionForDexing)
                 }
             }
         }

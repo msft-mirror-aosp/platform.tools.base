@@ -26,10 +26,15 @@ import com.android.build.api.dsl.AarMetadata
  *
  * @see [com.android.build.gradle.internal.component.KmpCreationConfig]
  */
-interface KmpVariantDslInfo: KmpComponentDslInfo, TestedVariantDslInfo, AarProducingComponentDslInfo {
+// TODO: think about extending LibraryVariantDslInfo if possible to simplify some logic down the line
+interface KmpVariantDslInfo:
+    VariantDslInfo,
+    KmpComponentDslInfo,
+    TestedVariantDslInfo,
+    AarProducingComponentDslInfo {
 
     val aarMetadata: AarMetadata
-
     val enabledUnitTest: Boolean
     val enableAndroidTest: Boolean
+    val androidTestMultiDexEnabled: Boolean?
 }

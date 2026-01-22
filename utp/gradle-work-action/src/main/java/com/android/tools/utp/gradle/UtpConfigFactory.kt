@@ -102,7 +102,7 @@ fun createRunnerConfigProtoForLocalDevice(
     additionalTestOutputDir: File?,
     additionalTestOutputOnDeviceDir: String?,
     installApkTimeout: Int?,
-    extractedSdkApks: List<List<Path>>,
+    dependencyApks: List<List<Path>>,
     uninstallApksAfterTest: Boolean,
     reinstallIncompatibleApksBeforeTest: Boolean,
     shardConfig: ShardConfig?,
@@ -136,7 +136,7 @@ fun createRunnerConfigProtoForLocalDevice(
                 installApkTimeout,
                 shardConfig,
                 uninstallApksAfterTest,
-                extractedSdkApks,
+                dependencyApks,
                 reinstallIncompatibleApksBeforeTest,
             )
         )
@@ -233,7 +233,7 @@ private fun createTestFixture(
     installApkTimeout: Int?,
     shardConfig: ShardConfig?,
     uninstallApksAfterTest: Boolean,
-    extractedSdkApks: List<List<Path>>,
+    dependencyApks: List<List<Path>>,
     reinstallIncompatibleApksBeforeTest: Boolean,
 ): FixtureProto.TestFixture {
     return FixtureProto.TestFixture.newBuilder().apply {
@@ -308,7 +308,7 @@ private fun createTestFixture(
         addHostPlugin(
             createApkInstallerPlugin(
                 targetApkConfigBundle,
-                extractedSdkApks,
+                dependencyApks,
                 helperApks,
                 installApkTimeout,
                 additionalInstallOptions,
@@ -567,7 +567,7 @@ private fun createAndroidTestLogcatPlugin(
 // APK install sequence is aligned with legacy installer for better compatibility
 private fun createApkInstallerPlugin(
     targetApkConfigBundle: TargetApkConfigBundle,
-    extractedSdkApks: List<List<Path>>,
+    dependencyApks: List<List<Path>>,
     helperApks: Iterable<File>,
     installApkTimeout: Int?,
     additionalInstallOptions: Iterable<String>,
@@ -581,8 +581,8 @@ private fun createApkInstallerPlugin(
         utpDependencies, AndroidApkInstallerConfig::newBuilder
     ) {
         instrumentationTargetPackageId = testData.instrumentationTargetPackageId
-        if (extractedSdkApks.isNotEmpty() && extractedSdkApks[0].isNotEmpty()) {
-            extractedSdkApks.forEach { apks ->
+        if (dependencyApks.isNotEmpty() && dependencyApks.first().isNotEmpty()) {
+            dependencyApks.forEach { apks ->
                 addApksToInstallBuilder().apply {
                     addAllApkPaths(apks.map { it.absolutePathString() })
                     installOptionsBuilder.apply {

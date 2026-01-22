@@ -149,16 +149,6 @@ interface TestData {
      */
     fun findTestedApks(deviceConfigProvider: DeviceConfigProvider): List<File>
 
-
-    /**
-     * TODO: pending migration from extractApkFilesBypassingBundleTool to getApkFiles
-     *
-     * Returns extracted dependency APK files to install for privacy sandbox apps.
-     *
-     * @suppress Do not use from production code. This API is exposed for prototype.
-     */
-    fun privacySandboxInstallBundlesFinder(deviceConfigProvider: DeviceConfigProvider): List<List<Path>>
-
     companion object {
         fun getTestingApk(directory: Directory): File {
             val testApkOutputs = BuiltArtifactsLoaderImpl().load(directory)

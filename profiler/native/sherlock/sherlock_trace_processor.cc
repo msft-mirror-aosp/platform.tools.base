@@ -31,11 +31,16 @@
 #include <string>
 #include <thread>
 
+#include "absl/flags/flag.h"
+#include "absl/flags/parse.h"
+#include "absl/log/initialize.h"
 #include "absl/log/log.h"
 #include "grpcpp/grpcpp.h"
 #include "perfetto/trace_processor/trace_processor.h"
 #include "processor.h"
 #include "proto/service.grpc.pb.h"
+
+ABSL_FLAG(int32_t, timeout, 10, "Timeout in seconds");
 
 using grpc::ServerBuilder;
 
@@ -272,16 +277,11 @@ void RunServer(int timeout_seconds) {
 }
 
 int main(int argc, char** argv) {
-  int timeout = 10;  // Default timeout value
+  absl::InitializeLog();
 
-  // Parse server timeout value from command-line arguments
-  for (int i = 1; i < argc - 1; i++) {
-    std::string arg = argv[i];
-    if (arg == "--timeout") {
-      timeout = std::atoi(argv[i + 1]);
-      break;
-    }
-  }
+  absl::ParseCommandLine(argc, argv);
+
+  int timeout = absl::GetFlag(FLAGS_timeout);
 
   LOG(INFO) << "Starting server with server timeout value of " << timeout
             << " seconds";

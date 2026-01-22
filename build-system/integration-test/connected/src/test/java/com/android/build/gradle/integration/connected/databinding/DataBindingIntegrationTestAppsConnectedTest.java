@@ -53,7 +53,6 @@ public class DataBindingIntegrationTestAppsConnectedTest {
                         .addGradleProperties(
                                 BooleanOption.PRIVACY_SANDBOX_SDK_SUPPORT.getPropertyName()
                                         + "=false")
-                        .disableBuiltInKotlin()
                         .withDependencyChecker(!"KotlinTestApp".equals(projectName));
         if (SdkVersionInfo.HIGHEST_KNOWN_STABLE_API < 28 && useAndroidX) {
             builder.withCompileSdkVersion("28");

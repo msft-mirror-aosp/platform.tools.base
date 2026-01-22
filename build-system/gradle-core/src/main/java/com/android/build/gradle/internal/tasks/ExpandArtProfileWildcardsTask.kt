@@ -173,7 +173,7 @@ abstract class ExpandArtProfileWildcardsTask: NonIncrementalTask() {
     ): VariantTaskCreationAction<ExpandArtProfileWildcardsTask, ApkCreationConfig>(
         creationConfig
     ), DexingTaskCreationAction by DexingTaskCreationActionImpl(
-        creationConfig
+        creationConfig.dexing
     ) {
         override val name: String
             get() = creationConfig.computeTaskNameInternal("expand", "L8ArtProfileWildcards")

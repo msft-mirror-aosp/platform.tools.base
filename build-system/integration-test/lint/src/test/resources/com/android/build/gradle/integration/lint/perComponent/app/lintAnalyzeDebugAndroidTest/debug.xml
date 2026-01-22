@@ -16,6 +16,7 @@
         javaDirectories="src/androidTest/java:src/androidTestDebug/java:src/androidTest/kotlin:src/androidTestDebug/kotlin"
         resDirectories="src/androidTest/res:src/androidTestDebug/res"
         assetsDirectories="src/androidTest/assets:src/androidTestDebug/assets"
+        keepRulesDirectories="src/androidTest/keepRules:src/androidTestDebug/keepRules"
         androidTest="true"/>
   </testSourceProviders>
   <testFixturesSourceProviders>

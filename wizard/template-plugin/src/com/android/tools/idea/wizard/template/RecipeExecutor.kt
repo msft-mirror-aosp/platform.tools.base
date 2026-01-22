@@ -83,7 +83,12 @@ interface RecipeExecutor {
    */
   fun applyPluginInModule(plugin: String, module: Module, revision: String?, minRev: String? = null)
 
-  fun applyPluginWithClasspathInModule(pluginId: String, module: Module, classpathModule: String, version: String)
+  fun applyPluginWithClasspathInModule(
+    pluginId: String,
+    module: Module,
+    classpathModule: String,
+    version: String,
+  )
 
   /**
    * Records a classpath dependency. If settings.gradle[.kts] has a `pluginManagement` block this
@@ -209,7 +214,8 @@ interface RecipeExecutor {
   fun addIncludeToSettings(moduleName: String)
 
   /**
-   * Adds and configures a new test suite in the module's `build.gradle` file for running Journey tests.
+   * Adds and configures a new test suite in the module's `build.gradle` file for running Journey
+   * tests.
    *
    * This creates a `testSuites` block and sets the `targetVariant` for the new suite. If a test
    * suite with the given name already exists, then the configuration is updated to support running
@@ -271,10 +277,10 @@ interface RecipeExecutor {
   fun useLibrary(name: String)
 
   /**
-   * Adds `compileSdk` element in form of block or property to the build file.
-   * It adds block for new AGP versions.
+   * Adds `compileSdk` element in form of block or property to the build file. It adds block for new
+   * AGP versions.
    */
-  fun addCompileSdk(androidVersion: AndroidVersion)
+  fun addCompileSdk(androidVersion: AndroidVersion, isKotlinMultiplatform: Boolean = false)
 }
 
 enum class SourceSetType {

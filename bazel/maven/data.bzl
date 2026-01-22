@@ -390,6 +390,7 @@ DATA = [
     "androidx.test:core:1.4.0-alpha06",
     "androidx.test:core:1.5.0",
     "androidx.test:core:1.6.0-alpha01",
+    "androidx.test:core:1.6.1",
     "androidx.test:core-ktx:1.5.0",  # Dependency of architecture-samples
     "androidx.test.espresso:espresso-contrib:3.5.0",  # Dependency of architecture-samples
     "androidx.test.espresso:espresso-contrib:3.5.1",
@@ -397,14 +398,12 @@ DATA = [
     "androidx.test.espresso:espresso-core:3.2.0",
     "androidx.test.espresso:espresso-core:3.4.0",
     "androidx.test.espresso:espresso-core:3.5.1",
-    "androidx.test.espresso:espresso-core:3.6.1",
     "androidx.test.espresso:espresso-intents:3.5.0",  # Dependency of architecture-samples
     "androidx.test.espresso.idling:idling-concurrent:3.5.0",  # Dependency of architecture-samples
     "androidx.test.ext:junit:1.1.2",  # TODO: To be removed once dependent tests pass b/273872043
     "androidx.test.ext:junit:1.1.3-alpha02",
     "androidx.test.ext:junit:1.1.5",
     "androidx.test.ext:junit:1.2.0-alpha01",
-    "androidx.test.ext:junit:1.2.1",
     "androidx.test.ext:junit-ktx:1.1.4",  # Dependency of architecture-samples
     "androidx.test:monitor:1.6.1",
     "androidx.test:orchestrator:1.5.0-alpha02",
@@ -414,7 +413,6 @@ DATA = [
     "androidx.test:runner:1.4.0-alpha06",
     "androidx.test:runner:1.5.2",
     "androidx.test.services:test-services:1.5.0-alpha02",
-    "androidx.test.uiautomator:uiautomator:2.3.0",
     "androidx.tracing:tracing-perfetto-handshake:1.0.0-beta02",
     "androidx.tv:tv-foundation:1.0.0-alpha07",
     "androidx.tv:tv-material:1.0.0-alpha07",
@@ -780,7 +778,6 @@ DATA = [
     "com.android:zipflinger:8.7.0",
     "com.anthropic:anthropic-java:2.8.1",
     "com.beust:jcommander:1.82",
-    "com.charleskorn.kaml:kaml:0.72.0",
     "com.crashlytics.sdk.android:crashlytics:2.6.8",
     "com.fasterxml.jackson.module:jackson-module-kotlin:2.15.2",
     "com.flurry.android:analytics:13.0.0",  # Used by SdkIndexIssuesSyncListenerTest
@@ -973,7 +970,6 @@ DATA = [
     "com.openai:openai-java:4.0.0",
     "com.squareup.dagger:dagger-compiler:1.2.2",
     "com.squareup:kotlinpoet:1.12.0",
-    "com.squareup:kotlinpoet:2.0.0",
     "com.squareup:kotlinpoet:2.1.0",
     "com.squareup.leakcanary:shark:2.14",
     "com.squareup.leakcanary:shark-android:2.14",
@@ -981,15 +977,6 @@ DATA = [
     "com.squareup.leakcanary:shark-hprof:2.14",
     "com.squareup.leakcanary:shark-log:2.14",
     "com.squareup.okio:okio:3.4.0",
-    "com.squareup.okio:okio-fakefilesystem:3.9.1",
-    "com.squareup.wire:com.squareup.wire.gradle.plugin:pom:5.3.1",
-    "com.squareup.wire:wire-compiler:5.3.1",
-    "com.squareup.wire:wire-gradle-plugin:5.3.1",
-    "com.squareup.wire:wire-grpc-client:5.3.1",
-    "com.squareup.wire:wire-kotlin-generator:5.3.1",
-    "com.squareup.wire:wire-runtime:5.3.1",
-    "com.squareup.wire:wire-runtime-jvm:5.4.0",
-    "com.squareup.wire:wire-schema:5.3.1",
     "com.vladsch.flexmark:flexmark:0.64.8",
     "com.vladsch.flexmark:flexmark-ext-autolink:0.64.8",
     "com.vladsch.flexmark:flexmark-ext-gfm-strikethrough:0.64.8",
@@ -1319,7 +1306,6 @@ DATA = [
     "org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3",
     "org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.0-RC2",
     "org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.1",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
-    "org.jetbrains.kotlinx:kotlinx-datetime:0.6.1",
     "org.jetbrains.kotlinx:kotlinx-serialization-core:1.6.0",
     "org.jetbrains.kotlinx:kotlinx-serialization-core:1.6.3",
     "org.jetbrains.kotlinx:kotlinx-serialization-core:1.8.0",

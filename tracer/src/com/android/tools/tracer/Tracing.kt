@@ -31,7 +31,7 @@ class Tracing {
     val enabled = StudioFlags.STUDIO_TRACE_LIBRARY_ENABLED.get()
     // TODO(b/467364934): Finalize the implementation without a file.
     val path: Path = "/tmp/trace.file".toPath()
-    val traceSink = TraceSink(0, FileSystem.SYSTEM.sink(path).buffer())
+    val traceSink = TraceSink(1, FileSystem.SYSTEM.sink(path).buffer())
     return TraceDriver(sink = traceSink, isEnabled = enabled)
   }
 

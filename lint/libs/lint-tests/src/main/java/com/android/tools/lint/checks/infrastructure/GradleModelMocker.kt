@@ -292,6 +292,15 @@ constructor(
         .generatedSourceFolders
     }
 
+  val keepRulesSourceFolders: Collection<File>
+    get() {
+      ensureInitialized()
+      return moduleModel.variants
+        .single { it.name == defaultVariantName }
+        .sourceProviders
+        .flatMap { it.keepRulesDirectories }
+    }
+
   fun syncFlagsTo(to: LintCliFlags) {
     ensureInitialized()
     to.suppressedIds.clear()
@@ -2165,6 +2174,7 @@ constructor(
         javaDirectories = listOf(File(root, "src/$name/java"), File(root, "src/$name/kotlin")),
         resDirectories = listOf(File(root, "src/$name/res")),
         assetsDirectories = listOf(File(root, "src/$name/assets")),
+        keepRulesDirectories = listOf(File(root, "src/$name/keepRules")),
       )
     }
 
@@ -2555,6 +2565,7 @@ private data class TestLintModelSourceProvider(
   override val javaDirectories: Collection<File>,
   override val resDirectories: Collection<File>,
   override val assetsDirectories: Collection<File>,
+  override val keepRulesDirectories: Collection<File>,
 ) : LintModelSourceProvider {
   override fun isUnitTest(): Boolean = _isUnitTest
 

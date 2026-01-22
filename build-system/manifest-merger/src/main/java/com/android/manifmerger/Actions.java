@@ -404,9 +404,13 @@ public class Actions {
             actualMappings.append(count + 1).append(line).append("\n");
             if (resultingSourceMapping.containsKey(count)) {
                 for (Record record : resultingSourceMapping.get(count)) {
-                    actualMappings.append(count + 1).append("-->")
-                            .append(record.getActionLocation().toString())
-                            .append("\n");
+                    actualMappings.append(count + 1).append("-->");
+                    if (record.getActionType() == ActionType.INJECTED) {
+                        actualMappings.append("INJECTED");
+                    } else {
+                        actualMappings.append(record.getActionLocation().toString());
+                    }
+                    actualMappings.append("\n");
                 }
             }
             count++;
@@ -417,7 +421,8 @@ public class Actions {
     @Nullable
     private static Actions.NodeRecord findNodeRecord(@NotNull DecisionTreeRecord decisionTreeRecord) {
         for (Actions.NodeRecord nodeRecord : decisionTreeRecord.getNodeRecords()) {
-            if (nodeRecord.getActionType() == Actions.ActionType.ADDED) {
+            if (nodeRecord.getActionType() == Actions.ActionType.ADDED
+                    || nodeRecord.getActionType() == Actions.ActionType.INJECTED) {
                 return nodeRecord;
             }
         }
@@ -427,7 +432,8 @@ public class Actions {
     @Nullable
     public Actions.NodeRecord findNodeRecord(@NotNull XmlNode.NodeKey nodeKey) {
         for (Actions.NodeRecord nodeRecord : getNodeRecords(nodeKey)) {
-            if (nodeRecord.getActionType() == Actions.ActionType.ADDED) {
+            if (nodeRecord.getActionType() == Actions.ActionType.ADDED
+                    || nodeRecord.getActionType() == Actions.ActionType.INJECTED) {
                 return nodeRecord;
             }
         }
@@ -438,25 +444,33 @@ public class Actions {
     private static Actions.AttributeRecord findAttributeRecord(
             @NotNull DecisionTreeRecord decisionTreeRecord,
             @NotNull XmlAttribute xmlAttribute) {
+        Actions.AttributeRecord addedRecord = null;
         for (Actions.AttributeRecord attributeRecord : decisionTreeRecord
                 .getAttributeRecords(xmlAttribute.getName())) {
-            if (attributeRecord.getActionType() == Actions.ActionType.ADDED) {
+            if (attributeRecord.getActionType() == Actions.ActionType.INJECTED) {
                 return attributeRecord;
             }
+            if (attributeRecord.getActionType() == Actions.ActionType.ADDED) {
+                addedRecord = attributeRecord;
+            }
         }
-        return null;
+        return addedRecord;
     }
 
     @Nullable
     public Actions.AttributeRecord findAttributeRecord(
             @NotNull XmlNode.NodeKey nodeKey, @NotNull XmlNode.NodeName attributeName) {
+        Actions.AttributeRecord addedRecord = null;
         for (Actions.AttributeRecord attributeRecord :
                 getAttributeRecords(nodeKey, attributeName)) {
-            if (attributeRecord.getActionType() == Actions.ActionType.ADDED) {
+            if (attributeRecord.getActionType() == Actions.ActionType.INJECTED) {
                 return attributeRecord;
             }
+            if (attributeRecord.getActionType() == Actions.ActionType.ADDED) {
+                addedRecord = attributeRecord;
+            }
         }
-        return null;
+        return addedRecord;
     }
 
     /**

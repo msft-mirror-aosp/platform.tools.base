@@ -93,7 +93,7 @@ class PreviewScreenshotGradlePlugin : Plugin<Project> {
         private const val LAYOUTLIB_VERSION = "16.1.0-jdk17"
 
         val SCREENSHOT_TEST_PLUGIN_VERSION: String by lazy {
-            requireNotNull(PreviewScreenshotGradlePlugin::class.java.getResourceAsStream("/version.properties"))
+            requireNotNull(PreviewScreenshotGradlePlugin::class.java.getResourceAsStream("/com-android-compose-screenshot.properties"))
                 .buffered().use { stream ->
                     Properties().let { properties ->
                         properties.load(stream)

@@ -1,0 +1,22 @@
+directories:
+  ./tools/adt/idea/compose-designer
+  ./tools/adt/idea/layoutlib
+  ./tools/adt/idea/layoutlib-loader
+  ./tools/adt/idea/preview-elements
+  ./tools/adt/idea/render-resources
+  ./tools/adt/idea/rendering
+  ./tools/base/bazel/maven
+  ./tools/base/build-system/integration-test/application
+  ./tools/base/layoutlib-api
+  ./tools/base/multipreview-asm
+  ./tools/base/preview/screenshot
+  ./tools/base/resource-repository
+  ./tools/base/standalone-render
+
+derive_targets_from_directories: true
+
+additional_languages:
+  kotlin
+
+java_language_level: 17
+workspace_type: java

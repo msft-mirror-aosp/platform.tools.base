@@ -332,6 +332,12 @@ abstract class KmpComponentImpl<DslInfoT: KmpComponentDslInfo>(
             variantDslFilters = PatternSet()
         )
 
+        override val keepRules = KotlinMultiplatformFlatSourceDirectoriesImpl(
+            name = SourceType.KEEP_RULES.folder,
+            variantServices = variantServices,
+            variantDslFilters = PatternSet()
+        )
+
         override val jniLibs = LayeredSourceDirectoriesImpl(
             _name = SourceType.JNI_LIBS.folder,
             variantServices = variantServices,
@@ -360,6 +366,10 @@ abstract class KmpComponentImpl<DslInfoT: KmpComponentDslInfo>(
 
         override fun baselineProfiles(action: (FlatSourceDirectoriesImpl) -> Unit) {
             action(baselineProfiles)
+        }
+
+        override fun keepRules(action: (FlatSourceDirectoriesImpl) -> Unit) {
+            action(keepRules)
         }
 
         override fun jniLibs(action: (LayeredSourceDirectoriesImpl) -> Unit) {
@@ -469,6 +479,19 @@ abstract class KmpComponentImpl<DslInfoT: KmpComponentDslInfo>(
                         FileBasedDirectoryEntryImpl(
                             name = sourceSet.name,
                             directory = File(srcDir.parentFile, SourceType.BASELINE_PROFILES.folder)
+                        )
+                    }
+                }
+            }
+        )
+
+        sources.keepRules.addStaticSources(
+            services.provider {
+                androidKotlinCompilation.allKotlinSourceSets.flatMap { sourceSet ->
+                    sourceSet.kotlin.srcDirs.map { srcDir ->
+                        FileBasedDirectoryEntryImpl(
+                            name = sourceSet.name,
+                            directory = File(srcDir.parentFile, SourceType.KEEP_RULES.folder)
                         )
                     }
                 }

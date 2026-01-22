@@ -16,7 +16,6 @@
 
 package com.android.build.gradle.integration.application
 
-import com.android.build.gradle.integration.common.fixture.Adb
 import com.android.build.gradle.integration.common.fixture.DESUGAR_DEPENDENCY_VERSION
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
@@ -26,7 +25,6 @@ import com.android.testutils.apk.AndroidArchive
 import com.android.testutils.apk.Dex
 import com.android.testutils.truth.DexClassSubject
 import com.android.utils.FileUtils
-import com.android.tools.smali.dexlib2.Opcode;
 import com.android.tools.smali.dexlib2.Opcode.INVOKE_DIRECT;
 import com.android.tools.smali.dexlib2.Opcode.INVOKE_DIRECT_RANGE;
 import com.android.tools.smali.dexlib2.Opcode.INVOKE_INTERFACE;
@@ -56,9 +54,6 @@ class CoreLibraryDesugarConversionTest(val minSdkVersion: Int) {
     val project = GradleTestProject.builder()
         .fromTestApp(HelloWorldApp.forPluginWithMinSdkVersion("com.android.application", minSdkVersion))
         .create()
-
-    @get:Rule
-    var adb = Adb()
 
     @Before
     fun setUp() {

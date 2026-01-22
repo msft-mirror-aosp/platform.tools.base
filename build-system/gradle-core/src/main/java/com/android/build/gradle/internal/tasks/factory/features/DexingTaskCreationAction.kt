@@ -16,7 +16,6 @@
 
 package com.android.build.gradle.internal.tasks.factory.features
 
-import com.android.build.gradle.internal.component.ApkCreationConfig
 import com.android.build.gradle.internal.component.features.DexingCreationConfig
 
 /**
@@ -42,9 +41,5 @@ interface DexingTaskCreationAction {
 }
 
 class DexingTaskCreationActionImpl(
-    creationConfig: ApkCreationConfig
-): DexingTaskCreationAction {
-
-    override val dexingCreationConfig: DexingCreationConfig =
-        creationConfig.dexing
-}
+    override val dexingCreationConfig: DexingCreationConfig
+): DexingTaskCreationAction

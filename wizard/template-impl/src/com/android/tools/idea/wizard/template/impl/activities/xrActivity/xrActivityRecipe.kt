@@ -47,7 +47,8 @@ fun RecipeExecutor.xrActivityRecipe(
   addDependency(mavenCoordinate = "androidx.compose.runtime:runtime")
   addDependency(mavenCoordinate = "androidx.compose.material3:material3")
 
-  addDependency(mavenCoordinate = "androidx.xr.compose:compose:1.0.0-alpha05", )
+  addDependency(mavenCoordinate = "com.android.extensions.xr:extensions-xr:1.1.0")
+  addDependency(mavenCoordinate = "androidx.xr.compose:compose:1.0.0-alpha05")
   addDependency(mavenCoordinate = "androidx.xr.runtime:runtime:1.0.0-alpha05")
   addDependency(mavenCoordinate = "androidx.xr.scenecore:scenecore:1.0.0-alpha05")
 

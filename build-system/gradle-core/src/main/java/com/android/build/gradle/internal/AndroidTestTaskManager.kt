@@ -300,8 +300,6 @@ class AndroidTestTaskManager(
                         AndroidArtifacts.ConsumedConfigType.RUNTIME_CLASSPATH,
                         AndroidArtifacts.ArtifactScope.PROJECT,
                         AndroidArtifacts.ArtifactType.APKS_FROM_BUNDLE),
-                null,
-                null,
                 androidTestProperties
                     .services
                     .projectOptions
@@ -312,9 +310,6 @@ class AndroidTestTaskManager(
                 androidTestProperties,
                 androidTestProperties.artifacts.get(SingleArtifact.APK),
                 if (isLibrary) null else testedVariant.artifacts.get(SingleArtifact.APK),
-                null,
-                null,
-                null,
                 androidTestProperties
                     .services
                     .projectOptions

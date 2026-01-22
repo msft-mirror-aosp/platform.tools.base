@@ -412,6 +412,7 @@ package com.android.build.api.dsl {
     method @Deprecated @org.gradle.api.Incubating public com.android.build.api.dsl.AndroidSourceDirectorySet getJni();
     method public com.android.build.api.dsl.AndroidSourceDirectorySet getJniLibs();
     method public String getKaptConfigurationName();
+    method @org.gradle.api.Incubating public com.android.build.api.dsl.AndroidSourceDirectorySet getKeepRules();
     method public com.android.build.api.dsl.AndroidSourceDirectorySet getKotlin();
     method public com.android.build.api.dsl.AndroidSourceFile getManifest();
     method public com.android.build.api.dsl.AndroidSourceDirectorySet getMlModels();
@@ -423,6 +424,7 @@ package com.android.build.api.dsl {
     method public void java(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.AndroidSourceDirectorySet,kotlin.Unit> action);
     method @Deprecated @org.gradle.api.Incubating public void jni(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.AndroidSourceDirectorySet,kotlin.Unit> action);
     method public void jniLibs(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.AndroidSourceDirectorySet,kotlin.Unit> action);
+    method @org.gradle.api.Incubating public void keepRules(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.AndroidSourceDirectorySet,kotlin.Unit> action);
     method public void kotlin(org.gradle.api.Action<com.android.build.api.dsl.AndroidSourceDirectorySet> action);
     method public void manifest(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.AndroidSourceFile,kotlin.Unit> action);
     method public void mlModels(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.AndroidSourceDirectorySet,kotlin.Unit> action);
@@ -443,6 +445,7 @@ package com.android.build.api.dsl {
     property @Deprecated @org.gradle.api.Incubating public com.android.build.api.dsl.AndroidSourceDirectorySet jni;
     property public abstract com.android.build.api.dsl.AndroidSourceDirectorySet jniLibs;
     property public abstract String kaptConfigurationName;
+    property @org.gradle.api.Incubating public abstract com.android.build.api.dsl.AndroidSourceDirectorySet keepRules;
     property public abstract com.android.build.api.dsl.AndroidSourceDirectorySet kotlin;
     property public abstract com.android.build.api.dsl.AndroidSourceFile manifest;
     property public abstract com.android.build.api.dsl.AndroidSourceDirectorySet mlModels;
@@ -3367,6 +3370,7 @@ package com.android.build.api.variant {
     method public com.android.build.api.variant.SourceDirectories.Flat getByName(String name);
     method public com.android.build.api.variant.SourceDirectories.Flat? getJava();
     method public com.android.build.api.variant.SourceDirectories.Layered? getJniLibs();
+    method public com.android.build.api.variant.SourceDirectories.Flat? getKeepRules();
     method public com.android.build.api.variant.SourceDirectories.Flat? getKotlin();
     method public com.android.build.api.variant.ManifestFiles getManifests();
     method public com.android.build.api.variant.SourceDirectories.Layered? getMlModels();
@@ -3379,6 +3383,7 @@ package com.android.build.api.variant {
     property public abstract com.android.build.api.variant.SourceDirectories.Flat? baselineProfiles;
     property public abstract com.android.build.api.variant.SourceDirectories.Flat? java;
     property public abstract com.android.build.api.variant.SourceDirectories.Layered? jniLibs;
+    property public abstract com.android.build.api.variant.SourceDirectories.Flat? keepRules;
     property public abstract com.android.build.api.variant.SourceDirectories.Flat? kotlin;
     property public abstract com.android.build.api.variant.ManifestFiles manifests;
     property public abstract com.android.build.api.variant.SourceDirectories.Layered? mlModels;

@@ -17,12 +17,10 @@
 package com.android.build.gradle.internal.testing
 
 import com.android.build.api.variant.AndroidVersion
-import com.android.build.gradle.internal.test.ApkBundlesFinder
 import com.android.build.gradle.internal.test.ApksFinder
 import com.android.builder.testing.api.DeviceConfigProvider
 import java.io.File
 import java.io.Serializable
-import java.nio.file.Path
 
 /**
  * Final values for the [TestData] that can be passed to test runners. This should not be used as
@@ -62,8 +60,6 @@ data class StaticTestData(
     override val testDirectories: List<File?>,
 
     val testedApks: ApksFinder,
-
-    val privacySandboxApks: ApkBundlesFinder
 ) : com.android.build.api.instrumentation.StaticTestData, Serializable {
 
     /**
@@ -74,13 +70,4 @@ data class StaticTestData(
     override val
             testedApkFinder: (DeviceConfigProvider) -> List<File>
         get() = testedApks::findApks
-
-    /**
-     * TODO: Pending migration from extractApkFilesBypassingBundleTool to getApkFiles (Currently unused)
-     *
-     * Returns extracted dependency APK files to install for privacy sandbox apps.
-     */
-    override val privacySandboxInstallBundlesFinder: (DeviceConfigProvider) -> List<List<Path>>
-        get() = privacySandboxApks::findBundles
-
 }

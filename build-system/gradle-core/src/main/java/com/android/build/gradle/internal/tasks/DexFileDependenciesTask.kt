@@ -164,7 +164,7 @@ abstract class DexFileDependenciesTask: NonIncrementalTask() {
         VariantTaskCreationAction<DexFileDependenciesTask, ApkCreationConfig>(
             creationConfig
         ), DexingTaskCreationAction by DexingTaskCreationActionImpl(
-            creationConfig
+            creationConfig.dexing
         ) {
         override val name: String = computeTaskName("desugar", "FileDependencies")
         override val type = DexFileDependenciesTask::class.java

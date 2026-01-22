@@ -25,9 +25,6 @@ import com.android.processmonitor.common.DeviceTracker
 import com.android.processmonitor.common.ProcessEvent
 import com.android.processmonitor.monitor.adblib.DeviceTrackerAdblib
 import com.android.processmonitor.monitor.adblib.ProcessTrackerFactoryAdblib
-import com.android.processmonitor.monitor.ddmlib.AdbAdapter
-import com.android.processmonitor.monitor.ddmlib.DeviceTrackerDdmlib
-import com.android.processmonitor.monitor.ddmlib.ProcessTrackerFactoryDdmlib
 import com.android.sdklib.deviceprovisioner.DeviceProvisioner
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
@@ -127,21 +124,7 @@ class ProcessNameMonitorImpl<T> @TestOnly internal constructor(
 
     companion object {
 
-        fun forDdmlib(
-            parentScope: CoroutineScope,
-            adbSession: AdbSession,
-            adbAdapter: AdbAdapter,
-            config: ProcessNameMonitor.Config,
-            logger: AdbLogger,
-        ) = ProcessNameMonitorImpl(
-            parentScope,
-            DeviceTrackerDdmlib(adbAdapter, logger, adbSession.ioDispatcher),
-            ProcessTrackerFactoryDdmlib(adbSession, adbAdapter, config.agentConfig, logger),
-            config.maxProcessRetention,
-            logger,
-        )
-
-        fun forAdblib(
+        fun create(
             parentScope: CoroutineScope,
             adbSession: AdbSession,
             deviceProvisioner: DeviceProvisioner,

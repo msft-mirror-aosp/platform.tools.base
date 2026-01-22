@@ -23,6 +23,7 @@ import com.android.build.gradle.integration.fusedlibrary.FusedLibraryTestConstan
 import com.android.build.gradle.integration.fusedlibrary.FusedLibraryTestConstants.FUSED_LIBRARY_GROUP
 import com.android.build.gradle.integration.fusedlibrary.FusedLibraryTestConstants.FUSED_LIBRARY_REPO_NAME
 import com.android.build.gradle.integration.fusedlibrary.FusedLibraryTestConstants.FUSED_LIBRARY_VERSION
+import com.android.build.gradle.integration.fusedlibrary.FusedLibPublicationCallback
 import com.android.build.gradle.options.BooleanOption
 import org.junit.Rule
 import org.junit.Test

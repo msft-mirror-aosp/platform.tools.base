@@ -123,6 +123,7 @@ import com.android.build.gradle.internal.tasks.ValidateSigningTask
 import com.android.build.gradle.internal.tasks.VerifyLibraryClassesTask
 import com.android.build.gradle.internal.tasks.checkIfR8VersionMatches
 import com.android.build.gradle.internal.tasks.creationconfig.ProcessJavaResCreationConfig
+import com.android.build.gradle.internal.tasks.creationconfig.createDexMergingCreationConfig
 import com.android.build.gradle.internal.tasks.creationconfig.createJavaCompileConfig
 import com.android.build.gradle.internal.tasks.creationconfig.createJavaPreCompileConfig
 import com.android.build.gradle.internal.tasks.creationconfig.forTestComponent
@@ -1628,11 +1629,16 @@ abstract class TaskManager(
         // if classes were altered at the ALL scoped level, we just need to merge the single jar
         // file resulting.
         if (classesAlteredThroughVariantAPI) {
-            taskFactory.register(DexMergingTask.CreationAction(
-                creationConfig,
-                DexMergingAction.MERGE_TRANSFORMED_CLASSES,
-                dexingType,
-                dexingUsingArtifactTransforms))
+            taskFactory.register(
+                DexMergingTask.CreationAction(
+                    createDexMergingCreationConfig(
+                        creationConfig,
+                        DexMergingAction.MERGE_TRANSFORMED_CLASSES,
+                        dexingType,
+                        dexingUsingArtifactTransforms
+                    )
+                )
+            )
             return
         }
 
@@ -1644,20 +1650,29 @@ abstract class TaskManager(
         when (dexingType) {
             DexingType.MONO_DEX -> {
                 taskFactory.register(
-                        DexMergingTask.CreationAction(
-                                creationConfig,
-                                DexMergingAction.MERGE_EXTERNAL_LIBS,
-                                dexingType,
-                                dexingUsingArtifactTransforms,
-                                separateFileDependenciesDexingTask,
-                                InternalMultipleArtifactType.EXTERNAL_LIBS_DEX))
+                    DexMergingTask.CreationAction(
+                        createDexMergingCreationConfig(
+                            creationConfig,
+                            DexMergingAction.MERGE_EXTERNAL_LIBS,
+                            dexingType,
+                            dexingUsingArtifactTransforms,
+                            separateFileDependenciesDexingTask,
+                            InternalMultipleArtifactType.EXTERNAL_LIBS_DEX
+                        )
+                    )
+                )
                 taskFactory.register(
-                        DexMergingTask.CreationAction(
-                                creationConfig,
-                                DexMergingAction.MERGE_ALL,
-                                dexingType,
-                                dexingUsingArtifactTransforms))
+                    DexMergingTask.CreationAction(
+                        createDexMergingCreationConfig(
+                            creationConfig,
+                            DexMergingAction.MERGE_ALL,
+                            dexingType,
+                            dexingUsingArtifactTransforms
+                        )
+                    )
+                )
             }
+
             DexingType.LEGACY_MULTIDEX -> {
                 // For Legacy Multidex we cannot employ the same optimization of first merging
                 // the external libraries, because in that step we don't have a main dex list file
@@ -1666,13 +1681,18 @@ abstract class TaskManager(
                 // MonoDex, which might cause the build to fail if the external libraries alone
                 // cannot fit into a single dex.
                 taskFactory.register(
-                        DexMergingTask.CreationAction(
-                                creationConfig,
-                                DexMergingAction.MERGE_ALL,
-                                dexingType,
-                                dexingUsingArtifactTransforms,
-                                separateFileDependenciesDexingTask))
+                    DexMergingTask.CreationAction(
+                        createDexMergingCreationConfig(
+                            creationConfig,
+                            DexMergingAction.MERGE_ALL,
+                            dexingType,
+                            dexingUsingArtifactTransforms,
+                            separateFileDependenciesDexingTask
+                        )
+                    )
+                )
             }
+
             DexingType.NATIVE_MULTIDEX -> {
                 // For a debuggable variant, we merge different bits in separate tasks.
                 // Potentially more .dex files being created, but during development-cycle of
@@ -1684,39 +1704,59 @@ abstract class TaskManager(
                 // (size-wise) when we have multiple .dex files.
                 if (creationConfig.debuggable) {
                     taskFactory.register(
-                            DexMergingTask.CreationAction(
-                                    creationConfig,
-                                    DexMergingAction.MERGE_EXTERNAL_LIBS,
-                                    dexingType,
-                                    dexingUsingArtifactTransforms,
-                                    separateFileDependenciesDexingTask))
+                        DexMergingTask.CreationAction(
+                            createDexMergingCreationConfig(
+                                creationConfig,
+                                DexMergingAction.MERGE_EXTERNAL_LIBS,
+                                dexingType,
+                                dexingUsingArtifactTransforms,
+                                separateFileDependenciesDexingTask
+                            )
+                        )
+                    )
                     taskFactory.register(
-                            DexMergingTask.CreationAction(
-                                    creationConfig,
-                                    DexMergingAction.MERGE_PROJECT,
-                                    dexingType,
-                                    dexingUsingArtifactTransforms))
+                        DexMergingTask.CreationAction(
+                            createDexMergingCreationConfig(
+                                creationConfig,
+                                DexMergingAction.MERGE_PROJECT,
+                                dexingType,
+                                dexingUsingArtifactTransforms
+                            )
+                        )
+                    )
                     taskFactory.register(
-                            DexMergingTask.CreationAction(
-                                    creationConfig,
-                                    DexMergingAction.MERGE_LIBRARY_PROJECTS,
-                                    dexingType,
-                                    dexingUsingArtifactTransforms))
+                        DexMergingTask.CreationAction(
+                            createDexMergingCreationConfig(
+                                creationConfig,
+                                DexMergingAction.MERGE_LIBRARY_PROJECTS,
+                                dexingType,
+                                dexingUsingArtifactTransforms
+                            )
+                        )
+                    )
                 } else {
                     taskFactory.register(
-                            DexMergingTask.CreationAction(
-                                    creationConfig,
-                                    DexMergingAction.MERGE_EXTERNAL_LIBS,
-                                    dexingType,
-                                    dexingUsingArtifactTransforms,
-                                    separateFileDependenciesDexingTask,
-                                    InternalMultipleArtifactType.EXTERNAL_LIBS_DEX))
+                        DexMergingTask.CreationAction(
+                            createDexMergingCreationConfig(
+                                creationConfig,
+                                DexMergingAction.MERGE_EXTERNAL_LIBS,
+                                dexingType,
+                                dexingUsingArtifactTransforms,
+                                separateFileDependenciesDexingTask,
+                                InternalMultipleArtifactType.EXTERNAL_LIBS_DEX
+                            )
+                        )
+                    )
                     taskFactory.register(
-                            DexMergingTask.CreationAction(
-                                    creationConfig,
-                                    DexMergingAction.MERGE_ALL,
-                                    dexingType,
-                                    dexingUsingArtifactTransforms))
+                        DexMergingTask.CreationAction(
+                            createDexMergingCreationConfig(
+                                creationConfig,
+                                DexMergingAction.MERGE_ALL,
+                                dexingType,
+                                dexingUsingArtifactTransforms
+                            )
+                        )
+                    )
                 }
             }
         }

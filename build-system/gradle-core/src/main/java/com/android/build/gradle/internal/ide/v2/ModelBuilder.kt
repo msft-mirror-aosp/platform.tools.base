@@ -49,6 +49,7 @@ import com.android.build.gradle.internal.component.ComponentCreationConfig
 import com.android.build.gradle.internal.component.ConsumableCreationConfig
 import com.android.build.gradle.internal.component.DeviceTestCreationConfig
 import com.android.build.gradle.internal.component.LibraryCreationConfig
+import com.android.build.gradle.internal.component.TargetSdkAwareConfig
 import com.android.build.gradle.internal.component.TestSuiteCreationConfig
 import com.android.build.gradle.internal.component.TestSuiteTargetCreationConfig
 import com.android.build.gradle.internal.component.TestVariantCreationConfig
@@ -283,7 +284,7 @@ class ModelBuilder<ExtensionT : CommonExtension>(
          * method not called by current versions of Studio, the MINIMUM_MODEL_CONSUMER version must
          * be increased to exclude all older versions of Studio that called that method.
          */
-        val modelProducer = VersionImpl(21, 1, humanReadable = "Android Gradle Plugin 9.1")
+        val modelProducer = VersionImpl(22, 0, humanReadable = "Android Gradle Plugin 9.1")
         /**
          * The minimum required model consumer version, to allow AGP to control support for older
          * versions of Android Studio.
@@ -473,6 +474,7 @@ class ModelBuilder<ExtensionT : CommonExtension>(
             aidlDirectories = null,
             renderscriptDirectories = null,
             baselineProfileDirectories = null,
+            keepRulesDirectories = null,
             resDirectories = null,
             assetsDirectories = null,
             jniLibsDirectories = listOf(),
@@ -1255,11 +1257,13 @@ class ModelBuilder<ExtensionT : CommonExtension>(
 
         val minSdkVersion =
                 ApiVersionImpl(component.minSdk.apiLevel, component.minSdk.codename)
-        val targetSdkVersionOverride = when (component) {
-            is ApkCreationConfig -> component.targetSdkOverride
-            is LibraryCreationConfig -> component.targetSdkOverride
-            else -> null
-        }?.let { ApiVersionImpl(it.apiLevel, it.codename) }
+        val targetSdkVersionOverride =
+            (component as? TargetSdkAwareConfig)?.targetSdkOverride?.let {
+                ApiVersionImpl(
+                    it.apiLevel,
+                    it.codename
+                )
+            }
         val maxSdkVersion =
                 if (component is VariantCreationConfig) component.maxSdk else null
 

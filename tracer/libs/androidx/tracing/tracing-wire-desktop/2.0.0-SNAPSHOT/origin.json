@@ -2,18 +2,18 @@
   "artifacts": [
     {
       "file": "androidx/tracing/tracing-wire-desktop/2.0.0-SNAPSHOT/tracing-wire-desktop-2.0.0-SNAPSHOT.pom",
-      "repo": "https://androidx.dev/snapshots/builds/14576191/artifacts/repository",
-      "artifact": "androidx.tracing:tracing-wire-desktop:pom:2.0.0-20251211.153948-1"
+      "repo": "https://androidx.dev/snapshots/builds/14746442/artifacts/repository/",
+      "artifact": "androidx.tracing:tracing-wire-desktop:pom:2.0.0-20260120.173829-1"
     },
     {
       "file": "androidx/tracing/tracing-wire-desktop/2.0.0-SNAPSHOT/tracing-wire-desktop-2.0.0-SNAPSHOT.jar",
-      "repo": "https://androidx.dev/snapshots/builds/14576191/artifacts/repository",
-      "artifact": "androidx.tracing:tracing-wire-desktop:jar:2.0.0-20251211.153948-1"
+      "repo": "https://androidx.dev/snapshots/builds/14746442/artifacts/repository/",
+      "artifact": "androidx.tracing:tracing-wire-desktop:jar:2.0.0-20260120.173829-1"
     },
     {
       "file": "androidx/tracing/tracing-wire-desktop/2.0.0-SNAPSHOT/tracing-wire-desktop-2.0.0-SNAPSHOT.module",
-      "repo": "https://androidx.dev/snapshots/builds/14576191/artifacts/repository",
-      "artifact": "androidx.tracing:tracing-wire-desktop:module:2.0.0-20251211.153948-1"
+      "repo": "https://androidx.dev/snapshots/builds/14746442/artifacts/repository/",
+      "artifact": "androidx.tracing:tracing-wire-desktop:module:2.0.0-20260120.173829-1"
     }
   ]
 }

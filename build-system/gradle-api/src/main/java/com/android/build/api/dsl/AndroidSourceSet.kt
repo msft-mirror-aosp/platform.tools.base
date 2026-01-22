@@ -76,6 +76,13 @@ interface AndroidSourceSet : Named {
     @Incubating
     fun baselineProfiles(action: AndroidSourceDirectorySet.() -> Unit)
 
+    /** The KeepRules R8 source directory for this source set. */
+    @get:Incubating
+    val keepRules: AndroidSourceDirectorySet
+    /** The KeepRules R8 source directory for this source set. */
+    @Incubating
+    fun keepRules(action: AndroidSourceDirectorySet.() -> Unit)
+    
     /**
      * The Android JNI source directory for this source set.
      * @deprecated This is unused and will be removed in AGP 9.0

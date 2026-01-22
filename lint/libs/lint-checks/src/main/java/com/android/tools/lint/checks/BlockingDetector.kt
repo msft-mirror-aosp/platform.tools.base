@@ -15,6 +15,7 @@
  */
 package com.android.tools.lint.checks
 
+import com.android.tools.lint.checks.fx.AssumptionTableBuilder.Companion.build
 import com.android.tools.lint.checks.fx.JoinEffectDetector
 import com.android.tools.lint.checks.fx.analysis.isKtProperty
 import com.android.tools.lint.checks.fx.result.EffectAnnotation
@@ -32,7 +33,7 @@ import com.android.tools.lint.detector.api.Scope
 import com.android.tools.lint.detector.api.Severity
 import com.android.tools.lint.detector.api.UastLintUtils.Companion.tryResolveUDeclaration
 import com.intellij.psi.PsiParameter
-import kotlinx.collections.immutable.persistentMapOf
+import org.jetbrains.annotations.VisibleForTesting
 import org.jetbrains.uast.UAnnotation
 import org.jetbrains.uast.UCallExpression
 import org.jetbrains.uast.UElement
@@ -40,8 +41,7 @@ import org.jetbrains.uast.UMethod
 import org.jetbrains.uast.getContainingUClass
 import org.jetbrains.uast.resolveToUElement
 
-class BlockingDetector :
-  JoinEffectDetector<BlockingDetector.Status>(statusLattice, persistentMapOf()) {
+class BlockingDetector : JoinEffectDetector<BlockingDetector.Status>(statusLattice, assumptions) {
   override val mainIssue = ISSUE
 
   override val effectEncoder = Encoder.enum<Status>()
@@ -235,7 +235,12 @@ class BlockingDetector :
     Unsat,
   }
 
+  override val externalAssumptionsDir: String?
+    get() = System.getProperty(ASSUMPTIONS_PATH).takeUnless { it.isNullOrEmpty() }
+
   companion object {
+    @VisibleForTesting const val ASSUMPTIONS_PATH = "lint.assumptions.blocking"
+
     // DefinitelyNonBlocking ⊑ MaybeBlocking ⊑ Unsat
     // Technically we only care about the first 2 values.
     val statusLattice =
@@ -269,5 +274,7 @@ class BlockingDetector :
         androidSpecific = false,
         implementation = Impl,
       )
+
+    val assumptions = statusLattice.build { assumeCommonJavaAndKotlinSignatures() }
   }
 }

@@ -4,7 +4,7 @@ ATTENTION REVIEWER: If this needs to be changed, please make sure changes
 below are backwards compatible.
 -------------------------------------------------------------------------
 Sha256 of below classes:
-866d92678eb55438458ad847c9ab1a36a5b4202dc5d470c4ad9aad7b21933dd2
+a03fb9f35dbf4c400b6d424d2ece581247dcce372dd9002609dd289e8753235a
 -------------------------------------------------------------------------
 com.android.builder.model.AaptOptions
 com.android.builder.model.AaptOptions$Namespacing extends java.lang.Enum
@@ -705,6 +705,7 @@ com.android.builder.model.v2.ide.SourceProvider.getBaselineProfileDirectories: j
 com.android.builder.model.v2.ide.SourceProvider.getCustomDirectories: java.util.Collection<com.android.builder.model.v2.CustomSourceDirectory> ()
 com.android.builder.model.v2.ide.SourceProvider.getJavaDirectories: java.util.Collection<java.io.File> ()
 com.android.builder.model.v2.ide.SourceProvider.getJniLibsDirectories: java.util.Collection<java.io.File> ()
+com.android.builder.model.v2.ide.SourceProvider.getKeepRulesDirectories: java.util.Collection<java.io.File> ()
 com.android.builder.model.v2.ide.SourceProvider.getKotlinDirectories: java.util.Collection<java.io.File> ()
 com.android.builder.model.v2.ide.SourceProvider.getManifestFile: java.io.File ()
 com.android.builder.model.v2.ide.SourceProvider.getMlModelsDirectories: java.util.Collection<java.io.File> ()

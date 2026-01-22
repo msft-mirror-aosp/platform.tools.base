@@ -73,6 +73,7 @@ import java.util.Collections
 import javax.inject.Inject
 
 open class KmpVariantImpl @Inject constructor(
+    val variantBuilder: KotlinMultiplatformAndroidVariantBuilderImpl,
     dslInfo: KmpVariantDslInfo,
     internalServices: VariantServices,
     buildFeatures: BuildFeatureValues,

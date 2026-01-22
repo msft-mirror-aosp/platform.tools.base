@@ -28,6 +28,7 @@ import com.android.SdkConstants.FD_DATA
 import com.android.SdkConstants.FD_GRADLE
 import com.android.SdkConstants.FN_ANNOTATIONS_ZIP
 import com.android.SdkConstants.GEN_FOLDER
+import com.android.SdkConstants.KEEP_RULES_FOLDER
 import com.android.SdkConstants.LIBS_FOLDER
 import com.android.SdkConstants.PLATFORM_LINUX
 import com.android.SdkConstants.RES_FOLDER
@@ -421,6 +422,16 @@ abstract class LintClient {
    * @return a list of output folders to search for .class files
    */
   open fun getJavaClassFolders(project: Project): List<File> = getClassPath(project).classFolders
+
+  /**
+   * Returns the list of source folders for keepRules R8 files
+   *
+   * @param project the project to look up .keep file locations for
+   * @return a list of source folders to search for .keep files
+   */
+  open fun getKeepRulesSourceFolders(project: Project): List<File> {
+    return emptyList()
+  }
 
   /**
    * Returns the list of Java libraries

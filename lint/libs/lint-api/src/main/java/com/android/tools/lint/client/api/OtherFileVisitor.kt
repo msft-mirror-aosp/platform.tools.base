@@ -174,7 +174,7 @@ internal class OtherFileVisitor(private val detectors: List<Detector>) {
       if (subset != null && !subset.isEmpty()) {
         val files = ArrayList<File>(subset.size)
         for (file in subset) {
-          if (file.name.startsWith("proguard")) {
+          if (file.name.startsWith("proguard") || file.name.endsWith(".keep")) {
             files.add(file)
           }
         }

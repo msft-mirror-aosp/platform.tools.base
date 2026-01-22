@@ -432,7 +432,7 @@ abstract class ManagedDeviceInstrumentationTestSetupTask: NonIncrementalGlobalTa
             testedAbi: String?,
             abi: String
         ) = """
-                $deviceName cannot be run in the given environment. Tests cannot be
+                $deviceName cannot be run in the current environment. Tests cannot be
                 run with testedAbi = "$testedAbi". This may be intentional as $deviceName
                 may be configured for testing on a different machine.
                 If this is not intended, set testedAbi = "$abi".
@@ -440,7 +440,7 @@ abstract class ManagedDeviceInstrumentationTestSetupTask: NonIncrementalGlobalTa
 
         private fun generateArmTranslationOnX86Error(deviceName: String, abi: String) = """
                 ARM translation is not available for x86 system images.
-                An $ABI_X86 image was selected as the image was available for the
+                An $ABI_X86 image was selected because the image was available for the
                 given sdkVersion and require64Bit = false for $deviceName.
                 This configuration may be intentional as $deviceName may be configured for
                 testing on a different machine.
@@ -454,14 +454,14 @@ abstract class ManagedDeviceInstrumentationTestSetupTask: NonIncrementalGlobalTa
             testedAbi: String?,
             abi: String
         ) = """
-                ARM translation is only available for google apis or playstore images
-                with an api level of 30 or higher.
+                ARM translation is only available for Google APIs or Play Store images
+                with an API level of 30 or higher.
                 $deviceName has a systemImageSource = "$systemImageSource"
                 and sdkVersion = $sdkVersion
                 This may be intentional as $deviceName may be configured for
                 testing on an ARM system and not an $abi system.
-                If ARM is not the intended abi for this device, set testedAbi = "$abi"
-                If Ndk Translation is intended for this device, set
+                If ARM is not the intended ABI for this device, set testedAbi = "$abi"
+                If NDK translation is intended for this device, set
                 systemImageSource = "google" and set the sdkVersion to 30 or higher.
             """.trimIndent()
 
@@ -471,30 +471,32 @@ abstract class ManagedDeviceInstrumentationTestSetupTask: NonIncrementalGlobalTa
                 testedAbi or set testedAbi to one of {"$ABI_X86", "$ABI_X86_64", "$ABI_ARM"}
             """.trimIndent()
 
+        // TODO(b/477334887): Implement this behavior change in AGP 10.0.
         private fun generateUnspecifiedAbiWarningWithNdkTranslationUnsupported(
             deviceName: String,
             abi: String
         ) = """
-                $deviceName has an unspecified testedAbi. This presently defaults to
-                "$abi". However, in 9.0 this will change to "$ABI_ARM"
+                The device "$deviceName" does not specify a "testedAbi".
+                This currently defaults to "$abi", but will change to "$ABI_ARM" in AGP 10.0.
 
-                $deviceName specifies a system image that that does not support NDK translation,
-                and will no longer be able to run tests in this environment. This
-                device will wtill be able to run on ARM machines.
-                To continue running tests with the current configuration, and not use
-                NDK translation set testedAbi = "$abi"
-            """.trimIndent()
+                The system image configured for "$deviceName" does not support NDK translation,
+                so it will be unable to run tests built for "$ABI_ARM".
 
+                To keep the current behavior and prevent test failures in AGP 10.0,
+                explicitly set the ABI: testedAbi = "$abi"
+        """.trimIndent()
+
+        // TODO(b/477334887): Implement this behavior change in AGP 10.0.
         private fun generateUnspecifiedAbiWarningWithNdkTranslation(
             deviceName: String,
             abi: String
         ) = """
-            $deviceName has an unspecified testedAbi. This presently defaults to
-            "$abi". However, in 9.0 this will change to "$ABI_ARM"
+                The device "$deviceName" does not specify a "testedAbi".
+                This currently defaults to "$abi", but will change to "$ABI_ARM" in AGP 10.0.
 
-            This device will use NDK translation for native code during testing. To continue
-            running tests using the current configuration and not use NDK translation,
-            set testedAbi = "$abi"
+                In AGP 10.0, this device will rely on NDK translation to run tests.
+                To keep the current behavior (avoiding NDK translation),
+                explicitly set the ABI: testedAbi = "$abi"
         """.trimIndent()
 
         @VisibleForTesting

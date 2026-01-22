@@ -50,17 +50,12 @@ internal class BundleTestDataImpl(
     @get:PathSensitive(PathSensitivity.RELATIVE)
     @get:Optional
     val apkBundle: FileCollection,
-    privacySandboxSdkApks: FileCollection?,
-    privacySandboxCompatSdkApks: Provider<Directory>?,
     extraInstrumentationTestRunnerArgs: Provider<Map<String, String>>
 ) : AbstractTestDataImpl(
     namespace = namespace,
     creationConfig = creationConfig,
     testApkDir = testApkDir,
     testedApksDir = null,
-    privacySandboxSdkApks = privacySandboxSdkApks,
-    privacySandboxCompatSdkApks = privacySandboxCompatSdkApks,
-    additionalSdkSupportedSplitApks = null,
     extraInstrumentationTestRunnerArgs = extraInstrumentationTestRunnerArgs
 ) {
 

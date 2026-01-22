@@ -141,13 +141,4 @@ interface StaticTestData {
      */
     @get:Incubating
     val testedApkFinder: (DeviceConfigProvider) -> List<File>
-
-    /**
-     * TODO: Pending migration from extractApkFilesBypassingBundleTool to getApkFiles
-     *
-     * Returns extracted dependency APK files to install for privacy sandbox apps.
-     *
-     * @suppress Do not use from production code. This API is exposed for prototype.
-     */
-    val privacySandboxInstallBundlesFinder: (DeviceConfigProvider) -> List<List<Path>>
 }

@@ -1,0 +1,5 @@
+directories:
+  tools/base/android-test
+
+java_language_level: 17
+workspace_type: java

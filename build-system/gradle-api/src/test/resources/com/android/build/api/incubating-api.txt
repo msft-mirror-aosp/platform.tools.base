@@ -405,7 +405,6 @@ https://issuetracker.google.com/330686870
   * com.android.build.api.instrumentation.StaticTestData.getInstrumentationRunnerArguments: java.util.Map<java.lang.String, java.lang.String> ()
   * com.android.build.api.instrumentation.StaticTestData.getInstrumentationTargetPackageId: java.lang.String ()
   * com.android.build.api.instrumentation.StaticTestData.getMinSdkVersion: com.android.build.api.variant.AndroidVersion ()
-  * com.android.build.api.instrumentation.StaticTestData.getPrivacySandboxInstallBundlesFinder: kotlin.jvm.functions.Function1<com.android.builder.testing.api.DeviceConfigProvider, java.util.List<java.util.List<java.nio.file.Path>>> ()
   * com.android.build.api.instrumentation.StaticTestData.getTestApk: java.io.File ()
   * com.android.build.api.instrumentation.StaticTestData.getTestDirectories: java.util.List<java.io.File> ()
   * com.android.build.api.instrumentation.StaticTestData.getTestedApkFinder: kotlin.jvm.functions.Function1<com.android.builder.testing.api.DeviceConfigProvider, java.util.List<java.io.File>> ()
@@ -676,3 +675,6 @@ https://issuetracker.google.com/444699160
   * com.android.build.api.variant.HostTestBuilder.setIncludeAndroidResources: void (boolean)
 https://issuetracker.google.com/467692785
   * com.android.build.api.KotlinMultiplatformHierarchyDsl.withAndroid: void (org.jetbrains.kotlin.gradle.plugin.KotlinHierarchyBuilder)
+https://issuetracker.google.com/476099690
+  * com.android.build.api.dsl.AndroidSourceSet.getKeepRules: com.android.build.api.dsl.AndroidSourceDirectorySet ()
+  * com.android.build.api.dsl.AndroidSourceSet.keepRules: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.AndroidSourceDirectorySet, kotlin.Unit>)

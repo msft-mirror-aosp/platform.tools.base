@@ -43,7 +43,7 @@ fi
 # Generate baseline coverage file lists
 "${script_dir}/bazel" \
   build \
-  --config=rcache \
+  --config=ci --config=remote-exec \
   --build_tag_filters="coverage-sources" \
   --build_metadata=ab_build_id="${build_number}" \
   --build_metadata=ab_target=studio-coverage \
@@ -55,7 +55,7 @@ fi
 # Run Bazel with coverage instrumentation
 "${script_dir}/bazel" \
   test \
-  --config=ci --config=remote-exec --config=ants \
+  --config=ci --config=remote-exec \
   --invocation_id=${invocation_id} \
   --tool_tag="studio_coverage.sh" \
   --build_event_binary_file="${dist_dir:-/tmp}/bazel-${build_number}.bes" \
@@ -87,8 +87,7 @@ fi
 # Build the lcov file
 "${script_dir}/bazel" \
   build \
-  --config=rcache \
-  --config=release \
+  --config=ci --config=remote-exec \
   --invocation_id=${report_invocation_id} \
   --jobs=HOST_CPUS*.5 \
   --build_metadata=ab_build_id="${build_number}" \

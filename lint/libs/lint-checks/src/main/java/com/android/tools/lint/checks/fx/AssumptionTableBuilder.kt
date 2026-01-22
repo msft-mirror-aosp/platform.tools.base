@@ -23,6 +23,8 @@ import com.android.tools.lint.checks.fx.result.MethodId
 import com.android.tools.lint.checks.fx.result.ResultTemplate
 import com.android.tools.lint.checks.fx.result.Type
 import com.android.tools.lint.checks.fx.result.Type.MethodRef
+import com.android.tools.lint.checks.fx.result.Type.MethodRef.Companion.rawStatic
+import com.android.tools.lint.checks.fx.result.Type.MethodRef.Companion.rawVirtual
 import com.android.tools.lint.checks.fx.result.TypeBounds
 import com.android.tools.lint.checks.fx.result.subscript
 import com.android.tools.lint.checks.fx.utils.Lattice
@@ -58,6 +60,50 @@ open class AssumptionTableBuilder<FX>(lattice: Lattice<FX>) :
     it.assumedAs(result)
   }
 
+  infix fun Pair<ClassId, String>.assumedVirtual(result: ResultTemplate<FX>) {
+    val domains = result.domains
+    val receiver = domains.firstOrNull() ?: throw IllegalArgumentException("No receiver")
+    val receiverC = receiver.erase()
+    require(receiverC == first) { throw IllegalArgumentException("Invalid receiver $receiverC") }
+    val rest = domains.subList(1, domains.size)
+    val method = MethodId(true, second, rest.map { it.erase() })
+    MethodRef(first, method) assumedAs result
+  }
+
+  infix fun Pair<ClassId, String>.assumedStatic(result: ResultTemplate<FX>) {
+    val method = MethodId(false, second, result.domains.map { it.erase() })
+    MethodRef(first, method) assumedAs result
+  }
+
+  private fun Type<FX>.erase(): ClassId? =
+    when (this) {
+      is Type.Application -> constructor
+      is Type.Sym.Param,
+      is Type.WildCard -> null
+      is Type.Ellipsis -> ClassId.Array
+      else -> throw IllegalArgumentException("Unexpected: $this")
+    }
+
+  /** Assumes a monomorphic method signature, taking the domain from the method descriptor */
+  infix fun MethodRef.assumedMonoAs(setUp: ResultTemplateBuilder<FX>.() -> Unit) {
+    val (container, sig) = this
+    val domains: Array<Type<Nothing>> =
+      when {
+        sig.isVirtual ->
+          Array(1 + sig.paramTags.size) {
+            when (it) {
+              0 -> Type.Application(container)
+              else -> sig.paramTags[it - 1]?.let(Type<Nothing>::Application) ?: Type.WildCard
+            }
+          }
+        else ->
+          Array(sig.paramTags.size) {
+            sig.paramTags[it]?.let(Type<Nothing>::Application) ?: Type.WildCard
+          }
+      }
+    this assumedAs given(domains = domains, setUp)
+  }
+
   /** Creates a monomorphic signature, [setUp]-ing the type and effect given [domains] */
   fun TypeBounds<Nothing>.given(
     vararg domains: Type<Nothing>,
@@ -75,7 +121,11 @@ open class AssumptionTableBuilder<FX>(lattice: Lattice<FX>) :
   /** Creates a polymorphic signature, introducing unbounded type parameter */
   fun TypeBounds<Nothing>.forAll(
     make: TypeBounds<Nothing>.(Type.Sym<Nothing>) -> ResultTemplate<FX>
-  ) = forAll(persistentSetOf(), make)
+  ) = uncheckedForAll(persistentSetOf()) { (x) -> make(x) }
+
+  fun TypeBounds<Nothing>.forAll(
+    make: TypeBounds<Nothing>.(Type.Sym<Nothing>, Type.Sym<Nothing>) -> ResultTemplate<FX>
+  ) = uncheckedForAll(persistentSetOf(), persistentSetOf()) { (x0, x1) -> make(x0, x1) }
 
   /** Creates a polymorphic signature, introducing type parameter bounded by [X] */
   @JvmName("forAllReified")
@@ -87,16 +137,39 @@ open class AssumptionTableBuilder<FX>(lattice: Lattice<FX>) :
   fun TypeBounds<Nothing>.forAll(
     bound: Type<Nothing>,
     make: TypeBounds<Nothing>.(Type.Sym<Nothing>) -> ResultTemplate<FX>,
-  ) = forAll(persistentSetOf(bound), make)
+  ) = uncheckedForAll(persistentSetOf(bound)) { (x) -> make(x) }
 
-  /** Creates a polymorphic signature introducing type parameter bounded by [bounds] */
-  fun TypeBounds<Nothing>.forAll(
-    bounds: PersistentSet<Type<Nothing>>,
-    make: TypeBounds<Nothing>.(Type.Sym<Nothing>) -> ResultTemplate<FX>,
+  /** Creates a polymorphic signature introducing type parameter bounded by [boundList] */
+  private fun TypeBounds<Nothing>.uncheckedForAll(
+    vararg boundList: PersistentSet<Type<Nothing>>,
+    make: TypeBounds<Nothing>.(List<Type.Sym<Nothing>>) -> ResultTemplate<FX>,
   ): ResultTemplate<FX> {
-    val name = "x${size.subscript()}"
-    val extendedContext = put(name, bounds)
-    return extendedContext.make(Type.Sym.Param(name)) // TODO when Type.Sym.This??
+    val names = Array(boundList.size) { i -> "x${(size + i).subscript()}" }
+    val extendedContext = (names zip boundList).fold(this) { acc, bound -> acc + bound }
+    return extendedContext.make(names.map(Type.Sym<Nothing>::Param))
+  }
+
+  open class Container<FX>(val containerFqn: String) {
+    val self = ClassId.of(containerFqn)
+    val prefix = with(containerFqn) { substring(0, lastIndexOf('.')) }
+
+    fun static(name: String, vararg params: ClassId?) = rawStatic(name, containerFqn, *params)
+
+    fun virtual(name: String, vararg params: ClassId?) = rawVirtual(name, containerFqn, *params)
+
+    operator fun String.unaryPlus() = self to this
+
+    companion object {
+      fun <FX, C : Container<FX>> with(vararg containers: C, setUp: C.() -> Unit) {
+        for (container in containers) with(container, setUp)
+      }
+    }
+  }
+
+  open class Pkg<FX>(val path: String) {
+    fun klass(name: String) = object : Container<FX>("$path.$name") {}
+
+    fun child(name: String) = object : Pkg<FX>("$path.$name") {}
   }
 
   companion object {
@@ -162,3 +235,6 @@ operator fun <FX, C : Any> KClass<C>.invoke(vararg ts: Type<FX>): Type.Applicati
   }
   return Type.Application(ClassId.of(this), ts.asList())
 }
+
+operator fun <FX> ClassId.invoke(vararg ts: Type<FX>): Type.Application<FX> =
+  Type.Application(this, ts.asList())

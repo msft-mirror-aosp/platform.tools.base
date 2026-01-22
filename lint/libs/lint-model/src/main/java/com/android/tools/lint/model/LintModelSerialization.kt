@@ -519,6 +519,7 @@ private open class LintModelWriter(
     printer.printFiles("javaDirectories", sourceProvider.javaDirectories, indent)
     printer.printFiles("resDirectories", sourceProvider.resDirectories, indent)
     printer.printFiles("assetsDirectories", sourceProvider.assetsDirectories, indent)
+    printer.printFiles("keepRulesDirectories", sourceProvider.keepRulesDirectories, indent)
     if (sourceProvider.isInstrumentationTest()) {
       printer.printAttribute("androidTest", VALUE_TRUE, indent)
     }
@@ -1189,6 +1190,7 @@ private abstract class LintModelReader(
     val javaDirectories = getFiles("javaDirectories")
     val resDirectories = getFiles("resDirectories")
     val assetsDirectories = getFiles("assetsDirectories")
+    val keepRulesDirectories = getFiles("keepRulesDirectories")
     val androidTestOnly = getOptionalBoolean("androidTest", false)
     val unitTestOnly = getOptionalBoolean("unitTest", false)
     val debugOnly = getOptionalBoolean("debugOnly", false)
@@ -1200,6 +1202,7 @@ private abstract class LintModelReader(
       javaDirectories = javaDirectories,
       resDirectories = resDirectories,
       assetsDirectories = assetsDirectories,
+      keepRulesDirectories = keepRulesDirectories,
       debugOnly = debugOnly,
       instrumentationTestOnly = androidTestOnly,
       unitTestOnly = unitTestOnly,

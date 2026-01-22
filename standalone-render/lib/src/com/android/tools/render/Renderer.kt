@@ -251,14 +251,19 @@ class Renderer(
         val disposable = Disposer.newCheckedDisposable()
         val logger = RenderLogger()
         return try {
-            val renderTask =
-                renderService.taskBuilder(module, configuration, logger).build(disposable).get()
+            val renderTask = renderService.taskBuilder(module, configuration, logger)
+                .disableImagePool()
+                .disableCachingImageFactory()
+                .build(disposable).get()
                     ?: return RenderResult.createRenderTaskErrorResult(
                         module,
                         { throw NotImplementedError("PsiFile supplier is not supported") },
                         null,
                         logger
                     )
+
+            // b/469819154: Release render after use to avoid accumulating heap memory usage.
+            Disposer.register(disposable) { renderTask.releaseRender() }
 
             val xmlFile =
                 RenderXmlFileSnapshot(

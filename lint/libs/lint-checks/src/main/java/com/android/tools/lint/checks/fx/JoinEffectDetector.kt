@@ -76,6 +76,7 @@ import kotlinx.collections.immutable.persistentMapOf
 import kotlinx.collections.immutable.persistentSetOf
 import kotlinx.collections.immutable.plus
 import kotlinx.collections.immutable.toPersistentSet
+import org.jetbrains.annotations.VisibleForTesting
 import org.jetbrains.kotlin.incremental.createDirectory
 import org.jetbrains.kotlin.psi.KtNamedFunction
 import org.jetbrains.uast.UClass
@@ -109,8 +110,13 @@ abstract class JoinEffectDetector<FX : Any>(
 
   protected abstract val effectEncoder: Encoder<FX>
 
+  /** Optional path to directory storing partial results */
+  protected open val externalAssumptionsDir: String?
+    get() = null
+
   final override fun beforeCheckEachProject(context: Context) {
     super.beforeCheckEachProject(context)
+    externalAssumptionsDir?.let(::loadPartialResults)
     maybeLoadPartialResults(context)
   }
 
@@ -198,13 +204,21 @@ abstract class JoinEffectDetector<FX : Any>(
     if (context.isGlobalAnalysis()) return
     val dirPath =
       getPartialResultDir(context.project, createIfAbsent = true)?.absolutePath ?: return
-    summaryEncoder.encodeToDir(
-      resultList(program, summariesCache),
-      dirPath,
-      methodIdEncoder,
-      Encoder.internedString,
-    )
+    savePartialResults(dirPath, resultList(program, summariesCache))
   }
+
+  @VisibleForTesting
+  fun savePartialResults(dirPath: String, results: AssumptionTable<FX> = knownResults.loaded) {
+    val entries = results.toList()
+    val keys = entries.map { it.first }
+    val vals = entries.map { it.second }
+    return savePartialResults(dirPath, keys to vals)
+  }
+
+  private fun savePartialResults(
+    dirPath: String,
+    results: Pair<List<ClassId>, List<PersistentMap<MethodId, ResultTemplate<FX>>>>,
+  ) = summaryEncoder.encodeToDir(results, dirPath, methodIdEncoder, Encoder.internedString)
 
   private fun maybeLoadPartialResults(context: Context) {
     if (context.isGlobalAnalysis()) return
@@ -212,10 +226,13 @@ abstract class JoinEffectDetector<FX : Any>(
     for (dependentProject in context.project.allLibraries) {
       val libDir =
         getPartialResultDir(dependentProject, createIfAbsent = false)?.absolutePath ?: continue
-      val classIds =
-        classIdListEncoder.decodeFromDir(libDir, methodIdEncoder, Encoder.internedString)
-      for (c in classIds) knownResults.toBeLoaded[c] = libDir
+      loadPartialResults(libDir)
     }
+  }
+
+  private fun loadPartialResults(libDir: String) {
+    val classIds = classIdListEncoder.decodeFromDir(libDir, methodIdEncoder, Encoder.internedString)
+    for (c in classIds) knownResults.toBeLoaded[c] = libDir
   }
 
   override fun checkPartialResults(context: Context, partialResults: PartialResult) {}

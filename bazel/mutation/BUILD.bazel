@@ -1,13 +1,23 @@
 load("@com_google_protobuf//bazel:py_proto_library.bzl", "py_proto_library")
-load("@rules_python//python:defs.bzl", "py_binary", "py_test")
+load("@rules_python//python:defs.bzl", "py_binary", "py_library", "py_test")
 
 py_binary(
     name = "mutation",
     srcs = ["mutation.py"],
     deps = [
         ":mutation_testing_py_proto",
+        ":utils",
         "@com_google_protobuf//:protobuf_python",
     ],
+)
+
+py_library(
+    name = "utils",
+    srcs = [
+        ":utils/exclude_filter.py",
+        ":utils/filter.py",
+    ],
+    visibility = ["//visibility:public"],
 )
 
 proto_library(
@@ -28,6 +38,26 @@ py_test(
     tags = ["noci:studio-win"],
     deps = [
         ":mutation",
+        "@absl-py//absl/testing:absltest",
+        "@absl-py//absl/testing:parameterized",
+    ],
+)
+
+py_test(
+    name = "exclude_filter_test",
+    srcs = ["utils/exclude_filter_test.py"],
+    deps = [
+        ":utils",
+        "@absl-py//absl/testing:absltest",
+        "@absl-py//absl/testing:parameterized",
+    ],
+)
+
+py_test(
+    name = "filter_test",
+    srcs = ["utils/filter_test.py"],
+    deps = [
+        ":utils",
         "@absl-py//absl/testing:absltest",
         "@absl-py//absl/testing:parameterized",
     ],

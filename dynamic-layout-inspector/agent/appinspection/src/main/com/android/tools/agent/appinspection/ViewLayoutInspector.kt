@@ -734,26 +734,33 @@ class ViewLayoutInspector(connection: Connection, private val environment: Inspe
 
             // Update screenshot settings according to snapshot request
             val previousScreenshotSettings = state.screenshotSettings
-            updateAllCapturingCallbacks()
+            val previousEnableBitmapScreenshot = state.enableBitmapScreenshot
 
-            ThreadUtils.runOnMainThread { roots.forEach { it.view.invalidate() } }
+            try {
+                state.enableBitmapScreenshot = true
+                updateAllCapturingCallbacks()
 
-            val windowSnapshotResults = windowSnapshotRequests.awaitAll()
-            val rootIds = roots.map { it.view.uniqueDrawingId }
+                ThreadUtils.runOnMainThread { roots.forEach { it.view.invalidate() } }
 
-            val reply = LayoutInspectorViewProtocol.CaptureSnapshotResponse.newBuilder().apply {
-                windowRoots = WindowRootsEvent.newBuilder().apply {
-                    addAllIds(rootIds)
+                val windowSnapshotResults = windowSnapshotRequests.awaitAll()
+                val rootIds = roots.map { it.view.uniqueDrawingId }
+
+                val reply = LayoutInspectorViewProtocol.CaptureSnapshotResponse.newBuilder().apply {
+                    windowRoots = WindowRootsEvent.newBuilder().apply {
+                        addAllIds(rootIds)
+                    }.build()
+                    addAllWindowSnapshots(windowSnapshotResults)
                 }.build()
-                addAllWindowSnapshots(windowSnapshotResults)
-            }.build()
 
-            // Update screenshot settings to whatever was used before
-            state.screenshotSettings = previousScreenshotSettings
-            updateAllCapturingCallbacks()
+                callback.reply {
+                    captureSnapshotResponse = reply
+                }
+            } finally {
+                // Update screenshot settings to whatever was used before
+                state.screenshotSettings = previousScreenshotSettings
+                state.enableBitmapScreenshot = previousEnableBitmapScreenshot
 
-            callback.reply {
-                captureSnapshotResponse = reply
+                updateAllCapturingCallbacks()
             }
         }
     }

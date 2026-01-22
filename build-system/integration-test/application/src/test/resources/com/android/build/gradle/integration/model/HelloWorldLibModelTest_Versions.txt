@@ -17,8 +17,8 @@
          - minor         = 1
          - humanReadable = "Android Studio Iguana"
       - model_producer:
-         - major         = 21
-         - minor         = 1
+         - major         = 22
+         - minor         = 0
          - humanReadable = "Android Gradle Plugin 9.1"
       - native_module:
          - major         = 0

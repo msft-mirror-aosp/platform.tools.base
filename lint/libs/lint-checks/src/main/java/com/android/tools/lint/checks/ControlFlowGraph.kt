@@ -18,6 +18,7 @@ package com.android.tools.lint.checks
 import com.android.tools.lint.detector.api.asCall
 import com.android.tools.lint.detector.api.callNeverReturns
 import com.android.tools.lint.detector.api.findCommonParent
+import com.android.tools.lint.detector.api.getPrimitiveType
 import com.android.tools.lint.detector.api.isJava
 import com.android.tools.lint.detector.api.isKotlin
 import com.android.tools.lint.detector.api.isScopingFunction
@@ -793,7 +794,9 @@ open class ControlFlowGraph<T : Any> private constructor() {
           "emptyList",
           "isEmpty",
           "listOf",
-          "equals" -> return true
+          "equals",
+          "inc",
+          "dec" -> return true
         }
 
         if (isScopingFunction(method)) {
@@ -822,8 +825,12 @@ open class ControlFlowGraph<T : Any> private constructor() {
           is UParenthesizedExpression -> return isSafe(element.expression)
           is UastEmptyExpression -> return true
           is UPolyadicExpression -> {
-            if (element is UBinaryExpression && element.resolveOperator() != null) {
-              return false
+            if (element is UBinaryExpression) {
+              val opClass = element.resolveOperator()?.containingClass?.qualifiedName
+              if (opClass != null && getPrimitiveType(opClass) == null) {
+                // Might be unsafe if this is an overloaded (non-primitive) operator function.
+                return false
+              }
             }
             return element.operands.all(::isSafe)
           }

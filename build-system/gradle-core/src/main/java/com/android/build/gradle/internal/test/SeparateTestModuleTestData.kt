@@ -28,18 +28,12 @@ class SeparateTestModuleTestData(
     creationConfig: TestVariantCreationConfig,
     testApkDir: Provider<Directory>,
     testedApksDir: Provider<Directory>,
-    privacySandboxSdkApks: FileCollection?,
-    privacySandboxCompatSdkApksDir: Provider<Directory>?,
-    additionalSdkSupportedApkSplits: Provider<Directory>?,
     extraInstrumentationTestRunnerArgs: Provider<Map<String, String>>,
 ) : AbstractTestDataImpl(
     namespace,
     creationConfig,
     testApkDir,
     testedApksDir,
-    privacySandboxSdkApks,
-    privacySandboxCompatSdkApksDir,
-    additionalSdkSupportedApkSplits,
     extraInstrumentationTestRunnerArgs
 ) {
 

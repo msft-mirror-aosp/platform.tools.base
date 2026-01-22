@@ -34,6 +34,7 @@ import random
 from typing import Optional, List, Tuple
 from tools.base.bazel.mutation.proto import mutation_pb2
 from google.protobuf import text_format
+from tools.base.bazel.mutation.utils import exclude_filter, filter
 
 # Default paths for picking files
 DEFAULT_PATHS = ["tools/base/adblib", "tools/base/adblib-tools"]
@@ -50,6 +51,12 @@ ALLOWED_FILE_FORMAT = (".kt", ".java")
 # Proto file header details
 MUTATION_PROTO_FILE = "tools/base/bazel/mutation/proto/mutation.proto"
 MUTATION_PROTO_MESSAGE = "MutationFileMetadata"
+
+EXCLUDE_FILTERS = [
+    exclude_filter.CommentFilter(),
+    exclude_filter.AbstractInterfaceFilter(),
+    exclude_filter.AbstractMethodFilter()
+]
 
 class MutationChange:
     def __init__(self, line_number: int, original_content: str, mutated_content: str):
@@ -252,8 +259,12 @@ def mutate(source: str, content: str) -> Optional[List[MutationChange]]:
 
     # List to hold all possible mutations of the file
     possible_mutations_list = []
+    lines = content.splitlines()
+    # Get exclusion list
+    excluded_lines = filter.apply_exclude_filters(lines=lines, exclude_filters=EXCLUDE_FILTERS)
     # Iterate through each line with its number
-    for line_number, line in enumerate(content.splitlines(), 1):
+    for line_index in filter.get_valid_indexes(start=0, stop=len(lines), exclude_list=excluded_lines):
+        line = lines[line_index]
         # Try each pattern on the current line
         for version, pattern, regex_function, exclusion_function in regex_patterns:
             # Check if the line needs to be excluded from regex matching
@@ -267,7 +278,7 @@ def mutate(source: str, content: str) -> Optional[List[MutationChange]]:
                 # A mutation was successful for this line, create an MutationChange object and add it to the list
                 possible_mutations_list.append(
                     MutationChange(
-                        line_number=line_number,
+                        line_number=line_index+1,
                         original_content=line,
                         mutated_content=modified_line
                     )

@@ -115,7 +115,6 @@ fun createUtpRunConfig(
     additionalTestOutputDir: File?,
     additionalTestOutputOnDeviceDir: String?,
     installApkTimeout: Int?,
-    extractedSdkApks: List<List<Path>>,
     uninstallApksAfterTest: Boolean,
     reinstallIncompatibleApksBeforeTest: Boolean,
     shardConfig: ShardConfig?,
@@ -145,9 +144,6 @@ fun createUtpRunConfig(
     utpRunConfig.additionalTestOutputDir.fileValue(additionalTestOutputDir).disallowChanges()
     utpRunConfig.additionalTestOutputOnDeviceDir.setDisallowChanges(additionalTestOutputOnDeviceDir)
     utpRunConfig.installApkTimeout.setDisallowChanges(installApkTimeout)
-    utpRunConfig.extractedSdkApks.setDisallowChanges(extractedSdkApks.map {
-        objectFactory.fileCollection().convention(it).apply { disallowChanges() }
-    })
     utpRunConfig.uninstallApksAfterTest.setDisallowChanges(uninstallApksAfterTest)
     utpRunConfig.reinstallIncompatibleApksBeforeTest.setDisallowChanges(reinstallIncompatibleApksBeforeTest)
     utpRunConfig.shardConfig.setDisallowChanges(shardConfig)

@@ -91,6 +91,11 @@ interface Sources {
     val manifests: ManifestFiles
 
     /**
+     * KeepRules files for R8 configuration
+     */
+    val keepRules: SourceDirectories.Flat?
+
+    /**
      * Access (and potentially creates) a new [SourceDirectories.Flat] for a custom source type that
      * can be referenced by its [name].
      *

@@ -152,7 +152,7 @@ abstract class D8BundleMainDexListTask : NonIncrementalTask() {
     ) : VariantTaskCreationAction<D8BundleMainDexListTask, ApkCreationConfig> (
         creationConfig
     ), DexingTaskCreationAction by DexingTaskCreationActionImpl(
-        creationConfig
+        creationConfig.dexing
     ) {
         override val name: String = creationConfig.computeTaskNameInternal("bundleMultiDexList")
         override val type: Class<D8BundleMainDexListTask> = D8BundleMainDexListTask::class.java

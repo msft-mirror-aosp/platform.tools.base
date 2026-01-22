@@ -56,7 +56,6 @@ class ManagedDeviceTestRunner(
 
     /**
      * @param additionalTestOutputDir output directory for additional test output, or null if disabled
-     * @param dependencyApks are the private sandbox SDK APKs
      */
     fun runTests(
         managedDevice: Device,
@@ -70,7 +69,6 @@ class ManagedDeviceTestRunner(
         additionalInstallOptions: List<String>,
         helperApks: Set<File>,
         logger: Logger,
-        dependencyApks: Set<File>
     ): Boolean {
         managedDevice as ManagedVirtualDevice
         val logger = LoggerWrapper(logger)
@@ -91,7 +89,6 @@ class ManagedDeviceTestRunner(
             enableEmulatorDisplay
         )
         val testedApks = getTestedApks(testData, utpManagedDevice, logger)
-        val extractedSdkApks = getExtractedSdkApks(testData, utpManagedDevice)
 
         return avdComponents.runWithAvds(
             utpManagedDevice.avdName, numShards ?: 1) { deviceSerials ->
@@ -141,7 +138,6 @@ class ManagedDeviceTestRunner(
                     additionalTestOutputDir,
                     findAdditionalTestOutputDirectoryOnManagedDevice(utpManagedDevice, testData),
                     installApkTimeout,
-                    extractedSdkApks,
                     uninstallApksAfterTest = false,
                     reinstallIncompatibleApksBeforeTest = true,
                     shardConfig,
@@ -185,12 +181,6 @@ class ManagedDeviceTestRunner(
                 return testedApks
             }
             return listOf()
-        }
-
-        fun getExtractedSdkApks(
-                testData: StaticTestData, device: UtpManagedDevice): List<List<Path>> {
-            val deviceConfigProvider = ManagedDeviceConfigProvider(device)
-            return testData.privacySandboxInstallBundlesFinder(deviceConfigProvider)
         }
     }
 }

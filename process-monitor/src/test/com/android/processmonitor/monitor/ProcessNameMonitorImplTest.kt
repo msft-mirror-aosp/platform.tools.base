@@ -23,13 +23,10 @@ import com.android.processmonitor.common.ProcessEvent
 import com.android.processmonitor.common.ProcessEvent.ProcessAdded
 import com.android.processmonitor.common.ProcessEvent.ProcessRemoved
 import com.android.processmonitor.common.ProcessTracker
-import com.android.processmonitor.monitor.ddmlib.FakeDeviceTracker
+import com.android.processmonitor.monitor.adblib.FakeDeviceTracker
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.async
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.isActive
@@ -38,7 +35,6 @@ import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
-import java.util.concurrent.CancellationException
 
 /**
  * Tests for [ProcessNameMonitorImpl]

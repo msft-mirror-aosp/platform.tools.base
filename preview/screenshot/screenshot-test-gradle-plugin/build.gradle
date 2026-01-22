@@ -31,7 +31,7 @@ base {
 }
 
 def generateVersionPropertiesResourceFile = tasks.register('generateVersionPropertiesResourceFile') {
-    def resourceFile = project.layout.buildDirectory.file("generated/resources/version.properties")
+    def resourceFile = project.layout.buildDirectory.file("generated/resources/com-android-compose-screenshot.properties")
     outputs.file(resourceFile)
 
     doLast {

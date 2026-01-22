@@ -70,7 +70,7 @@ class UtpActionImpl : UtpAction {
                 it.additionalTestOutputDir.orNull?.asFile,
                 it.additionalTestOutputOnDeviceDir.orNull,
                 it.installApkTimeout.orNull,
-                it.extractedSdkApks.get().map { it.map { it.toPath() } },
+                it.dependencyApks.get().map { it.map { it.toPath() } },
                 it.uninstallApksAfterTest.get(),
                 it.reinstallIncompatibleApksBeforeTest.get(),
                 it.shardConfig.orNull,

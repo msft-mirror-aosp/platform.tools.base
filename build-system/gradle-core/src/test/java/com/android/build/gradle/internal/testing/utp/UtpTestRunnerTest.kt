@@ -73,7 +73,6 @@ class UtpTestRunnerTest {
         whenever(mockDevice.apiLevel).thenReturn(28)
         whenever(mockTestData.minSdkVersion).thenReturn(AndroidVersionImpl(28))
         whenever(mockTestData.testedApkFinder).thenReturn { listOf(mockAppApk) }
-        whenever(mockTestData.privacySandboxInstallBundlesFinder).thenReturn { emptyList() }
 
         val adbHelperProvider: Provider<AdbHelper> = mock()
         whenever(adbHelperProvider.get()).thenReturn(mockAdbHelper)
@@ -116,7 +115,6 @@ class UtpTestRunnerTest {
                 "projectName",
                 "variantName",
                 mockTestData,
-                setOf(mock()),
                 setOf(mock()),
                 listOf(mockDevice),
                 0,

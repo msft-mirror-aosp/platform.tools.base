@@ -1569,7 +1569,14 @@ class LintDriver(
   private fun checkProGuard(project: Project, main: Project) {
     val detectors = scopeDetectors[Scope.PROGUARD_FILE]
     if (detectors != null) {
-      val files = project.proguardFiles
+      val files = mutableListOf<File>()
+      files.addAll(project.proguardFiles)
+      // mix in keep rules
+      val keepRules = project.keepRulesSourceFolders
+      for (dir in keepRules) {
+        files.addAll(dir.walk().maxDepth(3).filter { it.isFile })
+      }
+
       for (file in files) {
         val context = Context(this, project, main, file)
         fireEvent(EventType.SCANNING_FILE, context)
@@ -2876,6 +2883,9 @@ class LintDriver(
 
     override fun createSuperClassMap(project: Project): Map<String, String> =
       delegate.createSuperClassMap(project)
+
+    override fun getKeepRulesSourceFolders(project: Project): List<File> =
+      delegate.getKeepRulesSourceFolders(project)
 
     override fun getResourceFolders(project: Project): List<File> =
       delegate.getResourceFolders(project)

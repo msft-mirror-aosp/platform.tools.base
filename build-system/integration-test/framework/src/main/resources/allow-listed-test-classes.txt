@@ -451,7 +451,6 @@ com.android.build.gradle.integration.lint.LintModelPerComponentIntegrationTest
 com.android.build.gradle.integration.lint.LintModelWriterTaskTest
 com.android.build.gradle.integration.lint.LintMultipleLintJarsTest
 com.android.build.gradle.integration.lint.LintNoJavaClassesTest
-com.android.build.gradle.integration.lint.LintProguardFilesTest
 com.android.build.gradle.integration.lint.LintRClassAliasTest
 com.android.build.gradle.integration.lint.LintRelocatableBaselineTest
 com.android.build.gradle.integration.lint.LintResourceResolveTest

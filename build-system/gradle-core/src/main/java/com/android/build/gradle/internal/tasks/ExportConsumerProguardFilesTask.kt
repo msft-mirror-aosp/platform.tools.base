@@ -83,6 +83,11 @@ abstract class ExportConsumerProguardFilesTask : NonIncrementalTask() {
     @get:PathSensitive(PathSensitivity.RELATIVE)
     abstract val inputFiles: ConfigurableFileCollection
 
+    @get:Optional
+    @get:InputFiles
+    @get:PathSensitive(PathSensitivity.RELATIVE)
+    abstract val keepRulesDirectories: ConfigurableFileCollection
+
     @get:Input
     @get:Optional
     abstract val ignoreFromInKeepRules: SetProperty<String>
@@ -113,17 +118,19 @@ abstract class ExportConsumerProguardFilesTask : NonIncrementalTask() {
             ) { exception -> throw EvalIssueException(exception) }
         }
 
+        val input = inputFiles + keepRulesDirectories.filter(File::isFile)
+
         val filteredProguardFiles = if (isDynamicFeature) {
             getFilteredFiles(
                 ignoreFromInKeepRules.get(),
                 ignoreFromAllExternalDependenciesInKeepRules.get(),
                 libraryKeepRules,
-                inputFiles,
+                input,
                 LoggerWrapper.getLogger(ExportConsumerProguardFilesTask::class.java),
                 LibraryArtifactType.KEEP_RULES
             )
         } else {
-            inputFiles
+            input
         }
 
         workerExecutor.noIsolation().submit(ExportConsumerProguardRunnable::class.java) {
@@ -167,12 +174,15 @@ abstract class ExportConsumerProguardFilesTask : NonIncrementalTask() {
             task.isDynamicFeature = creationConfig.componentType.isDynamicFeature
             task.disallowGlobalOptions = creationConfig.services.projectOptions[BooleanOption.R8_GLOBAL_OPTIONS_IN_CONSUMER_RULES_DISALLOWED]
 
-            task.inputFiles.from(
-                task.consumerProguardFiles,
-                creationConfig
-                    .artifacts
-                    .get(InternalArtifactType.GENERATED_PROGUARD_FILE)
-            )
+            task.inputFiles.apply {
+                from(task.consumerProguardFiles)
+                from(creationConfig.artifacts.get(InternalArtifactType.GENERATED_PROGUARD_FILE))
+            }
+            creationConfig.sources.keepRules {
+                task.keepRulesDirectories.from(it.getAsFileTrees())
+            }
+            task.keepRulesDirectories.disallowChanges()
+
             if (creationConfig.componentType.isDynamicFeature) {
                 task.libraryKeepRules = creationConfig.variantDependencies.getArtifactCollection(
                         AndroidArtifacts.ConsumedConfigType.RUNTIME_CLASSPATH,
@@ -188,6 +198,7 @@ abstract class ExportConsumerProguardFilesTask : NonIncrementalTask() {
                     optimizationCreationConfig.ignoreFromAllExternalDependenciesInKeepRules
                 )
             }
+            task.inputFiles.disallowChanges()
             task.buildDirectory.setDisallowChanges(task.project.layout.buildDirectory)
         }
     }

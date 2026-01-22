@@ -2197,6 +2197,9 @@ public final class SdkConstants {
     public static final String DOT_AVIF = ".avif";
     public static final String DOT_TOML = ".toml";
     public static final String DOT_VERSIONS_DOT_TOML = ".versions.toml";
+    public static final String KEEP_RULES_FOLDER = "keepRules";
+    public static final String DOT_KEEP = ".keep";
+
 
     /** Extension of the Application package Files, i.e. "apk". */
     public static final String EXT_ANDROID_PACKAGE = "apk";

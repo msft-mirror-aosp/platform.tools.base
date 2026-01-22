@@ -17,7 +17,6 @@
 package com.android.build.gradle.integration.connected.application;
 
 import com.android.annotations.NonNull;
-import com.android.build.gradle.integration.common.fixture.Adb;
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp;
 import com.android.build.gradle.integration.common.runner.FilterableParameterized;
@@ -60,7 +59,6 @@ public class SigningConnectedTest {
                     .fromTestApp(HelloWorldApp.noBuildFile())
                     .create();
 
-    @Rule public Adb adb = new Adb();
     @ClassRule public static final ExternalResource EMULATOR = EmulatorUtils.getEmulator();
 
     @Parameterized.Parameters(name = "{0}, {2}")

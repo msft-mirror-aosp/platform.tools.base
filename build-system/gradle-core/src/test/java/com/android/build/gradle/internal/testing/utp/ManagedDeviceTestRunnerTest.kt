@@ -79,7 +79,6 @@ class ManagedDeviceTestRunnerTest {
     private lateinit var avdFolder: File
     private lateinit var outputDirectory: File
 
-    private val extractedSdkApks = listOf(listOf(Path("test1"), Path("test2")))
     private val sdkApkSet = setOf(File("test"))
 
     private val runnerConfigsCaptor = argumentCaptor<List<UtpRunConfig>>()
@@ -98,7 +97,6 @@ class ManagedDeviceTestRunnerTest {
         whenever(mockTestData.testApk).thenReturn(mockAppApk)
         whenever(mockTestData.minSdkVersion).thenReturn(AndroidVersionImpl(28))
         whenever(mockTestData.testedApkFinder).thenReturn { listOf(mockAppApk) }
-        whenever(mockTestData.privacySandboxInstallBundlesFinder).thenReturn { extractedSdkApks }
 
         whenever(mockDslDevice.pageAlignmentSuffix).thenReturn("")
 
@@ -198,7 +196,6 @@ class ManagedDeviceTestRunnerTest {
                     listOf(),
                     setOf(mockHelperApk),
                     mockLogger,
-                    sdkApkSet
                 )
             }
         }

@@ -41,6 +41,7 @@ import com.android.build.api.variant.impl.SigningConfigImpl
 import com.android.build.gradle.internal.component.ApkCreationConfig
 import com.android.build.gradle.internal.component.DeviceTestCreationConfig
 import com.android.build.gradle.internal.component.LibraryCreationConfig
+import com.android.build.gradle.internal.component.TargetSdkAwareConfig
 import com.android.build.gradle.internal.component.VariantCreationConfig
 import com.android.build.gradle.internal.component.features.AndroidResourcesCreationConfig
 import com.android.build.gradle.internal.component.features.BuildConfigCreationConfig
@@ -121,11 +122,7 @@ open class DeviceTestImpl @Inject constructor(
         get() = targetSdk
 
     override val targetSdkOverride: AndroidVersion?
-        get() = when (mainVariant) {
-            is ApkCreationConfig -> (mainVariant as ApkCreationConfig).targetSdkOverride
-            is LibraryCreationConfig -> (mainVariant as LibraryCreationConfig).targetSdkOverride
-            else -> null
-        }
+        get() = (mainVariant as? TargetSdkAwareConfig)?.targetSdkOverride
 
     override val applicationId: Property<String> = internalServices.propertyOf(
         String::class.java,

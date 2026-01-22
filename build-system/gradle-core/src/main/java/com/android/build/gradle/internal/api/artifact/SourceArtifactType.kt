@@ -35,6 +35,7 @@ sealed class SourceArtifactType: Artifact.Single<Directory>(
     object AIDL : SourceArtifactType()
     object RENDERSCRIPT : SourceArtifactType()
     object BASELINE_PROFILES : SourceArtifactType()
+    object KEEP_RULES : SourceArtifactType()
     object JNI : SourceArtifactType()
     object JNI_LIBS : SourceArtifactType()
     object SHADERS : SourceArtifactType()

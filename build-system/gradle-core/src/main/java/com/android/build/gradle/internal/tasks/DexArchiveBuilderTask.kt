@@ -231,7 +231,7 @@ abstract class DexArchiveBuilderTask : NewIncrementalTask() {
     ) : VariantTaskCreationAction<DexArchiveBuilderTask, ApkCreationConfig>(
         creationConfig
     ), DexingTaskCreationAction by DexingTaskCreationActionImpl(
-        creationConfig
+        creationConfig.dexing
     ) {
 
         override val name = creationConfig.computeTaskNameInternal("dexBuilder")

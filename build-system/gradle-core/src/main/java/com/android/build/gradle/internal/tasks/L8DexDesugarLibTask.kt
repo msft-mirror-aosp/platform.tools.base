@@ -143,7 +143,7 @@ abstract class L8DexDesugarLibTask : NonIncrementalTask() {
     ) : VariantTaskCreationAction<L8DexDesugarLibTask, ApkCreationConfig>(
         creationConfig
     ), DexingTaskCreationAction by DexingTaskCreationActionImpl(
-        creationConfig
+        creationConfig.dexing
     ) {
         override val name = computeTaskName("l8DexDesugarLib")
         override val type = L8DexDesugarLibTask::class.java

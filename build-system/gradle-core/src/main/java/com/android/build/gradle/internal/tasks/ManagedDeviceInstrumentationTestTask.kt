@@ -220,11 +220,6 @@ abstract class ManagedDeviceInstrumentationTestTask: NonIncrementalTask(), Andro
     @get: Input
     abstract val enableEmulatorDisplay: Property<Boolean>
 
-    @InputFiles
-    @PathSensitive(PathSensitivity.NONE)
-    @Optional
-    abstract fun getPrivacySandboxSdkApksFiles(): ConfigurableFileCollection
-
     @Option(
         option="enable-display",
         description = "Adding this option will display the emulator while testing, instead" +
@@ -275,7 +270,6 @@ abstract class ManagedDeviceInstrumentationTestTask: NonIncrementalTask(), Andro
                     installOptions.getOrElse(listOf()),
                     buddyApks.files,
                     logger,
-                    getPrivacySandboxSdkApksFiles()?.files ?: setOf()
                 )
             } catch (e: Exception) {
                 recordCrashedInstrumentedTestRun(
@@ -494,12 +488,6 @@ abstract class ManagedDeviceInstrumentationTestTask: NonIncrementalTask(), Andro
                 )
             }
             task.rClasses.disallowChanges()
-
-            if(testData.privacySandboxSdkApks != null) {
-                task.getPrivacySandboxSdkApksFiles()
-                    .setFrom(testData.privacySandboxSdkApks)
-            }
-            task.getPrivacySandboxSdkApksFiles().disallowChanges()
         }
     }
 }
