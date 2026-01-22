@@ -27,9 +27,7 @@ import static org.junit.Assert.fail;
 
 import org.junit.Test;
 
-/**
- * Unit tests for {@link AndroidVersion}.
- */
+/** Unit tests for {@link AndroidVersion}. */
 public class AndroidVersionTest {
 
     @Test
@@ -53,7 +51,8 @@ public class AndroidVersionTest {
                 .isEqualTo(new AndroidVersion(30, null, null, true));
         assertThat(new AndroidVersion(33).withBaseExtensionLevel())
                 .isEqualTo(new AndroidVersion(33, null, 3, true));
-        assertThat(new AndroidVersion(33).withBaseExtensionLevel().getExtensionLevel()).isEqualTo(3);
+        assertThat(new AndroidVersion(33).withBaseExtensionLevel().getExtensionLevel())
+                .isEqualTo(3);
         assertThat(new AndroidVersion(36, 1).withBaseExtensionLevel())
                 .isEqualTo(new AndroidVersion(36, 1, null, null, true));
     }
@@ -61,13 +60,13 @@ public class AndroidVersionTest {
     @Test
     public void withExtensionLevel() {
         assertThat(new AndroidVersion(30).withExtensionLevel(5))
-            .isEqualTo(new AndroidVersion(30, null, 5, false));
+                .isEqualTo(new AndroidVersion(30, null, 5, false));
         assertThat(new AndroidVersion(33).withExtensionLevel(3))
-            .isEqualTo(new AndroidVersion(33, null, 3, true));
+                .isEqualTo(new AndroidVersion(33, null, 3, true));
         assertThat(new AndroidVersion(33).withExtensionLevel(4))
-            .isEqualTo(new AndroidVersion(33, null, 4, false));
+                .isEqualTo(new AndroidVersion(33, null, 4, false));
         assertThat(new AndroidVersion(36, 1).withExtensionLevel(99))
-            .isEqualTo(new AndroidVersion(36, 1, null, 99, false));
+                .isEqualTo(new AndroidVersion(36, 1, null, 99, false));
     }
 
     @Test
@@ -273,7 +272,7 @@ public class AndroidVersionTest {
         assertEquals("API 0, CODE_NAME preview", v.toString());
 
         // invalid code name should fail
-        for (String s : new String[] { "REL", "code.name", "10val", "" }) {
+        for (String s : new String[] {"REL", "code.name", "10val", ""}) {
             try {
                 //noinspection ResultOfObjectAllocationIgnored
                 AndroidVersion.fromString(s);

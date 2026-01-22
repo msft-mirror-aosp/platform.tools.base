@@ -34,37 +34,31 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * <p>
- * Represents the version of a target or device.
- * </p>
- * A version is defined by an API level, an optional code name, and an optional extension level.
- * <ul><li>Release versions of the Android platform are identified by their API level (integer), and
- * extension level if present.
- * (technically the code name for release version is "REL" but this class will return
- * <code>null</code> instead.)</li>
- * <li>Preview versions of the platform are identified by a code name. Their API level
- * is usually set to the value of the previous platform.</li></ul>
- * <p>
- * While this class contains all values, its goal is to abstract them, so that code comparing 2+
+ * Represents the version of a target or device. A version is defined by an API level, an optional
+ * code name, and an optional extension level.
+ *
+ * <ul>
+ *   <li>Release versions of the Android platform are identified by their API level (integer), and
+ *       extension level if present. (technically the code name for release version is "REL" but
+ *       this class will return <code>null</code> instead.)
+ *   <li>Preview versions of the platform are identified by a code name. Their API level is usually
+ *       set to the value of the previous platform.
+ * </ul>
+ *
+ * <p>While this class contains all values, its goal is to abstract them, so that code comparing 2+
  * versions doesn't have to deal with the logic of handling all values.
- * </p>
- * <p>
- * There are some cases where ones may want to access the values directly. This can be done
- * with {@link #getApiLevel()}, {@link #getCodename()}, {@link #getExtensionLevel()},
- * and {@link #isBaseExtension()}.
- * </p>
- * For generic UI display of the API version, {@link #getApiString()} is to be used.
+ *
+ * <p>There are some cases where ones may want to access the values directly. This can be done with
+ * {@link #getApiLevel()}, {@link #getCodename()}, {@link #getExtensionLevel()}, and {@link
+ * #isBaseExtension()}. For generic UI display of the API version, {@link #getApiString()} is to be
+ * used.
  */
 public final class AndroidVersion implements Comparable<AndroidVersion>, Serializable {
 
-    /**
-     * Prefix used to build hash strings for platform targets
-     */
+    /** Prefix used to build hash strings for platform targets */
     public static final String PLATFORM_HASH_PREFIX = "android-";
 
-    /**
-     * SDK version codes mirroring ones found in Build#VERSION_CODES on Android.
-     */
+    /** SDK version codes mirroring ones found in Build#VERSION_CODES on Android. */
     @SuppressWarnings("unused")
     public static class VersionCodes {
         public static final int UNDEFINED = 0;
@@ -147,10 +141,8 @@ public final class AndroidVersion implements Comparable<AndroidVersion>, Seriali
 
     private final AndroidApiLevel mAndroidApiLevel;
 
-    @Nullable
-    private final String mCodename;
-    @Nullable
-    private final Integer mExtensionLevel;
+    @Nullable private final String mCodename;
+    @Nullable private final Integer mExtensionLevel;
 
     private final boolean mIsBaseExtension;
 
@@ -161,9 +153,13 @@ public final class AndroidVersion implements Comparable<AndroidVersion>, Seriali
     public static final AndroidVersion ART_RUNTIME = new AndroidVersion(21, null);
 
     /** First version to support 64-bit ABIs. */
-    public static final AndroidVersion SUPPORTS_64_BIT = new AndroidVersion(VersionCodes.LOLLIPOP, null);
+    public static final AndroidVersion SUPPORTS_64_BIT =
+            new AndroidVersion(VersionCodes.LOLLIPOP, null);
 
-    /** First version to feature binder's common interface "cmd" for sending shell commands to services. */
+    /**
+     * First version to feature binder's common interface "cmd" for sending shell commands to
+     * services.
+     */
     public static final AndroidVersion BINDER_CMD_AVAILABLE = new AndroidVersion(24, null);
 
     /** First version to allow split apks */
@@ -174,6 +170,7 @@ public final class AndroidVersion implements Comparable<AndroidVersion>, Seriali
 
     /** Minimum API versions that are recommended for use in testing apps */
     public static final int MIN_RECOMMENDED_API = 22;
+
     public static final int MIN_RECOMMENDED_WEAR_API = 25;
 
     /** First version to support foldable devices */
@@ -203,9 +200,7 @@ public final class AndroidVersion implements Comparable<AndroidVersion>, Seriali
     /** First version to support rectangular Wear display */
     public static final int MIN_RECTANGULAR_WEAR_API = 28;
 
-    /**
-     * Thrown when an {@link AndroidVersion} object could not be created.
-     */
+    /** Thrown when an {@link AndroidVersion} object could not be created. */
     public static final class AndroidVersionException extends Exception {
 
         private static final long serialVersionUID = 1L;
@@ -236,8 +231,8 @@ public final class AndroidVersion implements Comparable<AndroidVersion>, Seriali
     }
 
     /**
-     * Creates an {@link AndroidVersion} with the given api level and codename.
-     * Codename should be null for a release version, otherwise it's a preview codename.
+     * Creates an {@link AndroidVersion} with the given api level and codename. Codename should be
+     * null for a release version, otherwise it's a preview codename.
      */
     public AndroidVersion(int apiLevel, @Nullable String codename) {
         this(apiLevel, codename, null, true);
@@ -247,14 +242,16 @@ public final class AndroidVersion implements Comparable<AndroidVersion>, Seriali
      * Creates an {@link AndroidVersion} with the given api level, codename, and extension level.
      * Codename should be null for a release version, otherwise it's a preview codename.
      */
-    public AndroidVersion(int apiLevel,
+    public AndroidVersion(
+            int apiLevel,
             @Nullable String codename,
             @Nullable Integer extensionLevel,
             boolean isBaseExtension) {
         this(apiLevel, 0, codename, extensionLevel, isBaseExtension);
     }
 
-    public AndroidVersion(int apiLevel,
+    public AndroidVersion(
+            int apiLevel,
             int apiMinorLevel,
             @Nullable String codename,
             @Nullable Integer extensionLevel,
@@ -296,8 +293,9 @@ public final class AndroidVersion implements Comparable<AndroidVersion>, Seriali
     }
 
     /**
-     * Returns this AndroidVersion with the same API level and codename and the specified extension level,
-     * e.g. new AndroidVersion(33).withExtensionLevel(4).getApiStringWithExtension() would be "33-ext4".
+     * Returns this AndroidVersion with the same API level and codename and the specified extension
+     * level, e.g. new AndroidVersion(33).withExtensionLevel(4).getApiStringWithExtension() would be
+     * "33-ext4".
      */
     public AndroidVersion withExtensionLevel(int extensionLevel) {
         return new AndroidVersion(
@@ -311,8 +309,8 @@ public final class AndroidVersion implements Comparable<AndroidVersion>, Seriali
      * Creates an {@link AndroidVersion} from a string that may be an integer API level or a string
      * codename. <em>Important</em>: An important limitation of this method is that it cannot
      * possibly recreate the API level integer from a pure string codename. This is only OK to use
-     * if the caller can guarantee that only {@link #getApiString()} will be used later.
-     * {@link #getAndroidApiLevel()#getApiLevel()} will return 0.
+     * if the caller can guarantee that only {@link #getApiString()} will be used later. {@link
+     * #getAndroidApiLevel()#getApiLevel()} will return 0.
      *
      * <p>SdkVersionInfo.getVersion() can be used to get a valid AndroidVersion from known
      * codenames, and should be preferred.
@@ -326,15 +324,18 @@ public final class AndroidVersion implements Comparable<AndroidVersion>, Seriali
             Matcher matcher = API_LEVEL_PATTERN.matcher(apiString);
             if (matcher.matches()) {
                 int majorVersion = Integer.parseInt(matcher.group(1));
-                int minorVersion = matcher.group(3) != null ? Integer.parseInt(matcher.group(3)) : 0;
+                int minorVersion =
+                        matcher.group(3) != null ? Integer.parseInt(matcher.group(3)) : 0;
                 AndroidApiLevel androidApiLevel = new AndroidApiLevel(majorVersion, minorVersion);
-                Integer extensionLevel = matcher.group(5) != null ? Integer.parseInt(matcher.group(5)) : null;
+                Integer extensionLevel =
+                        matcher.group(5) != null ? Integer.parseInt(matcher.group(5)) : null;
                 boolean isBaseExtension =
                         extensionLevel == null
                                 || extensionLevel <= getBaseExtensionLevel(androidApiLevel);
                 return new AndroidVersion(androidApiLevel, null, extensionLevel, isBaseExtension);
             }
-        } catch (NumberFormatException ignore) {}
+        } catch (NumberFormatException ignore) {
+        }
 
         String codename = sanitizeCodename(apiString);
         if (codename == null || !PREVIEW_PATTERN.matcher(codename).matches()) {
@@ -389,12 +390,11 @@ public final class AndroidVersion implements Comparable<AndroidVersion>, Seriali
     }
 
     /**
-     * Returns the API level as an integer. If this is a preview platform, it
-     * will return the expected final version of the API rather than the current API
-     * level. This is the "feature level" as opposed to the "release level" returned by
-     * {@link #getApiLevel()} in the sense that it is useful when you want
-     * to check the presence of a given feature from an API, and we consider the feature
-     * present in preview platforms as well.
+     * Returns the API level as an integer. If this is a preview platform, it will return the
+     * expected final version of the API rather than the current API level. This is the "feature
+     * level" as opposed to the "release level" returned by {@link #getApiLevel()} in the sense that
+     * it is useful when you want to check the presence of a given feature from an API, and we
+     * consider the feature present in preview platforms as well.
      *
      * @return the API level of this version, +1 for preview platforms
      */
@@ -405,8 +405,9 @@ public final class AndroidVersion implements Comparable<AndroidVersion>, Seriali
 
     /**
      * Returns the version code name if applicable, null otherwise.
-     * <p>If the codename is non-null, then the API level should be ignored, and this should be
-     * used as a unique identifier of the target instead.</p>
+     *
+     * <p>If the codename is non-null, then the API level should be ignored, and this should be used
+     * as a unique identifier of the target instead.
      */
     @Nullable
     public String getCodename() {
@@ -460,7 +461,6 @@ public final class AndroidVersion implements Comparable<AndroidVersion>, Seriali
     @NonNull
     public String getApiStringWithoutExtension() {
         return getApiString(false);
-
     }
 
     /**
@@ -496,17 +496,13 @@ public final class AndroidVersion implements Comparable<AndroidVersion>, Seriali
         return PLATFORM_HASH_PREFIX + getApiStringWithExtension();
     }
 
-    /**
-     * Returns the extension level if known.
-     */
+    /** Returns the extension level if known. */
     @Nullable
     public Integer getExtensionLevel() {
         return mExtensionLevel;
     }
 
-    /**
-     * Returns whether this AndroidVersion is the base extension for the API level.
-     */
+    /** Returns whether this AndroidVersion is the base extension for the API level. */
     public boolean isBaseExtension() {
         return mIsBaseExtension;
     }
@@ -524,15 +520,13 @@ public final class AndroidVersion implements Comparable<AndroidVersion>, Seriali
     /**
      * Checks whether a device running a version similar to the receiver can run a project compiled
      * for the given <var>version</var>.
-     * <p>
-     * Be aware that this is not a perfect test, as other properties could break compatibility
+     *
+     * <p>Be aware that this is not a perfect test, as other properties could break compatibility
      * despite this method returning true.
-     * </p>
-     * <p>
-     * Nevertheless, when testing if an application can run on a device (where there is no
-     * access to the list of optional libraries), this method can give a good indication of whether
-     * there is a chance the application could run, or if there's a direct incompatibility.
-     * </p>
+     *
+     * <p>Nevertheless, when testing if an application can run on a device (where there is no access
+     * to the list of optional libraries), this method can give a good indication of whether there
+     * is a chance the application could run, or if there's a direct incompatibility.
      */
     public boolean canRun(@NonNull AndroidVersion appVersion) {
         // if the application is compiled for a preview version, the device must be running exactly
@@ -587,8 +581,8 @@ public final class AndroidVersion implements Comparable<AndroidVersion>, Seriali
 
     /** Comparator used to implement the natural order for this class. */
     private static final Comparator<AndroidVersion> ORDERING =
-            API_LEVEL_ORDERING
-                    .thenComparing(AndroidVersion::getNonBaseExtensionLevel, nullsFirst(naturalOrder()));
+            API_LEVEL_ORDERING.thenComparing(
+                    AndroidVersion::getNonBaseExtensionLevel, nullsFirst(naturalOrder()));
 
     @Override
     public int compareTo(@NonNull AndroidVersion o) {
@@ -603,9 +597,7 @@ public final class AndroidVersion implements Comparable<AndroidVersion>, Seriali
         return isBaseExtension() ? null : getExtensionLevel();
     }
 
-    /**
-     * Returns true if this version is equal to or newer than the given API level.
-     */
+    /** Returns true if this version is equal to or newer than the given API level. */
     public boolean isAtLeast(int apiLevel) {
         return isAtLeast(apiLevel, null);
     }
@@ -623,9 +615,9 @@ public final class AndroidVersion implements Comparable<AndroidVersion>, Seriali
     }
 
     /**
-     * Compares this version with the specified API and returns true if this version
-     * is greater or equal than the requested API -- that is the current version is a
-     * suitable min-api-level for the argument API.
+     * Compares this version with the specified API and returns true if this version is greater or
+     * equal than the requested API -- that is the current version is a suitable min-api-level for
+     * the argument API.
      *
      * @deprecated use isAtLeast
      */
@@ -660,12 +652,10 @@ public final class AndroidVersion implements Comparable<AndroidVersion>, Seriali
     }
 
     /**
-     * Sanitizes the codename string according to the following rules:
-     * - A codename should be {@code null} for a release version or it should be a non-empty
-     *   string for an actual preview.
-     * - In input, spacing is trimmed since it is irrelevant.
-     * - An empty string or the special codename "REL" means a release version
-     *   and is converted to {@code null}.
+     * Sanitizes the codename string according to the following rules: - A codename should be {@code
+     * null} for a release version or it should be a non-empty string for an actual preview. - In
+     * input, spacing is trimmed since it is irrelevant. - An empty string or the special codename
+     * "REL" means a release version and is converted to {@code null}.
      *
      * @param codename A possible-null codename.
      * @return Null for a release version or a non-empty codename.
