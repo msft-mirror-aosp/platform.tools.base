@@ -12,7 +12,6 @@ com.android.build.gradle.integration.api.ArtifactReplacementTest
 com.android.build.gradle.integration.api.BuiltArtifactsWithWorkerTest
 com.android.build.gradle.integration.api.BytecodeGenerationHooksTest
 com.android.build.gradle.integration.api.DynamicAppClassesAccessTest
-com.android.build.gradle.integration.api.GeneratedManifestInAndroidTestTest
 com.android.build.gradle.integration.api.GetCompileClasspathTest
 com.android.build.gradle.integration.api.GetRuntimeSymbolListTest
 com.android.build.gradle.integration.api.LibraryAllClassesAccessTest
@@ -33,7 +32,6 @@ com.android.build.gradle.integration.application.AgpVersionConsistencyTest
 com.android.build.gradle.integration.application.AidlSdkComponentsTest
 com.android.build.gradle.integration.application.AnalyzeDependenciesTest
 com.android.build.gradle.integration.application.AndroidComponentsFilteringTest
-com.android.build.gradle.integration.application.AndroidManifestInTestTest
 com.android.build.gradle.integration.application.AndroidTestResourcesTest
 com.android.build.gradle.integration.application.AnnotationProcessorTest
 com.android.build.gradle.integration.application.ApplicationIdReset

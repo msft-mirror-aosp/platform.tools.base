@@ -16,20 +16,96 @@
 
 package com.android.build.gradle.integration.application
 
-import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.project.ApkSelector
+import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import org.junit.Rule
 import org.junit.Test
 
 /** Assemble tests for androidManifestInTest. */
 class AndroidManifestInTestTest {
-  @Rule @JvmField var project = GradleTestProject.builder().fromTestProject("androidManifestInTest").create()
+  @get:Rule
+  val rule =
+    GradleRule.from {
+      androidApplication {
+        android {
+          namespace = "com.android.tests.basic"
+          defaultConfig {
+            versionCode = 12
+            versionName = "2.0"
+            minSdk = 16
+            targetSdk = 16
+            testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+          }
+        }
+        files {
+          add(
+            "src/androidTest/AndroidManifest.xml",
+            """
+            <?xml version="1.0" encoding="utf-8"?>
+            <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+                <instrumentation android:name="${"$"}{instrumentationRunner}">
+                    <meta-data android:name="listener"
+                               android:value="androidx.test.internal.runner.listener.ManifestListener"/>
+                </instrumentation>
+
+                <permission-group android:name="foo.permission-group.COST_MONEY"
+                    android:label="@string/app_name"
+                    android:description="@string/app_name" />
+
+                <permission android:name="foo.permission.RECEIVED_SMS"
+                    android:permissionGroup="foo.permission-group.COST_MONEY"
+                    android:label="@string/app_name"
+                    android:description="@string/app_name" />
+
+            </manifest>
+            """
+              .trimIndent(),
+          )
+
+          add(
+            "src/main/res/values/strings.xml",
+            """
+            <resources>
+                <string name="app_name">ManifestInTest</string>
+            </resources>
+            """
+              .trimIndent(),
+          )
+
+          add(
+            "src/androidTest/res/values/strings.xml",
+            """
+            <?xml version="1.0" encoding="utf-8"?>
+            <resources>
+                <string name="app_name">_Test-Basic</string>
+            </resources>
+            """
+              .trimIndent(),
+          )
+
+          add(
+            "src/main/res/drawable/icon.xml",
+            """
+            <vector xmlns:android="http://schemas.android.com/apk/res/android"
+                android:width="24dp"
+                android:height="24dp"
+                android:viewportWidth="24"
+                android:viewportHeight="24">
+                <path android:fillColor="#FF000000" android:pathData="M12,2L2,22h20L12,2z"/>
+            </vector>
+            """
+              .trimIndent(),
+          )
+        }
+      }
+    }
 
   @Test
   fun testUserProvidedTestAndroidManifest() {
-    project.execute("assembleDebugAndroidTest")
+    rule.build.executor.run("assembleDebugAndroidTest")
 
-    project.assertApk(ApkSelector.ANDROIDTEST_DEBUG) {
+    rule.build.androidApplication().assertApk(ApkSelector.ANDROIDTEST_DEBUG) {
       manifestAsNodes().node("manifest").apply {
         node("permission-group")
           .containsAttributeAndValue("http://schemas.android.com/apk/res/android:name", "\"foo.permission-group.COST_MONEY\"")
