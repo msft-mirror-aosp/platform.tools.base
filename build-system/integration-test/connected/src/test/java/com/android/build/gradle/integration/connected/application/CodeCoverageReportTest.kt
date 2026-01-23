@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.integration.connected.application
 
+import com.android.build.gradle.integration.common.fixture.GradleBuildResult
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition
 import com.android.build.gradle.integration.connected.utils.getEmulator
@@ -197,7 +198,7 @@ class CodeCoverageReportTest {
 
     @Test
     fun testCreateCoverageReport() {
-        rule.build.executor.run(":app:createCoverageReport")
+        val result = rule.build.executor.run(":app:createCoverageReport")
 
         val appBuildDir = rule.build.androidApplication(":app").buildDir.toFile()
         val outputDir = FileUtils.join(
@@ -208,7 +209,8 @@ class CodeCoverageReportTest {
             outputDir = outputDir,
             expectedProjectName = "reportAggregation",
             expectedModuleCount = 1,
-            verifyLibModuleIsPresent = false
+            verifyLibModuleIsPresent = false,
+            taskResult = result
         )
     }
 
@@ -242,7 +244,7 @@ class CodeCoverageReportTest {
 
     @Test
     fun testCreateAggregatedCoverageReport() {
-        rule.build.executor.run(":app:createAggregatedCoverageReport")
+        val result = rule.build.executor.run(":app:createAggregatedCoverageReport")
 
         val appBuildDir = rule.build.androidApplication(":app").buildDir.toFile()
         val outputDir = FileUtils.join(
@@ -253,7 +255,8 @@ class CodeCoverageReportTest {
             outputDir = outputDir,
             expectedProjectName = "reportAggregation",
             expectedModuleCount = 2,
-            verifyLibModuleIsPresent = true
+            verifyLibModuleIsPresent = true,
+            taskResult = result
         )
     }
 
@@ -302,7 +305,8 @@ class CodeCoverageReportTest {
         outputDir: File,
         expectedProjectName: String,
         expectedModuleCount: Int,
-        verifyLibModuleIsPresent: Boolean
+        verifyLibModuleIsPresent: Boolean,
+        taskResult: GradleBuildResult
     ) {
         assertThat(outputDir).exists()
         assertThat(outputDir).isDirectory()
@@ -310,6 +314,7 @@ class CodeCoverageReportTest {
         val indexFile = File(outputDir, "index.html")
         assertThat(indexFile).exists()
         assertThat(indexFile).isFile()
+        taskResult.assertOutputContains("View coverage report at file://${indexFile.absolutePath}")
 
         val cssFile = File(outputDir, "css/style.css")
         assertThat(cssFile).exists()

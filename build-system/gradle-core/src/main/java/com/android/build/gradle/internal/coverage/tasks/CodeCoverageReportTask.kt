@@ -35,6 +35,7 @@ import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskProvider
+import org.gradle.internal.logging.ConsoleRenderer
 import java.io.File
 
 @CacheableTask
@@ -63,6 +64,10 @@ abstract class CodeCoverageReportTask: NonIncrementalGlobalTask() {
             rootProjectName.get(),
             rootProjectDir.get().asFile
         )
+
+        val reportLocation =
+            ConsoleRenderer().asClickableFileUrl(File(htmlReportDir.get().asFile, "index.html"))
+        logger.lifecycle("View coverage report at $reportLocation")
     }
 
     class AggregatedCoverageReportCreationAction(
