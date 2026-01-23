@@ -44,10 +44,10 @@ fun StringBuilder.appendCapitalized(word: String) : StringBuilder {
     // This does not support characters that requires 2 char to be represented but the previous
     // code didn't either.
     // This catches possible errors and fallbacks to the less efficient way.
-    var c = word[0].toInt()
+    var c = word[0].code
 
     // see if the letter is using more than one char.
-    if (c >= Character.MIN_HIGH_SURROGATE.toInt() && c <= Character.MAX_HIGH_SURROGATE.toInt()) {
+    if (c >= Character.MIN_HIGH_SURROGATE.code && c <= Character.MAX_HIGH_SURROGATE.code) {
         c = word.codePointAt(0)
         val charCount = Character.charCount(c)
 

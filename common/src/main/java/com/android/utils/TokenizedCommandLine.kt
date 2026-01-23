@@ -501,7 +501,7 @@ class TokenizedCommandLine(
         var hash = 1469598103934665603
         var i = 1
         while (!isEndOfCommand(i) && !isEndOfCommand(i + 1)) {
-            hash = hash xor (charAt(i) ?: ' ').toLong()
+            hash = hash xor (charAt(i) ?: ' ').code.toLong()
             hash *= 1099511628211
             ++i
         }
