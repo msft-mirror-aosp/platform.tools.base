@@ -2,15 +2,15 @@ load("//tools/base/bazel:kotlin.bzl", "kotlin_test")
 load("//tools/base/bazel:maven.bzl", "maven_library")
 
 maven_library(
-    name = "android-test-test-engine",
+    name = "android-test-engine",
     srcs = glob([
         "src/main/java/**/*.java",
         "src/main/java/**/*.kt",
     ]),
-    coordinates = "com.android.tools.androidtest:test-engine",
-    description = "A JUnit 5 TestEngine for running Android instrumentation tests.",
+    coordinates = "com.android.tools.androidtest:android-test-engine",
+    description = "A JUnit TestEngine for running Android instrumentation tests.",
     notice = "LICENSE",
-    resource_strip_prefix = "tools/base/androidtest/testengine/src/main/resources/",
+    resource_strip_prefix = "tools/base/android-test/android-test-junit-engine/src/main/resources/",
     resources = glob(["src/main/resources/**"]),
     version = "0.1.0-dev",
     visibility = ["//visibility:public"],
@@ -28,10 +28,11 @@ kotlin_test(
         "src/test/java/**/*.java",
     ]),
     jvm_flags = ["-Dtest.suite.jar=tests.jar"],
+    resource_strip_prefix = "tools/base/android-test/android-test-junit-engine/src/main/resources/",
     resources = glob(["src/test/resources/**"]),
     test_class = "com.android.testutils.JarTestSuite",
     deps = [
-        ":android-test-test-engine",
+        ":android-test-engine",
         "//tools/base/testutils:tools.testutils",
         "@maven//:com.google.truth.truth",
         "@maven//:junit.junit",

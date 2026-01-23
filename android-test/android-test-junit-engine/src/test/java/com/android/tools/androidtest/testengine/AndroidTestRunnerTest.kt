@@ -53,12 +53,14 @@ class AndroidTestRunnerTest {
     private lateinit var instrumentationRunner: AmInstrumentationRunner
 
     private lateinit var baseApk: File
+    private lateinit var testApk: File
     private lateinit var splitApk1: File
     private lateinit var utilApk: File
 
     @Before
     fun setUp() {
         baseApk = tempFolder.newFile("base.apk")
+        testApk = tempFolder.newFile("test.apk")
         splitApk1 = tempFolder.newFile("split1.apk")
         utilApk = tempFolder.newFile("util.apk")
     }
@@ -71,6 +73,7 @@ class AndroidTestRunnerTest {
             adbApkInstaller = adbApkInstaller,
             instrumentationRunner = instrumentationRunner,
             testedApks = listOf(baseApk),
+            testApks = emptyList(),
             apkInstallOptions = installOptions,
             testUtilApks = emptyList(),
             uninstallApksAfterTests = true
@@ -90,6 +93,35 @@ class AndroidTestRunnerTest {
     }
 
     @Test
+    fun `run with test APK installs, tests, and uninstalls correctly`() {
+        // Given a runner for a single "tested" APK and a single test APK with uninstallation enabled.
+        val installOptions = listOf("-t", "-d")
+        val runner = AndroidTestRunner(
+            adbApkInstaller = adbApkInstaller,
+            instrumentationRunner = instrumentationRunner,
+            testedApks = listOf(baseApk),
+            testApks = listOf(testApk),
+            apkInstallOptions = installOptions,
+            testUtilApks = emptyList(),
+            uninstallApksAfterTests = true
+        )
+        val expectedInstallOptions = InstallOptions(extraArgs = installOptions)
+
+        // When the runner is executed.
+        runner.run()
+
+        // Then verify the sequence of operations is correct: install, run tests, cleanup, uninstall.
+        inOrder(adbApkInstaller, instrumentationRunner) {
+            verify(adbApkInstaller).installApk(baseApk, expectedInstallOptions)
+            verify(adbApkInstaller).installApk(testApk, expectedInstallOptions)
+            verify(instrumentationRunner).runAmInstrumentCommand()
+            verify(adbApkInstaller).postTestCleanup()
+            verify(adbApkInstaller).uninstallApk(baseApk)
+            verify(adbApkInstaller).uninstallApk(testApk)
+        }
+    }
+
+    @Test
     fun `run with split APKs installs, tests, and uninstalls correctly`() {
         // Given a runner for multiple "tested" (split) APKs with uninstallation enabled.
         val testedApks = listOf(baseApk, splitApk1)
@@ -98,6 +130,7 @@ class AndroidTestRunnerTest {
             adbApkInstaller = adbApkInstaller,
             instrumentationRunner = instrumentationRunner,
             testedApks = testedApks,
+            testApks = emptyList(),
             apkInstallOptions = installOptions,
             testUtilApks = emptyList(),
             uninstallApksAfterTests = true
@@ -124,6 +157,7 @@ class AndroidTestRunnerTest {
             adbApkInstaller = adbApkInstaller,
             instrumentationRunner = instrumentationRunner,
             testedApks = listOf(baseApk),
+            testApks = emptyList(),
             apkInstallOptions = emptyList(),
             testUtilApks = listOf(utilApk),
             uninstallApksAfterTests = true
@@ -151,6 +185,7 @@ class AndroidTestRunnerTest {
             adbApkInstaller = adbApkInstaller,
             instrumentationRunner = instrumentationRunner,
             testedApks = listOf(baseApk),
+            testApks = listOf(testApk),
             apkInstallOptions = emptyList(),
             testUtilApks = emptyList(),
             uninstallApksAfterTests = false // Key condition for this test
@@ -162,6 +197,7 @@ class AndroidTestRunnerTest {
         // Then verify that installation, test execution, and cleanup occur.
         inOrder(adbApkInstaller, instrumentationRunner) {
             verify(adbApkInstaller).installApk(eq(baseApk), any())
+            verify(adbApkInstaller).installApk(eq(testApk), any())
             verify(instrumentationRunner).runAmInstrumentCommand()
             verify(adbApkInstaller).postTestCleanup()
         }
@@ -176,6 +212,7 @@ class AndroidTestRunnerTest {
             adbApkInstaller = adbApkInstaller,
             instrumentationRunner = instrumentationRunner,
             testedApks = listOf(baseApk),
+            testApks = emptyList(),
             apkInstallOptions = emptyList(),
             testUtilApks = emptyList(),
             uninstallApksAfterTests = true
@@ -207,6 +244,7 @@ class AndroidTestRunnerTest {
             adbApkInstaller = adbApkInstaller,
             instrumentationRunner = instrumentationRunner,
             testedApks = emptyList(),
+            testApks = emptyList(),
             apkInstallOptions = emptyList(),
             testUtilApks = emptyList(),
             uninstallApksAfterTests = true

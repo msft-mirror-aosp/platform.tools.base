@@ -31,8 +31,9 @@ import java.io.File
  * @param instrumentationRunner Executes the `am instrument` command to run the tests.
  * @param testedApks A list of APK files for the application under test. This can be a single
  * base APK or multiple files for a split APK.
+ * @param testApks A list of test APK files containing the instrumentation tests.
  * @param apkInstallOptions A list of additional command-line options to be used when
- * installing the [testedApks].
+ * installing the [testedApks] and [testApks].
  * @param testUtilApks A list of utility APKs that need to be installed on the device for the
  * tests to run. These might include test services or other dependencies.
  * @param uninstallApksAfterTests If `true`, all APKs installed during the test run will be
@@ -42,6 +43,7 @@ class AndroidTestRunner(
     private val adbApkInstaller: AdbApkInstaller,
     private val instrumentationRunner: AmInstrumentationRunner,
     private val testedApks: List<File>,
+    private val testApks: List<File>,
     private val apkInstallOptions: List<String>,
     private val testUtilApks: List<File>,
     private val uninstallApksAfterTests: Boolean,
@@ -52,9 +54,10 @@ class AndroidTestRunner(
      *
      * This method orchestrates the following steps:
      * 1. Installs the main application APK(s).
-     * 2. Installs any required test utility APKs.
-     * 3. Runs the `am instrument` command to execute the tests.
-     * 4. Performs cleanup, which is guaranteed to run even if setup or the test itself fails.
+     * 2. Installs the test APK(s).
+     * 3. Installs any required test utility APKs.
+     * 4. Runs the `am instrument` command to execute the tests.
+     * 5. Performs cleanup, which is guaranteed to run even if setup or the test itself fails.
      * Cleanup includes uninstalling all installed APKs if [uninstallApksAfterTests] is true.
      */
     fun run() {
@@ -70,6 +73,19 @@ class AndroidTestRunner(
                     AdbApkInstaller.InstallOptions(extraArgs = apkInstallOptions)
                 )
             }
+
+            if (testApks.size == 1) {
+                adbApkInstaller.installApk(
+                    testApks.first(),
+                    AdbApkInstaller.InstallOptions(extraArgs = apkInstallOptions)
+                )
+            } else if (testApks.size > 1) {
+                adbApkInstaller.installSplitApk(
+                    testApks,
+                    AdbApkInstaller.InstallOptions(extraArgs = apkInstallOptions)
+                )
+            }
+
             testUtilApks.forEach { apk ->
                 adbApkInstaller.installApk(
                     apk,
@@ -83,6 +99,10 @@ class AndroidTestRunner(
             if (uninstallApksAfterTests) {
                 if (testedApks.isNotEmpty()) {
                     adbApkInstaller.uninstallApk(testedApks.first())
+                }
+
+                if (testApks.isNotEmpty()) {
+                    adbApkInstaller.uninstallApk(testApks.first())
                 }
 
                 testUtilApks.forEach { apk ->

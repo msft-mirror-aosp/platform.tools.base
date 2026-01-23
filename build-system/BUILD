@@ -508,6 +508,7 @@ maven_repository(
         "//tools/analytics-library/shared:tools.analytics-shared",
         "//tools/analytics-library/tracker:tools.analytics-tracker",
         "//tools/apkzlib",
+        "//tools/base/android-test/android-test-junit-engine:android-test-engine",
         "//tools/base/annotations:annotations",
         "//tools/base/build-system:tools.apksig",
         "//tools/base/common:tools.common",

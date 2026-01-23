@@ -20,9 +20,9 @@ import org.junit.platform.engine.EngineDiscoveryRequest
 import org.junit.platform.engine.ExecutionRequest
 import org.junit.platform.engine.TestDescriptor
 import org.junit.platform.engine.UniqueId
-import org.junit.platform.engine.support.descriptor.EngineDescriptor
+import org.junit.platform.engine.support.hierarchical.ForkJoinPoolHierarchicalTestExecutorService
 import org.junit.platform.engine.support.hierarchical.HierarchicalTestEngine
-import org.junit.platform.engine.support.hierarchical.Node
+import org.junit.platform.engine.support.hierarchical.HierarchicalTestExecutorService
 
 /**
  * A JUnit [HierarchicalTestEngine] for Android tests.
@@ -30,7 +30,7 @@ import org.junit.platform.engine.support.hierarchical.Node
  * This test engine orchestrates Android device tests by installing APKs and running
  * `am instrument`. It reports test results back to the JUnit Platform as dynamic tests.
  */
-class AndroidTestTestEngine : HierarchicalTestEngine<AndroidTestExecutionContext>() {
+class AndroidTestEngine : HierarchicalTestEngine<AndroidTestExecutionContext>() {
 
     override fun getId(): String = "android-test-engine"
 
@@ -43,18 +43,8 @@ class AndroidTestTestEngine : HierarchicalTestEngine<AndroidTestExecutionContext
     override fun createExecutionContext(request: ExecutionRequest): AndroidTestExecutionContext {
         return AndroidTestExecutionContext(request)
     }
-}
 
-/**
- * Root descriptor for [AndroidTestTestEngine].
- */
-class AndroidTestEngineDescriptor(uniqueId: UniqueId) :
-    EngineDescriptor(uniqueId, "Android Test Engine"), Node<AndroidTestExecutionContext> {
-
-    override fun execute(
-        context: AndroidTestExecutionContext,
-        dynamicTestExecutor: Node.DynamicTestExecutor
-    ): AndroidTestExecutionContext {
-        return context
+    override fun createExecutorService(request: ExecutionRequest): HierarchicalTestExecutorService {
+        return ForkJoinPoolHierarchicalTestExecutorService(request.configurationParameters)
     }
 }
