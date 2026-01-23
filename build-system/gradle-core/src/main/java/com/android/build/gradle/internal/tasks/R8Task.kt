@@ -467,8 +467,9 @@ abstract class R8Task @Inject constructor(projectLayout: ProjectLayout) : Progua
         .trimMargin()
     )
 
-    val finalListOfConfigurationFiles =
-      projectLayout.files(configurationFiles, generatedProguardFile.asFileTree, keepRulesDirectories.asFileTree)
+    checkKeepRulesDirectories()
+
+    val finalListOfConfigurationFiles = projectLayout.files(configurationFiles, generatedProguardFile.asFileTree, keepRulesFiles.asFileTree)
 
     // If inputArtProfile exists but artProfileRewriting is false, we need to copy it over
     // to outputArtProfile.
@@ -587,6 +588,33 @@ abstract class R8Task @Inject constructor(projectLayout: ProjectLayout) : Progua
     val packages = (gradualShrinkingPackages.orNull ?: listOf()).toList()
     if (packages.contains("**")) return PartialShrinkingIncludeAll
     return PartialShrinkingConfig(packages)
+  }
+
+  private fun checkKeepRulesDirectories() {
+    val banList = setOf("pro", "pgcfg")
+    val proFiles = mutableMapOf<File, MutableList<File>>()
+    keepRulesDirectories.orNull?.forEach { directory ->
+      directory
+        .takeIf { it.asFile.exists() }
+        ?.asFileTree
+        ?.forEach { file ->
+          if (file.isFile && file.extension in banList) {
+            proFiles.getOrPut(directory.asFile) { mutableListOf() }.add(file)
+          }
+        }
+    }
+
+    if (proFiles.isEmpty()) return
+
+    val message = StringBuffer("Use .keep extensions for keepRules source folders. To fix, rename files from list to .keep:\n")
+    val projectDir = projectLayout.projectDirectory.asFile
+    proFiles.keys.sorted().forEach { directory ->
+      val relativeDirectoryPath = directory.relativeTo(projectDir).path
+      val files = proFiles[directory]!!.map { it.relativeTo(directory).path }.joinToString(", ")
+      message.append("- $relativeDirectoryPath has $files\n")
+    }
+
+    throw RuntimeException(message.toString())
   }
 
   companion object {
