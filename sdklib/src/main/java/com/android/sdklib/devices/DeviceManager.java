@@ -700,6 +700,13 @@ public class DeviceManager {
                     ConfigKey.HINGE_ANGLES_POSTURE_DEFINITIONS,
                     hinge.getHingeAnglePostureDefinitions());
         }
+
+        for (Camera camera : hw.getCameras()) {
+            if (!camera.isSensorOrientationDefault()) {
+                props.put(ConfigKey.cameraSensorOrientation(camera.getLocation()),
+                        Integer.toString(camera.getSensorOrientation()));
+            }
+        }
         return props;
     }
 

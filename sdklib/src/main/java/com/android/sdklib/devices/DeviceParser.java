@@ -282,6 +282,8 @@ public class DeviceParser {
                 if (location != null) {
                     mCamera.setLocation(location);
                 }
+            } else if (DeviceSchema.NODE_SENSOR_ORIENTATION.equals(localName)) {
+                mCamera.setSensorOrientation(getInteger(mStringAccumulator));
             } else if (DeviceSchema.NODE_AUTOFOCUS.equals(localName)) {
                 mCamera.setFlash(getBool(mStringAccumulator));
             } else if (DeviceSchema.NODE_FLASH.equals(localName)) {

@@ -34,7 +34,7 @@
        - v4 adds support for foldable devices
        - v5 adds support for no sdcard devices
        - v6 adds support for multiple foldable regions
-       - v8 adds support for RISC-V ABI and touchpads
+       - v8 adds support for RISC-V ABI, touchpads, and sensor orientation for cameras
 
   -->
   <xsd:element name="devices" type="c:devicesType" />
@@ -1035,6 +1035,23 @@
           </xsd:restriction>
         </xsd:simpleType>
       </xsd:element>
+        <xsd:element name="sensor-orientation" minOccurs="0">
+            <xsd:annotation>
+                <xsd:documentation xml:lang="en">
+                    Specifies the orientation of the camera sensor relative to the device.
+                    See https://developer.android.com/media/camera/camera2/camera-preview#camera_orientation
+                    for additional details
+                </xsd:documentation>
+            </xsd:annotation>
+            <xsd:simpleType>
+                <xsd:restriction base="xsd:nonNegativeInteger">
+                    <xsd:enumeration value="0" />
+                    <xsd:enumeration value="90" />
+                    <xsd:enumeration value="180" />
+                    <xsd:enumeration value="270" />
+                </xsd:restriction>
+            </xsd:simpleType>
+        </xsd:element>
 
       <xsd:element name="autofocus" type="xsd:boolean">
         <xsd:annotation>

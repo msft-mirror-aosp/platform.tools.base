@@ -128,6 +128,8 @@ public class DeviceSchema {
 
     public static final String NODE_LOCATION = "location";
 
+    public static final String NODE_SENSOR_ORIENTATION = "sensor-orientation";
+
     public static final String NODE_GPU = "gpu";
 
     public static final String NODE_DOCK = "dock";
