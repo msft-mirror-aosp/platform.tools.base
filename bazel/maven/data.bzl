@@ -111,10 +111,13 @@ DATA = [
     "androidx.compose.material:material-ripple:1.7.7",  # Needed for TemplateDiffTest#testNewComposeWearActivityWithTileAndComplication
     "androidx.compose.material:material-ripple-jvmstubs:1.7.7",  # Needed for TemplateDiffTest#testNewComposeWearActivityWithTileAndComplication
     "androidx.compose.material3.adaptive:adaptive:1.0.0",  # Compose Navigation UI template: Compose BOM 2024.09.00
+    "androidx.compose.material3.adaptive:adaptive:1.2.0",  # Compose BOM 2025.12.00. Needed for Navigation UI Template
     "androidx.compose.material3:material3:1.0.0",
     "androidx.compose.material3:material3:1.1.1",
     "androidx.compose.material3:material3:1.3.0",  # Compose BOM 2024.09.00
+    "androidx.compose.material3:material3:1.4.0",  # Compose BOM 2025.12.00
     "androidx.compose.material3:material3-adaptive-navigation-suite:1.3.0",  # Compose Navigation UI template: Compose BOM 2024.09.00
+    "androidx.compose.material3:material3-adaptive-navigation-suite:1.4.0",  # Compose Navigation UI template: Compose BOM 2025.12.00
     "androidx.compose.material3:material3-desktop:1.3.0",  # Compose BOM 2024.09.00
     "androidx.compose.runtime:runtime:1.10.0",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
     "androidx.compose.runtime:runtime:1.3.3",  # Dependency of architecture-samples
@@ -248,6 +251,7 @@ DATA = [
     "androidx.lifecycle:lifecycle-common-java8:2.6.2",
     "androidx.lifecycle:lifecycle-common-java8:2.8.3",
     "androidx.lifecycle:lifecycle-common-java8:2.8.7",  # XR template
+    "androidx.lifecycle:lifecycle-common-java8:2.9.4",  # Compose BOM 2025.12.00. Needed for Navigation UI Template
     "androidx.lifecycle:lifecycle-common-jvm:2.8.7",
     "androidx.lifecycle:lifecycle-compiler:2.8.7",
     "androidx.lifecycle:lifecycle-extensions:2.2.0",

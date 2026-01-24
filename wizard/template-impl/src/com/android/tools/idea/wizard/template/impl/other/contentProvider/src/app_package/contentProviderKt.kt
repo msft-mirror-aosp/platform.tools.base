@@ -18,10 +18,8 @@ package com.android.tools.idea.wizard.template.impl.other.contentProvider.src.ap
 
 import com.android.tools.idea.wizard.template.escapeKotlinIdentifier
 
-fun contentProviderKt(
-  className: String,
-  packageName: String
-) = """
+fun contentProviderKt(className: String, packageName: String) =
+  """
 package ${escapeKotlinIdentifier(packageName)}
 
 import android.content.ContentProvider
@@ -36,8 +34,7 @@ class ${className} : ContentProvider() {
     }
 
     override fun getType(uri: Uri): String? {
-        TODO("Implement this to handle requests for the MIME type of the data" +
-                "at the given URI")
+        TODO("Implement this to handle requests for the MIME type of the data at the given URI")
     }
 
     override fun insert(uri: Uri, values: ContentValues?): Uri? {

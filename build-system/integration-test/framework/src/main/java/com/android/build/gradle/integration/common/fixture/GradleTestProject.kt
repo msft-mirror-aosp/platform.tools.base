@@ -186,11 +186,6 @@ open class GradleTestProject @JvmOverloads constructor(
         const val VERSION_CATALOG = "versionCatalog.gradle"
         const val DEFAULT_TEST_PROJECT_NAME = "project"
 
-        internal val AGP_9_OPT_OUTS = mapOf(
-            // TODO(b/418804641): Migrate to the new DSL
-            USE_NEW_DSL to false
-        )
-
         @JvmStatic
         fun builder(): GradleTestProjectBuilder {
             return GradleTestProjectBuilder()
@@ -1366,12 +1361,6 @@ allprojects { proj ->
 
         for (option in booleanOptions.keys) {
             executor.suppressOptionWarning(option)
-        }
-
-        // apply the AGP 9.0 opt-outs
-        for (entry in AGP_9_OPT_OUTS) {
-            executor.with(entry.key, entry.value)
-            executor.suppressOptionWarning(entry.key)
         }
 
         // TODO(b/385745419): Remove this when most tests have been migrated to built-in Kotlin

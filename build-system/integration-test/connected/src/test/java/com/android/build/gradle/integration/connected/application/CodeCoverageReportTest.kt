@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2026 The Android Open Source Project
+ * Copyright (C) 2025 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,17 @@
 
 package com.android.build.gradle.integration.connected.application
 
+import com.android.build.gradle.integration.common.fixture.GradleBuildResult
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition
 import com.android.build.gradle.integration.connected.utils.getEmulator
 import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.truth.PathSubject
+import com.android.testutils.truth.PathSubject.assertThat
 import com.android.utils.FileUtils
-import com.google.common.truth.Truth
+import com.google.common.truth.Truth.assertThat
+import com.google.gson.Gson
+import com.google.gson.annotations.SerializedName
 import org.gradle.api.JavaVersion
 import org.junit.ClassRule
 import org.junit.Rule
@@ -30,6 +34,14 @@ import org.junit.Test
 import org.junit.rules.ExternalResource
 import java.io.File
 
+/**
+ * Integration test for [com.android.build.gradle.internal.coverage.tasks.CodeCoverageReportTask].
+ *
+ * This test verifies the generation of the final HTML code coverage report by running the
+ * `createCoverageReport` and `createAggregatedCoverageReport` tasks. It checks for the
+ * existence of the report files, parses the generated JSON data, and verifies the accuracy of
+ * the aggregated coverage metrics.
+ */
 class CodeCoverageReportTest {
 
     companion object {
@@ -37,84 +49,40 @@ class CodeCoverageReportTest {
         @JvmField
         val emulator: ExternalResource = getEmulator()
 
-        const val APP_TOTAL_INSTRUCTION = 42
-        const val APP_TOTAL_BRANCH = 4
-
-        const val APP_EXPECTED_COVERED_INSTRUCTION_UNIT_TEST = 23
-        const val APP_EXPECTED_MISSED_INSTRUCTION_UNIT_TEST = 19
-        const val APP_EXPECTED_COVERED_BRANCH_UNIT_TEST = 1
-        const val APP_EXPECTED_MISSED_BRANCH_UNIT_TEST = 3
-
-        const val APP_EXPECTED_COVERED_INSTRUCTION_ANDROID_TEST = 5
-        const val APP_EXPECTED_MISSED_INSTRUCTION_ANDROID_TEST = 37
-        const val APP_EXPECTED_COVERED_BRANCH_ANDROID_TEST = 0
-        const val APP_EXPECTED_MISSED_BRANCH_ANDROID_TEST = 4
-
-        const val APP_EXPECTED_COVERED_INSTRUCTION_AGGREGATED = APP_EXPECTED_COVERED_INSTRUCTION_UNIT_TEST+ APP_EXPECTED_COVERED_INSTRUCTION_ANDROID_TEST
-        const val APP_EXPECTED_MISSED_INSTRUCTION_AGGREGATED = APP_TOTAL_INSTRUCTION - APP_EXPECTED_COVERED_INSTRUCTION_AGGREGATED
-        const val APP_EXPECTED_COVERED_BRANCH_AGGREGATED = APP_EXPECTED_COVERED_BRANCH_UNIT_TEST + APP_EXPECTED_COVERED_BRANCH_ANDROID_TEST
-        const val APP_EXPECTED_MISSED_BRANCH_AGGREGATED = APP_TOTAL_BRANCH - APP_EXPECTED_COVERED_BRANCH_AGGREGATED
-
-        const val LIB_TOTAL_INSTRUCTION = 42
-        const val LIB_TOTAL_BRANCH = 4
-
-        const val LIB_EXPECTED_COVERED_INSTRUCTION_UNIT_TEST = 32
-        const val LIB_EXPECTED_MISSED_INSTRUCTION_UNIT_TEST = 10
-        const val LIB_EXPECTED_COVERED_BRANCH_UNIT_TEST = 3
-        const val LIB_EXPECTED_MISSED_BRANCH_UNIT_TEST = 1
-
-        const val LIB_EXPECTED_COVERED_INSTRUCTION_ANDROID_TEST = 5
-        const val LIB_EXPECTED_MISSED_INSTRUCTION_ANDROID_TEST = 37
-        const val LIB_EXPECTED_COVERED_BRANCH_ANDROID_TEST = 0
-        const val LIB_EXPECTED_MISSED_BRANCH_ANDROID_TEST = 4
-
-        const val LIB_EXPECTED_COVERED_INSTRUCTION_AGGREGATED = LIB_EXPECTED_COVERED_INSTRUCTION_UNIT_TEST + LIB_EXPECTED_COVERED_INSTRUCTION_ANDROID_TEST
-        const val LIB_EXPECTED_MISSED_INSTRUCTION_AGGREGATED = LIB_TOTAL_INSTRUCTION - LIB_EXPECTED_COVERED_INSTRUCTION_AGGREGATED
-        const val LIB_EXPECTED_COVERED_BRANCH_AGGREGATED = LIB_EXPECTED_COVERED_BRANCH_UNIT_TEST + LIB_EXPECTED_COVERED_BRANCH_ANDROID_TEST
-        const val LIB_EXPECTED_MISSED_BRANCH_AGGREGATED = LIB_TOTAL_BRANCH - LIB_EXPECTED_COVERED_BRANCH_AGGREGATED
+        const val APP_EXPECTED_COVERED_INSTRUCTION_AGGREGATED = 28
+        const val APP_EXPECTED_COVERED_BRANCH_AGGREGATED = 1
+        const val LIB_EXPECTED_COVERED_INSTRUCTION_AGGREGATED = 37
+        const val LIB_EXPECTED_COVERED_BRANCH_AGGREGATED = 3
     }
 
-
     @get:Rule
-    val rule = GradleRule.fromProject("reportAggregation") {
+    val rule = GradleRule.fromProject("reportAggregation", "reportAggregation") {
         androidApplication(":app") {
             android {
                 namespace = "com.example.app"
                 compileSdk {
                     version = release(GradleBuildDefinition.DEFAULT_COMPILE_SDK_VERSION)
                 }
-
-                installation {
-                    timeOutInMs = 30000
-                }
-
                 defaultConfig {
                     minSdk {
                         version = release(24)
                     }
-                    targetSdk {
-                        version = release(GradleBuildDefinition.DEFAULT_COMPILE_SDK_VERSION)
-                    }
                     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
                 }
-
                 buildTypes {
                     named("debug") {
                         it.enableUnitTestCoverage = true
                         it.enableAndroidTestCoverage = true
                     }
                 }
-
                 kotlin {
                     jvmToolchain(17)
                 }
-
                 compileOptions {
                     sourceCompatibility = JavaVersion.VERSION_17
                     targetCompatibility = JavaVersion.VERSION_17
                 }
             }
-
             dependencies {
                 implementation(project(":lib"))
 
@@ -130,8 +98,46 @@ class CodeCoverageReportTest {
                 androidTestImplementation("androidx.test:runner:1.4.0-alpha06")
             }
         }
-
         androidLibrary(":lib") {
+            android {
+                namespace = "com.example.lib"
+                compileSdk {
+                    version = release(GradleBuildDefinition.DEFAULT_COMPILE_SDK_VERSION)
+                }
+                defaultConfig {
+                    minSdk {
+                        version = release(24)
+                    }
+                    testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+                }
+                buildTypes {
+                    named("debug") {
+                        it.enableUnitTestCoverage = true
+                        it.enableAndroidTestCoverage = true
+                    }
+                }
+                kotlin {
+                    jvmToolchain(17)
+                }
+                compileOptions {
+                    sourceCompatibility = JavaVersion.VERSION_17
+                    targetCompatibility = JavaVersion.VERSION_17
+                }
+                dependencies {
+                    testImplementation("junit:junit:4.13.2")
+                    testImplementation("org.mockito:mockito-core:5.12.0")
+                    testImplementation("org.jdeferred:jdeferred-android-aar:1.2.3")
+                    testImplementation("commons-logging:commons-logging:1.1.1")
+
+                    androidTestImplementation("androidx.test:core:1.4.0-alpha06")
+                    androidTestImplementation("androidx.test.ext:junit:1.1.3-alpha02")
+                    androidTestImplementation("androidx.test:monitor:1.4.0-alpha06")
+                    androidTestImplementation("androidx.test:rules:1.4.0-alpha06")
+                    androidTestImplementation("androidx.test:runner:1.4.0-alpha06")
+                }
+            }
+        }
+        androidLibrary(":lib2") {
             android {
                 namespace = "com.example.lib"
 
@@ -157,6 +163,10 @@ class CodeCoverageReportTest {
                     }
                 }
 
+                publishing {
+                    singleVariant("debug")
+                }
+
                 compileOptions {
                     sourceCompatibility = JavaVersion.VERSION_17
                     targetCompatibility = JavaVersion.VERSION_17
@@ -179,284 +189,38 @@ class CodeCoverageReportTest {
                 }
             }
         }
-
         gradleProperties {
             add(BooleanOption.REPORT_AGGREGATION_SUPPORT, true)
         }
     }
 
+    private val gson = Gson()
+
     @Test
-    fun testCollectDebugCoverage() {
-        val build = rule.build
-        build.executor.run(":app:collectDebugCoverage")
+    fun testCreateCoverageReport() {
+        val result = rule.build.executor.run(":app:createCoverageReport")
 
-        val appBuildDir = build
-            .androidApplication(":app")
-            .buildDir.toFile()
-
-        val taskOutputDir = FileUtils.join(
-            appBuildDir,
-            "intermediates",
-            "code_coverage_data",
-            "global",
-            "collectDebugCoverage"
+        val appBuildDir = rule.build.androidApplication(":app").buildDir.toFile()
+        val outputDir = FileUtils.join(
+            appBuildDir, "reports", "code_coverage_html_report", "global"
         )
 
-        PathSubject.assertThat(taskOutputDir).exists()
-        PathSubject.assertThat(taskOutputDir).isDirectory()
-
-        val xmlReports = taskOutputDir.listFiles().toList()
-
-        Truth.assertThat(xmlReports.size).isEqualTo(3)
-
-        val xmlReport1 = xmlReports.filter { it.name == "debugAppAggregatedXmlReport.xml" }
-        Truth.assertThat(xmlReport1.size).isEqualTo(1)
-        verifyReportName(xmlReport1.first(), "debugAppAggregated")
-        val aggregatedCoverageReportXml = xmlReport1.first().readLines().joinToString("\n")
-            .replace(Regex("[\\n\\t\\r]"), "")
-        verifyCoverageData(aggregatedCoverageReportXml,
-            APP_EXPECTED_COVERED_INSTRUCTION_AGGREGATED,
-            APP_EXPECTED_MISSED_INSTRUCTION_AGGREGATED,
-            APP_EXPECTED_COVERED_BRANCH_AGGREGATED,
-            APP_EXPECTED_MISSED_BRANCH_AGGREGATED)
-        verifyProperties(aggregatedCoverageReportXml,
-            ":app",
-            "Aggregated",
-            "debug")
-        verifySources(aggregatedCoverageReportXml, "app")
-
-
-        val xmlReport2 = xmlReports.filter { it.name == "debugAppUnitTestXmlReport.xml" }
-        Truth.assertThat(xmlReport2.size).isEqualTo(1)
-        val unitTestCoverageReportXml = xmlReport2.first().readLines().joinToString("\n")
-            .replace(Regex("[\\n\\t\\r]"), "")
-        verifyReportName(xmlReport2.first(), "debugAppUnitTest")
-        verifyCoverageData(unitTestCoverageReportXml,
-            APP_EXPECTED_COVERED_INSTRUCTION_UNIT_TEST,
-            APP_EXPECTED_MISSED_INSTRUCTION_UNIT_TEST,
-            APP_EXPECTED_COVERED_BRANCH_UNIT_TEST,
-            APP_EXPECTED_MISSED_BRANCH_UNIT_TEST)
-        verifyProperties(unitTestCoverageReportXml,
-            ":app",
-            "UnitTest",
-            "debug")
-        verifySources(unitTestCoverageReportXml, "app")
-
-        val xmlReport3 = xmlReports.filter { it.name == "debugAppAndroidTestXmlReport.xml" }
-        Truth.assertThat(xmlReport3.size).isEqualTo(1)
-        val androidTestCoverageReportXml = xmlReport3.first().readLines().joinToString("\n")
-            .replace(Regex("[\\n\\t\\r]"), "")
-        verifyReportName(xmlReport3.first(), "debugAppAndroidTest")
-        verifyCoverageData(androidTestCoverageReportXml,
-            APP_EXPECTED_COVERED_INSTRUCTION_ANDROID_TEST,
-            APP_EXPECTED_MISSED_INSTRUCTION_ANDROID_TEST,
-            APP_EXPECTED_COVERED_BRANCH_ANDROID_TEST,
-            APP_EXPECTED_MISSED_BRANCH_ANDROID_TEST)
-        verifyProperties(androidTestCoverageReportXml,
-            ":app",
-            "AndroidTest",
-            "debug")
-        verifySources(androidTestCoverageReportXml, "app")
+        verifyHtmlReport(
+            outputDir = outputDir,
+            expectedProjectName = "reportAggregation",
+            expectedModuleCount = 1,
+            verifyLibModuleIsPresent = false,
+            taskResult = result
+        )
     }
 
     @Test
-    fun testCollectDebugAggregatedCoverage() {
+    fun testCreateCoverageReportTaskForLibraryModule() {
         val build = rule.build
-        build.executor.run("collectDebugAggregatedCoverage")
+        build.executor.run(":lib:createCoverageReport")
 
         val appBuildDir = build
-            .androidApplication(":app")
-            .buildDir.toFile()
-
-        val taskOutputDir = FileUtils.join(
-            appBuildDir,
-            "intermediates",
-            "aggregated_code_coverage_data",
-            "global",
-            "collectDebugAggregatedCoverage"
-        )
-
-        // Check data is collected for app and lib modules.
-        PathSubject.assertThat(taskOutputDir).exists()
-        PathSubject.assertThat(taskOutputDir).isDirectory()
-
-        val xmlReports = taskOutputDir.listFiles()
-
-        Truth.assertThat(xmlReports.size).isEqualTo(6)
-
-        // Check the contents of generated report for current (app) module and reports copied from
-        // dependant modules (lib).
-        val xmlReport1 = xmlReports.filter { it.name == "debugAppAggregatedXmlReport.xml" }
-        Truth.assertThat(xmlReport1.size).isEqualTo(1)
-        val aggregatedCoverageReportXml = xmlReport1.first().readLines().joinToString("\n")
-            .replace(Regex("[\\n\\t\\r]"), "")
-        verifyReportName(xmlReport1.first(), "debugAppAggregated")
-        verifyCoverageData(aggregatedCoverageReportXml,
-            APP_EXPECTED_COVERED_INSTRUCTION_AGGREGATED,
-            APP_EXPECTED_MISSED_INSTRUCTION_AGGREGATED,
-            APP_EXPECTED_COVERED_BRANCH_AGGREGATED,
-            APP_EXPECTED_MISSED_BRANCH_AGGREGATED)
-        verifyProperties(aggregatedCoverageReportXml,
-            ":app",
-            "Aggregated",
-            "debug")
-        verifySources(aggregatedCoverageReportXml, "app")
-
-        val xmlReport2 = xmlReports.filter { it.name == "debugLibAggregatedXmlReport.xml" }
-        Truth.assertThat(xmlReport2.size).isEqualTo(1)
-        val aggregatedCoverageReportXmlLibModule = xmlReport2.first().readLines().joinToString("\n")
-            .replace(Regex("[\\n\\t\\r]"), "")
-        verifyReportName(xmlReport2.first(), "debugLibAggregated")
-        verifyCoverageData(aggregatedCoverageReportXmlLibModule,
-            LIB_EXPECTED_COVERED_INSTRUCTION_AGGREGATED,
-            LIB_EXPECTED_MISSED_INSTRUCTION_AGGREGATED,
-            LIB_EXPECTED_COVERED_BRANCH_AGGREGATED,
-            LIB_EXPECTED_MISSED_BRANCH_AGGREGATED)
-        verifyProperties(aggregatedCoverageReportXmlLibModule,
-            ":lib",
-            "Aggregated",
-            "debug")
-        verifySources(aggregatedCoverageReportXmlLibModule, "lib")
-
-        val xmlReport3 = xmlReports.filter { it.name == "debugAppUnitTestXmlReport.xml" }
-        Truth.assertThat(xmlReport3.size).isEqualTo(1)
-        val unitTestCoverageReportXml = xmlReport3.first().readLines().joinToString("\n")
-            .replace(Regex("[\\n\\t\\r]"), "")
-        verifyReportName(xmlReport3.first(), "debugAppUnitTest")
-        verifyCoverageData(unitTestCoverageReportXml,
-            APP_EXPECTED_COVERED_INSTRUCTION_UNIT_TEST,
-            APP_EXPECTED_MISSED_INSTRUCTION_UNIT_TEST,
-            APP_EXPECTED_COVERED_BRANCH_UNIT_TEST,
-            APP_EXPECTED_MISSED_BRANCH_UNIT_TEST)
-        verifyProperties(unitTestCoverageReportXml,
-            ":app",
-            "UnitTest",
-            "debug")
-        verifySources(unitTestCoverageReportXml, "app")
-
-        val xmlReport4 = xmlReports.filter { it.name == "debugAppAndroidTestXmlReport.xml" }
-        Truth.assertThat(xmlReport4.size).isEqualTo(1)
-        val androidTestCoverageReportXml = xmlReport4.first().readLines().joinToString("\n")
-            .replace(Regex("[\\n\\t\\r]"), "")
-        verifyReportName(xmlReport4.first(), "debugAppAndroidTest")
-        verifyCoverageData(androidTestCoverageReportXml,
-            APP_EXPECTED_COVERED_INSTRUCTION_ANDROID_TEST,
-            APP_EXPECTED_MISSED_INSTRUCTION_ANDROID_TEST,
-            APP_EXPECTED_COVERED_BRANCH_ANDROID_TEST,
-            APP_EXPECTED_MISSED_BRANCH_ANDROID_TEST)
-        verifyProperties(androidTestCoverageReportXml,
-            ":app",
-            "AndroidTest",
-            "debug")
-        verifySources(androidTestCoverageReportXml, "app")
-
-        val xmlReport5 = xmlReports.filter { it.name == "debugLibUnitTestXmlReport.xml" }
-        Truth.assertThat(xmlReport5.size).isEqualTo(1)
-        val unitTestCoverageReportXmlLibModule = xmlReport5.first().readLines().joinToString("\n")
-            .replace(Regex("[\\n\\t\\r]"), "")
-        verifyReportName(xmlReport5.first(), "debugLibUnitTest")
-        verifyCoverageData(unitTestCoverageReportXmlLibModule,
-            LIB_EXPECTED_COVERED_INSTRUCTION_UNIT_TEST,
-            LIB_EXPECTED_MISSED_INSTRUCTION_UNIT_TEST,
-            LIB_EXPECTED_COVERED_BRANCH_UNIT_TEST,
-            LIB_EXPECTED_MISSED_BRANCH_UNIT_TEST)
-        verifyProperties(unitTestCoverageReportXmlLibModule,
-            ":lib",
-            "UnitTest",
-            "debug")
-        verifySources(unitTestCoverageReportXmlLibModule, "lib")
-
-        val xmlReport6 = xmlReports.filter { it.name == "debugLibAndroidTestXmlReport.xml" }
-        Truth.assertThat(xmlReport6.size).isEqualTo(1)
-        val androidTestCoverageReportXmlLibModule = xmlReport6.first().readLines().joinToString("\n")
-            .replace(Regex("[\\n\\t\\r]"), "")
-        verifyReportName(xmlReport6.first(), "debugLibAndroidTest")
-        verifyCoverageData(androidTestCoverageReportXmlLibModule,
-            LIB_EXPECTED_COVERED_INSTRUCTION_ANDROID_TEST,
-            LIB_EXPECTED_MISSED_INSTRUCTION_ANDROID_TEST,
-            LIB_EXPECTED_COVERED_BRANCH_ANDROID_TEST,
-            LIB_EXPECTED_MISSED_BRANCH_ANDROID_TEST)
-        verifyProperties(androidTestCoverageReportXmlLibModule,
-            ":lib",
-            "AndroidTest",
-            "debug")
-        verifySources(androidTestCoverageReportXmlLibModule, "lib")
-
-        val libBuildDir = build
             .androidLibrary(":lib")
-            .buildDir.toFile()
-
-        val dependantTaskOutputDir = FileUtils.join(
-            libBuildDir,
-            "intermediates",
-            "code_coverage_data",
-            "global",
-            "collectDebugCoverage"
-        )
-
-        // Check collect task is executed for dependant module and correct xml reports are generated
-        PathSubject.assertThat(dependantTaskOutputDir).exists()
-        PathSubject.assertThat(dependantTaskOutputDir).isDirectory()
-
-        val libModuleXmlReports = dependantTaskOutputDir.listFiles()
-        Truth.assertThat(libModuleXmlReports.size).isEqualTo(3)
-
-        val xmlReport7 = xmlReports.filter { it.name == "debugLibAggregatedXmlReport.xml" }
-        Truth.assertThat(xmlReport7.size).isEqualTo(1)
-        val aggregatedCoverageReportXmlLibModule2 = xmlReport7.first().readLines().joinToString("\n")
-            .replace(Regex("[\\n\\t\\r]"), "")
-        verifyReportName(xmlReport7.first(), "debugLibAggregated")
-        verifyCoverageData(aggregatedCoverageReportXmlLibModule2,
-            LIB_EXPECTED_COVERED_INSTRUCTION_AGGREGATED,
-            LIB_EXPECTED_MISSED_INSTRUCTION_AGGREGATED,
-            LIB_EXPECTED_COVERED_BRANCH_AGGREGATED,
-            LIB_EXPECTED_MISSED_BRANCH_AGGREGATED)
-        verifyProperties(aggregatedCoverageReportXmlLibModule2,
-            ":lib",
-            "Aggregated",
-            "debug")
-        verifySources(aggregatedCoverageReportXmlLibModule2, "lib")
-
-        val xmlReport8 = xmlReports.filter { it.name == "debugLibUnitTestXmlReport.xml" }
-        Truth.assertThat(xmlReport8.size).isEqualTo(1)
-        val unitTestCoverageReportXmlLibModule2 = xmlReport8.first().readLines().joinToString("\n")
-            .replace(Regex("[\\n\\t\\r]"), "")
-        verifyReportName(xmlReport8.first(), "debugLibUnitTest")
-        verifyCoverageData(unitTestCoverageReportXmlLibModule2,
-            LIB_EXPECTED_COVERED_INSTRUCTION_UNIT_TEST,
-            LIB_EXPECTED_MISSED_INSTRUCTION_UNIT_TEST,
-            LIB_EXPECTED_COVERED_BRANCH_UNIT_TEST,
-            LIB_EXPECTED_MISSED_BRANCH_UNIT_TEST)
-        verifyProperties(unitTestCoverageReportXmlLibModule2,
-            ":lib",
-            "UnitTest",
-            "debug")
-        verifySources(unitTestCoverageReportXmlLibModule2, "lib")
-
-        val xmlReport9 = xmlReports.filter { it.name == "debugLibAndroidTestXmlReport.xml" }
-        Truth.assertThat(xmlReport9.size).isEqualTo(1)
-        val androidTestCoverageReportXmlLibModule2 = xmlReport9.first().readLines().joinToString("\n")
-            .replace(Regex("[\\n\\t\\r]"), "")
-        verifyReportName(xmlReport9.first(), "debugLibAndroidTest")
-        verifyCoverageData(androidTestCoverageReportXmlLibModule2,
-            LIB_EXPECTED_COVERED_INSTRUCTION_ANDROID_TEST,
-            LIB_EXPECTED_MISSED_INSTRUCTION_ANDROID_TEST,
-            LIB_EXPECTED_COVERED_BRANCH_ANDROID_TEST,
-            LIB_EXPECTED_MISSED_BRANCH_ANDROID_TEST)
-        verifyProperties(androidTestCoverageReportXmlLibModule2,
-            ":lib",
-            "AndroidTest",
-            "debug")
-        verifySources(androidTestCoverageReportXmlLibModule2, "lib")
-    }
-
-    @Test
-    fun testCreateCoverageReportTask() {
-        val build = rule.build
-        build.executor.run(":app:createCoverageReport")
-
-        val appBuildDir = build
-            .androidApplication(":app")
             .buildDir.toFile()
 
         val taskOutputDir = FileUtils.join(
@@ -479,16 +243,47 @@ class CodeCoverageReportTest {
     }
 
     @Test
-    fun testCreateAggregatedCoverageReportTask() {
-        val build = rule.build
-        build.executor.run(":app:createAggregatedCoverageReport")
+    fun testCreateAggregatedCoverageReport() {
+        val result = rule.build.executor.run(":app:createAggregatedCoverageReport")
 
-        val appBuildDir = build
-            .androidApplication(":app")
+        val appBuildDir = rule.build.androidApplication(":app").buildDir.toFile()
+        val outputDir = FileUtils.join(
+            appBuildDir, "reports", "aggregated_code_coverage_html_report", "global"
+        )
+
+        verifyHtmlReport(
+            outputDir = outputDir,
+            expectedProjectName = "reportAggregation",
+            expectedModuleCount = 2,
+            verifyLibModuleIsPresent = true,
+            taskResult = result
+        )
+    }
+
+    @Test
+    fun testCreateAggregatedCoverageReportTaskForLibraryModule() {
+        val build = rule.build
+
+        // Expect the build to fail
+        val aggregatedReportLibResult = build.executor
+            .expectFailure()
+            .run(":lib:createAggregatedCoverageReport")
+
+        // Assert that the failure reason is because the task was not found
+        aggregatedReportLibResult.assertFailureMessage().contains("task 'createAggregatedCoverageReport' not found in project ':lib'")
+    }
+
+    @Test
+    fun testCreateAggregatedCoverageReportTaskForLibraryModuleWithPublicationEnabled() {
+        val build = rule.build
+        build.executor.run(":lib2:createAggregatedCoverageReport")
+
+        val libBuildDir = build
+            .androidLibrary(":lib2")
             .buildDir.toFile()
 
         val taskOutputDir = FileUtils.join(
-            appBuildDir,
+            libBuildDir,
             "reports",
             "aggregated_code_coverage_html_report",
             "global",
@@ -506,61 +301,197 @@ class CodeCoverageReportTest {
         PathSubject.assertThat(indexFile).isFile()
     }
 
-    /**
-     * Verifies that the report file has the expected name, and the report name inside the XML matches the expected report name.
-     */
-    private fun verifyReportName(xmlReport: File, expectedReportName: String) {
-        val xmlReportString = xmlReport.readLines().joinToString("\n")
-            .replace(Regex("[\\n\\t\\r]"), "")
-        val xmlReportName = Regex("<report name=\"(.*?)\">")
-            .find(xmlReportString)!!.groups[1]!!.value
-        Truth.assertThat(xmlReportName).isEqualTo(expectedReportName)
+    private fun verifyHtmlReport(
+        outputDir: File,
+        expectedProjectName: String,
+        expectedModuleCount: Int,
+        verifyLibModuleIsPresent: Boolean,
+        taskResult: GradleBuildResult
+    ) {
+        assertThat(outputDir).exists()
+        assertThat(outputDir).isDirectory()
+
+        val indexFile = File(outputDir, "index.html")
+        assertThat(indexFile).exists()
+        assertThat(indexFile).isFile()
+        taskResult.assertOutputContains("View coverage report at file://${indexFile.absolutePath}")
+
+        val cssFile = File(outputDir, "css/style.css")
+        assertThat(cssFile).exists()
+        assertThat(cssFile).isFile()
+
+        val mainScriptFile = File(outputDir, "javascript/codecoveragescript.js")
+        assertThat(mainScriptFile).exists()
+        assertThat(mainScriptFile).isFile()
+
+        val sourceViewScriptFile = File(outputDir, "javascript/sourceviewscript.js")
+        assertThat(sourceViewScriptFile).exists()
+        assertThat(sourceViewScriptFile).isFile()
+
+        assertThat(File(outputDir, "data/report-data.js")).exists()
+        assertThat(File(outputDir, "sourcefiles")).isDirectory()
+
+        val report = parseReportJs<TestCoverageReport>(File(outputDir, "data/report-data.js"))
+
+        assertThat(report.name).isEqualTo(expectedProjectName)
+        assertThat(report.modules).hasSize(expectedModuleCount)
+
+        val appModule = report.modules.find { it.name == ":app" }
+        assertThat(appModule).isNotNull()
+        val appDebugCoverage = appModule!!.variantCoverages.find { it.name == "debug" }
+        assertThat(appDebugCoverage).isNotNull()
+        assertThat(appDebugCoverage!!.instruction.covered).isEqualTo(
+            APP_EXPECTED_COVERED_INSTRUCTION_AGGREGATED
+        )
+        assertThat(appDebugCoverage.branch.covered).isEqualTo(
+            APP_EXPECTED_COVERED_BRANCH_AGGREGATED
+        )
+
+        val appPackage = appModule.packages.find { it.name == "com.example.app" }
+        assertThat(appPackage).isNotNull()
+        val appKotlinClass = appPackage!!.classes.find { it.name == "AppKotlinClass" }
+        assertThat(appKotlinClass).isNotNull()
+
+        val appSourcePath = appKotlinClass!!.variantSourceFilePaths.find { it.variantName == "debug" }?.path
+        assertThat(appSourcePath).isNotNull()
+
+        val appSourceReportFile = File(outputDir, "sourcefiles/${appSourcePath}.json.js")
+        assertThat(appSourceReportFile).exists()
+        assertThat(appSourceReportFile).isFile()
+
+        val appSourceReport = parseSourceReportJs<TestSourceFileReport>(appSourceReportFile)
+        assertThat(appSourceReport.linesCoverages).isNotEmpty()
+        val addLine = appSourceReport.linesCoverages.find { it.lineText.contains("return n1+n2") }
+        assertThat(addLine).isNotNull()
+
+        val addLineDetails = addLine!!.variantCoverageDetails.find { it.variantName == "debug" }
+        assertThat(addLineDetails).isNotNull()
+
+        val unitTestCoverage = addLineDetails!!.testSuiteCoverages.find { it.testSuiteName == "UnitTest" }
+        assertThat(unitTestCoverage).isNotNull()
+        assertThat(unitTestCoverage!!.variantCoverage.instruction.covered).isEqualTo(5)
+
+        val androidTestCoverage = addLineDetails.testSuiteCoverages.find { it.testSuiteName == "AndroidTest" }
+        assertThat(androidTestCoverage).isNotNull()
+        assertThat(androidTestCoverage!!.variantCoverage.instruction.covered).isEqualTo(0)
+
+        if (verifyLibModuleIsPresent) {
+            val libModule = report.modules.find { it.name == ":lib" }
+            assertThat(libModule).isNotNull()
+            val libDebugCoverage = libModule!!.variantCoverages.find { it.name == "debug" }
+            assertThat(libDebugCoverage).isNotNull()
+            assertThat(libDebugCoverage!!.instruction.covered).isEqualTo(
+                LIB_EXPECTED_COVERED_INSTRUCTION_AGGREGATED
+            )
+            assertThat(libDebugCoverage.branch.covered).isEqualTo(
+                LIB_EXPECTED_COVERED_BRANCH_AGGREGATED
+            )
+
+            val libPackage = libModule.packages.find { it.name == "com.example.lib" }
+            assertThat(libPackage).isNotNull()
+            val libKotlinClass = libPackage!!.classes.find { it.name == "LibKotlinClass" }
+            assertThat(libKotlinClass).isNotNull()
+
+            val libSourcePath = libKotlinClass!!.variantSourceFilePaths.find { it.variantName == "debug" }?.path
+            assertThat(libSourcePath).isNotNull()
+
+            val libSourceReportFile = File(outputDir, "sourcefiles/${libSourcePath}.json.js")
+            assertThat(libSourceReportFile).exists()
+            assertThat(libSourceReportFile).isFile()
+
+            val libSourceReport = parseSourceReportJs<TestSourceFileReport>(libSourceReportFile)
+            assertThat(libSourceReport.linesCoverages).isNotEmpty()
+            val subtractLine = libSourceReport.linesCoverages.find { it.lineText.contains("return n1-n2") }
+            assertThat(subtractLine).isNotNull()
+
+            val subtractLineDetails = subtractLine!!.variantCoverageDetails.find { it.variantName == "debug" }
+            assertThat(subtractLineDetails).isNotNull()
+            val libUnitTestCoverage = subtractLineDetails!!.testSuiteCoverages.find { it.testSuiteName == "UnitTest" }
+            assertThat(libUnitTestCoverage).isNotNull()
+            assertThat(libUnitTestCoverage!!.variantCoverage.instruction.covered).isEqualTo(5)
+
+            val libAndroidTestCoverage = subtractLineDetails.testSuiteCoverages.find { it.testSuiteName == "AndroidTest" }!!
+            assertThat(libAndroidTestCoverage.variantCoverage.instruction.covered).isEqualTo(0)
+
+        } else {
+            val libModule = report.modules.find { it.name == ":lib" }
+            assertThat(libModule).isNull()
+        }
     }
 
-    /**
-     * Verifies the coverage data in the XML report string.
-     *
-     * @param xmlReportString The XML content of the report.
-     * @param instructionCovered Expected number of covered instructions.
-     * @param instructionMissed Expected number of missed instructions.
-     * @param branchCovered Expected number of covered branches.
-     * @param branchMissed Expected number of missed branches.
-     */
-    private fun verifyCoverageData(xmlReportString: String, instructionCovered: Int, instructionMissed: Int,
-        branchCovered: Int, branchMissed: Int) {
-
-        val expectedCounters = "<counter covered=\"${instructionCovered}\" missed=\"${instructionMissed}\" type=\"INSTRUCTION\"/>" +
-                "<counter covered=\"${branchCovered}\" missed=\"${branchMissed}\" type=\"BRANCH\"/>"
-
-        Truth.assertThat(xmlReportString.contains(expectedCounters)).isTrue()
+    private inline fun <reified T> parseReportJs(file: File): T {
+        val content = file.readText()
+            .removePrefix("const fullReport = ")
+            .removeSuffix(";")
+        return gson.fromJson(content, T::class.java)
     }
 
-    /**
-     * Verifies that the report contains the correct properties identifying the module, test suite and variant.
-     */
-    private fun verifyProperties(xmlReportString: String, moduleName: String, testSuiteName: String,
-        testedVariantName: String) {
-
-        val expectedProperties = "<properties>" +
-                "<property name=\"moduleName\" value=\"${moduleName}\"/>" +
-                "<property name=\"testSuiteName\" value=\"${testSuiteName}\"/>" +
-                "<property name=\"testedVariantName\" value=\"${testedVariantName}\"/>" +
-                "</properties>"
-
-        Truth.assertThat(xmlReportString.contains(expectedProperties)).isTrue()
+    private inline fun <reified T> parseSourceReportJs(file: File): T {
+        val content = file.readText()
+            .substringAfterLast("= ")
+            .removeSuffix(";")
+        return gson.fromJson(content, T::class.java)
     }
 
-    /**
-     * Verifies that the report contains the expected source file paths.
-     */
-    private fun verifySources(xmlReportString: String, moduleName: String) {
-        val expectedSources = "<sources>" +
-                "<file path=\"$moduleName/src/main/java\"/>" +
-                "<file path=\"$moduleName/src/debug/java\"/>" +
-                "<file path=\"$moduleName/src/main/kotlin\"/>" +
-                "<file path=\"$moduleName/src/debug/kotlin\"/>" +
-                "</sources>"
+    // --- Data classes for parsing JSON from report files ---
 
-        Truth.assertThat(xmlReportString.contains(expectedSources)).isTrue()
-    }
+    data class TestCoverageReport(
+        val name: String,
+        val modules: List<TestModuleReport>,
+        @SerializedName("numberOfTestsSuites") val numberOfTestsSuites: Int
+    )
+
+    data class TestModuleReport(
+        val name: String,
+        val variantCoverages: List<TestVariantCoverage>,
+        val packages: List<TestPackageReport>
+    )
+
+    data class TestPackageReport(
+        val name: String,
+        val classes: List<TestClassReport>
+    )
+
+    data class TestClassReport(
+        val name: String,
+        val sourceFileName: String,
+        val variantSourceFilePaths: List<TestVariantSourceFilePath>
+    )
+
+    data class TestVariantSourceFilePath(
+        val variantName: String,
+        val path: String
+    )
+
+    data class TestVariantCoverage(
+        val name: String,
+        val instruction: TestCoverageInfo,
+        val branch: TestCoverageInfo
+    )
+
+    data class TestCoverageInfo(
+        val percent: Int,
+        val covered: Int,
+        val total: Int
+    )
+
+    data class TestSourceFileReport(
+        val linesCoverages: List<TestLineCoverage>
+    )
+
+    data class TestLineCoverage(
+        val lineNumber: Int,
+        val lineText: String,
+        val variantCoverageDetails: List<TestVariantCoverageDetails>
+    )
+
+    data class TestVariantCoverageDetails(
+        val variantName: String,
+        val testSuiteCoverages: List<TestSuiteCoverage>
+    )
+
+    data class TestSuiteCoverage(
+        val testSuiteName: String,
+        val variantCoverage: TestVariantCoverage
+    )
 }

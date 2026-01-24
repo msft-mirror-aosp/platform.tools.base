@@ -7,7 +7,6 @@ com.android.build.gradle.integration.annotationprocessor.AutoServiceTest
 com.android.build.gradle.integration.annotationprocessor.IncrementalJavaCompileWithAPsTest
 com.android.build.gradle.integration.annotationprocessor.JavaPreCompileTest
 com.android.build.gradle.integration.annotationprocessor.KspJavaPreCompileTest
-com.android.build.gradle.integration.api.AddJavaResourcesTest
 com.android.build.gradle.integration.api.AllClassesAccessTest
 com.android.build.gradle.integration.api.ApiCompatibilityTest
 com.android.build.gradle.integration.api.ArtifactReplacementTest
@@ -38,7 +37,6 @@ com.android.build.gradle.integration.application.AndroidComponentsFilteringTest
 com.android.build.gradle.integration.application.AndroidManifestInTestTest
 com.android.build.gradle.integration.application.AndroidTestResourcesTest
 com.android.build.gradle.integration.application.AnnotationProcessorTest
-com.android.build.gradle.integration.application.AppAndLibNoBuildConfigTest
 com.android.build.gradle.integration.application.ApplicationIdReset
 com.android.build.gradle.integration.application.ApplicationIdTest
 com.android.build.gradle.integration.application.AppMetadataTaskTest
