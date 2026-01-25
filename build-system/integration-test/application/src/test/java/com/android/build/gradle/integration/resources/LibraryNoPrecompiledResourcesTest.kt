@@ -102,6 +102,7 @@ class LibraryNoPrecompiledResourcesTest {
     @Test
     fun testDependencyOnLibrariesWithNoProcompiledDependencies() {
             project.executor()
+                .with(BooleanOption.PRECOMPILE_DEPENDENCIES_RESOURCES, true)
                 .run("clean", "app:processDebugAndroidTestResources")
     }
 }

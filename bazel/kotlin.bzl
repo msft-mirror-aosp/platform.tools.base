@@ -9,7 +9,7 @@ load(":merge_archives.bzl", "run_singlejar")
 
 # buildifier: disable=native-java-common
 # buildifier: disable=native-java-info
-def kotlin_compile(ctx, name, srcs, deps, friend_jars, out, out_ijar, java_runtime, kotlinc_opts, warn = "off"):
+def kotlin_compile(ctx, name, srcs, deps, friend_jars, out, out_ijar, java_runtime, kotlinc_opts):
     """Runs kotlinc on the given source files.
 
     Args:
@@ -22,7 +22,6 @@ def kotlin_compile(ctx, name, srcs, deps, friend_jars, out, out_ijar, java_runti
         out_ijar: the output ijar file or None to disable ijar creation
         java_runtime: a JavaRuntimeInfo provider corresponding to the target JVM
         kotlinc_opts: list of additional flags to pass to the Kotlin compiler
-        warn: how to treat compiler warnings. "off", "report" or "error".
 
     Returns:
         JavaInfo for the resulting jar.
@@ -49,12 +48,7 @@ def kotlin_compile(ctx, name, srcs, deps, friend_jars, out, out_ijar, java_runti
     args.add("-api-version", "2.0")
     args.add("-language-version", "2.0")
     args.add("-module-name", name)
-
-    # Similar to https://github.com/bazelbuild/rules_kotlin/pull/390/commits/02a0d4ebd4052e104f99f0b04cb1a5963529ab6e
-    if warn == "off":
-        args.add("-nowarn")
-    elif warn == "error":
-        args.add("-Werror")
+    args.add("-nowarn")  # Mirrors the default javac opts.
     args.add("-Xjvm-default=all-compatibility")
     args.add("-no-stdlib")
 
@@ -334,8 +328,7 @@ def _kotlin_library_impl(ctx):
     # Compiler args and JVM target.
     java_compile_toolchain = select_java_compile_toolchain(ctx.attr._java_toolchains, ctx.attr.jvm_target)
     java_runtime = select_java_runtime(ctx.attr._java_toolchains, ctx.attr.jvm_target)
-    warn = ctx.attr.warn
-    javac_opts = default_javac_opts(ctx.attr._java_toolchains, ctx.attr.jvm_target) + ctx.attr.javacopts + (["-Werror"] if warn == "error" else [])
+    javac_opts = default_javac_opts(ctx.attr._java_toolchains, ctx.attr.jvm_target) + ctx.attr.javacopts
     kotlinc_opts = default_kotlinc_opts(ctx.attr._java_toolchains, ctx.attr.jvm_target) + ctx.attr.kotlinc_opts
 
     if kotlin_srcs:
@@ -356,7 +349,6 @@ def _kotlin_library_impl(ctx):
             out_ijar = kotlin_ijar,
             java_runtime = java_runtime,
             kotlinc_opts = kotlinc_opts,
-            warn = warn,
         ))
         jars.append(kotlin_jar)
         ijars.append(kotlin_ijar)
@@ -453,7 +445,6 @@ _kotlin_library = rule(
             providers = [JavaPluginInfo],
         ),
         "stdlib": attr.label(),
-        "warn": attr.string(default = "off", values = ["off", "report", "error"]),
         "_java_toolchains": attr.label(
             default = Label("//tools/base/bazel:default_java_toolchain_bundle"),
             providers = [KtJvmToolchainInfo],

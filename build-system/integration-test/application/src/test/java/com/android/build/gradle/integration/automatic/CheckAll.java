@@ -50,7 +50,7 @@ import java.util.List;
 @RunWith(FilterableParameterized.class)
 public class CheckAll {
 
-    @Parameterized.Parameters(name = "{0}_newDsl_{1}")
+    @Parameterized.Parameters(name = "{0}")
     public static Collection<Object[]> data() {
         List<Object[]> parameters = Lists.newArrayList();
 
@@ -61,9 +61,8 @@ public class CheckAll {
             if (!isValidProjectDirectory(testProject)) {
                 continue;
             }
-            for (Boolean newDsl : List.of(true, false)) {
-                parameters.add(new Object[]{testProject.getName(), newDsl});
-            }
+
+            parameters.add(new Object[] {testProject.getName()});
         }
 
         return parameters;
@@ -86,17 +85,13 @@ public class CheckAll {
 
     @Rule public GradleTestProject project;
 
-    private final Boolean newDsl;
-
-    public CheckAll(String projectName, Boolean newDsl) {
-        this.newDsl = newDsl;
+    public CheckAll(String projectName) {
         project =
                 GradleTestProject.builder()
                         .fromTestProject(projectName)
                         .withConfigurationCaching(ConfigurationCaching.ON)
                         .withHeap("2048M")
                         .withComposeCompilerGradlePlugin(true)
-                        .addGradleProperty(BooleanOption.USE_NEW_DSL, newDsl)
                         .create();
     }
 
@@ -104,7 +99,6 @@ public class CheckAll {
     public void assembleAndLint() throws Exception {
         AssumeUtil.assumeNotWindows(); // b/73306170
         Assume.assumeTrue(canAssemble(project));
-        if (newDsl) Assume.assumeFalse(requiresOldDsl(project));
         project.executor()
                 // Test project depends on vector drawable libraries that violate unique
                 // namespacing.
@@ -118,9 +112,8 @@ public class CheckAll {
         return !BROKEN_ALWAYS_ASSEMBLE.contains(project.getName());
     }
 
-    private static boolean requiresOldDsl(@NonNull GradleTestProject project) {
-        return OLD_DSL_PROJECTS.contains(project.getName());
-    }
+    private static final ImmutableSet<String> PROJECTS_TO_RUN_WITH_FAIL_ON_WARNING_DISABLED =
+            ImmutableSet.of();
 
     private static final ImmutableSet<String> BROKEN_ALWAYS_ASSEMBLE =
             ImmutableSet.of(
@@ -170,15 +163,4 @@ public class CheckAll {
                     "kotlinMultiplatform" // kotlin multiplatform project has its own assemble
                     // tests.
                     );
-
-    private static final ImmutableSet<String> OLD_DSL_PROJECTS =
-            ImmutableSet.of(
-                    "api",
-                    "artifactApi",
-                    "bytecodeGenerationHooks",
-                    "genFolderApi2",
-                    "noPreDex",
-                    "renamedApk",
-                    "splitAwareSeparateTestModule"
-            );
 }

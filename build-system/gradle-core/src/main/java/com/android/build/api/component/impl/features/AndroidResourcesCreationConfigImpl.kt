@@ -66,8 +66,12 @@ open class AndroidResourcesCreationConfigImpl(
             return globalOverride ?: androidResourcesDsl.isCrunchPngsDefault
         }
 
+    // Resource shrinker expects MergeResources task to have all the resources merged and with
+    // overlay rules applied, so we have to go through the MergeResources pipeline in case it's
+    // enabled, see b/134766811.
     override val isPrecompileDependenciesResourcesEnabled: Boolean
-        get() = internalServices.projectOptions[BooleanOption.PRECOMPILE_DEPENDENCIES_RESOURCES]
+        get() = internalServices.projectOptions[BooleanOption.PRECOMPILE_DEPENDENCIES_RESOURCES] &&
+                !useResourceShrinker
 
     override val resourceConfigurations: Set<String>
         get() = androidResourcesDsl.resourceConfigurations

@@ -506,20 +506,6 @@ enum class BooleanOption(
         )
     ),
 
-    /**
-     * When enabled, tasks for local and aggregated lint reports are registered.
-     */
-    LINT_REPORT_AGGREGATION(
-        "android.experimental.lint.lintReportAggregation",
-        false,
-        FeatureStage.Experimental,
-        futureStage = FutureStage(
-            Version.VERSION_10_0,
-            true,
-            FeatureStage.Experimental,
-        )
-    ),
-
     /* ------------------------
      * SOFTLY-ENFORCED FEATURES
      */

@@ -650,7 +650,6 @@ def maven_library(
         module_name = None,
         plugins = [],
         manifest_lines = None,
-        warn = "off",
         **kwargs):
     """Compiles a library jar from Java and Kotlin sources
 
@@ -697,7 +696,6 @@ def maven_library(
         coverage_baseline_enabled = False,
         stdlib = None,  # Maven libraries use the stdlib in different scopes and versions.
         plugins = plugins,
-        warn = warn,
         **kwargs
     )
 

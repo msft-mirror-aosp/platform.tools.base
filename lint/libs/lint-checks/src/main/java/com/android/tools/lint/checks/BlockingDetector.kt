@@ -266,6 +266,7 @@ class BlockingDetector : JoinEffectDetector<BlockingDetector.Status>(statusLatti
           """
           Ensures that blocking methods are not called from those that expect no blocking.
           """,
+        moreInfo = "https://docs.oracle.com/en/java/javase/21/core/virtual-threads.html", // TODO
         category = Category.CORRECTNESS,
         priority = 6,
         severity = Severity.ERROR,

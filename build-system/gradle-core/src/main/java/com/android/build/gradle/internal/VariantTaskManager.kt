@@ -87,9 +87,6 @@ abstract class VariantTaskManager<VariantBuilderT : VariantBuilder, VariantT : V
     @JvmField
     protected val variantPropertiesList: List<VariantT> =
         variants.map(ComponentInfo<VariantBuilderT, VariantT>::variant)
-    protected val isReportAggregationEnabled: Boolean
-        get() = globalConfig.services.projectOptions.get(BooleanOption.REPORT_AGGREGATION_SUPPORT)
-
     private val nestedComponents: List<NestedComponentCreationConfig> =
         testComponents + testFixturesComponents
     private val allPropertiesList: List<ComponentCreationConfig> =
@@ -136,12 +133,28 @@ abstract class VariantTaskManager<VariantBuilderT : VariantBuilder, VariantT : V
 
         checkMultidexDependency()
 
-        createReportAggregationTask()
+        val enableTestReportAggregation =
+            globalConfig.services.projectOptions.get(BooleanOption.REPORT_AGGREGATION_SUPPORT)
+
+        if (enableTestReportAggregation) {
+            taskFactory.register(
+                CodeCoverageReportTask.CoverageReportCreationAction(globalConfig))
+            //TODO: Only register the aggregated report task if it is applicable
+            taskFactory.register(
+                CodeCoverageReportTask.AggregatedCoverageReportCreationAction(globalConfig))
+        }
 
         // Create tasks for all variants (main, testFixtures and tests)
         for (variantInfo: ComponentInfo<VariantBuilderT, VariantT> in variants) {
             createTasksForVariant(variantInfo)
-
+            if(enableTestReportAggregation) {
+                val jacocoAntConfiguration = JacocoConfigurations.getJacocoAntTaskConfiguration(
+                    project, variantInfo.variant.global.testCoverage.jacocoVersion)
+                taskFactory.register(CodeCoverageCollectionTask.CoverageCollectionCreationAction(jacocoAntConfiguration,
+                    CodeCoverageReportCreationConfigImpl(variantInfo.variant, testComponents)))
+                //TODO: Only register the aggregated report task if it is applicable
+                taskFactory.register(CodeCoverageCollectionTask.AggregatedCoverageCollectionCreationAction(jacocoAntConfiguration, CodeCoverageReportCreationConfigImpl(variantInfo.variant, testComponents)))
+            }
             for (testSuite in variantInfo.variant.testSuites) {
                 TestSuiteTaskManager(project, globalConfig).createTasks(testSuite)
             }
@@ -153,13 +166,6 @@ abstract class VariantTaskManager<VariantBuilderT : VariantBuilder, VariantT : V
             createTasksForTest(testComponent)
         }
         createTopLevelTasks(componentType, variantModel)
-    }
-
-    protected open fun createReportAggregationTask() {
-        if (isReportAggregationEnabled) {
-            taskFactory.register(
-                CodeCoverageReportTask.CoverageReportCreationAction(globalConfig))
-        }
     }
 
     fun createPostApiTasks() {
@@ -218,13 +224,6 @@ abstract class VariantTaskManager<VariantBuilderT : VariantBuilder, VariantT : V
             }
         }
         createAssembleTask(variant)
-
-        if(isReportAggregationEnabled) {
-            val jacocoAntConfiguration = JacocoConfigurations.getJacocoAntTaskConfiguration(
-                project, variant.global.testCoverage.jacocoVersion)
-            taskFactory.register(CodeCoverageCollectionTask.CoverageCollectionCreationAction(jacocoAntConfiguration,
-                CodeCoverageReportCreationConfigImpl(variant, testComponents)))
-        }
 
         doCreateTasksForVariant(componentInfo)
 

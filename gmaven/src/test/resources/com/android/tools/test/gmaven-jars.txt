@@ -636,10 +636,6 @@ com/android/tools/build/gradle
   com/android/build/gradle/internal/test/
   com/android/build/gradle/internal/test/report/
   com/android/build/gradle/internal/test/report/base-style.css
-  com/android/build/gradle/internal/test/report/renderer/
-  com/android/build/gradle/internal/test/report/renderer/index.html
-  com/android/build/gradle/internal/test/report/renderer/script.js
-  com/android/build/gradle/internal/test/report/renderer/styles.css
   com/android/build/gradle/internal/test/report/report.js
   com/android/build/gradle/internal/test/report/style.css
   com/android/build/gradle/internal/testFixtures/

@@ -32,7 +32,6 @@ import com.android.tools.idea.wizard.template.impl.activities.composeWearActivit
 import com.android.tools.idea.wizard.template.impl.activities.cppEmptyActivity.cppEmptyActivityTemplate
 import com.android.tools.idea.wizard.template.impl.activities.cppGameActivity.cppGameActivityTemplate
 import com.android.tools.idea.wizard.template.impl.activities.emptyActivity.emptyActivityTemplate
-import com.android.tools.idea.wizard.template.impl.activities.firebaseAiLogicActivity.firebaseAiLogicActivityTemplate
 import com.android.tools.idea.wizard.template.impl.activities.fullscreenActivity.fullscreenActivityTemplate
 import com.android.tools.idea.wizard.template.impl.activities.googleAdMobAdsActivity.googleAdMobAdsActivityTemplate
 import com.android.tools.idea.wizard.template.impl.activities.googleMapsActivity.googleMapsActivityTemplate
@@ -79,7 +78,6 @@ class WizardTemplateProviderImpl : WizardTemplateProvider() {
   override fun getTemplates(): List<Template> =
     listOf(
       composeActivityMaterial3Template,
-      firebaseAiLogicActivityTemplate,
       composeNavigationUiActivityMaterial3Template,
       archStarterActivityTemplate,
       aiStarterTemplate,

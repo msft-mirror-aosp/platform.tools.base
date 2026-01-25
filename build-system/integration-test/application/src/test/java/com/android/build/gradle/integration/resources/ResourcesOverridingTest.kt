@@ -29,7 +29,17 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 
-class ResourcesOverridingTest {
+@RunWith(FilterableParameterized::class)
+class ResourcesOverridingTest(private val precompileDependenciesResources: Boolean) {
+
+    companion object {
+        @Parameterized.Parameters(name = "precompileDependenciesResources_{0}")
+        @JvmStatic
+        fun params() = listOf(
+            arrayOf(true),
+            arrayOf(false)
+        )
+    }
 
     private val publishedLib = MinimalSubProject.lib("com.example.publishedLib")
         .withFile(
@@ -108,8 +118,10 @@ class ResourcesOverridingTest {
         )
 
         project.executor()
+            .with(BooleanOption.PRECOMPILE_DEPENDENCIES_RESOURCES, precompileDependenciesResources)
             .run(":publishedLib:assembleRelease")
         project.executor()
+            .with(BooleanOption.PRECOMPILE_DEPENDENCIES_RESOURCES, precompileDependenciesResources)
             .run(":app:assembleDebug")
 
         assertThatApk(project.getSubproject("app").getApk(GradleTestProject.ApkType.DEBUG))
@@ -140,8 +152,12 @@ class ResourcesOverridingTest {
             """.trimIndent()
         )
 
-        project.executor().run(":publishedLib:assembleRelease")
-        project.executor().run(":app:assembleDebug")
+        project.executor()
+            .with(BooleanOption.PRECOMPILE_DEPENDENCIES_RESOURCES, precompileDependenciesResources)
+            .run(":publishedLib:assembleRelease")
+        project.executor()
+            .with(BooleanOption.PRECOMPILE_DEPENDENCIES_RESOURCES, precompileDependenciesResources)
+            .run(":app:assembleDebug")
 
         assertThatApk(project.getSubproject("app").getApk(GradleTestProject.ApkType.DEBUG))
             .containsFileWithContent(
@@ -171,8 +187,12 @@ class ResourcesOverridingTest {
             """.trimIndent()
         )
 
-        project.executor().run(":publishedLib:assembleRelease")
-        project.executor().run(":app:assembleDebug")
+        project.executor()
+            .with(BooleanOption.PRECOMPILE_DEPENDENCIES_RESOURCES, precompileDependenciesResources)
+            .run(":publishedLib:assembleRelease")
+        project.executor()
+            .with(BooleanOption.PRECOMPILE_DEPENDENCIES_RESOURCES, precompileDependenciesResources)
+            .run(":app:assembleDebug")
 
         assertThatApk(project.getSubproject("app").getApk(GradleTestProject.ApkType.DEBUG))
             .containsFileWithContent(

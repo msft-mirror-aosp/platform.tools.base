@@ -207,8 +207,10 @@ class PrecompileRemoteResourcesTest {
 
     @Test
     fun checkAppBuild() {
-        project.executor().run(":publishedLib:assembleRelease")
-        project.executor().run(":app:assembleDebug")
+        project.executor().with(BooleanOption.PRECOMPILE_DEPENDENCIES_RESOURCES, true)
+            .run(":publishedLib:assembleRelease")
+        project.executor().with(BooleanOption.PRECOMPILE_DEPENDENCIES_RESOURCES, true)
+            .run(":app:assembleDebug")
 
         checkAarResourcesCompilerTransformOutput()
         checkValuesResourcedAreMerged()
@@ -218,16 +220,24 @@ class PrecompileRemoteResourcesTest {
 
     @Test
     fun checkLocalLibBuild() {
-        project.executor().run(":publishedLib:assembleRelease")
-        val result = project.executor().run(":localLib:assembleRelease")
+        project.executor().with(BooleanOption.PRECOMPILE_DEPENDENCIES_RESOURCES, true)
+            .run(":publishedLib:assembleRelease")
+
+        val result = project.executor().with(BooleanOption.PRECOMPILE_DEPENDENCIES_RESOURCES, true)
+            .run(":localLib:assembleRelease")
 
         assertThat(result.getTask(":localLib:verifyReleaseResources").didWork()).isTrue()
     }
 
     @Test
     fun testIntegrationWithResourceShrinker() {
-        project.executor().run(":publishedLib:assembleRelease")
-        project.executor().run(":app:assembleRelease")
+        project.executor()
+            .with(BooleanOption.PRECOMPILE_DEPENDENCIES_RESOURCES, true)
+            .run(":publishedLib:assembleRelease")
+
+        project.executor()
+            .with(BooleanOption.PRECOMPILE_DEPENDENCIES_RESOURCES, true)
+            .run(":app:assembleRelease")
 
         val compressed = InternalArtifactType.SHRUNK_RESOURCES_PROTO_FORMAT
             .getOutputDir(project.getSubproject(":app").buildDir)

@@ -163,8 +163,6 @@ def main():
       ci.run(studio_mac.studio_mac_arm)
     case 'studio-nightly':
       ci.run(studio_nightly.studio_nightly)
-    case 'studio-autobot':
-      pass  # No-op. To be filled in later.
     case _:
       raise NotImplementedError(f'target: "{args.target}" does not exist')
 

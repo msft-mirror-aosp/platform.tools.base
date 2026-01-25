@@ -453,75 +453,42 @@ abstract class AndroidLintTask : NonIncrementalTask() {
                 creationConfig.artifacts,
                 variantName = creationConfig.name
             )
-            registerLintReportArtifacts(
-                taskProvider,
-                creationConfig.artifacts,
-                creationConfig.name,
-                creationConfig.services.projectInfo.getReportsDir(),
-                "lint-results",
-                InternalArtifactType.LINT_TEXT_REPORT,
-                InternalArtifactType.LINT_HTML_REPORT,
-                InternalArtifactType.LINT_XML_REPORT,
-                InternalArtifactType.LINT_SARIF_REPORT
-            )
+            registerLintReportArtifacts(taskProvider, creationConfig.artifacts, creationConfig.name, creationConfig.services.projectInfo.getReportsDir())
         }
 
         override fun configureOutputSettings(task: AndroidLintTask) {
             task.configureOutputSettings(creationConfig.global.lintOptions)
         }
-    }
 
-    /** Creates the createLocalLintReport task. */
-    class LocalLintReportCreationAction(variant: VariantWithTests) : VariantCreationAction(variant) {
-        override val name: String = creationConfig.computeTaskNameInternal("createLocalLintReport")
-        override val fatalOnly: Boolean get() = false
-        override val autoFix: Boolean get() = false
-        override val lintMode: LintMode get() = LintMode.REPORTING
-        override val description: String get() = "Create local lint report on the ${creationConfig.name} variant"
-
-        override fun handleProvider(taskProvider: TaskProvider<AndroidLintTask>) {
-            registerLintReportArtifacts(
-                taskProvider,
-                creationConfig.artifacts,
-                creationConfig.name,
-                creationConfig.services.projectInfo.getReportsDir(),
-                "local-lint-results",
-                InternalArtifactType.LINT_TEXT_REPORT,
-                InternalArtifactType.LINT_HTML_REPORT,
-                InternalArtifactType.LINT_XML_REPORT,
-                InternalArtifactType.LINT_SARIF_REPORT
-            )
-        }
-
-        override fun configureOutputSettings(task: AndroidLintTask) {
-            task.configureOutputSettings(creationConfig.global.lintOptions)
-        }
-    }
-
-    /** Creates the createAggregatedLintReport task. */
-    class AggregatedLintReportCreationAction(variant: VariantWithTests) : VariantCreationAction(variant) {
-        override val name: String = creationConfig.computeTaskNameInternal("createAggregatedLintReport")
-        override val fatalOnly: Boolean get() = false
-        override val autoFix: Boolean get() = false
-        override val lintMode: LintMode get() = LintMode.REPORTING
-        override val description: String get() = "Create aggregated lint report on the ${creationConfig.name} variant"
-
-        override fun handleProvider(taskProvider: TaskProvider<AndroidLintTask>) {
-            registerLintReportArtifacts(
-                taskProvider,
-                creationConfig.artifacts,
-                creationConfig.name,
-                creationConfig.services.projectInfo.getReportsDir(),
-                "aggregated-lint-results",
-                InternalArtifactType.AGGREGATED_LINT_TEXT_REPORT,
-                InternalArtifactType.AGGREGATED_LINT_HTML_REPORT,
-                InternalArtifactType.AGGREGATED_LINT_XML_REPORT,
-                InternalArtifactType.AGGREGATED_LINT_SARIF_REPORT
-            )
-        }
-
-        override fun configureOutputSettings(task: AndroidLintTask) {
-            task.configureOutputSettings(creationConfig.global.lintOptions)
+        companion object {
+            fun registerLintReportArtifacts(
+                taskProvider: TaskProvider<AndroidLintTask>,
+                artifacts: ArtifactsImpl,
+                variantName: String?,
+                reportsDirectory: Provider<Directory>,
+            ) {
+                val name = "lint-results" + if (variantName != null) "-$variantName" else ""
+                artifacts
+                    .setInitialProvider(taskProvider, AndroidLintTask::textReportOutputFile)
+                    .atLocation(reportsDirectory)
+                    .withName("$name.txt")
+                    .on(InternalArtifactType.LINT_TEXT_REPORT)
+                artifacts
+                    .setInitialProvider(taskProvider, AndroidLintTask::htmlReportOutputFile)
+                    .atLocation(reportsDirectory)
+                    .withName("$name.html")
+                    .on(InternalArtifactType.LINT_HTML_REPORT)
+                artifacts
+                    .setInitialProvider(taskProvider, AndroidLintTask::xmlReportOutputFile)
+                    .atLocation(reportsDirectory)
+                    .withName("$name.xml")
+                    .on(InternalArtifactType.LINT_XML_REPORT)
+                artifacts
+                    .setInitialProvider(taskProvider, AndroidLintTask::sarifReportOutputFile)
+                    .atLocation(reportsDirectory)
+                    .withName("$name.sarif")
+                    .on(InternalArtifactType.LINT_SARIF_REPORT)
+            }
         }
     }
 
@@ -846,41 +813,6 @@ abstract class AndroidLintTask : NonIncrementalTask() {
         abstract fun configureOutputSettings(task: AndroidLintTask)
 
         companion object {
-            @JvmStatic
-            fun registerLintReportArtifacts(
-                taskProvider: TaskProvider<AndroidLintTask>,
-                artifacts: ArtifactsImpl,
-                variantName: String?,
-                reportsDirectory: Provider<Directory>,
-                namePrefix: String,
-                textReportType: InternalArtifactType<RegularFile>,
-                htmlReportType: InternalArtifactType<RegularFile>,
-                xmlReportType: InternalArtifactType<RegularFile>,
-                sarifReportType: InternalArtifactType<RegularFile>
-            ) {
-                val name = namePrefix + if (variantName != null) "-$variantName" else ""
-                artifacts
-                    .setInitialProvider(taskProvider, AndroidLintTask::textReportOutputFile)
-                    .atLocation(reportsDirectory)
-                    .withName("$name.txt")
-                    .on(textReportType)
-                artifacts
-                    .setInitialProvider(taskProvider, AndroidLintTask::htmlReportOutputFile)
-                    .atLocation(reportsDirectory)
-                    .withName("$name.html")
-                    .on(htmlReportType)
-                artifacts
-                    .setInitialProvider(taskProvider, AndroidLintTask::xmlReportOutputFile)
-                    .atLocation(reportsDirectory)
-                    .withName("$name.xml")
-                    .on(xmlReportType)
-                artifacts
-                    .setInitialProvider(taskProvider, AndroidLintTask::sarifReportOutputFile)
-                    .atLocation(reportsDirectory)
-                    .withName("$name.sarif")
-                    .on(sarifReportType)
-            }
-
             @JvmStatic
             fun registerLintIntermediateArtifacts(
                 taskProvider: TaskProvider<AndroidLintTask>,

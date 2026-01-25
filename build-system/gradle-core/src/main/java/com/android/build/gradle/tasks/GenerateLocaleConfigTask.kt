@@ -118,9 +118,11 @@ abstract class GenerateLocaleConfigTask : NonIncrementalTask() {
     abstract val incrementalDir: DirectoryProperty
 
     @get:Input
+    @get:Optional
     abstract val compileSdk: Property<Int>
 
     @get:Input
+    @get:Optional
     abstract val minSdk: Property<Int>
 
     @get:Input
@@ -238,9 +240,9 @@ abstract class GenerateLocaleConfigTask : NonIncrementalTask() {
             localeConfigFile.parentFile.mkdirs()
 
             // Starting with API 35, add the default locale in the config
-            val compileSdk = parameters.compileSdk.get()
-            val minSdk = parameters.minSdk.get()
-            if (compileSdk >= 35) {
+            val compileSdk = parameters.compileSdk.orNull
+            val minSdk = parameters.minSdk.orNull
+            if (compileSdk != null && compileSdk >= 35) {
                 writeLocaleConfig(output = localeConfigFile, finalLocales, appLocales.defaultLocale)
 
                 if (minSdk <= 35) {
@@ -400,7 +402,7 @@ abstract class GenerateLocaleConfigTask : NonIncrementalTask() {
             task.androidJarInput.initialize(task, creationConfig)
 
             task.compileSdk.setDisallowChanges(
-                parseTargetHash(creationConfig.global.compileSdkHashString).apiLevel ?: 1
+                parseTargetHash(creationConfig.global.compileSdkHashString).apiLevel
             )
 
             task.minSdk.setDisallowChanges(

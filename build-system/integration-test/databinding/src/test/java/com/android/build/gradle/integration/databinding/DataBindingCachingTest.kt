@@ -39,19 +39,14 @@ import org.junit.runners.Parameterized
  * (https://issuetracker.google.com/69243050).
  */
 @RunWith(FilterableParameterized::class)
-class DataBindingCachingTest(
-    private val withKotlin: Boolean,
-    private val withBuiltInKotlin: Boolean
-) {
+class DataBindingCachingTest(private val withKotlin: Boolean) {
 
     companion object {
-        @Parameterized.Parameters(name = "withKotlin_{0}_withBuiltInKotlin_{1}")
+        @Parameterized.Parameters(name = "withKotlin_{0}")
         @JvmStatic
         fun parameters() = listOf(
-            // TODO(b/477888767)
-            //arrayOf(true, true),
-            arrayOf(true, false),
-            arrayOf(false, false)
+            arrayOf(true),
+            arrayOf(false)
         )
     }
 
@@ -81,13 +76,7 @@ class DataBindingCachingTest(
                 ":compileDebugKotlin" to SKIPPED,
                 ":kaptDebugKotlin" to FROM_CACHE,
                 ":kaptGenerateStubsDebugKotlin" to FROM_CACHE,
-
-            ).plus(
-                if (!withBuiltInKotlin) {
-                    mapOf(":checkKotlinGradlePluginConfigurationErrors" to SKIPPED)
-                } else {
-                    emptyMap()
-                }
+                ":checkKotlinGradlePluginConfigurationErrors" to SKIPPED
             )
         } else {
             emptyMap()
@@ -102,22 +91,17 @@ class DataBindingCachingTest(
 
     @get:Rule
     val project = GradleTestProject.builder()
-        .fromTestProject("databinding").apply {
-            if (!withBuiltInKotlin) disableBuiltInKotlin()
-        }
-        .withKotlinGradlePlugin(withKotlin && !withBuiltInKotlin)
-        .addGradleProperty(BooleanOption.USE_NEW_DSL, withBuiltInKotlin)
+        .fromTestProject("databinding")
+        .withKotlinGradlePlugin(withKotlin)
+        .disableBuiltInKotlin()
         .withName("project")
         .create()
 
     @get:Rule
     val projectCopy = GradleTestProject.builder()
         .fromTestProject("databinding")
-        .fromTestProject("databinding").apply {
-            if (!withBuiltInKotlin) disableBuiltInKotlin()
-        }
-        .withKotlinGradlePlugin(withKotlin && !withBuiltInKotlin)
-        .addGradleProperty(BooleanOption.USE_NEW_DSL, withBuiltInKotlin)
+        .withKotlinGradlePlugin(withKotlin)
+        .disableBuiltInKotlin()
         .withName("projectCopy")
         .create()
 
@@ -128,47 +112,24 @@ class DataBindingCachingTest(
     fun setUp() {
         if (withKotlin) {
             for (project in listOf(project, projectCopy)) {
-                if (withBuiltInKotlin) {
-                    TestFileUtils.searchAndReplace(
-                        project.buildFile,
-                        "buildscript { apply from: \"../commonBuildScript.gradle\" }",
-                        """
-                            buildscript {
-                                apply from: "../commonBuildScript.gradle"
-                                dependencies {
-                                    classpath "com.android.tools.build:gradle-kotlin:\${'$'}{libs.versions.buildVersion.get()}"
-                                }
-                            }
-                        """.trimIndent())
-                    TestFileUtils.searchAndReplace(
-                        project.buildFile,
-                        "apply plugin: 'com.android.application'",
-                        "apply plugin: 'com.android.application'\n" +
-                                "apply plugin: 'com.android.legacy-kapt'"
-                    )
-                } else {
-                    TestFileUtils.searchAndReplace(
-                        project.buildFile,
-                        "apply plugin: 'com.android.application'",
-                        "apply plugin: 'com.android.application'\n" +
-                                "apply plugin: 'kotlin-android'\n" +
-                                "apply plugin: 'kotlin-kapt'"
-                    )
-                    TestFileUtils.appendToFile(
-                        project.buildFile,
-                        """
-                        android.kotlinOptions.jvmTarget = '11'
-                        """.trimIndent())
-                }
+                TestFileUtils.searchAndReplace(
+                    project.buildFile,
+                    "apply plugin: 'com.android.application'",
+                    "apply plugin: 'com.android.application'\n" +
+                            "apply plugin: 'kotlin-android'\n" +
+                            "apply plugin: 'kotlin-kapt'"
+                )
                 TestFileUtils.appendToFile(
                     project.buildFile,
                     """
+                    android.kotlinOptions.jvmTarget = '11'
                     tasks.withType(org.jetbrains.kotlin.gradle.tasks.KaptGenerateStubs.class).configureEach {
                         compilerOptions {
                             jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11)
                         }
                     }
-                    """.trimIndent())
+                    """.trimIndent()
+                )
             }
         }
     }

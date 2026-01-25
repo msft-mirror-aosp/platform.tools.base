@@ -415,10 +415,6 @@ InternalArtifactType<T : FileSystemLocation>(
     object LINT_HTML_REPORT: InternalArtifactType<RegularFile>(FILE, Category.REPORTS)
     object LINT_XML_REPORT: InternalArtifactType<RegularFile>(FILE, Category.REPORTS)
     object LINT_SARIF_REPORT: InternalArtifactType<RegularFile>(FILE, Category.REPORTS)
-    object AGGREGATED_LINT_TEXT_REPORT: InternalArtifactType<RegularFile>(FILE, Category.REPORTS)
-    object AGGREGATED_LINT_HTML_REPORT: InternalArtifactType<RegularFile>(FILE, Category.REPORTS)
-    object AGGREGATED_LINT_XML_REPORT: InternalArtifactType<RegularFile>(FILE, Category.REPORTS)
-    object AGGREGATED_LINT_SARIF_REPORT: InternalArtifactType<RegularFile>(FILE, Category.REPORTS)
     // Intermediate lint reports to be read and printed to stdout or stderr
     object LINT_INTERMEDIATE_TEXT_REPORT: InternalArtifactType<RegularFile>(FILE)
     object LINT_VITAL_INTERMEDIATE_TEXT_REPORT: InternalArtifactType<RegularFile>(FILE)

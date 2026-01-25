@@ -16,9 +16,11 @@
 
 package com.android.build.gradle.internal.tasks
 
+import com.android.build.api.artifact.ScopedArtifact
 import com.android.build.api.artifact.SingleArtifact
 import com.android.build.api.variant.ApplicationAndroidResources
 import com.android.build.api.variant.ApplicationVariantBuilder
+import com.android.build.api.variant.ScopedArtifacts
 import com.android.build.gradle.internal.AbstractAppTaskManager
 import com.android.build.gradle.internal.component.DeviceTestCreationConfig
 import com.android.build.gradle.internal.component.ApkCreationConfig
@@ -26,12 +28,9 @@ import com.android.build.gradle.internal.component.ApplicationCreationConfig
 import com.android.build.gradle.internal.component.ComponentCreationConfig
 import com.android.build.gradle.internal.component.TestComponentCreationConfig
 import com.android.build.gradle.internal.component.TestFixturesCreationConfig
-import com.android.build.gradle.internal.coverage.JacocoConfigurations
-import com.android.build.gradle.internal.coverage.tasks.CodeCoverageCollectionTask
-import com.android.build.gradle.internal.coverage.tasks.CodeCoverageReportCreationConfigImpl
-import com.android.build.gradle.internal.coverage.tasks.CodeCoverageReportTask
 import com.android.build.gradle.internal.dsl.AbstractPublishing
 import com.android.build.gradle.internal.dsl.ModulePropertyKey
+import com.android.build.gradle.internal.publishing.AndroidArtifacts
 import com.android.build.gradle.internal.publishing.AndroidArtifacts.PublishedConfigType
 import com.android.build.gradle.internal.publishing.PublishedConfigSpec
 import com.android.build.gradle.internal.scope.InternalArtifactType
@@ -46,14 +45,19 @@ import com.android.build.gradle.internal.variant.ComponentInfo
 import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.tasks.ExtractSupportedLocalesTask
 import com.android.build.gradle.tasks.GenerateLocaleConfigTask
+import org.gradle.api.Action
 import org.gradle.api.Project
 import org.gradle.api.Task
+import org.gradle.api.artifacts.ArtifactView
+import org.gradle.api.artifacts.Configuration
+import org.gradle.api.attributes.AttributeContainer
+import org.gradle.api.file.FileCollection
 import org.gradle.api.tasks.TaskProvider
 
 class ApplicationTaskManager(
     project: Project,
     private val variants: Collection<ComponentInfo<ApplicationVariantBuilder, ApplicationCreationConfig>>,
-    private val testComponents: Collection<TestComponentCreationConfig>,
+    testComponents: Collection<TestComponentCreationConfig>,
     testFixturesComponents: Collection<TestFixturesCreationConfig>,
     globalConfig: GlobalTaskCreationConfig,
     localConfig: TaskManagerConfig,
@@ -148,20 +152,6 @@ class ApplicationTaskManager(
                 component.componentName,
                 configType
             )
-        }
-
-        if (isReportAggregationEnabled) {
-            val jacocoAntConfiguration = JacocoConfigurations.getJacocoAntTaskConfiguration(
-                project, variant.global.testCoverage.jacocoVersion)
-            taskFactory.register(CodeCoverageCollectionTask.AggregatedCoverageCollectionCreationAction(jacocoAntConfiguration, CodeCoverageReportCreationConfigImpl(variantInfo.variant, testComponents)))
-        }
-    }
-
-    override fun createReportAggregationTask() {
-        super.createReportAggregationTask()
-        if(isReportAggregationEnabled) {
-            taskFactory.register(
-                CodeCoverageReportTask.AggregatedCoverageReportCreationAction(globalConfig))
         }
     }
 
