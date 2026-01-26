@@ -236,10 +236,10 @@ class AdbSessionTest {
       previousConnectionId = deviceList.connectionId
       Assert.assertNotNull(deviceList)
       if (deviceList.isEmpty()) {
-        Assert.assertTrue(deviceList.isTrackerConnecting || deviceList.isTrackerDisconnected)
-        if (deviceList.isTrackerConnecting) {
+        Assert.assertTrue(deviceList.flowStatus.isStartOfFlow || deviceList.flowStatus.isRetrying)
+        if (deviceList.flowStatus.isStartOfFlow) {
           Assert.assertFalse(isTrackerDisconnectedSeen)
-        } else if (deviceList.isTrackerDisconnected) {
+        } else if (deviceList.flowStatus.isRetrying) {
           isTrackerDisconnectedSeen = true
         }
       } else {

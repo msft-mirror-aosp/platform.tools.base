@@ -20,8 +20,6 @@ import com.android.adblib.AdbSession
 import com.android.adblib.DeviceInfo
 import com.android.adblib.DeviceSelector
 import com.android.adblib.adbLogger
-import com.android.adblib.isTrackerConnecting
-import com.android.adblib.isTrackerDisconnected
 import com.android.adblib.trackDevices
 import com.android.adblib.utils.SuspendingLazy
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -55,11 +53,11 @@ internal class DeviceInfoTracker(private val session: AdbSession, private val de
       .trackDevices()
       .transformWhile { trackedDeviceList ->
         when {
-          trackedDeviceList.isTrackerConnecting -> {
+          trackedDeviceList.flowStatus.isStartOfFlow -> {
             // Keep the flow going, as we don't have a valid list yet
             true
           }
-          trackedDeviceList.isTrackerDisconnected -> {
+          trackedDeviceList.flowStatus.isRetrying || trackedDeviceList.flowStatus.isEndOfFlow -> {
             // Stop the flow, since underlying ADB connection has ended
             logger.info { "Device tracking disconnected, ending tracking of device '$device'" }
             false

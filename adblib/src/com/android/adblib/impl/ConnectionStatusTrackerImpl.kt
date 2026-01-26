@@ -20,8 +20,6 @@ import com.android.adblib.ConnectionStatus
 import com.android.adblib.ConnectionStatusTracker
 import com.android.adblib.TrackedDeviceList
 import com.android.adblib.adbLogger
-import com.android.adblib.isTrackerConnecting
-import com.android.adblib.isTrackerDisconnected
 import com.android.adblib.trackDevices
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -64,7 +62,7 @@ internal class ConnectionStatusTrackerImpl(override val session: AdbSession) : C
   }
 
   private fun TrackedDeviceList.toConnectionStatus(): ConnectionStatus {
-    if (isTrackerDisconnected || isTrackerConnecting) {
+    if (!flowStatus.isActive) {
       return ConnectionStatus(false, connectionId)
     }
 

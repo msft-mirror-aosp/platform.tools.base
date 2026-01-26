@@ -22,8 +22,6 @@ import com.android.adblib.AdbSession
 import com.android.adblib.INFINITE_DURATION
 import com.android.adblib.INFINITE_TIMEOUT
 import com.android.adblib.adbLogger
-import com.android.adblib.isTrackerConnecting
-import com.android.adblib.isTrackerDisconnected
 import com.android.adblib.trackDevices
 import com.android.adblib.withErrorTimeout
 import com.android.ddmlib.AdbDelegateUsageTracker
@@ -840,8 +838,7 @@ class AdbLibAndroidDebugBridge(
   }
 
   override fun isConnected(): Boolean {
-    val trackState = session.trackDevices().value
-    return !trackState.isTrackerDisconnected && !trackState.isTrackerConnecting
+    return session.trackDevices().value.flowStatus.isActive
   }
 
   /**

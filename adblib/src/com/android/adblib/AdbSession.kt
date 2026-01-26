@@ -35,7 +35,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collect
@@ -190,11 +189,11 @@ class ClosedSessionException(message: String) : CancellationException(message)
  * Returns a [StateFlow] that emits a new [TrackedDeviceList] everytime a device state change is detected by the ADB Host.
  *
  * The implementation uses a [stateIn] operator with the following characteristics:
- * * The initial value of the returned [StateFlow] is always an empty [TrackedDeviceList] of type [isTrackerConnecting]. This is because it
- *   may take some time to collect the initial list of devices.
+ * * The initial value of the returned [StateFlow] is always an empty [TrackedDeviceList] with `flowStatus` of
+ *   [StateFlowStatus.isStartOfFlow]. This is because it may take some time to collect the initial list of devices.
  * * The upstream flow is a [AdbHostServices.trackDevices] that is retried after a delay of [retryDelay] in case of error.
- *     * In case of error in the upstream flow, an empty [TrackedDeviceList] (of type [isTrackerDisconnected]) is emitted to downstream
- *       flows and the [TrackedDeviceList.connectionId] is incremented.
+ *     * In case of error in the upstream flow, an empty [TrackedDeviceList] (with `flowStatus` [StateFlowStatus.isRetrying]) is emitted to
+ *       downstream flows and the [TrackedDeviceList.connectionId] is incremented.
  * * The returned [StateFlow] is unique to this [AdbSession], meaning all collectors of the returned flow share a single underlying
  *   [AdbHostServices.trackDevices] connection.
  * * The returned [StateFlow] activates a [AdbHostServices.trackDevices] connection only when there are active downstream flows, see
@@ -202,6 +201,9 @@ class ClosedSessionException(message: String) : CancellationException(message)
  * * The returned [StateFlow] runs in a separate coroutine in the [AdbSession.scope]. If the scope is cancelled, the [StateFlow] stops
  *   emitting new values, but downstream flows are not terminated. It is up to the caller to use an appropriate [CoroutineScope] when
  *   collecting the returned flow. A typical usage would be to use the [AdbSession.scope] when collecting, for example:
+ *
+ *   ``` val session: AdbSession session.scope.launch { session.trackDevices.flowOn(Dispatchers.Default).collect { // Collect until session
+ *   scope is cancelled. } } ```
  *
  *   ``` val session: AdbSession session.scope.launch { session.trackDevices.flowOn(Dispatchers.Default).collect { // Collect until session
  *   scope is cancelled. } } ```
@@ -260,21 +262,6 @@ class TrackedDeviceList(
     return "${this::class.simpleName}: connectionId=$connectionId, " + "device count=${size}, flowStatus=$flowStatus"
   }
 }
-
-/** Returns `true` if this [TrackedDeviceList] instance has been produced by [AdbSession.trackDevices] due to a connection failure. */
-val TrackedDeviceList.isTrackerDisconnected: Boolean
-  get() {
-    return flowStatus.isRetrying
-  }
-
-/**
- * Returns `true` if this [TrackedDeviceList] instance is the initial value produced by the [StateFlow] returned by
- * [AdbSession.trackDevices].
- */
-val TrackedDeviceList.isTrackerConnecting: Boolean
-  get() {
-    return flowStatus.isStartOfFlow
-  }
 
 /**
  * Returns a flow of [DeviceInfo] that tracks changes to a given [device][DeviceSelector], typically changes to the [DeviceInfo.deviceState]
