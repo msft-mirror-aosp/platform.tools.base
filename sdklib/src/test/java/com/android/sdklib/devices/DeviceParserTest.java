@@ -343,7 +343,7 @@ public class DeviceParserTest extends TestCase {
         try (InputStream stream = DeviceSchemaTest.class.getResourceAsStream("devices_v8.xml")) {
             Table<String, String, Device> devices = DeviceParser.parse(stream);
             assertEquals(
-                    "Parsing devices.xml produces the wrong number of devices", 2, devices.size());
+                    "Parsing devices.xml produces the wrong number of devices", 3, devices.size());
 
             Device device0 = devices.get("no_abis", "Generic");
             assertThat(device0.getDefaultHardware().getSupportedAbis()).isEmpty();
@@ -353,6 +353,39 @@ public class DeviceParserTest extends TestCase {
                     .containsExactly(Abi.ARM64_V8A, Abi.ARMEABI_V7A);
             assertThat(device1.getDefaultHardware().getTranslatedAbis())
                     .containsExactly(Abi.RISCV64);
+        }
+    }
+
+    public void testDevices_v8() throws Exception {
+        try (InputStream stream = DeviceSchemaTest.class.getResourceAsStream("devices_v8.xml")) {
+            Table<String, String, Device> devices = DeviceParser.parse(stream);
+            assertEquals(
+                    "Parsing devices.xml produces the wrong number of devices", 3, devices.size());
+
+            Device device0 = devices.get("glasses_like", "Generic");
+            Hardware hw = device0.getDefaultHardware();
+            Touchpad t = hw.getTouchpad();
+            assertNotNull(t);
+            assertEquals(200, t.getWidth());
+            assertEquals(100, t.getHeight());
+            assertEquals(ScreenType.NOTOUCH, hw.getScreen().getScreenType());
+
+            assertEquals(2, hw.getCameras().size());
+            Camera c = hw.getCamera(CameraLocation.FRONT);
+            assertNotNull(c);
+            assertEquals(CameraLocation.FRONT, c.getLocation());
+            assertEquals(270, c.getSensorOrientation());
+            assertFalse(c.hasFlash());
+            assertTrue(c.hasAutofocus());
+            c = hw.getCamera(CameraLocation.BACK);
+            assertNotNull(c);
+            assertEquals(CameraLocation.BACK, c.getLocation());
+            assertEquals(90, c.getSensorOrientation());
+            assertTrue(c.hasFlash());
+            assertTrue(c.hasAutofocus());
+
+            Device device1 = devices.get("various_abis", "Generic");
+            assertNull(device1.getDefaultHardware().getTouchpad());
         }
     }
 
