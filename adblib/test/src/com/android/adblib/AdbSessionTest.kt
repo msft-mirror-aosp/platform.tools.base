@@ -157,6 +157,27 @@ class AdbSessionTest {
   }
 
   @Test
+  fun testTrackDevicesEmitsEndOfFlowOnSessionClose(): Unit = runBlockingWithTimeout {
+    // Prepare
+    val fakeDevice = fakeAdb.connectDevice("1234", "test1", "test2", "model", sdk = AndroidApiLevel(23), DeviceState.HostConnectionType.USB)
+    fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
+
+    val flow = session.trackDevices()
+
+    yieldUntil { flow.value.flowStatus.isActive }
+    val connectionId = flow.value.connectionId
+
+    // Act
+    session.close()
+
+    // Assert
+    yieldUntil { flow.value.flowStatus.isEndOfFlow }
+    Assert.assertTrue(flow.value.isEmpty())
+    Assert.assertNull(flow.value.throwable)
+    Assert.assertEquals(connectionId, flow.value.connectionId)
+  }
+
+  @Test
   fun testTraceDevicesWithProtobuffer(): Unit = runBlockingWithTimeout {
     fakeAdb.fakeAdbServer.features = fakeAdb.fakeAdbServer.features.toMutableSet().also { it.add(AdbFeatures.DEVICE_LIST_BINARY_PROTO) }
 
