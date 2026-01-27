@@ -24,9 +24,12 @@ bazel_dep(name = "rules_license", version = "1.0.0")
 bazel_dep(name = "protobuf", version = "29.2", repo_name = "com_google_protobuf")
 single_version_override(
     module_name = "protobuf",
+    version = "29.2",
     patches = [
         # b/392548175 - failure in upb aspect when using '-c opt'.
         "//tools/base/bazel/bzlmod:protobuf-upb-proto-disable.patch",
+        # Stop rules_jvm_external from calling coursier for maven resolution.
+        "//tools/base/bazel/bzlmod:protobuf_use_maven_install_lockfile.patch",
     ],
     patch_strip = 1,
 )
