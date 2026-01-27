@@ -35,6 +35,7 @@ import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfig
 import com.android.build.gradle.internal.tasks.factory.dependsOn
 import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.tasks.GenerateTestConfig
+import com.android.build.gradle.tasks.TestResultsCollectionTask
 import com.android.build.gradle.tasks.factory.AndroidUnitTest
 import com.google.common.collect.ImmutableSet
 import org.gradle.api.Project
@@ -42,6 +43,7 @@ import org.gradle.api.Task
 import org.gradle.api.file.RegularFile
 import org.gradle.api.plugins.JavaBasePlugin
 import org.gradle.api.tasks.PathSensitivity
+import org.gradle.api.tasks.TaskProvider
 import org.gradle.testing.jacoco.plugins.JacocoPlugin
 
 open class HostTestTaskManager(project: Project, globalConfig: GlobalTaskCreationConfig) : TaskManager(project, globalConfig) {
@@ -67,6 +69,7 @@ open class HostTestTaskManager(project: Project, globalConfig: GlobalTaskCreatio
     taskName: String,
     coverageTestTaskName: String,
     internalArtifactType: InternalArtifactType<RegularFile>,
+    testResultsCollectionTasksMap: Map<String, MutableList<TaskProvider<TestResultsCollectionTask>>>,
   ) {
     if (hostTestCreationConfig.codeCoverageEnabled) {
       project.pluginManager.apply(JacocoPlugin::class.java)
@@ -82,7 +85,11 @@ open class HostTestTaskManager(project: Project, globalConfig: GlobalTaskCreatio
 
     hostTestCreationConfig.runTestTaskConfigurationActions(runTestsTask)
     taskFactory.configure(taskName) { test: Task -> test.dependsOn(runTestsTask) }
-
+    project.gradle.taskGraph.whenReady { graph ->
+      if (shouldIgnoreFailures(testResultsCollectionTasksMap[hostTestCreationConfig.mainVariant.name], graph)) {
+        runTestsTask.configure { it.ignoreFailures = true }
+      }
+    }
     if (hostTestCreationConfig.codeCoverageEnabled) {
       val ant = JacocoConfigurations.getJacocoAntTaskConfiguration(project, getUnitTestJacocoVersion(project, hostTestCreationConfig))
       project.plugins.withType(JacocoPlugin::class.java) {

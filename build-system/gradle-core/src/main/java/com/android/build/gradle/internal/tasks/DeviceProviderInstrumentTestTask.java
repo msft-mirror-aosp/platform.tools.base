@@ -55,6 +55,7 @@ import com.android.build.gradle.internal.test.report.TestReport;
 import com.android.build.gradle.internal.testing.ConnectedDeviceProvider;
 import com.android.build.gradle.internal.testing.StaticTestData;
 import com.android.build.gradle.internal.testing.TestData;
+import com.android.build.gradle.internal.testing.TestReportAggregationUtils;
 import com.android.build.gradle.internal.testing.TestRunner;
 import com.android.build.gradle.internal.testing.utp.UtpTestRunner;
 import com.android.build.gradle.internal.testing.utp.UtpTestUtilsKt;
@@ -87,7 +88,6 @@ import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.file.ConfigurableFileCollection;
 import org.gradle.api.file.DirectoryProperty;
 import org.gradle.api.file.RegularFile;
-import org.gradle.api.file.RegularFileProperty;
 import org.gradle.api.logging.Logger;
 import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.plugins.JavaBasePlugin;
@@ -96,7 +96,6 @@ import org.gradle.api.provider.Property;
 import org.gradle.api.provider.Provider;
 import org.gradle.api.tasks.Classpath;
 import org.gradle.api.tasks.Input;
-import org.gradle.api.tasks.InputFile;
 import org.gradle.api.tasks.InputFiles;
 import org.gradle.api.tasks.Internal;
 import org.gradle.api.tasks.Nested;
@@ -197,6 +196,24 @@ public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTas
         @Optional
         public abstract Property<Boolean> getKeepInstalledApks();
 
+        public static final String TEST_RESULT_METADATA_FILE = "metadata.txt";
+        public static final String CURRENT_TEST_SUITE = "AndroidTest";
+
+        @Internal
+        public abstract Property<String> getModulePath();
+
+        @Internal
+        public abstract Property<String> getTestedVariantName();
+
+        @Internal
+        public abstract Property<String> getTestSuiteName();
+
+        @Internal
+        public abstract Property<String> getTestSuiteTarget();
+
+        @Internal
+        public abstract DirectoryProperty getXmlResultsDirectory();
+
         TestRunner createTestRunner(
                 WorkerExecutor workerExecutor,
                 ObjectFactory objectFactory,
@@ -276,6 +293,7 @@ public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTas
                 getTestRunnerFactory(),
                 getReportsDir().getAsFile().get(),
                 getCodeCoverageEnabled().get(),
+                getTestReportAggregationEnabled().get(),
                 getAnalyticsService().get(),
                 getIgnoreFailures(),
                 getLogger(),
@@ -300,6 +318,7 @@ public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTas
             TestRunnerFactory testRunnerFactory,
             File reportDir,
             Boolean enableCoverage,
+            Boolean enableTestReportAggregation,
             AnalyticsService analyticsService,
             boolean ignoreFailures,
             Logger logger,
@@ -383,17 +402,26 @@ public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTas
         TestReport report = new TestReport(ReportType.SINGLE_FLAVOR, resultsOutputDir, reportOutDir);
         CompositeTestResults results = report.generateReport();
 
+        if (enableTestReportAggregation) {
+            TestReportAggregationUtils.processTestReportAggregation(
+                    resultsOutputDir,
+                    testRunnerFactory.getXmlResultsDirectory(),
+                    testRunnerFactory.getModulePath().get(),
+                    testRunnerFactory.getTestedVariantName().get(),
+                    testRunnerFactory.getTestSuiteName().get(),
+                    testRunnerFactory.getTestSuiteTarget().get());
+        }
+
         TestsAnalytics.recordOkInstrumentedTestRun(
                 dependencies,
                 testRunnerFactory.getExecutionEnum().get(),
                 enableCoverage,
                 results.getTestCount(),
-                analyticsService
-        );
+                analyticsService);
 
         if (!success) {
-            String reportUrl = new ConsoleRenderer().asClickableFileUrl(
-                    new File(reportOutDir, "index.html"));
+            String reportUrl =
+                    new ConsoleRenderer().asClickableFileUrl(new File(reportOutDir, "index.html"));
             String message = "There were failing tests. See the report at: " + reportUrl;
             if (ignoreFailures) {
                 logger.warn(message);
@@ -419,8 +447,8 @@ public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTas
             @NonNull Boolean enableCoverage,
             @NonNull ArtifactCollection dependencies,
             List<String> targetSerials,
-            Execution execution
-    ) throws DeviceException, ExecutionException {
+            Execution execution)
+            throws DeviceException, ExecutionException {
         return deviceProvider.use(
                 () -> {
                     try {
@@ -548,6 +576,9 @@ public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTas
 
     @Input
     public abstract Property<Boolean> getCodeCoverageEnabled();
+
+    @Input
+    public abstract Property<Boolean> getTestReportAggregationEnabled();
 
     @Input
     public abstract Property<Boolean> getAdditionalTestOutputEnabled();
@@ -760,6 +791,16 @@ public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTas
             UtpTestUtilsKt.maybeCreateUtpConfigurations(
                 creationConfig.getServices().getConfigurations(),
                 creationConfig.getServices().getDependencies());
+
+            if (creationConfig instanceof DeviceTestCreationConfig) {
+                ((DeviceTestCreationConfig) creationConfig)
+                        .getMainVariant()
+                        .getArtifacts()
+                        .setInitialProvider(
+                                taskProvider,
+                                task -> task.getTestRunnerFactory().getXmlResultsDirectory())
+                        .on(InternalArtifactType.ANDROID_TEST_RESULTS.INSTANCE);
+            }
         }
 
         @Override
@@ -834,6 +875,15 @@ public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTas
                     .getForceCompilation()
                     .set(creationConfig.isForceAotCompilation());
 
+            task.getTestRunnerFactory()
+                    .getModulePath()
+                    .set(creationConfig.getServices().getProjectInfo().getPath());
+            task.getTestRunnerFactory().getTestedVariantName().set(variantName);
+            task.getTestRunnerFactory()
+                    .getTestSuiteName()
+                    .set(TestRunnerFactory.CURRENT_TEST_SUITE);
+            task.getTestRunnerFactory().getTestSuiteTarget().set(deviceProviderName);
+
             if (connectedCheckTargetSerials != null) {
                 task.getTestRunnerFactory()
                         .getConnectedCheckDeviceSerials()
@@ -878,6 +928,8 @@ public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTas
                     .set(componentType != null && componentType.isDynamicFeature());
             task.getCodeCoverageEnabled().set(creationConfig.getCodeCoverageEnabled());
             boolean useJacocoTransformOutputs = creationConfig.getCodeCoverageEnabled();
+            task.getTestReportAggregationEnabled()
+                    .set(projectOptions.get(BooleanOption.REPORT_AGGREGATION_SUPPORT));
             task.dependencies =
                     creationConfig
                             .getVariantDependencies()

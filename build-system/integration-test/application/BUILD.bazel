@@ -159,6 +159,7 @@ TEST_DATA = [
     "//tools/base/build-system/integration-test:test-projects/renamedApk",
     "//tools/base/build-system/integration-test:test-projects/renderscriptNdk",
     "//tools/base/build-system/integration-test:test-projects/repo",
+    "//tools/base/build-system/integration-test:test-projects/reportAggregation",
     "//tools/base/build-system/integration-test:test-projects/rsSupportMode",
     "//tools/base/build-system/integration-test:test-projects/sameNamedLibs",
     "//tools/base/build-system/integration-test:test-projects/separateTestModule",

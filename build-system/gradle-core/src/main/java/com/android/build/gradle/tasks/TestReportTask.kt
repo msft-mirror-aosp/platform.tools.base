@@ -21,11 +21,9 @@ import com.android.build.gradle.internal.tasks.BuildAnalyzer
 import com.android.build.gradle.internal.tasks.NonIncrementalGlobalTask
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationAction
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfig
-import com.android.build.gradle.internal.test.report.ReportType
-import com.android.build.gradle.internal.test.report.TestReport
+import com.android.build.gradle.internal.test.report.XMLReportAggregator
 import com.android.buildanalyzer.common.TaskCategory
 import java.io.File
-import org.gradle.api.GradleException
 import org.gradle.api.file.Directory
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.provider.ListProperty
@@ -36,7 +34,6 @@ import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
-import org.gradle.internal.logging.ConsoleRenderer
 
 @CacheableTask
 @BuildAnalyzer(primaryTaskCategory = TaskCategory.TEST)
@@ -46,7 +43,7 @@ abstract class TestReportTask : NonIncrementalGlobalTask() {
 
   @get:InputFiles @get:PathSensitive(PathSensitivity.RELATIVE) abstract val testResults: ListProperty<Directory>
 
-  @get:OutputDirectory abstract val reportDir: DirectoryProperty
+  @get:OutputDirectory abstract val testReport: DirectoryProperty
 
   override fun doTaskAction() {
     if (!reportAggregationEnabled.get()) {
@@ -54,28 +51,31 @@ abstract class TestReportTask : NonIncrementalGlobalTask() {
       return
     }
     val inputDirectories: List<File> = testResults.get().map { it.asFile }
-    val reportDir = reportDir.get().asFile
+    val testReport = testReport.get().asFile
 
-    val report = TestReport(ReportType.MULTI_PROJECT, inputDirectories, reportDir)
-    val compositeTestResults = report.generateReport()
-
-    if (!compositeTestResults.failures.isEmpty()) {
-      val reportUrl = ConsoleRenderer().asClickableFileUrl(File(reportDir, "index.html"))
-      val message = "There were failing tests. See the report at: " + reportUrl
-      throw GradleException(message)
-    }
+    XMLReportAggregator(inputDirectories).writeReport(testReport)
   }
 
   class AggregatedTestReportCreationAction(creationConfig: GlobalTaskCreationConfig, isReportAggregationEnabled: Boolean) :
     BaseCreationAction(creationConfig, isReportAggregationEnabled) {
     override val name = "createAggregatedTestReport"
     override val artifactType = InternalMultipleArtifactType.ALL_PROJECT_TEST_RESULTS
+
+    override fun configure(task: TestReportTask) {
+      super.configure(task)
+      task.testReport.set(task.project.layout.buildDirectory.dir("reports/tests/aggregated-test-report"))
+    }
   }
 
   class TestReportCreationAction(creationConfig: GlobalTaskCreationConfig, isReportAggregationEnabled: Boolean) :
     BaseCreationAction(creationConfig, isReportAggregationEnabled) {
     override val name = "createTestReport"
     override val artifactType = InternalMultipleArtifactType.PROJECT_LEVEL_TEST_RESULTS
+
+    override fun configure(task: TestReportTask) {
+      super.configure(task)
+      task.testReport.set(task.project.layout.buildDirectory.dir("reports/tests/test-report"))
+    }
   }
 
   abstract class BaseCreationAction(val creationConfig: GlobalTaskCreationConfig, val isReportAggregationEnabled: Boolean) :
@@ -90,7 +90,6 @@ abstract class TestReportTask : NonIncrementalGlobalTask() {
       if (isReportAggregationEnabled) {
         task.testResults.set(creationConfig.globalArtifacts.getAll(artifactType))
       }
-      task.reportDir.set(task.project.layout.buildDirectory.dir("intermediates/$name/"))
     }
   }
 }

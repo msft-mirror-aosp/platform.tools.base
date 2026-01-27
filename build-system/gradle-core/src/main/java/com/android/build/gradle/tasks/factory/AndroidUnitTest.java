@@ -38,6 +38,7 @@ import com.android.build.gradle.internal.tasks.BuildAnalyzer;
 import com.android.build.gradle.internal.tasks.UsesAnalytics;
 import com.android.build.gradle.internal.tasks.VariantTask;
 import com.android.build.gradle.internal.tasks.factory.VariantTaskCreationAction;
+import com.android.build.gradle.internal.testing.TestReportAggregationUtils;
 import com.android.build.gradle.internal.utils.HasConfigurableValuesKt;
 import com.android.build.gradle.options.BooleanOption;
 import com.android.build.gradle.options.ProjectOptions;
@@ -53,6 +54,7 @@ import kotlin.Unit;
 import org.gradle.api.artifacts.ArtifactCollection;
 import org.gradle.api.file.ConfigurableFileCollection;
 import org.gradle.api.file.Directory;
+import org.gradle.api.file.DirectoryProperty;
 import org.gradle.api.file.RegularFile;
 import org.gradle.api.file.RegularFileProperty;
 import org.gradle.api.plugins.JavaBasePlugin;
@@ -65,6 +67,7 @@ import org.gradle.api.tasks.InputFiles;
 import org.gradle.api.tasks.Internal;
 import org.gradle.api.tasks.Nested;
 import org.gradle.api.tasks.Optional;
+import org.gradle.api.tasks.OutputDirectory;
 import org.gradle.api.tasks.OutputFile;
 import org.gradle.api.tasks.PathSensitive;
 import org.gradle.api.tasks.PathSensitivity;
@@ -90,6 +93,8 @@ import java.util.concurrent.Callable;
 @BuildAnalyzer(primaryTaskCategory = TaskCategory.TEST)
 public abstract class AndroidUnitTest extends Test implements VariantTask, UsesAnalytics {
 
+    public static final String TEST_RESULT_METADATA_FILE = "metadata.txt";
+    public static final String CURRENT_TEST_SUITE = "UnitTest";
     private String variantName;
 
     private ArtifactCollection dependencies;
@@ -120,6 +125,10 @@ public abstract class AndroidUnitTest extends Test implements VariantTask, UsesA
     @Optional
     public abstract RegularFileProperty getJacocoCoverageOutputFile();
 
+    @OutputDirectory
+    @Optional
+    public abstract DirectoryProperty getXmlResultsDirectory();
+
     @InputFiles
     @Optional
     @PathSensitive(PathSensitivity.RELATIVE)
@@ -127,6 +136,21 @@ public abstract class AndroidUnitTest extends Test implements VariantTask, UsesA
 
     @Input
     public abstract Property<Boolean> getJacocoExtensionEnabled();
+
+    @Input
+    public abstract Property<Boolean> getTestReportAggregationEnabled();
+
+    @Internal
+    public abstract Property<String> getModulePath();
+
+    @Internal
+    public abstract Property<String> getTestedVariantName();
+
+    @Internal
+    public abstract Property<String> getTestSuiteName();
+
+    @Internal
+    public abstract Property<String> getTestSuiteTarget();
 
     @Override
     @TaskAction
@@ -170,6 +194,15 @@ public abstract class AndroidUnitTest extends Test implements VariantTask, UsesA
         }
 
         super.executeTests();
+        if (this.getTestReportAggregationEnabled().get()) {
+            TestReportAggregationUtils.processTestReportAggregation(
+                    getReports().getJunitXml().getOutputLocation().get().getAsFile(),
+                    getXmlResultsDirectory(),
+                    getModulePath().get(),
+                    getTestedVariantName().get(),
+                    getTestSuiteName().get(),
+                    getTestSuiteTarget().get());
+        }
     }
 
     public static class CreationAction
@@ -214,6 +247,11 @@ public abstract class AndroidUnitTest extends Test implements VariantTask, UsesA
                         .withName(taskProvider.getName() + SdkConstants.DOT_EXEC)
                         .on(internalArtifactType);
             }
+            hostTestCreationConfig
+                    .getMainVariant()
+                    .getArtifacts()
+                    .setInitialProvider(taskProvider, AndroidUnitTest::getXmlResultsDirectory)
+                    .on(InternalArtifactType.UNIT_TEST_RESULTS.INSTANCE);
         }
 
         @Override
@@ -226,6 +264,10 @@ public abstract class AndroidUnitTest extends Test implements VariantTask, UsesA
             if (pluginExtension != null) {
                 pluginExtension.setToolVersion(jacocoVersion);
             }
+            task.getModulePath().set(creationConfig.getServices().getProjectInfo().getPath());
+            task.getTestedVariantName().set(hostTestCreationConfig.getMainVariant().getName());
+            task.getTestSuiteName().set(CURRENT_TEST_SUITE);
+            task.getTestSuiteTarget().set("host");
 
             JacocoTaskExtension jacocoTaskExtension =
                     task.getExtensions().findByType(JacocoTaskExtension.class);
@@ -279,6 +321,8 @@ public abstract class AndroidUnitTest extends Test implements VariantTask, UsesA
 
             // we run by default in headless mode, so the forked JVM doesn't steal focus.
             task.systemProperty("java.awt.headless", "true");
+            task.getTestReportAggregationEnabled()
+                    .set(configOptions.get(BooleanOption.REPORT_AGGREGATION_SUPPORT));
 
             task.setGroup(JavaBasePlugin.VERIFICATION_GROUP);
             String testType =
@@ -337,7 +381,6 @@ public abstract class AndroidUnitTest extends Test implements VariantTask, UsesA
                                     .getProjectInfo()
                                     .getTestResultsFolder()
                                     .map(it -> it.dir(task.getName()).getAsFile()));
-
             DirectoryReport htmlReport = testTaskReports.getHtml();
             htmlReport
                     .getOutputLocation()

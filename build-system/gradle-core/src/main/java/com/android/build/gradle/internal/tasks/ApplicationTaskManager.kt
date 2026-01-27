@@ -143,11 +143,14 @@ class ApplicationTaskManager(
   }
 
   override fun registerTestAndCodeCoverageCollectionTasks(
-    variantInfo: ComponentInfo<ApplicationVariantBuilder, ApplicationCreationConfig>
+    variantInfo: ComponentInfo<ApplicationVariantBuilder, ApplicationCreationConfig>,
+    testResultsCollectionTasks: MutableList<TaskProvider<TestResultsCollectionTask>>,
   ) {
-    super.registerTestAndCodeCoverageCollectionTasks(variantInfo)
+    super.registerTestAndCodeCoverageCollectionTasks(variantInfo, testResultsCollectionTasks)
 
-    taskFactory.register(TestResultsCollectionTask.AggregatedTestResultsCollectionCreationAction(variantInfo.variant))
+    testResultsCollectionTasks.add(
+      taskFactory.register(TestResultsCollectionTask.AggregatedTestResultsCollectionCreationAction(variantInfo.variant))
+    )
 
     taskFactory.register(
       CodeCoverageCollectionTask.AggregatedCoverageCollectionCreationAction(

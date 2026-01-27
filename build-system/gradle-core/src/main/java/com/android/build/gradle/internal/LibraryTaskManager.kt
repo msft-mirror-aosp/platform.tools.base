@@ -244,10 +244,15 @@ class LibraryTaskManager(
     createBundleTask(libraryVariant)
   }
 
-  override fun registerTestAndCodeCoverageCollectionTasks(variantInfo: ComponentInfo<LibraryVariantBuilder, LibraryCreationConfig>) {
-    super.registerTestAndCodeCoverageCollectionTasks(variantInfo)
+  override fun registerTestAndCodeCoverageCollectionTasks(
+    variantInfo: ComponentInfo<LibraryVariantBuilder, LibraryCreationConfig>,
+    testResultsCollectionTasks: MutableList<TaskProvider<TestResultsCollectionTask>>,
+  ) {
+    super.registerTestAndCodeCoverageCollectionTasks(variantInfo, testResultsCollectionTasks)
     if (variantInfo.variant.publishInfo?.components?.isNotEmpty() ?: false) {
-      taskFactory.register(TestResultsCollectionTask.AggregatedTestResultsCollectionCreationAction(variantInfo.variant))
+      testResultsCollectionTasks.add(
+        taskFactory.register(TestResultsCollectionTask.AggregatedTestResultsCollectionCreationAction(variantInfo.variant))
+      )
 
       taskFactory.register(
         CodeCoverageCollectionTask.AggregatedCoverageCollectionCreationAction(

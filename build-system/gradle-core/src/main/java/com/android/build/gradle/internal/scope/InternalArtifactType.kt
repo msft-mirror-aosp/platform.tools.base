@@ -797,6 +797,12 @@ sealed class InternalArtifactType<T : FileSystemLocation>(
   // Variant level combined test results.
   object VARIANT_TEST_RESULTS : InternalArtifactType<Directory>(DIRECTORY)
 
+  // Data for the unit test results
+  object UNIT_TEST_RESULTS : InternalArtifactType<Directory>(DIRECTORY)
+
+  // Data for the android test results
+  object ANDROID_TEST_RESULTS : InternalArtifactType<Directory>(DIRECTORY)
+
   override fun getFileSystemLocationName(): String {
     return fileName ?: super.getFileSystemLocationName()
   }

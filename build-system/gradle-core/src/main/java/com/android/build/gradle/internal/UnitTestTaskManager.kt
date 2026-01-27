@@ -21,8 +21,10 @@ import com.android.build.gradle.internal.component.HostTestCreationConfig
 import com.android.build.gradle.internal.res.GenerateLibraryRFileTask
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfig
+import com.android.build.gradle.tasks.TestResultsCollectionTask
 import org.gradle.api.Project
 import org.gradle.api.plugins.JavaPlugin
+import org.gradle.api.tasks.TaskProvider
 
 class UnitTestTaskManager(project: Project, globalConfig: GlobalTaskCreationConfig) : HostTestTaskManager(project, globalConfig) {
 
@@ -32,7 +34,10 @@ class UnitTestTaskManager(project: Project, globalConfig: GlobalTaskCreationConf
   }
 
   /** Creates the tasks to build unit tests. */
-  fun createTasks(hostTestCreationConfig: HostTestCreationConfig) {
+  fun createTasks(
+    hostTestCreationConfig: HostTestCreationConfig,
+    testResultsCollectionTasksMap: Map<String, MutableList<TaskProvider<TestResultsCollectionTask>>> = emptyMap(),
+  ) {
     val taskContainer = hostTestCreationConfig.taskContainer
     val testedVariant = hostTestCreationConfig.mainVariant
     createAnchorTasks(hostTestCreationConfig)
@@ -69,6 +74,7 @@ class UnitTestTaskManager(project: Project, globalConfig: GlobalTaskCreationConf
       globalConfig.taskNames.test,
       JavaPlugin.TEST_TASK_NAME,
       InternalArtifactType.UNIT_TEST_CODE_COVERAGE,
+      testResultsCollectionTasksMap,
     )
   }
 

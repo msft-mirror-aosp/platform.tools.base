@@ -66,6 +66,7 @@ class DeterministicTaskOutputsTest {
         // Test reports contain timestamps, which make them different across builds.
         "app/build/reports/tests/testDebugUnitTest",
         "app/build/test-results/testDebugUnitTest/",
+        "app/build/intermediates/unit_test_results/debug/testDebugUnitTest/",
 
         // This is @LocalState for the dexing task
         "app/build/intermediates/dex_archive_input_jar_hashes/debug/dexBuilderDebug/out",
