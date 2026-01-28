@@ -1,5 +1,3 @@
-import com.android.tools.internal.testing.DevicePool;
-
 apply plugin: 'com.android.tools.java'
 apply plugin: 'com.android.tools.kotlin'
 
@@ -22,7 +20,6 @@ dependencies {
     testImplementation libs.com.android.tools.sdkCommon
     testImplementation libs.com.android.tools.sdklib
     testImplementation externalTestFixtures.repository
-    testImplementation project(':base:testing-infrastructure:device-pool:device-provider')
     testImplementation libs.com.android.tools.testutils
     testImplementation libs.com.android.zipflinger
     testCompileOnly(project(':base:profile'))
@@ -168,7 +165,7 @@ configure(allConnectedTestTasks) {
     systemProperties['jar.path'] = jar.archiveFile.get().getAsFile().path
     systemProperties['java.io.tmpdir'] = tempFile.absolutePath
 
-    environment testEnvironment + ["APPLY_DEVICEPOOL_PLUGIN": true]
+    environment testEnvironment
 
     // Always run the task, when requested.
     outputs.upToDateWhen { false }
@@ -192,24 +189,9 @@ configure([test, testPrebuilts, onlineTest, connectedIntegrationTest,
     }
 }
 
-DevicePool devicePool = new DevicePool();
-
-task('startDevicePool').doLast {
-    // This port number needs to be kept in sync with DevicePoolClient.
-    devicePool.start(5554)
-}
-
-task('stopDevicePool').doLast {
-    devicePool.stop()
-}
-
-startDevicePool.finalizedBy stopDevicePool
-allConnectedTestTasks.forEach({task -> stopDevicePool.mustRunAfter(task)})
-
 automaticTest.dependsOn ':publishLocal'
 onlineTest.dependsOn ':publishLocal'
 test.dependsOn ':publishAndroidGradleLocal'
-allConnectedTestTasks.forEach({task -> task.dependsOn startDevicePool, ':base:testing-infrastructure:device-pool:device-provider:publishLocal'})
 connectedIntegrationTest.dependsOn ':publishLocal'
 connectedIntegrationTestQuarantine.dependsOn ':publishLocal'
 

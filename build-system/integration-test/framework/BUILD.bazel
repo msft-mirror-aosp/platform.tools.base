@@ -33,7 +33,6 @@ kotlin_library(
         "//tools/base/repository:tools.testlib",
         "//tools/base/sdk-common:tools.sdk-common",
         "//tools/base/sdklib:tools.sdklib",
-        "//tools/base/testing-infrastructure/device-pool/device-provider",
         "//tools/base/testutils:tools.testutils",
         # Do not change order. jacoco-core depends on old version of ASM, which
         # should not come before this ASM in the classpath, or it will cause build
@@ -96,7 +95,6 @@ kotlin_test(
         "//tools/base/repository:tools.repository",
         "//tools/base/sdk-common:tools.sdk-common",
         "//tools/base/sdklib:tools.sdklib",
-        "//tools/base/testing-infrastructure/device-pool/device-provider",
         "//tools/base/testutils:tools.testutils",
         "@maven//:com.android.tools.smali.smali-dexlib2",
         "@maven//:com.google.apis.google-api-services-storage",
