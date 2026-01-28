@@ -222,7 +222,6 @@ abstract class AndroidComponentsExtensionImpl<
                 .apply {
                     isCanBeResolved = false
                     isCanBeConsumed = false
-                    isVisible = false
                 }
         } else {
             null
@@ -245,7 +244,6 @@ abstract class AndroidComponentsExtensionImpl<
                         .apply {
                             isCanBeResolved = false
                             isCanBeConsumed = false
-                            isVisible = false
                         }
                 }
         }
@@ -313,7 +311,6 @@ abstract class AndroidComponentsExtensionImpl<
                     .apply {
                         isCanBeResolved = true
                         isCanBeConsumed = false
-                        isVisible = false
                     }
             if (globalConfiguration?.allDependencies?.isNotEmpty() == true) {
                 variantResolvableConfiguration.extendsFrom(globalConfiguration)
@@ -330,7 +327,6 @@ abstract class AndroidComponentsExtensionImpl<
                         .apply {
                             isCanBeResolved = true
                             isCanBeConsumed = false
-                            isVisible = false
                         }
                 if (globalConfiguration?.allDependencies?.isNotEmpty() == true) {
                     componentResolvableConfiguration.extendsFrom(globalConfiguration)

@@ -70,7 +70,6 @@ open class KotlinMultiplatformAndroidComponentsExtensionImpl@Inject constructor(
              .apply {
                  isCanBeResolved = false
                  isCanBeConsumed = false
-                 isVisible = false
              }
         }
      }
@@ -88,7 +87,6 @@ open class KotlinMultiplatformAndroidComponentsExtensionImpl@Inject constructor(
                     .apply {
                         isCanBeResolved = true
                         isCanBeConsumed = false
-                        isVisible = false
                     }
 
             if (globalConfiguration?.allDependencies?.isNotEmpty() == true) {
@@ -107,7 +105,6 @@ open class KotlinMultiplatformAndroidComponentsExtensionImpl@Inject constructor(
                         .apply {
                             isCanBeResolved = true
                             isCanBeConsumed = false
-                            isVisible = false
                         }
                 if (globalConfiguration?.allDependencies?.isNotEmpty() == true) {
                     componentResolvableConfiguration.extendsFrom(globalConfiguration)
