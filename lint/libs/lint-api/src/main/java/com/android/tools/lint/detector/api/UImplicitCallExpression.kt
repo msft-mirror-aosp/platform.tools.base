@@ -305,10 +305,10 @@ private class BinaryExpressionAsCallExpression(
       }
       val newArguments =
         if (isReversed) {
-          if (isSingleParameter)
-          // extension function, second parameter is receiver
-          listOf(binary.leftOperand)
-          else {
+          if (isSingleParameter) {
+            // extension function, second parameter is receiver
+            listOf(binary.leftOperand)
+          } else {
             listOf(binary.rightOperand, binary.leftOperand)
           }
         } else {

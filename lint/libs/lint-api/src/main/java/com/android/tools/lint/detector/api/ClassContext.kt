@@ -130,10 +130,10 @@ class ClassContext(
         if (parentPath.startsWith(topPath)) {
           val start = topPath.length + 1
           val relative =
-            if (start > parentPath.length)
-            // default package?
-            ""
-            else parentPath.substring(start)
+            if (start > parentPath.length) {
+              // default package?
+              ""
+            } else parentPath.substring(start)
           val sources = project.getJavaSourceFolders()
           for (dir in sources) {
             val sourceFile = File(dir, relative + File.separator + source)
