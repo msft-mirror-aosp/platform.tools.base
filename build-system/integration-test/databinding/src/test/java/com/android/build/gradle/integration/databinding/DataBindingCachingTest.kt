@@ -48,8 +48,7 @@ class DataBindingCachingTest(
         @Parameterized.Parameters(name = "withKotlin_{0}_withBuiltInKotlin_{1}")
         @JvmStatic
         fun parameters() = listOf(
-            // TODO(b/477888767)
-            //arrayOf(true, true),
+            arrayOf(true, true),
             arrayOf(true, false),
             arrayOf(false, false)
         )
