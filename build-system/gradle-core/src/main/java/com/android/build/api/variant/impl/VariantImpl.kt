@@ -25,6 +25,7 @@ import com.android.build.api.component.impl.features.OptimizationCreationConfigI
 import com.android.build.api.component.impl.features.RenderscriptCreationConfigImpl
 import com.android.build.api.component.impl.features.ShadersCreationConfigImpl
 import com.android.build.api.component.impl.warnAboutAccessingVariantApiValueForDisabledFeature
+import com.android.build.api.dsl.CompileSdkVersion
 import com.android.build.api.variant.AndroidVersion
 import com.android.build.api.variant.BuildConfigField
 import com.android.build.api.variant.CanMinifyAndroidResourcesBuilder
@@ -53,6 +54,7 @@ import com.android.build.gradle.internal.scope.MutableTaskContainer
 import com.android.build.gradle.internal.services.TaskCreationServices
 import com.android.build.gradle.internal.services.VariantServices
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfig
+import com.android.build.gradle.internal.utils.parseTargetHash
 import com.android.build.gradle.internal.variant.BaseVariantData
 import com.android.build.gradle.internal.variant.VariantPathHelper
 import com.android.builder.core.ComponentTypeImpl
@@ -116,6 +118,9 @@ abstract class VariantImpl<DslInfoT : VariantDslInfo>(
 
   override val minSdkVersion: AndroidVersion
     get() = minSdk
+
+  override val compileSdk: CompileSdkVersion
+    get() = parseTargetHash(global.compileSdkHashString)
 
   override val maxSdk: Int?
     get() = variantBuilder.maxSdk

@@ -18,6 +18,7 @@
 package com.android.build.api.variant
 
 import com.android.build.api.component.UnitTest
+import com.android.build.api.dsl.CompileSdkVersion
 import java.io.Serializable
 import org.gradle.api.Incubating
 import org.gradle.api.file.RegularFile
@@ -47,6 +48,9 @@ interface Variant : Component, HasAndroidResources {
 
   /** Gets the minimum supported SDK Version for this variant. */
   val minSdk: AndroidVersion
+
+  /** Gets the compile SDK Version for this variant. */
+  val compileSdk: CompileSdkVersion
 
   @get:Deprecated(
     level = DeprecationLevel.HIDDEN,

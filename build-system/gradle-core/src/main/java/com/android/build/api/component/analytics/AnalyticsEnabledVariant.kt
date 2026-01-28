@@ -17,6 +17,7 @@
 package com.android.build.api.component.analytics
 
 import com.android.build.api.component.UnitTest
+import com.android.build.api.dsl.CompileSdkVersion
 import com.android.build.api.variant.AndroidVersion
 import com.android.build.api.variant.BuildConfigField
 import com.android.build.api.variant.Component
@@ -87,6 +88,12 @@ abstract class AnalyticsEnabledVariant(override val delegate: Variant, stats: Gr
         if (userVisibleExternalNativeBuild is AnalyticsEnabledExternalNdkBuild) VariantPropertiesMethodType.NDK_BUILD_NATIVE_OPTIONS_VALUE
         else VariantPropertiesMethodType.CMAKE_NATIVE_OPTIONS_VALUE
       return userVisibleExternalNativeBuild
+    }
+
+  override val compileSdk: CompileSdkVersion
+    get() {
+      stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type = VariantPropertiesMethodType.COMPILE_SDK_VALUE
+      return delegate.compileSdk
     }
 
   private val userVisibleUnitTest: AnalyticsEnabledUnitTest? by

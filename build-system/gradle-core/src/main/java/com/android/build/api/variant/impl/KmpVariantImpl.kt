@@ -24,6 +24,7 @@ import com.android.build.api.component.impl.KmpAndroidTestImpl
 import com.android.build.api.component.impl.KmpComponentImpl
 import com.android.build.api.component.impl.KmpHostTestImpl
 import com.android.build.api.component.impl.features.OptimizationCreationConfigImpl
+import com.android.build.api.dsl.CompileSdkVersion
 import com.android.build.api.dsl.KotlinMultiplatformAndroidCompilation
 import com.android.build.api.instrumentation.AsmClassVisitorFactory
 import com.android.build.api.instrumentation.FramesComputationMode
@@ -133,6 +134,9 @@ constructor(
         internalServices,
       )
     }
+
+  override val compileSdk: CompileSdkVersion
+    get() = parseTargetHash(global.compileSdkHashString)
 
   override val proguardFiles: ListProperty<RegularFile>
     get() = optimizationCreationConfig.proguardFiles
