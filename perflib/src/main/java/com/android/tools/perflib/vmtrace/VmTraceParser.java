@@ -96,9 +96,16 @@ public class VmTraceParser {
      * represented in little-endian order.
      */
     private static int doReadNumberLE(int numBytes, InputStream mInputStream) throws IOException {
+        if (numBytes < 0 || numBytes > 4) {
+            throw new IllegalArgumentException("numBytes must be between 0 and 4, inclusive.");
+        }
         int leNumber = 0;
         for (int i = 0; i < numBytes; i++) {
-            leNumber += mInputStream.read() << (i * 8);
+            int value = mInputStream.read();
+            if (value == -1) {
+                throw new EOFException();
+            }
+            leNumber |= value << (i * 8);
         }
         return leNumber;
     }
