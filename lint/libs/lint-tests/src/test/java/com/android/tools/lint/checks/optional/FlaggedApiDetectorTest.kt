@@ -99,6 +99,22 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
             """
           )
           .indented(),
+        java(
+            """
+            package test.pkg;
+            import test.api.MyApi;
+            import com.example.foobar.Flags;
+            import androidx.annotation.RequiresFlag;
+
+            public class Test3 {
+              @RequiresFlag(Flags.FLAG_FOOBAR)
+              public void test(MyApi api) {
+                  api.apiMethod(); // OK: AndroidX version
+              }
+            }
+            """
+          )
+          .indented(),
         // Generated
         java(
             """
@@ -113,6 +129,7 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
           .indented(),
         flaggedApiAnnotationStub,
         requiresFlagAnnotationStub,
+        androidxRequiresFlagAnnotationStub,
       )
       .run()
       .expect(
@@ -1510,6 +1527,56 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
       .run()
       .expectClean()
   }
+
+  fun testRequiresFlagAnnotatedSurroundingClass() {
+    lint()
+      .files(
+        java(
+            """
+            package test.api;
+            import android.annotation.RequiresFlag;
+            import com.example.foobar.Flags;
+
+            public class MyApi {
+              @RequiresFlag(Flags.FLAG_FOOBAR)
+              public void apiMethod() { }
+            }
+            """
+          )
+          .indented(),
+        java(
+            """
+            package test.pkg;
+            import test.api.MyApi;
+            import com.example.foobar.Flags;
+            import android.annotation.RequiresFlag;
+
+            @RequiresFlag(Flags.FLAG_FOOBAR)
+            public class Test {
+              public void test(MyApi api) {
+                  api.apiMethod(); // OK: class is annotated
+              }
+            }
+            """
+          )
+          .indented(),
+        // Generated
+        java(
+            """
+            package com.example.foobar;
+
+            public class Flags {
+                public static final String FLAG_FOOBAR = "com.example.foobar.foobar";
+                public static boolean foobar() { return true; }
+            }
+            """
+          )
+          .indented(),
+        requiresFlagAnnotationStub,
+      )
+      .run()
+      .expectClean()
+  }
 }
 
 private val flaggedApiAnnotationStub: TestFile =
@@ -1539,7 +1606,31 @@ private val flaggedApiAnnotationStub: TestFile =
 private val requiresFlagAnnotationStub: TestFile =
   java(
       """
-      package android.annotation;
+      package android.annotation; // HIDE-FROM-DOCUMENTATION
+
+      import static java.lang.annotation.ElementType.ANNOTATION_TYPE;
+      import static java.lang.annotation.ElementType.CONSTRUCTOR;
+      import static java.lang.annotation.ElementType.FIELD;
+      import static java.lang.annotation.ElementType.METHOD;
+      import static java.lang.annotation.ElementType.TYPE;
+
+      import java.lang.annotation.Retention;
+      import java.lang.annotation.RetentionPolicy;
+      import java.lang.annotation.Target;
+
+      @Target({TYPE, METHOD, CONSTRUCTOR, FIELD, ANNOTATION_TYPE})
+      @Retention(RetentionPolicy.CLASS)
+      public @interface RequiresFlag {
+          String value();
+      }
+      """
+    )
+    .indented()
+
+private val androidxRequiresFlagAnnotationStub: TestFile =
+  java(
+      """
+      package androidx.annotation; // HIDE-FROM-DOCUMENTATION
 
       import static java.lang.annotation.ElementType.ANNOTATION_TYPE;
       import static java.lang.annotation.ElementType.CONSTRUCTOR;

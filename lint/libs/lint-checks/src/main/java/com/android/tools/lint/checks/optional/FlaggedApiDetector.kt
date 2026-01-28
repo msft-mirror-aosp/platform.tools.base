@@ -18,6 +18,7 @@ package com.android.tools.lint.checks.optional
 
 import com.android.SdkConstants.ATTR_VALUE
 import com.android.sdklib.SdkVersionInfo.CUR_DEVELOPMENT
+import com.android.support.AndroidxName
 import com.android.tools.lint.checks.ApiLookup
 import com.android.tools.lint.checks.BuiltinIssueRegistry
 import com.android.tools.lint.checks.TypedefDetector
@@ -103,38 +104,36 @@ class FlaggedApiDetector : Detector(), SourceCodeScanner {
         implementation = IMPLEMENTATION,
       )
 
-    private const val FLAGGED_API_ANNOTATION = "android.annotation.FlaggedApi"
-    private const val REQUIRES_FLAG_ANNOTATION = "android.annotation.RequiresFlag"
+    private val FLAGGED_API_ANNOTATION = AndroidxName("android.annotation.FlaggedApi", "androidx.annotation.FlaggedApi")
+    private val REQUIRES_FLAG_ANNOTATION = AndroidxName("android.annotation.RequiresFlag", "androidx.annotation.RequiresFlag")
+
+    private fun isFlagAnnotation(qualifiedName: String?): Boolean {
+      return FLAGGED_API_ANNOTATION.isEquals(qualifiedName) || REQUIRES_FLAG_ANNOTATION.isEquals(qualifiedName)
+    }
 
     /** Is the given [element] referencing an annotated element */
-    fun isAlreadyAnnotated(element: UElement?): Boolean {
+    fun isAlreadyAnnotated(evaluator: JavaEvaluator, element: UElement?): Boolean {
       val resolved = element?.tryResolve() ?: return false
-      return isAlreadyAnnotated(resolved)
+      return isAlreadyAnnotated(evaluator, resolved)
     }
 
     /** Is the given [resolved] class/method/field annotated with a `@FlaggedApi` or `@RequiresFlag` annotation? */
-    fun isAlreadyAnnotated(resolved: PsiElement?): Boolean {
+    fun isAlreadyAnnotated(evaluator: JavaEvaluator, resolved: PsiElement?): Boolean {
       if (resolved !is PsiMember) return false
-
-      val modifierList = resolved.modifierList
-      if (
-        modifierList != null && (modifierList.hasAnnotation(FLAGGED_API_ANNOTATION) || modifierList.hasAnnotation(REQUIRES_FLAG_ANNOTATION))
-      ) {
-        return true
+      // Check both the annotation on the member itself and its surrounding class.
+      return listOfNotNull(resolved, resolved.containingClass).any { owner ->
+        evaluator.getAnnotations(owner).any { isFlagAnnotation(it.qualifiedName) }
       }
-      val classModifierList = resolved.containingClass?.modifierList
-      if (
-        classModifierList != null &&
-          (classModifierList.hasAnnotation(FLAGGED_API_ANNOTATION) || classModifierList.hasAnnotation(REQUIRES_FLAG_ANNOTATION))
-      ) {
-        return true
-      }
-      return false
     }
   }
 
   override fun applicableAnnotations(): List<String> {
-    return listOf(FLAGGED_API_ANNOTATION, REQUIRES_FLAG_ANNOTATION)
+    return listOf(
+      FLAGGED_API_ANNOTATION.oldName(),
+      FLAGGED_API_ANNOTATION.newName(),
+      REQUIRES_FLAG_ANNOTATION.oldName(),
+      REQUIRES_FLAG_ANNOTATION.newName(),
+    )
   }
 
   override fun isApplicableAnnotationUsage(type: AnnotationUsageType): Boolean {
@@ -212,7 +211,7 @@ class FlaggedApiDetector : Detector(), SourceCodeScanner {
     val (flag, flag2) = flags ?: return
 
     if (annotationInfo.origin == AnnotationOrigin.SELF) {
-      if (qualifiedName == FLAGGED_API_ANNOTATION || qualifiedName == REQUIRES_FLAG_ANNOTATION) {
+      if (FLAGGED_API_ANNOTATION.isEquals(qualifiedName) || REQUIRES_FLAG_ANNOTATION.isEquals(qualifiedName)) {
         return
       }
     } else if (isAlreadyAnnotated(evaluator, element, flag)) {
