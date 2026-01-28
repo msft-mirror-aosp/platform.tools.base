@@ -23,6 +23,7 @@ import java.net.InetAddress
 import java.net.InetSocketAddress
 import java.nio.channels.ServerSocketChannel
 import java.nio.channels.SocketChannel
+import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.Future
@@ -38,8 +39,8 @@ class FakeEmulatorConsole(private val avdName: String, private val avdPath: Stri
 
   private val serverSocket: ServerSocketChannel = ServerSocketChannel.open()
   private var serverSocketLocalAddress: InetSocketAddress? = null
-  private var clientSocket: SocketChannel? = null
-  private val executor: ExecutorService = Executors.newSingleThreadExecutor()
+  private val clientSockets = CopyOnWriteArrayList<SocketChannel>()
+  private val executor: ExecutorService = Executors.newCachedThreadPool()
   private var runEmulatorTask: Future<*>? = null
   private val isShutdown = AtomicBoolean(false)
 
@@ -57,9 +58,19 @@ class FakeEmulatorConsole(private val avdName: String, private val avdPath: Stri
     get() = serverSocketLocalAddress!!.port
 
   private fun run() {
+    while (!isShutdown.get()) {
+      try {
+        val socket = serverSocket.accept()
+        clientSockets.add(socket)
+        executor.submit { handleConnection(socket) }
+      } catch (_: IOException) {
+        // Expected during shutdown
+      }
+    }
+  }
+
+  private fun handleConnection(socket: SocketChannel) {
     try {
-      val socket = serverSocket.accept()
-      clientSocket = socket
       val input = BufferedReader(InputStreamReader(socket.socket().getInputStream()))
       val output = PrintWriter(socket.socket().getOutputStream(), true) // autoFlush=true
 
@@ -92,14 +103,18 @@ class FakeEmulatorConsole(private val avdName: String, private val avdPath: Stri
       }
     } catch (_: IOException) {
       // Ignore socket closing exceptions, which are expected during shutdown
+    } finally {
+      clientSockets.remove(socket)
+      runCatching { socket.close() }
     }
   }
 
   override fun close() {
     if (isShutdown.compareAndSet(false, true)) {
       runEmulatorTask?.cancel(true)
-      runCatching { clientSocket?.close() }
       runCatching { serverSocket.close() }
+      clientSockets.forEach { runCatching { it.close() } }
+      clientSockets.clear()
       executor.shutdown()
       if (!executor.awaitTermination(5, TimeUnit.SECONDS)) {
         executor.shutdownNow()

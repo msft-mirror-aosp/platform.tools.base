@@ -30,6 +30,7 @@ import com.android.fakeadbserver.DeviceState
 import com.android.sdklib.AndroidApiLevel
 import java.io.IOException
 import java.nio.file.Files
+import java.nio.file.Path
 import java.nio.file.attribute.FileTime
 import java.nio.file.attribute.PosixFilePermission.OWNER_READ
 import java.util.concurrent.TimeUnit
@@ -172,13 +173,13 @@ class AdblibIDeviceWrapperTest {
   }
 
   @Test
-  fun getConstructorCreateOrGetCachedAvdDataCall_doesNotCrash_whenDeviceDisconnects() = runBlockingWithTimeout { // Prepare
+  fun queryAvdDataInConstructor_doesNotCrash_onDeviceDisconnect() = runBlockingWithTimeout {
     // Prepare
-    val (connectedDevice, _) = createConnectedDevice("device1", DeviceState.DeviceStatus.OFFLINE)
+    val (connectedDevice, _) = createConnectedDevice("emulator-1234", DeviceState.DeviceStatus.OFFLINE)
     createAdblibIDeviceWrapper(connectedDevice, bridge)
 
     // Act
-    fakeAdb.disconnectDevice("device1")
+    fakeAdb.disconnectDevice("emulator-1234")
     connectedDevice.scope.coroutineContext[Job]?.join()
 
     // Assert
@@ -191,7 +192,11 @@ class AdblibIDeviceWrapperTest {
   @Test
   fun getAvdDataDoesNotThrow_whenDeviceDisconnects() = runBlockingWithTimeout {
     // Prepare
-    val (connectedDevice, _) = createConnectedDevice("device1", DeviceState.DeviceStatus.OFFLINE)
+    val avdName = "myAvd-36"
+    val avdPath = Path.of("/android/avds/myAvd-36.avd").toString()
+    val emulatorPort = fakeAdbRule.fakeAdb.fakeAdbServer.connectEmulatorConsole(avdName = avdName, avdPath = avdPath).get().port
+    val deviceId = "emulator-$emulatorPort"
+    val (connectedDevice, _) = createConnectedDevice(deviceId, DeviceState.DeviceStatus.OFFLINE)
     val adblibIDeviceWrapper = createAdblibIDeviceWrapper(connectedDevice, bridge)
 
     // Assert: AvdData `ListenableFuture` doesn't get set while device is not online
@@ -202,7 +207,7 @@ class AdblibIDeviceWrapperTest {
     assertNull(adblibIDeviceWrapper.avdPath)
 
     // Act
-    fakeAdb.disconnectDevice("device1")
+    fakeAdb.disconnectDevice(deviceId)
     delay(50)
     // Assert
     assertFalse(avdDataFuture.isDone)
@@ -214,7 +219,11 @@ class AdblibIDeviceWrapperTest {
   @Test
   fun avdIsQueriedOnlyWhenDeviceGoesOnline() = runBlockingWithTimeout {
     // Prepare
-    val (connectedDevice, fakeDevice) = createConnectedDevice("device1", DeviceState.DeviceStatus.OFFLINE)
+    val avdName = "myAvd-36"
+    val avdPath = Path.of("/android/avds/myAvd-36.avd").toString()
+    val emulatorPort = fakeAdbRule.fakeAdb.fakeAdbServer.connectEmulatorConsole(avdName = avdName, avdPath = avdPath).get().port
+    val deviceId = "emulator-$emulatorPort"
+    val (connectedDevice, fakeDevice) = createConnectedDevice(deviceId, DeviceState.DeviceStatus.OFFLINE)
     val adblibIDeviceWrapper = AdblibIDeviceWrapper(connectedDevice, bridge, deviceState = { connectedDevice.deviceInfo.deviceState })
 
     // Assert: AvdData `ListenableFuture` doesn't get set while device is not online
@@ -227,9 +236,9 @@ class AdblibIDeviceWrapperTest {
     // Act / Assert
     fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
     yieldUntil { avdDataFuture.isDone }
-    assertNull(adblibIDeviceWrapper.avdData.get())
-    assertNull(adblibIDeviceWrapper.avdName)
-    assertNull(adblibIDeviceWrapper.avdPath)
+    assertNotNull(adblibIDeviceWrapper.avdData.get())
+    assertEquals(avdName, adblibIDeviceWrapper.avdName)
+    assertEquals(avdPath, adblibIDeviceWrapper.avdPath)
   }
 
   @Test

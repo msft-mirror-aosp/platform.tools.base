@@ -229,34 +229,36 @@ internal class AdblibIDeviceWrapper(
         return mAvdData!!.getOrThrow()
       }
 
+      if (!isEmulator) {
+        mAvdData = Result.success(null)
+        return null
+      }
+
       // Wait until the device goes online before creating avd data.
       // Note that extra care should be taken when relying on `connectedDevice` state
       // instead of `AdblibIDeviceWrapper.deviceStateProvider`. In this case it's ok to use
       // the former as all we care about is populating avd data as soon as possible.
       connectedDevice.waitUntilOnline()
 
-      if (!isEmulator) {
-        mAvdData = Result.success(null)
-      } else {
-        val emulatorMatchResult = RE_EMULATOR_SN.toRegex().matchEntire(serialNumber) ?: return null
-        val port = emulatorMatchResult.groupValues[1].toIntOrNull() ?: return null
+      val emulatorMatchResult = RE_EMULATOR_SN.toRegex().matchEntire(serialNumber) ?: return null
+      val port = emulatorMatchResult.groupValues[1].toIntOrNull() ?: return null
 
-        try {
-          connectedDevice.session.openEmulatorConsole(localConsoleAddress(port)).use {
-            val avdName = kotlin.runCatching { it.avdName() }.getOrNull()
-            val path = kotlin.runCatching { it.avdPath() }.getOrNull()
-            val avdData = AvdData(avdName, path)
+      try {
+        connectedDevice.session.openEmulatorConsole(localConsoleAddress(port)).use {
+          val avdName = kotlin.runCatching { it.avdName() }.getOrNull()
+          val path = kotlin.runCatching { it.avdPath() }.getOrNull()
+          val avdData = AvdData(avdName, path)
 
-            mAvdData = Result.success(avdData)
-            mAvdName = avdData.name
-            mAvdPath = avdData.path
-          }
-        } catch (e: EmulatorCommandException) {
-          logger.warn(e, "Couldn't open emulator console")
-        } catch (e: IOException) {
-          logger.warn(e, "Couldn't open emulator console")
+          mAvdData = Result.success(avdData)
+          mAvdName = avdData.name
+          mAvdPath = avdData.path
         }
+      } catch (e: EmulatorCommandException) {
+        logger.warn(e, "Couldn't open emulator console")
+      } catch (e: IOException) {
+        logger.warn(e, "Couldn't open emulator console")
       }
+
       return mAvdData?.getOrThrow()
     }
   }
