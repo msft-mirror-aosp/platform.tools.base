@@ -101,7 +101,6 @@ import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfigI
 import com.android.build.api.variant.HasTestSuitesBuilder
 import com.android.build.api.variant.impl.TestSuiteSourceContainer
 import com.android.build.gradle.internal.component.TargetSdkAwareConfig
-import com.android.build.gradle.internal.manifest.ManifestDataProvider
 import com.android.build.gradle.internal.services.BuiltInKotlinSupportMode
 import com.android.build.gradle.internal.testsuites.TestSuiteSourceCreationConfig
 import com.android.build.gradle.internal.testsuites.impl.TestSuiteBuilderImpl
@@ -160,6 +159,9 @@ class VariantManager<
     private val lazyManifestParserMap: MutableMap<File, LazyManifestParser> =
             Maps.newHashMapWithExpectedSize(3)
     private val signingOverride: SigningConfig?
+
+    private val usedAndroidTestSourceSets = mutableSetOf<DefaultAndroidSourceSet>()
+    private val ignoredAndroidTestCheckAction = mutableListOf<() -> Unit>()
 
     // We cannot use gradle's state of executed as that returns true while inside afterEvalute.
     // Wew want this to only be true after all tasks have been create.
@@ -260,6 +262,9 @@ class VariantManager<
         // API and finalize the variant instance.
         finalizationBlocks.forEach { it.invoke() }
 
+        // runs the check actions and clear the collection
+        ignoredAndroidTestCheckAction.forEach { it.invoke() }
+        ignoredAndroidTestCheckAction.clear()
 
         // FIXME we should lock the variant API properties after all the beforeVariants, and
         // before any onVariants to avoid cross access between the two.
@@ -923,24 +928,43 @@ class VariantManager<
         }
 
         if (variantFactory.componentType.hasTestComponents) {
-            (variantBuilder as? HasDeviceTestsBuilder)?.deviceTests?.values
-                ?.filter { it.enable }
-                ?.forEach { deviceTestBuilder ->
-                    val deviceTest = createTestComponents<AndroidTestComponentDslInfo>(
-                        dimensionCombination,
-                        buildTypeData,
-                        productFlavorDataList,
-                        variantInfo,
-                        ComponentTypeImpl.ANDROID_TEST,
-                        testFixturesEnabledForVariant,
-                        deviceTestBuilder,
-                    )
-                    addTestComponent(deviceTest)
-                    (variant as HasDeviceTestsCreationConfig).addDeviceTest(
-                        DeviceTestBuilder.ANDROID_TEST_TYPE,
-                        deviceTest as DeviceTestImpl
-                    )
-            }
+            (variantBuilder as? HasDeviceTestsBuilder)?.deviceTests
+                ?.forEach { (name, deviceTestBuilder) ->
+                    if (deviceTestBuilder.enable) {
+                        val deviceTest = createTestComponents<AndroidTestComponentDslInfo>(
+                            dimensionCombination,
+                            buildTypeData,
+                            productFlavorDataList,
+                            variantInfo,
+                            ComponentTypeImpl.ANDROID_TEST,
+                            testFixturesEnabledForVariant,
+                            deviceTestBuilder,
+                        )
+                        addTestComponent(deviceTest)
+                        (variant as HasDeviceTestsCreationConfig).addDeviceTest(
+                            DeviceTestBuilder.ANDROID_TEST_TYPE,
+                            deviceTest as DeviceTestImpl
+                        )
+                        if (name == DeviceTestBuilder.ANDROID_TEST_TYPE) {
+                            usedAndroidTestSourceSets.addAll(
+                              getComponentSourceSets(
+                                    ComponentTypeImpl.ANDROID_TEST,
+                                    productFlavorDataList,
+                                    buildTypeData)
+                            )
+                        }
+                    } else {
+                        if (name == DeviceTestBuilder.ANDROID_TEST_TYPE) {
+                            ignoredAndroidTestCheckAction.add {
+                                checkIgnoredDependencies(
+                                    ComponentTypeImpl.ANDROID_TEST,
+                                    productFlavorDataList,
+                                      buildTypeData,
+                                )
+                            }
+                        }
+                    }
+                }
 
             (variantBuilder as? HasHostTestsBuilder)?.hostTests
                 ?.filterValues { it.enable }
@@ -1205,6 +1229,61 @@ class VariantManager<
         // lock the Properties of the variant API after the old API because
         // of the versionCode/versionName properties that are shared between the old and new APIs.
         lockVariantProperties()
+    }
+
+  /**
+   * Returns part of the component sourcesets, notably not taking into account the variant specific
+   * sourcesets
+   */
+  private fun getComponentSourceSets(
+        componentType: ComponentType,
+        productFlavorDataList: List<ProductFlavorData<ProductFlavor>>,
+        buildTypeData: BuildTypeData<BuildType>
+    ): List<DefaultAndroidSourceSet> {
+        val sourceSets = mutableListOf<DefaultAndroidSourceSet>()
+        // Default config
+        variantInputModel.defaultConfigData.getSourceSet(componentType)?.let { sourceSets.add(it) }
+        // Build type
+        buildTypeData.getSourceSet(componentType)?.let { sourceSets.add(it) }
+        // Flavors
+        productFlavorDataList.forEach { flavorData ->
+            flavorData.getSourceSet(componentType)?.let { sourceSets.add(it) }
+        }
+        return sourceSets
+    }
+
+    private fun checkIgnoredDependencies(
+        componentType: ComponentType,
+        productFlavorDataList: List<ProductFlavorData<ProductFlavor>>,
+        buildTypeData: BuildTypeData<BuildType>,
+    ) {
+        val sourceSets = getComponentSourceSets(
+          componentType,
+          productFlavorDataList,
+          buildTypeData)
+
+        for (sourceSet in sourceSets) {
+            if (usedAndroidTestSourceSets.contains(sourceSet)) {
+                continue
+            }
+            val configs = listOf(
+                sourceSet.implementationConfigurationName,
+                sourceSet.compileOnlyConfigurationName,
+                sourceSet.runtimeOnlyConfigurationName,
+                sourceSet.annotationProcessorConfigurationName
+            )
+
+            for (configName in configs) {
+                val config = project.configurations.findByName(configName)
+                if (config != null && !config.dependencies.isEmpty()) {
+                    dslServices.issueReporter.reportWarning(
+                        IssueReporter.Type.GENERIC,
+                        "${config.name} dependencies are ignored because androidTest is disabled."
+                    )
+                    return
+                }
+            }
+        }
     }
 
     init {

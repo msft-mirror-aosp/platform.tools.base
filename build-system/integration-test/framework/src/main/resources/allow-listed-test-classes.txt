@@ -132,7 +132,6 @@ com.android.build.gradle.integration.application.MissingCompileSdkVersionTest
 com.android.build.gradle.integration.application.MissingNamespaceTest
 com.android.build.gradle.integration.application.MissingSdkTest
 com.android.build.gradle.integration.application.ModelInstantAppCompatibleTest
-com.android.build.gradle.integration.application.ModelSyncFilesTest
 com.android.build.gradle.integration.application.ModelTest
 com.android.build.gradle.integration.application.ModelWithDataBindingTest
 com.android.build.gradle.integration.application.MultiCompositeBuildTest
