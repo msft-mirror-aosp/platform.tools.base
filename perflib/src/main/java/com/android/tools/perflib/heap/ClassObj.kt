@@ -18,115 +18,124 @@ package com.android.tools.perflib.heap
 import com.google.common.annotations.VisibleForTesting
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap
 
-open class ClassObj(
-    id: Long, stack: StackTrace?, val className: String,
-    private val staticFieldsOffset: Long
-) : Instance(id, stack), Comparable<ClassObj> {
-    class HeapData {
-        var shallowSize = 0
-        var instances: MutableList<Instance> = ArrayList()
+open class ClassObj(id: Long, stack: StackTrace?, val className: String, private val staticFieldsOffset: Long) :
+  Instance(id, stack), Comparable<ClassObj> {
+  class HeapData {
+    var shallowSize = 0
+    var instances: MutableList<Instance> = ArrayList()
+  }
+
+  var superClassId: Long = 0
+  var classLoaderId: Long = 0
+  var fields: Array<Field> = Array(0) { throw IllegalStateException() }
+  var staticFields: Array<Field> = Array(0) { throw IllegalStateException() }
+  var instanceSize = 0
+  override var isSoftReference = false
+  var heapData = Int2ObjectOpenHashMap<HeapData>()
+
+  fun addSubclass(subclass: ClassObj) = subclasses.add(subclass)
+
+  val subclasses: MutableSet<ClassObj> = mutableSetOf()
+
+  fun dumpSubclasses() {
+    for (subclass in subclasses) {
+      println("     " + subclass.className)
+    }
+  }
+
+  override fun toString() = className.replace('/', '.')
+
+  fun addInstance(heapId: Int, instance: Instance) {
+    if (instance is ClassInstance) {
+      instance.size = instanceSize
+    }
+    val data = heapData[heapId] ?: HeapData().also { heapData.put(heapId, it) }
+    data.instances.add(instance)
+    data.shallowSize += instance.size
+  }
+
+  val allFieldsCount: Int
+    get() = fields.size + (superClassObj?.allFieldsCount ?: 0)
+
+  fun getShallowSize(heapId: Int): Int = heapData[heapId]?.shallowSize ?: 0
+
+  fun setIsSoftReference() {
+    isSoftReference = true
+  }
+
+  open val staticFieldValues: Map<Field, Any?>
+    get() {
+      val result: MutableMap<Field, Any?> = HashMap()
+      buffer.setPosition(staticFieldsOffset)
+      val numEntries = readUnsignedShort()
+      for (i in 0 until numEntries) {
+        val f = staticFields[i]
+        readId()
+        readUnsignedByte()
+        val value = readValue(f.type)
+        result[f] = value
+      }
+      return result
     }
 
-    var superClassId: Long = 0
-    var classLoaderId: Long = 0
-    var fields: Array<Field> = Array(0) { throw IllegalStateException() }
-    var staticFields: Array<Field> = Array(0) { throw IllegalStateException() }
-    var instanceSize = 0
-    override var isSoftReference = false
-    var heapData = Int2ObjectOpenHashMap<HeapData>()
-
-    fun addSubclass(subclass: ClassObj) = subclasses.add(subclass)
-
-    val subclasses: MutableSet<ClassObj> = mutableSetOf()
-
-    fun dumpSubclasses() {
-        for (subclass in subclasses) {
-            println("     " + subclass.className)
-        }
+  override fun resolveReferences() {
+    for ((key, value) in staticFieldValues) {
+      if (value is Instance) {
+        value.addReverseReference(key, this)
+        _hardFwdRefs += value
+      }
     }
+  }
 
-    override fun toString() = className.replace('/', '.')
-
-    fun addInstance(heapId: Int, instance: Instance) {
-        if (instance is ClassInstance) {
-            instance.size = instanceSize
-        }
-        val data = heapData[heapId] ?: HeapData().also { heapData.put(heapId, it) }
-        data.instances.add(instance)
-        data.shallowSize += instance.size
+  override fun accept(visitor: Visitor) {
+    visitor.visitClassObj(this)
+    for (instance in hardForwardReferences) {
+      visitor.visitLater(this, instance)
     }
+  }
 
-    val allFieldsCount: Int get() = fields.size + (superClassObj?.allFieldsCount ?: 0)
-
-    fun getShallowSize(heapId: Int): Int = heapData[heapId]?.shallowSize ?: 0
-
-    fun setIsSoftReference() {
-        isSoftReference = true
+  override fun compareTo(other: ClassObj): Int {
+    if (id == other.id) {
+      return 0
     }
-
-    open val staticFieldValues: Map<Field, Any?>
-        get() {
-            val result: MutableMap<Field, Any?> = HashMap()
-            buffer.setPosition(staticFieldsOffset)
-            val numEntries = readUnsignedShort()
-            for (i in 0 until numEntries) {
-                val f = staticFields[i]
-                readId()
-                readUnsignedByte()
-                val value = readValue(f.type)
-                result[f] = value
-            }
-            return result
-        }
-
-    override fun resolveReferences() {
-        for ((key, value) in staticFieldValues) {
-            if (value is Instance) {
-                value.addReverseReference(key, this)
-                _hardFwdRefs += value
-            }
-        }
+    val nameCompareResult = className.compareTo(other.className)
+    return when {
+      nameCompareResult != 0 -> nameCompareResult
+      id - other.id > 0 -> 1
+      else -> -1
     }
+  }
 
-    override fun accept(visitor: Visitor) {
-        visitor.visitClassObj(this)
-        for (instance in hardForwardReferences) {
-            visitor.visitLater(this, instance)
-        }
-    }
+  override fun equals(other: Any?) = other is ClassObj && compareTo(other) == 0
 
-    override fun compareTo(other: ClassObj): Int {
-        if (id == other.id) {
-            return 0
-        }
-        val nameCompareResult = className.compareTo(other.className)
-        return when {
-            nameCompareResult != 0 -> nameCompareResult
-            id - other.id > 0 -> 1
-            else -> -1
-        }
-    }
+  override fun hashCode(): Int = className.hashCode()
 
-    override fun equals(other: Any?) = other is ClassObj && compareTo(other) == 0
-    override fun hashCode(): Int = className.hashCode()
+  @VisibleForTesting fun getStaticField(type: Type, name: String): Any? = staticFieldValues[Field(type, name)]
 
-    @VisibleForTesting
-    fun getStaticField(type: Type, name: String): Any? = staticFieldValues[Field(type, name)]
+  open val superClassObj: ClassObj?
+    get() = heap!!.mSnapshot.findClass(superClassId)
 
-    open val superClassObj: ClassObj? get() = heap!!.mSnapshot.findClass(superClassId)
-    val classLoader: Instance? get() = heap!!.mSnapshot.findInstance(classLoaderId)
-    val instancesList: List<Instance> get() = heapData.keys.flatMap(::getHeapInstances)
+  val classLoader: Instance?
+    get() = heap!!.mSnapshot.findInstance(classLoaderId)
 
-    fun getHeapInstances(heapId: Int): List<Instance> = heapData[heapId]?.instances ?: listOf()
-    fun getHeapInstancesCount(heapId: Int): Int = heapData[heapId]?.instances?.size ?: 0
+  val instancesList: List<Instance>
+    get() = heapData.keys.flatMap(::getHeapInstances)
 
-    val instanceCount: Int get() = heapData.values.sumOf { (it as HeapData).instances.size }
-    val shallowSize: Int get() = heapData.values.sumOf { (it as HeapData).shallowSize }
+  fun getHeapInstances(heapId: Int): List<Instance> = heapData[heapId]?.instances ?: listOf()
 
-    val descendantClasses: Sequence<ClassObj>
-        get() = sequenceOf(this) + subclasses.flatMap { it.descendantClasses }
+  fun getHeapInstancesCount(heapId: Int): Int = heapData[heapId]?.instances?.size ?: 0
 
-    companion object {
-        val referenceClassName: String get() = "java.lang.ref.Reference"
-    }
+  val instanceCount: Int
+    get() = heapData.values.sumOf { (it as HeapData).instances.size }
+
+  val shallowSize: Int
+    get() = heapData.values.sumOf { (it as HeapData).shallowSize }
+
+  val descendantClasses: Sequence<ClassObj>
+    get() = sequenceOf(this) + subclasses.flatMap { it.descendantClasses }
+
+  companion object {
+    val referenceClassName: String
+      get() = "java.lang.ref.Reference"
+  }
 }
