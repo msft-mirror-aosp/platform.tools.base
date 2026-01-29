@@ -38,7 +38,8 @@ class CmakeSettingsMock : BasicModuleModelMock() {
   val abi by lazy { createCxxAbiModel(sdkComponents, configurationParameters, variant, "x86") }
 
   init {
-    //        doReturn(externalNativeCmakeOptions).whenever(coreExternalNativeBuildOptions).externalNativeCmakeOptions
+    //
+    // doReturn(externalNativeCmakeOptions).whenever(coreExternalNativeBuildOptions).externalNativeCmakeOptions
     doReturn(makeSetProperty(setOf())).whenever(variantExternalNativeBuild).abiFilters
     doReturn(makeListProperty(listOf("-DCMAKE_ARG=1"))).whenever(variantExternalNativeBuild).arguments
     doReturn(makeListProperty(listOf("-DC_FLAG_DEFINED"))).whenever(variantExternalNativeBuild).cFlags

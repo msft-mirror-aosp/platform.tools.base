@@ -25,7 +25,8 @@ import com.android.build.api.dsl.AarMetadata
  *
  * @see [com.android.build.gradle.internal.component.KmpCreationConfig]
  */
-// TODO: think about extending LibraryVariantDslInfo if possible to simplify some logic down the line
+// TODO: think about extending LibraryVariantDslInfo if possible to simplify some logic down the
+// line
 interface KmpVariantDslInfo : VariantDslInfo, KmpComponentDslInfo, TestedVariantDslInfo, AarProducingComponentDslInfo {
 
   val aarMetadata: AarMetadata

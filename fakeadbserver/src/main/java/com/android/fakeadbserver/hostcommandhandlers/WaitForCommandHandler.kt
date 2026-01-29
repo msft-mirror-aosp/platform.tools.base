@@ -55,14 +55,16 @@ class WaitForCommandHandler : HostCommandHandler() {
       4 -> {
         // wait-for-TRANSPORT-STATE
         // where TRANSPORT: "local" | "usb" | "any"
-        //           STATE: "device" | "recovery" | "rescue" | "sideload" | "bootloader" | "any" | "disconnect"
+        //           STATE: "device" | "recovery" | "rescue" | "sideload" | "bootloader" | "any" |
+        // "disconnect"
         transport = splits[2]
         state = splits[3]
       }
 
       3 -> {
         // wait-for-STATE
-        // where STATE: "device" | "recovery" | "rescue" | "sideload" | "bootloader" | "any" | "disconnect"
+        // where STATE: "device" | "recovery" | "rescue" | "sideload" | "bootloader" | "any" |
+        // "disconnect"
         // Default transport value is "any"
         transport = "any"
         state = splits[2]

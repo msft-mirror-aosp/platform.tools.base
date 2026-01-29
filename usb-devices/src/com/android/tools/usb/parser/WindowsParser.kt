@@ -47,7 +47,8 @@ private fun extractValues(lines: List<String>): UsbDevice? {
       if (pidIndex != -1) {
         productId = "0x" + line.substring(pidIndex + 4, pidIndex + 8)
 
-        // Relevant serial numbers for devices seem to be of the format DeviceID=USB\VID_18D1&amp;PID_4EE4\HT85G1A03400
+        // Relevant serial numbers for devices seem to be of the format
+        // DeviceID=USB\VID_18D1&amp;PID_4EE4\HT85G1A03400
         // where the serial number comes after product ID and a \, with no &'s
         val afterPid = line.substring(pidIndex + 8)
         if (afterPid.startsWith("\\") && !afterPid.contains('&')) {
@@ -67,7 +68,8 @@ class WindowsParser : OutputParser {
   object WindowsUSBCollector : Collector<String, MutableList<MutableList<String>>, MutableList<MutableList<String>>> {
     override fun accumulator() =
       BiConsumer<MutableList<MutableList<String>>, String> { stringGroups, line ->
-        // looks for a specific line, creates a new MutableList<String> and append it to the List of Lists, otherwise add non-empty lines to
+        // looks for a specific line, creates a new MutableList<String> and append it to the List
+        // of Lists, otherwise add non-empty lines to
         // the last List of strings
         if (line.isEmpty()) return@BiConsumer
         if (line.startsWith(NEW_DEVICE_KEY)) {

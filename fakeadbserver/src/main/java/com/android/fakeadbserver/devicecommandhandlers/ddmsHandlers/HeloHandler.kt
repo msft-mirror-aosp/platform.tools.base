@@ -33,7 +33,8 @@ class HeloHandler : DdmPacketHandler {
     jdwpHandlerOutput: JdwpHandlerOutput,
     socketScope: CoroutineScope,
   ): Boolean {
-    // ADB has an issue of reporting the process name instead of the real not reporting the real package name.
+    // ADB has an issue of reporting the process name instead of the real not reporting the real
+    // package name.
     val appName = client.processName
     val deviceApiLevel = device.apiLevel
 

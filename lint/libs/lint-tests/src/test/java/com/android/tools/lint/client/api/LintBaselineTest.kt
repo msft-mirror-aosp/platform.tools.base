@@ -96,18 +96,12 @@ class LintBaselineTest {
     }
   }
 
-  private fun LintBaseline.findAndMark(
-      issue: Issue,
-      location: Location,
-      message: String,
-      severity: Severity?,
-      project: Project?,
-  ): Boolean {
+  private fun LintBaseline.findAndMark(issue: Issue, location: Location, message: String, severity: Severity?, project: Project?): Boolean {
     val incident =
-        Incident(issue, location, message).apply {
-          severity?.let { this.severity = it }
-          project?.let { this.project = it }
-        }
+      Incident(issue, location, message).apply {
+        severity?.let { this.severity = it }
+        project?.let { this.project = it }
+      }
     return findAndMark(incident)
   }
 
@@ -117,76 +111,70 @@ class LintBaselineTest {
 
     @Language("XML")
     val baselineContents =
-        """
-        <issues format="5" by="lint unittest">
+      """
+      <issues format="5" by="lint unittest">
 
-            <issue
-                id="MultipleUsesSdk"
-                severity="Warning"
-                message="There should only be a single `<uses-sdk>` element in the manifest: merge these together"
-                category="Correctness"
-                priority="9"
-                summary="Multiple `&lt;uses-sdk&gt;` elements in the manifest"
-                explanation="The manifest should contain a `&lt;uses-sdk>` element which defines the minimum API Level required for the application to run, as well as the target version (the highest API level you have tested the version for)."
-                url="http://developer.android.com/guide/topics/manifest/uses-sdk-element.html"
-                urls="http://developer.android.com/guide/topics/manifest/uses-sdk-element.html"
-                errorLine1="    &lt;uses-sdk android:minSdkVersion=&quot;8&quot; />"
-                errorLine2="    ^">
-                <location
-                    file="AndroidManifest.xml"
-                    line="7"/>
-            </issue>
+          <issue
+              id="MultipleUsesSdk"
+              severity="Warning"
+              message="There should only be a single `<uses-sdk>` element in the manifest: merge these together"
+              category="Correctness"
+              priority="9"
+              summary="Multiple `&lt;uses-sdk&gt;` elements in the manifest"
+              explanation="The manifest should contain a `&lt;uses-sdk>` element which defines the minimum API Level required for the application to run, as well as the target version (the highest API level you have tested the version for)."
+              url="http://developer.android.com/guide/topics/manifest/uses-sdk-element.html"
+              urls="http://developer.android.com/guide/topics/manifest/uses-sdk-element.html"
+              errorLine1="    &lt;uses-sdk android:minSdkVersion=&quot;8&quot; />"
+              errorLine2="    ^">
+              <location
+                  file="AndroidManifest.xml"
+                  line="7"/>
+          </issue>
 
-            <issue
-                id="HardcodedText"
-                severity="Warning"
-                message="[I18N] Hardcoded string &quot;Fooo&quot;, should use @string resource"
-                category="Internationalization"
-                priority="5"
-                summary="Hardcoded text"
-                explanation="Hardcoding text attributes directly in layout files is bad for several reasons:
+          <issue
+              id="HardcodedText"
+              severity="Warning"
+              message="[I18N] Hardcoded string &quot;Fooo&quot;, should use @string resource"
+              category="Internationalization"
+              priority="5"
+              summary="Hardcoded text"
+              explanation="Hardcoding text attributes directly in layout files is bad for several reasons:
 
-        * When creating configuration variations (for example for landscape or portrait)you have to repeat the actual text (and keep it up to date when making changes)
+      * When creating configuration variations (for example for landscape or portrait)you have to repeat the actual text (and keep it up to date when making changes)
 
-        * The application cannot be translated to other languages by just adding new translations for existing string resources.
+      * The application cannot be translated to other languages by just adding new translations for existing string resources.
 
-        There are quickfixes to automatically extract this hardcoded string into a resource lookup."
-                errorLine1="        android:text=&quot;Fooo&quot; />"
-                errorLine2="        ~~~~~~~~~~~~~~~~~~~">
-                <location
-                    file="res/layout/main.xml"
-                    line="12"/>
-                <location
-                    file="res/layout/main2.xml"
-                    line="11"/>
-            </issue>
+      There are quickfixes to automatically extract this hardcoded string into a resource lookup."
+              errorLine1="        android:text=&quot;Fooo&quot; />"
+              errorLine2="        ~~~~~~~~~~~~~~~~~~~">
+              <location
+                  file="res/layout/main.xml"
+                  line="12"/>
+              <location
+                  file="res/layout/main2.xml"
+                  line="11"/>
+          </issue>
 
-            <issue
-                id="Range"
-                message="Value must be ≥ 0 (was -1)"
-                errorLine1="                                childHeightSpec = MeasureSpec.makeMeasureSpec(maxLayoutHeight,"
-                errorLine2="                                                                              ~~~~~~~~~~~~~~~">
-                <location
-                    file="java/android/support/v4/widget/SlidingPaneLayout.java"
-                    line="589"
-                    column="79"/>
-            </issue>
+          <issue
+              id="Range"
+              message="Value must be ≥ 0 (was -1)"
+              errorLine1="                                childHeightSpec = MeasureSpec.makeMeasureSpec(maxLayoutHeight,"
+              errorLine2="                                                                              ~~~~~~~~~~~~~~~">
+              <location
+                  file="java/android/support/v4/widget/SlidingPaneLayout.java"
+                  line="589"
+                  column="79"/>
+          </issue>
 
-        </issues>
-        """
-            .trimIndent()
+      </issues>
+      """
+        .trimIndent()
     baselineFile.writeText(baselineContents)
 
     val baseline = LintBaseline(ToolsBaseTestLintClient(), baselineFile)
 
     var found: Boolean =
-        baseline.findAndMark(
-            ManifestDetector.MULTIPLE_USES_SDK,
-            Location.create(File("bogus")),
-            "Unrelated",
-            Severity.WARNING,
-            null,
-        )
+      baseline.findAndMark(ManifestDetector.MULTIPLE_USES_SDK, Location.create(File("bogus")), "Unrelated", Severity.WARNING, null)
     assertThat(found).isFalse()
     assertThat(baseline.foundWarningCount).isEqualTo(0)
     assertThat(baseline.foundErrorCount).isEqualTo(0)
@@ -196,13 +184,13 @@ class LintBaselineTest {
 
     // Wrong issue
     found =
-        baseline.findAndMark(
-            ManifestDetector.MULTIPLE_USES_SDK,
-            Location.create(File("bogus")),
-            "Hardcoded string \"Fooo\", should use @string resource",
-            Severity.WARNING,
-            null,
-        )
+      baseline.findAndMark(
+        ManifestDetector.MULTIPLE_USES_SDK,
+        Location.create(File("bogus")),
+        "Hardcoded string \"Fooo\", should use @string resource",
+        Severity.WARNING,
+        null,
+      )
     assertThat(found).isFalse()
     assertThat(baseline.foundWarningCount).isEqualTo(0)
     assertThat(baseline.foundErrorCount).isEqualTo(0)
@@ -210,13 +198,13 @@ class LintBaselineTest {
 
     // Wrong file
     found =
-        baseline.findAndMark(
-            HardcodedValuesDetector.ISSUE,
-            Location.create(File("res/layout-port/main.xml")),
-            "Hardcoded string \"Fooo\", should use @string resource",
-            Severity.WARNING,
-            null,
-        )
+      baseline.findAndMark(
+        HardcodedValuesDetector.ISSUE,
+        Location.create(File("res/layout-port/main.xml")),
+        "Hardcoded string \"Fooo\", should use @string resource",
+        Severity.WARNING,
+        null,
+      )
     assertThat(found).isFalse()
     assertThat(baseline.foundWarningCount).isEqualTo(0)
     assertThat(baseline.foundErrorCount).isEqualTo(0)
@@ -224,13 +212,13 @@ class LintBaselineTest {
 
     // Match
     found =
-        baseline.findAndMark(
-            HardcodedValuesDetector.ISSUE,
-            Location.create(File("res/layout/main.xml")),
-            "Hardcoded string \"Fooo\", should use @string resource",
-            Severity.WARNING,
-            null,
-        )
+      baseline.findAndMark(
+        HardcodedValuesDetector.ISSUE,
+        Location.create(File("res/layout/main.xml")),
+        "Hardcoded string \"Fooo\", should use @string resource",
+        Severity.WARNING,
+        null,
+      )
     assertThat(found).isTrue()
     assertThat(baseline.fixedCount).isEqualTo(2)
     assertThat(baseline.foundWarningCount).isEqualTo(1)
@@ -239,28 +227,28 @@ class LintBaselineTest {
 
     // Search for the same error once it's already been found: no longer there
     found =
-        baseline.findAndMark(
-            HardcodedValuesDetector.ISSUE,
-            Location.create(File("res/layout/main.xml")),
-            "Hardcoded string \"Fooo\", should use @string resource",
-            Severity.WARNING,
-            null,
-        )
+      baseline.findAndMark(
+        HardcodedValuesDetector.ISSUE,
+        Location.create(File("res/layout/main.xml")),
+        "Hardcoded string \"Fooo\", should use @string resource",
+        Severity.WARNING,
+        null,
+      )
     assertThat(found).isFalse()
     assertThat(baseline.foundWarningCount).isEqualTo(1)
     assertThat(baseline.foundErrorCount).isEqualTo(0)
     assertThat(baseline.fixedCount).isEqualTo(2)
 
     found =
-        baseline.findAndMark(
-            RangeDetector.RANGE,
-            Location.create(File("java/android/support/v4/widget/SlidingPaneLayout.java")),
-            // Match, by different message
-            // Actual: "Value must be \u2265 0 (was -1)", Severity.WARNING, null
-            "Value must be \u2265 0",
-            Severity.WARNING,
-            null,
-        )
+      baseline.findAndMark(
+        RangeDetector.RANGE,
+        Location.create(File("java/android/support/v4/widget/SlidingPaneLayout.java")),
+        // Match, by different message
+        // Actual: "Value must be \u2265 0 (was -1)", Severity.WARNING, null
+        "Value must be \u2265 0",
+        Severity.WARNING,
+        null,
+      )
     assertThat(found).isTrue()
     assertThat(baseline.fixedCount).isEqualTo(1)
     assertThat(baseline.foundWarningCount).isEqualTo(2)
@@ -332,28 +320,28 @@ class LintBaselineTest {
     assertTrue(stringsEquivalent("abc `def` ghi", "abc def ghi"))
     assertTrue(stringsEquivalent("`abc` def", "abc def"))
     assertTrue(
-        stringsEquivalent(
-            "Suspicious equality check: equals() is not implemented in targetType",
-            "Suspicious equality check: `equals()` is not implemented in targetType",
-        )
+      stringsEquivalent(
+        "Suspicious equality check: equals() is not implemented in targetType",
+        "Suspicious equality check: `equals()` is not implemented in targetType",
+      )
     )
     assertTrue(
-        stringsEquivalent(
-            "This Handler class should be static or leaks might occur name",
-            "This `Handler` class should be static or leaks might occur name",
-        )
+      stringsEquivalent(
+        "This Handler class should be static or leaks might occur name",
+        "This `Handler` class should be static or leaks might occur name",
+      )
     )
     assertTrue(
-        stringsEquivalent(
-            "Using the AllowAllHostnameVerifier HostnameVerifier is unsafe ",
-            "Using the `AllowAllHostnameVerifier` HostnameVerifier is unsafe ",
-        )
+      stringsEquivalent(
+        "Using the AllowAllHostnameVerifier HostnameVerifier is unsafe ",
+        "Using the `AllowAllHostnameVerifier` HostnameVerifier is unsafe ",
+      )
     )
     assertTrue(
-        stringsEquivalent(
-            "Reading app signatures from getPackageInfo: The app signatures could be exploited if not validated properly; see issue explanation for details.",
-            "Reading app signatures from `getPackageInfo`: The app signatures could be exploited if not validated properly; see issue explanation for details",
-        )
+      stringsEquivalent(
+        "Reading app signatures from getPackageInfo: The app signatures could be exploited if not validated properly; see issue explanation for details.",
+        "Reading app signatures from `getPackageInfo`: The app signatures could be exploited if not validated properly; see issue explanation for details",
+      )
     )
     assertTrue(stringsEquivalent("````abc", "abc"))
     assertFalse(stringsEquivalent("abc", "def"))
@@ -371,11 +359,11 @@ class LintBaselineTest {
   fun tolerateMinSpChanges() {
     val baseline = LintBaseline(ToolsBaseTestLintClient(), File(""))
     assertTrue(
-        baseline.sameMessage(
-            PxUsageDetector.SMALL_SP_ISSUE,
-            "Avoid using sizes smaller than 12sp: 11sp",
-            "Avoid using sizes smaller than 11sp: 11sp",
-        )
+      baseline.sameMessage(
+        PxUsageDetector.SMALL_SP_ISSUE,
+        "Avoid using sizes smaller than 12sp: 11sp",
+        "Avoid using sizes smaller than 11sp: 11sp",
+      )
     )
   }
 
@@ -383,35 +371,29 @@ class LintBaselineTest {
   fun tolerateMinSdkTooLowChanges() {
     val baseline = LintBaseline(ToolsBaseTestLintClient(), File(""))
     assertTrue(
-        baseline.sameMessage(
-            GradleDetector.MIN_SDK_TOO_LOW,
-            "The value of minSdkVersion is too low. It can be incremented without noticeably reducing the number of supported devices.",
-            "The value of minSdkVersion (14) is too low. It can be incremented without noticeably reducing the number of supported devices.",
-        )
+      baseline.sameMessage(
+        GradleDetector.MIN_SDK_TOO_LOW,
+        "The value of minSdkVersion is too low. It can be incremented without noticeably reducing the number of supported devices.",
+        "The value of minSdkVersion (14) is too low. It can be incremented without noticeably reducing the number of supported devices.",
+      )
     )
   }
 
   @Test
   fun tolerateRangeMessageChanges() {
     val baseline = LintBaseline(ToolsBaseTestLintClient(), File(""))
-    assertTrue(
-        baseline.sameMessage(
-            RangeDetector.RANGE,
-            "Value must be ≥ 0 but can be -1",
-            "Value must be ≥ 0",
-        )
-    )
+    assertTrue(baseline.sameMessage(RangeDetector.RANGE, "Value must be ≥ 0 but can be -1", "Value must be ≥ 0"))
   }
 
   @Test
   fun tolerateIconMissingDensityFolderMessageChanges() {
     val baseline = LintBaseline(ToolsBaseTestLintClient(), File(""))
     assertTrue(
-        baseline.sameMessage(
-            IconDetector.ICON_MISSING_FOLDER,
-            "Missing density variation folders in `res`: drawable-hdpi, drawable-xhdpi, drawable-xxhdpi",
-            "Missing density variation folders in `/some/full/path/to/app/res`: drawable-hdpi, drawable-xhdpi, drawable-xxhdpi",
-        )
+      baseline.sameMessage(
+        IconDetector.ICON_MISSING_FOLDER,
+        "Missing density variation folders in `res`: drawable-hdpi, drawable-xhdpi, drawable-xxhdpi",
+        "Missing density variation folders in `/some/full/path/to/app/res`: drawable-hdpi, drawable-xhdpi, drawable-xxhdpi",
+      )
     )
   }
 
@@ -419,35 +401,35 @@ class LintBaselineTest {
   fun tolerateMinSdkVersionChanges() {
     val baseline = LintBaseline(ToolsBaseTestLintClient(), File(""))
     assertTrue(
-        baseline.sameMessage(
-            IconDetector.WEBP_UNSUPPORTED,
-            "WebP requires Android 4.0 (API 15); current minSdkVersion is 9",
-            "WebP requires Android 4.0 (API 15); current minSdkVersion is 10",
-        )
+      baseline.sameMessage(
+        IconDetector.WEBP_UNSUPPORTED,
+        "WebP requires Android 4.0 (API 15); current minSdkVersion is 9",
+        "WebP requires Android 4.0 (API 15); current minSdkVersion is 10",
+      )
     )
 
     assertTrue(
-        baseline.sameMessage(
-            OverrideConcreteDetector.ISSUE,
-            "Must override android.service.notification.NotificationListenerService.onNotificationPosted(android.service.notification.StatusBarNotification): Method was abstract until 21, and your minSdkVersion is 9",
-            "Must override android.service.notification.NotificationListenerService.onNotificationPosted(android.service.notification.StatusBarNotification): Method was abstract until 21, and your minSdkVersion is 10",
-        )
+      baseline.sameMessage(
+        OverrideConcreteDetector.ISSUE,
+        "Must override android.service.notification.NotificationListenerService.onNotificationPosted(android.service.notification.StatusBarNotification): Method was abstract until 21, and your minSdkVersion is 9",
+        "Must override android.service.notification.NotificationListenerService.onNotificationPosted(android.service.notification.StatusBarNotification): Method was abstract until 21, and your minSdkVersion is 10",
+      )
     )
 
     assertTrue(
-        baseline.sameMessage(
-            LocaleFolderDetector.GET_LOCALES,
-            "The app will crash on platforms older than v21 (minSdkVersion is 9) because AssetManager#getLocales is called and it contains one or more v21-style (3-letter or BCP47 locale) folders: values-b+kok+IN, values-fil",
-            "The app will crash on platforms older than v21 (minSdkVersion is 10) because AssetManager#getLocales is called and it contains one or more v21-style (3-letter or BCP47 locale) folders: values-b+kok+IN, values-fil",
-        )
+      baseline.sameMessage(
+        LocaleFolderDetector.GET_LOCALES,
+        "The app will crash on platforms older than v21 (minSdkVersion is 9) because AssetManager#getLocales is called and it contains one or more v21-style (3-letter or BCP47 locale) folders: values-b+kok+IN, values-fil",
+        "The app will crash on platforms older than v21 (minSdkVersion is 10) because AssetManager#getLocales is called and it contains one or more v21-style (3-letter or BCP47 locale) folders: values-b+kok+IN, values-fil",
+      )
     )
 
     assertTrue(
-        baseline.sameMessage(
-            FontDetector.FONT_VALIDATION,
-            "For `minSdkVersion`=27 only app: attributes should be used",
-            "For `minSdkVersion`=100 only app: attributes should be used",
-        )
+      baseline.sameMessage(
+        FontDetector.FONT_VALIDATION,
+        "For `minSdkVersion`=27 only app: attributes should be used",
+        "For `minSdkVersion`=100 only app: attributes should be used",
+      )
     )
   }
 
@@ -455,11 +437,11 @@ class LintBaselineTest {
   fun tolerateIconXmlAndPngMessageChanges() {
     val baseline = LintBaseline(ToolsBaseTestLintClient(), File(""))
     assertTrue(
-        baseline.sameMessage(
-            IconDetector.ICON_XML_AND_PNG,
-            "The following images appear both as density independent `.xml` files and as bitmap files: res/drawable/background.xml",
-            "The following images appear both as density independent `.xml` files and as bitmap files: /some/full/path/to/app/res/drawable/background.xml",
-        )
+      baseline.sameMessage(
+        IconDetector.ICON_XML_AND_PNG,
+        "The following images appear both as density independent `.xml` files and as bitmap files: res/drawable/background.xml",
+        "The following images appear both as density independent `.xml` files and as bitmap files: /some/full/path/to/app/res/drawable/background.xml",
+      )
     )
   }
 
@@ -467,25 +449,25 @@ class LintBaselineTest {
   fun tolerateRestrictToChanges() {
     val baseline = LintBaseline(ToolsBaseTestLintClient(), File(""))
     assertTrue(
-        baseline.sameMessage(
-            RestrictToDetector.RESTRICTED,
-            "LibraryCode.method3 can only be called from within the same library group (referenced groupId=test.pkg.library from groupId=other.app)",
-            "LibraryCode.method3 can only be called from within the same library group (groupId=test.pkg.library)",
-        )
+      baseline.sameMessage(
+        RestrictToDetector.RESTRICTED,
+        "LibraryCode.method3 can only be called from within the same library group (referenced groupId=test.pkg.library from groupId=other.app)",
+        "LibraryCode.method3 can only be called from within the same library group (groupId=test.pkg.library)",
+      )
     )
     assertTrue(
-        baseline.sameMessage(
-            RestrictToDetector.RESTRICTED,
-            "LibraryCode.method3 can only be called from within the same library group (referenced groupId=test.pkg.library from groupId=other.app)",
-            "LibraryCode.method3 can only be called from within the same library group",
-        )
+      baseline.sameMessage(
+        RestrictToDetector.RESTRICTED,
+        "LibraryCode.method3 can only be called from within the same library group (referenced groupId=test.pkg.library from groupId=other.app)",
+        "LibraryCode.method3 can only be called from within the same library group",
+      )
     )
     assertFalse(
-        baseline.sameMessage(
-            RestrictToDetector.RESTRICTED,
-            "LibraryCode.FIELD3 can only be called from within the same library group (referenced groupId=test.pkg.library from groupId=other.app)",
-            "LibraryCode.method3 can only be called from within the same library group (groupId=test.pkg.library)",
-        )
+      baseline.sameMessage(
+        RestrictToDetector.RESTRICTED,
+        "LibraryCode.FIELD3 can only be called from within the same library group (referenced groupId=test.pkg.library from groupId=other.app)",
+        "LibraryCode.method3 can only be called from within the same library group (groupId=test.pkg.library)",
+      )
     )
   }
 
@@ -501,11 +483,11 @@ class LintBaselineTest {
   fun tolerateScopedStorageChanges() {
     val baseline = LintBaseline(ToolsBaseTestLintClient(), File(""))
     assertTrue(
-        baseline.sameMessage(
-            ScopedStorageDetector.ISSUE,
-            "The Google Play store has a policy that limits usage of MANAGE_EXTERNAL_STORAGE",
-            "Most apps are not allowed to use MANAGE_EXTERNAL_STORAGE",
-        )
+      baseline.sameMessage(
+        ScopedStorageDetector.ISSUE,
+        "The Google Play store has a policy that limits usage of MANAGE_EXTERNAL_STORAGE",
+        "Most apps are not allowed to use MANAGE_EXTERNAL_STORAGE",
+      )
     )
   }
 
@@ -515,157 +497,157 @@ class LintBaselineTest {
 
     // minSdk changes can happen anytime; be flexible with these:
     assertTrue(
-        baseline.sameMessage(
-            ApiDetector.UNSUPPORTED,
-            "Call requires API level 23 (current min is 1): `foo`",
-            "Call requires API level 23 (current min is 22): `foo`",
-        )
+      baseline.sameMessage(
+        ApiDetector.UNSUPPORTED,
+        "Call requires API level 23 (current min is 1): `foo`",
+        "Call requires API level 23 (current min is 22): `foo`",
+      )
     )
 
     // When we switch from preview builds to finalized APIs the target can change:
 
     assertTrue(
-        baseline.sameMessage(
-            ApiDetector.UNSUPPORTED,
-            "Call requires version 4 of the R Extensions SDK (current min is 0): `requiresExtRv4`",
-            "Call requires version 4 of the R Extensions SDK (current min is 10): `requiresExtRv4`",
-        )
+      baseline.sameMessage(
+        ApiDetector.UNSUPPORTED,
+        "Call requires version 4 of the R Extensions SDK (current min is 0): `requiresExtRv4`",
+        "Call requires version 4 of the R Extensions SDK (current min is 10): `requiresExtRv4`",
+      )
     )
 
     assertTrue(
-        baseline.sameMessage(
-            ApiDetector.UNSUPPORTED,
-            "Call requires API level 10000 (current min is 1): `android.app.GameManager#getGameMode`",
-            "Call requires API level CUR_DEVELOPMENT/10000 (current min is 1): `android.app.GameManager#getGameMode`",
-        )
+      baseline.sameMessage(
+        ApiDetector.UNSUPPORTED,
+        "Call requires API level 10000 (current min is 1): `android.app.GameManager#getGameMode`",
+        "Call requires API level CUR_DEVELOPMENT/10000 (current min is 1): `android.app.GameManager#getGameMode`",
+      )
     )
 
     assertTrue(
-        baseline.sameMessage(
-            ApiDetector.UNSUPPORTED,
-            "Call requires API level R (current min is 1): `setZOrderedOnTop`",
-            "Call requires API level 30 (current min is 29): `setZOrderedOnTop`",
-        )
+      baseline.sameMessage(
+        ApiDetector.UNSUPPORTED,
+        "Call requires API level R (current min is 1): `setZOrderedOnTop`",
+        "Call requires API level 30 (current min is 29): `setZOrderedOnTop`",
+      )
     )
 
     assertFalse(
-        baseline.sameMessage(
-            ApiDetector.UNSUPPORTED,
-            "Call requires API level R (current min is 1): `setZOrderedOnTop`",
-            "Call requires API level 30 (current min is 29): `otherMethod`",
-        )
+      baseline.sameMessage(
+        ApiDetector.UNSUPPORTED,
+        "Call requires API level R (current min is 1): `setZOrderedOnTop`",
+        "Call requires API level 30 (current min is 29): `otherMethod`",
+      )
     )
 
     assertFalse(
-        baseline.sameMessage(
-            ApiDetector.UNSUPPORTED,
-            "Field requires API level R (current min is 29): `setZOrderedOnTop`",
-            "Call requires API level 30 (current min is 29): `setZOrderedOnTop`",
-        )
+      baseline.sameMessage(
+        ApiDetector.UNSUPPORTED,
+        "Field requires API level R (current min is 29): `setZOrderedOnTop`",
+        "Call requires API level 30 (current min is 29): `setZOrderedOnTop`",
+      )
     )
 
     assertFalse(
-        baseline.sameMessage(
-            ApiDetector.UNSUPPORTED,
-            "Call requires API level R (current min is 29): `setZOrderedOnTop`",
-            "Call requires API level 30 (current min is 29): `setZOrdered`",
-        )
+      baseline.sameMessage(
+        ApiDetector.UNSUPPORTED,
+        "Call requires API level R (current min is 29): `setZOrderedOnTop`",
+        "Call requires API level 30 (current min is 29): `setZOrdered`",
+      )
     )
 
     assertTrue(
-        baseline.sameMessage(
-            ApiDetector.UNSUPPORTED,
-            "Call requires API level 24 (current min is 18): `java.util.Map#getOrDefault` (called from kotlin.collections.Map#getOrDefault)",
-            "Call requires API level 24 (current min is 13): `java.util.Map#getOrDefault`",
-        )
+      baseline.sameMessage(
+        ApiDetector.UNSUPPORTED,
+        "Call requires API level 24 (current min is 18): `java.util.Map#getOrDefault` (called from kotlin.collections.Map#getOrDefault)",
+        "Call requires API level 24 (current min is 13): `java.util.Map#getOrDefault`",
+      )
     )
 
     assertTrue(
-        baseline.sameMessage(
-            ApiDetector.UNSUPPORTED,
-            "Call requires API level 24 (current min is 18): java.util.Map#getOrDefault (called from kotlin.collections.Map#getOrDefault)",
-            "Call requires API level 24 (current min is 13): java.util.Map#getOrDefault (called from kotlin.collections.Map#getOrDefault)",
-        )
+      baseline.sameMessage(
+        ApiDetector.UNSUPPORTED,
+        "Call requires API level 24 (current min is 18): java.util.Map#getOrDefault (called from kotlin.collections.Map#getOrDefault)",
+        "Call requires API level 24 (current min is 13): java.util.Map#getOrDefault (called from kotlin.collections.Map#getOrDefault)",
+      )
     )
 
     assertTrue(
-        baseline.sameMessage(
-            ApiDetector.UNSUPPORTED,
-            new = "Cast from Cursor to Closeable requires API level 16 (current min is 18)",
-            old = "Cast from Cursor to Closeable requires API level 16 (current min is 14)",
-        )
+      baseline.sameMessage(
+        ApiDetector.UNSUPPORTED,
+        new = "Cast from Cursor to Closeable requires API level 16 (current min is 18)",
+        old = "Cast from Cursor to Closeable requires API level 16 (current min is 14)",
+      )
     )
 
     // Make sure that when a method is added to an extension we continue to handle this correctly
     assertTrue(
-        baseline.sameMessage(
-            ApiDetector.UNSUPPORTED,
-            new = "Field requires version 4 of the AD_SERVICES-ext SDK (current min is 0): `android.app.GameManager#GAME_MODE_BATTERY`",
-            old = "Field requires API level 34 (current min is 24): `android.app.GameManager#GAME_MODE_BATTERY`",
-        )
+      baseline.sameMessage(
+        ApiDetector.UNSUPPORTED,
+        new = "Field requires version 4 of the AD_SERVICES-ext SDK (current min is 0): `android.app.GameManager#GAME_MODE_BATTERY`",
+        old = "Field requires API level 34 (current min is 24): `android.app.GameManager#GAME_MODE_BATTERY`",
+      )
     )
 
     assertTrue(
-        baseline.sameMessage(
-            ApiDetector.UNSUPPORTED,
-            new = "Field requires version 5 of the AD_SERVICES-ext SDK (current min is 3): `android.app.GameManager#GAME_MODE_BATTERY`",
-            old = "Field requires version 4 of the AD_SERVICES-ext SDK (current min is 0): `android.app.GameManager#GAME_MODE_BATTERY`",
-        )
+      baseline.sameMessage(
+        ApiDetector.UNSUPPORTED,
+        new = "Field requires version 5 of the AD_SERVICES-ext SDK (current min is 3): `android.app.GameManager#GAME_MODE_BATTERY`",
+        old = "Field requires version 4 of the AD_SERVICES-ext SDK (current min is 0): `android.app.GameManager#GAME_MODE_BATTERY`",
+      )
     )
 
     assertTrue(
-        baseline.sameMessage(
-            ApiDetector.UNSUPPORTED,
-            new = "Cast from `Cursor` to `Closeable` requires version 4 of the AD_SERVICES-ext SDK (current min is 0)",
-            old = "Cast from `Cursor` to `Closeable` requires API level 16 (current min is 14)",
-        )
+      baseline.sameMessage(
+        ApiDetector.UNSUPPORTED,
+        new = "Cast from `Cursor` to `Closeable` requires version 4 of the AD_SERVICES-ext SDK (current min is 0)",
+        old = "Cast from `Cursor` to `Closeable` requires API level 16 (current min is 14)",
+      )
     )
 
     assertTrue(
-        baseline.sameMessage(
-            ApiDetector.UNSUPPORTED,
-            new = "Implicit cast from `TypedArray` to `AutoCloseable` requires API level 31 (current min is 29)",
-            old = "Implicit cast from `TypedArray` to `AutoCloseable` requires API level 31 (current min is 24)",
-        )
+      baseline.sameMessage(
+        ApiDetector.UNSUPPORTED,
+        new = "Implicit cast from `TypedArray` to `AutoCloseable` requires API level 31 (current min is 29)",
+        old = "Implicit cast from `TypedArray` to `AutoCloseable` requires API level 31 (current min is 24)",
+      )
     )
 
     // Repeatable annotation requires API level 24 (current min is 15)
     assertTrue(
-        baseline.sameMessage(
-            ApiDetector.UNSUPPORTED,
-            new = "Repeatable annotation requires API level 24 (current min is 33)",
-            old = "Repeatable annotation requires API level 24 (current min is 15)",
-        )
+      baseline.sameMessage(
+        ApiDetector.UNSUPPORTED,
+        new = "Repeatable annotation requires API level 24 (current min is 33)",
+        old = "Repeatable annotation requires API level 24 (current min is 15)",
+      )
     )
 
     // Using theme references in XML drawables requires API level 21 (current min is 9)
     assertTrue(
-        baseline.sameMessage(
-            ApiDetector.UNSUPPORTED,
-            new = "Using theme references in XML drawables requires API level 21 (current min is 33)",
-            old = "Using theme references in XML drawables requires API level 21 (current min is 9)",
-        )
+      baseline.sameMessage(
+        ApiDetector.UNSUPPORTED,
+        new = "Using theme references in XML drawables requires API level 21 (current min is 33)",
+        old = "Using theme references in XML drawables requires API level 21 (current min is 9)",
+      )
     )
 
     // Custom drawables requires API level 24 (current min is 15)
     assertTrue(
-        baseline.sameMessage(
-            ApiDetector.UNSUPPORTED,
-            new = "Custom drawables requires API level 24 (current min is 33)",
-            old = "Custom drawables requires API level 24 (current min is 15)",
-        )
+      baseline.sameMessage(
+        ApiDetector.UNSUPPORTED,
+        new = "Custom drawables requires API level 24 (current min is 33)",
+        old = "Custom drawables requires API level 24 (current min is 15)",
+      )
     )
 
     // switchTextAppearance requires API level 14 (current min is 1), but note that attribute
     // editTextColor is only used in API level 11 and higher
     assertTrue(
-        baseline.sameMessage(
-            ApiDetector.UNSUPPORTED,
-            new =
-                "`switchTextAppearance` requires API level 14 (current min is 33), but note that attribute `editTextColor` is only used in API level 11 and higher",
-            old =
-                "`switchTextAppearance` requires API level 14 (current min is 1), but note that attribute `editTextColor` is only used in API level 11 and higher",
-        )
+      baseline.sameMessage(
+        ApiDetector.UNSUPPORTED,
+        new =
+          "`switchTextAppearance` requires API level 14 (current min is 33), but note that attribute `editTextColor` is only used in API level 11 and higher",
+        old =
+          "`switchTextAppearance` requires API level 14 (current min is 1), but note that attribute `editTextColor` is only used in API level 11 and higher",
+      )
     )
 
     // The type of the for loop iterated value is
@@ -673,98 +655,98 @@ class LintBaselineTest {
     // requires API level 24 (current min is 1); to work around this, add an explicit cast to (Map)
     // before the keySet call.
     assertTrue(
-        baseline.sameMessage(
-            ApiDetector.UNSUPPORTED,
-            new =
-                "The type of the for loop iterated value is java.util.concurrent.ConcurrentHashMap.KeySetView<java.lang.String,java.lang.Object>, which requires API level 24 (current min is 33); to work around this, add an explicit cast to (Map) before the keySet call.",
-            old =
-                "The type of the for loop iterated value is java.util.concurrent.ConcurrentHashMap.KeySetView<java.lang.String,java.lang.Object>, which requires API level 24 (current min is 1); to work around this, add an explicit cast to (Map) before the keySet call.",
-        )
+      baseline.sameMessage(
+        ApiDetector.UNSUPPORTED,
+        new =
+          "The type of the for loop iterated value is java.util.concurrent.ConcurrentHashMap.KeySetView<java.lang.String,java.lang.Object>, which requires API level 24 (current min is 33); to work around this, add an explicit cast to (Map) before the keySet call.",
+        old =
+          "The type of the for loop iterated value is java.util.concurrent.ConcurrentHashMap.KeySetView<java.lang.String,java.lang.Object>, which requires API level 24 (current min is 1); to work around this, add an explicit cast to (Map) before the keySet call.",
+      )
     )
 
     // Implicit TypedArray.close() call from try-with-resources requires API level 31 (current min
     // is 24)
     assertTrue(
-        baseline.sameMessage(
-            ApiDetector.UNSUPPORTED,
-            new = "Implicit `TypedArray.close()` call from try-with-resources requires API level 31 (current min is 33)",
-            old = "Implicit `TypedArray.close()` call from try-with-resources requires API level 31 (current min is 24)",
-        )
+      baseline.sameMessage(
+        ApiDetector.UNSUPPORTED,
+        new = "Implicit `TypedArray.close()` call from try-with-resources requires API level 31 (current min is 33)",
+        old = "Implicit `TypedArray.close()` call from try-with-resources requires API level 31 (current min is 24)",
+      )
     )
 
     // Error: Multi-catch with these reflection exceptions requires API level 19 (current min is 1)
     // because they get compiled to the common but new super type ReflectiveOperationException. As a
     // workaround either create individual catch statements, or catch Exception.
     assertTrue(
-        baseline.sameMessage(
-            ApiDetector.UNSUPPORTED,
-            new =
-                "Multi-catch with these reflection exceptions requires API level 19 (current min is 29) because they get compiled to the common but new super type `ReflectiveOperationException`. As a workaround either create individual catch statements, or catch `Exception`.",
-            old =
-                "Multi-catch with these reflection exceptions requires API level 19 (current min is 1) because they get compiled to the common but new super type `ReflectiveOperationException`. As a workaround either create individual catch statements, or catch `Exception`.",
-        )
+      baseline.sameMessage(
+        ApiDetector.UNSUPPORTED,
+        new =
+          "Multi-catch with these reflection exceptions requires API level 19 (current min is 29) because they get compiled to the common but new super type `ReflectiveOperationException`. As a workaround either create individual catch statements, or catch `Exception`.",
+        old =
+          "Multi-catch with these reflection exceptions requires API level 19 (current min is 1) because they get compiled to the common but new super type `ReflectiveOperationException`. As a workaround either create individual catch statements, or catch `Exception`.",
+      )
     )
 
     // <vector> requires API level 21 (current min is 1) or building with Android Gradle plugin
     // 1.4.0 or higher
     assertTrue(
-        baseline.sameMessage(
-            ApiDetector.UNSUPPORTED,
-            new = "`<vector>` requires API level 21 (current min is 21)",
-            old = "`<vector>` requires API level 21 (current min is 1)",
-        )
+      baseline.sameMessage(
+        ApiDetector.UNSUPPORTED,
+        new = "`<vector>` requires API level 21 (current min is 21)",
+        old = "`<vector>` requires API level 21 (current min is 1)",
+      )
     )
     assertTrue(
-        baseline.sameMessage(
-            ApiDetector.UNSUPPORTED,
-            new = "`<vector>` requires API level 21 (current min is 21) or building with Android Gradle plugin 1.4.0 or higher",
-            old = "`<vector>` requires API level 21 (current min is 1) or building with Android Gradle plugin 1.4.0 or higher",
-        )
+      baseline.sameMessage(
+        ApiDetector.UNSUPPORTED,
+        new = "`<vector>` requires API level 21 (current min is 21) or building with Android Gradle plugin 1.4.0 or higher",
+        old = "`<vector>` requires API level 21 (current min is 1) or building with Android Gradle plugin 1.4.0 or higher",
+      )
     )
 
     assertFalse(
-        baseline.sameMessage(
-            ApiDetector.UNSUPPORTED,
-            "Cast from `Cursor` to `Closeable` requires API level 16 (current min is 14)",
-            "Implicit cast from `Cursor` to `Closeable` requires API level 16 (current min is 14)",
-        )
+      baseline.sameMessage(
+        ApiDetector.UNSUPPORTED,
+        "Cast from `Cursor` to `Closeable` requires API level 16 (current min is 14)",
+        "Implicit cast from `Cursor` to `Closeable` requires API level 16 (current min is 14)",
+      )
     )
 
     assertTrue(
-        baseline.sameMessage(
-            ApiDetector.UNSUPPORTED,
-            new = "Call requires API level 24, or core library desugaring (current min is 1): `java.util.Map#getOrDefault`",
-            old = "Call requires API level 24 (current min is 1): `java.util.Map#getOrDefault`",
-        )
+      baseline.sameMessage(
+        ApiDetector.UNSUPPORTED,
+        new = "Call requires API level 24, or core library desugaring (current min is 1): `java.util.Map#getOrDefault`",
+        old = "Call requires API level 24 (current min is 1): `java.util.Map#getOrDefault`",
+      )
     )
 
     // Switching default display name for extensions (since api-versions.xml
     // seems to have switched the meaning of the name attribute from short
     // name to full name, and have introduced a new shortName attribute)
     assertTrue(
-        baseline.sameMessage(
-            ApiDetector.UNSUPPORTED,
-            new = "Call requires version 4 of the R Extensions SDK (current min is 0): `rOnly`",
-            old = "Call requires version 4 of the R-ext SDK (current min is 0): `rOnly`",
-        )
+      baseline.sameMessage(
+        ApiDetector.UNSUPPORTED,
+        new = "Call requires version 4 of the R Extensions SDK (current min is 0): `rOnly`",
+        old = "Call requires version 4 of the R-ext SDK (current min is 0): `rOnly`",
+      )
     )
 
     assertTrue(
-        baseline.sameMessage(
-            ApiDetector.UNSUPPORTED,
-            old = "This Kotlin extension function will be hidden by java.util.SequencedCollection starting in API 35",
-            new =
-                "This Kotlin extension function will be hidden by java.util.SequencedCollection starting in API 35: `removeFirst`. When this source code is recompiled against API level 35, it will crash on older levels. You can avoid this by using removeAt(0) instead.",
-        )
+      baseline.sameMessage(
+        ApiDetector.UNSUPPORTED,
+        old = "This Kotlin extension function will be hidden by java.util.SequencedCollection starting in API 35",
+        new =
+          "This Kotlin extension function will be hidden by java.util.SequencedCollection starting in API 35: `removeFirst`. When this source code is recompiled against API level 35, it will crash on older levels. You can avoid this by using removeAt(0) instead.",
+      )
     )
 
     assertTrue(
-        baseline.sameMessage(
-            ApiDetector.UNSUPPORTED,
-            old = "This Kotlin extension function will be hidden by java.util.SequencedCollection starting in API 35",
-            new =
-                "This Kotlin extension function will be hidden by java.util.SequencedCollection starting in API 35: `removeLast`. When this source code is recompiled against API level 35, it will crash on older levels. You can avoid this by using removeAt(list.lastIndex) instead.",
-        )
+      baseline.sameMessage(
+        ApiDetector.UNSUPPORTED,
+        old = "This Kotlin extension function will be hidden by java.util.SequencedCollection starting in API 35",
+        new =
+          "This Kotlin extension function will be hidden by java.util.SequencedCollection starting in API 35: `removeLast`. When this source code is recompiled against API level 35, it will crash on older levels. You can avoid this by using removeAt(list.lastIndex) instead.",
+      )
     )
   }
 
@@ -773,51 +755,51 @@ class LintBaselineTest {
     val baseline = LintBaseline(ToolsBaseTestLintClient(), File(""))
 
     assertTrue(
-        baseline.sameMessage(
-            ApiDetector.OBSOLETE_SDK,
-            new = "Unnecessary; `Build.VERSION.SDK_INT == Build.VERSION_CODES.JELLY_BEAN` is never true here",
-            old = "Unnecessary; SDK_INT is never < 21",
-        )
+      baseline.sameMessage(
+        ApiDetector.OBSOLETE_SDK,
+        new = "Unnecessary; `Build.VERSION.SDK_INT == Build.VERSION_CODES.JELLY_BEAN` is never true here",
+        old = "Unnecessary; SDK_INT is never < 21",
+      )
     )
 
     assertTrue(
-        baseline.sameMessage(
-            ApiDetector.OBSOLETE_SDK,
-            new = "Unnecessary; `Build.VERSION.SDK_INT == Build.VERSION_CODES.JELLY_BEAN` is never true here (SDK_INT ≥ 11 and < 31)",
-            old = "Unnecessary; SDK_INT is never < 21",
-        )
+      baseline.sameMessage(
+        ApiDetector.OBSOLETE_SDK,
+        new = "Unnecessary; `Build.VERSION.SDK_INT == Build.VERSION_CODES.JELLY_BEAN` is never true here (SDK_INT ≥ 11 and < 31)",
+        old = "Unnecessary; SDK_INT is never < 21",
+      )
     )
 
     assertTrue(
-        baseline.sameMessage(
-            ApiDetector.OBSOLETE_SDK,
-            new = "Unnecessary; `Build.VERSION.SDK_INT == Build.VERSION_CODES.JELLY_BEAN` is never true here",
-            old = "Unnecessary; `SDK_INT` is never < 21",
-        )
+      baseline.sameMessage(
+        ApiDetector.OBSOLETE_SDK,
+        new = "Unnecessary; `Build.VERSION.SDK_INT == Build.VERSION_CODES.JELLY_BEAN` is never true here",
+        old = "Unnecessary; `SDK_INT` is never < 21",
+      )
     )
 
     assertFalse(
-        baseline.sameMessage(
-            ApiDetector.OBSOLETE_SDK,
-            new = "Unnecessary; `Build.VERSION.SDK_INT == Build.VERSION_CODES.JELLY_BEAN` is never true here",
-            old = "Unnecessary; SDK_INT is always > 21",
-        )
+      baseline.sameMessage(
+        ApiDetector.OBSOLETE_SDK,
+        new = "Unnecessary; `Build.VERSION.SDK_INT == Build.VERSION_CODES.JELLY_BEAN` is never true here",
+        old = "Unnecessary; SDK_INT is always > 21",
+      )
     )
 
     assertFalse(
-        baseline.sameMessage(
-            ApiDetector.OBSOLETE_SDK,
-            new = "Unnecessary; SDK_INT is always > 23",
-            old = "Unnecessary; SDK_INT is always > 21",
-        )
+      baseline.sameMessage(
+        ApiDetector.OBSOLETE_SDK,
+        new = "Unnecessary; SDK_INT is always > 23",
+        old = "Unnecessary; SDK_INT is always > 21",
+      )
     )
 
     assertTrue(
-        baseline.sameMessage(
-            ApiDetector.OBSOLETE_SDK,
-            new = "Unnecessary; `SDK_INT` is always > 21",
-            old = "Unnecessary; SDK_INT is always > 21",
-        )
+      baseline.sameMessage(
+        ApiDetector.OBSOLETE_SDK,
+        new = "Unnecessary; `SDK_INT` is always > 21",
+        old = "Unnecessary; SDK_INT is always > 21",
+      )
     )
   }
 
@@ -827,11 +809,11 @@ class LintBaselineTest {
     // as now enforced by LintImplTextFormat
     val baseline = LintBaseline(ToolsBaseTestLintClient(), File(""))
     assertTrue(
-        baseline.sameMessage(
-            TypoDetector.ISSUE,
-            "Did you mean \"intended\" instead of \"actual\" ?",
-            "Did you mean \"intended\" instead of \"actual\"?",
-        )
+      baseline.sameMessage(
+        TypoDetector.ISSUE,
+        "Did you mean \"intended\" instead of \"actual\" ?",
+        "Did you mean \"intended\" instead of \"actual\"?",
+      )
     )
   }
 
@@ -839,19 +821,19 @@ class LintBaselineTest {
   fun tolerateA11yI18nChanges() {
     val baseline = LintBaseline(ToolsBaseTestLintClient(), File(""))
     assertTrue(
-        baseline.sameMessage(
-            HardcodedValuesDetector.ISSUE,
-            "Hardcoded string \"Fooo\", should use @string resource",
-            "[I18N] Hardcoded string \"Fooo\", should use @string resource",
-        )
+      baseline.sameMessage(
+        HardcodedValuesDetector.ISSUE,
+        "Hardcoded string \"Fooo\", should use @string resource",
+        "[I18N] Hardcoded string \"Fooo\", should use @string resource",
+      )
     )
 
     assertTrue(
-        baseline.sameMessage(
-            AccessibilityDetector.ISSUE,
-            "Empty contentDescription attribute on image",
-            "[Accessibility] Empty contentDescription attribute on image",
-        )
+      baseline.sameMessage(
+        AccessibilityDetector.ISSUE,
+        "Empty contentDescription attribute on image",
+        "[Accessibility] Empty contentDescription attribute on image",
+      )
     )
   }
 
@@ -859,11 +841,11 @@ class LintBaselineTest {
   fun tolerateRtlCompatChanges() {
     val baseline = LintBaseline(ToolsBaseTestLintClient(), File(""))
     assertTrue(
-        baseline.sameMessage(
-            RtlDetector.COMPAT,
-            "To support older versions than API 17 (project specifies 11) you should also add android:layout_alignParentLeft=\"true\"",
-            "To support older versions than API 17 (project specifies 14) you should also add android:layout_alignParentLeft=\"true\"",
-        )
+      baseline.sameMessage(
+        RtlDetector.COMPAT,
+        "To support older versions than API 17 (project specifies 11) you should also add android:layout_alignParentLeft=\"true\"",
+        "To support older versions than API 17 (project specifies 14) you should also add android:layout_alignParentLeft=\"true\"",
+      )
     )
   }
 
@@ -872,19 +854,19 @@ class LintBaselineTest {
     // Regression test for b/328444663
     val baseline = LintBaseline(ToolsBaseTestLintClient(), File(""))
     assertTrue(
-        baseline.sameMessage(
-            RtlDetector.COMPAT,
-            "\n  This is text\n  that could be trim \n  indented.\n",
-            "This is text\nthat could be trim indented.",
-        )
+      baseline.sameMessage(
+        RtlDetector.COMPAT,
+        "\n  This is text\n  that could be trim \n  indented.\n",
+        "This is text\nthat could be trim indented.",
+      )
     )
 
     assertTrue(
-        baseline.sameMessage(
-            RtlDetector.COMPAT,
-            "This is text\nthat could be trim indented.",
-            "\n  This is text\n  that could be trim \n  indented.\n",
-        )
+      baseline.sameMessage(
+        RtlDetector.COMPAT,
+        "This is text\nthat could be trim indented.",
+        "\n  This is text\n  that could be trim \n  indented.\n",
+      )
     )
   }
 
@@ -892,11 +874,11 @@ class LintBaselineTest {
   fun tolerateUnusedAttributeChanges() {
     val baseline = LintBaseline(ToolsBaseTestLintClient(), File(""))
     assertTrue(
-        baseline.sameMessage(
-            ApiDetector.UNUSED,
-            "Attribute `Abc` is only used in API level 19 and higher (current min is 16)",
-            "Attribute `Abc` is only used in API level 18 and higher (current min is 17)",
-        )
+      baseline.sameMessage(
+        ApiDetector.UNUSED,
+        "Attribute `Abc` is only used in API level 19 and higher (current min is 16)",
+        "Attribute `Abc` is only used in API level 18 and higher (current min is 17)",
+      )
     )
   }
 
@@ -919,22 +901,18 @@ class LintBaselineTest {
     sourceFile.createNewFile()
 
     baseline.findAndMark(
-        HardcodedValuesDetector.ISSUE,
-        Location.create(sourceFile, "", 0),
-        "Hardcoded string \"Fooo\", should use `@string` resource",
-        Severity.WARNING,
-        project2,
+      HardcodedValuesDetector.ISSUE,
+      Location.create(sourceFile, "", 0),
+      "Hardcoded string \"Fooo\", should use `@string` resource",
+      Severity.WARNING,
+      project2,
     )
     baseline.findAndMark(
-        ManifestDetector.MULTIPLE_USES_SDK,
-        Location.create(
-            File("/foo/bar/Foo/AndroidManifest.xml"),
-            DefaultPosition(6, 4, 198),
-            DefaultPosition(6, 42, 236),
-        ),
-        "There should only be a single `<uses-sdk>` element in the manifest: merge these together",
-        Severity.WARNING,
-        null,
+      ManifestDetector.MULTIPLE_USES_SDK,
+      Location.create(File("/foo/bar/Foo/AndroidManifest.xml"), DefaultPosition(6, 4, 198), DefaultPosition(6, 42, 236)),
+      "There should only be a single `<uses-sdk>` element in the manifest: merge these together",
+      Severity.WARNING,
+      null,
     )
     baseline.close()
 
@@ -942,7 +920,7 @@ class LintBaselineTest {
 
     @Language("XML")
     val expected =
-        """<?xml version="1.0" encoding="UTF-8"?>
+      """<?xml version="1.0" encoding="UTF-8"?>
 <issues format="5" by="lint unittest">
 
     <issue
@@ -971,26 +949,22 @@ class LintBaselineTest {
     assertThat(baseline.removeFixed).isFalse()
 
     var found: Boolean =
-        baseline.findAndMark(
-            HardcodedValuesDetector.ISSUE,
-            Location.create(sourceFile, "", 0),
-            "Hardcoded string \"Fooo\", should use `@string` resource",
-            Severity.WARNING,
-            project2,
-        )
+      baseline.findAndMark(
+        HardcodedValuesDetector.ISSUE,
+        Location.create(sourceFile, "", 0),
+        "Hardcoded string \"Fooo\", should use `@string` resource",
+        Severity.WARNING,
+        project2,
+      )
     assertThat(found).isTrue()
     found =
-        baseline.findAndMark(
-            ManifestDetector.MULTIPLE_USES_SDK,
-            Location.create(
-                File("/foo/bar/Foo/AndroidManifest.xml"),
-                DefaultPosition(6, 4, 198),
-                DefaultPosition(6, 42, 236),
-            ),
-            "There should only be a single `<uses-sdk>` element in the manifest: merge these together",
-            Severity.WARNING,
-            null,
-        )
+      baseline.findAndMark(
+        ManifestDetector.MULTIPLE_USES_SDK,
+        Location.create(File("/foo/bar/Foo/AndroidManifest.xml"), DefaultPosition(6, 4, 198), DefaultPosition(6, 42, 236)),
+        "There should only be a single `<uses-sdk>` element in the manifest: merge these together",
+        Severity.WARNING,
+        null,
+      )
     assertThat(found).isTrue()
     baseline.close()
 
@@ -1004,28 +978,24 @@ class LintBaselineTest {
     assertThat(baseline.removeFixed).isTrue()
 
     found =
-        baseline.findAndMark(
-            HardcodedValuesDetector.ISSUE,
-            Location.create(sourceFile, "", 0),
-            "Hardcoded string \"Fooo\", should use `@string` resource",
-            Severity.WARNING,
-            project2,
-        )
+      baseline.findAndMark(
+        HardcodedValuesDetector.ISSUE,
+        Location.create(sourceFile, "", 0),
+        "Hardcoded string \"Fooo\", should use `@string` resource",
+        Severity.WARNING,
+        project2,
+      )
     assertThat(found).isTrue()
 
     // Note that this is a different, unrelated issue
     found =
-        baseline.findAndMark(
-            ManifestDetector.APPLICATION_ICON,
-            Location.create(
-                File("/foo/bar/Foo/AndroidManifest.xml"),
-                DefaultPosition(4, 4, 198),
-                DefaultPosition(4, 42, 236),
-            ),
-            "Should explicitly set `android:icon`, there is no default",
-            Severity.WARNING,
-            null,
-        )
+      baseline.findAndMark(
+        ManifestDetector.APPLICATION_ICON,
+        Location.create(File("/foo/bar/Foo/AndroidManifest.xml"), DefaultPosition(4, 4, 198), DefaultPosition(4, 42, 236)),
+        "Should explicitly set `android:icon`, there is no default",
+        Severity.WARNING,
+        null,
+      )
     assertThat(found).isFalse()
     baseline.close()
 
@@ -1035,21 +1005,21 @@ class LintBaselineTest {
     // NOT see the new issue, and the fixed issue (the uses sdk error reported in the baseline
     // before but not repeated now) should be missing.
     assertThat(actual)
-        .isEqualTo(
-            "" +
-                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
-                "<issues format=\"5\" by=\"lint unittest\">\n" +
-                "\n" +
-                "    <issue\n" +
-                "        id=\"HardcodedText\"\n" +
-                "        message=\"Hardcoded string &quot;Fooo&quot;, should use `@string` resource\">\n" +
-                "        <location\n" +
-                "            file=\"../project1/my/source/file.txt\"\n" +
-                "            line=\"1\"/>\n" +
-                "    </issue>\n" +
-                "\n" +
-                "</issues>\n"
-        )
+      .isEqualTo(
+        "" +
+          "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+          "<issues format=\"5\" by=\"lint unittest\">\n" +
+          "\n" +
+          "    <issue\n" +
+          "        id=\"HardcodedText\"\n" +
+          "        message=\"Hardcoded string &quot;Fooo&quot;, should use `@string` resource\">\n" +
+          "        <location\n" +
+          "            file=\"../project1/my/source/file.txt\"\n" +
+          "            line=\"1\"/>\n" +
+          "    </issue>\n" +
+          "\n" +
+          "</issues>\n"
+      )
   }
 
   @Test
@@ -1060,7 +1030,7 @@ class LintBaselineTest {
 
     @Language("XML")
     val baselineContents =
-        """<?xml version="1.0" encoding="UTF-8"?>
+      """<?xml version="1.0" encoding="UTF-8"?>
 <issues format="5" by="lint unittest">
 
     <issue
@@ -1080,13 +1050,13 @@ class LintBaselineTest {
     val baseline = LintBaseline(ToolsBaseTestLintClient(), baselineFile)
 
     assertTrue(
-        baseline.findAndMark(
-            ManifestDetector.DATA_EXTRACTION_RULES,
-            Location.create(File("src/main/AndroidManifest.xml")),
-            errorMessage,
-            Severity.WARNING,
-            null,
-        )
+      baseline.findAndMark(
+        ManifestDetector.DATA_EXTRACTION_RULES,
+        Location.create(File("src/main/AndroidManifest.xml")),
+        errorMessage,
+        Severity.WARNING,
+        null,
+      )
     )
 
     baseline.close()
@@ -1106,7 +1076,7 @@ class LintBaselineTest {
 
     @Language("XML")
     val baselineContents =
-        """
+      """
       <issues format="6" by="lint 8.10.0-alpha04" type="baseline" client="" dependencies="true" name="" variant="all" version="8.10.0-alpha04">
 
           <!--
@@ -1143,38 +1113,20 @@ class LintBaselineTest {
 
         </issues>
         """
-            .trimIndent()
+        .trimIndent()
     baselineFile.writeText(baselineContents)
     val baseline = LintBaseline(ToolsBaseTestLintClient(), baselineFile)
 
     assertTrue(
-        baseline.findAndMark(
-            ApiDetector.UNSUPPORTED,
-            Location.create(File("File1.java")),
-            originalMessage.lintTrim(),
-            Severity.WARNING,
-            null,
-        )
+      baseline.findAndMark(ApiDetector.UNSUPPORTED, Location.create(File("File1.java")), originalMessage.lintTrim(), Severity.WARNING, null)
     )
 
     assertTrue(
-        baseline.findAndMark(
-            ApiDetector.UNSUPPORTED,
-            Location.create(File("File2.java")),
-            originalMessage.lintTrim(),
-            Severity.WARNING,
-            null,
-        )
+      baseline.findAndMark(ApiDetector.UNSUPPORTED, Location.create(File("File2.java")), originalMessage.lintTrim(), Severity.WARNING, null)
     )
 
     assertFalse(
-        baseline.findAndMark(
-            ApiDetector.UNSUPPORTED,
-            Location.create(File("File1.java")),
-            originalMessage.lintTrim(),
-            Severity.WARNING,
-            null,
-        )
+      baseline.findAndMark(ApiDetector.UNSUPPORTED, Location.create(File("File1.java")), originalMessage.lintTrim(), Severity.WARNING, null)
     )
 
     baseline.close()
@@ -1185,94 +1137,94 @@ class LintBaselineTest {
     val root = temporaryFolder.newFolder().canonicalFile.absoluteFile
 
     val testFile =
-        kotlin(
-                """
+      kotlin(
+          """
             package test.pkg
             import android.location.LocationManager
             fun test() {
                 val mode = LocationManager.MODE_CHANGED_ACTION
             }
             """
-            )
-            .indented()
+        )
+        .indented()
 
     val baselineFolder = File(root, "baselines")
     baselineFolder.mkdirs()
     val existingBaseline = File(baselineFolder, "baseline.xml")
     val outputBaseline = File(baselineFolder, "baseline-out.xml")
     existingBaseline.writeText(
-        // language=XML
-        """
-        <issues format="5" by="lint unittest">
-            <issue
-                id="HardcodedText"
-                message="Hardcoded string &quot;Fooo&quot;, should use `@string` resource">
-                <location
-                    file="../project1/my/source/file.txt"
-                    line="1"/>
-            </issue>
+      // language=XML
+      """
+      <issues format="5" by="lint unittest">
+          <issue
+              id="HardcodedText"
+              message="Hardcoded string &quot;Fooo&quot;, should use `@string` resource">
+              <location
+                  file="../project1/my/source/file.txt"
+                  line="1"/>
+          </issue>
 
-        </issues>
-        """
-            .trimIndent()
+      </issues>
+      """
+        .trimIndent()
     )
 
     val project = lint().files(testFile).createProjects(root).single()
 
     MainTest.checkDriver(
-        // Expected output
-        "src/test/pkg/test.kt:4: Error: Field requires API level 19 (current min is 1): android.location.LocationManager#MODE_CHANGED_ACTION [InlinedApi]\n" +
-            "    val mode = LocationManager.MODE_CHANGED_ACTION\n" +
-            "               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
-            "1 error",
-        // Expected error
-        "",
-        // Expected exit code
-        ERRNO_ERRORS,
-        arrayOf(
-            "--exit-code",
-            "--check",
-            "InlinedApi",
-            "--error",
-            "InlinedApi",
-            "--ignore",
-            "LintBaseline",
-            "--ignore",
-            "LintBaselineFixed",
-            "--baseline",
-            existingBaseline.path,
-            "--write-reference-baseline",
-            outputBaseline.path,
-            "--disable",
-            "LintError",
-            "--sdk-home",
-            TestUtils.getSdk().toFile().path,
-            project.path,
-        ),
-        { it.replace(root.path, "ROOT") },
-        null,
+      // Expected output
+      "src/test/pkg/test.kt:4: Error: Field requires API level 19 (current min is 1): android.location.LocationManager#MODE_CHANGED_ACTION [InlinedApi]\n" +
+        "    val mode = LocationManager.MODE_CHANGED_ACTION\n" +
+        "               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
+        "1 error",
+      // Expected error
+      "",
+      // Expected exit code
+      ERRNO_ERRORS,
+      arrayOf(
+        "--exit-code",
+        "--check",
+        "InlinedApi",
+        "--error",
+        "InlinedApi",
+        "--ignore",
+        "LintBaseline",
+        "--ignore",
+        "LintBaselineFixed",
+        "--baseline",
+        existingBaseline.path,
+        "--write-reference-baseline",
+        outputBaseline.path,
+        "--disable",
+        "LintError",
+        "--sdk-home",
+        TestUtils.getSdk().toFile().path,
+        project.path,
+      ),
+      { it.replace(root.path, "ROOT") },
+      null,
     )
 
     @Language("XML")
     val expected =
-        """
-        <?xml version="1.0" encoding="UTF-8"?>
-        <issues>
+      """
+      <?xml version="1.0" encoding="UTF-8"?>
+      <issues>
 
-            <issue
-                id="InlinedApi"
-                message="Field requires API level 19 (current min is 1): `android.location.LocationManager#MODE_CHANGED_ACTION`"
-                errorLine1="    val mode = LocationManager.MODE_CHANGED_ACTION"
-                errorLine2="               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-                <location
-                    file="src/test/pkg/test.kt"
-                    line="4"
-                    column="16"/>
-            </issue>
+          <issue
+              id="InlinedApi"
+              message="Field requires API level 19 (current min is 1): `android.location.LocationManager#MODE_CHANGED_ACTION`"
+              errorLine1="    val mode = LocationManager.MODE_CHANGED_ACTION"
+              errorLine2="               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+              <location
+                  file="src/test/pkg/test.kt"
+                  line="4"
+                  column="16"/>
+          </issue>
 
-        </issues>
-        """
-            .trimIndent()
+      </issues>
+      """
+        .trimIndent()
     assertEquals(expected, readBaseline(outputBaseline).dos2unix()) // b/209433064
   }
 
@@ -1283,56 +1235,56 @@ class LintBaselineTest {
     val root = temporaryFolder.newFolder().canonicalFile.absoluteFile
 
     val testFile =
-        kotlin(
-                """
+      kotlin(
+          """
             package test.pkg
             val path = "/sdcard/path"
             """
-            )
-            .indented()
+        )
+        .indented()
 
     val outputBaseline = File(root, "baseline-out.xml")
     val project = lint().files(testFile).createProjects(root).single()
     MainTest.checkDriver(
-        // Expected output
-        "src/test/pkg/test.kt:2: Warning: Do not hardcode \"/sdcard/\"; use Environment.getExternalStorageDirectory().getPath() instead [SdCardPath]\n" +
-            "0 errors, 1 warning",
-        // Expected error
-        "",
-        // Expected exit code
-        ERRNO_SUCCESS,
-        arrayOf(
-            "--check",
-            "SdCardPath",
-            "--nolines",
-            "--write-reference-baseline",
-            outputBaseline.path,
-            "--disable",
-            "LintError",
-            project.path,
-        ),
-        { it.replace(root.path, "ROOT") },
-        null,
+      // Expected output
+      "src/test/pkg/test.kt:2: Warning: Do not hardcode \"/sdcard/\"; use Environment.getExternalStorageDirectory().getPath() instead [SdCardPath]\n" +
+        "0 errors, 1 warning",
+      // Expected error
+      "",
+      // Expected exit code
+      ERRNO_SUCCESS,
+      arrayOf(
+        "--check",
+        "SdCardPath",
+        "--nolines",
+        "--write-reference-baseline",
+        outputBaseline.path,
+        "--disable",
+        "LintError",
+        project.path,
+      ),
+      { it.replace(root.path, "ROOT") },
+      null,
     )
 
     @Language("XML")
     val expected =
-        """
-        <?xml version="1.0" encoding="UTF-8"?>
-        <issues>
+      """
+      <?xml version="1.0" encoding="UTF-8"?>
+      <issues>
 
-            <issue
-                id="SdCardPath"
-                message="Do not hardcode &quot;/sdcard/&quot;; use `Environment.getExternalStorageDirectory().getPath()` instead">
-                <location
-                    file="src/test/pkg/test.kt"
-                    line="2"
-                    column="13"/>
-            </issue>
+          <issue
+              id="SdCardPath"
+              message="Do not hardcode &quot;/sdcard/&quot;; use `Environment.getExternalStorageDirectory().getPath()` instead">
+              <location
+                  file="src/test/pkg/test.kt"
+                  line="2"
+                  column="13"/>
+          </issue>
 
-        </issues>
-        """
-            .trimIndent()
+      </issues>
+      """
+        .trimIndent()
     assertEquals(expected, readBaseline(outputBaseline))
   }
 
@@ -1343,69 +1295,69 @@ class LintBaselineTest {
     val root = temporaryFolder.newFolder().canonicalFile.absoluteFile
 
     val testFile =
-        kotlin(
-                """
+      kotlin(
+          """
             package test.pkg
             val path = "/sdcard/path"
             """
-            )
-            .indented()
+        )
+        .indented()
 
     val outputBaseline = File(root, "baseline-out.xml")
     val project = lint().files(testFile).createProjects(root).single()
     MainTest.checkDriver(
-        // Expected output
-        "src/test/pkg/test.kt:2: Warning: Do not hardcode \"/sdcard/\"; use Environment.getExternalStorageDirectory().getPath() instead [SdCardPath]\n" +
-            "0 errors, 1 warning",
-        // Expected error
-        "",
-        // Expected exit code
-        ERRNO_SUCCESS,
-        arrayOf(
-            "--check",
-            "SdCardPath",
-            "--nolines",
-            "--write-reference-baseline",
-            outputBaseline.path,
-            "--baseline-omit-line-numbers",
-            "--disable",
-            "LintError",
-            project.path,
-        ),
-        { it.replace(root.path, "ROOT") },
-        // Make sure we don't hold on to any instance state in the baseline
-        { driver, type, _, _ ->
-          if (type == LintListener.EventType.COMPLETED) {
-            val clientField = driver.javaClass.getDeclaredField("realClient")
-            clientField.isAccessible = true
-            val client = clientField.get(driver) as LintCliClient
-            val incidents = client.getBaselineIncidents()
-            for (incident in incidents) {
-              assertNull(incident.scope)
-              assertNull(incident.clientProperties)
-              assertNull(incident.location.originalSource)
-              assertNull(incident.fix?.range?.originalSource)
-            }
+      // Expected output
+      "src/test/pkg/test.kt:2: Warning: Do not hardcode \"/sdcard/\"; use Environment.getExternalStorageDirectory().getPath() instead [SdCardPath]\n" +
+        "0 errors, 1 warning",
+      // Expected error
+      "",
+      // Expected exit code
+      ERRNO_SUCCESS,
+      arrayOf(
+        "--check",
+        "SdCardPath",
+        "--nolines",
+        "--write-reference-baseline",
+        outputBaseline.path,
+        "--baseline-omit-line-numbers",
+        "--disable",
+        "LintError",
+        project.path,
+      ),
+      { it.replace(root.path, "ROOT") },
+      // Make sure we don't hold on to any instance state in the baseline
+      { driver, type, _, _ ->
+        if (type == LintListener.EventType.COMPLETED) {
+          val clientField = driver.javaClass.getDeclaredField("realClient")
+          clientField.isAccessible = true
+          val client = clientField.get(driver) as LintCliClient
+          val incidents = client.getBaselineIncidents()
+          for (incident in incidents) {
+            assertNull(incident.scope)
+            assertNull(incident.clientProperties)
+            assertNull(incident.location.originalSource)
+            assertNull(incident.fix?.range?.originalSource)
           }
-        },
+        }
+      },
     )
 
     @Language("XML")
     val expected =
-        """
-        <?xml version="1.0" encoding="UTF-8"?>
-        <issues>
+      """
+      <?xml version="1.0" encoding="UTF-8"?>
+      <issues>
 
-            <issue
-                id="SdCardPath"
-                message="Do not hardcode &quot;/sdcard/&quot;; use `Environment.getExternalStorageDirectory().getPath()` instead">
-                <location
-                    file="src/test/pkg/test.kt"/>
-            </issue>
+          <issue
+              id="SdCardPath"
+              message="Do not hardcode &quot;/sdcard/&quot;; use `Environment.getExternalStorageDirectory().getPath()` instead">
+              <location
+                  file="src/test/pkg/test.kt"/>
+          </issue>
 
-        </issues>
-        """
-            .trimIndent()
+      </issues>
+      """
+        .trimIndent()
     assertEquals(expected, readBaseline(outputBaseline))
   }
 
@@ -1416,78 +1368,78 @@ class LintBaselineTest {
     val root = temporaryFolder.newFolder().canonicalFile.absoluteFile
 
     val testFile =
-        kotlin(
-                """
+      kotlin(
+          """
             package test.pkg
             val path = "/sdcard/path"
             """
-            )
-            .indented()
+        )
+        .indented()
 
     val existingBaseline = File(root, "baseline.xml")
     existingBaseline.writeText(
-        // language=XML
-        """
-        <?xml version="1.0" encoding="UTF-8"?>
-        <issues>
+      // language=XML
+      """
+      <?xml version="1.0" encoding="UTF-8"?>
+      <issues>
 
-            <issue
-                id="SdCardPath"
-                message="Do not hardcode &quot;/sdcard/&quot;; use `Environment.getExternalStorageDirectory().getPath()` instead">
-                <location
-                    file="src/test/pkg/test.kt"
-                    line="2"
-                    column="13"/>
-            </issue>
+          <issue
+              id="SdCardPath"
+              message="Do not hardcode &quot;/sdcard/&quot;; use `Environment.getExternalStorageDirectory().getPath()` instead">
+              <location
+                  file="src/test/pkg/test.kt"
+                  line="2"
+                  column="13"/>
+          </issue>
 
-        </issues>
-        """
-            .trimIndent()
+      </issues>
+      """
+        .trimIndent()
     )
     val project = lint().files(testFile).createProjects(root).single()
     MainTest.checkDriver(
-        // Expected output
-        """
-        ../baseline.xml: Hint: 1 warning was filtered out because it is listed in the baseline file, ../baseline.xml [LintBaseline]
-        No errors or warnings (and 1 warning filtered by baseline baseline.xml)
-        """
-            .trimIndent(),
-        // Expected error
-        "",
-        // Expected exit code
-        ERRNO_CREATED_BASELINE,
-        arrayOf(
-            "--check",
-            "SdCardPath",
-            "--nolines",
-            "--baseline",
-            existingBaseline.path,
-            "--update-baseline",
-            "--baseline-omit-line-numbers",
-            "--disable",
-            "LintError",
-            project.path,
-        ),
-        { it.replace(root.path, "ROOT") },
-        null,
+      // Expected output
+      """
+      ../baseline.xml: Hint: 1 warning was filtered out because it is listed in the baseline file, ../baseline.xml [LintBaseline]
+      No errors or warnings (and 1 warning filtered by baseline baseline.xml)
+      """
+        .trimIndent(),
+      // Expected error
+      "",
+      // Expected exit code
+      ERRNO_CREATED_BASELINE,
+      arrayOf(
+        "--check",
+        "SdCardPath",
+        "--nolines",
+        "--baseline",
+        existingBaseline.path,
+        "--update-baseline",
+        "--baseline-omit-line-numbers",
+        "--disable",
+        "LintError",
+        project.path,
+      ),
+      { it.replace(root.path, "ROOT") },
+      null,
     )
 
     @Language("XML")
     val expected =
-        """
-        <?xml version="1.0" encoding="UTF-8"?>
-        <issues>
+      """
+      <?xml version="1.0" encoding="UTF-8"?>
+      <issues>
 
-            <issue
-                id="SdCardPath"
-                message="Do not hardcode &quot;/sdcard/&quot;; use `Environment.getExternalStorageDirectory().getPath()` instead">
-                <location
-                    file="src/test/pkg/test.kt"/>
-            </issue>
+          <issue
+              id="SdCardPath"
+              message="Do not hardcode &quot;/sdcard/&quot;; use `Environment.getExternalStorageDirectory().getPath()` instead">
+              <location
+                  file="src/test/pkg/test.kt"/>
+          </issue>
 
-        </issues>
-        """
-            .trimIndent()
+      </issues>
+      """
+        .trimIndent()
     assertEquals(expected, readBaseline(existingBaseline))
   }
 
@@ -1499,71 +1451,71 @@ class LintBaselineTest {
     val root = temporaryFolder.newFolder().canonicalFile.absoluteFile
 
     val testFile =
-        kotlin(
-                """
+      kotlin(
+          """
             package test.pkg
             val path = "/sdcard/path"
             """
-            )
-            .indented()
+        )
+        .indented()
 
     val existingBaseline = File(root, "baseline.xml")
     existingBaseline.writeText(
-        // language=XML
-        """
-        <?xml version="1.0" encoding="UTF-8"?>
-        <issues>
+      // language=XML
+      """
+      <?xml version="1.0" encoding="UTF-8"?>
+      <issues>
 
-            <issue
-                id="SdCardPath"
-                message="Do not hardcode &quot;/sdcard/&quot;; use `Environment.getExternalStorageDirectory().getPath()` instead">
-                <location
-                    file="src/test/pkg/test.kt"
-                    line="2"
-                    column="13"/>
-            </issue>
+          <issue
+              id="SdCardPath"
+              message="Do not hardcode &quot;/sdcard/&quot;; use `Environment.getExternalStorageDirectory().getPath()` instead">
+              <location
+                  file="src/test/pkg/test.kt"
+                  line="2"
+                  column="13"/>
+          </issue>
 
-        </issues>
-        """
-            .trimIndent()
+      </issues>
+      """
+        .trimIndent()
     )
     val project = lint().files(testFile).createProjects(root).single()
     val textReport = File(root, "text-report.txt")
     MainTest.checkDriver(
-        // Expected output
-        """
-        Wrote text report to ROOT/text-report.txt
-        Lint found no new issues (and 1 warning filtered by baseline baseline.xml)
-        """
-            .trimIndent(),
-        // Expected error
-        "",
-        // Expected exit code
-        ERRNO_SUCCESS,
-        arrayOf(
-            "--check",
-            "SdCardPath",
-            "--nolines",
-            "--baseline",
-            existingBaseline.path,
-            "--text",
-            textReport.path,
-            "--disable",
-            "LintError",
-            project.path,
-        ),
-        { it.replace(root.path, "ROOT") },
-        null,
+      // Expected output
+      """
+      Wrote text report to ROOT/text-report.txt
+      Lint found no new issues (and 1 warning filtered by baseline baseline.xml)
+      """
+        .trimIndent(),
+      // Expected error
+      "",
+      // Expected exit code
+      ERRNO_SUCCESS,
+      arrayOf(
+        "--check",
+        "SdCardPath",
+        "--nolines",
+        "--baseline",
+        existingBaseline.path,
+        "--text",
+        textReport.path,
+        "--disable",
+        "LintError",
+        project.path,
+      ),
+      { it.replace(root.path, "ROOT") },
+      null,
     )
 
     assertEquals(
-        """
-        ../baseline.xml: Hint: 1 warning was filtered out because it is listed in the baseline file, ../baseline.xml [LintBaseline]
-        No errors or warnings (and 1 warning filtered by baseline baseline.xml)
-        """
-            .trimIndent()
-            .trim(),
-        textReport.readText().trim().dos2unix(),
+      """
+      ../baseline.xml: Hint: 1 warning was filtered out because it is listed in the baseline file, ../baseline.xml [LintBaseline]
+      No errors or warnings (and 1 warning filtered by baseline baseline.xml)
+      """
+        .trimIndent()
+        .trim(),
+      textReport.readText().trim().dos2unix(),
     )
   }
 
@@ -1576,60 +1528,60 @@ class LintBaselineTest {
     val root = temporaryFolder.newFolder().canonicalFile.absoluteFile
 
     val testFile =
-        kotlin(
-                """
+      kotlin(
+          """
           package test.pkg
           fun test(manager: android.app.GameManager) {
               val x = manager.getGameMode()
           }
           """
-            )
-            .indented()
+        )
+        .indented()
 
     val existingBaseline = File(root, "baseline.xml")
     existingBaseline.writeText(
-        // language=XML
-        """
-        <?xml version="1.0" encoding="UTF-8"?>
-        <issues>
+      // language=XML
+      """
+      <?xml version="1.0" encoding="UTF-8"?>
+      <issues>
 
-            <issue
-                id="NewApi"
-                message="Call requires API level 31 (current min is 1): `android.app.GameManager#getGameMode`">
-                <location
-                    file="src/test/pkg/test.kt"/>
-            </issue>
+          <issue
+              id="NewApi"
+              message="Call requires API level 31 (current min is 1): `android.app.GameManager#getGameMode`">
+              <location
+                  file="src/test/pkg/test.kt"/>
+          </issue>
 
-        </issues>
-        """
-            .trimIndent()
+      </issues>
+      """
+        .trimIndent()
     )
     val project = lint().files(testFile, manifest().minSdk(31)).createProjects(root).single()
     MainTest.checkDriver(
-        // Expected output
-        """
-        ../baseline.xml: Hint: 1 errors/warnings were listed in the baseline file (../baseline.xml) but not found in the project; perhaps they have been fixed? Unmatched issue types: NewApi [LintBaselineFixed]
-        No errors or warnings
-        """
-            .trimIndent(),
-        // Expected error
-        "",
-        // Expected exit code
-        ERRNO_SUCCESS,
-        arrayOf(
-            "--check",
-            "NewApi",
-            "--nolines",
-            "--baseline",
-            existingBaseline.path,
-            "--disable",
-            "LintError",
-            "--sdk-home",
-            TestUtils.getSdk().toFile().path,
-            project.path,
-        ),
-        { it.replace(root.path, "ROOT") },
-        null,
+      // Expected output
+      """
+      ../baseline.xml: Hint: 1 errors/warnings were listed in the baseline file (../baseline.xml) but not found in the project; perhaps they have been fixed? Unmatched issue types: NewApi [LintBaselineFixed]
+      No errors or warnings
+      """
+        .trimIndent(),
+      // Expected error
+      "",
+      // Expected exit code
+      ERRNO_SUCCESS,
+      arrayOf(
+        "--check",
+        "NewApi",
+        "--nolines",
+        "--baseline",
+        existingBaseline.path,
+        "--disable",
+        "LintError",
+        "--sdk-home",
+        TestUtils.getSdk().toFile().path,
+        project.path,
+      ),
+      { it.replace(root.path, "ROOT") },
+      null,
     )
   }
 
@@ -1641,7 +1593,7 @@ class LintBaselineTest {
 
     @Language("XML")
     val baselineContents =
-        """
+      """
             <issues format="5" by="lint 4.1.0" client="cli" variant="all" version="4.1.0">
 
                 <issue id="NewApi" message="Class requires API level 31 (current min is 30): `android.net.ipsec.ike.exceptions.IkeProtocolException`">
@@ -1698,141 +1650,135 @@ class LintBaselineTest {
                 <issue id="NewApi" message="Call requires API level 31 (current min is 30): `new android.net.ipsec.ike.exceptions.InvalidSyntaxException`"><location file="$path" /></issue>
             </issues>
             """
-            .trimIndent()
+        .trimIndent()
     baselineFile.writeText(baselineContents)
     assertNotNull(XmlUtils.parseDocumentSilently(baselineContents, false))
     val baseline = LintBaseline(ToolsBaseTestLintClient(), baselineFile)
 
     fun mark(message: String, path: String): Boolean {
       val location = Location.create(File(path))
-      return baseline.findAndMark(
-          ApiDetector.UNSUPPORTED,
-          location,
-          message,
-          Severity.WARNING,
-          null,
-      )
+      return baseline.findAndMark(ApiDetector.UNSUPPORTED, location, message, Severity.WARNING, null)
     }
 
     assertTrue(
-        mark(
-            "Class requires API level S (current min is 30): `android.net.ipsec.ike.exceptions.IkeException`",
-            "/packages/modules/IPsec/src/java/com/android/internal/net/ipsec/ike/ChildSessionStateMachine.java",
-        )
+      mark(
+        "Class requires API level S (current min is 30): `android.net.ipsec.ike.exceptions.IkeException`",
+        "/packages/modules/IPsec/src/java/com/android/internal/net/ipsec/ike/ChildSessionStateMachine.java",
+      )
     )
     assertTrue(
-        mark(
-            "Class requires API level S (current min is 30): `android.net.ipsec.ike.exceptions.IkeException`",
-            "/packages/modules/IPsec/src/java/com/android/internal/net/ipsec/ike/ChildSessionStateMachine.java",
-        )
+      mark(
+        "Class requires API level S (current min is 30): `android.net.ipsec.ike.exceptions.IkeException`",
+        "/packages/modules/IPsec/src/java/com/android/internal/net/ipsec/ike/ChildSessionStateMachine.java",
+      )
     )
     assertTrue(
-        mark(
-            "Cast from `IkeException` to `Throwable` requires API level 31 (current min is 30)",
-            "/packages/modules/IPsec/src/java/com/android/internal/net/ipsec/ike/ChildSessionStateMachine.java",
-        )
+      mark(
+        "Cast from `IkeException` to `Throwable` requires API level 31 (current min is 30)",
+        "/packages/modules/IPsec/src/java/com/android/internal/net/ipsec/ike/ChildSessionStateMachine.java",
+      )
     )
     assertTrue(
-        mark(
-            "Cast from `IkeInternalException` to `IkeException` requires API level 31 (current min is 30)",
-            "/packages/modules/IPsec/src/java/com/android/internal/net/ipsec/ike/ChildSessionStateMachine.java",
-        )
+      mark(
+        "Cast from `IkeInternalException` to `IkeException` requires API level 31 (current min is 30)",
+        "/packages/modules/IPsec/src/java/com/android/internal/net/ipsec/ike/ChildSessionStateMachine.java",
+      )
     )
     assertTrue(
-        mark(
-            "Cast from `IkeException` to `Exception` requires API level 31 (current min is 30)",
-            "/packages/modules/IPsec/src/java/com/android/internal/net/ipsec/ike/ChildSessionStateMachine.java",
-        )
+      mark(
+        "Cast from `IkeException` to `Exception` requires API level 31 (current min is 30)",
+        "/packages/modules/IPsec/src/java/com/android/internal/net/ipsec/ike/ChildSessionStateMachine.java",
+      )
     )
     assertTrue(
-        mark(
-            "Exception requires API level S (current min is 30): `android.net.ipsec.ike.exceptions.IkeProtocolException`",
-            "/packages/modules/IPsec/src/java/com/android/internal/net/ipsec/ike/ChildSessionStateMachine.java",
-        )
+      mark(
+        "Exception requires API level S (current min is 30): `android.net.ipsec.ike.exceptions.IkeProtocolException`",
+        "/packages/modules/IPsec/src/java/com/android/internal/net/ipsec/ike/ChildSessionStateMachine.java",
+      )
     )
     assertTrue(
-        mark(
-            "Cast from `IkeProtocolException` to `Exception` requires API level 31 (current min is 30)",
-            "/packages/modules/IPsec/src/java/com/android/internal/net/ipsec/ike/ChildSessionStateMachine.java",
-        )
+      mark(
+        "Cast from `IkeProtocolException` to `Exception` requires API level 31 (current min is 30)",
+        "/packages/modules/IPsec/src/java/com/android/internal/net/ipsec/ike/ChildSessionStateMachine.java",
+      )
     )
     assertTrue(
-        mark(
-            "Cast from `IkeException` to `Exception` requires API level 31 (current min is 30)",
-            "/packages/modules/IPsec/src/java/com/android/internal/net/ipsec/ike/ChildSessionStateMachine.java",
-        )
+      mark(
+        "Cast from `IkeException` to `Exception` requires API level 31 (current min is 30)",
+        "/packages/modules/IPsec/src/java/com/android/internal/net/ipsec/ike/ChildSessionStateMachine.java",
+      )
     )
     assertTrue(
-        mark(
-            "Cast from `ChildSaProposal` to `SaProposal` requires API level 31 (current min is 30)",
-            "/packages/modules/IPsec/src/java/com/android/internal/net/ipsec/ike/ChildSessionStateMachine.java",
-        )
+      mark(
+        "Cast from `ChildSaProposal` to `SaProposal` requires API level 31 (current min is 30)",
+        "/packages/modules/IPsec/src/java/com/android/internal/net/ipsec/ike/ChildSessionStateMachine.java",
+      )
     )
     assertTrue(
-        mark(
-            "Class requires API level S (current min is 30): `android.net.ipsec.ike.exceptions.IkeProtocolException`",
-            "/packages/modules/IPsec/src/java/com/android/internal/net/ipsec/ike/ChildSessionStateMachine.java",
-        )
+      mark(
+        "Class requires API level S (current min is 30): `android.net.ipsec.ike.exceptions.IkeProtocolException`",
+        "/packages/modules/IPsec/src/java/com/android/internal/net/ipsec/ike/ChildSessionStateMachine.java",
+      )
     )
     assertTrue(
-        mark(
-            "Class requires API level S (current min is 30): `android.net.ipsec.ike.exceptions.IkeProtocolException`",
-            "/packages/modules/IPsec/src/java/com/android/internal/net/ipsec/ike/ChildSessionStateMachine.java",
-        )
+      mark(
+        "Class requires API level S (current min is 30): `android.net.ipsec.ike.exceptions.IkeProtocolException`",
+        "/packages/modules/IPsec/src/java/com/android/internal/net/ipsec/ike/ChildSessionStateMachine.java",
+      )
     )
     assertTrue(
-        mark(
-            "Cast from `IkeException` to `Throwable` requires API level 31 (current min is 30)",
-            "/packages/modules/IPsec/src/java/com/android/internal/net/ipsec/ike/ChildSessionStateMachine.java",
-        )
+      mark(
+        "Cast from `IkeException` to `Throwable` requires API level 31 (current min is 30)",
+        "/packages/modules/IPsec/src/java/com/android/internal/net/ipsec/ike/ChildSessionStateMachine.java",
+      )
     )
     assertTrue(
-        mark(
-            "Cast from `IkeProtocolException` to `Throwable` requires API level 31 (current min is 30)",
-            "/packages/modules/IPsec/src/java/com/android/internal/net/ipsec/ike/ChildSessionStateMachine.java",
-        )
+      mark(
+        "Cast from `IkeProtocolException` to `Throwable` requires API level 31 (current min is 30)",
+        "/packages/modules/IPsec/src/java/com/android/internal/net/ipsec/ike/ChildSessionStateMachine.java",
+      )
     )
     assertTrue(
-        mark(
-            "Exception requires API level S (current min is 30): `android.net.ipsec.ike.exceptions.IkeProtocolException`",
-            "/packages/modules/IPsec/src/java/com/android/internal/net/ipsec/ike/ChildSessionStateMachine.java",
-        )
+      mark(
+        "Exception requires API level S (current min is 30): `android.net.ipsec.ike.exceptions.IkeProtocolException`",
+        "/packages/modules/IPsec/src/java/com/android/internal/net/ipsec/ike/ChildSessionStateMachine.java",
+      )
     )
     assertTrue(
-        mark(
-            "Cast from `IkeProtocolException` to `Throwable` requires API level 31 (current min is 30)",
-            "/packages/modules/IPsec/src/java/com/android/internal/net/ipsec/ike/ChildSessionStateMachine.java",
-        )
+      mark(
+        "Cast from `IkeProtocolException` to `Throwable` requires API level 31 (current min is 30)",
+        "/packages/modules/IPsec/src/java/com/android/internal/net/ipsec/ike/ChildSessionStateMachine.java",
+      )
     )
     assertTrue(
-        mark(
-            "Class requires API level S (current min is 30): `android.net.ipsec.ike.TunnelModeChildSessionParams`",
-            "/packages/modules/IPsec/src/java/com/android/internal/net/ipsec/ike/ChildSessionStateMachine.java",
-        )
+      mark(
+        "Class requires API level S (current min is 30): `android.net.ipsec.ike.TunnelModeChildSessionParams`",
+        "/packages/modules/IPsec/src/java/com/android/internal/net/ipsec/ike/ChildSessionStateMachine.java",
+      )
     )
     assertTrue(
-        mark(
-            "Cast from `IkeProtocolException` to `IkeException` requires API level 31 (current min is 30)",
-            "/packages/modules/IPsec/src/java/com/android/internal/net/ipsec/ike/ChildSessionStateMachine.java",
-        )
+      mark(
+        "Cast from `IkeProtocolException` to `IkeException` requires API level 31 (current min is 30)",
+        "/packages/modules/IPsec/src/java/com/android/internal/net/ipsec/ike/ChildSessionStateMachine.java",
+      )
     )
     assertTrue(
-        mark(
-            "Exception requires API level S (current min is 30): `android.net.ipsec.ike.exceptions.IkeProtocolException`",
-            "/packages/modules/IPsec/src/java/com/android/internal/net/ipsec/ike/ChildSessionStateMachine.java",
-        )
+      mark(
+        "Exception requires API level S (current min is 30): `android.net.ipsec.ike.exceptions.IkeProtocolException`",
+        "/packages/modules/IPsec/src/java/com/android/internal/net/ipsec/ike/ChildSessionStateMachine.java",
+      )
     )
     assertTrue(
-        mark(
-            "Class requires API level S (current min is 30): `android.net.ipsec.ike.exceptions.IkeProtocolException`",
-            "/packages/modules/IPsec/src/java/com/android/internal/net/ipsec/ike/ChildSessionStateMachine.java",
-        )
+      mark(
+        "Class requires API level S (current min is 30): `android.net.ipsec.ike.exceptions.IkeProtocolException`",
+        "/packages/modules/IPsec/src/java/com/android/internal/net/ipsec/ike/ChildSessionStateMachine.java",
+      )
     )
     assertTrue(
-        mark(
-            "Cast from `IkeInternalException` to `IkeException` requires API level 31 (current min is 30)",
-            "/packages/modules/IPsec/src/java/com/android/internal/net/ipsec/ike/ChildSessionStateMachine.java",
-        )
+      mark(
+        "Cast from `IkeInternalException` to `IkeException` requires API level 31 (current min is 30)",
+        "/packages/modules/IPsec/src/java/com/android/internal/net/ipsec/ike/ChildSessionStateMachine.java",
+      )
     )
     baseline.close()
   }
@@ -1845,25 +1791,25 @@ class LintBaselineTest {
 
     @Language("XML")
     val baselineContents =
-        """
-        <issues format="5" by="lint 4.1.0" client="cli" variant="all" version="4.1.0">
+      """
+      <issues format="5" by="lint 4.1.0" client="cli" variant="all" version="4.1.0">
 
-            <issue id="NewApi" message="Call requires API level 29: `Something`"><location file="OtherFile.java"/></issue>
-            <issue id="NewApi" message="Call requires API level 30: `Something`"><location file="MyFile.java"/></issue>
-        </issues>
-        """
-            .trimIndent()
+          <issue id="NewApi" message="Call requires API level 29: `Something`"><location file="OtherFile.java"/></issue>
+          <issue id="NewApi" message="Call requires API level 30: `Something`"><location file="MyFile.java"/></issue>
+      </issues>
+      """
+        .trimIndent()
     baselineFile.writeText(baselineContents)
     assertNotNull(XmlUtils.parseDocumentSilently(baselineContents, false))
     val baseline = LintBaseline(ToolsBaseTestLintClient(), baselineFile)
     assertTrue(
-        baseline.findAndMark(
-            ApiDetector.UNSUPPORTED,
-            Location.create(File("MyFile.java")),
-            "Call requires API level S: `Something`",
-            Severity.WARNING,
-            null,
-        )
+      baseline.findAndMark(
+        ApiDetector.UNSUPPORTED,
+        Location.create(File("MyFile.java")),
+        "Call requires API level S: `Something`",
+        Severity.WARNING,
+        null,
+      )
     )
     baseline.close()
   }
@@ -1874,14 +1820,14 @@ class LintBaselineTest {
 
     @Language("XML")
     val baselineContents =
-        """
-        <issues format="5" by="lint 4.1.0" client="cli" variant="all" version="4.1.0">
+      """
+      <issues format="5" by="lint 4.1.0" client="cli" variant="all" version="4.1.0">
 
-            <issue id="NewApi" message="Call requires API level 30: `Something`"><location file="MyFile.java"/></issue>
-            <issue id="NewApi" message="Call requires API level 30: `Something`"><location file="OtherFile.java"/></issue>
-        </issues>
-        """
-            .trimIndent()
+          <issue id="NewApi" message="Call requires API level 30: `Something`"><location file="MyFile.java"/></issue>
+          <issue id="NewApi" message="Call requires API level 30: `Something`"><location file="OtherFile.java"/></issue>
+      </issues>
+      """
+        .trimIndent()
 
     baselineFile.writeText(baselineContents)
     assertNotNull(XmlUtils.parseDocumentSilently(baselineContents, false))
@@ -1889,13 +1835,7 @@ class LintBaselineTest {
 
     fun mark(message: String, path: String): Boolean {
       val location = Location.create(File(path))
-      return baseline.findAndMark(
-          ApiDetector.UNSUPPORTED,
-          location,
-          message,
-          Severity.WARNING,
-          null,
-      )
+      return baseline.findAndMark(ApiDetector.UNSUPPORTED, location, message, Severity.WARNING, null)
     }
 
     assertTrue(mark("Call requires API level 30: `Something`", "MyFile.java"))
@@ -1915,16 +1855,16 @@ class LintBaselineTest {
     val root = temporaryFolder.newFolder().canonicalFile.absoluteFile
 
     val testFile =
-        xml(
-                "res/layout/accessibility.xml",
-                """
+      xml(
+          "res/layout/accessibility.xml",
+          """
                 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:id="@+id/newlinear" android:orientation="vertical" android:layout_width="match_parent" android:layout_height="match_parent">
                     <ImageView android:id="@+id/android_logo" android:layout_width="wrap_content" android:layout_height="wrap_content" android:src="@drawable/android_button" android:focusable="false" android:clickable="false" android:layout_weight="1.0" />
                     <ImageButton android:importantForAccessibility="yes" android:id="@+id/android_logo2" android:layout_width="wrap_content" android:layout_height="wrap_content" android:src="@drawable/android_button" android:focusable="false" android:clickable="false" android:layout_weight="1.0" />
                 </LinearLayout>
                 """,
-            )
-            .indented()
+        )
+        .indented()
 
     val baselineFolder = File(root, "baselines")
     baselineFolder.mkdirs()
@@ -1932,32 +1872,32 @@ class LintBaselineTest {
     val existingBaseline = File(baselineFolder, "baseline.xml")
     val outputBaseline = File(baselineFolder, "baseline-out.xml")
     existingBaseline.writeText(
-        // language=XML
-        """
-        <issues format="5" by="lint unittest">
-            <issue
-                id="HardcodedText"
-                message="Hardcoded string &quot;Fooo&quot;, should use `@string` resource">
-                <location
-                    file="../project1/my/source/file.txt"
-                    line="1"/>
-            </issue>
+      // language=XML
+      """
+      <issues format="5" by="lint unittest">
+          <issue
+              id="HardcodedText"
+              message="Hardcoded string &quot;Fooo&quot;, should use `@string` resource">
+              <location
+                  file="../project1/my/source/file.txt"
+                  line="1"/>
+          </issue>
 
-            <issue
-                id="ContentDescription"
-                message="Missing `contentDescription` attribute on image">
-                <location
-                    file="res/layout/accessibility.xml"
-                    line="5"/>
-            </issue>
+          <issue
+              id="ContentDescription"
+              message="Missing `contentDescription` attribute on image">
+              <location
+                  file="res/layout/accessibility.xml"
+                  line="5"/>
+          </issue>
 
-        </issues>
-        """
-            .trimIndent()
+      </issues>
+      """
+        .trimIndent()
     )
 
     val outputWithBaseline =
-        """
+      """
             ../baselines/baseline.xml: Hint: 1 error was filtered out because it is listed in the baseline file, ../baselines/baseline.xml [LintBaseline]
             ../baselines/baseline.xml: Hint: 1 errors/warnings were listed in the baseline file (../baselines/baseline.xml) but not found in the project; perhaps they have been fixed? Unmatched issue types: HardcodedText [LintBaselineFixed]
             res/layout/accessibility.xml:3: Error: Missing contentDescription attribute on image [ContentDescription]
@@ -1966,7 +1906,7 @@ class LintBaselineTest {
             1 error (and 1 error filtered by baseline baseline.xml)
             """
     val outputWithoutBaseline =
-        """
+      """
             res/layout/accessibility.xml:2: Error: Missing contentDescription attribute on image [ContentDescription]
                 <ImageView android:id="@+id/android_logo" android:layout_width="wrap_content" android:layout_height="wrap_content" android:src="@drawable/android_button" android:focusable="false" android:clickable="false" android:layout_weight="1.0" />
                  ~~~~~~~~~
@@ -1979,11 +1919,7 @@ class LintBaselineTest {
     val project = lint().files(testFile).createProjects(root).single()
 
     val scenarios: List<Pair<File?, String>> =
-        listOf(
-            null to outputWithoutBaseline,
-            nonexistentBaseline to outputWithoutBaseline,
-            existingBaseline to outputWithBaseline,
-        )
+      listOf(null to outputWithoutBaseline, nonexistentBaseline to outputWithoutBaseline, existingBaseline to outputWithBaseline)
 
     for ((baselineFile, output) in scenarios) {
       outputBaseline.delete()
@@ -1991,62 +1927,62 @@ class LintBaselineTest {
       val baselineArgs = if (baselineFile != null) arrayOf("--baseline", baselineFile.path) else emptyArray()
 
       MainTest.checkDriver(
-          // Expected output
-          output,
-          // Expected error
-          "",
-          // Expected exit code
-          ERRNO_ERRORS,
-          arrayOf(
-              "--exit-code",
-              "--check",
-              "ContentDescription",
-              "--error",
-              "ContentDescription",
-              *baselineArgs,
-              "--write-reference-baseline",
-              outputBaseline.path,
-              "--disable",
-              "LintError",
-              project.path,
-          ),
-          { it.replace(root.path, "ROOT") },
-          null,
+        // Expected output
+        output,
+        // Expected error
+        "",
+        // Expected exit code
+        ERRNO_ERRORS,
+        arrayOf(
+          "--exit-code",
+          "--check",
+          "ContentDescription",
+          "--error",
+          "ContentDescription",
+          *baselineArgs,
+          "--write-reference-baseline",
+          outputBaseline.path,
+          "--disable",
+          "LintError",
+          project.path,
+        ),
+        { it.replace(root.path, "ROOT") },
+        null,
       )
 
       val newBaseline = readBaseline(outputBaseline)
 
       @Language("XML")
       val expected =
-          """
-          <?xml version="1.0" encoding="UTF-8"?>
-          <issues>
+        """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <issues>
 
-              <issue
-                  id="ContentDescription"
-                  message="Missing `contentDescription` attribute on image"
-                  errorLine1="    &lt;ImageView android:id=&quot;@+id/android_logo&quot; android:layout_width=&quot;wrap_content&quot; android:layout_height=&quot;wrap_content&quot; android:src=&quot;@drawable/android_button&quot; android:focusable=&quot;false&quot; android:clickable=&quot;false&quot; android:layout_weight=&quot;1.0&quot; />"
-                  errorLine2="     ~~~~~~~~~">
-                  <location
-                      file="res/layout/accessibility.xml"
-                      line="2"
-                      column="6"/>
-              </issue>
+            <issue
+                id="ContentDescription"
+                message="Missing `contentDescription` attribute on image"
+                errorLine1="    &lt;ImageView android:id=&quot;@+id/android_logo&quot; android:layout_width=&quot;wrap_content&quot; android:layout_height=&quot;wrap_content&quot; android:src=&quot;@drawable/android_button&quot; android:focusable=&quot;false&quot; android:clickable=&quot;false&quot; android:layout_weight=&quot;1.0&quot; />"
+                errorLine2="     ~~~~~~~~~">
+                <location
+                    file="res/layout/accessibility.xml"
+                    line="2"
+                    column="6"/>
+            </issue>
 
-              <issue
-                  id="ContentDescription"
-                  message="Missing `contentDescription` attribute on image"
-                  errorLine1="    &lt;ImageButton android:importantForAccessibility=&quot;yes&quot; android:id=&quot;@+id/android_logo2&quot; android:layout_width=&quot;wrap_content&quot; android:layout_height=&quot;wrap_content&quot; android:src=&quot;@drawable/android_button&quot; android:focusable=&quot;false&quot; android:clickable=&quot;false&quot; android:layout_weight=&quot;1.0&quot; />"
-                  errorLine2="     ~~~~~~~~~~~">
-                  <location
-                      file="res/layout/accessibility.xml"
-                      line="3"
-                      column="6"/>
-              </issue>
+            <issue
+                id="ContentDescription"
+                message="Missing `contentDescription` attribute on image"
+                errorLine1="    &lt;ImageButton android:importantForAccessibility=&quot;yes&quot; android:id=&quot;@+id/android_logo2&quot; android:layout_width=&quot;wrap_content&quot; android:layout_height=&quot;wrap_content&quot; android:src=&quot;@drawable/android_button&quot; android:focusable=&quot;false&quot; android:clickable=&quot;false&quot; android:layout_weight=&quot;1.0&quot; />"
+                errorLine2="     ~~~~~~~~~~~">
+                <location
+                    file="res/layout/accessibility.xml"
+                    line="3"
+                    column="6"/>
+            </issue>
 
-          </issues>
-          """
-              .trimIndent()
+        </issues>
+        """
+          .trimIndent()
       assertEquals(expected, newBaseline.dos2unix()) // b/209433064
     }
   }
@@ -2074,37 +2010,35 @@ class LintBaselineTest {
       gradleUserFile.writeText("Some file in gradle user home")
       val root = temporaryFolder.root
       val projects =
-          lint()
-              .files(
-                  jar("dependency.jar"),
-                  manifest(
-                          """
+        lint()
+          .files(
+            jar("dependency.jar"),
+            manifest(
+                """
                     <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                         package="test.pkg" android:versionName="1.0">
                         <uses-sdk android:minSdkVersion="10" android:targetSdkVersion="33" />
                         <uses-sdk android:minSdkVersion="10" android:targetSdkVersion="33" />
                     </manifest>
                     """
-                      )
-                      .indented(),
-                  // lint check just looks for a file named *.txt and takes its *contents* a path where it
-                  // reports the file
-                  source("src/foo/foo.txt", gradleUserFile.path),
-                  source("src/foo/bar.txt", gradleCacheFile.path),
-                  source("src/foo/baz.txt", sdkFile.path),
-                  *JarFileIssueRegistryTest.lintApiStubs,
-                  bytecode(
-                      "lint.jar",
-                      source(
-                          "META-INF/services/com.android.tools.lint.client.api.IssueRegistry",
-                          "test.pkg.MyIssueRegistry",
-                      ),
-                      0x70522285,
-                  ),
-                  bytecode(
-                      "lint.jar",
-                      kotlin(
-                              """
+              )
+              .indented(),
+            // lint check just looks for a file named *.txt and takes its *contents* a path
+            // where it
+            // reports the file
+            source("src/foo/foo.txt", gradleUserFile.path),
+            source("src/foo/bar.txt", gradleCacheFile.path),
+            source("src/foo/baz.txt", sdkFile.path),
+            *JarFileIssueRegistryTest.lintApiStubs,
+            bytecode(
+              "lint.jar",
+              source("META-INF/services/com.android.tools.lint.client.api.IssueRegistry", "test.pkg.MyIssueRegistry"),
+              0x70522285,
+            ),
+            bytecode(
+              "lint.jar",
+              kotlin(
+                  """
                     package test.pkg
                     import java.io.File
                     import com.android.tools.lint.client.api.*
@@ -2147,15 +2081,15 @@ class LintBaselineTest {
                         )
                     }
                     """
-                          )
-                          .indented(),
-                      0x9fd640fb,
-                      """
+                )
+                .indented(),
+              0x9fd640fb,
+              """
                 META-INF/main.kotlin_module:
                 H4sIAAAAAAAAAGNgYGBmYGBgBGI2BijgMuZSTM7P1UvMSynKz0zRK8nPzynW
                 y8nMK9FLzslMBVKJBZlCfM5gdnxxSWlSsXeJEoMWAwCSLNcCTQAAAA==
                 """,
-                      """
+              """
                 test/pkg/MyDetector＄Companion.class:
                 H4sIAAAAAAAAAJVSy04UQRQ9VT0v2kGahwoo4gMVNFJAXBgxJDpo0smgCejE
                 hIUpZkospruadNUQ3c1K/8M/YGXiwkxY+lHGW80oG2Pi5j7Ovefe6nP7x89v
@@ -2171,7 +2105,7 @@ class LintBaselineTest {
                 ysKCdBXzmMGtYuE13Cb/iPAx6o12EcQYjzERYxJTFOJCTDMv7YJZTGNmF2WL
                 0GLWomJx2eLKL/vlZnc4AwAA
                 """,
-                      """
+              """
                 test/pkg/MyDetector.class:
                 H4sIAAAAAAAAAJ1XaXcT1xl+rmR7pEGAEIRgCInbECIhozGOoWnk0oIxsYgk
                 U+SYGrqNpbE8tjSjzoxcuyttk7bpvrfp3nTfThunBzjlnB5OP/Yv9G/0Y09P
@@ -2213,7 +2147,7 @@ class LintBaselineTest {
                 vQK+jx+wi9cL+CF+dBvCxY/xk9tIuPLvpy5+5iLmYr+Ln7s44uJZF79wkXFh
                 uKj8H5i9QWsnEAAA
                 """,
-                      """
+              """
                 test/pkg/MyIssueRegistry.class:
                 H4sIAAAAAAAAAKVVW28bRRT+Zn13nWTjppC4DXGTuHXckHXSG9Rpipu0sNRO
                 UNxaoDxt7K2ZeL0b7YwtioSUX8EPQDzyAIioiEoo6iM/CvWs161dOxEFHnbO
@@ -2239,10 +2173,10 @@ class LintBaselineTest {
                 oNRdH6JM1CDpx6R3Zw8BHQUd6zruYoO2uKfjExT3wATuY3MPSYEVgS2BsMCM
                 wAOB6wI3BC509wkBTSAvMCtwU2BJICdwS+D2KzTjhGAACAAA
                 """,
-                  ),
-              )
-              .testModes(TestMode.DEFAULT)
-              .createProjects(root)
+            ),
+          )
+          .testModes(TestMode.DEFAULT)
+          .createProjects(root)
 
       val lintJar = File(root, "app/lint.jar")
       assertTrue(lintJar.exists())
@@ -2255,106 +2189,106 @@ class LintBaselineTest {
       // test
       // the issue will be reported at /caches/transforms-3/cba987654321/.
       baseline.writeText(
-          // language=XML
-          """
-          <?xml version="1.0" encoding="UTF-8"?>
-          <issues>
+        // language=XML
+        """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <issues>
 
-          <issue
-              id="MyIssueId"
-              message="My message">
-              <location
-                  file="${"$"}GRADLE_USER_HOME/caches/transforms-3/abc123456789/transformed/leakcanary-android-core-2.8.1/jars/classes.jar"/>
-          </issue>
+        <issue
+            id="MyIssueId"
+            message="My message">
+            <location
+                file="${"$"}GRADLE_USER_HOME/caches/transforms-3/abc123456789/transformed/leakcanary-android-core-2.8.1/jars/classes.jar"/>
+        </issue>
 
-          </issues>
-          """
-              .trimIndent()
+        </issues>
+        """
+          .trimIndent()
       )
 
       val config = File(root, "config.xml")
       config.writeText("<lint checkDependencies='false'/>\n                  ")
 
       MainTest.checkDriver(
-          // Expected output
-          null, // not checked since it has an absolute path which depends on specific test machine
-          // Expected error
-          null,
-          // Expected exit code
-          ERRNO_CREATED_BASELINE,
-          arrayOf(
-              "--config",
-              config.path,
-              "--exit-code",
-              "--ignore",
-              "LintBaseline,MissingVersion,OldTargetApi",
-              "--baseline",
-              baseline.path,
-              "--update-baseline",
-              "--disable",
-              "LintError",
-              "--lint-rule-jars",
-              lintJar.path,
-              "--sdk-home",
-              TestUtils.getSdk().toFile().path,
-              projects[0].path,
-          ),
-          { it.replace(root.path, "ROOT") },
-          null,
-          {
-            assertThat(it.contains("mypath.txt")).isTrue()
-            assertThat(it.contains("package.xml")).isTrue()
-            assertThat(it.contains("1 error, 2 warnings (and 1 warning filtered by baseline baseline.xml)")).isTrue()
-          },
-          true,
+        // Expected output
+        null, // not checked since it has an absolute path which depends on specific test machine
+        // Expected error
+        null,
+        // Expected exit code
+        ERRNO_CREATED_BASELINE,
+        arrayOf(
+          "--config",
+          config.path,
+          "--exit-code",
+          "--ignore",
+          "LintBaseline,MissingVersion,OldTargetApi",
+          "--baseline",
+          baseline.path,
+          "--update-baseline",
+          "--disable",
+          "LintError",
+          "--lint-rule-jars",
+          lintJar.path,
+          "--sdk-home",
+          TestUtils.getSdk().toFile().path,
+          projects[0].path,
+        ),
+        { it.replace(root.path, "ROOT") },
+        null,
+        {
+          assertThat(it.contains("mypath.txt")).isTrue()
+          assertThat(it.contains("package.xml")).isTrue()
+          assertThat(it.contains("1 error, 2 warnings (and 1 warning filtered by baseline baseline.xml)")).isTrue()
+        },
+        true,
       )
 
       @Language("XML")
       val expected =
-          """
-          <?xml version="1.0" encoding="UTF-8"?>
-          <issues>
+        """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <issues>
 
-              <issue
-                  id="MyIssueId"
-                  message="My message">
-                  <location
-                      file="${"$"}GRADLE_USER_HOME/caches/transforms-3/cba987654321/transformed/leakcanary-android-core-2.8.1/jars/classes.jar"/>
-              </issue>
+            <issue
+                id="MyIssueId"
+                message="My message">
+                <location
+                    file="${"$"}GRADLE_USER_HOME/caches/transforms-3/cba987654321/transformed/leakcanary-android-core-2.8.1/jars/classes.jar"/>
+            </issue>
 
-              <issue
-                  id="MyIssueId"
-                  message="My message">
-                  <location
-                      file="${"$"}GRADLE_USER_HOME/mypath.txt"/>
-              </issue>
+            <issue
+                id="MyIssueId"
+                message="My message">
+                <location
+                    file="${"$"}GRADLE_USER_HOME/mypath.txt"/>
+            </issue>
 
-              <issue
-                  id="MyIssueId"
-                  message="My message">
-                  <location
-                      file="${"$"}ANDROID_HOME/platform-tools/package.xml"/>
-              </issue>
+            <issue
+                id="MyIssueId"
+                message="My message">
+                <location
+                    file="${"$"}ANDROID_HOME/platform-tools/package.xml"/>
+            </issue>
 
-              <issue
-                  id="MultipleUsesSdk"
-                  message="There should only be a single `&lt;uses-sdk>` element in the manifest: merge these together"
-                  errorLine1="    &lt;uses-sdk android:minSdkVersion=&quot;10&quot; android:targetSdkVersion=&quot;33&quot; />"
-                  errorLine2="     ~~~~~~~~">
-                  <location
-                      file="AndroidManifest.xml"
-                      line="4"
-                      column="6"/>
-                  <location
-                      file="AndroidManifest.xml"
-                      line="3"
-                      column="6"
-                      message="Also appears here"/>
-              </issue>
+            <issue
+                id="MultipleUsesSdk"
+                message="There should only be a single `&lt;uses-sdk>` element in the manifest: merge these together"
+                errorLine1="    &lt;uses-sdk android:minSdkVersion=&quot;10&quot; android:targetSdkVersion=&quot;33&quot; />"
+                errorLine2="     ~~~~~~~~">
+                <location
+                    file="AndroidManifest.xml"
+                    line="4"
+                    column="6"/>
+                <location
+                    file="AndroidManifest.xml"
+                    line="3"
+                    column="6"
+                    message="Also appears here"/>
+            </issue>
 
-          </issues>
-          """
-              .trimIndent()
+        </issues>
+        """
+          .trimIndent()
       assertEquals(expected, readBaseline(baseline).dos2unix())
     } finally {
       gradleUserFile.delete()
@@ -2375,13 +2309,13 @@ class LintBaselineTest {
     val root = temporaryFolder.newFolder().canonicalFile.absoluteFile
 
     val testFile =
-        kotlin(
-                """
+      kotlin(
+          """
             package test.pkg
             val path = "/sdcard/path"
             """
-            )
-            .indented()
+        )
+        .indented()
 
     val baseline = File(root, "lint-baseline.xml")
     val project = lint().files(testFile).createProjects(root).single()
@@ -2389,26 +2323,26 @@ class LintBaselineTest {
     // First run with --missing-baseline-is-empty-baseline flag and check that no baseline file
     // is written.
     MainTest.checkDriver(
-        // Expected output
-        "src/test/pkg/test.kt:2: Warning: Do not hardcode \"/sdcard/\"; use Environment.getExternalStorageDirectory().getPath() instead [SdCardPath]\n" +
-            "0 errors, 1 warning",
-        // Expected error
-        "",
-        // Expected exit code
-        ERRNO_SUCCESS,
-        arrayOf(
-            "--missing-baseline-is-empty-baseline",
-            "--check",
-            "SdCardPath",
-            "--nolines",
-            "--baseline",
-            baseline.path,
-            "--disable",
-            "LintError",
-            project.path,
-        ),
-        { it.replace(root.path, "ROOT") },
-        null,
+      // Expected output
+      "src/test/pkg/test.kt:2: Warning: Do not hardcode \"/sdcard/\"; use Environment.getExternalStorageDirectory().getPath() instead [SdCardPath]\n" +
+        "0 errors, 1 warning",
+      // Expected error
+      "",
+      // Expected exit code
+      ERRNO_SUCCESS,
+      arrayOf(
+        "--missing-baseline-is-empty-baseline",
+        "--check",
+        "SdCardPath",
+        "--nolines",
+        "--baseline",
+        baseline.path,
+        "--disable",
+        "LintError",
+        project.path,
+      ),
+      { it.replace(root.path, "ROOT") },
+      null,
     )
 
     PathSubject.assertThat(baseline).doesNotExist()
@@ -2416,47 +2350,47 @@ class LintBaselineTest {
     // Then run with --missing-baseline-is-empty-baseline and --update-baseline flags and check
     // that a baseline file is written.
     MainTest.checkDriver(
-        // Expected output
-        "src/test/pkg/test.kt:2: Warning: Do not hardcode \"/sdcard/\"; use Environment.getExternalStorageDirectory().getPath() instead [SdCardPath]\n" +
-            "0 errors, 1 warning",
-        // Expected error
-        "",
-        // Expected exit code
-        ERRNO_CREATED_BASELINE,
-        arrayOf(
-            "--missing-baseline-is-empty-baseline",
-            "--update-baseline",
-            "--check",
-            "SdCardPath",
-            "--nolines",
-            "--baseline",
-            baseline.path,
-            "--disable",
-            "LintError",
-            project.path,
-        ),
-        { it.replace(root.path, "ROOT") },
-        null,
+      // Expected output
+      "src/test/pkg/test.kt:2: Warning: Do not hardcode \"/sdcard/\"; use Environment.getExternalStorageDirectory().getPath() instead [SdCardPath]\n" +
+        "0 errors, 1 warning",
+      // Expected error
+      "",
+      // Expected exit code
+      ERRNO_CREATED_BASELINE,
+      arrayOf(
+        "--missing-baseline-is-empty-baseline",
+        "--update-baseline",
+        "--check",
+        "SdCardPath",
+        "--nolines",
+        "--baseline",
+        baseline.path,
+        "--disable",
+        "LintError",
+        project.path,
+      ),
+      { it.replace(root.path, "ROOT") },
+      null,
     )
 
     @Language("XML")
     val expectedBaselineContents =
-        """
-        <?xml version="1.0" encoding="UTF-8"?>
-        <issues>
+      """
+      <?xml version="1.0" encoding="UTF-8"?>
+      <issues>
 
-            <issue
-                id="SdCardPath"
-                message="Do not hardcode &quot;/sdcard/&quot;; use `Environment.getExternalStorageDirectory().getPath()` instead">
-                <location
-                    file="src/test/pkg/test.kt"
-                    line="2"
-                    column="13"/>
-            </issue>
+          <issue
+              id="SdCardPath"
+              message="Do not hardcode &quot;/sdcard/&quot;; use `Environment.getExternalStorageDirectory().getPath()` instead">
+              <location
+                  file="src/test/pkg/test.kt"
+                  line="2"
+                  column="13"/>
+          </issue>
 
-        </issues>
-        """
-            .trimIndent()
+      </issues>
+      """
+        .trimIndent()
     PathSubject.assertThat(baseline).exists()
     assertEquals(expectedBaselineContents, readBaseline(baseline))
 
@@ -2465,35 +2399,26 @@ class LintBaselineTest {
     baseline.delete()
     PathSubject.assertThat(baseline).doesNotExist()
     MainTest.checkDriver(
-        // Expected output
-        "src/test/pkg/test.kt:2: Warning: Do not hardcode \"/sdcard/\"; use Environment.getExternalStorageDirectory().getPath() instead [SdCardPath]\n" +
-            "0 errors, 1 warning",
-        // Expected error
-        "Created baseline file ROOT" +
-            File.separator +
-            "lint-baseline.xml\n" +
-            "\n" +
-            "Also breaking the build in case this was not intentional. If you\n" +
-            "deliberately created the baseline file, re-run the build and this\n" +
-            "time it should succeed without warnings.\n" +
-            "\n" +
-            "If not, investigate the baseline path in the lintOptions config\n" +
-            "or verify that the baseline file has been checked into version\n" +
-            "control.\n",
-        // Expected exit code
-        ERRNO_CREATED_BASELINE,
-        arrayOf(
-            "--check",
-            "SdCardPath",
-            "--nolines",
-            "--baseline",
-            baseline.path,
-            "--disable",
-            "LintError",
-            project.path,
-        ),
-        { it.replace(root.path, "ROOT") },
-        null,
+      // Expected output
+      "src/test/pkg/test.kt:2: Warning: Do not hardcode \"/sdcard/\"; use Environment.getExternalStorageDirectory().getPath() instead [SdCardPath]\n" +
+        "0 errors, 1 warning",
+      // Expected error
+      "Created baseline file ROOT" +
+        File.separator +
+        "lint-baseline.xml\n" +
+        "\n" +
+        "Also breaking the build in case this was not intentional. If you\n" +
+        "deliberately created the baseline file, re-run the build and this\n" +
+        "time it should succeed without warnings.\n" +
+        "\n" +
+        "If not, investigate the baseline path in the lintOptions config\n" +
+        "or verify that the baseline file has been checked into version\n" +
+        "control.\n",
+      // Expected exit code
+      ERRNO_CREATED_BASELINE,
+      arrayOf("--check", "SdCardPath", "--nolines", "--baseline", baseline.path, "--disable", "LintError", project.path),
+      { it.replace(root.path, "ROOT") },
+      null,
     )
 
     PathSubject.assertThat(baseline).exists()
@@ -2514,12 +2439,12 @@ class LintBaselineTest {
     val root = temporaryFolder.newFolder().canonicalFile.absoluteFile
 
     val testFile =
-        kotlin(
-                """
+      kotlin(
+          """
             package test.pkg
             """
-            )
-            .indented()
+        )
+        .indented()
 
     val baseline = File(root, "lint-baseline.xml")
     val project = lint().files(testFile).createProjects(root).single()
@@ -2527,25 +2452,25 @@ class LintBaselineTest {
     // First run with --missing-baseline-is-empty-baseline flag and check that no baseline file
     // is written.
     MainTest.checkDriver(
-        // Expected output
-        "No issues found.",
-        // Expected error
-        "",
-        // Expected exit code
-        ERRNO_SUCCESS,
-        arrayOf(
-            "--missing-baseline-is-empty-baseline",
-            "--check",
-            "SdCardPath",
-            "--nolines",
-            "--baseline",
-            baseline.path,
-            "--disable",
-            "LintError",
-            project.path,
-        ),
-        { it.replace(root.path, "ROOT") },
-        null,
+      // Expected output
+      "No issues found.",
+      // Expected error
+      "",
+      // Expected exit code
+      ERRNO_SUCCESS,
+      arrayOf(
+        "--missing-baseline-is-empty-baseline",
+        "--check",
+        "SdCardPath",
+        "--nolines",
+        "--baseline",
+        baseline.path,
+        "--disable",
+        "LintError",
+        project.path,
+      ),
+      { it.replace(root.path, "ROOT") },
+      null,
     )
 
     PathSubject.assertThat(baseline).doesNotExist()
@@ -2553,71 +2478,62 @@ class LintBaselineTest {
     // Then run without --missing-baseline-is-empty-baseline flag and check that a baseline file
     // is written.
     MainTest.checkDriver(
-        // Expected output
-        "No issues found.",
-        // Expected error
-        "Created baseline file ROOT" +
-            File.separator +
-            "lint-baseline.xml\n" +
-            "\n" +
-            "Also breaking the build in case this was not intentional. If you\n" +
-            "deliberately created the baseline file, re-run the build and this\n" +
-            "time it should succeed without warnings.\n" +
-            "\n" +
-            "If not, investigate the baseline path in the lintOptions config\n" +
-            "or verify that the baseline file has been checked into version\n" +
-            "control.\n",
-        // Expected exit code
-        ERRNO_CREATED_BASELINE,
-        arrayOf(
-            "--check",
-            "SdCardPath",
-            "--nolines",
-            "--baseline",
-            baseline.path,
-            "--disable",
-            "LintError",
-            project.path,
-        ),
-        { it.replace(root.path, "ROOT") },
-        null,
+      // Expected output
+      "No issues found.",
+      // Expected error
+      "Created baseline file ROOT" +
+        File.separator +
+        "lint-baseline.xml\n" +
+        "\n" +
+        "Also breaking the build in case this was not intentional. If you\n" +
+        "deliberately created the baseline file, re-run the build and this\n" +
+        "time it should succeed without warnings.\n" +
+        "\n" +
+        "If not, investigate the baseline path in the lintOptions config\n" +
+        "or verify that the baseline file has been checked into version\n" +
+        "control.\n",
+      // Expected exit code
+      ERRNO_CREATED_BASELINE,
+      arrayOf("--check", "SdCardPath", "--nolines", "--baseline", baseline.path, "--disable", "LintError", project.path),
+      { it.replace(root.path, "ROOT") },
+      null,
     )
 
     @Language("XML")
     val expectedBaselineContents =
-        """
-        <?xml version="1.0" encoding="UTF-8"?>
-        <issues>
+      """
+      <?xml version="1.0" encoding="UTF-8"?>
+      <issues>
 
-        </issues>
-        """
-            .trimIndent()
+      </issues>
+      """
+        .trimIndent()
     PathSubject.assertThat(baseline).exists()
     assertEquals(expectedBaselineContents, readBaseline(baseline))
 
     // Then run with --missing-baseline-is-empty-baseline and --update-baseline flags and check
     // that the baseline file is deleted.
     MainTest.checkDriver(
-        // Expected output
-        "No issues found.",
-        // Expected error
-        "",
-        // Expected exit code
-        ERRNO_CREATED_BASELINE,
-        arrayOf(
-            "--missing-baseline-is-empty-baseline",
-            "--update-baseline",
-            "--check",
-            "SdCardPath",
-            "--nolines",
-            "--baseline",
-            baseline.path,
-            "--disable",
-            "LintError",
-            project.path,
-        ),
-        { it.replace(root.path, "ROOT") },
-        null,
+      // Expected output
+      "No issues found.",
+      // Expected error
+      "",
+      // Expected exit code
+      ERRNO_CREATED_BASELINE,
+      arrayOf(
+        "--missing-baseline-is-empty-baseline",
+        "--update-baseline",
+        "--check",
+        "SdCardPath",
+        "--nolines",
+        "--baseline",
+        baseline.path,
+        "--disable",
+        "LintError",
+        project.path,
+      ),
+      { it.replace(root.path, "ROOT") },
+      null,
     )
 
     PathSubject.assertThat(baseline).doesNotExist()
@@ -2629,25 +2545,25 @@ class LintBaselineTest {
     // message
     @Language("XML")
     val baselineContents =
-        """
-        <?xml version="1.0" encoding="UTF-8"?>
-        <issues format="6" by="lint 7.3.0-dev" type="baseline" client="gradle" dependencies="false" name="AGP (7.3.0-dev)" variant="all" version="7.3.0-dev">
+      """
+      <?xml version="1.0" encoding="UTF-8"?>
+      <issues format="6" by="lint 7.3.0-dev" type="baseline" client="gradle" dependencies="false" name="AGP (7.3.0-dev)" variant="all" version="7.3.0-dev">
 
-            <issue
-                id="InconsistentLayout"
-                message="The id &quot;hello1&quot; in layout &quot;activity_main&quot; is missing from the following layout configurations: layout (present in layout-sw600dp)"
-                errorLine1="        android:id=&quot;@+id/hello1&quot;"
-                errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~">
-                <location
-                    file="src/main/res/layout-sw600dp/activity_main.xml"
-                    line="19"
-                    column="9"
-                    message="Occurrence in layout-sw600dp"/>
-            </issue>
+          <issue
+              id="InconsistentLayout"
+              message="The id &quot;hello1&quot; in layout &quot;activity_main&quot; is missing from the following layout configurations: layout (present in layout-sw600dp)"
+              errorLine1="        android:id=&quot;@+id/hello1&quot;"
+              errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~">
+              <location
+                  file="src/main/res/layout-sw600dp/activity_main.xml"
+                  line="19"
+                  column="9"
+                  message="Occurrence in layout-sw600dp"/>
+          </issue>
 
-        </issues>
-        """
-            .trimIndent()
+      </issues>
+      """
+        .trimIndent()
 
     // Test 1: Test matching where we look at the wrong file and return instead of getting to the
     // next one
@@ -2656,13 +2572,13 @@ class LintBaselineTest {
     assertNotNull(XmlUtils.parseDocumentSilently(baselineContents, false))
     val baseline = LintBaseline(ToolsBaseTestLintClient(), baselineFile)
     assertTrue(
-        baseline.findAndMark(
-            LayoutConsistencyDetector.INCONSISTENT_IDS,
-            Location.create(File("src/main/res/layout-sw600dp/activity_main.xml")),
-            "The id \"hello1\" in layout \"activity_main\" is missing from the following layout configurations: layout (present in layout-sw600dp)",
-            Severity.WARNING,
-            null,
-        )
+      baseline.findAndMark(
+        LayoutConsistencyDetector.INCONSISTENT_IDS,
+        Location.create(File("src/main/res/layout-sw600dp/activity_main.xml")),
+        "The id \"hello1\" in layout \"activity_main\" is missing from the following layout configurations: layout (present in layout-sw600dp)",
+        Severity.WARNING,
+        null,
+      )
     )
     baseline.close()
   }
@@ -2675,11 +2591,11 @@ class LintBaselineTest {
     val root = temporaryFolder.newFolder().canonicalFile.absoluteFile
 
     val testFiles =
-        arrayOf(
-            image("res/drawable-mdpi/frame.png", 472, 290).fill(-0x1).fill(10, 10, 362, 280, 0x00000000),
-            image("res/drawable-nodpi/frame.png", 472, 290).fill(-0x1).fill(10, 10, 362, 280, 0x00000000),
-            image("res/drawable-xlarge-nodpi-v11/frame.png", 472, 290).fill(-0x1).fill(10, 10, 362, 280, 0x00000000),
-        )
+      arrayOf(
+        image("res/drawable-mdpi/frame.png", 472, 290).fill(-0x1).fill(10, 10, 362, 280, 0x00000000),
+        image("res/drawable-nodpi/frame.png", 472, 290).fill(-0x1).fill(10, 10, 362, 280, 0x00000000),
+        image("res/drawable-xlarge-nodpi-v11/frame.png", 472, 290).fill(-0x1).fill(10, 10, 362, 280, 0x00000000),
+      )
     val baselineFolder = File(root, "baselines")
     baselineFolder.mkdirs()
     val outputBaseline = File(baselineFolder, "baseline-out.xml")
@@ -2687,48 +2603,48 @@ class LintBaselineTest {
     val project = lint().files(*testFiles).createProjects(root).single()
 
     MainTest.checkDriver(
-        // Expected output
-        "ROOT/app/res: Warning: Missing density variation folders in res: drawable-hdpi, drawable-xhdpi, drawable-xxhdpi [IconMissingDensityFolder]\n" +
-            "0 errors, 1 warning",
-        // Expected error
-        "",
-        // Expected exit code
-        ERRNO_SUCCESS,
-        arrayOf(
-            "--exit-code",
-            "--check",
-            "IconMissingDensityFolder",
-            "--ignore",
-            "LintBaseline",
-            "--fullpath",
-            "--write-reference-baseline",
-            outputBaseline.path,
-            "--disable",
-            "LintError",
-            "--sdk-home",
-            TestUtils.getSdk().toFile().path,
-            project.path,
-        ),
-        { it.replace(root.path, "ROOT") },
-        null,
+      // Expected output
+      "ROOT/app/res: Warning: Missing density variation folders in res: drawable-hdpi, drawable-xhdpi, drawable-xxhdpi [IconMissingDensityFolder]\n" +
+        "0 errors, 1 warning",
+      // Expected error
+      "",
+      // Expected exit code
+      ERRNO_SUCCESS,
+      arrayOf(
+        "--exit-code",
+        "--check",
+        "IconMissingDensityFolder",
+        "--ignore",
+        "LintBaseline",
+        "--fullpath",
+        "--write-reference-baseline",
+        outputBaseline.path,
+        "--disable",
+        "LintError",
+        "--sdk-home",
+        TestUtils.getSdk().toFile().path,
+        project.path,
+      ),
+      { it.replace(root.path, "ROOT") },
+      null,
     )
 
     @Language("XML")
     val expected =
-        """
-        <?xml version="1.0" encoding="UTF-8"?>
-        <issues>
+      """
+      <?xml version="1.0" encoding="UTF-8"?>
+      <issues>
 
-            <issue
-                id="IconMissingDensityFolder"
-                message="Missing density variation folders in `res`: drawable-hdpi, drawable-xhdpi, drawable-xxhdpi">
-                <location
-                    file="res"/>
-            </issue>
+          <issue
+              id="IconMissingDensityFolder"
+              message="Missing density variation folders in `res`: drawable-hdpi, drawable-xhdpi, drawable-xxhdpi">
+              <location
+                  file="res"/>
+          </issue>
 
-        </issues>
-        """
-            .trimIndent()
+      </issues>
+      """
+        .trimIndent()
     assertEquals(expected, readBaseline(outputBaseline).dos2unix()) // b/209433064
   }
 
@@ -2744,35 +2660,29 @@ class LintBaselineTest {
     val gradleFile = File("$gradleDir/file.txt")
     gradleFile.createNewFile()
 
-    baseline.findAndMark(
-        NotificationPermissionDetector.ISSUE,
-        Location.create(gradleFile),
-        "My message",
-        Severity.WARNING,
-        null,
-    )
+    baseline.findAndMark(NotificationPermissionDetector.ISSUE, Location.create(gradleFile), "My message", Severity.WARNING, null)
 
     baseline.close()
 
     // The Gradle home path should be replaced with "$GRADLE_USER_HOME"
     assertEquals(
-        // language=XML
-        """
-        <?xml version="1.0" encoding="UTF-8"?>
-        <issues format="5" by="lint unittest">
+      // language=XML
+      """
+      <?xml version="1.0" encoding="UTF-8"?>
+      <issues format="5" by="lint unittest">
 
-            <issue
-                id="NotificationPermission"
-                message="My message">
-                <location
-                    file="${"$"}GRADLE_USER_HOME/some/gradle/dir/file.txt"/>
-            </issue>
+          <issue
+              id="NotificationPermission"
+              message="My message">
+              <location
+                  file="${"$"}GRADLE_USER_HOME/some/gradle/dir/file.txt"/>
+          </issue>
 
-        </issues>
+      </issues>
 
-        """
-            .trimIndent(),
-        baselineFile.readText(),
+      """
+        .trimIndent(),
+      baselineFile.readText(),
     )
   }
 
@@ -2816,21 +2726,21 @@ class LintBaselineTest {
   fun testUnknownApi() {
     val baseline = LintBaseline(ToolsBaseTestLintClient(), File(""))
     assertTrue(
-        baseline.sameMessage(
-            IssueRegistry.UNKNOWN_ISSUE_ID,
-            "Unknown issue id \"HardcodedTxt\". Did you mean 'HardcodedText' (Hardcoded text) ?",
-            "Unknown issue id \"HardcodedTxt\"",
-        )
+      baseline.sameMessage(
+        IssueRegistry.UNKNOWN_ISSUE_ID,
+        "Unknown issue id \"HardcodedTxt\". Did you mean 'HardcodedText' (Hardcoded text) ?",
+        "Unknown issue id \"HardcodedTxt\"",
+      )
     )
 
     // 377642757: Lint fails with InstantiationException without exception message in lint
     // stacktrace
     assertFalse(
-        baseline.sameMessage(
-            IssueRegistry.UNKNOWN_ISSUE_ID,
-            "Unknown issue id \"HardcodedTxt\"",
-            "For minSdkVersion=27 only app: attributes should be used",
-        )
+      baseline.sameMessage(
+        IssueRegistry.UNKNOWN_ISSUE_ID,
+        "Unknown issue id \"HardcodedTxt\"",
+        "For minSdkVersion=27 only app: attributes should be used",
+      )
     )
   }
 
@@ -2912,19 +2822,19 @@ class LintBaselineTest {
     // Regression test for b/312895376
     val baseline = LintBaseline(ToolsBaseTestLintClient(), File(""))
     assertTrue(
-        baseline.sameMessage(
-            DuplicateIdDetector.CROSS_LAYOUT,
-            "Duplicate id @+id/foo, defined or included multiple times in layout/bar.xml...",
-            "Duplicate id @+id/foo, defined or included multiple times in layout\\bar.xml...",
-        )
+      baseline.sameMessage(
+        DuplicateIdDetector.CROSS_LAYOUT,
+        "Duplicate id @+id/foo, defined or included multiple times in layout/bar.xml...",
+        "Duplicate id @+id/foo, defined or included multiple times in layout\\bar.xml...",
+      )
     )
 
     assertTrue(
-        baseline.sameMessage(
-            DuplicateIdDetector.CROSS_LAYOUT,
-            "Duplicate id @+id/button2, defined or included multiple times in layout/layout1.xml: [layout/layout1.xml defines @+id/button2, layout/layout1.xml => layout/layout2.xml => layout/layout4.xml defines @+id/button2]",
-            "Duplicate id @+id/button2, defined or included multiple times in layout\\layout1.xml: [layout\\layout1.xml defines @+id/button2, layout\\layout1.xml => layout\\layout2.xml => layout\\layout4.xml defines @+id/button2]",
-        )
+      baseline.sameMessage(
+        DuplicateIdDetector.CROSS_LAYOUT,
+        "Duplicate id @+id/button2, defined or included multiple times in layout/layout1.xml: [layout/layout1.xml defines @+id/button2, layout/layout1.xml => layout/layout2.xml => layout/layout4.xml defines @+id/button2]",
+        "Duplicate id @+id/button2, defined or included multiple times in layout\\layout1.xml: [layout\\layout1.xml defines @+id/button2, layout\\layout1.xml => layout\\layout2.xml => layout\\layout4.xml defines @+id/button2]",
+      )
     )
 
     // make sure we only match for file separators
@@ -2938,20 +2848,17 @@ class LintBaselineTest {
     val root = temporaryFolder.newFolder("lintjar")
 
     lint()
-        .files(
-            *JarFileIssueRegistryTest.lintApiStubs,
-            bytecode(
-                "lint.jar",
-                source(
-                    "META-INF/services/com.android.tools.lint.client.api.IssueRegistry",
-                    "test.pkg.MyIssueRegistry",
-                ),
-                0x70522285,
-            ),
-            bytecode(
-                "lint.jar",
-                kotlin(
-                        """
+      .files(
+        *JarFileIssueRegistryTest.lintApiStubs,
+        bytecode(
+          "lint.jar",
+          source("META-INF/services/com.android.tools.lint.client.api.IssueRegistry", "test.pkg.MyIssueRegistry"),
+          0x70522285,
+        ),
+        bytecode(
+          "lint.jar",
+          kotlin(
+              """
             package test.pkg
             import com.android.tools.lint.client.api.*
             import com.android.tools.lint.detector.api.*
@@ -2979,16 +2886,16 @@ class LintBaselineTest {
               )
               )
             """
-                    )
-                    .indented(),
-                0x77a720c0,
-                """
+            )
+            .indented(),
+          0x77a720c0,
+          """
           META-INF/main.kotlin_module:
           H4sIAAAAAAAA/2NgYGBmYGBgBGJOBijgMuZSTM7P1UvMSynKz0zRK8nPzynW
           y8nMK9FLzslMBVKJBZlCfM5gdnxxSWlSsXcJlywXR0lqcYleQXa6kKBvpWdx
           cWlqUGp6ZnFJUaV3iRKDFgMARSnsbWwAAAA=
           """,
-                """
+          """
           test/pkg/MyDetector.class:
           H4sIAAAAAAAA/5VUy1ITQRQ9PSHJEDCEIDFBRRSUhNeE+NhgWeWzjJUgBcoC
           Vp2kKzSZzOB0J8qOb3HtxpWUC4ty6UdZ3p5MCZZUiUnmntNn+j765s78+Pn1
@@ -3007,7 +2914,7 @@ class LintBaselineTest {
           S3wiRjcvhblPrUVvGWMd3CesknqLapzdRayKuSpuV3EH80RRrKKEhV0whUUs
           7SKlzG9ZIaHoBYEVhbTCjEIu5PlfzQb31cMEAAA=
           """,
-                """
+          """
           test/pkg/MyIssueRegistry.class:
           H4sIAAAAAAAA/6VVW28bRRT+Zn1bu26yMQk4TkPd1rSOm2ad9AZ1mpImFJY6
           CUpKBMrTxp6aSda71s7Yojyg/Ap+AOKRB5CIWoGEoj7yoxBnd12S2omg8LBz
@@ -3034,7 +2941,7 @@ class LintBaselineTest {
           JB5iZQc5iTmJVYmkxKTERxI3JW5JTITzRxKmRFViWuK2xIxEReKOxN2/AAbm
           ojBNCAAA
           """,
-                """
+          """
           test/pkg/MyIssueRegistryKt.class:
           H4sIAAAAAAAA/51VW08TURD+pkV6sVIogtxEhQqtCMtFvBUxWCCuFjCUEJUH
           ctgem4XtbrN7SuSN+Oq/8BcoPmg0MYRHf42/wDhbKxDkobCb7JwzZ75v57Iz
@@ -3055,10 +2962,10 @@ class LintBaselineTest {
           FkcnHvl+4T6mWY6x/jZ7OLyGoI4RHZqOUYzpGMeEzj+LyTWQh7u4t4aAh5CH
           8B89/7DSSAYAAA==
           """,
-            ),
-        )
-        .testModes(TestMode.DEFAULT)
-        .createProjects(root)
+        ),
+      )
+      .testModes(TestMode.DEFAULT)
+      .createProjects(root)
 
     val lintJar = File(root, "app/lint.jar")
     assertTrue(lintJar.exists())
@@ -3069,36 +2976,32 @@ class LintBaselineTest {
 
     val baseline = LintBaseline(ToolsBaseTestLintClient(), File(""))
     baseline.sameMessage(
-        ApiDetector.UNSUPPORTED,
-        "Call requires API level 23 (current min is 1): `foo`",
-        "Call requires API level 23 (current min is 22): `foo`",
+      ApiDetector.UNSUPPORTED,
+      "Call requires API level 23 (current min is 1): `foo`",
+      "Call requires API level 23 (current min is 22): `foo`",
     )
 
     assertTrue(
-        // default matching on string equivalence, even if this isn't specially coded there
-        baseline.sameMessage(
-            issue,
-            new = "Value must be ≥ 0 but can be -1",
-            old = "Value must be ≥ 0",
-        )
+      // default matching on string equivalence, even if this isn't specially coded there
+      baseline.sameMessage(issue, new = "Value must be ≥ 0 but can be -1", old = "Value must be ≥ 0")
     )
 
     // Now make sure our sameMessage implementations are called
 
     assertTrue(
-        baseline.sameMessage(
-            issue,
-            new = "PreviousMessage", // matches hardcoded check in Detector's sameMessage()
-            old = "Value must be ≥ 0",
-        )
+      baseline.sameMessage(
+        issue,
+        new = "PreviousMessage", // matches hardcoded check in Detector's sameMessage()
+        old = "Value must be ≥ 0",
+      )
     )
 
     assertFalse(
-        baseline.sameMessage(
-            RangeDetector.RANGE, // make sure this only works for the new issue, not an unrelated one
-            new = "PreviousDetector",
-            old = "Value must be ≥ 0",
-        )
+      baseline.sameMessage(
+        RangeDetector.RANGE, // make sure this only works for the new issue, not an unrelated one
+        new = "PreviousDetector",
+        old = "Value must be ≥ 0",
+      )
     )
   }
 
@@ -3129,35 +3032,35 @@ class LintBaselineTest {
     val client = TestLintClient()
 
     lint
-        .files(
-            xml("res/layout/foo.xml", "<LinearLayout/>"),
-            java(
-                """
+      .files(
+        xml("res/layout/foo.xml", "<LinearLayout/>"),
+        java(
+          """
                   package test.pkg;
                   @SuppressWarnings("ALL") class Foo {
                   }
                   """
-            ),
-        )
-        .allowSystemErrors(true)
-        .allowExceptions(true)
-        .issues(LintDriverCrashTest.CrashingDetector.CRASHING_ISSUE)
-        .testModes(TestMode.DEFAULT)
-        .sdkHome(TestUtils.getSdk().toFile())
-        .clientFactory {
-          client.setLintTask(lint)
-          client.flags.isUpdateBaseline = true
-          client.flags.baselineFile = outputBaseline
-          client
-        }
-        .run()
-        .check({
-          assertThat(it)
-              .contains(
-                  // This LintError should not be baselined
-                  "Foo.java: Error: Unexpected failure during lint analysis of Foo.java (this is a bug in lint or one of the libraries it depends on)"
-              )
-        })
+        ),
+      )
+      .allowSystemErrors(true)
+      .allowExceptions(true)
+      .issues(LintDriverCrashTest.CrashingDetector.CRASHING_ISSUE)
+      .testModes(TestMode.DEFAULT)
+      .sdkHome(TestUtils.getSdk().toFile())
+      .clientFactory {
+        client.setLintTask(lint)
+        client.flags.isUpdateBaseline = true
+        client.flags.baselineFile = outputBaseline
+        client
+      }
+      .run()
+      .check({
+        assertThat(it)
+          .contains(
+            // This LintError should not be baselined
+            "Foo.java: Error: Unexpected failure during lint analysis of Foo.java (this is a bug in lint or one of the libraries it depends on)"
+          )
+      })
 
     val baseline = client.driver.baseline!!
 
@@ -3165,14 +3068,14 @@ class LintBaselineTest {
     // or when Lint CLI is revising an existing baseline.
     baseline.write(outputBaseline)
     assertEquals(
-        """
-        <?xml version="1.0" encoding="UTF-8"?>
-        <issues>
+      """
+      <?xml version="1.0" encoding="UTF-8"?>
+      <issues>
 
-        </issues>
-        """
-            .trimIndent(),
-        readBaseline(outputBaseline).dos2unix(),
+      </issues>
+      """
+        .trimIndent(),
+      readBaseline(outputBaseline).dos2unix(),
     )
 
     // Writing to the baseline the way Lint CLI does when creating a new
@@ -3180,14 +3083,14 @@ class LintBaselineTest {
     client.writeBaselineFile(LintStats(0, 0), outputBaseline, true)
 
     assertEquals(
-        """
-        <?xml version="1.0" encoding="UTF-8"?>
-        <issues>
+      """
+      <?xml version="1.0" encoding="UTF-8"?>
+      <issues>
 
-        </issues>
-        """
-            .trimIndent(),
-        readBaseline(outputBaseline).dos2unix(),
+      </issues>
+      """
+        .trimIndent(),
+      readBaseline(outputBaseline).dos2unix(),
     )
   }
 
@@ -3198,13 +3101,13 @@ class LintBaselineTest {
      */
     fun readBaseline(baseline: File): String {
       val newBaseline =
-          baseline.readText().trim().let {
-            // Filter out header attributes which would make the test file change over
-            // time, like "<issues format="5" by="lint 7.1.0-dev">"
-            val start = it.indexOf("<issues ") + 7
-            val end = it.indexOf('>', start)
-            it.substring(0, start) + it.substring(end)
-          }
+        baseline.readText().trim().let {
+          // Filter out header attributes which would make the test file change over
+          // time, like "<issues format="5" by="lint 7.1.0-dev">"
+          val start = it.indexOf("<issues ") + 7
+          val end = it.indexOf('>', start)
+          it.substring(0, start) + it.substring(end)
+        }
       return newBaseline
     }
   }

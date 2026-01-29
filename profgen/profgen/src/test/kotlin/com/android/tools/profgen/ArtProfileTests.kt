@@ -419,7 +419,8 @@ class ArtProfileTests {
     }
 
     os = ByteArrayOutputStream()
-    // since these profiles were deserialized from disk, serialize them back to disk and deserialize them
+    // since these profiles were deserialized from disk, serialize them back to disk and deserialize
+    // them
     // again to ensure that they match
     deserialized.save(os, serializer)
 
@@ -451,7 +452,8 @@ class ArtProfileTests {
     val startProf = ArtProfile(os.toByteArray().inputStream())!!
 
     os = ByteArrayOutputStream()
-    // since these profiles were deserialized from disk, serialize them back to disk and deserialize them
+    // since these profiles were deserialized from disk, serialize them back to disk and deserialize
+    // them
     // again to ensure that they match
     startProf.save(os, end)
 

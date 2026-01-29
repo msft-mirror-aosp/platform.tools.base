@@ -47,7 +47,8 @@ internal class DeviceInfoTracker(private val session: AdbSession, private val de
 
   fun createFlow(): Flow<DeviceInfo> {
     // Note: 'transformWhile' is not experimental anymore
-    // See https://github.com/Kotlin/kotlinx.coroutines/commit/8d1ee7d3230a66f7c26910c1b17746fd3ada57d8
+    // See
+    // https://github.com/Kotlin/kotlinx.coroutines/commit/8d1ee7d3230a66f7c26910c1b17746fd3ada57d8
     @OptIn(ExperimentalCoroutinesApi::class)
     return session
       .trackDevices()

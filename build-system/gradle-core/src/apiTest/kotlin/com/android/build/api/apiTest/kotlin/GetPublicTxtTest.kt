@@ -29,8 +29,9 @@ class GetPublicTxtTest : VariantApiBaseTest(TestType.Script) {
       tasksToInvoke.add(":lib:validateDebugPublicResources")
       addModule(":lib") {
         @Suppress("RemoveExplicitTypeArguments")
-        buildFile = // language=kotlin prefix="import org.gradle.api.*; import org.gradle.api.file.*;import org.gradle.api.provider.*;
-                    // import org.gradle.api.tasks.*; import org.gradle.workers.*;"
+        buildFile = // language=kotlin prefix="import org.gradle.api.*; import
+          // org.gradle.api.file.*;import org.gradle.api.provider.*;
+          // import org.gradle.api.tasks.*; import org.gradle.workers.*;"
           """
             plugins {
                 id("com.android.library")

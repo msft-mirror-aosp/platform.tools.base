@@ -708,8 +708,10 @@ class AdbLibAndroidDebugBridge(
           if (!isUnitTestMode) {
             adbServerController.lastKnownRemoteAddress
               ?: run {
-                // Open a connection to try to force setting the `lastKnownRemoteAddress`, but this
-                // can fail for many reasons (server not started, server not available) so we have
+                // Open a connection to try to force setting the `lastKnownRemoteAddress`, but
+                // this
+                // can fail for many reasons (server not started, server not available) so we
+                // have
                 // to ignore errors.
                 if (adbServerController.isStarted) {
                   runCatching { adbServerController.channelProvider.createChannel().use {} }

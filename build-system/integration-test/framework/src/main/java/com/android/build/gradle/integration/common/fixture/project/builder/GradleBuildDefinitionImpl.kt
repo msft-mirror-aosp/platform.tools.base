@@ -397,7 +397,8 @@ internal class GradleBuildDefinitionImpl(
     // include build logic in the settings file
     val customPluginMap = handleCustomBuildLogic(location)
 
-    // gather all the plugins and all their versions so that the settings file can declare them as needed.
+    // gather all the plugins and all their versions so that the settings file can declare them as
+    // needed.
     // this is not needed if we use the old plugin style
     val allPlugins = if (useOldPluginStyleForSeparateClassloaders) mapOf() else computeAllPluginMap()
 

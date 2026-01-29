@@ -25,7 +25,8 @@ import java.nio.ByteOrder
 class JdwpVmIdSizesHandler : JdwpPacketHandler {
 
   override fun handlePacket(device: DeviceState, client: ClientState, packet: JdwpPacket, jdwpHandlerOutput: JdwpHandlerOutput): Boolean {
-    // See https://docs.oracle.com/javase/8/docs/platform/jpda/jdwp/jdwp-protocol.html#JDWP_VirtualMachine_IDSizes
+    // See
+    // https://docs.oracle.com/javase/8/docs/platform/jpda/jdwp/jdwp-protocol.html#JDWP_VirtualMachine_IDSizes
     // int	fieldIDSize	fieldID size in bytes
     // int	methodIDSize	methodID size in bytes
     // int	objectIDSize	objectID size in bytes

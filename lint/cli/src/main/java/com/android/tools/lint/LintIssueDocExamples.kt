@@ -36,26 +36,26 @@ fun appendExample(jsonFile: File?, issueData: IssueData) {
   val tooLarge = example.files.firstOrNull { it.source.length > max }
   if (tooLarge != null) {
     println(
-        "Error: Example too large for ${issueData.issue.id} (from example ${example.testClass}#${example.testMethod}, " +
-            "source file ${tooLarge.path} of length ${tooLarge.source.length}"
+      "Error: Example too large for ${issueData.issue.id} (from example ${example.testClass}#${example.testMethod}, " +
+        "source file ${tooLarge.path} of length ${tooLarge.source.length}"
     )
     return
   }
 
   appendExample(
-      jsonFile,
-      example.testClass,
-      example.testMethod,
-      output,
-      example.files
-          .mapNotNull {
-            if (it.path == null) {
-              null
-            } else Pair(it.path, it.source)
-          }
-          .toList(),
-      issueData.issue,
-      issueData,
+    jsonFile,
+    example.testClass,
+    example.testMethod,
+    output,
+    example.files
+      .mapNotNull {
+        if (it.path == null) {
+          null
+        } else Pair(it.path, it.source)
+      }
+      .toList(),
+    issueData.issue,
+    issueData,
   )
 }
 
@@ -75,18 +75,18 @@ private fun String.stripRepeatedBlankLines(): String {
 }
 
 private fun appendExample(
-    file: File,
-    className: String,
-    methodName: String,
-    expected: String,
-    files: List<Pair<String, String>>,
-    primaryIssue: Issue,
-    issueData: IssueData,
+  file: File,
+  className: String,
+  methodName: String,
+  expected: String,
+  files: List<Pair<String, String>>,
+  primaryIssue: Issue,
+  issueData: IssueData,
 ) {
   val incidents: List<ReportedIncident> =
-      LintIssueDocGenerator.getOutputIncidents(expected)
-          // Don't include internal-only issues
-          .filter { !it.id.startsWith("_") }
+    LintIssueDocGenerator.getOutputIncidents(expected)
+      // Don't include internal-only issues
+      .filter { !it.id.startsWith("_") }
   if (incidents.isEmpty()) {
     return
   }
@@ -96,100 +96,92 @@ private fun appendExample(
 
   // Strip comments
   val filesWithoutComments =
-      files.map { pathAndSource ->
-        val path = pathAndSource.first
-        val original = pathAndSource.second
-        val extension = ".${path.substringAfterLast(".")}"
+    files.map { pathAndSource ->
+      val path = pathAndSource.first
+      val original = pathAndSource.second
+      val extension = ".${path.substringAfterLast(".")}"
 
-        // Remove comments, and if comments are removed, also go and adjust
-        // all the line numbers in the incidents list correspondingly
-        val source = stripComments(original, extension).stripRepeatedBlankLines()
-        if (source.length < original.length) {
-          for (incident in incidents) {
-            val sourceLine = incident.sourceLine1 ?: ""
-            if (incident.path == path && sourceLine.isNotBlank()) {
-              val strippedSourceLine = stripComments(sourceLine, extension).trim()
-              if (strippedSourceLine.isEmpty()) {
-                // The error line seems to be on a comment; for these cases
-                // we cannot remove the comments -- give up and use originals
-                appendExample(file, className, methodName, incidents, files, primaryIssue, issueData)
-                return
-              }
+      // Remove comments, and if comments are removed, also go and adjust
+      // all the line numbers in the incidents list correspondingly
+      val source = stripComments(original, extension).stripRepeatedBlankLines()
+      if (source.length < original.length) {
+        for (incident in incidents) {
+          val sourceLine = incident.sourceLine1 ?: ""
+          if (incident.path == path && sourceLine.isNotBlank()) {
+            val strippedSourceLine = stripComments(sourceLine, extension).trim()
+            if (strippedSourceLine.isEmpty()) {
+              // The error line seems to be on a comment; for these cases
+              // we cannot remove the comments -- give up and use originals
+              appendExample(file, className, methodName, incidents, files, primaryIssue, issueData)
+              return
+            }
 
-              val targetLineNumber = incident.lineNumber
-              // Count how many occurrences until we find this line in the original source
-              var count = 0
-              var offset = 0
-              var line = 1
+            val targetLineNumber = incident.lineNumber
+            // Count how many occurrences until we find this line in the original source
+            var count = 0
+            var offset = 0
+            var line = 1
 
-              while (true) {
-                val start = offset
-                offset = original.indexOf(strippedSourceLine, offset)
-                if (offset == -1) {
-                  break
-                } else {
-                  count++
-                  offset += strippedSourceLine.length
-                  for (c in start until offset) {
-                    if (original[c] == '\n') {
-                      line++
-                    }
-                  }
-                  if (line >= targetLineNumber) {
-                    break
+            while (true) {
+              val start = offset
+              offset = original.indexOf(strippedSourceLine, offset)
+              if (offset == -1) {
+                break
+              } else {
+                count++
+                offset += strippedSourceLine.length
+                for (c in start until offset) {
+                  if (original[c] == '\n') {
+                    line++
                   }
                 }
-              }
-
-              // Now find the same line the same number of times in the stripped file
-              offset = 0
-              while (true) {
-                offset = source.indexOf(strippedSourceLine, offset)
-                if (offset == -1) {
+                if (line >= targetLineNumber) {
                   break
-                } else {
-                  count--
-                  if (count == 0) {
-                    val lineNumber = source.getLineNumber(offset)
-                    if (lineNumber != incident.lineNumber) {
-                      val copy = incident.copy(lineNumber = lineNumber)
-                      shiftedLineNumbers[incident] = copy
-                    }
-                    break
-                  }
-                  offset += strippedSourceLine.length
                 }
               }
             }
-          }
 
-          Pair(path, source)
-        } else {
-          pathAndSource
+            // Now find the same line the same number of times in the stripped file
+            offset = 0
+            while (true) {
+              offset = source.indexOf(strippedSourceLine, offset)
+              if (offset == -1) {
+                break
+              } else {
+                count--
+                if (count == 0) {
+                  val lineNumber = source.getLineNumber(offset)
+                  if (lineNumber != incident.lineNumber) {
+                    val copy = incident.copy(lineNumber = lineNumber)
+                    shiftedLineNumbers[incident] = copy
+                  }
+                  break
+                }
+                offset += strippedSourceLine.length
+              }
+            }
+          }
         }
+
+        Pair(path, source)
+      } else {
+        pathAndSource
       }
+    }
 
   val incidentsWithShiftedLineNumbers = incidents.map { shiftedLineNumbers[it] ?: it }
 
-  appendExample(
-      file,
-      className,
-      methodName,
-      incidentsWithShiftedLineNumbers,
-      filesWithoutComments,
-      primaryIssue,
-      issueData,
-  )
+  appendExample(file, className, methodName, incidentsWithShiftedLineNumbers, filesWithoutComments, primaryIssue, issueData)
 }
 
 private fun appendExample(
-    jsonFile: File,
-    className: String,
-    methodName: String,
-    incidents: List<ReportedIncident>,
-    files: List<Pair<String, String>>,
-    primaryIssue: Issue,
-    issueData: IssueData,
+  jsonFile: File,
+  className: String,
+  methodName: String,
+  incidents: List<ReportedIncident>,
+  files: List<Pair<String, String>>,
+  primaryIssue: Issue,
+  issueData: IssueData,
 ) {
   val (primaryIncidents, remainingIncidents) = incidents.partition { it.id == primaryIssue.id }
   if (primaryIncidents.isEmpty()) {
@@ -228,10 +220,10 @@ private fun appendExample(
   }
 
   val (mainFiles, supportFiles) =
-      files.partition { file ->
-        val path = file.first
-        incidents.any { it.path.endsWith(path) || path.endsWith(it.path) }
-      }
+    files.partition { file ->
+      val path = file.first
+      incidents.any { it.path.endsWith(path) || path.endsWith(it.path) }
+    }
   if (mainFiles.isEmpty()) {
     return
   }
@@ -283,7 +275,7 @@ private fun appendExample(
   sb.append("    \"severity\": \"${primaryIssue.defaultSeverity.toName()}\",\n")
   sb.append("    \"category\": \"${primaryIssue.category.fullName.escapeJson()}\",\n")
   sb.append(
-      "    \"documentation\": \"${"https://googlesamples.github.io/android-custom-lint-rules/checks/${primaryIssue.id}.md.html".escapeJson()}\",\n"
+    "    \"documentation\": \"${"https://googlesamples.github.io/android-custom-lint-rules/checks/${primaryIssue.id}.md.html".escapeJson()}\",\n"
   )
   sb.append("    \"priority\": \"${primaryIssue.priority}\",\n")
   sb.append("    \"enabled-by-default\": \"${primaryIssue.isEnabledByDefault()}\",\n")
@@ -328,7 +320,7 @@ private fun exampleIncludesHints(files: List<Pair<String, String>>, primaryIssue
       val sourceWindowEnd = min(source.length, group.range.last + windowSize)
       val sourceWindow = "..." + source.substring(sourceWindowStart, sourceWindowEnd).replace("\n", "\\n") + "..."
       println(
-          "WARNING: Test file $path for ${primaryIssue.id} may be leaking problem through names: `${matchResult.value}` in `$sourceWindow`"
+        "WARNING: Test file $path for ${primaryIssue.id} may be leaking problem through names: `${matchResult.value}` in `$sourceWindow`"
       )
       return true
     }

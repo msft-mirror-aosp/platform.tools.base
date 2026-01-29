@@ -223,12 +223,7 @@ fun formatList(strings: List<String>, maxItems: Int = Integer.MAX_VALUE): String
  * @param useConjunction whether the last two items should be joined with "and" instead of ","
  * @return a comma separated list-string
  */
-fun formatList(
-    strings: List<String>,
-    maxItems: Int = Integer.MAX_VALUE,
-    sort: Boolean = true,
-    useConjunction: Boolean = false,
-): String {
+fun formatList(strings: List<String>, maxItems: Int = Integer.MAX_VALUE, sort: Boolean = true, useConjunction: Boolean = false): String {
   var sortedStrings = strings
   if (sort) {
     val sorted = ArrayList(sortedStrings)
@@ -294,13 +289,7 @@ fun isXmlFile(file: File): Boolean {
  * @return true if `string` ends with `suffix`, case-insensitively.
  */
 fun endsWith(string: String, suffix: String): Boolean {
-  return string.regionMatches(
-      string.length - suffix.length,
-      suffix,
-      0,
-      suffix.length,
-      ignoreCase = true, /* ignoreCase */
-  )
+  return string.regionMatches(string.length - suffix.length, suffix, 0, suffix.length, ignoreCase = true /* ignoreCase */)
 }
 
 /**
@@ -343,12 +332,12 @@ fun getBaseName(fileName: String): String {
  * @return a description string
  */
 fun describeCounts(
-    errorCount: Int,
-    warningCount: Int,
-    hintCount: Int,
-    comma: Boolean,
-    capitalize: Boolean,
-    includeZero: Boolean = false,
+  errorCount: Int,
+  warningCount: Int,
+  hintCount: Int,
+  comma: Boolean,
+  capitalize: Boolean,
+  includeZero: Boolean = false,
 ): String {
   if (errorCount == 0 && warningCount == 0 && hintCount == 0) {
     return if (capitalize) {
@@ -440,12 +429,8 @@ fun isRootElement(element: Element): Boolean {
  * @return the stripped id, never null
  */
 @Deprecated(
-    message = "Use ResourceUrl for parsing @id and similar strings.",
-    replaceWith =
-        ReplaceWith(
-            expression = "ResourceUrl.parse(id)?.name",
-            imports = ["com.android.resources.ResourceUrl"],
-        ),
+  message = "Use ResourceUrl for parsing @id and similar strings.",
+  replaceWith = ReplaceWith(expression = "ResourceUrl.parse(id)?.name", imports = ["com.android.resources.ResourceUrl"]),
 )
 fun stripIdPrefix(id: String?): String {
   return when {
@@ -473,12 +458,7 @@ fun idReferencesMatch(id1: String?, id2: String?): Boolean {
     } else {
       assert(id2.startsWith(ID_PREFIX)) { id2 }
       id1.length - id2.length == NEW_ID_PREFIX.length - ID_PREFIX.length &&
-          id1.regionMatches(
-              NEW_ID_PREFIX.length,
-              id2,
-              ID_PREFIX.length,
-              id2.length - ID_PREFIX.length,
-          )
+        id1.regionMatches(NEW_ID_PREFIX.length, id2, ID_PREFIX.length, id2.length - ID_PREFIX.length)
     }
   } else {
     assert(id1.startsWith(ID_PREFIX)) { id1 }
@@ -487,12 +467,7 @@ fun idReferencesMatch(id1: String?, id2: String?): Boolean {
     } else {
       assert(id2.startsWith(NEW_ID_PREFIX))
       id2.length - id1.length == NEW_ID_PREFIX.length - ID_PREFIX.length &&
-          id2.regionMatches(
-              NEW_ID_PREFIX.length,
-              id1,
-              ID_PREFIX.length,
-              id1.length - ID_PREFIX.length,
-          )
+        id2.regionMatches(NEW_ID_PREFIX.length, id1, ID_PREFIX.length, id1.length - ID_PREFIX.length)
     }
   }
 }
@@ -679,15 +654,15 @@ fun splitPath(path: String): Iterable<String> {
   while (i < n) {
     val p = combined[i]
     if (
-        p.length == 1 &&
-            i < n - 1 &&
-            Character.isLetter(p[0]) &&
-            // Technically, Windows paths do not have to have a \ after the :,
-            // which means it would be using the current directory on that drive,
-            // but that's unlikely to be the case in a path since it would have
-            // unpredictable results
-            !combined[i + 1].isEmpty() &&
-            combined[i + 1][0] == '\\'
+      p.length == 1 &&
+        i < n - 1 &&
+        Character.isLetter(p[0]) &&
+        // Technically, Windows paths do not have to have a \ after the :,
+        // which means it would be using the current directory on that drive,
+        // but that's unlikely to be the case in a path since it would have
+        // unpredictable results
+        !combined[i + 1].isEmpty() &&
+        combined[i + 1][0] == '\\'
     ) {
       combined[i] = p + ':'.toString() + combined[i + 1]
       combined.removeAt(i + 1)
@@ -1117,12 +1092,12 @@ fun getLocaleAndRegion(folderName: String): String? {
  * is true.
  */
 fun getStyleAttributes(
-    project: Project,
-    client: LintClient,
-    styleUrl: String,
-    namespaceUri: String,
-    attribute: String,
-    acceptMissing: Boolean = false,
+  project: Project,
+  client: LintClient,
+  styleUrl: String,
+  namespaceUri: String,
+  attribute: String,
+  acceptMissing: Boolean = false,
 ): List<ResourceValue>? {
   val resources = client.getResources(project, ALL_DEPENDENCIES)
   val style = ResourceUrl.parse(styleUrl)
@@ -1150,17 +1125,13 @@ fun getStyleAttributes(
       val rv = item.resourceValue
       if (rv is StyleResourceValue) {
         val srv = rv as StyleResourceValue?
-        val namespace =
-            MoreObjects.firstNonNull(
-                ResourceNamespace.fromNamespaceUri(namespaceUri),
-                ResourceNamespace.TODO(),
-            )
+        val namespace = MoreObjects.firstNonNull(ResourceNamespace.fromNamespaceUri(namespaceUri), ResourceNamespace.TODO())
         val frameworkResource: String? =
-            if (!attribute.startsWith(ANDROID_NS_NAME_PREFIX) && namespace == ResourceNamespace.ANDROID) {
-              ANDROID_NS_NAME_PREFIX + attribute
-            } else {
-              null
-            }
+          if (!attribute.startsWith(ANDROID_NS_NAME_PREFIX) && namespace == ResourceNamespace.ANDROID) {
+            ANDROID_NS_NAME_PREFIX + attribute
+          } else {
+            null
+          }
         for (styleItem in srv!!.definedItems) {
           if (styleItem.attrName == attribute && styleItem.namespace == namespace || styleItem.attrName == frameworkResource) {
             if (!result.contains(styleItem)) {
@@ -1201,11 +1172,7 @@ fun getStyleAttributes(
   return result
 }
 
-fun getInheritedStyles(
-    project: Project,
-    client: LintClient,
-    styleUrl: String,
-): List<StyleResourceValue>? {
+fun getInheritedStyles(project: Project, client: LintClient, styleUrl: String): List<StyleResourceValue>? {
   val resources = client.getResources(project, ALL_DEPENDENCIES)
   val style = ResourceUrl.parse(styleUrl)
   if (style == null || style.isFramework) {
@@ -1279,11 +1246,7 @@ fun isSameResourceFile(file1: File?, file2: File?): Boolean {
 }
 
 /** Computes a suggested name given a resource prefix and resource name. */
-fun computeResourceName(
-    prefix: String,
-    name: String,
-    folderType: ResourceFolderType? = null,
-): String {
+fun computeResourceName(prefix: String, name: String, folderType: ResourceFolderType? = null): String {
   var newPrefix = prefix
   var newName = name
   if (newPrefix.isEmpty()) {
@@ -1324,13 +1287,7 @@ fun computeResourceName(
 }
 
 /** Returns true if the given Gradle model is older than the given version number. */
-fun isModelOlderThan(
-    project: Project,
-    major: Int,
-    minor: Int,
-    micro: Int,
-    defaultForNonGradleProjects: Boolean = false,
-): Boolean {
+fun isModelOlderThan(project: Project, major: Int, minor: Int, micro: Int, defaultForNonGradleProjects: Boolean = false): Boolean {
   val version = project.gradleModelVersion ?: return defaultForNonGradleProjects
 
   if (version.major != major) {
@@ -1525,11 +1482,11 @@ fun guessGradleLocation(project: Project): Location {
   val location: Location
   val topLevel = findGradleBuildFile(dir)
   location =
-      if (topLevel.exists()) {
-        Location.create(topLevel)
-      } else {
-        Location.create(dir)
-      }
+    if (topLevel.exists()) {
+      Location.create(topLevel)
+    } else {
+      Location.create(dir)
+    }
   return location
 }
 
@@ -1596,9 +1553,9 @@ fun findGradleRootDir(projectDir: File): File? {
     // The settings file is the best marker for the root of the
     // Gradle project.
     if (
-        File(parent, SdkConstants.FN_SETTINGS_GRADLE).exists() ||
-            File(parent, SdkConstants.FN_SETTINGS_GRADLE_KTS).exists() ||
-            File(parent, SdkConstants.FN_SETTINGS_GRADLE_DECLARATIVE).exists()
+      File(parent, SdkConstants.FN_SETTINGS_GRADLE).exists() ||
+        File(parent, SdkConstants.FN_SETTINGS_GRADLE_KTS).exists() ||
+        File(parent, SdkConstants.FN_SETTINGS_GRADLE_DECLARATIVE).exists()
     ) {
       return parent
     }
@@ -1627,26 +1584,22 @@ fun isFalseLiteral(element: PsiElement?): Boolean {
 }
 
 @Deprecated(
-    message =
-        "This method is ambiguous. To move up/out in the AST, use skipParenthesizedExprUp instead " +
-            "(and from Java, import static method in UastUtils). " +
-            "To go inside the parentheses, instead use skipParenthesizedExprUp()",
-    replaceWith =
-        ReplaceWith(
-            "skipParenthesizedExprUp(element)",
-            "com.intellij.psi.util.PsiUtil.skipParenthesizedExprUp",
-        ),
+  message =
+    "This method is ambiguous. To move up/out in the AST, use skipParenthesizedExprUp instead " +
+      "(and from Java, import static method in UastUtils). " +
+      "To go inside the parentheses, instead use skipParenthesizedExprUp()",
+  replaceWith = ReplaceWith("skipParenthesizedExprUp(element)", "com.intellij.psi.util.PsiUtil.skipParenthesizedExprUp"),
 )
 fun skipParentheses(element: PsiElement?): PsiElement? {
   return PsiUtil.skipParenthesizedExprUp(element)
 }
 
 @Deprecated(
-    message =
-        "This method is ambiguous. To move up/out in the AST, use skipParenthesizedExprUp instead " +
-            "(and from Java, import static method in UastUtils). If the element is not a UExpression there's no need to call this method. " +
-            "To go inside the parentheses, instead use skipParenthesizedExprUp()",
-    replaceWith = ReplaceWith("skipParenthesizedExprUp(element)", "org.jetbrains.uast.skipParenthesizedExprUp"),
+  message =
+    "This method is ambiguous. To move up/out in the AST, use skipParenthesizedExprUp instead " +
+      "(and from Java, import static method in UastUtils). If the element is not a UExpression there's no need to call this method. " +
+      "To go inside the parentheses, instead use skipParenthesizedExprUp()",
+  replaceWith = ReplaceWith("skipParenthesizedExprUp(element)", "org.jetbrains.uast.skipParenthesizedExprUp"),
 )
 fun skipParentheses(element: UElement?): UElement? {
   var current = element
@@ -1702,8 +1655,8 @@ fun KtElement.firstLabelableParent(): KtExpressionWithLabel? {
   return PsiTreeUtil.findFirstParent(this) { parent ->
     // Main kind we're looking for
     parent is KtExpressionWithLabel ||
-        // But not beyond expression, e.g., declarations inside an anonymous object
-        parent !is KtExpression
+      // But not beyond expression, e.g., declarations inside an anonymous object
+      parent !is KtExpression
   } as? KtExpressionWithLabel
 }
 
@@ -1763,8 +1716,8 @@ fun getPrimitiveType(autoBoxedType: String): String? {
  * @return the fully qualified class name
  */
 @Deprecated(
-    "Use the overload which also supplies a project, to help resolve relative references",
-    ReplaceWith("resolveManifestName(element, context.project)"),
+  "Use the overload which also supplies a project, to help resolve relative references",
+  ReplaceWith("resolveManifestName(element, context.project)"),
 )
 fun resolveManifestName(element: Element): String {
   return resolveManifestName(element, null)
@@ -1799,15 +1752,8 @@ fun resolveManifestName(element: Element, project: Project?): String {
   return className
 }
 
-@Deprecated(
-    "Supply defaultValue for missing variables",
-    ReplaceWith("resolvePlaceHolders(project, value, substitutions, \"\""),
-)
-fun resolvePlaceHolders(
-    project: Project?,
-    value: String,
-    substitutions: Map<String, String>?,
-): String {
+@Deprecated("Supply defaultValue for missing variables", ReplaceWith("resolvePlaceHolders(project, value, substitutions, \"\""))
+fun resolvePlaceHolders(project: Project?, value: String, substitutions: Map<String, String>?): String {
   return resolvePlaceHolders(project, value, substitutions, "")!!
 }
 
@@ -1817,10 +1763,10 @@ fun resolvePlaceHolders(
  */
 @Contract("_, !null, _, !null -> !null")
 fun resolvePlaceHolders(
-    project: Project?,
-    value: String,
-    substitutions: Map<String, String>? = null,
-    defaultValue: String? = null,
+  project: Project?,
+  value: String,
+  substitutions: Map<String, String>? = null,
+  defaultValue: String? = null,
 ): String? {
   var s = value
   var startFromIndex = 0
@@ -1965,12 +1911,7 @@ fun readUrlData(client: LintClient, query: String, timeout: Int): ByteArray? {
 }
 
 /** Reads the data from the given URL with a timeout (in milliseconds) and last-modified timestamp (in milliseconds). */
-fun readUrlData(
-    client: LintClient,
-    query: String,
-    timeout: Int,
-    lastModified: Long,
-): ReadUrlDataResult {
+fun readUrlData(client: LintClient, query: String, timeout: Int, lastModified: Long): ReadUrlDataResult {
   val url = URL(query)
 
   val failure = ReadUrlDataResult(null, true)
@@ -2038,31 +1979,25 @@ fun isLayoutMarkerTag(element: Element): Boolean {
  * markers since they are replaced with real views.
  */
 fun isLayoutMarkerTag(tagName: String): Boolean =
-    when (tagName) {
-      REQUEST_FOCUS,
-      TAG,
-      "aapt:attr", // checked with namespace in #isLayoutMarkerTag
-      TAG_LAYOUT,
-      TAG_VARIABLE,
-      TAG_DATA,
-      TAG_IMPORT -> true
-      else -> false
-    }
+  when (tagName) {
+    REQUEST_FOCUS,
+    TAG,
+    "aapt:attr", // checked with namespace in #isLayoutMarkerTag
+    TAG_LAYOUT,
+    TAG_VARIABLE,
+    TAG_DATA,
+    TAG_IMPORT -> true
+    else -> false
+  }
 
 /** Returns `true` if the given element is written in Kotlin. */
-@Deprecated(
-    "Prefer to check element's language directly",
-    replaceWith = ReplaceWith("element != null && isKotlin(element.language)"),
-)
+@Deprecated("Prefer to check element's language directly", replaceWith = ReplaceWith("element != null && isKotlin(element.language)"))
 fun isKotlin(element: PsiElement?): Boolean {
   return element != null && isKotlin(element.language)
 }
 
 /** Returns `true` if the given element is written in Java. */
-@Deprecated(
-    "Prefer to check element's language directly",
-    replaceWith = ReplaceWith("element != null && isJava(element.language)"),
-)
+@Deprecated("Prefer to check element's language directly", replaceWith = ReplaceWith("element != null && isJava(element.language)"))
 fun isJava(element: PsiElement?): Boolean {
   return element != null && isJava(element.language)
 }
@@ -2105,10 +2040,7 @@ fun isPolyadicFromStringTemplate(element: UElement?): Boolean {
  * Computes argument mapping from arguments to parameters (or returns null if the mapping is 1-1, e.g. in Java), or if the mapping is
  * trivial (Kotlin 0 or 1 args), or if there's some kind of error.
  */
-fun computeKotlinArgumentMapping(
-    call: UCallExpression,
-    method: PsiMethod,
-): Map<UExpression, PsiParameter>? {
+fun computeKotlinArgumentMapping(call: UCallExpression, method: PsiMethod): Map<UExpression, PsiParameter>? {
   if (call is UImplicitCallExpression) {
     return call.getArgumentMapping()
   }
@@ -2288,9 +2220,9 @@ fun hasImplicitDefaultConstructor(psiClass: PsiClass?): Boolean {
     //    }
     // but the above method returns false. So add some of our own heuristics:
     if (
-        psiClass.hasModifierProperty(PsiModifier.FINAL) &&
-            !psiClass.hasModifierProperty(PsiModifier.ABSTRACT) &&
-            psiClass.hasModifierProperty(PsiModifier.PUBLIC)
+      psiClass.hasModifierProperty(PsiModifier.FINAL) &&
+        !psiClass.hasModifierProperty(PsiModifier.ABSTRACT) &&
+        psiClass.hasModifierProperty(PsiModifier.PUBLIC)
     ) {
       return true
     }
@@ -2304,18 +2236,15 @@ fun ULocalVariable.isImmutable(): Boolean = isFinal || (sourcePsi as? KtProperty
 // For compatibility reasons
 @Suppress("unused")
 object LintUtils {
-  @Deprecated(
-      "Use package function instead",
-      replaceWith = ReplaceWith("com.android.tools.lint.detector.api.getInternalName(psiClass)"),
-  )
+  @Deprecated("Use package function instead", replaceWith = ReplaceWith("com.android.tools.lint.detector.api.getInternalName(psiClass)"))
   @JvmStatic
   fun getInternalName(psiClass: PsiClass): String? {
     return com.android.tools.lint.detector.api.getInternalName(psiClass)
   }
 
   @Deprecated(
-      "Use package function instead",
-      replaceWith = ReplaceWith("com.android.tools.lint.detector.api.getInternalMethodName(method)"),
+    "Use package function instead",
+    replaceWith = ReplaceWith("com.android.tools.lint.detector.api.getInternalMethodName(method)"),
   )
   @JvmStatic
   fun getInternalMethodName(method: PsiMethod): String {
@@ -2324,8 +2253,8 @@ object LintUtils {
 
   @JvmStatic
   @Deprecated(
-      "Use package function instead",
-      replaceWith = ReplaceWith("com.android.tools.lint.detector.api.formatList(strings, maxItems)"),
+    "Use package function instead",
+    replaceWith = ReplaceWith("com.android.tools.lint.detector.api.formatList(strings, maxItems)"),
   )
   fun formatList(strings: List<String>, maxItems: Int): String {
     return com.android.tools.lint.detector.api.formatList(strings, maxItems)
@@ -2333,8 +2262,8 @@ object LintUtils {
 
   @JvmStatic
   @Deprecated(
-      "Use package function instead",
-      replaceWith = ReplaceWith("com.android.tools.lint.detector.api.formatList(strings, maxItems, sort)"),
+    "Use package function instead",
+    replaceWith = ReplaceWith("com.android.tools.lint.detector.api.formatList(strings, maxItems, sort)"),
   )
   fun formatList(strings: List<String>, maxItems: Int, sort: Boolean): String {
     return com.android.tools.lint.detector.api.formatList(strings, maxItems, sort)
@@ -2342,116 +2271,86 @@ object LintUtils {
 
   @JvmStatic
   @Deprecated(
-      "Use package function instead",
-      replaceWith = ReplaceWith("com.android.tools.lint.detector.api.isFileBasedResourceType(type)"),
+    "Use package function instead",
+    replaceWith = ReplaceWith("com.android.tools.lint.detector.api.isFileBasedResourceType(type)"),
   )
   fun isFileBasedResourceType(type: ResourceType): Boolean {
     return com.android.tools.lint.detector.api.isFileBasedResourceType(type)
   }
 
   @JvmStatic
-  @Deprecated(
-      "Use package function instead",
-      replaceWith = ReplaceWith("com.android.tools.lint.detector.api.isXmlFile(file)"),
-  )
+  @Deprecated("Use package function instead", replaceWith = ReplaceWith("com.android.tools.lint.detector.api.isXmlFile(file)"))
   fun isXmlFile(file: File): Boolean {
     return com.android.tools.lint.detector.api.isXmlFile(file)
   }
 
   @JvmStatic
-  @Deprecated(
-      "Use package function instead",
-      replaceWith = ReplaceWith("com.android.tools.lint.detector.api.endsWith(string, suffix)"),
-  )
+  @Deprecated("Use package function instead", replaceWith = ReplaceWith("com.android.tools.lint.detector.api.endsWith(string, suffix)"))
   fun endsWith(string: String, suffix: String): Boolean {
     return com.android.tools.lint.detector.api.endsWith(string, suffix)
   }
 
   @JvmStatic
   @Deprecated(
-      "Use package function instead",
-      replaceWith = ReplaceWith("com.android.tools.lint.detector.api.startsWith(string, prefix, offset)"),
+    "Use package function instead",
+    replaceWith = ReplaceWith("com.android.tools.lint.detector.api.startsWith(string, prefix, offset)"),
   )
   fun startsWith(string: String, prefix: String, offset: Int): Boolean {
     return com.android.tools.lint.detector.api.startsWith(string, prefix, offset)
   }
 
   @JvmStatic
-  @Deprecated(
-      "Use package function instead",
-      replaceWith = ReplaceWith("com.android.tools.lint.detector.api.getBaseName(fileName)"),
-  )
+  @Deprecated("Use package function instead", replaceWith = ReplaceWith("com.android.tools.lint.detector.api.getBaseName(fileName)"))
   fun getBaseName(fileName: String): String {
     return com.android.tools.lint.detector.api.getBaseName(fileName)
   }
 
   @JvmStatic
   @Deprecated(
-      "Use package function instead",
-      replaceWith = ReplaceWith("com.android.tools.lint.detector.api.describeCounts(errorCount, warningCount, 0, comma, capitalize)"),
+    "Use package function instead",
+    replaceWith = ReplaceWith("com.android.tools.lint.detector.api.describeCounts(errorCount, warningCount, 0, comma, capitalize)"),
   )
-  fun describeCounts(
-      errorCount: Int,
-      warningCount: Int,
-      comma: Boolean,
-      capitalize: Boolean,
-  ): String {
+  fun describeCounts(errorCount: Int, warningCount: Int, comma: Boolean, capitalize: Boolean): String {
     return describeCounts(errorCount, warningCount, 0, comma, capitalize)
   }
 
   @JvmStatic
-  @Deprecated(
-      "Use package function instead",
-      replaceWith = ReplaceWith("com.android.tools.lint.detector.api.getChildren(node)"),
-  )
+  @Deprecated("Use package function instead", replaceWith = ReplaceWith("com.android.tools.lint.detector.api.getChildren(node)"))
   fun getChildren(node: Node): List<Element> {
     return com.android.tools.lint.detector.api.getChildren(node)
   }
 
   @JvmStatic
-  @Deprecated(
-      "Use package function instead",
-      replaceWith = ReplaceWith("com.android.tools.lint.detector.api.getChildCount(node)"),
-  )
+  @Deprecated("Use package function instead", replaceWith = ReplaceWith("com.android.tools.lint.detector.api.getChildCount(node)"))
   fun getChildCount(node: Node): Int {
     return com.android.tools.lint.detector.api.getChildCount(node)
   }
 
   @JvmStatic
-  @Deprecated(
-      "Use package function instead",
-      replaceWith = ReplaceWith("com.android.tools.lint.detector.api.isRootElement(element)"),
-  )
+  @Deprecated("Use package function instead", replaceWith = ReplaceWith("com.android.tools.lint.detector.api.isRootElement(element)"))
   fun isRootElement(element: Element): Boolean {
     return com.android.tools.lint.detector.api.isRootElement(element)
   }
 
   @JvmStatic
   @Deprecated(
-      message = "Use ResourceUrl for parsing @id and similar strings and consider the namespace used.",
-      replaceWith =
-          ReplaceWith(
-              expression = "ResourceUrl.parse(id)",
-              imports = ["com.android.resources.ResourceUrl"],
-          ),
+    message = "Use ResourceUrl for parsing @id and similar strings and consider the namespace used.",
+    replaceWith = ReplaceWith(expression = "ResourceUrl.parse(id)", imports = ["com.android.resources.ResourceUrl"]),
   )
   fun stripIdPrefix(id: String?): String {
     return com.android.tools.lint.detector.api.stripIdPrefix(id)
   }
 
   @JvmStatic
-  @Deprecated(
-      "Use package function instead",
-      replaceWith = ReplaceWith("com.android.tools.lint.detector.api.idReferencesMatch(id1, id2)"),
-  )
+  @Deprecated("Use package function instead", replaceWith = ReplaceWith("com.android.tools.lint.detector.api.idReferencesMatch(id1, id2)"))
   fun idReferencesMatch(id1: String?, id2: String?): Boolean {
     return com.android.tools.lint.detector.api.idReferencesMatch(id1, id2)
   }
 
   @JvmStatic
   @Deprecated(
-      "Use package function instead",
-      replaceWith = ReplaceWith("com.android.tools.lint.detector.api.getFileNameWithParent(client, file)"),
+    "Use package function instead",
+    replaceWith = ReplaceWith("com.android.tools.lint.detector.api.getFileNameWithParent(client, file)"),
   )
   fun getFileNameWithParent(client: LintClient, file: File): String {
     return com.android.tools.lint.detector.api.getFileNameWithParent(client, file)
@@ -2459,70 +2358,52 @@ object LintUtils {
 
   @JvmStatic
   @Deprecated(
-      "Use package function instead",
-      replaceWith = ReplaceWith("com.android.tools.lint.detector.api.getFileNameWithParent(client, file)"),
+    "Use package function instead",
+    replaceWith = ReplaceWith("com.android.tools.lint.detector.api.getFileNameWithParent(client, file)"),
   )
   fun getFileNameWithParent(client: LintClient, file: PathString): String {
     return com.android.tools.lint.detector.api.getFileNameWithParent(client, file)
   }
 
   @JvmStatic
-  @Deprecated(
-      "Use package function instead",
-      replaceWith = ReplaceWith("com.android.tools.lint.detector.api.isEditableTo(s, t, max)"),
-  )
+  @Deprecated("Use package function instead", replaceWith = ReplaceWith("com.android.tools.lint.detector.api.isEditableTo(s, t, max)"))
   fun isEditableTo(s: String, t: String, max: Int): Boolean {
     return com.android.tools.lint.detector.api.isEditableTo(s, t, max)
   }
 
   @JvmStatic
-  @Deprecated(
-      "Use package function instead",
-      replaceWith = ReplaceWith("com.android.tools.lint.detector.api.editDistance(s, t, max)"),
-  )
+  @Deprecated("Use package function instead", replaceWith = ReplaceWith("com.android.tools.lint.detector.api.editDistance(s, t, max)"))
   @JvmOverloads
   fun editDistance(s: String, t: String, max: Int = Integer.MAX_VALUE): Int {
     return com.android.tools.lint.detector.api.editDistance(s, t, max)
   }
 
   @JvmStatic
-  @Deprecated(
-      "Use package function instead",
-      replaceWith = ReplaceWith("com.android.tools.lint.detector.api.assertionsEnabled()"),
-  )
+  @Deprecated("Use package function instead", replaceWith = ReplaceWith("com.android.tools.lint.detector.api.assertionsEnabled()"))
   fun assertionsEnabled(): Boolean = com.android.tools.lint.detector.api.assertionsEnabled()
 
   @JvmStatic
-  @Deprecated(
-      "Use package function instead",
-      replaceWith = ReplaceWith("com.android.tools.lint.detector.api.getLayoutName(layoutFile)"),
-  )
+  @Deprecated("Use package function instead", replaceWith = ReplaceWith("com.android.tools.lint.detector.api.getLayoutName(layoutFile)"))
   fun getLayoutName(layoutFile: File): String {
     return SdkUtils.getLayoutName(layoutFile)
   }
 
   @JvmStatic
-  @Deprecated(
-      "Use package function instead",
-      replaceWith = ReplaceWith("com.android.tools.lint.detector.api.splitPath(path)"),
-  )
+  @Deprecated("Use package function instead", replaceWith = ReplaceWith("com.android.tools.lint.detector.api.splitPath(path)"))
   fun splitPath(path: String): Iterable<String> {
     return com.android.tools.lint.detector.api.splitPath(path)
   }
 
   @JvmStatic
-  @Deprecated(
-      "Use package function instead",
-      replaceWith = ReplaceWith("com.android.tools.lint.detector.api.getCommonParent(files)"),
-  )
+  @Deprecated("Use package function instead", replaceWith = ReplaceWith("com.android.tools.lint.detector.api.getCommonParent(files)"))
   fun getCommonParent(files: List<File>): File? {
     return com.android.tools.lint.detector.api.getCommonParent(files)
   }
 
   @JvmStatic
   @Deprecated(
-      "Use package function instead",
-      replaceWith = ReplaceWith("com.android.tools.lint.detector.api.getCommonParent(file1, file2)"),
+    "Use package function instead",
+    replaceWith = ReplaceWith("com.android.tools.lint.detector.api.getCommonParent(file1, file2)"),
   )
   fun getCommonParent(file1: File, file2: File): File? {
     return com.android.tools.lint.detector.api.getCommonParent(file1, file2)
@@ -2530,8 +2411,8 @@ object LintUtils {
 
   @JvmStatic
   @Deprecated(
-      "Use package function instead",
-      replaceWith = ReplaceWith("com.android.tools.lint.detector.api.getEncodedString(client, file, createString)"),
+    "Use package function instead",
+    replaceWith = ReplaceWith("com.android.tools.lint.detector.api.getEncodedString(client, file, createString)"),
   )
   @Throws(IOException::class)
   fun getEncodedString(client: LintClient, file: File, createString: Boolean): CharSequence {
@@ -2540,8 +2421,8 @@ object LintUtils {
 
   @JvmStatic
   @Deprecated(
-      "Use package function instead",
-      replaceWith = ReplaceWith("com.android.tools.lint.detector.api.isDataBindingExpression(expression)"),
+    "Use package function instead",
+    replaceWith = ReplaceWith("com.android.tools.lint.detector.api.isDataBindingExpression(expression)"),
   )
   fun isDataBindingExpression(expression: String): Boolean {
     return com.android.tools.lint.detector.api.isDataBindingExpression(expression)
@@ -2549,8 +2430,8 @@ object LintUtils {
 
   @JvmStatic
   @Deprecated(
-      "Use package function instead",
-      replaceWith = ReplaceWith("com.android.tools.lint.detector.api.isManifestPlaceHolderExpression(expression)"),
+    "Use package function instead",
+    replaceWith = ReplaceWith("com.android.tools.lint.detector.api.isManifestPlaceHolderExpression(expression)"),
   )
   fun isManifestPlaceHolderExpression(expression: String): Boolean {
     return com.android.tools.lint.detector.api.isManifestPlaceHolderExpression(expression)
@@ -2558,8 +2439,8 @@ object LintUtils {
 
   @JvmStatic
   @Deprecated(
-      "Use package function instead",
-      replaceWith = ReplaceWith("com.android.tools.lint.detector.api.getEncodedString(data, createString)"),
+    "Use package function instead",
+    replaceWith = ReplaceWith("com.android.tools.lint.detector.api.getEncodedString(data, createString)"),
   )
   fun getEncodedString(data: ByteArray?, createString: Boolean): CharSequence {
     return com.android.tools.lint.detector.api.getEncodedString(data, createString)
@@ -2567,114 +2448,83 @@ object LintUtils {
 
   @JvmStatic
   @Deprecated(
-      "Use package function instead",
-      replaceWith = ReplaceWith("com.android.tools.lint.detector.api.isStaticInnerClass(classNode)"),
+    "Use package function instead",
+    replaceWith = ReplaceWith("com.android.tools.lint.detector.api.isStaticInnerClass(classNode)"),
   )
   fun isStaticInnerClass(classNode: ClassNode): Boolean {
     return com.android.tools.lint.detector.api.isStaticInnerClass(classNode)
   }
 
   @JvmStatic
-  @Deprecated(
-      "Use package function instead",
-      replaceWith = ReplaceWith("com.android.tools.lint.detector.api.isAnonymousClass(classNode)"),
-  )
+  @Deprecated("Use package function instead", replaceWith = ReplaceWith("com.android.tools.lint.detector.api.isAnonymousClass(classNode)"))
   fun isAnonymousClass(classNode: ClassNode): Boolean {
     return com.android.tools.lint.detector.api.isAnonymousClass(classNode)
   }
 
   @JvmStatic
-  @Deprecated(
-      "Use package function instead",
-      replaceWith = ReplaceWith("com.android.tools.lint.detector.api.getPrevOpcode(node)"),
-  )
+  @Deprecated("Use package function instead", replaceWith = ReplaceWith("com.android.tools.lint.detector.api.getPrevOpcode(node)"))
   fun getPrevOpcode(node: AbstractInsnNode): Int {
     return com.android.tools.lint.detector.api.getPrevOpcode(node)
   }
 
   @JvmStatic
-  @Deprecated(
-      "Use package function instead",
-      replaceWith = ReplaceWith("com.android.tools.lint.detector.api.getPrevInstruction(node)"),
-  )
+  @Deprecated("Use package function instead", replaceWith = ReplaceWith("com.android.tools.lint.detector.api.getPrevInstruction(node)"))
   fun getPrevInstruction(node: AbstractInsnNode): AbstractInsnNode? {
     return com.android.tools.lint.detector.api.getPrevInstruction(node)
   }
 
   @JvmStatic
-  @Deprecated(
-      "Use package function instead",
-      replaceWith = ReplaceWith("com.android.tools.lint.detector.api.getNextOpcode(node)"),
-  )
+  @Deprecated("Use package function instead", replaceWith = ReplaceWith("com.android.tools.lint.detector.api.getNextOpcode(node)"))
   fun getNextOpcode(node: AbstractInsnNode): Int {
     return com.android.tools.lint.detector.api.getNextOpcode(node)
   }
 
   @JvmStatic
-  @Deprecated(
-      "Use package function instead",
-      replaceWith = ReplaceWith("com.android.tools.lint.detector.api.getNextInstruction(node)"),
-  )
+  @Deprecated("Use package function instead", replaceWith = ReplaceWith("com.android.tools.lint.detector.api.getNextInstruction(node)"))
   fun getNextInstruction(node: AbstractInsnNode): AbstractInsnNode? {
     return com.android.tools.lint.detector.api.getNextInstruction(node)
   }
 
   @JvmStatic
-  @Deprecated(
-      "Use package function instead",
-      replaceWith = ReplaceWith("com.android.tools.lint.detector.api.isManifestFolder(dir)"),
-  )
+  @Deprecated("Use package function instead", replaceWith = ReplaceWith("com.android.tools.lint.detector.api.isManifestFolder(dir)"))
   fun isManifestFolder(dir: File?): Boolean {
     return com.android.tools.lint.detector.api.isManifestFolder(dir)
   }
 
   @JvmStatic
   @Deprecated(
-      "Use package function instead",
-      replaceWith = ReplaceWith("com.android.tools.lint.detector.api.getLocaleAndRegion(folderName)"),
+    "Use package function instead",
+    replaceWith = ReplaceWith("com.android.tools.lint.detector.api.getLocaleAndRegion(folderName)"),
   )
   fun getLocaleAndRegion(folderName: String): String? {
     return com.android.tools.lint.detector.api.getLocaleAndRegion(folderName)
   }
 
   @JvmStatic
-  @Deprecated(
-      "Use package function instead",
-      replaceWith = ReplaceWith("com.android.tools.lint.detector.api.getStyleAttributes("),
-  )
+  @Deprecated("Use package function instead", replaceWith = ReplaceWith("com.android.tools.lint.detector.api.getStyleAttributes("))
   fun getStyleAttributes(
-      project: Project,
-      client: LintClient,
-      styleUrl: String,
-      namespaceUri: String,
-      attribute: String,
+    project: Project,
+    client: LintClient,
+    styleUrl: String,
+    namespaceUri: String,
+    attribute: String,
   ): List<ResourceValue>? {
-    return com.android.tools.lint.detector.api.getStyleAttributes(
-        project,
-        client,
-        styleUrl,
-        namespaceUri,
-        attribute,
-    )
+    return com.android.tools.lint.detector.api.getStyleAttributes(project, client, styleUrl, namespaceUri, attribute)
   }
 
   @JvmStatic
   @Deprecated(
-      "Use package function instead",
-      replaceWith = ReplaceWith("com.android.tools.lint.detector.api.getInheritedStyles(project, client, styleUrl)"),
+    "Use package function instead",
+    replaceWith = ReplaceWith("com.android.tools.lint.detector.api.getInheritedStyles(project, client, styleUrl)"),
   )
-  fun getInheritedStyles(
-      project: Project,
-      client: LintClient,
-      styleUrl: String,
-  ): List<StyleResourceValue>? {
+  fun getInheritedStyles(project: Project, client: LintClient, styleUrl: String): List<StyleResourceValue>? {
     return com.android.tools.lint.detector.api.getInheritedStyles(project, client, styleUrl)
   }
 
   @JvmStatic
   @Deprecated(
-      "Use package function instead",
-      replaceWith = ReplaceWith("com.android.tools.lint.detector.api.isSameResourceFile(file1, file2)"),
+    "Use package function instead",
+    replaceWith = ReplaceWith("com.android.tools.lint.detector.api.isSameResourceFile(file1, file2)"),
   )
   fun isSameResourceFile(file1: File?, file2: File?): Boolean {
     return com.android.tools.lint.detector.api.isSameResourceFile(file1, file2)
@@ -2682,45 +2532,29 @@ object LintUtils {
 
   @JvmStatic
   @Deprecated(
-      "Use package function instead",
-      replaceWith = ReplaceWith("com.android.tools.lint.detector.api.computeResourceName(prefix, name, folderType)"),
+    "Use package function instead",
+    replaceWith = ReplaceWith("com.android.tools.lint.detector.api.computeResourceName(prefix, name, folderType)"),
   )
   @JvmOverloads
-  fun computeResourceName(
-      prefix: String,
-      name: String,
-      folderType: ResourceFolderType? = null,
-  ): String {
+  fun computeResourceName(prefix: String, name: String, folderType: ResourceFolderType? = null): String {
     return com.android.tools.lint.detector.api.computeResourceName(prefix, name, folderType)
   }
 
   @JvmStatic
   @Deprecated(
-      "Use package function instead",
-      replaceWith =
-          ReplaceWith("com.android.tools.lint.detector.api.isModelOlderThan(project, major, minor, micro, defaultForNonGradleProjects"),
+    "Use package function instead",
+    replaceWith =
+      ReplaceWith("com.android.tools.lint.detector.api.isModelOlderThan(project, major, minor, micro, defaultForNonGradleProjects"),
   )
   @JvmOverloads
-  fun isModelOlderThan(
-      project: Project,
-      major: Int,
-      minor: Int,
-      micro: Int,
-      defaultForNonGradleProjects: Boolean = false,
-  ): Boolean {
-    return com.android.tools.lint.detector.api.isModelOlderThan(
-        project,
-        major,
-        minor,
-        micro,
-        defaultForNonGradleProjects,
-    )
+  fun isModelOlderThan(project: Project, major: Int, minor: Int, micro: Int, defaultForNonGradleProjects: Boolean = false): Boolean {
+    return com.android.tools.lint.detector.api.isModelOlderThan(project, major, minor, micro, defaultForNonGradleProjects)
   }
 
   @JvmStatic
   @Deprecated(
-      "Use package function instead",
-      replaceWith = ReplaceWith("com.android.tools.lint.detector.api.getLanguageLevel(element, defaultLevel)"),
+    "Use package function instead",
+    replaceWith = ReplaceWith("com.android.tools.lint.detector.api.getLanguageLevel(element, defaultLevel)"),
   )
   fun getLanguageLevel(element: UElement, defaultLevel: LanguageLevel): LanguageLevel {
     return com.android.tools.lint.detector.api.getLanguageLevel(element, defaultLevel)
@@ -2728,8 +2562,8 @@ object LintUtils {
 
   @JvmStatic
   @Deprecated(
-      "Use package function instead",
-      replaceWith = ReplaceWith("com.android.tools.lint.detector.api.getLanguageLevel(element, defaultLevel)"),
+    "Use package function instead",
+    replaceWith = ReplaceWith("com.android.tools.lint.detector.api.getLanguageLevel(element, defaultLevel)"),
   )
   fun getLanguageLevel(element: PsiElement, defaultLevel: LanguageLevel): LanguageLevel {
     return com.android.tools.lint.detector.api.getLanguageLevel(element, defaultLevel)
@@ -2737,8 +2571,8 @@ object LintUtils {
 
   @JvmStatic
   @Deprecated(
-      "Use package function instead",
-      replaceWith = ReplaceWith("com.android.tools.lint.detector.api.findSubstring(string, prefix, suffix)"),
+    "Use package function instead",
+    replaceWith = ReplaceWith("com.android.tools.lint.detector.api.findSubstring(string, prefix, suffix)"),
   )
   fun findSubstring(string: String, prefix: String?, suffix: String?): String? {
     return com.android.tools.lint.detector.api.findSubstring(string, prefix, suffix)
@@ -2746,143 +2580,107 @@ object LintUtils {
 
   @JvmStatic
   @Deprecated(
-      "Use package function instead",
-      replaceWith = ReplaceWith("com.android.tools.lint.detector.api.getFormattedParameters(format, errorMessage)"),
+    "Use package function instead",
+    replaceWith = ReplaceWith("com.android.tools.lint.detector.api.getFormattedParameters(format, errorMessage)"),
   )
   fun getFormattedParameters(format: String, errorMessage: String): List<String> {
     return com.android.tools.lint.detector.api.getFormattedParameters(format, errorMessage)
   }
 
   @JvmStatic
-  @Deprecated(
-      "Use package function instead",
-      replaceWith = ReplaceWith("com.android.tools.lint.detector.api.getLocale(parent)"),
-  )
+  @Deprecated("Use package function instead", replaceWith = ReplaceWith("com.android.tools.lint.detector.api.getLocale(parent)"))
   fun getLocale(parent: String): LocaleQualifier? {
     return com.android.tools.lint.detector.api.getLocale(parent)
   }
 
   @JvmStatic
-  @Deprecated(
-      "Use package function instead",
-      replaceWith = ReplaceWith("com.android.tools.lint.detector.api.getLocale(context)"),
-  )
+  @Deprecated("Use package function instead", replaceWith = ReplaceWith("com.android.tools.lint.detector.api.getLocale(context)"))
   fun getLocale(context: XmlContext): LocaleQualifier? {
     return com.android.tools.lint.detector.api.getLocale(context)
   }
 
   @JvmStatic
   @Deprecated(
-      "Use package function instead",
-      replaceWith = ReplaceWith("com.android.tools.lint.detector.api.isEnglishResource(context, assumeForBase)"),
+    "Use package function instead",
+    replaceWith = ReplaceWith("com.android.tools.lint.detector.api.isEnglishResource(context, assumeForBase)"),
   )
   fun isEnglishResource(context: XmlContext, assumeForBase: Boolean): Boolean {
     return com.android.tools.lint.detector.api.isEnglishResource(context, assumeForBase)
   }
 
   @JvmStatic
-  @Deprecated(
-      "Use package function instead",
-      replaceWith = ReplaceWith("com.android.tools.lint.detector.api.guessGradleLocation(project)"),
-  )
+  @Deprecated("Use package function instead", replaceWith = ReplaceWith("com.android.tools.lint.detector.api.guessGradleLocation(project)"))
   fun guessGradleLocation(project: Project): Location {
     return com.android.tools.lint.detector.api.guessGradleLocation(project)
   }
 
   @JvmStatic
   @Deprecated(
-      "Use package function instead",
-      replaceWith = ReplaceWith("com.android.tools.lint.detector.api.guessGradleLocation(client, projectDir, string)"),
+    "Use package function instead",
+    replaceWith = ReplaceWith("com.android.tools.lint.detector.api.guessGradleLocation(client, projectDir, string)"),
   )
   fun guessGradleLocation(client: LintClient, projectDir: File, string: String?): Location {
     return com.android.tools.lint.detector.api.guessGradleLocation(client, projectDir, string)
   }
 
   @JvmStatic
-  @Deprecated(
-      "Use package function instead",
-      replaceWith = ReplaceWith("com.android.tools.lint.detector.api.isNullLiteral(element)"),
-  )
+  @Deprecated("Use package function instead", replaceWith = ReplaceWith("com.android.tools.lint.detector.api.isNullLiteral(element)"))
   fun isNullLiteral(element: PsiElement?): Boolean {
     return com.android.tools.lint.detector.api.isNullLiteral(element)
   }
 
   @JvmStatic
-  @Deprecated(
-      "Use package function instead",
-      replaceWith = ReplaceWith("com.android.tools.lint.detector.api.isTrueLiteral(element)"),
-  )
+  @Deprecated("Use package function instead", replaceWith = ReplaceWith("com.android.tools.lint.detector.api.isTrueLiteral(element)"))
   fun isTrueLiteral(element: PsiElement?): Boolean {
     return com.android.tools.lint.detector.api.isTrueLiteral(element)
   }
 
   @JvmStatic
-  @Deprecated(
-      "Use package function instead",
-      replaceWith = ReplaceWith("com.android.tools.lint.detector.api.isFalseLiteral(element)"),
-  )
+  @Deprecated("Use package function instead", replaceWith = ReplaceWith("com.android.tools.lint.detector.api.isFalseLiteral(element)"))
   fun isFalseLiteral(element: PsiElement?): Boolean {
     return com.android.tools.lint.detector.api.isFalseLiteral(element)
   }
 
   @JvmStatic
-  @Deprecated(
-      "Use package function instead",
-      replaceWith = ReplaceWith("com.android.tools.lint.detector.api.skipParentheses(element)"),
-  )
+  @Deprecated("Use package function instead", replaceWith = ReplaceWith("com.android.tools.lint.detector.api.skipParentheses(element)"))
   fun skipParentheses(element: PsiElement?): PsiElement? {
     return com.android.tools.lint.detector.api.skipParentheses(element)
   }
 
   @JvmStatic
-  @Deprecated(
-      "Use package function instead",
-      replaceWith = ReplaceWith("com.android.tools.lint.detector.api.skipParentheses(element)"),
-  )
+  @Deprecated("Use package function instead", replaceWith = ReplaceWith("com.android.tools.lint.detector.api.skipParentheses(element)"))
   fun skipParentheses(element: UElement?): UElement? {
     return skipParenthesizedExprUp(element)
   }
 
   @JvmStatic
-  @Deprecated(
-      "Use package function instead",
-      replaceWith = ReplaceWith("com.android.tools.lint.detector.api.nextNonWhitespace(element)"),
-  )
+  @Deprecated("Use package function instead", replaceWith = ReplaceWith("com.android.tools.lint.detector.api.nextNonWhitespace(element)"))
   fun nextNonWhitespace(element: PsiElement?): PsiElement? {
     return com.android.tools.lint.detector.api.nextNonWhitespace(element)
   }
 
   @JvmStatic
-  @Deprecated(
-      "Use package function instead",
-      replaceWith = ReplaceWith("com.android.tools.lint.detector.api.prevNonWhitespace(element)"),
-  )
+  @Deprecated("Use package function instead", replaceWith = ReplaceWith("com.android.tools.lint.detector.api.prevNonWhitespace(element)"))
   fun prevNonWhitespace(element: PsiElement?): PsiElement? {
     return com.android.tools.lint.detector.api.prevNonWhitespace(element)
   }
 
   @JvmStatic
-  @Deprecated(
-      "Use package function instead",
-      replaceWith = ReplaceWith("com.android.tools.lint.detector.api.isString(type)"),
-  )
+  @Deprecated("Use package function instead", replaceWith = ReplaceWith("com.android.tools.lint.detector.api.isString(type)"))
   fun isString(type: PsiType): Boolean {
     return com.android.tools.lint.detector.api.isString(type)
   }
 
   @JvmStatic
-  @Deprecated(
-      "Use package function instead",
-      replaceWith = ReplaceWith("com.android.tools.lint.detector.api.getAutoBoxedType(primitive)"),
-  )
+  @Deprecated("Use package function instead", replaceWith = ReplaceWith("com.android.tools.lint.detector.api.getAutoBoxedType(primitive)"))
   fun getAutoBoxedType(primitive: String): String? {
     return com.android.tools.lint.detector.api.getAutoBoxedType(primitive)
   }
 
   @JvmStatic
   @Deprecated(
-      "Use package function instead",
-      replaceWith = ReplaceWith("com.android.tools.lint.detector.api.getPrimitiveType(autoBoxedType)"),
+    "Use package function instead",
+    replaceWith = ReplaceWith("com.android.tools.lint.detector.api.getPrimitiveType(autoBoxedType)"),
   )
   fun getPrimitiveType(autoBoxedType: String): String? {
     return com.android.tools.lint.detector.api.getPrimitiveType(autoBoxedType)
@@ -2890,26 +2688,23 @@ object LintUtils {
 
   @JvmStatic
   @Deprecated(
-      "Use package function instead",
-      replaceWith = ReplaceWith("com.android.tools.lint.detector.api.resolveManifestName(element, project)"),
+    "Use package function instead",
+    replaceWith = ReplaceWith("com.android.tools.lint.detector.api.resolveManifestName(element, project)"),
   )
   fun resolveManifestName(element: Element): String {
     return resolveManifestName(element, null)
   }
 
   @JvmStatic
-  @Deprecated(
-      "Use package function instead",
-      replaceWith = ReplaceWith("com.android.tools.lint.detector.api.isJavaKeyword(keyword)"),
-  )
+  @Deprecated("Use package function instead", replaceWith = ReplaceWith("com.android.tools.lint.detector.api.isJavaKeyword(keyword)"))
   fun isJavaKeyword(keyword: String): Boolean {
     return com.android.tools.lint.detector.api.isJavaKeyword(keyword)
   }
 
   @JvmStatic
   @Deprecated(
-      "Use package function instead",
-      replaceWith = ReplaceWith("com.android.tools.lint.detector.api.readUrlData(client, query, timeout)"),
+    "Use package function instead",
+    replaceWith = ReplaceWith("com.android.tools.lint.detector.api.readUrlData(client, query, timeout)"),
   )
   @Throws(IOException::class)
   fun readUrlData(client: LintClient, query: String, timeout: Int): ByteArray? {
@@ -2918,8 +2713,8 @@ object LintUtils {
 
   @JvmStatic
   @Deprecated(
-      "Use package function instead",
-      replaceWith = ReplaceWith("com.android.tools.lint.detector.api.readUrlDataAsString(client, query, timeout)"),
+    "Use package function instead",
+    replaceWith = ReplaceWith("com.android.tools.lint.detector.api.readUrlDataAsString(client, query, timeout)"),
   )
   @Throws(IOException::class)
   fun readUrlDataAsString(client: LintClient, query: String, timeout: Int): String? {
@@ -2927,38 +2722,26 @@ object LintUtils {
   }
 
   @JvmStatic
-  @Deprecated(
-      "Use package function instead",
-      replaceWith = ReplaceWith("com.android.tools.lint.detector.api.coalesce(*ts)"),
-  )
+  @Deprecated("Use package function instead", replaceWith = ReplaceWith("com.android.tools.lint.detector.api.coalesce(*ts)"))
   @SafeVarargs
   fun <T> coalesce(vararg ts: T): T? {
     return com.android.tools.lint.detector.api.coalesce(*ts)
   }
 
   @JvmStatic
-  @Deprecated(
-      "Use package function instead",
-      replaceWith = ReplaceWith("com.android.tools.lint.detector.api.getMethodName(call)"),
-  )
+  @Deprecated("Use package function instead", replaceWith = ReplaceWith("com.android.tools.lint.detector.api.getMethodName(call)"))
   fun getMethodName(call: UCallExpression): String? {
     return com.android.tools.lint.detector.api.getMethodName(call)
   }
 
   @JvmStatic
-  @Deprecated(
-      "Use package function instead",
-      replaceWith = ReplaceWith("com.android.tools.lint.detector.api.isKotlin(element)"),
-  )
+  @Deprecated("Use package function instead", replaceWith = ReplaceWith("com.android.tools.lint.detector.api.isKotlin(element)"))
   fun isKotlin(element: PsiElement?): Boolean {
     return com.android.tools.lint.detector.api.isKotlin(element)
   }
 
   @JvmStatic
-  @Deprecated(
-      "Use package function instead",
-      replaceWith = ReplaceWith("com.android.tools.lint.detector.api.isKotlin(language)"),
-  )
+  @Deprecated("Use package function instead", replaceWith = ReplaceWith("com.android.tools.lint.detector.api.isKotlin(language)"))
   fun isKotlin(language: Language?): Boolean {
     return language != null && com.android.tools.lint.detector.api.isKotlin(language)
   }

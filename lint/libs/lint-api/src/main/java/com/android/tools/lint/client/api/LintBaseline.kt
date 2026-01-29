@@ -52,11 +52,11 @@ import org.xmlpull.v1.XmlPullParserException
  * alerted whenever new issues crop up.
  */
 class LintBaseline(
-    /** Client to use for file reading, path variables, logging, etc */
-    private val client: LintClient,
+  /** Client to use for file reading, path variables, logging, etc */
+  private val client: LintClient,
 
-    /** The file to read the baselines from, and if [writeOnClose] is set, to write to when the baseline is [close]'ed. */
-    var file: File,
+  /** The file to read the baselines from, and if [writeOnClose] is set, to write to when the baseline is [close]'ed. */
+  var file: File,
 ) {
 
   /** The number of errors that have been matched from the baseline. */
@@ -139,20 +139,8 @@ class LintBaseline(
       val client = driver.client
       val baselineFile = file
       val message =
-          describeBaselineFilter(
-              foundErrorCount,
-              foundWarningCount,
-              foundHintCount,
-              getDisplayPath(client, project, baselineFile),
-          )
-      LintClient.report(
-          client,
-          IssueRegistry.BASELINE_USED,
-          message,
-          file = baselineFile,
-          project = project,
-          driver = driver,
-      )
+        describeBaselineFilter(foundErrorCount, foundWarningCount, foundHintCount, getDisplayPath(client, project, baselineFile))
+      LintClient.report(client, IssueRegistry.BASELINE_USED, message, file = baselineFile, project = project, driver = driver)
     }
 
     val fixedCount = fixedCount
@@ -192,31 +180,24 @@ class LintBaseline(
 
       // Keep in sync with isFixedMessage() below
       var message =
-          String.format(
-              Locale.getDefault(),
-              "%1\$d errors/warnings were listed in the " +
-                  "baseline file (%2\$s) but not found in the project; perhaps they have " +
-                  "been fixed?",
-              fixedCount,
-              TextFormat.TEXT.convertTo(getDisplayPath(client, project, baselineFile), TextFormat.RAW),
-          )
+        String.format(
+          Locale.getDefault(),
+          "%1\$d errors/warnings were listed in the " +
+            "baseline file (%2\$s) but not found in the project; perhaps they have " +
+            "been fixed?",
+          fixedCount,
+          TextFormat.TEXT.convertTo(getDisplayPath(client, project, baselineFile), TextFormat.RAW),
+        )
       if (LintClient.isGradle && project.buildModule != null && project.buildModule?.lintOptions?.checkDependencies == false) {
         message +=
-            " Another possible explanation is that lint recently stopped " +
-                "analyzing (and including results from) dependent projects by default. " +
-                "You can turn this back on with " +
-                "`android.lintOptions.checkDependencies=true`."
+          " Another possible explanation is that lint recently stopped " +
+            "analyzing (and including results from) dependent projects by default. " +
+            "You can turn this back on with " +
+            "`android.lintOptions.checkDependencies=true`."
       }
       message += " Unmatched issue types: $issueTypes"
 
-      LintClient.report(
-          client,
-          IssueRegistry.BASELINE_FIXED,
-          message,
-          file = baselineFile,
-          project = project,
-          driver = driver,
-      )
+      LintClient.report(client, IssueRegistry.BASELINE_FIXED, message, file = baselineFile, project = project, driver = driver)
     }
   }
 
@@ -246,11 +227,11 @@ class LintBaseline(
   }
 
   private fun findAndMark(
-      issue: Issue,
-      location: Location,
-      message: String,
-      severity: Severity?,
-      alreadyChecked: MutableSet<String>?,
+    issue: Issue,
+    location: Location,
+    message: String,
+    severity: Severity?,
+    alreadyChecked: MutableSet<String>?,
   ): Boolean {
     if (message.isEmpty()) {
       return false
@@ -287,8 +268,8 @@ class LintBaseline(
       entry ?: continue
       if (entry.issueId == issueId || IssueRegistry.isDeletedIssueId(entry.issueId) && IssueRegistry.getNewId(entry.issueId) == issueId) {
         if (
-            isSamePathSuffix(path, entry.path) ||
-                (pathWithinGradleCaches.value != null && isSimilarGradleCachePath(pathWithinGradleCaches.value!!, entry.path))
+          isSamePathSuffix(path, entry.path) ||
+            (pathWithinGradleCaches.value != null && isSimilarGradleCachePath(pathWithinGradleCaches.value!!, entry.path))
         ) {
           // Remove all linked entries. We don't loop through all the locations;
           // they're allowed to vary over time, we just assume that all entries
@@ -351,10 +332,7 @@ class LintBaseline(
    *
    * [pathWithinGradleCaches] must have already been simplified via [tryGetPathWithinGradleCaches]. [otherPath] should be a full path.
    */
-  private fun isSimilarGradleCachePath(
-      pathWithinGradleCaches: CharSequence,
-      otherPath: String,
-  ): Boolean {
+  private fun isSimilarGradleCachePath(pathWithinGradleCaches: CharSequence, otherPath: String): Boolean {
     val otherPathWithinGradleCaches = tryGetPathWithinGradleCaches(otherPath) ?: return false
     // Gradle cache paths have an ID somewhere in them that changes across test runs/machines
     // Like transforms-3/ID/transformed/leakcanary-android-core-2.8.1/jars/classes.jar
@@ -431,13 +409,13 @@ class LintBaseline(
         // Most API errors will put the key symbol that is being referred to in
         // backticks, so we'll just match those spans.
         if (
-            new.contains('`') &&
-                symbolsMatch(old, new) &&
-                // Also make sure we match call/field/class etc. prefix, e.g.
-                //     Call requires 3: foo
-                //     Field requires 3: foo
-                // are referring to different things
-                old.regionMatches(0, new, 0, 4)
+          new.contains('`') &&
+            symbolsMatch(old, new) &&
+            // Also make sure we match call/field/class etc. prefix, e.g.
+            //     Call requires 3: foo
+            //     Field requires 3: foo
+            // are referring to different things
+            old.regionMatches(0, new, 0, 4)
         ) {
           true
         } else if (old == "This Kotlin extension function will be hidden by java.util.SequencedCollection starting in API 35") {
@@ -502,19 +480,19 @@ class LintBaseline(
       // flagged by lint)
       else -> {
         stringsEquivalent(old, new) ||
-            // try/catch: All real detectors should correctly instantiate using the
-            // below mechanism (since it's how issues are already instantiated when
-            // lint runs (see IssueRegistry.createDetectors)). However, there are some
-            // built-in issues (like IssueRegistry.LINT_ERROR) which use an empty (invalid)
-            // detector implementation; safeguard against these here (see b/377642757).
-            // (These are all also handled in the switch statement above to not get this
-            // far, but keep the try/catch just in case there are additional cases
-            // added in the future which runs into this.)
-            try {
-              issue.implementation.detectorClass.getDeclaredConstructor().newInstance().sameMessage(issue, new, old)
-            } catch (_: Throwable) {
-              false
-            }
+          // try/catch: All real detectors should correctly instantiate using the
+          // below mechanism (since it's how issues are already instantiated when
+          // lint runs (see IssueRegistry.createDetectors)). However, there are some
+          // built-in issues (like IssueRegistry.LINT_ERROR) which use an empty (invalid)
+          // detector implementation; safeguard against these here (see b/377642757).
+          // (These are all also handled in the switch statement above to not get this
+          // far, but keep the try/catch just in case there are additional cases
+          // added in the future which runs into this.)
+          try {
+            issue.implementation.detectorClass.getDeclaredConstructor().newInstance().sameMessage(issue, new, old)
+          } catch (_: Throwable) {
+            false
+          }
       }
     }
   }
@@ -527,12 +505,12 @@ class LintBaseline(
   /** Set a custom attribute on this baseline (which is persisted and can be retrieved later with [getAttribute]) */
   fun setAttribute(name: String, value: String) {
     val attributes =
-        attributes
-            ?: run {
-              val newMap = mutableMapOf<String, String>()
-              attributes = newMap
-              newMap
-            }
+      attributes
+        ?: run {
+          val newMap = mutableMapOf<String, String>()
+          attributes = newMap
+          newMap
+        }
     attributes[name] = value
   }
 
@@ -780,17 +758,17 @@ class LintBaseline(
         writer.write("<")
         writer.write(TAG_LOCATION)
         val path =
-            PrettyPaths.getPath(
-                currentLocation.file,
-                project,
-                client,
-                useUnixPaths = true,
-                tryPathVariables = true,
-                pathVariables = client.pathVariables,
-                preferRelativePathOverPathVariables = false,
-                allowParentRelativePaths = false,
-                preferRelativeOverAbsolute = true,
-            )
+          PrettyPaths.getPath(
+            currentLocation.file,
+            project,
+            client,
+            useUnixPaths = true,
+            tryPathVariables = true,
+            pathVariables = client.pathVariables,
+            preferRelativePathOverPathVariables = false,
+            allowParentRelativePaths = false,
+            preferRelativeOverAbsolute = true,
+          )
         writeAttribute(writer, 3, ATTR_FILE, path)
         val line = currentLocation.start?.line ?: -1
         if (line >= 0 && !omitLineNumbers) {
@@ -831,17 +809,12 @@ class LintBaseline(
     /** Given an issue, determines whether it should be included in a baseline. Lint errors should not be baselined - see b/297095583. */
     fun shouldBaseline(id: String): Boolean {
       return id != IssueRegistry.LINT_ERROR.id &&
-          id != IssueRegistry.LINT_WARNING.id &&
-          id != IssueRegistry.BASELINE_USED.id &&
-          id != IssueRegistry.BASELINE_FIXED.id
+        id != IssueRegistry.LINT_WARNING.id &&
+        id != IssueRegistry.BASELINE_USED.id &&
+        id != IssueRegistry.BASELINE_FIXED.id
     }
 
-    fun describeBaselineFilter(
-        errors: Int,
-        warnings: Int,
-        hints: Int,
-        baselineDisplayPath: String,
-    ): String {
+    fun describeBaselineFilter(errors: Int, warnings: Int, hints: Int, baselineDisplayPath: String): String {
       val counts = describeCounts(errors, warnings, hints, comma = false, capitalize = true)
       val escapedPath = TextFormat.TEXT.convertTo(baselineDisplayPath, TextFormat.RAW)
       return if (errors + warnings == 1) {
@@ -964,12 +937,7 @@ class LintBaseline(
      *
      * If [prefix] and or [suffix] are non-empty, they must also be matched in the strings.
      */
-    fun sameWithAbsolutePath(
-        relative: String,
-        full: String,
-        prefix: String = "",
-        suffix: String = "",
-    ): Boolean {
+    fun sameWithAbsolutePath(relative: String, full: String, prefix: String = "", suffix: String = ""): Boolean {
       if (!relative.startsWith(prefix) || !full.startsWith(prefix) || !relative.endsWith(suffix) || !full.endsWith(suffix)) {
         return false
       }
@@ -979,12 +947,7 @@ class LintBaseline(
       val first = prefixMatchLength(relative, full)
       val last = suffixMatchLength(relative, full)
       val relativeLength = relative.length - first - last
-      return relative.regionMatches(
-          first,
-          full,
-          full.length - last - relativeLength,
-          relativeLength,
-      )
+      return relative.regionMatches(first, full, full.length - last - relativeLength, relativeLength)
     }
 
     /** Return the index of the first character where the strings [a] and [b] differ */
@@ -1099,9 +1062,9 @@ class LintBaseline(
         }
         val symbolEnd2 = s2.indexOf('`', symbolStart2 + 1)
         if (
-            symbolEnd2 == -1 ||
-                symbolEnd2 - symbolStart2 != symbolEnd - symbolStart ||
-                !s1.regionMatches(symbolStart, s2, symbolStart2, symbolEnd - symbolStart)
+          symbolEnd2 == -1 ||
+            symbolEnd2 - symbolStart2 != symbolEnd - symbolStart ||
+            !s1.regionMatches(symbolStart, s2, symbolStart2, symbolEnd - symbolStart)
         ) {
           return false
         }

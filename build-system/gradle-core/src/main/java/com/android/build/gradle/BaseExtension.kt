@@ -319,7 +319,8 @@ protected constructor(
    */
   val ndkDirectory: File
     get() {
-      // do not call this method from within the plugin code as it forces part of SDK initialization.
+      // do not call this method from within the plugin code as it forces part of SDK
+      // initialization.
       return dslServices.sdkComponents.map { it.versionedNdkHandler(ndkVersion, ndkPath).ndkPlatform.getOrThrow().ndkDirectory }.get()
     }
 

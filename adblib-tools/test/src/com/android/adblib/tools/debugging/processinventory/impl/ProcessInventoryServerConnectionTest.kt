@@ -589,7 +589,8 @@ class ProcessInventoryServerConnectionTest : AdbLibToolsTestBase() {
       // Wait a bit to ensure the server has processed the update and the client has received it.
       delay(100)
 
-      // Assert: The state should NOT have changed back to true. It should remain in the terminal 'false' state.
+      // Assert: The state should NOT have changed back to true. It should remain in the terminal
+      // 'false' state.
       val lastProcess = processListSnapshots.last().first()
       assertEquals(pid, lastProcess.pid)
       assertEquals(

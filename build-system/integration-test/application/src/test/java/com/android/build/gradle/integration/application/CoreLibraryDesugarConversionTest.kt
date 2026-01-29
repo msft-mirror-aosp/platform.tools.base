@@ -163,7 +163,8 @@ class CoreLibraryDesugarConversionTest(val minSdkVersion: Int) {
         findMethodThatInvokes(dex, "Lj$/time/TimeConversions;", "convert", "Ljava/time/ZonedDateTime;", listOf("Lj$/time/ZonedDateTime;")),
       )
 
-    // Consumer and IntUnaryOperator are desugared up to 23 so conversion doesn't exist for 24 and above
+    // Consumer and IntUnaryOperator are desugared up to 23 so conversion doesn't exist for 24 and
+    // above
     Assume.assumeTrue(minSdkVersion < 24)
 
     DexClassSubject.assertThat(dex.classes[programClass])

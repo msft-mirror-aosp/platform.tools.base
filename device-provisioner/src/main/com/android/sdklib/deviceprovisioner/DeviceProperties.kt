@@ -242,7 +242,8 @@ interface DeviceProperties {
           characteristics.contains("tv") -> DeviceType.TV
           characteristics.contains("automotive") -> DeviceType.AUTOMOTIVE
           characteristics.contains("xr") -> DeviceType.XR_HEADSET
-          // TODO(b/408280128): Remove this workaround once RO_BUILD_CHARACTERISTICS contains "xr".
+          // TODO(b/408280128): Remove this workaround once RO_BUILD_CHARACTERISTICS contains
+          // "xr".
           properties["init.svc.sxrd"] == "running" -> DeviceType.XR_HEADSET
           else -> DeviceType.HANDHELD
         }

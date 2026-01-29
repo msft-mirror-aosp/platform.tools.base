@@ -23,17 +23,18 @@ class CredentialManagerDigitalAssetLinkDetectorTest : AbstractCheckTest() {
 
   fun testDocumentationExample() {
     lint()
-        .projects(
-            STUB_CREDENTIAL_MANAGER_LIB_PROJECT,
-            project()
-                .type(ProjectDescription.Type.APP)
-                .name("app")
-                .dependsOn(STUB_CREDENTIAL_MANAGER_LIB_PROJECT)
-                .files(
-                    // We need there to be an <application> element, as this is where we report the missing
-                    // meta-data element.
-                    manifest(
-                            """
+      .projects(
+        STUB_CREDENTIAL_MANAGER_LIB_PROJECT,
+        project()
+          .type(ProjectDescription.Type.APP)
+          .name("app")
+          .dependsOn(STUB_CREDENTIAL_MANAGER_LIB_PROJECT)
+          .files(
+            // We need there to be an <application> element, as this is where we report the
+            // missing
+            // meta-data element.
+            manifest(
+                """
                 <manifest package="com.example.app" xmlns:android="http://schemas.android.com/apk/res/android">
                   <uses-sdk android:minSdkVersion="33" android:targetSdkVersion="34" />
                   <application>
@@ -46,10 +47,10 @@ class CredentialManagerDigitalAssetLinkDetectorTest : AbstractCheckTest() {
                   </application>
                 </manifest>
                 """
-                        )
-                        .indented(),
-                    kotlin(
-                            """
+              )
+              .indented(),
+            kotlin(
+                """
                 package com.example.app
 
                 import androidx.credentials.CreatePasswordRequest
@@ -58,34 +59,34 @@ class CredentialManagerDigitalAssetLinkDetectorTest : AbstractCheckTest() {
                   val createPasswordRequest = CreatePasswordRequest("user", "pass")
                 }
                 """
-                        )
-                        .indented(),
-                ),
-        )
-        .issues(CredentialManagerDigitalAssetLinkDetector.ISSUE)
-        .run()
-        .expect(
-            """
+              )
+              .indented(),
+          ),
+      )
+      .issues(CredentialManagerDigitalAssetLinkDetector.ISSUE)
+      .run()
+      .expect(
+        """
         AndroidManifest.xml:3: Error: Missing <meta-data> tag for asset statements for Credential Manager [CredManMissingDal]
           <application>
            ~~~~~~~~~~~
         1 errors, 0 warnings
         """
-        )
+      )
   }
 
   fun testMissingMetaDataMultiModule() {
     // In this test, the use of CreatePasswordRequest is in a library module.
     lint()
-        .projects(
-            STUB_CREDENTIAL_MANAGER_LIB_PROJECT,
-            project()
-                .type(ProjectDescription.Type.LIBRARY)
-                .dependsOn(STUB_CREDENTIAL_MANAGER_LIB_PROJECT)
-                .name("lib")
-                .files(
-                    kotlin(
-                            """
+      .projects(
+        STUB_CREDENTIAL_MANAGER_LIB_PROJECT,
+        project()
+          .type(ProjectDescription.Type.LIBRARY)
+          .dependsOn(STUB_CREDENTIAL_MANAGER_LIB_PROJECT)
+          .name("lib")
+          .files(
+            kotlin(
+                """
                 package com.example.app
 
                 import androidx.credentials.CreatePasswordRequest
@@ -94,16 +95,16 @@ class CredentialManagerDigitalAssetLinkDetectorTest : AbstractCheckTest() {
                   val createPasswordRequest = CreatePasswordRequest("user", "pass")
                 }
                 """
-                        )
-                        .indented()
-                ),
-            project()
-                .type(ProjectDescription.Type.APP)
-                .name("app")
-                .dependsOn("lib")
-                .files(
-                    manifest(
-                            """
+              )
+              .indented()
+          ),
+        project()
+          .type(ProjectDescription.Type.APP)
+          .name("app")
+          .dependsOn("lib")
+          .files(
+            manifest(
+                """
                 <manifest package="com.example.app" xmlns:android="http://schemas.android.com/apk/res/android">
                   <uses-sdk android:minSdkVersion="33" android:targetSdkVersion="34" />
                   <application>
@@ -116,33 +117,33 @@ class CredentialManagerDigitalAssetLinkDetectorTest : AbstractCheckTest() {
                   </application>
                 </manifest>
                 """
-                        )
-                        .indented()
-                ),
-        )
-        .issues(CredentialManagerDigitalAssetLinkDetector.ISSUE)
-        .run()
-        .expect(
-            """
+              )
+              .indented()
+          ),
+      )
+      .issues(CredentialManagerDigitalAssetLinkDetector.ISSUE)
+      .run()
+      .expect(
+        """
         AndroidManifest.xml:3: Error: Missing <meta-data> tag for asset statements for Credential Manager [CredManMissingDal]
           <application>
            ~~~~~~~~~~~
         1 errors, 0 warnings
         """
-        )
+      )
   }
 
   fun testMissingResourceAttribute() {
     lint()
-        .projects(
-            STUB_CREDENTIAL_MANAGER_LIB_PROJECT,
-            project()
-                .type(ProjectDescription.Type.APP)
-                .name("app")
-                .dependsOn(STUB_CREDENTIAL_MANAGER_LIB_PROJECT)
-                .files(
-                    manifest(
-                        """
+      .projects(
+        STUB_CREDENTIAL_MANAGER_LIB_PROJECT,
+        project()
+          .type(ProjectDescription.Type.APP)
+          .name("app")
+          .dependsOn(STUB_CREDENTIAL_MANAGER_LIB_PROJECT)
+          .files(
+            manifest(
+              """
               <manifest package="com.example.app" xmlns:android="http://schemas.android.com/apk/res/android">
                 <uses-sdk android:minSdkVersion="33" android:targetSdkVersion="34" />
                 <application>
@@ -156,9 +157,9 @@ class CredentialManagerDigitalAssetLinkDetectorTest : AbstractCheckTest() {
                 </application>
               </manifest>
               """
-                    ),
-                    kotlin(
-                            """
+            ),
+            kotlin(
+                """
                 package com.example.app
 
                 import androidx.credentials.CreatePasswordRequest
@@ -167,34 +168,34 @@ class CredentialManagerDigitalAssetLinkDetectorTest : AbstractCheckTest() {
                   val createPasswordRequest = CreatePasswordRequest("user", "pass")
                 }
                 """
-                        )
-                        .indented(),
-                ),
-        )
-        .issues(CredentialManagerDigitalAssetLinkDetector.ISSUE)
-        .run()
-        .expect(
-            """
+              )
+              .indented(),
+          ),
+      )
+      .issues(CredentialManagerDigitalAssetLinkDetector.ISSUE)
+      .run()
+      .expect(
+        """
         AndroidManifest.xml:5: Error: Missing android:resource attribute for asset statements string resource [CredManMissingDal]
                           <meta-data android:name="asset_statements" />
                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         1 errors, 0 warnings
         """
-        )
+      )
   }
 
   fun testMissingInclude() {
     lint()
-        .projects(
-            STUB_CREDENTIAL_MANAGER_LIB_PROJECT,
-            project()
-                .type(ProjectDescription.Type.APP)
-                .name("app")
-                .dependsOn(STUB_CREDENTIAL_MANAGER_LIB_PROJECT)
-                .files(
-                    xml(
-                            "res/values/strings.xml",
-                            """
+      .projects(
+        STUB_CREDENTIAL_MANAGER_LIB_PROJECT,
+        project()
+          .type(ProjectDescription.Type.APP)
+          .name("app")
+          .dependsOn(STUB_CREDENTIAL_MANAGER_LIB_PROJECT)
+          .files(
+            xml(
+                "res/values/strings.xml",
+                """
                 <resources>
                   <string name="myAssetStatements">
                   [{
@@ -202,10 +203,10 @@ class CredentialManagerDigitalAssetLinkDetectorTest : AbstractCheckTest() {
                   </string>
                 </resources>
                 """,
-                        )
-                        .indented(),
-                    manifest(
-                        """
+              )
+              .indented(),
+            manifest(
+              """
               <manifest package="com.example.app" xmlns:android="http://schemas.android.com/apk/res/android">
                 <uses-sdk android:minSdkVersion="33" android:targetSdkVersion="34" />
                 <application>
@@ -219,9 +220,9 @@ class CredentialManagerDigitalAssetLinkDetectorTest : AbstractCheckTest() {
                 </application>
               </manifest>
               """
-                    ),
-                    kotlin(
-                            """
+            ),
+            kotlin(
+                """
                 package com.example.app
 
                 import androidx.credentials.CreatePasswordRequest
@@ -230,34 +231,34 @@ class CredentialManagerDigitalAssetLinkDetectorTest : AbstractCheckTest() {
                   val createPasswordRequest = CreatePasswordRequest("user", "pass")
                 }
                 """
-                        )
-                        .indented(),
-                ),
-        )
-        .issues(CredentialManagerDigitalAssetLinkDetector.ISSUE)
-        .run()
-        .expect(
-            """
+              )
+              .indented(),
+          ),
+      )
+      .issues(CredentialManagerDigitalAssetLinkDetector.ISSUE)
+      .run()
+      .expect(
+        """
         AndroidManifest.xml:5: Error: Could not find "include" in asset statements string resource [CredManMissingDal]
                           <meta-data android:name="asset_statements" android:resource="@string/myAssetStatements" />
                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         1 errors, 0 warnings
         """
-        )
+      )
   }
 
   fun testMissingUrl() {
     lint()
-        .projects(
-            STUB_CREDENTIAL_MANAGER_LIB_PROJECT,
-            project()
-                .type(ProjectDescription.Type.APP)
-                .name("app")
-                .dependsOn(STUB_CREDENTIAL_MANAGER_LIB_PROJECT)
-                .files(
-                    xml(
-                            "res/values/strings.xml",
-                            """
+      .projects(
+        STUB_CREDENTIAL_MANAGER_LIB_PROJECT,
+        project()
+          .type(ProjectDescription.Type.APP)
+          .name("app")
+          .dependsOn(STUB_CREDENTIAL_MANAGER_LIB_PROJECT)
+          .files(
+            xml(
+                "res/values/strings.xml",
+                """
                 <resources>
                   <string name="myAssetStatements">
                   [{
@@ -266,10 +267,10 @@ class CredentialManagerDigitalAssetLinkDetectorTest : AbstractCheckTest() {
                   </string>
                 </resources>
                 """,
-                        )
-                        .indented(),
-                    manifest(
-                        """
+              )
+              .indented(),
+            manifest(
+              """
               <manifest package="com.example.app" xmlns:android="http://schemas.android.com/apk/res/android">
                 <uses-sdk android:minSdkVersion="33" android:targetSdkVersion="34" />
                 <application>
@@ -283,9 +284,9 @@ class CredentialManagerDigitalAssetLinkDetectorTest : AbstractCheckTest() {
                 </application>
               </manifest>
               """
-                    ),
-                    kotlin(
-                            """
+            ),
+            kotlin(
+                """
                 package com.example.app
 
                 import androidx.credentials.CreatePasswordRequest
@@ -294,34 +295,34 @@ class CredentialManagerDigitalAssetLinkDetectorTest : AbstractCheckTest() {
                   val createPasswordRequest = CreatePasswordRequest("user", "pass")
                 }
                 """
-                        )
-                        .indented(),
-                ),
-        )
-        .issues(CredentialManagerDigitalAssetLinkDetector.ISSUE)
-        .run()
-        .expect(
-            """
+              )
+              .indented(),
+          ),
+      )
+      .issues(CredentialManagerDigitalAssetLinkDetector.ISSUE)
+      .run()
+      .expect(
+        """
         AndroidManifest.xml:5: Error: Could not find .well-known/assetlinks.json in asset statements string resource [CredManMissingDal]
                           <meta-data android:name="asset_statements" android:resource="@string/myAssetStatements" />
                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         1 errors, 0 warnings
         """
-        )
+      )
   }
 
   fun testCorrectLink() {
     lint()
-        .projects(
-            STUB_CREDENTIAL_MANAGER_LIB_PROJECT,
-            project()
-                .type(ProjectDescription.Type.APP)
-                .name("app")
-                .dependsOn(STUB_CREDENTIAL_MANAGER_LIB_PROJECT)
-                .files(
-                    xml(
-                            "res/values/strings.xml",
-                            """
+      .projects(
+        STUB_CREDENTIAL_MANAGER_LIB_PROJECT,
+        project()
+          .type(ProjectDescription.Type.APP)
+          .name("app")
+          .dependsOn(STUB_CREDENTIAL_MANAGER_LIB_PROJECT)
+          .files(
+            xml(
+                "res/values/strings.xml",
+                """
                 <resources>
                   <string name="myAssetStatements">
                   [{
@@ -330,10 +331,10 @@ class CredentialManagerDigitalAssetLinkDetectorTest : AbstractCheckTest() {
                   </string>
                 </resources>
                 """,
-                        )
-                        .indented(),
-                    manifest(
-                        """
+              )
+              .indented(),
+            manifest(
+              """
               <manifest package="com.example.app" xmlns:android="http://schemas.android.com/apk/res/android">
                 <uses-sdk android:minSdkVersion="33" android:targetSdkVersion="34" />
                 <application>
@@ -347,9 +348,9 @@ class CredentialManagerDigitalAssetLinkDetectorTest : AbstractCheckTest() {
                 </application>
               </manifest>
               """
-                    ),
-                    kotlin(
-                            """
+            ),
+            kotlin(
+                """
                 package com.example.app
 
                 import androidx.credentials.CreatePasswordRequest
@@ -358,29 +359,29 @@ class CredentialManagerDigitalAssetLinkDetectorTest : AbstractCheckTest() {
                   val createPasswordRequest = CreatePasswordRequest("user", "pass")
                 }
                 """
-                        )
-                        .indented(),
-                ),
-        )
-        .issues(CredentialManagerDigitalAssetLinkDetector.ISSUE)
-        .run()
-        .expectClean()
+              )
+              .indented(),
+          ),
+      )
+      .issues(CredentialManagerDigitalAssetLinkDetector.ISSUE)
+      .run()
+      .expectClean()
   }
 }
 
 private val STUB_CREDENTIAL_MANAGER_LIB_PROJECT =
-    ProjectDescription()
-        .files(
-            TestFiles.kotlin(
-                    """
+  ProjectDescription()
+    .files(
+      TestFiles.kotlin(
+          """
           package androidx.credentials
 
           /*HIDE-FROM-DOCUMENTATION*/
 
           class CreatePasswordRequest(id: String, password: String)
           """
-                )
-                .indented()
         )
-        .type(ProjectDescription.Type.LIBRARY)
-        .name("CredMan")
+        .indented()
+    )
+    .type(ProjectDescription.Type.LIBRARY)
+    .name("CredMan")

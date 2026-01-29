@@ -127,7 +127,8 @@ class GenerateTestConfigTest {
       }
       androidLibrary {
         // Library's min sdk level is higher than app's manifest.
-        // This should cause the manifest merger failure, however the app's manifest has an overrideLibrary,
+        // This should cause the manifest merger failure, however the app's manifest has an
+        // overrideLibrary,
         // so this incompatibility should be ignored.
         android.defaultConfig.minSdk = 31
       }

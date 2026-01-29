@@ -165,7 +165,8 @@ class NoOpIncrementalBuildMinifyTest {
          */
         DID_WORK to
           setOf(
-            // lintDebug is intentionally not up-to-date because it must print the lint issues
+            // lintDebug is intentionally not up-to-date because it must print the lint
+            // issues
             // stdout or stderr if necessary.
             ":lintDebug"
           ),

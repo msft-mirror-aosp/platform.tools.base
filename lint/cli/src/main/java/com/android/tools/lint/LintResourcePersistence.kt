@@ -67,12 +67,7 @@ object LintResourcePersistence {
    * Serializes the lint resource repository; can be deserialized with [deserialize]. The [pathVariables] help write relative paths. If
    * [sort] is true, elements will be sorted by name; this is used in tests to ensure stable output.
    */
-  fun serialize(
-      repository: LintResourceRepository,
-      pathVariables: PathVariables,
-      root: File?,
-      sort: Boolean = false,
-  ): String {
+  fun serialize(repository: LintResourceRepository, pathVariables: PathVariables, root: File?, sort: Boolean = false): String {
     val typeToMap = repository.typeToMap
     if (typeToMap.isEmpty()) {
       return ""
@@ -105,11 +100,11 @@ object LintResourcePersistence {
     }
 
     val entries =
-        if (sort) {
-          typeToMap.entries.sortedWith(compareBy { it.key })
-        } else {
-          typeToMap.entries
-        }
+      if (sort) {
+        typeToMap.entries.sortedWith(compareBy { it.key })
+      } else {
+        typeToMap.entries
+      }
 
     for ((type, map) in entries) {
       if (map.isEmpty) {
@@ -120,11 +115,11 @@ object LintResourcePersistence {
       writer.write(':')
 
       val values =
-          if (sort) {
-            map.values().sortedWith(compareBy { it?.name })
-          } else {
-            map.values()
-          }
+        if (sort) {
+          map.values().sortedWith(compareBy { it?.name })
+        } else {
+          map.values()
+        }
 
       for (item in values) {
         writer.escape(item.name)
@@ -373,15 +368,15 @@ object LintResourcePersistence {
       while (i < n) {
         val p = s[i++]
         val c =
-            if (p == '\\') {
-              if (i < n) {
-                s[i++]
-              } else {
-                break
-              }
+          if (p == '\\') {
+            if (i < n) {
+              s[i++]
             } else {
-              p
+              break
             }
+          } else {
+            p
+          }
         if (p == terminator) {
           break
         } else {
@@ -435,11 +430,11 @@ object LintResourcePersistence {
 
   /** Deserializes a lint resource repository created by [serialize] */
   fun deserialize(
-      s: String,
-      pathVariables: PathVariables,
-      root: File? = null,
-      project: Project? = null,
-      allowMissingPathVariable: Boolean = false,
+    s: String,
+    pathVariables: PathVariables,
+    root: File? = null,
+    project: Project? = null,
+    allowMissingPathVariable: Boolean = false,
   ): LintResourceRepository {
     if (s.isEmpty()) {
       return LintResourceRepository.Companion.EmptyRepository
@@ -466,12 +461,12 @@ object LintResourcePersistence {
     for (file in fileList) {
       val folderName = file.parentFile?.name ?: continue
       val config =
-          parentConfigMap[folderName]
-              ?: FolderConfiguration.getConfigForFolder(folderName)?.also {
-                it.normalizeByAddingImpliedVersionQualifier()
-                parentConfigMap[folderName] = it
-              }
-              ?: continue
+        parentConfigMap[folderName]
+          ?: FolderConfiguration.getConfigForFolder(folderName)?.also {
+            it.normalizeByAddingImpliedVersionQualifier()
+            parentConfigMap[folderName] = it
+          }
+          ?: continue
       folderConfigMap[file] = config
     }
 
@@ -529,64 +524,51 @@ object LintResourcePersistence {
 
       val peek = reader.peek()
       val content =
-          when {
-            peek == '\"' -> {
-              reader.advance() // "
-              val content = reader.readString('"')
+        when {
+          peek == '\"' -> {
+            reader.advance() // "
+            val content = reader.readString('"')
 
-              if (reader.peek() != ';') {
-                // raw source provided as well
-                rawSource = reader.readString(';')
-              }
-              content
+            if (reader.peek() != ';') {
+              // raw source provided as well
+              rawSource = reader.readString(';')
             }
-            peek != ';' -> {
-              // Arguments
-              args = reader.readRaw(';')
-              null
-            }
-            else -> {
-              null
-            }
+            content
           }
+          peek != ';' -> {
+            // Arguments
+            args = reader.readRaw(';')
+            null
+          }
+          else -> {
+            null
+          }
+        }
       val file = fileList[fileNum]
       val config = folderConfigMap[file]!!
       if (fileBased) {
-        val item =
-            LintResourceItem(
-                file,
-                name,
-                namespace,
-                type,
-                null,
-                false,
-                libraryName,
-                config,
-                true,
-                ignore,
-                null,
-            )
+        val item = LintResourceItem(file, name, namespace, type, null, false, libraryName, config, true, ignore, null)
         LintResourceRepository.recordItem(map, type, name, item)
 
         // As a side effect sets item.sourceFile
         ResourceFile(file, item, config)
       } else {
         val item =
-            LintDeserializedResourceItem(
-                file,
-                name,
-                namespace,
-                type,
-                config,
-                false,
-                rawSource,
-                content,
-                args,
-                libraryName,
-                ignore,
-                start,
-                end,
-            )
+          LintDeserializedResourceItem(
+            file,
+            name,
+            namespace,
+            type,
+            config,
+            false,
+            rawSource,
+            content,
+            args,
+            libraryName,
+            ignore,
+            start,
+            end,
+          )
         LintResourceRepository.recordItem(map, type, name, item)
         val list = valueItems[file] ?: ArrayList<LintDeserializedResourceItem>().also { valueItems[file] = it }
         list.add(item)
@@ -612,25 +594,25 @@ object LintResourcePersistence {
   }
 
   private class LintDeserializedResourceItem(
-      private val sourceFile: File,
-      name: String,
-      namespace: ResourceNamespace,
-      type: ResourceType,
-      private val config: FolderConfiguration,
-      private val fileBased: Boolean,
-      private val rawSource: String?,
-      /** Source text. */
-      private val text: String?,
-      /**
-       * Additional serialized data, used to deserialize a specific resource value. This is done lazily since lint almost never consults
-       * resource values for anything other than strings and dimensions (and only usually when some other potentially triggering issue is
-       * there.)
-       */
-      private val arguments: String?,
-      private val library: String?,
-      private val ignoredIds: String,
-      private val start: Long,
-      private val end: Long,
+    private val sourceFile: File,
+    name: String,
+    namespace: ResourceNamespace,
+    type: ResourceType,
+    private val config: FolderConfiguration,
+    private val fileBased: Boolean,
+    private val rawSource: String?,
+    /** Source text. */
+    private val text: String?,
+    /**
+     * Additional serialized data, used to deserialize a specific resource value. This is done lazily since lint almost never consults
+     * resource values for anything other than strings and dimensions (and only usually when some other potentially triggering issue is
+     * there.)
+     */
+    private val arguments: String?,
+    private val library: String?,
+    private val ignoredIds: String,
+    private val start: Long,
+    private val end: Long,
   ) : ResourceMergerItem(name, namespace, type, null, false, null), LocationAware, IgnoredIdProvider {
     override fun getConfiguration(): FolderConfiguration {
       return config
@@ -709,11 +691,11 @@ object LintResourcePersistence {
           }
           type == ResourceType.STYLE -> {
             val parent =
-                when (reader.next()) {
-                  'E' -> ""
-                  'N' -> null
-                  else -> reader.readString(',')
-                }
+              when (reader.next()) {
+                'E' -> ""
+                'N' -> null
+                else -> reader.readString(',')
+              }
             val style = StyleResourceValueImpl(namespace, name, parent, library)
             while (!reader.eof()) {
               val name = reader.readString(':')
@@ -796,9 +778,9 @@ object LintResourcePersistence {
     override fun getLocation(): Location {
       if (start != -1L && end != -1L) {
         return Location.create(
-            file,
-            DefaultPosition(decodeLine(start), decodeColumn(start), decodeOffset(start)),
-            DefaultPosition(decodeLine(end), decodeColumn(end), decodeOffset(end)),
+          file,
+          DefaultPosition(decodeLine(start), decodeColumn(start), decodeOffset(start)),
+          DefaultPosition(decodeLine(end), decodeColumn(end), decodeOffset(end)),
         )
       } else {
         return Location.create(file)

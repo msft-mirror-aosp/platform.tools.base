@@ -65,22 +65,15 @@ class UncaughtExceptionHandlerDetector : Detector(), SourceCodeScanner {
 
     when (method.name) {
       "setDefaultUncaughtExceptionHandler" -> {
-        if (
-            context.evaluator.methodMatches(
-                method,
-                THREAD_CLASS,
-                false,
-                "java.lang.Thread.UncaughtExceptionHandler",
-            )
-        ) {
+        if (context.evaluator.methodMatches(method, THREAD_CLASS, false, "java.lang.Thread.UncaughtExceptionHandler")) {
           incidents.add(
-              Incident(context)
-                  .issue(ISSUE)
-                  .at(node)
-                  .message(
-                      "Must call `getDefaultUncaughtExceptionHandler()` to get the existing handler, " +
-                          "and call `existingHandler.uncaughtException(thread, throwable)` from your new handler"
-                  )
+            Incident(context)
+              .issue(ISSUE)
+              .at(node)
+              .message(
+                "Must call `getDefaultUncaughtExceptionHandler()` to get the existing handler, " +
+                  "and call `existingHandler.uncaughtException(thread, throwable)` from your new handler"
+              )
           )
         }
       }
@@ -96,11 +89,11 @@ class UncaughtExceptionHandlerDetector : Detector(), SourceCodeScanner {
 
     @JvmField
     val ISSUE =
-        Issue.create(
-            id = "DefaultUncaughtExceptionDelegation",
-            briefDescription = "Missing default uncaught exception handler delegation",
-            explanation =
-                """
+      Issue.create(
+        id = "DefaultUncaughtExceptionDelegation",
+        briefDescription = "Missing default uncaught exception handler delegation",
+        explanation =
+          """
           A default uncaught exception handler should usually call the existing (previously set) \
           default uncaught exception handler. \
           This is especially true on Android, which uses a default uncaught exception handler to handle crashes. \
@@ -109,12 +102,12 @@ class UncaughtExceptionHandlerDetector : Detector(), SourceCodeScanner {
           in the same module. \
           Make sure you also call `existingHandler.uncaughtException(thread, throwable)` from your new handler.
           """,
-            category = Category.CORRECTNESS,
-            priority = 5,
-            severity = Severity.WARNING,
-            implementation = IMPLEMENTATION,
-            androidSpecific = true,
-        )
+        category = Category.CORRECTNESS,
+        priority = 5,
+        severity = Severity.WARNING,
+        implementation = IMPLEMENTATION,
+        androidSpecific = true,
+      )
 
     private const val THREAD_CLASS = "java.lang.Thread"
   }

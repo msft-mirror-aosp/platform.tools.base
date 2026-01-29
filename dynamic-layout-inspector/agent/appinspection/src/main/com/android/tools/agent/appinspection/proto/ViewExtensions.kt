@@ -91,10 +91,13 @@ private fun View.toNodeImpl(stringTable: StringTable, absOffset: Point): ViewNod
           val transform = Matrix()
           view.transformMatrixToGlobal(transform)
 
-          // If the view is rotated (View#setRotation), we don't want to render the actual layout bounds,
+          // If the view is rotated (View#setRotation), we don't want to render the actual
+          // layout bounds,
           // instead we want to rotate them, to highlight the fact that the view is rotated.
-          // In this case layout bound != render bound. In all other cases layout bounds == render bounds.
-          // To determine if a view is rotated we take the view transformation and subtract the view's location.
+          // In this case layout bound != render bound. In all other cases layout bounds ==
+          // render bounds.
+          // To determine if a view is rotated we take the view transformation and subtract the
+          // view's location.
           // If the result is not the identity matrix, it means the view is rotated.
           transform.postTranslate(-absPos.x.toFloat(), -absPos.y.toFloat())
           if (!transform.isIdentity) {
@@ -104,7 +107,8 @@ private fun View.toNodeImpl(stringTable: StringTable, absOffset: Point): ViewNod
             val corners = floatArrayOf(0f, 0f, w, 0f, w, h, 0f, h)
             transform.mapPoints(corners)
             if (corners.none { it.isNaN() }) {
-              // If the view is rotated its bounds are not a rectangle anymore, for this reason we use a quad.
+              // If the view is rotated its bounds are not a rectangle anymore, for this reason
+              // we use a quad.
               render =
                 Quad.newBuilder()
                   .apply {

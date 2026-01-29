@@ -28,7 +28,8 @@ class DaggerHiltFlavoredTest {
   var project =
     GradleTestProject.builder()
       .fromTestProject("dagger-hilt-flavored-project")
-      // We had a workaround specifically for dagger (which is now removed but is still needed in this case)
+      // We had a workaround specifically for dagger (which is now removed but is still needed
+      // in this case)
       // as no Dagger plugin is released yet which doesn't rely on this workaround.
       .addGradleProperty(BooleanOption.ENABLE_IDENTITY_TRANSFORMS_FOR_PROCESSED_ARTIFACTS, true)
       .create()

@@ -70,7 +70,8 @@ val copyright =
 //
 // The generated source code resembles the following (methods omitted for brevity):
 //
-// public static class Lambda1 extends Lambda<Object> implements Function1<Object, Object>, ProxyClass, SourceLocationAware {
+// public static class Lambda1 extends Lambda<Object> implements Function1<Object, Object>,
+// ProxyClass, SourceLocationAware {
 //    private ProxyClassHandler handler;
 //
 //    public Lambda1(int arg0) {
@@ -82,7 +83,8 @@ val copyright =
 //     */
 //    public boolean equals(Object arg0) {
 //        if (handler.implementsMethod("equals", "(Ljava/lang/Object;)Z")) {
-//            return (boolean) handler.invokeMethod(this, "equals", "(Ljava/lang/Object;)Z", new Object[] { arg0 });
+//            return (boolean) handler.invokeMethod(this, "equals", "(Ljava/lang/Object;)Z", new
+// Object[] { arg0 });
 //        }
 //        return super.equals(arg0);
 //    }
@@ -91,7 +93,8 @@ val copyright =
 //     * Inherited from Function1
 //     */
 //    public Object invoke(Object arg0) {
-//        return (Object) handler.invokeMethod(this, "invoke", "(Ljava/lang/Object;)Ljava/lang/Object;", new Object[] { arg0 });
+//        return (Object) handler.invokeMethod(this, "invoke",
+// "(Ljava/lang/Object;)Ljava/lang/Object;", new Object[] { arg0 });
 //    }
 //
 //    public ProxyClassHandler getHandler() {
@@ -166,7 +169,8 @@ private fun generateProxies(proxies: List<ProxySpec>): JavaFile {
       classType,
     )
 
-  // Field holding the mapping of a set of types to the generated proxy that extends/implements those types
+  // Field holding the mapping of a set of types to the generated proxy that extends/implements
+  // those types
   val field =
     FieldSpec.builder(mapType, "proxies", Modifier.PUBLIC, Modifier.STATIC)
       .initializer(CodeBlock.of("new \$T<>()", java.util.HashMap::class.java))
@@ -291,7 +295,8 @@ private fun TypeSpec.Builder.addMethodsFrom(clazz: Class<*>, implemented: Mutabl
 
       val descriptor = Type.getMethodDescriptor(it)
 
-      // Ignore methods that only differ by return type; we can't handle that in source code. This happens
+      // Ignore methods that only differ by return type; we can't handle that in source code.
+      // This happens
       // when a superclass defines a method that a subclass overrides to return a derived type.
       // For example:
       // class Type {}
@@ -302,8 +307,10 @@ private fun TypeSpec.Builder.addMethodsFrom(clazz: Class<*>, implemented: Mutabl
       // class B : A {
       //      fun foo() : Derived
       // }
-      // When we walk the inheritance hierarchy for class B, we will encounter 'foo() : Derived', then
-      // 'foo() : Type' ; we only want to generate a stub method for 'foo() : Derived' - and, in fact, we
+      // When we walk the inheritance hierarchy for class B, we will encounter 'foo() :
+      // Derived', then
+      // 'foo() : Type' ; we only want to generate a stub method for 'foo() : Derived' - and, in
+      // fact, we
       // can't generate a stub for both, as java source code doesn't support it.
       val namedDescriptor = Pair(it.name, descriptor.substringBeforeLast(')'))
       if (namedDescriptor in implemented) {
@@ -341,7 +348,8 @@ private fun TypeSpec.Builder.addMethodsFrom(clazz: Class<*>, implemented: Mutabl
       val invoke =
         CodeBlock.of("\$N.invokeMethod(\$N, \$S, \$S, new \$T[] { \$L })", "handler", "this", it.name, descriptor, Object::class.java, args)
 
-      // If we are overriding a superclass implementation, ensure we have the ability to fall back
+      // If we are overriding a superclass implementation, ensure we have the ability to fall
+      // back
       // to that implementation in the event that the new lambda class does not provide an
       // implementation. Note that ACC_ABSTRACT is also set for interface methods.
       if (it.modifiers and Opcodes.ACC_ABSTRACT == 0) {

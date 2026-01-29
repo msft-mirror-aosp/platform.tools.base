@@ -113,7 +113,8 @@ class ResizableBuffer(initialCapacity: Int = 256, private val maxCapacity: Int =
   fun afterChannelRead(useMarkedPosition: Boolean = true): ByteBuffer {
     try {
       if (useMarkedPosition) {
-        // Data is from `mark` to `position`, so set limit = position, position = mark, and mark = -1
+        // Data is from `mark` to `position`, so set limit = position, position = mark, and mark =
+        // -1
         val newLimit = buffer.position()
         buffer.reset() // reset position to mark
         val mark = buffer.position()

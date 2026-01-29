@@ -155,7 +155,8 @@ class ApplicationVariantFactory(dslServices: DslServices) :
         },
       mlModelBindingOverride = false,
       // For unit tests, we only create android resources tasks when the tested component is
-      // a library variant and the user specifies to includeAndroidResources. Otherwise, the tested
+      // a library variant and the user specifies to includeAndroidResources. Otherwise, the
+      // tested
       // resources and assets are just copied as the unit test resources and assets output.
       // We always create android resources for Screenshot tests
       includeAndroidResources = includeAndroidResources && hostTestComponentType != ComponentTypeImpl.UNIT_TEST,

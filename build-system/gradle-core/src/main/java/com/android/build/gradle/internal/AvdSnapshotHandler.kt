@@ -298,7 +298,8 @@ class AvdSnapshotHandler(
             Thread.sleep(5000)
           }
           if (emulatorSerial == null) {
-            // The emulator process terminated unexpectedly before its serial number could be detected.
+            // The emulator process terminated unexpectedly before its serial number could be
+            // detected.
             throw EmulatorStartFailedException("Unable to find device serial for $avdName.", lastException)
           }
           logger.verbose("$avdName is attached to adb ($emulatorSerial).")

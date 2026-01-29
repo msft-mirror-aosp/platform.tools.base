@@ -291,7 +291,8 @@ constructor(
   override var proguardFiles: MutableList<File>
     get() = super.proguardFiles
     set(value) {
-      // Override to handle the proguardFiles = ['string'] case (see PluginDslTest.testProguardFiles_*)
+      // Override to handle the proguardFiles = ['string'] case (see
+      // PluginDslTest.testProguardFiles_*)
       setProguardFiles(value)
     }
 

@@ -85,7 +85,8 @@ fun JavaCompile.configureProperties(creationConfig: JavaCompileCreationConfig) {
     this.options.compilerArgs.add("-XDstringConcat=inline")
     this.classpath =
       project.files(
-        // classes(e.g. android.jar) that were previously passed through bootstrapClasspath need to be provided
+        // classes(e.g. android.jar) that were previously passed through bootstrapClasspath need
+        // to be provided
         // through classpath
         creationConfig.bootClasspath,
         creationConfig.artifacts.getAll(MultipleArtifact.PRE_COMPILATION_CLASSES),

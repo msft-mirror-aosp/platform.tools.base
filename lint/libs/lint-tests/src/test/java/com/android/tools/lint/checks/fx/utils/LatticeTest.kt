@@ -119,55 +119,40 @@ class UnitLatticeTest : LatticeTest<Unit>(lattice = UnitLattice, poolInits = lis
 class ImplicationLatticeTest : LatticeTest<Boolean>(lattice = ImplicationLattice, poolInits = listOf())
 
 class DiscreteLatticeTest :
-    LatticeTest<Discrete<Int>>(
-        lattice = DiscreteLattice(),
-        poolInits = listOf(Discrete.Value(1), Discrete.Value(2), Discrete.Value(3)),
-    )
+  LatticeTest<Discrete<Int>>(lattice = DiscreteLattice(), poolInits = listOf(Discrete.Value(1), Discrete.Value(2), Discrete.Value(3)))
 
 class TotalOrderLatticeTest : LatticeTest<Int>(lattice = TotalOrderLattice(7), poolInits = listOf(1, 2, 3))
 
 class Product2LatticeTest :
-    LatticeTest<Pair<Boolean, Int>>(
-        lattice =
-            Lattice.product(
-                ::Pair,
-                Pair<Boolean, Int>::first,
-                Pair<Boolean, Int>::second,
-                ImplicationLattice,
-                TotalOrderLattice(3),
-            ),
-        poolInits = listOf(false to 2, true to 0),
-    )
+  LatticeTest<Pair<Boolean, Int>>(
+    lattice = Lattice.product(::Pair, Pair<Boolean, Int>::first, Pair<Boolean, Int>::second, ImplicationLattice, TotalOrderLattice(3)),
+    poolInits = listOf(false to 2, true to 0),
+  )
 
 class Product3LatticeTest :
-    LatticeTest<Triple<Boolean, Int, UnboundedSet<String>>>(
-        lattice =
-            Lattice.product(
-                ::Triple,
-                Triple<Boolean, Int, UnboundedSet<String>>::first,
-                Triple<Boolean, Int, UnboundedSet<String>>::second,
-                Triple<Boolean, Int, UnboundedSet<String>>::third,
-                ImplicationLattice.dual(),
-                TotalOrderLattice(4),
-                possibilityLattice(),
-            ),
-        poolInits =
-            listOf(
-                Triple(true, 3, null),
-                Triple(false, 2, unboundedSetOf("foo")),
-                Triple(true, 0, unboundedSetOf()),
-            ),
-    )
+  LatticeTest<Triple<Boolean, Int, UnboundedSet<String>>>(
+    lattice =
+      Lattice.product(
+        ::Triple,
+        Triple<Boolean, Int, UnboundedSet<String>>::first,
+        Triple<Boolean, Int, UnboundedSet<String>>::second,
+        Triple<Boolean, Int, UnboundedSet<String>>::third,
+        ImplicationLattice.dual(),
+        TotalOrderLattice(4),
+        possibilityLattice(),
+      ),
+    poolInits = listOf(Triple(true, 3, null), Triple(false, 2, unboundedSetOf("foo")), Triple(true, 0, unboundedSetOf())),
+  )
 
 class PointWiseLatticeTest :
-    LatticeTest<PersistentMap<String, UnboundedSet<Int>>?>(
-        lattice = Lattice.pointWise(possibilityLattice()),
-        poolInits =
-            listOf(
-                persistentMapOf("foo" to persistentSetOf(3), "bar" to persistentSetOf(4, 5), "hi" to null),
-                persistentMapOf("bar" to persistentSetOf(5, 6), "qux" to persistentSetOf(6, 7)),
-            ),
-    ) {
+  LatticeTest<PersistentMap<String, UnboundedSet<Int>>?>(
+    lattice = Lattice.pointWise(possibilityLattice()),
+    poolInits =
+      listOf(
+        persistentMapOf("foo" to persistentSetOf(3), "bar" to persistentSetOf(4, 5), "hi" to null),
+        persistentMapOf("bar" to persistentSetOf(5, 6), "qux" to persistentSetOf(6, 7)),
+      ),
+  ) {
 
   @Test
   fun `keys of joined maps subsume both`() = forall { m1, m2 ->
@@ -191,22 +176,22 @@ open class SingletonLattice<X>(val value: X) : Lattice<X> {
   final override val top = value
 
   final override fun meetOf(first: X, second: X) =
-      value.also {
-        require(first == value)
-        require(second == value)
-      }
+    value.also {
+      require(first == value)
+      require(second == value)
+    }
 
   final override fun joinOf(first: X, second: X) =
-      value.also {
-        require(first == value)
-        require(second == value)
-      }
+    value.also {
+      require(first == value)
+      require(second == value)
+    }
 
   final override fun precede(first: X, second: X) =
-      true.also {
-        require(first == value)
-        require(second == value)
-      }
+    true.also {
+      require(first == value)
+      require(second == value)
+    }
 }
 
 object UnitLattice : SingletonLattice<Unit>(Unit)
@@ -266,12 +251,12 @@ class DiscreteLattice<T> : Lattice<Discrete<T>> {
   override fun precede(first: Discrete<T>, second: Discrete<T>) = first is Discrete.Btm || second is Discrete.Top || first == second
 
   private fun combine(id: Discrete<T>, overApprox: Discrete<T>, l: Discrete<T>, r: Discrete<T>) =
-      when {
-        l == id -> r
-        r == id -> l
-        l == r -> l
-        else -> overApprox
-      }
+    when {
+      l == id -> r
+      r == id -> l
+      l == r -> l
+      else -> overApprox
+    }
 }
 
 private infix fun Boolean.implies(that: () -> Boolean) = !this || that()

@@ -74,11 +74,11 @@ class ForegroundServicePermissionDetector : ResourceXmlDetector(), SourceCodeSca
    * @param anyPermission the app must have at least one permission in this list.
    */
   private fun checkPermission(
-      context: XmlContext,
-      element: Element,
-      type: String,
-      allPermissions: List<String>,
-      anyPermission: List<String>?,
+    context: XmlContext,
+    element: Element,
+    type: String,
+    allPermissions: List<String>,
+    anyPermission: List<String>?,
   ) {
     val wantAllPermissions = ArrayList(allPermissions)
     var hasAnyPermission = anyPermission == null
@@ -100,11 +100,11 @@ class ForegroundServicePermissionDetector : ResourceXmlDetector(), SourceCodeSca
       // The foregroundServiceType does not have all its permission requirement meet.
       // The app will get a SecurityException at runtime, so it is an ERROR.
       var message =
-          "foregroundServiceType:" +
-              type +
-              " requires permission:" +
-              allPermissions +
-              if (anyPermission == null) "" else " AND any permission in list:$anyPermission"
+        "foregroundServiceType:" +
+          type +
+          " requires permission:" +
+          allPermissions +
+          if (anyPermission == null) "" else " AND any permission in list:$anyPermission"
       val incident = Incident(ISSUE_PERMISSION, element, context.getLocation(element), message)
       context.report(incident, targetSdkAtLeast(34))
     }
@@ -120,144 +120,99 @@ class ForegroundServicePermissionDetector : ResourceXmlDetector(), SourceCodeSca
     // check every individual type.
     for (type in types.split('|')) {
       when (type) {
-        "dataSync" ->
-            checkPermission(
-                context,
-                element,
-                type,
-                listOf("android.permission.FOREGROUND_SERVICE_DATA_SYNC"),
-                null,
-            )
-        "mediaPlayback" ->
-            checkPermission(
-                context,
-                element,
-                type,
-                listOf("android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"),
-                null,
-            )
+        "dataSync" -> checkPermission(context, element, type, listOf("android.permission.FOREGROUND_SERVICE_DATA_SYNC"), null)
+        "mediaPlayback" -> checkPermission(context, element, type, listOf("android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"), null)
         "phoneCall" ->
-            checkPermission(
-                context,
-                element,
-                type,
-                listOf("android.permission.FOREGROUND_SERVICE_PHONE_CALL"),
-                null,
-                // It would be nice to check this, but the dev can alternatively
-                // make their app the default dialer app through the ROLE_DIALER
-                // role, so declaring this permission is not actually required.
-                // listOf("android.permission.MANAGE_OWN_CALLS"),
-            )
+          checkPermission(
+            context,
+            element,
+            type,
+            listOf("android.permission.FOREGROUND_SERVICE_PHONE_CALL"),
+            null,
+            // It would be nice to check this, but the dev can alternatively
+            // make their app the default dialer app through the ROLE_DIALER
+            // role, so declaring this permission is not actually required.
+            // listOf("android.permission.MANAGE_OWN_CALLS"),
+          )
         "location" ->
-            checkPermission(
-                context,
-                element,
-                type,
-                listOf("android.permission.FOREGROUND_SERVICE_LOCATION"),
-                listOf(
-                    "android.permission.ACCESS_COARSE_LOCATION",
-                    "android.permission.ACCESS_FINE_LOCATION",
-                ),
-            )
+          checkPermission(
+            context,
+            element,
+            type,
+            listOf("android.permission.FOREGROUND_SERVICE_LOCATION"),
+            listOf("android.permission.ACCESS_COARSE_LOCATION", "android.permission.ACCESS_FINE_LOCATION"),
+          )
         "connectedDevice" ->
-            checkPermission(
-                context,
-                element,
-                type,
-                listOf("android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE"),
-                null,
-                // It would be nice to check this, but the dev can alternatively
-                // call UsbManager.requestPermission() at runtime, so declaring one
-                // of the permissions below is not actually required.
-                /*
-                listOf(
-                  "android.permission.BLUETOOTH_ADVERTISE",
-                  "android.permission.BLUETOOTH_CONNECT",
-                  "android.permission.BLUETOOTH_SCAN",
-                  "android.permission.CHANGE_NETWORK_STATE",
-                  "android.permission.CHANGE_WIFI_STATE",
-                  "android.permission.CHANGE_WIFI_MULTICAST_STATE",
-                  "android.permission.NFC",
-                  "android.permission.TRANSMIT_IR",
-                  "android.permission.UWB_RANGING",
-                ),
-                */
-            )
-        "mediaProjection" ->
-            checkPermission(
-                context,
-                element,
-                type,
-                listOf("android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION"),
-                null,
-            )
+          checkPermission(
+            context,
+            element,
+            type,
+            listOf("android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE"),
+            null,
+            // It would be nice to check this, but the dev can alternatively
+            // call UsbManager.requestPermission() at runtime, so declaring one
+            // of the permissions below is not actually required.
+            /*
+            listOf(
+              "android.permission.BLUETOOTH_ADVERTISE",
+              "android.permission.BLUETOOTH_CONNECT",
+              "android.permission.BLUETOOTH_SCAN",
+              "android.permission.CHANGE_NETWORK_STATE",
+              "android.permission.CHANGE_WIFI_STATE",
+              "android.permission.CHANGE_WIFI_MULTICAST_STATE",
+              "android.permission.NFC",
+              "android.permission.TRANSMIT_IR",
+              "android.permission.UWB_RANGING",
+            ),
+            */
+          )
+        "mediaProjection" -> checkPermission(context, element, type, listOf("android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION"), null)
         "camera" ->
-            checkPermission(
-                context,
-                element,
-                type,
-                listOf("android.permission.FOREGROUND_SERVICE_CAMERA"),
-                listOf("android.permission.CAMERA", "android.permission.SYSTEM_CAMERA"),
-            )
+          checkPermission(
+            context,
+            element,
+            type,
+            listOf("android.permission.FOREGROUND_SERVICE_CAMERA"),
+            listOf("android.permission.CAMERA", "android.permission.SYSTEM_CAMERA"),
+          )
         "microphone" ->
-            checkPermission(
-                context,
-                element,
-                type,
-                listOf("android.permission.FOREGROUND_SERVICE_MICROPHONE"),
-                listOf(
-                    "android.permission.CAPTURE_AUDIO_HOTWORD",
-                    "android.permission.CAPTURE_AUDIO_OUTPUT",
-                    "android.permission.CAPTURE_MEDIA_OUTPUT",
-                    "android.permission.CAPTURE_TUNER_AUDIO_INPUT",
-                    "android.permission.CAPTURE_VOICE_COMMUNICATION_OUTPUT",
-                    "android.permission.RECORD_AUDIO",
-                ),
-            )
+          checkPermission(
+            context,
+            element,
+            type,
+            listOf("android.permission.FOREGROUND_SERVICE_MICROPHONE"),
+            listOf(
+              "android.permission.CAPTURE_AUDIO_HOTWORD",
+              "android.permission.CAPTURE_AUDIO_OUTPUT",
+              "android.permission.CAPTURE_MEDIA_OUTPUT",
+              "android.permission.CAPTURE_TUNER_AUDIO_INPUT",
+              "android.permission.CAPTURE_VOICE_COMMUNICATION_OUTPUT",
+              "android.permission.RECORD_AUDIO",
+            ),
+          )
         "health" ->
-            checkPermission(
-                context,
-                element,
-                type,
-                listOf("android.permission.FOREGROUND_SERVICE_HEALTH"),
-                listOf(
-                    "android.permission.ACTIVITY_RECOGNITION",
-                    "android.permission.BODY_SENSORS",
-                    "android.permission.HIGH_SAMPLING_RATE_SENSORS",
-                ),
-            )
-        "remoteMessaging" ->
-            checkPermission(
-                context,
-                element,
-                type,
-                listOf("android.permission.FOREGROUND_SERVICE_REMOTE_MESSAGING"),
-                null,
-            )
+          checkPermission(
+            context,
+            element,
+            type,
+            listOf("android.permission.FOREGROUND_SERVICE_HEALTH"),
+            listOf(
+              "android.permission.ACTIVITY_RECOGNITION",
+              "android.permission.BODY_SENSORS",
+              "android.permission.HIGH_SAMPLING_RATE_SENSORS",
+            ),
+          )
+        "remoteMessaging" -> checkPermission(context, element, type, listOf("android.permission.FOREGROUND_SERVICE_REMOTE_MESSAGING"), null)
         "systemExempted" ->
-            checkPermission(
-                context,
-                element,
-                type,
-                listOf("android.permission.FOREGROUND_SERVICE_SYSTEM_EXEMPTED"),
-                listOf("android.permission.SCHEDULE_EXACT_ALARM", "android.permission.USE_EXACT_ALARM"),
-            )
-        "fileManagement" ->
-            checkPermission(
-                context,
-                element,
-                type,
-                listOf("android.permission.FOREGROUND_SERVICE_FILE_MANAGEMENT"),
-                null,
-            )
-        "specialUse" ->
-            checkPermission(
-                context,
-                element,
-                type,
-                listOf("android.permission.FOREGROUND_SERVICE_SPECIAL_USE"),
-                null,
-            )
+          checkPermission(
+            context,
+            element,
+            type,
+            listOf("android.permission.FOREGROUND_SERVICE_SYSTEM_EXEMPTED"),
+            listOf("android.permission.SCHEDULE_EXACT_ALARM", "android.permission.USE_EXACT_ALARM"),
+          )
+        "fileManagement" -> checkPermission(context, element, type, listOf("android.permission.FOREGROUND_SERVICE_FILE_MANAGEMENT"), null)
+        "specialUse" -> checkPermission(context, element, type, listOf("android.permission.FOREGROUND_SERVICE_SPECIAL_USE"), null)
         else -> continue
       }
     }
@@ -265,29 +220,29 @@ class ForegroundServicePermissionDetector : ResourceXmlDetector(), SourceCodeSca
 
   companion object {
     val IMPLEMENTATION =
-        Implementation(
-            ForegroundServicePermissionDetector::class.java,
-            EnumSet.of(Scope.MANIFEST, Scope.JAVA_FILE),
-            Scope.MANIFEST_SCOPE,
-            Scope.JAVA_FILE_SCOPE,
-        )
+      Implementation(
+        ForegroundServicePermissionDetector::class.java,
+        EnumSet.of(Scope.MANIFEST, Scope.JAVA_FILE),
+        Scope.MANIFEST_SCOPE,
+        Scope.JAVA_FILE_SCOPE,
+      )
 
     /** Foreground service type related issues */
     val ISSUE_PERMISSION =
-        Issue.create(
-            id = "ForegroundServicePermission",
-            briefDescription = "Missing permissions required by foregroundServiceType",
-            explanation =
-                """
+      Issue.create(
+        id = "ForegroundServicePermission",
+        briefDescription = "Missing permissions required by foregroundServiceType",
+        explanation =
+          """
                 For targetSdkVersion >= 34, each `foregroundServiceType` listed in the `<service>` element \
                 requires specific sets of permissions to be declared in the manifest. If permissions are \
                 missing, then when the foreground service is started with a `foregroundServiceType` that has \
                 missing permissions, a `SecurityException` will be thrown.
           """,
-            category = Category.CORRECTNESS,
-            priority = 5,
-            severity = Severity.ERROR, // It is an error, missing permission causes SecurityException.
-            implementation = IMPLEMENTATION,
-        )
+        category = Category.CORRECTNESS,
+        priority = 5,
+        severity = Severity.ERROR, // It is an error, missing permission causes SecurityException.
+        implementation = IMPLEMENTATION,
+      )
   }
 }

@@ -156,10 +156,10 @@ internal class UElementVisitor constructor(driver: LintDriver, private val parse
     }
 
     annotationHandler =
-        when {
-          annotationScanners.isEmpty() -> null
-          else -> AnnotationHandler(driver, annotationScanners)
-        }
+      when {
+        annotationScanners.isEmpty() -> null
+        else -> AnnotationHandler(driver, annotationScanners)
+      }
     parser.evaluator.setRelevantAnnotations(annotationHandler?.relevantAnnotations)
   }
 
@@ -193,11 +193,11 @@ internal class UElementVisitor constructor(driver: LintDriver, private val parse
         }
 
         if (
-            methodDetectors.isNotEmpty() ||
-                resourceFieldDetectors.isNotEmpty() ||
-                constructorDetectors.isNotEmpty() ||
-                referenceDetectors.isNotEmpty() ||
-                annotationHandler != null
+          methodDetectors.isNotEmpty() ||
+            resourceFieldDetectors.isNotEmpty() ||
+            constructorDetectors.isNotEmpty() ||
+            referenceDetectors.isNotEmpty() ||
+            annotationHandler != null
         ) {
           client.runReadAction {
             // TODO: Do we need to break this one up into finer grain locking units
@@ -248,11 +248,7 @@ internal class UElementVisitor constructor(driver: LintDriver, private val parse
     }
   }
 
-  private fun generateCallGraph(
-      projectContext: Context,
-      parser: UastParser,
-      contexts: List<JavaContext>,
-  ): CallGraphResult? {
+  private fun generateCallGraph(projectContext: Context, parser: UastParser, contexts: List<JavaContext>): CallGraphResult? {
     if (contexts.isEmpty()) {
       return null
     }
@@ -285,20 +281,16 @@ internal class UElementVisitor constructor(driver: LintDriver, private val parse
       }
       val detectorNames = "[" + Joiner.on(", ").join(detectors) + "]"
       var message =
-          "Lint ran out of memory while building a callgraph (requested by " +
-              "these detectors: " +
-              detectorNames +
-              "). You can either disable these " +
-              "checks, or give lint more heap space."
+        "Lint ran out of memory while building a callgraph (requested by " +
+          "these detectors: " +
+          detectorNames +
+          "). You can either disable these " +
+          "checks, or give lint more heap space."
       if (LintClient.isGradle) {
         message +=
-            " For example, to set the Gradle daemon to use 4 GB, edit " + "`gradle.properties` to contains `org.gradle.jvmargs=-Xmx4g`"
+          " For example, to set the Gradle daemon to use 4 GB, edit " + "`gradle.properties` to contains `org.gradle.jvmargs=-Xmx4g`"
       }
-      projectContext.report(
-          IssueRegistry.LINT_ERROR,
-          Location.create(projectContext.project.dir),
-          message,
-      )
+      projectContext.report(IssueRegistry.LINT_ERROR, Location.create(projectContext.project.dir), message)
       return null
     }
   }
@@ -352,9 +344,9 @@ internal class UElementVisitor constructor(driver: LintDriver, private val parse
       if (klass is PsiTypeParameter) return sequenceOf() // See Javadoc for SourceCodeScanner.visitClass.
       val superClasses = InheritanceUtil.getSuperClasses(klass).asSequence()
       return (superClasses + klass) // Include self.
-          .mapNotNull { it.qualifiedName?.let(superClassDetectors::get) }
-          .flatten()
-          .distinct()
+        .mapNotNull { it.qualifiedName?.let(superClassDetectors::get) }
+        .flatten()
+        .distinct()
     }
   }
 
@@ -658,10 +650,8 @@ internal class UElementVisitor constructor(driver: LintDriver, private val parse
       return super.visitPatternExpression(node)
     }
 
-    private inline fun <reified Node : UElement> eachDetectorVisit(
-        node: Node,
-        visit: UElementHandler.(Node) -> Unit,
-    ) = uastHandlerDetectors[Node::class.java]?.forEach { it.uastHandler.visit(node) }
+    private inline fun <reified Node : UElement> eachDetectorVisit(node: Node, visit: UElementHandler.(Node) -> Unit) =
+      uastHandlerDetectors[Node::class.java]?.forEach { it.uastHandler.visit(node) }
   }
 
   /**
@@ -712,13 +702,7 @@ internal class UElementVisitor constructor(driver: LintDriver, private val parse
         val reference = ResourceReference.get(node)
         if (reference != null) {
           for (uastScanner in resourceFieldDetectors) {
-            uastScanner.visitResourceReference(
-                mContext,
-                reference.node,
-                reference.type,
-                reference.name,
-                reference.`package` == ANDROID_PKG,
-            )
+            uastScanner.visitResourceReference(mContext, reference.node, reference.type, reference.name, reference.`package` == ANDROID_PKG)
           }
         } else if (aliasedImports && node.resolve() == null) {
           val identifier = node.identifier
@@ -731,11 +715,11 @@ internal class UElementVisitor constructor(driver: LintDriver, private val parse
                 val resource = ktImport.importedReference?.let { it.toUElement() }?.let { ResourceReference.get(it) } ?: continue
                 for (uastScanner in resourceFieldDetectors) {
                   uastScanner.visitResourceReference(
-                      mContext,
-                      resource.node,
-                      resource.type,
-                      resource.name,
-                      resource.`package` == ANDROID_PKG,
+                    mContext,
+                    resource.node,
+                    resource.type,
+                    resource.name,
+                    resource.`package` == ANDROID_PKG,
                   )
                 }
                 break

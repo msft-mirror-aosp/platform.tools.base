@@ -173,7 +173,8 @@ class NavigationPlaceholderTest {
     PathSubject.assertThat(navigationJson).contains("\"path\": \"/com.example.app\"")
     PathSubject.assertThat(navigationJson).contains("\"host\": \"app.example.com\"")
 
-    // navigation lib when mergeResources the library - having all substitutions except applicationId
+    // navigation lib when mergeResources the library - having all substitutions except
+    // applicationId
     val navigationLib = project.file("lib/build/${SdkConstants.FD_GENERATED}/updated_navigation_xml/debug/navigation/nav_lib.xml")
     PathSubject.assertThat(navigationLib).contains("app:uri=\"libScheme://lib.example.com/$appIdPlaceholder\" />")
 
@@ -181,7 +182,8 @@ class NavigationPlaceholderTest {
     val navigation = project.file("app/build/${SdkConstants.FD_GENERATED}/updated_navigation_xml/debug/navigation/nav_app.xml")
     PathSubject.assertThat(navigation).contains("app:uri=\"appScheme://app.example.com/com.example.app\" />")
 
-    // lib navigation we collect during app mergeResources - all substitutions are done including applicationId
+    // lib navigation we collect during app mergeResources - all substitutions are done including
+    // applicationId
     val navigationLibFromApp = project.file("app/build/${SdkConstants.FD_GENERATED}/updated_navigation_xml/debug/navigation/nav_lib.xml")
     PathSubject.assertThat(navigationLibFromApp).contains("app:uri=\"libScheme://lib.example.com/com.example.app\" />")
 

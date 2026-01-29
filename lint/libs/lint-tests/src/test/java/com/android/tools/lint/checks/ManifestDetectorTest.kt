@@ -43,16 +43,16 @@ class ManifestDetectorTest : AbstractCheckTest() {
 
   fun testBrokenOrder() {
     val expected =
-        """
+      """
             AndroidManifest.xml:15: Warning: <uses-sdk> tag appears after <application> tag [ManifestOrder]
                <uses-sdk android:minSdkVersion="Froyo" />
                 ~~~~~~~~
             0 errors, 1 warnings
             """
     lint()
-        .files(
-            manifest(
-                    """
+      .files(
+        manifest(
+            """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                      package="com.example.helloworld"
                      android:versionCode="1"
@@ -71,26 +71,26 @@ class ManifestDetectorTest : AbstractCheckTest() {
 
                 </manifest>
                 """
-                )
-                .indented(),
-            strings,
-        )
-        .issues(ManifestDetector.ORDER)
-        .run()
-        .expect(expected)
+          )
+          .indented(),
+        strings,
+      )
+      .issues(ManifestDetector.ORDER)
+      .run()
+      .expect(expected)
   }
 
   fun testMissingUsesSdkInGradle() {
     lint()
-        .files(missingUsesSdk, library) // placeholder; only name counts
-        .issues(ManifestDetector.SET_VERSION)
-        .run()
-        .expectClean()
+      .files(missingUsesSdk, library) // placeholder; only name counts
+      .issues(ManifestDetector.SET_VERSION)
+      .run()
+      .expectClean()
   }
 
   fun testMultipleSdk() {
     val expected =
-        """
+      """
             AndroidManifest.xml:7: Error: There should only be a single <uses-sdk> element in the manifest: merge these together [MultipleUsesSdk]
                 <uses-sdk android:targetSdkVersion="14" />
                  ~~~~~~~~
@@ -103,9 +103,9 @@ class ManifestDetectorTest : AbstractCheckTest() {
             1 errors, 0 warnings
             """
     lint()
-        .files(
-            manifest(
-                    """
+      .files(
+        manifest(
+            """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="test.bytecode"
                     android:versionCode="1"
@@ -131,19 +131,19 @@ class ManifestDetectorTest : AbstractCheckTest() {
 
                 </manifest>
                 """
-                )
-                .indented(),
-            strings,
-        )
-        .issues(ManifestDetector.MULTIPLE_USES_SDK)
-        .allowManifestMergerErrors(true)
-        .run()
-        .expect(expected)
+          )
+          .indented(),
+        strings,
+      )
+      .issues(ManifestDetector.MULTIPLE_USES_SDK)
+      .allowManifestMergerErrors(true)
+      .run()
+      .expect(expected)
   }
 
   fun testWrongLocation() {
     val expected =
-        """
+      """
             AndroidManifest.xml:7: Error: The <uses-sdk> element must be a direct child of the <manifest> root element [WrongManifestParent]
                    <uses-sdk android:minSdkVersion="Froyo" />
                     ~~~~~~~~
@@ -186,9 +186,9 @@ class ManifestDetectorTest : AbstractCheckTest() {
             13 errors, 0 warnings
             """
     lint()
-        .files(
-            manifest(
-                    """
+      .files(
+        manifest(
+            """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                      package="com.example.helloworld"
                      android:versionCode="1"
@@ -217,24 +217,24 @@ class ManifestDetectorTest : AbstractCheckTest() {
 
                 </manifest>
                 """
-                )
-                .indented()
-        )
-        .issues(ManifestDetector.WRONG_PARENT)
-        // Many elements have missing names, which causes the manifest merger to fail, but we can
-        // still report the lint errors.
-        .allowManifestMergerErrors(true)
-        .run()
-        .expect(expected)
+          )
+          .indented()
+      )
+      .issues(ManifestDetector.WRONG_PARENT)
+      // Many elements have missing names, which causes the manifest merger to fail, but we can
+      // still report the lint errors.
+      .allowManifestMergerErrors(true)
+      .run()
+      .expect(expected)
   }
 
   fun test112063828() {
     // Regression test for
     // 112063828: Lint flags "uses-feature" from my own namespace is not a child of <manifest>
     lint()
-        .files(
-            manifest(
-                    """
+      .files(
+        manifest(
+            """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     xmlns:dist="http://schemas.android.com/apk/distribution"
                     package="test.pkg.nullnessmigrationtest">
@@ -251,26 +251,26 @@ class ManifestDetectorTest : AbstractCheckTest() {
                     </dist:module>
                 </manifest>
                 """
-                )
-                .indented()
-        )
-        .issues(ManifestDetector.WRONG_PARENT)
-        .run()
-        .expectClean()
+          )
+          .indented()
+      )
+      .issues(ManifestDetector.WRONG_PARENT)
+      .run()
+      .expectClean()
   }
 
   fun testDuplicateActivity() {
     val expected =
-        """
+      """
             AndroidManifest.xml:15: Error: Duplicate registration for activity com.example.helloworld.HelloWorld [DuplicateActivity]
                    <activity android:name="com.example.helloworld.HelloWorld"
                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             1 errors, 0 warnings
             """
     lint()
-        .files(
-            manifest(
-                    """
+      .files(
+        manifest(
+            """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                      package="com.example.helloworld"
                      android:versionCode="1"
@@ -293,34 +293,34 @@ class ManifestDetectorTest : AbstractCheckTest() {
 
                 </manifest>
                 """
-                )
-                .indented(),
-            strings,
-        )
-        .issues(ManifestDetector.DUPLICATE_ACTIVITY)
-        .allowManifestMergerErrors(true)
-        .run()
-        .expect(expected)
+          )
+          .indented(),
+        strings,
+      )
+      .issues(ManifestDetector.DUPLICATE_ACTIVITY)
+      .allowManifestMergerErrors(true)
+      .run()
+      .expect(expected)
   }
 
   fun testDuplicateActivityAcrossSourceSets() {
     val library = project(manifest().minSdk(14), projectProperties().library(true), libraryCode, libraryStrings).name("LibraryProject")
     val main =
-        project(
-                manifest().minSdk(14),
-                projectProperties().property("android.library.reference.1", "../LibraryProject").property("manifestmerger.enabled", "true"),
-                mainCode,
-            )
-            .name("MainProject")
-            .dependsOn(library)
+      project(
+          manifest().minSdk(14),
+          projectProperties().property("android.library.reference.1", "../LibraryProject").property("manifestmerger.enabled", "true"),
+          mainCode,
+        )
+        .name("MainProject")
+        .dependsOn(library)
     lint().projects(library, main).issues(ManifestDetector.DUPLICATE_ACTIVITY).run().expectClean()
   }
 
   fun testIgnoreDuplicateActivity() {
     lint()
-        .files(
-            manifest(
-                    """
+      .files(
+        manifest(
+            """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                      xmlns:tools="http://schemas.android.com/tools"
                      package="com.example.helloworld"
@@ -344,22 +344,22 @@ class ManifestDetectorTest : AbstractCheckTest() {
 
                 </manifest>
                 """
-                )
-                .indented(),
-            strings,
-        )
-        .issues(ManifestDetector.DUPLICATE_ACTIVITY)
-        .allowManifestMergerErrors(true)
-        .run()
-        .expectClean()
+          )
+          .indented(),
+        strings,
+      )
+      .issues(ManifestDetector.DUPLICATE_ACTIVITY)
+      .allowManifestMergerErrors(true)
+      .run()
+      .expectClean()
   }
 
   fun testAllowBackup() {
     // No longer flagging this; it's noisy and many users just suppress it
     lint()
-        .files(
-            manifest(
-                    """
+      .files(
+        manifest(
+            """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="test.bytecode"
                     android:versionCode="1"
@@ -374,20 +374,20 @@ class ManifestDetectorTest : AbstractCheckTest() {
 
                 </manifest>
                 """
-                )
-                .indented(),
-            strings,
-        )
-        .issues(ManifestDetector.DATA_EXTRACTION_RULES)
-        .run()
-        .expectClean()
+          )
+          .indented(),
+        strings,
+      )
+      .issues(ManifestDetector.DATA_EXTRACTION_RULES)
+      .run()
+      .expectClean()
   }
 
   fun testAllowBackupOk() {
     lint()
-        .files(
-            manifest(
-                    """
+      .files(
+        manifest(
+            """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="foo.bar2"
                     android:versionCode="1"
@@ -412,20 +412,20 @@ class ManifestDetectorTest : AbstractCheckTest() {
 
                 </manifest>
                 """
-                )
-                .indented(),
-            strings,
-        )
-        .issues(ManifestDetector.DATA_EXTRACTION_RULES)
-        .run()
-        .expectClean()
+          )
+          .indented(),
+        strings,
+      )
+      .issues(ManifestDetector.DATA_EXTRACTION_RULES)
+      .run()
+      .expectClean()
   }
 
   fun testAllowBackupUnnecessary() {
     lint()
-        .files(
-            manifest(
-                    """
+      .files(
+        manifest(
+            """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="foo.bar2"
                     android:versionCode="1"
@@ -441,43 +441,43 @@ class ManifestDetectorTest : AbstractCheckTest() {
 
                 </manifest>
                 """
-                )
-                .indented(),
-            strings,
-        )
-        .issues(ManifestDetector.DATA_EXTRACTION_RULES)
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+        strings,
+      )
+      .issues(ManifestDetector.DATA_EXTRACTION_RULES)
+      .run()
+      .expect(
+        """
             AndroidManifest.xml:11: Warning: The attribute android:allowBackup is deprecated from Android 12 and the default allows backup [DataExtractionRules]
                     android:allowBackup="true" >
                                          ~~~~
             0 errors, 1 warnings
             """
-        )
-        .expectFixDiffs(
-            """
+      )
+      .expectFixDiffs(
+        """
             Fix for AndroidManifest.xml line 11: Delete allowBackup:
             @@ -10 +9,0 @@
             -        android:allowBackup="true"
             """
-        )
+      )
   }
 
   fun testAllowBackupOk3() {
     // Not flagged in library projects
     lint()
-        .files(manifest().minSdk(14), projectProperties().library(true), strings)
-        .issues(ManifestDetector.DATA_EXTRACTION_RULES)
-        .run()
-        .expectClean()
+      .files(manifest().minSdk(14), projectProperties().library(true), strings)
+      .issues(ManifestDetector.DATA_EXTRACTION_RULES)
+      .run()
+      .expectClean()
   }
 
   fun testAllowIgnore() {
     lint()
-        .files(
-            manifest(
-                    """
+      .files(
+        manifest(
+            """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     xmlns:tools="http://schemas.android.com/tools"
                     package="foo.bar2"
@@ -503,37 +503,37 @@ class ManifestDetectorTest : AbstractCheckTest() {
 
                 </manifest>
                 """
-                )
-                .indented(),
-            strings,
-        )
-        .issues(ManifestDetector.DATA_EXTRACTION_RULES)
-        .run()
-        .expectClean()
+          )
+          .indented(),
+        strings,
+      )
+      .issues(ManifestDetector.DATA_EXTRACTION_RULES)
+      .run()
+      .expectClean()
   }
 
   fun testNoApplication() {
     lint()
-        .files(
-            manifest(
-                    """
+      .files(
+        manifest(
+            """
             <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                 package="test.pkg"
                 android:versionCode="1"
                 android:versionName="1.0" >
             </manifest>
             """
-                )
-                .indented()
-        )
-        .issues(ManifestDetector.DATA_EXTRACTION_RULES, ManifestDetector.APPLICATION_ICON)
-        .run()
-        .expectClean()
+          )
+          .indented()
+      )
+      .issues(ManifestDetector.DATA_EXTRACTION_RULES, ManifestDetector.APPLICATION_ICON)
+      .run()
+      .expectClean()
   }
 
   fun testDuplicatePermissions() {
     val expected =
-        """
+      """
             AndroidManifest.xml:11: Error: Permission name SEND_SMS is not unique (appears in both foo.permission.SEND_SMS and bar.permission.SEND_SMS) [UniquePermission]
                 <permission android:name="bar.permission.SEND_SMS"
                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -543,9 +543,9 @@ class ManifestDetectorTest : AbstractCheckTest() {
             1 errors, 0 warnings
             """
     lint()
-        .files(
-            manifest(
-                    """
+      .files(
+        manifest(
+            """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="foo.bar2"
                     android:versionCode="1"
@@ -567,18 +567,18 @@ class ManifestDetectorTest : AbstractCheckTest() {
 
                 </manifest>
                 """
-                )
-                .indented(),
-            strings,
-        )
-        .issues(ManifestDetector.UNIQUE_PERMISSION)
-        .run()
-        .expect(expected)
+          )
+          .indented(),
+        strings,
+      )
+      .issues(ManifestDetector.UNIQUE_PERMISSION)
+      .run()
+      .expect(expected)
   }
 
   fun testDuplicatePermissionGroups() {
     val expected =
-        """
+      """
             AndroidManifest.xml:11: Error: Permission group name STORAGE is not unique (appears in both foo.permissiongroup.STORAGE and bar.permissiongroup.STORAGE) [UniquePermission]
                 <permission-group android:name="bar.permissiongroup.STORAGE"
                                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -588,9 +588,9 @@ class ManifestDetectorTest : AbstractCheckTest() {
             1 errors, 0 warnings
             """
     lint()
-        .files(
-            manifest(
-                    """
+      .files(
+        manifest(
+            """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="foo.bar2"
                     android:versionCode="1"
@@ -612,20 +612,20 @@ class ManifestDetectorTest : AbstractCheckTest() {
 
                 </manifest>
                 """
-                )
-                .indented(),
-            strings,
-        )
-        .issues(ManifestDetector.UNIQUE_PERMISSION)
-        .run()
-        .expect(expected)
+          )
+          .indented(),
+        strings,
+      )
+      .issues(ManifestDetector.UNIQUE_PERMISSION)
+      .run()
+      .expect(expected)
   }
 
   fun testDuplicatePermissionsMultiProject() {
     val library =
-        project(
-                manifest(
-                        """
+      project(
+          manifest(
+              """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="foo.bar2"
                     android:versionCode="1"
@@ -644,15 +644,15 @@ class ManifestDetectorTest : AbstractCheckTest() {
 
                 </manifest>
                 """
-                    )
-                    .indented()
             )
-            .type(ProjectDescription.Type.LIBRARY)
-            .name("Library")
+            .indented()
+        )
+        .type(ProjectDescription.Type.LIBRARY)
+        .name("Library")
     val main =
-        project(
-                manifest(
-                        """
+      project(
+          manifest(
+              """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="foo.bar2"
                     android:versionCode="1"
@@ -671,18 +671,18 @@ class ManifestDetectorTest : AbstractCheckTest() {
 
                 </manifest>
                 """
-                    )
-                    .indented()
             )
-            .name("App")
-            .dependsOn(library)
+            .indented()
+        )
+        .name("App")
+        .dependsOn(library)
     lint()
-        .projects(main, library)
-        .incremental("App/AndroidManifest.xml")
-        .issues(ManifestDetector.UNIQUE_PERMISSION)
-        .run()
-        .expect(
-            """
+      .projects(main, library)
+      .incremental("App/AndroidManifest.xml")
+      .issues(ManifestDetector.UNIQUE_PERMISSION)
+      .run()
+      .expect(
+        """
                 ../Library/AndroidManifest.xml:8: Error: Permission name SEND_SMS is not unique (appears in both foo.permission.SEND_SMS and bar.permission.SEND_SMS) [UniquePermission]
                     <permission android:name="bar.permission.SEND_SMS"
                                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -691,7 +691,7 @@ class ManifestDetectorTest : AbstractCheckTest() {
                                               ~~~~~~~~~~~~~~~~~~~~~~~
                 1 errors, 0 warnings
                 """
-        )
+      )
   }
 
   fun testUniquePermissionsPrunedViaManifestRemove() {
@@ -707,9 +707,9 @@ class ManifestDetectorTest : AbstractCheckTest() {
     //     https://code.google.com/p/android/issues/detail?id=227683
     // (5) Using manifest placeholders
     val library =
-        project(
-                manifest(
-                        """
+      project(
+          manifest(
+              """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="test.pkg.library" >
                     <permission
@@ -721,15 +721,15 @@ class ManifestDetectorTest : AbstractCheckTest() {
                     <permission android:name="＄{unknownPlaceHolder1}.permission.PERMISSION_NAME_3"/>
                 </manifest>
                 """
-                    )
-                    .indented()
             )
-            .type(ProjectDescription.Type.LIBRARY)
-            .name("Library")
+            .indented()
+        )
+        .type(ProjectDescription.Type.LIBRARY)
+        .name("Library")
     val main =
-        project(
-                manifest(
-                        """
+      project(
+          manifest(
+              """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     xmlns:tools="http://schemas.android.com/tools"
                     package="test.pkg.app" >
@@ -741,18 +741,18 @@ class ManifestDetectorTest : AbstractCheckTest() {
                     <permission android:name="＄{unknownPlaceHolder2}.permission.PERMISSION_NAME_3"/>
                 </manifest>
                 """
-                    )
-                    .indented()
             )
-            .name("App")
-            .dependsOn(library)
+            .indented()
+        )
+        .name("App")
+        .dependsOn(library)
     lint()
-        .projects(main, library)
-        .incremental("App/AndroidManifest.xml")
-        .issues(ManifestDetector.UNIQUE_PERMISSION)
-        .run()
-        .expect(
-            """
+      .projects(main, library)
+      .incremental("App/AndroidManifest.xml")
+      .issues(ManifestDetector.UNIQUE_PERMISSION)
+      .run()
+      .expect(
+        """
                 ../Library/AndroidManifest.xml:7: Error: Permission name PERMISSION_NAME_1 is not unique (appears in both pkg2.PERMISSION_NAME_1 and pkg1.PERMISSION_NAME_1) [UniquePermission]
                     <permission android:name="pkg1.PERMISSION_NAME_1"/>
                                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -761,12 +761,12 @@ class ManifestDetectorTest : AbstractCheckTest() {
                                               ~~~~~~~~~~~~~~~~~~~~~~
                 1 errors, 0 warnings
                 """
-        )
+      )
   }
 
   fun testMissingVersion() {
     val expected =
-        """
+      """
             AndroidManifest.xml:1: Warning: Should set android:versionCode to specify the application version [MissingVersion]
             <manifest xmlns:android="http://schemas.android.com/apk/res/android"
              ~~~~~~~~
@@ -776,14 +776,14 @@ class ManifestDetectorTest : AbstractCheckTest() {
             0 errors, 2 warnings
             """
     lint()
-        .files(noVersion)
-        .issues(ManifestDetector.SET_VERSION)
-        .run()
-        .expect(expected)
-        .verifyFixes()
-        .window(1)
-        .expectFixDiffs(
-            """
+      .files(noVersion)
+      .issues(ManifestDetector.SET_VERSION)
+      .run()
+      .expect(expected)
+      .verifyFixes()
+      .window(1)
+      .expectFixDiffs(
+        """
                 Fix for AndroidManifest.xml line 1: Set versionCode:
                 @@ -2,3 +2,4 @@
                  <manifest xmlns:android="http://schemas.android.com/apk/res/android"
@@ -797,20 +797,20 @@ class ManifestDetectorTest : AbstractCheckTest() {
                 +    package="foo.bar2"
                 +    android:versionName="[TODO]|" >
                 """
-        )
+      )
   }
 
   fun testVersionNotMissingInGradleProjects() {
     lint()
-        .files(noVersion, library) // placeholder; only name counts
-        .issues(ManifestDetector.SET_VERSION)
-        .run()
-        .expectClean()
+      .files(noVersion, library) // placeholder; only name counts
+      .issues(ManifestDetector.SET_VERSION)
+      .run()
+      .expectClean()
   }
 
   fun testIllegalReference() {
     val expected =
-        """
+      """
             AndroidManifest.xml:3: Warning: The android:versionCode cannot be a resource url, it must be a literal integer [IllegalResourceRef]
                 android:versionCode="@dimen/versionCode"
                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -823,9 +823,9 @@ class ManifestDetectorTest : AbstractCheckTest() {
             0 errors, 3 warnings
             """
     lint()
-        .files(
-            manifest(
-                    """
+      .files(
+        manifest(
+            """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="foo.bar2"
                     android:versionCode="@dimen/versionCode"
@@ -850,28 +850,28 @@ class ManifestDetectorTest : AbstractCheckTest() {
 
                 </manifest>
                 """
-                )
-                .indented()
-        ) // Looking for a version in the manifest that is replaced by the provisional test
-        // infrastructure
-        .skipTestModes(TestMode.PARTIAL)
-        .issues(ManifestDetector.ILLEGAL_REFERENCE)
-        .run()
-        .expect(expected)
+          )
+          .indented()
+      ) // Looking for a version in the manifest that is replaced by the provisional test
+      // infrastructure
+      .skipTestModes(TestMode.PARTIAL)
+      .issues(ManifestDetector.ILLEGAL_REFERENCE)
+      .run()
+      .expect(expected)
   }
 
   fun testDuplicateUsesFeature() {
     val expected =
-        """
+      """
             AndroidManifest.xml:9: Warning: Duplicate declaration of uses-feature android.hardware.camera [DuplicateUsesFeature]
                 <uses-feature android:name="android.hardware.camera"/>
                               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             0 errors, 1 warnings
             """
     lint()
-        .files(
-            manifest(
-                    """
+      .files(
+        manifest(
+            """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="foo.bar2"
                     android:versionCode="1"
@@ -889,20 +889,20 @@ class ManifestDetectorTest : AbstractCheckTest() {
 
                 </manifest>
                 """
-                )
-                .indented(),
-            strings,
-        )
-        .issues(ManifestDetector.DUPLICATE_USES_FEATURE)
-        .run()
-        .expect(expected)
+          )
+          .indented(),
+        strings,
+      )
+      .issues(ManifestDetector.DUPLICATE_USES_FEATURE)
+      .run()
+      .expect(expected)
   }
 
   fun testDuplicateUsesFeatureOk() {
     lint()
-        .files(
-            manifest(
-                    """
+      .files(
+        manifest(
+            """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="foo.bar2"
                     android:versionCode="1"
@@ -919,32 +919,32 @@ class ManifestDetectorTest : AbstractCheckTest() {
 
                 </manifest>
                 """
-                )
-                .indented(),
-            strings,
-        )
-        .issues(ManifestDetector.DUPLICATE_USES_FEATURE)
-        .run()
-        .expectClean()
+          )
+          .indented(),
+        strings,
+      )
+      .issues(ManifestDetector.DUPLICATE_USES_FEATURE)
+      .run()
+      .expectClean()
   }
 
   fun testMissingApplicationIcon() {
     val expected =
-        """
+      """
             AndroidManifest.xml:8: Warning: Should explicitly set android:icon, there is no default [MissingApplicationIcon]
                 <application
                  ~~~~~~~~~~~
             0 errors, 1 warnings
             """
     lint()
-        .files(missingApplicationIcon, strings)
-        .issues(ManifestDetector.APPLICATION_ICON)
-        .run()
-        .expect(expected)
-        .verifyFixes()
-        .window(1)
-        .expectFixDiffs(
-            """
+      .files(missingApplicationIcon, strings)
+      .issues(ManifestDetector.APPLICATION_ICON)
+      .run()
+      .expect(expected)
+      .verifyFixes()
+      .window(1)
+      .expectFixDiffs(
+        """
                 Fix for AndroidManifest.xml line 8: Set icon:
                 @@ -8,3 +8,5 @@
 
@@ -954,15 +954,15 @@ class ManifestDetectorTest : AbstractCheckTest() {
                 +        android:label="@string/app_name" >
                          <activity
                 """
-        )
+      )
   }
 
   fun testMissingApplicationIconInLibrary() {
     lint()
-        .files(missingApplicationIcon, projectProperties().library(true), strings)
-        .issues(ManifestDetector.APPLICATION_ICON)
-        .run()
-        .expectClean()
+      .files(missingApplicationIcon, projectProperties().library(true), strings)
+      .issues(ManifestDetector.APPLICATION_ICON)
+      .run()
+      .expectClean()
   }
 
   fun testMissingApplicationIconOk() {
@@ -971,7 +971,7 @@ class ManifestDetectorTest : AbstractCheckTest() {
 
   fun testDeviceAdmin() {
     val expected =
-        """
+      """
             AndroidManifest.xml:30: Warning: You must have an intent filter for action android.app.action.DEVICE_ADMIN_ENABLED [DeviceAdmin]
                         <meta-data android:name="android.app.device_admin"
                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -984,9 +984,9 @@ class ManifestDetectorTest : AbstractCheckTest() {
             0 errors, 3 warnings
             """
     lint()
-        .files(
-            manifest(
-                    """
+      .files(
+        manifest(
+            """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                           xmlns:tools="http://schemas.android.com/tools"
                           package="foo.bar2"
@@ -1062,27 +1062,27 @@ class ManifestDetectorTest : AbstractCheckTest() {
 
                 </manifest>
                 """
-                )
-                .indented()
-        )
-        .issues(ManifestDetector.DEVICE_ADMIN)
-        .run()
-        .expect(expected)
+          )
+          .indented()
+      )
+      .issues(ManifestDetector.DEVICE_ADMIN)
+      .run()
+      .expect(expected)
   }
 
   fun testMockLocations() {
     val expected =
-        """
+      """
             src/main/AndroidManifest.xml:8: Error: Mock locations should only be requested in a test or debug-specific manifest file (typically src/debug/AndroidManifest.xml) [MockLocation]
                 <uses-permission android:name="android.permission.ACCESS_MOCK_LOCATION" />
                                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             1 errors, 0 warnings
             """
     lint()
-        .files(
-            xml(
-                    "src/main/AndroidManifest.xml",
-                    """
+      .files(
+        xml(
+            "src/main/AndroidManifest.xml",
+            """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="foo.bar2"
                     android:versionCode="1"
@@ -1094,11 +1094,11 @@ class ManifestDetectorTest : AbstractCheckTest() {
 
                 </manifest>
                 """,
-                )
-                .indented(),
-            xml(
-                    "src/debug/AndroidManifest.xml",
-                    """
+          )
+          .indented(),
+        xml(
+            "src/debug/AndroidManifest.xml",
+            """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="foo.bar2"
                     android:versionCode="1"
@@ -1110,11 +1110,11 @@ class ManifestDetectorTest : AbstractCheckTest() {
 
                 </manifest>
                 """,
-                )
-                .indented(),
-            xml(
-                    "src/test/AndroidManifest.xml",
-                    """
+          )
+          .indented(),
+        xml(
+            "src/test/AndroidManifest.xml",
+            """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="foo.bar2"
                     android:versionCode="1"
@@ -1126,10 +1126,10 @@ class ManifestDetectorTest : AbstractCheckTest() {
 
                 </manifest>
                 """,
-                )
-                .indented(),
-            gradle(
-                    """
+          )
+          .indented(),
+        gradle(
+            """
                 android {
                     compileSdkVersion 25
                     defaultConfig {
@@ -1141,12 +1141,12 @@ class ManifestDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-                )
-                .indented(),
-        )
-        .issues(ManifestDetector.MOCK_LOCATION)
-        .run()
-        .expect(expected)
+          )
+          .indented(),
+      )
+      .issues(ManifestDetector.MOCK_LOCATION)
+      .run()
+      .expect(expected)
 
     // TODO: When we have an instantiatable gradle model, test with real model and verify
     // that a manifest file in a debug build type does not get flagged.
@@ -1154,9 +1154,9 @@ class ManifestDetectorTest : AbstractCheckTest() {
 
   fun testMockLocationsOk() {
     lint()
-        .files( // Not a Gradle project
-            manifest(
-                    """
+      .files( // Not a Gradle project
+        manifest(
+            """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="foo.bar2"
                     android:versionCode="1"
@@ -1168,17 +1168,17 @@ class ManifestDetectorTest : AbstractCheckTest() {
 
                 </manifest>
                 """
-                )
-                .indented()
-        )
-        .issues(ManifestDetector.MOCK_LOCATION)
-        .run()
-        .expectClean()
+          )
+          .indented()
+      )
+      .issues(ManifestDetector.MOCK_LOCATION)
+      .run()
+      .expectClean()
   }
 
   fun testGradleOverrides() {
     val expected =
-        """
+      """
             src/main/AndroidManifest.xml:6: Warning: This minSdkVersion value (14) is not used; it is always overridden by the value specified in the Gradle build script (5) [GradleOverrides]
                 <uses-sdk android:minSdkVersion="14" android:targetSdkVersion="17" />
                           ~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1188,10 +1188,10 @@ class ManifestDetectorTest : AbstractCheckTest() {
             0 errors, 2 warnings
             """
     lint()
-        .files(
-            xml("src/main/" + gradleOverride.targetRelativePath, gradleOverride.contents),
-            gradle(
-                    """
+      .files(
+        xml("src/main/" + gradleOverride.targetRelativePath, gradleOverride.contents),
+        gradle(
+            """
                 android {
                     compileSdkVersion 25
                     defaultConfig {
@@ -1203,16 +1203,16 @@ class ManifestDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-                )
-                .indented(),
-        )
-        .issues(ManifestDetector.GRADLE_OVERRIDES) // Exclude because the testing framework for partial analysis will
-        // change a string in the error message that is just a manifestation
-        // of the way it mutates the project (to lower the minSdkVersion)
-        .skipTestModes(TestMode.PARTIAL)
-        .allowManifestMergerErrors(true)
-        .run()
-        .expect(expected)
+          )
+          .indented(),
+      )
+      .issues(ManifestDetector.GRADLE_OVERRIDES) // Exclude because the testing framework for partial analysis will
+      // change a string in the error message that is just a manifestation
+      // of the way it mutates the project (to lower the minSdkVersion)
+      .skipTestModes(TestMode.PARTIAL)
+      .allowManifestMergerErrors(true)
+      .run()
+      .expect(expected)
   }
 
   fun testGradleOverridesOk() {
@@ -1222,71 +1222,71 @@ class ManifestDetectorTest : AbstractCheckTest() {
   fun testGradleOverrideManifestMergerOverride() {
     // Regression test for https://code.google.com/p/android/issues/detail?id=186762
     val library =
-        project()
-            .files(
-                manifest(
-                        """
+      project()
+        .files(
+          manifest(
+              """
           <manifest xmlns:android="http://schemas.android.com/apk/res/android"
               package="com.example.lib">
             <uses-sdk android:minSdkVersion="17" />
           </manifest>
           """
-                    )
-                    .indented()
             )
-            .type(ProjectDescription.Type.LIBRARY)
-            .name("lib")
+            .indented()
+        )
+        .type(ProjectDescription.Type.LIBRARY)
+        .name("lib")
 
     val app =
-        project()
-            .files(
-                gradle(
-                        """
+      project()
+        .files(
+          gradle(
+              """
                 android {
                     defaultConfig {
                         minSdkVersion 14
                     }
                 }
                 """
-                    )
-                    .indented(),
-                manifest(
-                        """
+            )
+            .indented(),
+          manifest(
+              """
           <manifest xmlns:android="http://schemas.android.com/apk/res/android"
               xmlns:tools="http://schemas.android.com/tools"
               package="com.example.app">
             <uses-sdk android:minSdkVersion="14" tools:overrideLibrary="com.example.lib" />
           </manifest>
           """
-                    )
-                    .indented(),
             )
-            .type(ProjectDescription.Type.APP)
-            .name("app")
-            .dependsOn(library)
+            .indented(),
+        )
+        .type(ProjectDescription.Type.APP)
+        .name("app")
+        .dependsOn(library)
 
     lint()
-        .projects(app, library)
-        .issues(ManifestDetector.GRADLE_OVERRIDES)
-        // Partial analysis mode (in unit test mode) will fail due to the minSdkVersion mismatch.
-        // But that is what we are testing.
-        .testModes(TestMode.DEFAULT)
-        .run()
-        .expectClean()
+      .projects(app, library)
+      .issues(ManifestDetector.GRADLE_OVERRIDES)
+      // Partial analysis mode (in unit test mode) will fail due to the minSdkVersion mismatch.
+      // But that is what we are testing.
+      .testModes(TestMode.DEFAULT)
+      .run()
+      .expectClean()
   }
 
   fun testManifestPackagePlaceholder() {
     val expected =
-        """
+      """
             src/main/AndroidManifest.xml:2: Warning: Cannot use placeholder for the package in the manifest; set applicationId in build.gradle instead [GradleOverrides]
                 package="＄{packageName}" >
                 ~~~~~~~~~~~~~~~~~~~~~~~~
             0 errors, 1 warnings
             """
     lint()
-        .files(
-            manifest(
-                    """
+      .files(
+        manifest(
+            """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="＄{packageName}" >
                     <uses-sdk android:minSdkVersion="14" android:targetSdkVersion="17" />
@@ -1296,13 +1296,13 @@ class ManifestDetectorTest : AbstractCheckTest() {
                     </application>
                 </manifest>
                 """
-                )
-                .indented(),
-            gradle("android {\n}"),
-        )
-        .issues(ManifestDetector.GRADLE_OVERRIDES)
-        .run()
-        .expect(expected)
+          )
+          .indented(),
+        gradle("android {\n}"),
+      )
+      .issues(ManifestDetector.GRADLE_OVERRIDES)
+      .run()
+      .expect(expected)
   }
 
   fun testMipMap() {
@@ -1311,7 +1311,7 @@ class ManifestDetectorTest : AbstractCheckTest() {
 
   fun testMipMapWithDensityFiltering() {
     val expected =
-        """
+      """
             src/main/AndroidManifest.xml:8: Warning: Should use @mipmap instead of @drawable for launcher icons [MipmapIcons]
                     android:icon="@drawable/ic_launcher"
                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1321,10 +1321,10 @@ class ManifestDetectorTest : AbstractCheckTest() {
             0 errors, 2 warnings
             """
     lint()
-        .files(
-            mipmap,
-            gradle(
-                    """
+      .files(
+        mipmap,
+        gradle(
+            """
                 android {
                     defaultConfig {
                         applicationId "test.mipmap"
@@ -1343,20 +1343,20 @@ class ManifestDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-                )
-                .indented(),
-        )
-        .issues(ManifestDetector.MIPMAP)
-        .variant("freeBetaDebug")
-        .run()
-        .expect(expected)
+          )
+          .indented(),
+      )
+      .issues(ManifestDetector.MIPMAP)
+      .variant("freeBetaDebug")
+      .run()
+      .expect(expected)
   }
 
   fun testFullBackupContentBoolean() {
     lint()
-        .files(
-            manifest(
-                    """
+      .files(
+        manifest(
+            """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="com.example.helloworld" >
 
@@ -1369,21 +1369,21 @@ class ManifestDetectorTest : AbstractCheckTest() {
 
                 </manifest>
                 """
-                )
-                .indented()
-        )
-        .issues(ManifestDetector.DATA_EXTRACTION_RULES)
-        .incremental()
-        .run()
-        .expectClean()
+          )
+          .indented()
+      )
+      .issues(ManifestDetector.DATA_EXTRACTION_RULES)
+      .incremental()
+      .run()
+      .expectClean()
   }
 
   fun testFullBackupContentMissingInLibrary() {
     lint()
-        .files(
-            projectProperties().library(true),
-            manifest(
-                    """
+      .files(
+        projectProperties().library(true),
+        manifest(
+            """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="com.example.helloworld" >
 
@@ -1396,21 +1396,21 @@ class ManifestDetectorTest : AbstractCheckTest() {
 
                 </manifest>
                 """
-                )
-                .indented(),
-        )
-        .issues(ManifestDetector.DATA_EXTRACTION_RULES)
-        .incremental("AndroidManifest.xml")
-        .run()
-        .expectClean()
+          )
+          .indented(),
+      )
+      .issues(ManifestDetector.DATA_EXTRACTION_RULES)
+      .incremental("AndroidManifest.xml")
+      .run()
+      .expectClean()
   }
 
   fun testFullBackupContentOk() {
     lint()
-        .files(
-            projectProperties().library(true),
-            manifest(
-                    """
+      .files(
+        projectProperties().library(true),
+        manifest(
+            """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="com.example.helloworld" >
 
@@ -1423,31 +1423,31 @@ class ManifestDetectorTest : AbstractCheckTest() {
 
                 </manifest>
                 """
-                )
-                .indented(),
-            xml(
-                    "res/xml/backup.xml",
-                    """
+          )
+          .indented(),
+        xml(
+            "res/xml/backup.xml",
+            """
                 <full-backup-content>
                      <include domain="file" path="dd"/>
                      <exclude domain="file" path="dd/fo3o.txt"/>
                      <exclude domain="file" path="dd/ss/foo.txt"/>
                 </full-backup-content>
                 """,
-                )
-                .indented(),
-        )
-        .issues(ManifestDetector.DATA_EXTRACTION_RULES)
-        .incremental("AndroidManifest.xml")
-        .run()
-        .expectClean()
+          )
+          .indented(),
+      )
+      .issues(ManifestDetector.DATA_EXTRACTION_RULES)
+      .incremental("AndroidManifest.xml")
+      .run()
+      .expectClean()
   }
 
   fun testHasBackupSpecifiedInTarget23() {
     lint()
-        .files(
-            manifest(
-                    """
+      .files(
+        manifest(
+            """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="com.example.helloworld" >
                     <uses-sdk android:targetSdkVersion="23" />
@@ -1460,20 +1460,20 @@ class ManifestDetectorTest : AbstractCheckTest() {
 
                 </manifest>
                 """
-                )
-                .indented()
-        )
-        .issues(ManifestDetector.DATA_EXTRACTION_RULES)
-        .run()
-        .expectClean()
+          )
+          .indented()
+      )
+      .issues(ManifestDetector.DATA_EXTRACTION_RULES)
+      .run()
+      .expectClean()
   }
 
   fun testMissingFullContentBackupInTarget23() {
     // No longer flagging this; it's noisy and many users just suppress it
     lint()
-        .files(
-            manifest(
-                    """
+      .files(
+        manifest(
+            """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="com.example.helloworld" >
                     <uses-sdk android:targetSdkVersion="23" />
@@ -1485,19 +1485,19 @@ class ManifestDetectorTest : AbstractCheckTest() {
 
                 </manifest>
                 """
-                )
-                .indented()
-        )
-        .issues(ManifestDetector.DATA_EXTRACTION_RULES)
-        .run()
-        .expectClean()
+          )
+          .indented()
+      )
+      .issues(ManifestDetector.DATA_EXTRACTION_RULES)
+      .run()
+      .expectClean()
   }
 
   fun testMissingFullContentBackupInPreTarget23() {
     lint()
-        .files(
-            manifest(
-                    """
+      .files(
+        manifest(
+            """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="com.example.helloworld" >
                     <uses-sdk android:targetSdkVersion="21" />
@@ -1509,19 +1509,19 @@ class ManifestDetectorTest : AbstractCheckTest() {
 
                 </manifest>
                 """
-                )
-                .indented()
-        )
-        .issues(ManifestDetector.DATA_EXTRACTION_RULES)
-        .run()
-        .expectClean()
+          )
+          .indented()
+      )
+      .issues(ManifestDetector.DATA_EXTRACTION_RULES)
+      .run()
+      .expectClean()
   }
 
   fun testMissingFullContentBackupWithoutGcmPreTarget23() {
     lint()
-        .files(
-            manifest(
-                    """
+      .files(
+        manifest(
+            """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="com.example.helloworld" >
                     <uses-sdk android:targetSdkVersion="21" />
@@ -1533,19 +1533,19 @@ class ManifestDetectorTest : AbstractCheckTest() {
 
                 </manifest>
                 """
-                )
-                .indented()
-        )
-        .issues(ManifestDetector.DATA_EXTRACTION_RULES)
-        .run()
-        .expectClean()
+          )
+          .indented()
+      )
+      .issues(ManifestDetector.DATA_EXTRACTION_RULES)
+      .run()
+      .expectClean()
   }
 
   fun testMissingFullContentBackupWithoutGcmPostTarget23() {
     lint()
-        .files(
-            manifest(
-                    """
+      .files(
+        manifest(
+            """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="com.example.helloworld" >
                     <uses-sdk android:targetSdkVersion="23" />
@@ -1557,19 +1557,19 @@ class ManifestDetectorTest : AbstractCheckTest() {
 
                 </manifest>
                 """
-                )
-                .indented()
-        )
-        .issues(ManifestDetector.DATA_EXTRACTION_RULES)
-        .run()
-        .expectClean()
+          )
+          .indented()
+      )
+      .issues(ManifestDetector.DATA_EXTRACTION_RULES)
+      .run()
+      .expectClean()
   }
 
   fun testMissingFullContentBackupWithGcmPreTarget23() {
     lint()
-        .files(
-            manifest(
-                    """
+      .files(
+        manifest(
+            """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="com.example.helloworld" >
                     <uses-sdk android:targetSdkVersion="21" />
@@ -1588,20 +1588,20 @@ class ManifestDetectorTest : AbstractCheckTest() {
 
                 </manifest>
                 """
-                )
-                .indented()
-        )
-        .issues(ManifestDetector.DATA_EXTRACTION_RULES)
-        .run()
-        .expectClean()
+          )
+          .indented()
+      )
+      .issues(ManifestDetector.DATA_EXTRACTION_RULES)
+      .run()
+      .expectClean()
   }
 
   fun testMissingFullContentBackupWithGcmPostTarget23() {
     // No longer flagging this; it's noisy and many users just suppress it
     lint()
-        .files(
-            manifest(
-                    """
+      .files(
+        manifest(
+            """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="com.example.helloworld" >
                     <uses-sdk android:targetSdkVersion="23" />
@@ -1620,20 +1620,20 @@ class ManifestDetectorTest : AbstractCheckTest() {
 
                 </manifest>
                 """
-                )
-                .indented()
-        )
-        .issues(ManifestDetector.DATA_EXTRACTION_RULES)
-        .run()
-        .expectClean()
+          )
+          .indented()
+      )
+      .issues(ManifestDetector.DATA_EXTRACTION_RULES)
+      .run()
+      .expectClean()
   }
 
   fun testNoMissingFullBackupWithDoNotAllowBackup() {
     // Regression test for https://code.google.com/p/android/issues/detail?id=181805
     lint()
-        .files(
-            manifest(
-                    """
+      .files(
+        manifest(
+            """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="com.example.helloworld" >
                     <uses-sdk android:targetSdkVersion="21" />
@@ -1652,20 +1652,20 @@ class ManifestDetectorTest : AbstractCheckTest() {
 
                 </manifest>
                 """
-                )
-                .indented()
-        )
-        .issues(ManifestDetector.DATA_EXTRACTION_RULES)
-        .run()
-        .expectClean()
+          )
+          .indented()
+      )
+      .issues(ManifestDetector.DATA_EXTRACTION_RULES)
+      .run()
+      .expectClean()
   }
 
   fun testFullBackupContentMissingIgnored() {
     // Make sure now that we look at the merged manifest that we correctly handle tools:ignore
     lint()
-        .files(
-            manifest(
-                    """
+      .files(
+        manifest(
+            """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     xmlns:tools="http://schemas.android.com/tools"
                     package="com.example.helloworld" >
@@ -1680,22 +1680,22 @@ class ManifestDetectorTest : AbstractCheckTest() {
 
                 </manifest>
                 """
-                )
-                .indented()
-        )
-        .issues(ManifestDetector.DATA_EXTRACTION_RULES)
-        .incremental()
-        .run()
-        .expectClean()
+          )
+          .indented()
+      )
+      .issues(ManifestDetector.DATA_EXTRACTION_RULES)
+      .incremental()
+      .run()
+      .expectClean()
   }
 
   fun testBackupAttributeFromMergedManifest() {
     // Regression test for https://code.google.com/p/android/issues/detail?id=236584
     // Library project specifies backup descriptor, main project does not.
     val library =
-        project(
-                manifest(
-                        """
+      project(
+          manifest(
+              """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="test.pkg.library" >
                     <uses-sdk android:targetSdkVersion="23" />
@@ -1706,26 +1706,26 @@ class ManifestDetectorTest : AbstractCheckTest() {
 
                 </manifest>
                 """
-                    )
-                    .indented(),
-                xml(
-                        "res/xml/backup.xml",
-                        """
+            )
+            .indented(),
+          xml(
+              "res/xml/backup.xml",
+              """
                 <full-backup-content>
                      <include domain="file" path="dd"/>
                      <exclude domain="file" path="dd/fo3o.txt"/>
                      <exclude domain="file" path="dd/ss/foo.txt"/>
                 </full-backup-content>
                 """,
-                    )
-                    .indented(),
             )
-            .type(ProjectDescription.Type.LIBRARY)
-            .name("LibraryProject")
+            .indented(),
+        )
+        .type(ProjectDescription.Type.LIBRARY)
+        .name("LibraryProject")
     val main =
-        project(
-                manifest(
-                        """
+      project(
+          manifest(
+              """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="test.pkg.app" >
                     <uses-sdk android:targetSdkVersion="23" />
@@ -1736,26 +1736,26 @@ class ManifestDetectorTest : AbstractCheckTest() {
 
                 </manifest>
                 """
-                    )
-                    .indented()
             )
-            .dependsOn(library)
+            .indented()
+        )
+        .dependsOn(library)
     lint().projects(main, library).issues(ManifestDetector.DATA_EXTRACTION_RULES).run().expectClean()
   }
 
   fun testWearableBindListener() {
     val expected =
-        """
+      """
             src/main/AndroidManifest.xml:10: Error: The com.google.android.gms.wearable.BIND_LISTENER action is deprecated [WearableBindListener]
                               <action android:name="com.google.android.gms.wearable.BIND_LISTENER" />
                                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             1 errors, 0 warnings
             """
     lint()
-        .files(
-            xml(
-                    "src/main/AndroidManifest.xml",
-                    """
+      .files(
+        xml(
+            "src/main/AndroidManifest.xml",
+            """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="com.example.helloworld" >
                     <uses-sdk android:targetSdkVersion="22" />
@@ -1772,31 +1772,31 @@ class ManifestDetectorTest : AbstractCheckTest() {
 
                 </manifest>
                 """,
-                )
-                .indented(),
-            gradle(
-                    """
+          )
+          .indented(),
+        gradle(
+            """
                 apply plugin: 'com.android.application'
 
                 dependencies {
                     compile 'com.google.android.gms:play-services-wearable:8.4.0'
                 }
                 """
-                )
-                .indented(),
-        )
-        .issues(ManifestDetector.WEARABLE_BIND_LISTENER)
-        .run()
-        .expect(expected)
+          )
+          .indented(),
+      )
+      .issues(ManifestDetector.WEARABLE_BIND_LISTENER)
+      .run()
+      .expect(expected)
   }
 
   // No warnings here because the variant points to a gms dependency version 8.1.0
   fun testWearableBindListenerNoWarn() {
     lint()
-        .files(
-            xml(
-                    "src/main/AndroidManifest.xml",
-                    """
+      .files(
+        xml(
+            "src/main/AndroidManifest.xml",
+            """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="com.example.helloworld" >
                     <uses-sdk android:targetSdkVersion="22" />
@@ -1813,10 +1813,10 @@ class ManifestDetectorTest : AbstractCheckTest() {
 
                 </manifest>
                 """,
-                )
-                .indented(),
-            gradle(
-                    """
+          )
+          .indented(),
+        gradle(
+            """
                 apply plugin: 'com.android.application'
 
                 android {
@@ -1826,29 +1826,30 @@ class ManifestDetectorTest : AbstractCheckTest() {
                     compile 'com.google.android.gms:play-services-wearable:8.1.+'
                 }
                 """
-                )
-                .indented(),
-        )
-        .issues(ManifestDetector.WEARABLE_BIND_LISTENER)
-        .run()
-        .expectClean()
+          )
+          .indented(),
+      )
+      .issues(ManifestDetector.WEARABLE_BIND_LISTENER)
+      .run()
+      .expectClean()
   }
 
   fun testWearableBindListenerCompileSdk24() {
     val expected =
-        """
+      """
             src/main/AndroidManifest.xml:10: Error: The com.google.android.gms.wearable.BIND_LISTENER action is deprecated. Please upgrade to the latest available version of play-services-wearable: 8.4.0 [WearableBindListener]
                               <action android:name="com.google.android.gms.wearable.BIND_LISTENER" />
                                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             1 errors, 0 warnings
             """
     lint()
-        .files(
-            // When not specifying compileSdkVersion, it will always be >= 24 (so we don't need to pick
-            // a specific one)
-            xml(
-                    "src/main/AndroidManifest.xml",
-                    """
+      .files(
+        // When not specifying compileSdkVersion, it will always be >= 24 (so we don't need to
+        // pick
+        // a specific one)
+        xml(
+            "src/main/AndroidManifest.xml",
+            """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="com.example.helloworld" >
                     <uses-sdk android:targetSdkVersion="22" />
@@ -1865,35 +1866,35 @@ class ManifestDetectorTest : AbstractCheckTest() {
 
                 </manifest>
                 """,
-                )
-                .indented(),
-            gradle(
-                    """
+          )
+          .indented(),
+        gradle(
+            """
                 apply plugin: 'com.android.application'
 
                 dependencies {
                     compile 'com.google.android.gms:play-services-wearable:8.1.+'
                 }
                 """
-                )
-                .indented(),
-        )
-        .issues(ManifestDetector.WEARABLE_BIND_LISTENER) // This test uses a mock SDK home to ensure that the latest expected
-        // version is 8.4.0 rather than whatever happens to actually be the
-        // latest version at the time (such as 9.6.1 at the moment of this writing)
-        .sdkHome(mockSupportLibraryInstallation)
-        // the mock support installation doesn't contain an actual android.jar etc
-        .requireCompileSdk(false)
-        .run()
-        .expect(expected)
+          )
+          .indented(),
+      )
+      .issues(ManifestDetector.WEARABLE_BIND_LISTENER) // This test uses a mock SDK home to ensure that the latest expected
+      // version is 8.4.0 rather than whatever happens to actually be the
+      // latest version at the time (such as 9.6.1 at the moment of this writing)
+      .sdkHome(mockSupportLibraryInstallation)
+      // the mock support installation doesn't contain an actual android.jar etc
+      .requireCompileSdk(false)
+      .run()
+      .expect(expected)
   }
 
   fun testAppIndexingNoWarn() {
     lint()
-        .files(
-            manifest(
-                    "src/main/AndroidManifest.xml",
-                    """
+      .files(
+        manifest(
+            "src/main/AndroidManifest.xml",
+            """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="com.example.helloworld" >
                     <uses-sdk android:targetSdkVersion="25" />
@@ -1910,37 +1911,37 @@ class ManifestDetectorTest : AbstractCheckTest() {
 
                 </manifest>
                 """,
-                )
-                .indented(),
-            gradle(
-                    """
+          )
+          .indented(),
+        gradle(
+            """
                 apply plugin: 'com.android.application'
 
                 dependencies {
                     compile 'com.google.firebase:firebase-appindexing:11.0.4'
                 }
                 """
-                )
-                .indented(),
-        )
-        .issues(ManifestDetector.APP_INDEXING_SERVICE)
-        .run()
-        .expectClean()
+          )
+          .indented(),
+      )
+      .issues(ManifestDetector.APP_INDEXING_SERVICE)
+      .run()
+      .expectClean()
   }
 
   fun testAppIndexingTargetSdk26() {
     val expected =
-        """
+      """
             src/main/AndroidManifest.xml:10: Warning: UPDATE_INDEX is configured as a service in your app, which is no longer supported for the API level you're targeting. Use a BroadcastReceiver instead. [AppIndexingService]
                               <action android:name="com.google.firebase.appindexing.UPDATE_INDEX" />
                                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             0 errors, 1 warnings
             """
     lint()
-        .files(
-            manifest(
-                    "src/main/AndroidManifest.xml",
-                    """
+      .files(
+        manifest(
+            "src/main/AndroidManifest.xml",
+            """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="com.example.helloworld" >
                     <uses-sdk android:targetSdkVersion="26" />
@@ -1957,31 +1958,31 @@ class ManifestDetectorTest : AbstractCheckTest() {
 
                 </manifest>
                 """,
-                )
-                .indented(),
-            gradle(
-                    """
+          )
+          .indented(),
+        gradle(
+            """
                 apply plugin: 'com.android.application'
 
                 dependencies {
                     compile 'com.google.firebase:firebase-appindexing:11.0.4'
                 }
                 """
-                )
-                .indented(),
-        )
-        .issues(ManifestDetector.APP_INDEXING_SERVICE)
-        .run()
-        .expect(expected)
+          )
+          .indented(),
+      )
+      .issues(ManifestDetector.APP_INDEXING_SERVICE)
+      .run()
+      .expect(expected)
   }
 
   fun testVersionCodeNotRequiredInLibraries() {
     // Regression test for b/144803800
     lint()
-        .files(
-            projectProperties().library(true),
-            manifest(
-                    """
+      .files(
+        projectProperties().library(true),
+        manifest(
+            """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="com.example.helloworld" >
                     <uses-sdk android:targetSdkVersion="26" />
@@ -1998,20 +1999,20 @@ class ManifestDetectorTest : AbstractCheckTest() {
 
                 </manifest>
                 """
-                )
-                .indented(),
-        )
-        .issues(ManifestDetector.SET_VERSION)
-        .run()
-        .expectClean()
+          )
+          .indented(),
+      )
+      .issues(ManifestDetector.SET_VERSION)
+      .run()
+      .expectClean()
   }
 
   fun testProviderTag() {
     // Regression test for b/154309642
     lint()
-        .files(
-            manifest(
-                    """
+      .files(
+        manifest(
+            """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="com.example.helloworld" >
                     <provider android:authorities="com.example.provider" /><!-- ERROR -->
@@ -2023,54 +2024,54 @@ class ManifestDetectorTest : AbstractCheckTest() {
                     </queries>
                 </manifest>
                 """
-                )
-                .indented()
-        )
-        .issues(ManifestDetector.WRONG_PARENT)
-        .run()
-        .expect(
-            """
+          )
+          .indented()
+      )
+      .issues(ManifestDetector.WRONG_PARENT)
+      .run()
+      .expect(
+        """
                 AndroidManifest.xml:3: Error: The <provider> element must be a direct child of the <application> element or the <queries> element [WrongManifestParent]
                     <provider android:authorities="com.example.provider" /><!-- ERROR -->
                      ~~~~~~~~
                 1 errors, 0 warnings
                 """
-        )
+      )
   }
 
   fun testDataExtractionRules1() {
     // allowBackup disabled and dataExtractionRules not present
     lint()
-        .files(
-            manifest(
-                    """
+      .files(
+        manifest(
+            """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android" package="test.pkg">
                   <uses-sdk android:minSdkVersion="28" android:targetSdkVersion="31" />
                   <application android:allowBackup="false">
                   </application>
                 </manifest>
                 """
-                )
-                .indented()
-        )
-        .issues(ManifestDetector.DATA_EXTRACTION_RULES)
-        .run()
-        .expect(
-            """
+          )
+          .indented()
+      )
+      .issues(ManifestDetector.DATA_EXTRACTION_RULES)
+      .run()
+      .expect(
+        """
             AndroidManifest.xml:3: Warning: The attribute android:allowBackup is deprecated from Android 12 and higher and may be removed in future versions. Consider adding the attribute android:dataExtractionRules specifying an @xml resource which configures cloud backups and device transfers on Android 12 and higher. [DataExtractionRules]
               <application android:allowBackup="false">
                                                 ~~~~~
             0 errors, 1 warnings
             """
-        )
+      )
   }
 
   fun testDataExtractionMigrateFullBackupContent() {
     // fullBackupContent set and dataExtractionRules not present
     lint()
-        .files(
-            manifest(
-                    """
+      .files(
+        manifest(
+            """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android" package="test.pkg">
                   <uses-sdk android:minSdkVersion="28" android:targetSdkVersion="31" />
                   <application
@@ -2079,23 +2080,23 @@ class ManifestDetectorTest : AbstractCheckTest() {
                   </application>
                 </manifest>
                 """
-                )
-                .indented()
-                .indented(),
-            fullBackup,
-        )
-        .issues(ManifestDetector.DATA_EXTRACTION_RULES)
-        .run()
-        .expect(
-            """
+          )
+          .indented()
+          .indented(),
+        fullBackup,
+      )
+      .issues(ManifestDetector.DATA_EXTRACTION_RULES)
+      .run()
+      .expect(
+        """
             AndroidManifest.xml:5: Warning: The attribute android:fullBackupContent is deprecated from Android 12 and higher and may be removed in future versions. Consider adding the attribute android:dataExtractionRules specifying an @xml resource which configures cloud backups and device transfers on Android 12 and higher. [DataExtractionRules]
                   android:fullBackupContent="@xml/full_backup_content">
                                              ~~~~~~~~~~~~~~~~~~~~~~~~
             0 errors, 1 warnings
             """
-        )
-        .expectFixDiffs(
-            """
+      )
+      .expectFixDiffs(
+        """
             Fix for AndroidManifest.xml line 5: Create data_extraction_rules.xml:
             @@ -10,0 +11 @@
             +        android:dataExtractionRules="@xml/data_extraction_rules"
@@ -2109,16 +2110,16 @@ class ManifestDetectorTest : AbstractCheckTest() {
             +    </cloud-backup>
             +</data-extraction-rules>
             """
-        )
+      )
   }
 
   fun testFullContentMigration() {
     // fullBackupContent set and dataExtractionRules not present; quickfix should migrate existing
     // rules
     lint()
-        .files(
-            manifest(
-                    """
+      .files(
+        manifest(
+            """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android" package="test.pkg">
                   <uses-sdk android:minSdkVersion="28" android:targetSdkVersion="31" />
                   <application
@@ -2127,12 +2128,12 @@ class ManifestDetectorTest : AbstractCheckTest() {
                   </application>
                 </manifest>
                 """
-                )
-                .indented()
-                .indented(),
-            xml(
-                    "res/xml/full_backup_content.xml",
-                    """
+          )
+          .indented()
+          .indented(),
+        xml(
+            "res/xml/full_backup_content.xml",
+            """
                 <!-- Our copyright here -->
                 <full-backup-content>
                      <!-- Some comment -->
@@ -2145,21 +2146,21 @@ class ManifestDetectorTest : AbstractCheckTest() {
                      <!-- Final comment -->
                 </full-backup-content>
                 """,
-                )
-                .indented(),
-        )
-        .issues(ManifestDetector.DATA_EXTRACTION_RULES)
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+      )
+      .issues(ManifestDetector.DATA_EXTRACTION_RULES)
+      .run()
+      .expect(
+        """
             AndroidManifest.xml:5: Warning: The attribute android:fullBackupContent is deprecated from Android 12 and higher and may be removed in future versions. Consider adding the attribute android:dataExtractionRules specifying an @xml resource which configures cloud backups and device transfers on Android 12 and higher. [DataExtractionRules]
                   android:fullBackupContent="@xml/full_backup_content">
                                              ~~~~~~~~~~~~~~~~~~~~~~~~
             0 errors, 1 warnings
             """
-        )
-        .expectFixDiffs(
-            """
+      )
+      .expectFixDiffs(
+        """
             Fix for AndroidManifest.xml line 5: Create data_extraction_rules.xml:
             @@ -10,0 +11 @@
             +        android:dataExtractionRules="@xml/data_extraction_rules"
@@ -2179,15 +2180,15 @@ class ManifestDetectorTest : AbstractCheckTest() {
             +    </cloud-backup>
             +</data-extraction-rules>
             """
-        )
+      )
   }
 
   fun testDataExtractionRulesRemove() {
     // only allowBackup set to false and dataExtractionRules not present; create default contents
     lint()
-        .files(
-            manifest(
-                    """
+      .files(
+        manifest(
+            """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android" package="test.pkg">
                   <uses-sdk android:minSdkVersion="28" android:targetSdkVersion="31" />
                   <application
@@ -2195,23 +2196,23 @@ class ManifestDetectorTest : AbstractCheckTest() {
                   </application>
                 </manifest>
                 """
-                )
-                .indented()
-                .indented(),
-            fullBackup,
-        )
-        .issues(ManifestDetector.DATA_EXTRACTION_RULES)
-        .run()
-        .expect(
-            """
+          )
+          .indented()
+          .indented(),
+        fullBackup,
+      )
+      .issues(ManifestDetector.DATA_EXTRACTION_RULES)
+      .run()
+      .expect(
+        """
             AndroidManifest.xml:4: Warning: The attribute android:allowBackup is deprecated from Android 12 and higher and may be removed in future versions. Consider adding the attribute android:dataExtractionRules specifying an @xml resource which configures cloud backups and device transfers on Android 12 and higher. [DataExtractionRules]
                   android:allowBackup="false">
                                        ~~~~~
             0 errors, 1 warnings
             """
-        )
-        .expectFixDiffs(
-            """
+      )
+      .expectFixDiffs(
+        """
             Fix for AndroidManifest.xml line 4: Create data_extraction_rules.xml:
             @@ -9 +9,3 @@
             -    <application android:allowBackup="false" >
@@ -2257,16 +2258,16 @@ class ManifestDetectorTest : AbstractCheckTest() {
             +    -->
             +</data-extraction-rules>
             """
-        )
+      )
   }
 
   fun disabled_testDataExtractionRules3() {
     // See TEMPORARILY DISABLED comment in ManifestDetector: not yet enforced
     // allowBackup set when min SDK is S+
     lint()
-        .files(
-            manifest(
-                    """
+      .files(
+        manifest(
+            """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android" package="test.pkg">
                   <uses-sdk android:minSdkVersion="31" android:targetSdkVersion="31" />
                   <application
@@ -2275,29 +2276,29 @@ class ManifestDetectorTest : AbstractCheckTest() {
                   </application>
                 </manifest>
                 """
-                )
-                .indented(),
-            dataExtractionRules,
-        )
-        .issues(ManifestDetector.DATA_EXTRACTION_RULES)
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+        dataExtractionRules,
+      )
+      .issues(ManifestDetector.DATA_EXTRACTION_RULES)
+      .run()
+      .expect(
+        """
             AndroidManifest.xml:4: Warning: This attribute is unused; dataExtractionRules will take precedence since minSdkVersion is 31 or higher [DataExtractionRules]
                       android:allowBackup="true"
                                            ~~~~
             0 errors, 1 warnings
             """
-        )
+      )
   }
 
   fun ignored_testDataExtractionRules4() {
     // See TEMPORARILY DISABLED comment in ManifestDetector: not yet enforced
     // fullBackupContent set when min SDK is S+
     lint()
-        .files(
-            manifest(
-                    """
+      .files(
+        manifest(
+            """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android" package="test.pkg">
                   <uses-sdk android:minSdkVersion="31" android:targetSdkVersion="31" />
                   <application
@@ -2307,15 +2308,15 @@ class ManifestDetectorTest : AbstractCheckTest() {
                   </application>
                 </manifest>
                 """
-                )
-                .indented(),
-            fullBackup,
-            dataExtractionRules,
-        )
-        .issues(ManifestDetector.DATA_EXTRACTION_RULES)
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+        fullBackup,
+        dataExtractionRules,
+      )
+      .issues(ManifestDetector.DATA_EXTRACTION_RULES)
+      .run()
+      .expect(
+        """
             AndroidManifest.xml:4: Warning: This attribute is unused; dataExtractionRules will take precedence since minSdkVersion is 31 or higher [DataExtractionRules]
                   android:allowBackup="true"
                                        ~~~~
@@ -2324,60 +2325,60 @@ class ManifestDetectorTest : AbstractCheckTest() {
                                              ~~~~~~~~~~~~~~~~~~~~~~~~
             0 errors, 2 warnings
             """
-        )
+      )
   }
 
   fun testDataExtractionWithoutFullBackupContent() {
     lint()
-        .files(
-            manifest(
-                    """
+      .files(
+        manifest(
+            """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="test.pkg">
                   <uses-sdk android:minSdkVersion="29" android:targetSdkVersion="35" />
                   <application android:dataExtractionRules="@xml/data_extraction_rules" />
                 </manifest>
                 """
-                )
-                .indented(),
-            dataExtractionRules,
-        )
-        .issues(ManifestDetector.DATA_EXTRACTION_RULES)
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+        dataExtractionRules,
+      )
+      .issues(ManifestDetector.DATA_EXTRACTION_RULES)
+      .run()
+      .expect(
+        """
             AndroidManifest.xml:4: Warning: The attribute android:dataExtractionRules only applies for Android 12 and higher; since minSdkVersion is API 29 you should also set android:fullBackupContent [DataExtractionRules]
               <application android:dataExtractionRules="@xml/data_extraction_rules" />
                                                         ~~~~~~~~~~~~~~~~~~~~~~~~~~
             0 errors, 1 warnings
             """
-        )
+      )
   }
 
   fun testNoAllowBackupWithBuildApi31() {
     lint()
-        .files(
-            manifest(
-                    """
+      .files(
+        manifest(
+            """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android" package="test.pkg">
                     <uses-sdk android:minSdkVersion="25" android:targetSdkVersion="29" />
                     <application>
                     </application>
                 </manifest>
                 """
-                )
-                .indented()
-        )
-        .issues(ManifestDetector.DATA_EXTRACTION_RULES)
-        .run()
-        .expectClean()
+          )
+          .indented()
+      )
+      .issues(ManifestDetector.DATA_EXTRACTION_RULES)
+      .run()
+      .expectClean()
   }
 
   fun testRedundantLabelOnActivity() {
     lint()
-        .files(
-            manifest(
-                    """
+      .files(
+        manifest(
+            """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.lb.myapplication">
 
                     <application
@@ -2395,20 +2396,20 @@ class ManifestDetectorTest : AbstractCheckTest() {
 
                 </manifest>
                 """
-                )
-                .indented()
-        )
-        .issues(ManifestDetector.REDUNDANT_LABEL)
-        .run()
-        .expect(
-            """
+          )
+          .indented()
+      )
+      .issues(ManifestDetector.REDUNDANT_LABEL)
+      .run()
+      .expect(
+        """
             AndroidManifest.xml:7: Warning: Redundant label can be removed [RedundantLabel]
                     <activity android:name=".MainActivity" android:label="@string/app_name">
                                                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             0 errors, 1 warnings"""
-        )
-        .expectFixDiffs(
-            """
+      )
+      .expectFixDiffs(
+        """
             Fix for AndroidManifest.xml line 7: Delete label:
             @@ -12,3 +12 @@
             -        <activity
@@ -2416,14 +2417,14 @@ class ManifestDetectorTest : AbstractCheckTest() {
             -            android:label="@string/app_name" >
             +        <activity android:name=".MainActivity" >
         """
-        )
+      )
   }
 
   fun testDuplicateMissingPackage() {
     lint()
-        .files(
-            manifest(
-                    """
+      .files(
+        manifest(
+            """
             <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
                 <application>
@@ -2440,53 +2441,53 @@ class ManifestDetectorTest : AbstractCheckTest() {
 
             </manifest>
             """
-                )
-                .indented(),
-            kts(
-                """
+          )
+          .indented(),
+        kts(
+          """
           android {
               namespace = "test.pkg"
           }
           """
-            ),
-        )
-        .issues(ManifestDetector.DUPLICATE_ACTIVITY)
-        .run()
-        .expect(
-            """
+        ),
+      )
+      .issues(ManifestDetector.DUPLICATE_ACTIVITY)
+      .run()
+      .expect(
+        """
         src/main/AndroidManifest.xml:10: Error: Duplicate registration for activity test.pkg.MainActivity [DuplicateActivity]
                     android:name=".MainActivity"
                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         1 errors, 0 warnings
         """
-        )
+      )
   }
 
   private val fullBackup =
-      xml(
-              "res/xml/full_backup_content.xml",
-              """
+    xml(
+        "res/xml/full_backup_content.xml",
+        """
                 <full-backup-content>
                      <include domain="file" path="dd"/>
                      <exclude domain="file" path="dd/fo3o.txt"/>
                      <exclude domain="file" path="dd/ss/foo.txt"/>
                 </full-backup-content>
                 """,
-          )
-          .indented()
+      )
+      .indented()
 
   private val dataExtractionRules =
-      xml(
-              "res/xml/data_extraction_rules.xml",
-              """
+    xml(
+        "res/xml/data_extraction_rules.xml",
+        """
                 <full-backup-content>
                      <include domain="file" path="dd"/>
                      <exclude domain="file" path="dd/fo3o.txt"/>
                      <exclude domain="file" path="dd/ss/foo.txt"/>
                 </full-backup-content>
                 """,
-          )
-          .indented()
+      )
+      .indented()
 
   // Make fake SDK "installation" such that we can predict the set
   // of Maven repositories discovered by this test
@@ -2501,7 +2502,7 @@ class ManifestDetectorTest : AbstractCheckTest() {
           fail(e.message)
         }
         val paths =
-            arrayOf("extras/google/m2repository/com/google/android/gms/play-services-wearable/8.4.0/play-services-wearable-8.4.0.aar")
+          arrayOf("extras/google/m2repository/com/google/android/gms/play-services-wearable/8.4.0/play-services-wearable-8.4.0.aar")
         createRelativePaths(sdkDir!!, paths)
       }
       return sdkDir
@@ -2509,8 +2510,8 @@ class ManifestDetectorTest : AbstractCheckTest() {
 
   // Sample code
   private val gradleOverride =
-      manifest(
-              """
+    manifest(
+        """
         <manifest xmlns:android="http://schemas.android.com/apk/res/android"
             package="foo.bar2"
             android:versionCode="1"
@@ -2536,16 +2537,16 @@ class ManifestDetectorTest : AbstractCheckTest() {
 
         </manifest>
         """
-          )
-          .indented()
+      )
+      .indented()
 
   // Sample code
   private val library = gradle("build.gradle", "")
 
   // Sample code
   private val mipmap =
-      manifest(
-              """
+    manifest(
+        """
         <manifest xmlns:android="http://schemas.android.com/apk/res/android"
             package="test.mipmap"
             android:versionCode="1"
@@ -2581,13 +2582,13 @@ class ManifestDetectorTest : AbstractCheckTest() {
 
         </manifest>
         """
-          )
-          .indented()
+      )
+      .indented()
 
   // Sample code
   private val missingApplicationIcon =
-      manifest(
-              """
+    manifest(
+        """
         <manifest xmlns:android="http://schemas.android.com/apk/res/android"
             package="foo.bar2"
             android:versionCode="1"
@@ -2610,13 +2611,13 @@ class ManifestDetectorTest : AbstractCheckTest() {
 
         </manifest>
         """
-          )
-          .indented()
+      )
+      .indented()
 
   // Sample code
   private val missingUsesSdk =
-      manifest(
-              """
+    manifest(
+        """
         <manifest xmlns:android="http://schemas.android.com/apk/res/android"
             package="test.bytecode"
             android:versionCode="1"
@@ -2638,13 +2639,13 @@ class ManifestDetectorTest : AbstractCheckTest() {
 
         </manifest>
         """
-          )
-          .indented()
+      )
+      .indented()
 
   // Sample code
   private val noVersion =
-      manifest(
-              """
+    manifest(
+        """
         <manifest xmlns:android="http://schemas.android.com/apk/res/android"
             package="foo.bar2" >
 
@@ -2666,14 +2667,14 @@ class ManifestDetectorTest : AbstractCheckTest() {
 
         </manifest>
         """
-          )
-          .indented()
+      )
+      .indented()
 
   // Sample code
   private val strings =
-      xml(
-              "res/values/strings.xml",
-              """
+    xml(
+        "res/values/strings.xml",
+        """
         <!-- Copyright (C) 2007 The Android Open Source Project
 
              Licensed under the Apache License, Version 2.0 (the "License");
@@ -2705,13 +2706,13 @@ class ManifestDetectorTest : AbstractCheckTest() {
         </resources>
 
         """,
-          )
-          .indented()
+      )
+      .indented()
 
   // Sample code
   private val libraryCode =
-      java(
-              """
+    java(
+        """
         package foo.library;
 
         public class LibraryCode {
@@ -2720,13 +2721,13 @@ class ManifestDetectorTest : AbstractCheckTest() {
             }
         }
         """
-          )
-          .indented()
+      )
+      .indented()
 
   // Sample code
   private val mainCode =
-      java(
-              """
+    java(
+        """
         package foo.main;
 
         public class MainCode {
@@ -2735,14 +2736,14 @@ class ManifestDetectorTest : AbstractCheckTest() {
             }
         }
         """
-          )
-          .indented()
+      )
+      .indented()
 
   // Sample code
   private val libraryStrings =
-      xml(
-              "res/values/strings.xml",
-              """
+    xml(
+        "res/values/strings.xml",
+        """
         <resources>
 
             <string name="app_name">LibraryProject</string>
@@ -2752,6 +2753,6 @@ class ManifestDetectorTest : AbstractCheckTest() {
 
         </resources>
         """,
-          )
-          .indented()
+      )
+      .indented()
 }

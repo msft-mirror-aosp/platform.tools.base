@@ -53,7 +53,6 @@ object CodeCoverageReportOrchestrator {
    * @param htmlReportDir The output directory where the final HTML report will be written.
    * @param rootProjectName The display name of the root project.
    * @param rootProjectDir The root directory of the project, used to resolve relative source file paths.
-   *
    * @throws GradleException if any of the input XML report files cannot be parsed.
    */
   fun orchestrate(inputDirectories: List<File>, htmlReportDir: DirectoryProperty, rootProjectName: String, rootProjectDir: File) {

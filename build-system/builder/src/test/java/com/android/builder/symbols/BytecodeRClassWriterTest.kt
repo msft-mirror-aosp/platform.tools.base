@@ -125,7 +125,8 @@ class BytecodeRClassWriterTest {
     val librarySymbols =
       SymbolTable.builder().tablePackage("com.example.foo.lib").add(Symbol.normalSymbol(ResourceType.STRING, "libstring", 0x4)).build()
 
-    // The existing path: Symbol table --com.android.builder.symbols.exportToJava--> R.java --javac--> R classes
+    // The existing path: Symbol table --com.android.builder.symbols.exportToJava--> R.java
+    // --javac--> R classes
     // Generate the R.java file.
     val appRDotJava = SymbolIo.exportToJava(appSymbols, rDotJavaDir, false)
     val libRDotJava = SymbolIo.exportToJava(librarySymbols, rDotJavaDir, false)

@@ -81,14 +81,8 @@ class LintUtilsTest : TestCase() {
     assertEquals("foo, bar, baz", formatList(listOf("foo", "bar", "baz"), 3, false))
     assertEquals("foo, bar, baz", formatList(listOf("foo", "bar", "baz"), 5, false))
 
-    assertEquals(
-        "foo, bar, baz... (3 more)",
-        formatList(listOf("foo", "bar", "baz", "4", "5", "6"), 3, false),
-    )
-    assertEquals(
-        "foo... (5 more)",
-        formatList(listOf("foo", "bar", "baz", "4", "5", "6"), 1, false),
-    )
+    assertEquals("foo, bar, baz... (3 more)", formatList(listOf("foo", "bar", "baz", "4", "5", "6"), 3, false))
+    assertEquals("foo... (5 more)", formatList(listOf("foo", "bar", "baz", "4", "5", "6"), 1, false))
     assertEquals("foo, bar, baz", formatList(listOf("foo", "bar", "baz"), 0, false))
 
     assertEquals("foo, bar and baz", formatList(listOf("foo", "bar", "baz"), 0, false, true))
@@ -193,13 +187,13 @@ class LintUtilsTest : TestCase() {
     assertTrue(arrayOf("\\foo\\bar", "\\bar\\foo").contentEquals(Iterables.toArray(splitPath("\\foo\\bar;\\bar\\foo"), String::class.java)))
 
     assertTrue(
-        arrayOf("\${sdk.dir}\\foo\\bar", "\\bar\\foo")
-            .contentEquals(Iterables.toArray(splitPath("\${sdk.dir}\\foo\\bar;\\bar\\foo"), String::class.java))
+      arrayOf("\${sdk.dir}\\foo\\bar", "\\bar\\foo")
+        .contentEquals(Iterables.toArray(splitPath("\${sdk.dir}\\foo\\bar;\\bar\\foo"), String::class.java))
     )
 
     assertTrue(
-        arrayOf("\${sdk.dir}/foo/bar", "/bar/foo")
-            .contentEquals(Iterables.toArray(splitPath("\${sdk.dir}/foo/bar:/bar/foo"), String::class.java))
+      arrayOf("\${sdk.dir}/foo/bar", "/bar/foo")
+        .contentEquals(Iterables.toArray(splitPath("\${sdk.dir}/foo/bar:/bar/foo"), String::class.java))
     )
 
     assertTrue(arrayOf("C:\\foo", "/bar").contentEquals(Iterables.toArray(splitPath("C:\\foo:/bar"), String::class.java)))
@@ -229,14 +223,8 @@ class LintUtilsTest : TestCase() {
     assertNull(getCommonParent(listOf(File("C:/Program Files"), File("F:/"))))
 
     assertEquals(File("/foo"), getCommonParent(listOf(File("/foo/bar"), File("/foo/baz"))))
-    assertEquals(
-        File("/foo"),
-        getCommonParent(listOf(File("/foo/bar"), File("/foo/baz"), File("/foo/baz/f"))),
-    )
-    assertEquals(
-        File("/foo/bar"),
-        getCommonParent(listOf(File("/foo/bar"), File("/foo/bar/baz"), File("/foo/bar/foo2/foo3"))),
-    )
+    assertEquals(File("/foo"), getCommonParent(listOf(File("/foo/bar"), File("/foo/baz"), File("/foo/baz/f"))))
+    assertEquals(File("/foo/bar"), getCommonParent(listOf(File("/foo/bar"), File("/foo/bar/baz"), File("/foo/bar/foo2/foo3"))))
   }
 
   fun testStripIdPrefix() {
@@ -324,20 +312,20 @@ class LintUtilsTest : TestCase() {
     dispose(context)
 
     xml =
-        TestFiles.xml(
-            "res/values/strings.xml",
-            "" + "<resources tools:locale=\"nb\" xmlns:tools=\"http://schemas.android.com/tools\">\n" + "</resources>\n",
-        )
+      TestFiles.xml(
+        "res/values/strings.xml",
+        "" + "<resources tools:locale=\"nb\" xmlns:tools=\"http://schemas.android.com/tools\">\n" + "</resources>\n",
+      )
     context = createXmlContext(xml.getContents()!!, File(xml.targetPath))
     assertEquals("nb", getLocale(context)!!.language)
     dispose(context)
 
     // folder location wins over tools:locale wins
     xml =
-        TestFiles.xml(
-            "res/values-fr-rUS/strings.xml",
-            "" + "<resources tools:locale=\"nb\" xmlns:tools=\"http://schemas.android.com/tools\">\n" + "</resources>\n",
-        )
+      TestFiles.xml(
+        "res/values-fr-rUS/strings.xml",
+        "" + "<resources tools:locale=\"nb\" xmlns:tools=\"http://schemas.android.com/tools\">\n" + "</resources>\n",
+      )
     context = createXmlContext(xml.getContents()!!, File(xml.targetPath))
     assertEquals("fr", getLocale(context)!!.language)
     dispose(context)
@@ -369,18 +357,9 @@ class LintUtilsTest : TestCase() {
     assertEquals("PrefixName", computeResourceName("prefix", "Name", null))
     assertEquals("PrefixName", computeResourceName("prefix_", "Name", null))
     assertEquals("MyPrefixName", computeResourceName("myPrefix", "Name", null))
-    assertEquals(
-        "my_prefix_name",
-        computeResourceName("myPrefix", "name", ResourceFolderType.LAYOUT),
-    )
-    assertEquals(
-        "UnitTestPrefixContentFrame",
-        computeResourceName("unit_test_prefix_", "ContentFrame", ResourceFolderType.VALUES),
-    )
-    assertEquals(
-        "MyPrefixMyStyle",
-        computeResourceName("myPrefix_", "MyStyle", ResourceFolderType.VALUES),
-    )
+    assertEquals("my_prefix_name", computeResourceName("myPrefix", "name", ResourceFolderType.LAYOUT))
+    assertEquals("UnitTestPrefixContentFrame", computeResourceName("unit_test_prefix_", "ContentFrame", ResourceFolderType.VALUES))
+    assertEquals("MyPrefixMyStyle", computeResourceName("myPrefix_", "MyStyle", ResourceFolderType.VALUES))
   }
 
   fun testIsModelOlderThan() {
@@ -421,10 +400,7 @@ class LintUtilsTest : TestCase() {
   }
 
   fun testGetFormattedParameters() {
-    assertEquals(
-        listOf("foo", "bar"),
-        getFormattedParameters("Prefix %1\$s Divider %2\$s Suffix", "Prefix foo Divider bar Suffix"),
-    )
+    assertEquals(listOf("foo", "bar"), getFormattedParameters("Prefix %1\$s Divider %2\$s Suffix", "Prefix foo Divider bar Suffix"))
   }
 
   fun testEscapePropertyValue() {
@@ -433,10 +409,10 @@ class LintUtilsTest : TestCase() {
     assertEquals("c\\:/foo/bar", escapePropertyValue("c:/foo/bar"))
     assertEquals("\\!\\#\\:\\\\a\\\\b\\\\c", escapePropertyValue("!#:\\a\\b\\c"))
     assertEquals(
-        "foofoofoofoofoofoofoofoofoofoofoofoofoofoofoofoofoo\\#foofoofoofoofoofoofoofoofoofoofoofoofoofoofoofoofoofoofoofoofoofoofoofoo",
-        escapePropertyValue(
-            "foofoofoofoofoofoofoofoofoofoofoofoofoofoofoofoofoo#foofoofoofoofoofoofoofoofoofoofoofoofoofoofoofoofoofoofoofoofoofoofoofoo"
-        ),
+      "foofoofoofoofoofoofoofoofoofoofoofoofoofoofoofoofoo\\#foofoofoofoofoofoofoofoofoofoofoofoofoofoofoofoofoofoofoofoofoofoofoofoo",
+      escapePropertyValue(
+        "foofoofoofoofoofoofoofoofoofoofoofoofoofoofoofoofoo#foofoofoofoofoofoofoofoofoofoofoofoofoofoofoofoofoofoofoofoofoofoofoofoo"
+      ),
     )
   }
 
@@ -445,24 +421,24 @@ class LintUtilsTest : TestCase() {
     assertEquals(TYPE_INT, getPrimitiveType(TYPE_INTEGER_WRAPPER))
 
     val pairs =
-        arrayOf(
-            TYPE_BOOLEAN,
-            TYPE_BOOLEAN_WRAPPER,
-            TYPE_BYTE,
-            TYPE_BYTE_WRAPPER,
-            TYPE_CHAR,
-            TYPE_CHARACTER_WRAPPER,
-            TYPE_DOUBLE,
-            TYPE_DOUBLE_WRAPPER,
-            TYPE_FLOAT,
-            TYPE_FLOAT_WRAPPER,
-            TYPE_INT,
-            TYPE_INTEGER_WRAPPER,
-            TYPE_LONG,
-            TYPE_LONG_WRAPPER,
-            TYPE_SHORT,
-            TYPE_SHORT_WRAPPER,
-        )
+      arrayOf(
+        TYPE_BOOLEAN,
+        TYPE_BOOLEAN_WRAPPER,
+        TYPE_BYTE,
+        TYPE_BYTE_WRAPPER,
+        TYPE_CHAR,
+        TYPE_CHARACTER_WRAPPER,
+        TYPE_DOUBLE,
+        TYPE_DOUBLE_WRAPPER,
+        TYPE_FLOAT,
+        TYPE_FLOAT_WRAPPER,
+        TYPE_INT,
+        TYPE_INTEGER_WRAPPER,
+        TYPE_LONG,
+        TYPE_LONG_WRAPPER,
+        TYPE_SHORT,
+        TYPE_SHORT_WRAPPER,
+      )
 
     var i = 0
     while (i < pairs.size) {
@@ -476,93 +452,82 @@ class LintUtilsTest : TestCase() {
 
   fun testResolveManifestName() {
     assertEquals(
-        "test.pkg.TestActivity",
-        resolveManifestName(
-            getElementWithNameValue(
-                "" +
-                    "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
-                    "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n" +
-                    "    package=\"test.pkg\">\n" +
-                    "    <application>\n" +
-                    "        <activity android:name=\".TestActivity\" />\n" +
-                    "    </application>\n" +
-                    "</manifest>\n",
-                ".TestActivity",
-            ),
-            null,
+      "test.pkg.TestActivity",
+      resolveManifestName(
+        getElementWithNameValue(
+          "" +
+            "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
+            "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n" +
+            "    package=\"test.pkg\">\n" +
+            "    <application>\n" +
+            "        <activity android:name=\".TestActivity\" />\n" +
+            "    </application>\n" +
+            "</manifest>\n",
+          ".TestActivity",
         ),
+        null,
+      ),
     )
 
     assertEquals(
-        "test.pkg.TestActivity",
-        resolveManifestName(
-            getElementWithNameValue(
-                "" +
-                    "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
-                    "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n" +
-                    "    package=\"test.pkg\">\n" +
-                    "    <application>\n" +
-                    "        <activity android:name=\"TestActivity\" />\n" +
-                    "    </application>\n" +
-                    "</manifest>\n",
-                "TestActivity",
-            ),
-            null,
+      "test.pkg.TestActivity",
+      resolveManifestName(
+        getElementWithNameValue(
+          "" +
+            "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
+            "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n" +
+            "    package=\"test.pkg\">\n" +
+            "    <application>\n" +
+            "        <activity android:name=\"TestActivity\" />\n" +
+            "    </application>\n" +
+            "</manifest>\n",
+          "TestActivity",
         ),
+        null,
+      ),
     )
 
     assertEquals(
-        "test.pkg.TestActivity",
-        resolveManifestName(
-            getElementWithNameValue(
-                "" +
-                    "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
-                    "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n" +
-                    "    package=\"test.pkg\">\n" +
-                    "    <application>\n" +
-                    "        <activity android:name=\"test.pkg.TestActivity\" />\n" +
-                    "    </application>\n" +
-                    "</manifest>\n",
-                "test.pkg.TestActivity",
-            ),
-            null,
+      "test.pkg.TestActivity",
+      resolveManifestName(
+        getElementWithNameValue(
+          "" +
+            "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
+            "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n" +
+            "    package=\"test.pkg\">\n" +
+            "    <application>\n" +
+            "        <activity android:name=\"test.pkg.TestActivity\" />\n" +
+            "    </application>\n" +
+            "</manifest>\n",
+          "test.pkg.TestActivity",
         ),
+        null,
+      ),
     )
 
     assertEquals(
-        "test.pkg.TestActivity.Bar",
-        resolveManifestName(
-            getElementWithNameValue(
-                "" +
-                    "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
-                    "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n" +
-                    "    package=\"test.pkg\">\n" +
-                    "    <application>\n" +
-                    "        <activity android:name=\"test.pkg.TestActivity\$Bar\" />\n" +
-                    "    </application>\n" +
-                    "</manifest>\n",
-                "test.pkg.TestActivity\$Bar",
-            ),
-            null,
+      "test.pkg.TestActivity.Bar",
+      resolveManifestName(
+        getElementWithNameValue(
+          "" +
+            "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
+            "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n" +
+            "    package=\"test.pkg\">\n" +
+            "    <application>\n" +
+            "        <activity android:name=\"test.pkg.TestActivity\$Bar\" />\n" +
+            "    </application>\n" +
+            "</manifest>\n",
+          "test.pkg.TestActivity\$Bar",
         ),
+        null,
+      ),
     )
   }
 
   fun testGetFileNameWithParent() {
-    assertThat(
-            getFileNameWithParent(
-                TestLintClient(),
-                File("tmp" + separator + "foo" + separator + "bar.baz"),
-            )
-        )
-        .isEqualTo("foo/bar.baz")
-    assertThat(
-            getFileNameWithParent(
-                LintCliClient(CLIENT_UNIT_TESTS),
-                File("tmp" + separator + "foo" + separator + "bar.baz"),
-            )
-        )
-        .isEqualTo("foo/bar.baz")
+    assertThat(getFileNameWithParent(TestLintClient(), File("tmp" + separator + "foo" + separator + "bar.baz"))).isEqualTo("foo/bar.baz")
+    assertThat(getFileNameWithParent(LintCliClient(CLIENT_UNIT_TESTS), File("tmp" + separator + "foo" + separator + "bar.baz")))
+      .isEqualTo("foo/bar.baz")
   }
 
   fun testResolvePlaceholders() {
@@ -571,26 +536,15 @@ class LintUtilsTest : TestCase() {
     assertEquals("", resolvePlaceHolders(null, "\${test}", null, ""))
     assertNull(resolvePlaceHolders(null, "\${test}"))
     assertEquals("Test", resolvePlaceHolders(null, "\${test}", mapOf("test" to "Test"), null))
-    assertEquals(
-        "FirstSecond",
-        resolvePlaceHolders(null, "\${abc}\${def}", mapOf("abc" to "First", "def" to "Second"), ""),
-    )
-    assertEquals(
-        " First Second ",
-        resolvePlaceHolders(null, " \${abc} \${def} ", mapOf("abc" to "First", "def" to "Second"), ""),
-    )
+    assertEquals("FirstSecond", resolvePlaceHolders(null, "\${abc}\${def}", mapOf("abc" to "First", "def" to "Second"), ""))
+    assertEquals(" First Second ", resolvePlaceHolders(null, " \${abc} \${def} ", mapOf("abc" to "First", "def" to "Second"), ""))
   }
 
   fun testResolvePlaceholdersInfiniteLoop() {
     // Regression test for infinite loop issue identified in b/416480093
     assertEquals(
-        "This is 12345678\${bad} but then thisisfine",
-        resolvePlaceHolders(
-            null,
-            "This is \${bad} but then \${good}",
-            mapOf("bad" to "12345678\${bad}", "good" to "thisisfine"),
-            null,
-        ),
+      "This is 12345678\${bad} but then thisisfine",
+      resolvePlaceHolders(null, "This is \${bad} but then \${good}", mapOf("bad" to "12345678\${bad}", "good" to "thisisfine"), null),
     )
     // This was previously causing an infinite loop:
     // This is ${bad} but then ${good}
@@ -608,13 +562,8 @@ class LintUtilsTest : TestCase() {
     // An incorrect fix might start the next search from an index that is too high, which could
     // miss a subsequent placeholder. This assertion prevents this mistake.
     assertEquals(
-        "This is tr",
-        resolvePlaceHolders(
-            null,
-            "This is \${thisisalongstring}\${s}",
-            mapOf("thisisalongstring" to "t", "s" to "r"),
-            null,
-        ),
+      "This is tr",
+      resolvePlaceHolders(null, "This is \${thisisalongstring}\${s}", mapOf("thisisalongstring" to "t", "s" to "r"), null),
     )
   }
 
@@ -676,12 +625,7 @@ class LintUtilsTest : TestCase() {
      * Given two XML documents and two id's, look up the nodes, then test the matching method ([matchXmlElement]) to make sure that the
      * match for the first id returns the same element as the one found by id search.
      */
-    fun testMatch(
-        sourceDocument: Document,
-        sourceId: String,
-        targetDocument: Document,
-        targetId: String,
-    ) {
+    fun testMatch(sourceDocument: Document, sourceId: String, targetDocument: Document, targetId: String) {
       val source = findElement(sourceDocument.documentElement, sourceId)!!
       val target = findElement(targetDocument.documentElement, targetId)!!
 
@@ -695,8 +639,8 @@ class LintUtilsTest : TestCase() {
 
     // The document we're going to search for equivalent elements from
     val doc1 =
-        xml(
-            """
+      xml(
+        """
                 <root>
                     <extra/>
                     <child>
@@ -714,12 +658,12 @@ class LintUtilsTest : TestCase() {
                     </child>
                 </root>
                 """
-        )
+      )
 
     // The document we're trying to find matches in
     val doc2 =
-        xml(
-            """
+      xml(
+        """
                 <root>
                     <child2>
                         <grandchild name="n2"/> <!-- wrong path -->
@@ -741,7 +685,7 @@ class LintUtilsTest : TestCase() {
                     </child>
                 </root>
                 """
-        )
+      )
 
     // ID matching
     testMatch(doc1, "1", doc2, "1")
@@ -754,12 +698,12 @@ class LintUtilsTest : TestCase() {
 
     // Ordinal matching
     testMatch(
-        doc1,
-        "n2",
-        doc2,
-        // Don't search for n2 in the target since there's an identically named incorrect
-        // match in the wrong parent path
-        "<child:3><grandchild:8>",
+      doc1,
+      "n2",
+      doc2,
+      // Don't search for n2 in the target since there's an identically named incorrect
+      // match in the wrong parent path
+      "<child:3><grandchild:8>",
     )
     testMatch(doc1, "<child:3><duplicate:4>", doc2, "<child:3><duplicate:7>")
 
@@ -829,10 +773,7 @@ class LintUtilsTest : TestCase() {
     }
 
     @JvmStatic
-    fun parse(
-        @Language("JAVA") javaSource: String,
-        relativePath: File?,
-    ): Pair<JavaContext, Disposable> {
+    fun parse(@Language("JAVA") javaSource: String, relativePath: File?): Pair<JavaContext, Disposable> {
       var path = relativePath
       if (path == null) {
         val className = ClassName(javaSource)
@@ -845,10 +786,7 @@ class LintUtilsTest : TestCase() {
     }
 
     @JvmStatic
-    fun parseKotlin(
-        @Language("Kt") kotlinSource: String,
-        relativePath: File?,
-    ): Pair<JavaContext, Disposable> {
+    fun parseKotlin(@Language("Kt") kotlinSource: String, relativePath: File?): Pair<JavaContext, Disposable> {
       var path = relativePath
       if (path == null) {
         val className = ClassName(kotlinSource)
@@ -869,25 +807,25 @@ class LintUtilsTest : TestCase() {
 
     @JvmStatic
     fun parse(
-        vararg testFiles: TestFile = emptyArray(),
-        javaLanguageLevel: LanguageLevel? = null,
-        kotlinLanguageLevel: LanguageVersionSettings? = null,
-        library: Boolean = false,
-        android: Boolean = true,
+      vararg testFiles: TestFile = emptyArray(),
+      javaLanguageLevel: LanguageLevel? = null,
+      kotlinLanguageLevel: LanguageVersionSettings? = null,
+      library: Boolean = false,
+      android: Boolean = true,
     ): Pair<JavaContext, Disposable> {
       val temp = Files.createTempDir()
       val temporaryFolder = TemporaryFolder(temp)
       temporaryFolder.create()
       val parsed =
-          com.android.tools.lint.checks.infrastructure.parseFirst(
-              javaLanguageLevel = javaLanguageLevel,
-              kotlinLanguageLevel = kotlinLanguageLevel,
-              library = library,
-              android = android,
-              sdkHome = TestUtils.getSdk().toFile(),
-              temporaryFolder = temporaryFolder,
-              testFiles = testFiles,
-          )
+        com.android.tools.lint.checks.infrastructure.parseFirst(
+          javaLanguageLevel = javaLanguageLevel,
+          kotlinLanguageLevel = kotlinLanguageLevel,
+          library = library,
+          android = android,
+          sdkHome = TestUtils.getSdk().toFile(),
+          temporaryFolder = temporaryFolder,
+          testFiles = testFiles,
+        )
       val disposable = Disposable {
         Disposer.dispose(parsed.second)
         temp.deleteRecursively()
@@ -901,15 +839,15 @@ class LintUtilsTest : TestCase() {
       val temporaryFolder = TemporaryFolder(temp)
       temporaryFolder.create()
       val parsed =
-          com.android.tools.lint.checks.infrastructure.parse(
-              javaLanguageLevel = null,
-              kotlinLanguageLevel = null,
-              library = false,
-              sdkHome = TestUtils.getSdk().toFile(),
-              android = true,
-              temporaryFolder = temporaryFolder,
-              testFiles = testFiles,
-          )
+        com.android.tools.lint.checks.infrastructure.parse(
+          javaLanguageLevel = null,
+          kotlinLanguageLevel = null,
+          library = false,
+          sdkHome = TestUtils.getSdk().toFile(),
+          android = true,
+          temporaryFolder = temporaryFolder,
+          testFiles = testFiles,
+        )
       val disposable = Disposable {
         Disposer.dispose(parsed.second)
         temp.deleteRecursively()
@@ -917,10 +855,7 @@ class LintUtilsTest : TestCase() {
       return Pair.of(parsed.first, disposable)
     }
 
-    private fun getElementWithNameValue(
-        @Language("XML") xml: String,
-        activityName: String,
-    ): Element {
+    private fun getElementWithNameValue(@Language("XML") xml: String, activityName: String): Element {
       val document = XmlUtils.parseDocumentSilently(xml, true)
       assertNotNull(document)
       val root = document!!.documentElement

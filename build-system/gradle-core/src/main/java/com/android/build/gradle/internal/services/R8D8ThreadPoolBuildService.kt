@@ -73,7 +73,8 @@ abstract class R8D8ThreadPoolBuildService : BuildService<R8D8ThreadPoolBuildServ
 
     fun defaultThreadPoolSize(): Int {
       // Use the same thread pool size that R8 is using
-      // (see https://r8.googlesource.com/r8/+/fedff04/src/main/java/com/android/tools/r8/utils/ThreadUtils.java#232)
+      // (see
+      // https://r8.googlesource.com/r8/+/fedff04/src/main/java/com/android/tools/r8/utils/ThreadUtils.java#232)
       val processors = Runtime.getRuntime().availableProcessors()
       return if (processors <= 16) {
         processors

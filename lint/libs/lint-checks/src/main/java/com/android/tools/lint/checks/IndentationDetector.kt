@@ -59,11 +59,11 @@ class IndentationDetector : Detector(), SourceCodeScanner {
     private val IMPLEMENTATION = Implementation(IndentationDetector::class.java, Scope.JAVA_FILE_SCOPE)
 
     val ALWAYS_RUN_OPTION =
-        BooleanOption(
-            "always-run",
-            "Whether this check should be included while editing",
-            false,
-            """
+      BooleanOption(
+        "always-run",
+        "Whether this check should be included while editing",
+        false,
+        """
                 While you're editing, it's common to have a temporary situation where \
                 you have suspicious indentation scenarios -- e.g. you start typing an \
                 `if` statement on the line above something you want to make conditional, and \
@@ -73,15 +73,15 @@ class IndentationDetector : Detector(), SourceCodeScanner {
                 it looks like the file has not been recently edited. With this option, you \
                 can turn it on in all cases.
                 """,
-        )
+      )
 
     @JvmField
     val ISSUE =
-        Issue.create(
-                id = "SuspiciousIndentation",
-                briefDescription = "Suspicious indentation",
-                explanation =
-                    """
+      Issue.create(
+          id = "SuspiciousIndentation",
+          briefDescription = "Suspicious indentation",
+          explanation =
+            """
                 This check looks for cases where the indentation suggests a grouping that isn't actually \
                 there in the code. A common example of this would be something like
                 ```kotlin
@@ -92,13 +92,13 @@ class IndentationDetector : Detector(), SourceCodeScanner {
                 Here, the `column = 0` line will be executed every single time, not just if the condition \
                 is true.
                 """,
-                category = Category.CORRECTNESS,
-                priority = 6,
-                severity = Severity.ERROR,
-                implementation = IMPLEMENTATION,
-            )
-            .setAliases(listOf("SuspiciousIndentAfterControlStatement"))
-            .setOptions(listOf(ALWAYS_RUN_OPTION))
+          category = Category.CORRECTNESS,
+          priority = 6,
+          severity = Severity.ERROR,
+          implementation = IMPLEMENTATION,
+        )
+        .setAliases(listOf("SuspiciousIndentAfterControlStatement"))
+        .setOptions(listOf(ALWAYS_RUN_OPTION))
   }
 
   override fun getApplicableUastTypes(): List<Class<out UElement>> {
@@ -110,10 +110,10 @@ class IndentationDetector : Detector(), SourceCodeScanner {
     // https://issuetracker.google.com/230626781
     // and the documentation for [IN_EDITOR_OPTION].
     if (
-        LintClient.isStudio &&
-            !ALWAYS_RUN_OPTION.getValue(context) &&
-            Scope.checkSingleFile(context.driver.scope) &&
-            context.client.isEdited(context.file, true)
+      LintClient.isStudio &&
+        !ALWAYS_RUN_OPTION.getValue(context) &&
+        Scope.checkSingleFile(context.driver.scope) &&
+        context.client.isEdited(context.file, true)
     ) {
       // See if it looks like the file has not been modified
       return null
@@ -146,31 +146,32 @@ class IndentationDetector : Detector(), SourceCodeScanner {
         }
         val indent = startOffset - lineStart
         val body =
-            when (statement) {
-              is UIfExpression -> {
-                // TODO: Instead, visit BOTH of these
-                val elseExpression = statement.elseExpression
-                if (elseExpression != null && elseExpression !is UastEmptyExpression) elseExpression else statement.thenExpression
-              }
-              is ULoopExpression -> statement.body
-              else -> null
+          when (statement) {
+            is UIfExpression -> {
+              // TODO: Instead, visit BOTH of these
+              val elseExpression = statement.elseExpression
+              if (elseExpression != null && elseExpression !is UastEmptyExpression) elseExpression else statement.thenExpression
             }
+            is ULoopExpression -> statement.body
+            else -> null
+          }
         if (
-            body != null &&
-                body !is UBlockExpression &&
-                body.sourcePsi != null &&
-                // Sometimes code will align if/else's like this:
-                //   if something
-                //   else //noinspection blah blah blah
-                //   if something-else
-                // and here the last if is really relative to the else, but we're okay in this scenario
-                (statement !is UIfExpression || body !is UIfExpression) &&
-                // If we have something like
-                //   if something
-                //   return true
-                //   return false
-                // while not great, it's obvious that the first return isn't unconditional
-                (body !is UJumpExpression || i < expressions.size - 1 && expressions[i + 1] !is UJumpExpression)
+          body != null &&
+            body !is UBlockExpression &&
+            body.sourcePsi != null &&
+            // Sometimes code will align if/else's like this:
+            //   if something
+            //   else //noinspection blah blah blah
+            //   if something-else
+            // and here the last if is really relative to the else, but we're okay in this
+            // scenario
+            (statement !is UIfExpression || body !is UIfExpression) &&
+            // If we have something like
+            //   if something
+            //   return true
+            //   return false
+            // while not great, it's obvious that the first return isn't unconditional
+            (body !is UJumpExpression || i < expressions.size - 1 && expressions[i + 1] !is UJumpExpression)
         ) {
           val nestedStart = body.sourcePsi!!.startOffset
           val nestedLineStart = findLineBeginBackwards(nestedStart)
@@ -178,12 +179,7 @@ class IndentationDetector : Detector(), SourceCodeScanner {
           if (nestedIndent == indent) {
             val secondary = getLineLocation(sourcePsi)
             val location = getLineLocation(body).withSecondary(secondary, "Previous statement here")
-            context.report(
-                ISSUE,
-                node,
-                location,
-                "Suspicious indentation: This is conditionally executed; expected it to be indented",
-            )
+            context.report(ISSUE, node, location, "Suspicious indentation: This is conditionally executed; expected it to be indented")
           }
         }
 
@@ -212,18 +208,18 @@ class IndentationDetector : Detector(), SourceCodeScanner {
           if (delta != -1) {
             val prevLineLoc = Location.create(context.file, contents, prevStart + delta, prevStart + indent)
             val location =
-                Location.create(context.file, contents, lineStart + delta, lineStart + indent)
-                    .withSecondary(prevLineLoc, "Previous line indentation here")
+              Location.create(context.file, contents, lineStart + delta, lineStart + indent)
+                .withSecondary(prevLineLoc, "Previous line indentation here")
             val prevChar = contents[prevStart + delta].describe()
             val currChar = contents[lineStart + delta].describe()
             val incident =
-                Incident(
-                        ISSUE,
-                        node,
-                        location,
-                        "The indentation string here is different from on the previous line (`$prevChar` vs `$currChar`)",
-                    )
-                    .overrideSeverity(Severity.WARNING)
+              Incident(
+                  ISSUE,
+                  node,
+                  location,
+                  "The indentation string here is different from on the previous line (`$prevChar` vs `$currChar`)",
+                )
+                .overrideSeverity(Severity.WARNING)
             context.report(incident)
             return
           }
@@ -288,8 +284,8 @@ class IndentationDetector : Detector(), SourceCodeScanner {
       if (prev is UDeclarationsExpression || prev.isAssignment()) {
         val curr = expressions[index]
         if (
-            curr.isAssignment() ||
-                curr is UPrefixExpression && (curr.operator == UastPrefixOperator.INC || curr.operator == UastPrefixOperator.DEC)
+          curr.isAssignment() ||
+            curr is UPrefixExpression && (curr.operator == UastPrefixOperator.INC || curr.operator == UastPrefixOperator.DEC)
         ) {
           return true
         }
@@ -367,11 +363,7 @@ class IndentationDetector : Detector(), SourceCodeScanner {
       return length
     }
 
-    private fun getIndentationDeltaOffset(
-        prevLineOffset: Int,
-        currLineOffset: Int,
-        indentationLength: Int,
-    ): Int {
+    private fun getIndentationDeltaOffset(prevLineOffset: Int, currLineOffset: Int, indentationLength: Int): Int {
       for (i in 0 until indentationLength) {
         if (contents[prevLineOffset + i] != contents[currLineOffset + i]) {
           return i

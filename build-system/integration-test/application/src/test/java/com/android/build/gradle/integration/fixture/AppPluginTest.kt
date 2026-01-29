@@ -104,7 +104,8 @@ abstract class AppPluginTestTransformAssetsTask : DefaultTask() {
 
   @TaskAction
   fun taskAction() {
-    // We must copy the contents of the input directory to the output directory before our transformation
+    // We must copy the contents of the input directory to the output directory before our
+    // transformation
     inputDir.get().asFile.copyRecursively(outputDir.get().asFile)
 
     // Transform an existing file by updating its contents

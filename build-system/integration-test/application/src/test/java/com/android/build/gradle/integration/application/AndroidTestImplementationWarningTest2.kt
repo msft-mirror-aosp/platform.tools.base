@@ -28,32 +28,28 @@ import org.junit.Test
 class AndroidTestImplementationWarningTest2 {
 
   @get:Rule
-  val rule = GradleRule.from {
-    androidApplication {
-      pluginCallbacks += DisableAndroidTestForOneFlavorCallback::class.java
-      android {
-        flavorDimensions += "version"
-        productFlavors {
+  val rule =
+    GradleRule.from {
+      androidApplication {
+        pluginCallbacks += DisableAndroidTestForOneFlavorCallback::class.java
+        android {
+          flavorDimensions += "version"
+          productFlavors {
             create("demo") { it.dimension = "version" }
             create("full") { it.dimension = "version" }
+          }
         }
-      }
-      dependencies {
-        androidTestImplementation("com.google.guava:guava:19.0")
+        dependencies { androidTestImplementation("com.google.guava:guava:19.0") }
       }
     }
-  }
 
   class DisableAndroidTestForOneFlavorCallback : ApplicationComponentCallback {
 
-    override fun handleExtension(
-      project: Project,
-      androidComponents: ApplicationAndroidComponentsExtension,
-    ) {
+    override fun handleExtension(project: Project, androidComponents: ApplicationAndroidComponentsExtension) {
       androidComponents.beforeVariants { variantBuilder ->
         // Disable for 'demo' flavor
         if (variantBuilder.productFlavors.any { it.second == "demo" }) {
-             variantBuilder.deviceTests[DeviceTestBuilder.ANDROID_TEST_TYPE]?.enable = false
+          variantBuilder.deviceTests[DeviceTestBuilder.ANDROID_TEST_TYPE]?.enable = false
         }
       }
     }

@@ -183,10 +183,14 @@ abstract class NetworkCache(
 
           if (!networkEnabled || lastModified == 0L || now - lastModified <= expiryMs) {
             // We found a cached file.
-            // - Within the "cache expiry interval" we always assume we have something as fresh as the "Builtin index".
-            // - Outside the "cache expiry interval" if a network connection is allowed we always try to download the
-            // latest version (code bellow). If a network connection is not allowed, we assume the cache only exists
-            // because it was (or will be) updated on a background task where a network connection is allowed.
+            // - Within the "cache expiry interval" we always assume we have something as fresh as
+            // the "Builtin index".
+            // - Outside the "cache expiry interval" if a network connection is allowed we always
+            // try to download the
+            // latest version (code bellow). If a network connection is not allowed, we assume the
+            // cache only exists
+            // because it was (or will be) updated on a background task where a network connection
+            // is allowed.
             lastReadSourceType =
               if (lastModified != 0L) {
                 if (now - lastModified > expiryMs) {
@@ -223,7 +227,8 @@ abstract class NetworkCache(
             // Make sure that we propagate assertions
             throw e
           } catch (e: Throwable) {
-            // timeouts etc.: fall through to use "expired" data, if available, otherwise use the Builtin index
+            // timeouts etc.: fall through to use "expired" data, if available, otherwise use the
+            // Builtin index
             try {
               lastReadSourceType = DataSourceType.CACHE_FILE_EXPIRED_NETWORK_ERROR
               return CancellableFileIo.newInputStream(file)

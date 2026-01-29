@@ -21,17 +21,16 @@ import java.io.File
 
 /** A resource compilation service that simply copies files to the output directory. */
 object CopyToOutputDirectoryResourceCompilationService : ResourceCompilationService {
-    override fun submitCompile(request: CompileResourceRequest) {
-        val out = compileOutputFor(request)
-        FileUtils.mkdirs(out.parentFile)
-        FileUtils.copyFile(request.inputFile, out)
-    }
+  override fun submitCompile(request: CompileResourceRequest) {
+    val out = compileOutputFor(request)
+    FileUtils.mkdirs(out.parentFile)
+    FileUtils.copyFile(request.inputFile, out)
+  }
 
-    override fun compileOutputFor(request: CompileResourceRequest): File {
-        val parentDir = File(request.outputDirectory, request.inputDirectoryName)
-        return File(parentDir, request.inputFile.name)
-    }
+  override fun compileOutputFor(request: CompileResourceRequest): File {
+    val parentDir = File(request.outputDirectory, request.inputDirectoryName)
+    return File(parentDir, request.inputFile.name)
+  }
 
-    override fun close() {
-    }
+  override fun close() {}
 }

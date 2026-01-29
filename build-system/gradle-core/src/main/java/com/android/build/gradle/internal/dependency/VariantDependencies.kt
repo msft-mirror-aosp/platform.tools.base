@@ -419,8 +419,10 @@ internal constructor(
       val publicationConfigurations = listOfNotNull(apiPublication, runtimePublication, sourcesPublication)
 
       // This is set to be able to consume artifacts published with the library plugin.
-      // For the artifacts of the new android multiplatform plugin, kotlin plugin has a compatibility rules that
-      // equates `androidJvm` with `jvm`, together with the `TargetJvmEnvironment` we are able to select the
+      // For the artifacts of the new android multiplatform plugin, kotlin plugin has a
+      // compatibility rules that
+      // equates `androidJvm` with `jvm`, together with the `TargetJvmEnvironment` we are able to
+      // select the
       // android variant.
       incomingConfigurations.forEach {
         it.attributes.attribute(KotlinPlatformType.attribute, KotlinPlatformType.androidJvm)

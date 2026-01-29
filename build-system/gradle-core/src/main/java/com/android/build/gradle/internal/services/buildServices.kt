@@ -17,7 +17,6 @@
 package com.android.build.gradle.internal.services
 
 import com.android.Version
-import com.android.build.gradle.internal.dependency.AgpVersionCompatibilityRule
 import java.io.ByteArrayOutputStream
 import java.io.InputStream
 import java.io.ObjectInputStream

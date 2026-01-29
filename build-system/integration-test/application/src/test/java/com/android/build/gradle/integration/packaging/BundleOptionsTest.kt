@@ -73,7 +73,8 @@ class BundleOptionsTest {
     assertThat(apksNoTextureSplit).doesNotContain("base-atc.apk")
 
     // TODO: Support support for language splits?
-    // project.buildFile.appendText("\nandroid.bundle.language.enableSplit=false", StandardCharsets.UTF_8)
+    // project.buildFile.appendText("\nandroid.bundle.language.enableSplit=false",
+    // StandardCharsets.UTF_8)
     // val apksNoLanguageSplit = generateApks()
     // assertThat(apksNoLanguageSplit).doesNotContain("standalone-hdpi.apk")
   }

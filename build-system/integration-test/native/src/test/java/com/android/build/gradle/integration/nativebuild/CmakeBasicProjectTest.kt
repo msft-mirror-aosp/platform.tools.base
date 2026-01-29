@@ -127,7 +127,8 @@ class CmakeBasicProjectTest(private val cmakeVersionInDsl: String, private val m
     fun data(): Array<Array<*>> {
       val result: Array<Array<*>> =
         cartesianOf(
-            // This test covers a wider range of CMake versions than most other tests to verify that
+            // This test covers a wider range of CMake versions than most other tests to
+            // verify that
             // the basic functionality of each mode works.
             CMakeVersion.FOR_TESTING.map { it.version }.toTypedArray(),
             arrayOf(Mode.CMake),
@@ -137,7 +138,8 @@ class CmakeBasicProjectTest(private val cmakeVersionInDsl: String, private val m
           .shuffled(Random(192))
           .toTypedArray()
       return if (CURRENT_PLATFORM == PLATFORM_WINDOWS) {
-        // Because Windows runs much slower, limit the tests that run on Windows to a (stable) sample
+        // Because Windows runs much slower, limit the tests that run on Windows to a (stable)
+        // sample
         result.take(10).toTypedArray()
       } else result
     }
@@ -419,10 +421,12 @@ class CmakeBasicProjectTest(private val cmakeVersionInDsl: String, private val m
     )
     executorWithLegacyApi().run("configureCMakeDebug[armeabi-v7a]")
 
-    // Step 2 -- Change to root CMakeLists.txt so that it no longer refers to the nested CMakeLists.txt
+    // Step 2 -- Change to root CMakeLists.txt so that it no longer refers to the nested
+    // CMakeLists.txt
     // Also, delete the nested CMakeLists.txt.
     // Before the bug fix, the following configureCMakeDebug would issue an error like:
-    // [CXX1409] ...\android_gradle_build.json debug|armeabi-v7a : expected buildFiles file 'nested-a\CMakeLists.txt' to exist
+    // [CXX1409] ...\android_gradle_build.json debug|armeabi-v7a : expected buildFiles file
+    // 'nested-a\CMakeLists.txt' to exist
     cmakeLists.writeText(cmakeListsOriginalContent)
     nestedACMakeLists.delete()
     executorWithLegacyApi().run("configureCMakeDebug[armeabi-v7a]")

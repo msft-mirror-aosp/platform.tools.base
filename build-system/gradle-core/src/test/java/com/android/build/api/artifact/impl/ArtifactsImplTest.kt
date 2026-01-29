@@ -286,7 +286,8 @@ class ArtifactsImplTest {
     Truth.assertThat(artifactContainer.get().get()).hasSize(1)
     val outputFile = artifactContainer.get().get()[0]
     Truth.assertThat(outputFile.asFile.absolutePath).contains("test_files")
-    // since multiple producer are possible, task name is provided in path even with a single registered producer
+    // since multiple producer are possible, task name is provided in path even with a single
+    // registered producer
     Truth.assertThat(outputFile.asFile.absolutePath).contains("agpTaskProvider")
   }
 
@@ -326,7 +327,8 @@ class ArtifactsImplTest {
     Truth.assertThat(artifactContainer.get().get()).hasSize(1)
     val outputFile = artifactContainer.get().get()[0]
     Truth.assertThat(outputFile.asFile.absolutePath).contains("test_directories")
-    // since multiple producer are possible, task name is provided in path even with a single registered producer
+    // since multiple producer are possible, task name is provided in path even with a single
+    // registered producer
     Truth.assertThat(outputFile.asFile.absolutePath).contains("agpTaskProvider")
   }
 
@@ -382,7 +384,8 @@ class ArtifactsImplTest {
     Truth.assertThat(transformerInitialized.get()).isFalse()
 
     val artifactContainer = artifacts.getArtifactContainer(TEST_TRANSFORMABLE_FILE)
-    // agp Producer should output in a folder with its task name since there are transforms registered.
+    // agp Producer should output in a folder with its task name since there are transforms
+    // registered.
     Truth.assertThat(agpTaskProvider.get().outputFile.get().asFile.absolutePath).contains("agpTaskProvider")
     // transform input should be in the agp producer.
     Truth.assertThat(transformerProvider.get().inputFile.asFile.get().absolutePath).contains("agpTaskProvider")
@@ -425,7 +428,8 @@ class ArtifactsImplTest {
     Truth.assertThat(transformerInitialized.get()).isFalse()
 
     val artifactContainer = artifacts.getArtifactContainer(TEST_TRANSFORMABLE_DIRECTORY)
-    // agp Producer should output in a folder with its task name since there are transforms registered.
+    // agp Producer should output in a folder with its task name since there are transforms
+    // registered.
     Truth.assertThat(agpTaskProvider.get().outputFolder.get().asFile.absolutePath).contains("agpTaskProvider")
     // transform input should be in the agp producer.
     Truth.assertThat(transformerProvider.get().inputFolder.asFile.get().absolutePath).contains("agpTaskProvider")
@@ -486,7 +490,8 @@ class ArtifactsImplTest {
     Truth.assertThat(artifactContainer.get().get().asFile.absolutePath)
       .isEqualTo(transformerTwoProvider.get().outputFile.asFile.get().absolutePath)
 
-    // agp Producer should output in a folder with its task name since there are transforms registered.
+    // agp Producer should output in a folder with its task name since there are transforms
+    // registered.
     Truth.assertThat(agpTaskProvider.get().outputFile.get().asFile.absolutePath).contains("agpTaskProvider")
     // transformOne input should be in the agp producer.
     Truth.assertThat(transformerOneProvider.get().inputFile.asFile.get().absolutePath).contains("agpTaskProvider")
@@ -553,7 +558,8 @@ class ArtifactsImplTest {
     Truth.assertThat(artifactContainer.get().get().asFile.absolutePath)
       .isEqualTo(transformerTwoProvider.get().outputFolder.asFile.get().absolutePath)
 
-    // agp Producer should output in a folder with its task name since there are transforms registered.
+    // agp Producer should output in a folder with its task name since there are transforms
+    // registered.
     Truth.assertThat(agpTaskProvider.get().outputFolder.get().asFile.absolutePath).contains("agpTaskProvider")
     // transformOne input should be in the agp producer.
     Truth.assertThat(transformerOneProvider.get().inputFolder.asFile.get().absolutePath).contains("agpTaskProvider")

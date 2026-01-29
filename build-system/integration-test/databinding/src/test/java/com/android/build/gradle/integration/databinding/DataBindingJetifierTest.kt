@@ -66,7 +66,8 @@ class DataBindingJetifierTest {
           "com/example/",
           "androidx/preference/Preference", // exact match we want
           "androidx/", // the rest of androidx
-          "android/support/v4/", // precise(ish) test on old support to ensure we don't have anything unexpected.
+          "android/support/v4/", // precise(ish) test on old support to ensure we don't have
+          // anything unexpected.
           "kotlin/",
           "kotlinx/",
           "org/intellij/",

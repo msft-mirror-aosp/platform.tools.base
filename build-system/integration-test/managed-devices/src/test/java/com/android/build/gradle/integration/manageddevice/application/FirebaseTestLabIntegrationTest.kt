@@ -129,7 +129,8 @@ class FirebaseTestLabIntegrationTest {
           remove(getByName(TestLabBuildService.RegistrationAction.getBuildServiceName(TestLabBuildService::class.java, project)))
         }
 
-        // Inject FTL build service with FakeHttpHandler so that it does not send server calls to the real FTL server
+        // Inject FTL build service with FakeHttpHandler so that it does not send server calls to
+        // the real FTL server
         project.gradle.sharedServices.registerIfAbsent(
           TestLabBuildService.RegistrationAction.getBuildServiceName(TestLabBuildService::class.java, project),
           TestLabBuildService::class.java,
@@ -515,7 +516,8 @@ class FirebaseTestLabIntegrationTest {
       assertThat(it)
         .contains("^POST https://www\\.googleapis\\.com/toolresults/v1beta3/projects/test_quota_project_id:initializeSettings\$ is hit")
       // Verifies that test request is sent to FTL server
-      //            assertThat(it).contains("Firebase Testlab Test for myFtlDevice1: Starting Android test.")
+      //            assertThat(it).contains("Firebase Testlab Test for myFtlDevice1: Starting
+      // Android test.")
       assertThat(it)
         .contains(
           "Test request for device myFtlDevice1 has been submitted to Firebase TestLab: fake results URL for result storage/details"

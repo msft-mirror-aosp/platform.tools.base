@@ -514,7 +514,8 @@ class LeakTraceTest {
     val actual = LeakTrace.fromString(leakTraceText)
 
     // Input starts with signature. But toString() will not contain it.
-    // Hence, remove the signature line from the input string leakTrace to compare with the actual output
+    // Hence, remove the signature line from the input string leakTrace to compare with the actual
+    // output
     val inputWithoutSignature = leakTraceText.lines().subList(1, leakTraceText.lines().size).joinToString("\n")
 
     assertEquals(inputWithoutSignature, actual.toString())
@@ -573,8 +574,10 @@ class LeakTraceTest {
 
     val actual = LeakTrace.fromString(leakTraceText)
 
-    // Input starts with signature, bytes and displaying information. But, toString() will have only leak trace.
-    // Hence, remove the signature line from the input leakTrace string to compare with the actual output.
+    // Input starts with signature, bytes and displaying information. But, toString() will have only
+    // leak trace.
+    // Hence, remove the signature line from the input leakTrace string to compare with the actual
+    // output.
     val inputWithoutSignature = leakTraceText.lines().subList(3, leakTraceText.lines().size).joinToString("\n")
     assertEquals(inputWithoutSignature, actual.toString())
   }

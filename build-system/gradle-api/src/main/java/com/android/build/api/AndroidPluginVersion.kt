@@ -188,7 +188,8 @@ private constructor(
     StringBuilder()
       .apply {
         append(major).append('.').append(minor).append('.').append(micro)
-        // This duplicates encoding the same special cases as in AgpVersion. Sadly it's challenging
+        // This duplicates encoding the same special cases as in AgpVersion. Sadly it's
+        // challenging
         // to share code as gradle-api should  have as few dependencies as possible.
         // See AndroidPluginVersionTest
         when (_previewType) {

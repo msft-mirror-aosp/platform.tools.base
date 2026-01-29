@@ -30,9 +30,9 @@ class MonotoneTest {
   @Test
   fun `unproductive cyclic dependency gives empty result as least fix point`() {
     val trivial = // f ↦ x ↦ f(x)
-        object : Monotone<Unit, Unit>, Lattice<Unit> by UnitLattice {
-          override fun invoke(rec: (Unit) -> Unit, x: Unit) = rec(x)
-        }
+      object : Monotone<Unit, Unit>, Lattice<Unit> by UnitLattice {
+        override fun invoke(rec: (Unit) -> Unit, x: Unit) = rec(x)
+      }
 
     // We maintain a convention of not explicitly storing `⊥` entries,
     // so here we're asserting the empty table as the only valid representation.
@@ -46,9 +46,9 @@ class MonotoneTest {
   @Test
   fun `monotone over functions climbing up a finite-height lattice has a least fixpoint`() {
     val productivelyCyclic = // f ↦ x ↦ {(n+2)%10 | n ∈ f(x)} ⊔ {0}
-        object : Monotone<Unit, UnboundedSet<Int>>, Lattice<UnboundedSet<Int>> by possibilityLattice() {
-          override fun invoke(rec: (Unit) -> UnboundedSet<Int>, x: Unit) = rec(x).map { (it + 2) % 10 } join unboundedSetOf(0)
-        }
+      object : Monotone<Unit, UnboundedSet<Int>>, Lattice<UnboundedSet<Int>> by possibilityLattice() {
+        override fun invoke(rec: (Unit) -> UnboundedSet<Int>, x: Unit) = rec(x).map { (it + 2) % 10 } join unboundedSetOf(0)
+      }
 
     val m = productivelyCyclic.leastFixPoint(Unit)
     assertThat(m[Unit]!!).isEqualTo(unboundedSetOf(0, 2, 4, 6, 8))
@@ -61,13 +61,13 @@ class MonotoneTest {
   @Test
   fun `fibonacci effectively tabled`() {
     val fib =
-        object : Monotone<Long, Discrete<Long>>, Lattice<Discrete<Long>> by DiscreteLattice() {
-          override fun invoke(rec: (Long) -> Discrete<Long>, n: Long) =
-              when {
-                n < 2 -> Discrete.Value(n)
-                else -> Discrete.lift(Long::plus)(rec(n - 1), rec(n - 2))
-              }
-        }
+      object : Monotone<Long, Discrete<Long>>, Lattice<Discrete<Long>> by DiscreteLattice() {
+        override fun invoke(rec: (Long) -> Discrete<Long>, n: Long) =
+          when {
+            n < 2 -> Discrete.Value(n)
+            else -> Discrete.lift(Long::plus)(rec(n - 1), rec(n - 2))
+          }
+      }
 
     val m = fib.leastFixPoint(100L)
     assertThat(m[100L]!!).isEqualTo(Discrete.Value(3736710778780434371))
@@ -105,136 +105,116 @@ class MonotoneTest {
   // This is the full *concrete* interpreter that doesn't guarantee termination, so
   // it's up to the individual tests to pick examples that don't build up unbounded fresh terms
   private val lcInterpreter =
-      object : Monotone<Closure, Discrete<Val>>, Lattice<Discrete<Val>> by DiscreteLattice() {
-        override fun invoke(
-            assumeResultOn: (Closure) -> Discrete<Val>,
-            context: Closure,
-        ): Discrete<Val> {
-          /** Structural recursion on [context.expr], resorting to [assumeResultOn] for otherwise non-structural recursion */
-          fun loop(context: Closure): Discrete<Val> {
-            val (expr, env) = context
-            return when (expr) {
-              is Expr.Var -> env[expr.name]!!
-              is Expr.App -> {
-                val fRes = loop(Closure(expr.fn, env))
-                val xRes = loop(Closure(expr.arg, env))
-                if (fRes !is Discrete.Value) return fRes
-                val f = fRes.value as? Closure ?: return Discrete.Btm
-                val e = f.expr as? Expr.Lam ?: return Discrete.Btm
-                assumeResultOn(Closure(e.body, f.env + (e.param to xRes)))
-              }
-              is Expr.Lam -> Discrete.Value(Closure(expr, env))
-              is Expr.Const -> Discrete.Value(expr)
-              is Expr.Set -> throw UnsupportedOperationException("Need the store for mutable states")
-              is Expr.If -> {
-                val scrutiny = loop(Closure(expr.scrutiny, env))
-                val scrutinyValue = (scrutiny as? Discrete.Value)?.value ?: return scrutiny
-                loop(
-                    Closure(
-                        when (scrutinyValue) {
-                          is Expr.Const -> expr.ifConst
-                          is Closure -> expr.ifFun
-                        },
-                        env,
-                    )
+    object : Monotone<Closure, Discrete<Val>>, Lattice<Discrete<Val>> by DiscreteLattice() {
+      override fun invoke(assumeResultOn: (Closure) -> Discrete<Val>, context: Closure): Discrete<Val> {
+        /** Structural recursion on [context.expr], resorting to [assumeResultOn] for otherwise non-structural recursion */
+        fun loop(context: Closure): Discrete<Val> {
+          val (expr, env) = context
+          return when (expr) {
+            is Expr.Var -> env[expr.name]!!
+            is Expr.App -> {
+              val fRes = loop(Closure(expr.fn, env))
+              val xRes = loop(Closure(expr.arg, env))
+              if (fRes !is Discrete.Value) return fRes
+              val f = fRes.value as? Closure ?: return Discrete.Btm
+              val e = f.expr as? Expr.Lam ?: return Discrete.Btm
+              assumeResultOn(Closure(e.body, f.env + (e.param to xRes)))
+            }
+            is Expr.Lam -> Discrete.Value(Closure(expr, env))
+            is Expr.Const -> Discrete.Value(expr)
+            is Expr.Set -> throw UnsupportedOperationException("Need the store for mutable states")
+            is Expr.If -> {
+              val scrutiny = loop(Closure(expr.scrutiny, env))
+              val scrutinyValue = (scrutiny as? Discrete.Value)?.value ?: return scrutiny
+              loop(
+                Closure(
+                  when (scrutinyValue) {
+                    is Expr.Const -> expr.ifConst
+                    is Closure -> expr.ifFun
+                  },
+                  env,
                 )
-              }
+              )
             }
           }
-          return loop(context)
         }
+        return loop(context)
       }
+    }
 
   private fun testEval(e: Expr, v: Discrete<Val>) =
-      with(lcInterpreter) {
-        val ctx = Closure(e, mapOf())
-        val m = leastFixPoint(ctx)
-        val r = m[ctx] ?: bottom
-        assertThat(r).isEqualTo(v)
-      }
+    with(lcInterpreter) {
+      val ctx = Closure(e, mapOf())
+      val m = leastFixPoint(ctx)
+      val r = m[ctx] ?: bottom
+      assertThat(r).isEqualTo(v)
+    }
 
-  @Test
-  fun `(λx, 42) 43 = 42`() =
-      testEval(
-          Expr.App(Expr.Lam("x", Expr.Const(42)), Expr.Const(43)),
-          Discrete.Value(Expr.Const(42)),
-      )
+  @Test fun `(λx, 42) 43 = 42`() = testEval(Expr.App(Expr.Lam("x", Expr.Const(42)), Expr.Const(43)), Discrete.Value(Expr.Const(42)))
 
   @Test fun `(λx, x) 13 = 13`() = testEval(Expr.App(Expr.Lam("x", Expr.Var("x")), Expr.Const(13)), Discrete.Value(Expr.Const(13)))
 
   @Test
   fun `(λx, x x) (λx, x x) diverges`() =
-      testEval(
-          run {
-            val x = Expr.Var("x")
-            val om = Expr.Lam("x", Expr.App(x, x))
-            Expr.App(om, om)
-          },
-          Discrete.Btm,
-      )
+    testEval(
+      run {
+        val x = Expr.Var("x")
+        val om = Expr.Lam("x", Expr.App(x, x))
+        Expr.App(om, om)
+      },
+      Discrete.Btm,
+    )
 
   /*
    * Example 5: Hard-coded 0-CFA interpreter of lambda-calculus with mutable states
    */
 
-  private data class State<out X>(
-      val store: PersistentMap<String, UnboundedSet<Expr>>?,
-      val value: X,
-  )
+  private data class State<out X>(val store: PersistentMap<String, UnboundedSet<Expr>>?, val value: X)
 
   private val storeLattice = Lattice.pointWise<String, UnboundedSet<Expr>>(possibilityLattice())
 
   private val stateLattice =
-      Lattice.product(
-          ::State,
-          State<UnboundedSet<Expr>>::store,
-          State<UnboundedSet<Expr>>::value,
-          storeLattice,
-          possibilityLattice(),
-      )
+    Lattice.product(::State, State<UnboundedSet<Expr>>::store, State<UnboundedSet<Expr>>::value, storeLattice, possibilityLattice())
 
   // The abstract interpreter terminates on all programs.
   // For example, it finitely over-approximates unbounded closures as (spurious) cycles through
   // indirection in the store.
   private val monovariantLcInterpreter =
-      object : Monotone<State<Expr>, State<UnboundedSet<Expr>>>, Lattice<State<UnboundedSet<Expr>>> by stateLattice {
-        override fun invoke(
-            rec: (State<Expr>) -> State<UnboundedSet<Expr>>,
-            state: State<Expr>,
-        ): State<UnboundedSet<Expr>> {
-          val (store, expr) = state
-          if (store == null) return top
-          return when (expr) {
-            is Expr.Var -> State(store, store[expr.name])
-            is Expr.App -> {
-              val (store1, func) = invoke(rec, State(store, expr.fn))
-              val (store2, arg) = invoke(rec, State(store1, expr.arg))
-              if (func == null) return top
-              func.joinedOver { f ->
-                when (f) {
-                  is Expr.Lam -> {
-                    val alloc = persistentMapOf(f.param to arg)
-                    rec(State(storeLattice.joinOf(store2, alloc), f.body))
-                  }
-                  else -> bottom
+    object : Monotone<State<Expr>, State<UnboundedSet<Expr>>>, Lattice<State<UnboundedSet<Expr>>> by stateLattice {
+      override fun invoke(rec: (State<Expr>) -> State<UnboundedSet<Expr>>, state: State<Expr>): State<UnboundedSet<Expr>> {
+        val (store, expr) = state
+        if (store == null) return top
+        return when (expr) {
+          is Expr.Var -> State(store, store[expr.name])
+          is Expr.App -> {
+            val (store1, func) = invoke(rec, State(store, expr.fn))
+            val (store2, arg) = invoke(rec, State(store1, expr.arg))
+            if (func == null) return top
+            func.joinedOver { f ->
+              when (f) {
+                is Expr.Lam -> {
+                  val alloc = persistentMapOf(f.param to arg)
+                  rec(State(storeLattice.joinOf(store2, alloc), f.body))
                 }
+                else -> bottom
               }
             }
-            is Expr.Lam,
-            is Expr.Const -> State(store, unboundedSetOf(expr))
-            is Expr.Set -> {
-              val (store1, rhs) = invoke(rec, State(store, expr.rhs))
-              val update = persistentMapOf(expr.lhs to rhs)
-              State(storeLattice.joinOf(store1, update), rhs)
-            }
-            is Expr.If -> {
-              val (store1, scrutiny) = invoke(rec, State(store, expr.scrutiny))
-              if (scrutiny == null) return top
-              scrutiny.joinedOver { v -> invoke(rec, State(store1, if (v is Expr.Lam) expr.ifFun else expr.ifConst)) }
-            }
+          }
+          is Expr.Lam,
+          is Expr.Const -> State(store, unboundedSetOf(expr))
+          is Expr.Set -> {
+            val (store1, rhs) = invoke(rec, State(store, expr.rhs))
+            val update = persistentMapOf(expr.lhs to rhs)
+            State(storeLattice.joinOf(store1, update), rhs)
+          }
+          is Expr.If -> {
+            val (store1, scrutiny) = invoke(rec, State(store, expr.scrutiny))
+            if (scrutiny == null) return top
+            scrutiny.joinedOver { v -> invoke(rec, State(store1, if (v is Expr.Lam) expr.ifFun else expr.ifConst)) }
           }
         }
       }
+    }
 
   private fun testAbstractEval(e: Expr, resultState: State<UnboundedSet<Expr>>) {
     with(monovariantLcInterpreter) {
@@ -246,36 +226,36 @@ class MonotoneTest {
 
   @Test
   fun `(λx, 42) 43 ⊑ {42}`() =
-      testAbstractEval(
-          Expr.App(Expr.Lam("x", Expr.Const(42)), Expr.Const(43)),
-          State(persistentMapOf(/* ignored */ ), unboundedSetOf(Expr.Const(42))),
-      )
+    testAbstractEval(
+      Expr.App(Expr.Lam("x", Expr.Const(42)), Expr.Const(43)),
+      State(persistentMapOf(/* ignored */ ), unboundedSetOf(Expr.Const(42))),
+    )
 
   @Test
   fun `(λx, x) 13 ⊑ {13}`() =
-      testAbstractEval(
-          Expr.App(Expr.Lam("x", Expr.Var("x")), Expr.Const(13)),
-          State(persistentMapOf(/* ignored */ ), unboundedSetOf(Expr.Const(13))),
-      )
+    testAbstractEval(
+      Expr.App(Expr.Lam("x", Expr.Var("x")), Expr.Const(13)),
+      State(persistentMapOf(/* ignored */ ), unboundedSetOf(Expr.Const(13))),
+    )
 
   @Test
   fun `(λx, x x) (λx, x x) ⊑ ⊥`() =
-      testAbstractEval(
-          run {
-            val x = Expr.Var("x")
-            val om = Expr.Lam("x", Expr.App(x, x))
-            Expr.App(om, om)
-          },
-          stateLattice.bottom,
-      )
+    testAbstractEval(
+      run {
+        val x = Expr.Var("x")
+        val om = Expr.Lam("x", Expr.App(x, x))
+        Expr.App(om, om)
+      },
+      stateLattice.bottom,
+    )
 
   @Test
   fun `let f = (λx, x) in ((f f) 42) ⊑ {42, (λx, x)}`() {
     val id = Expr.Lam("x", Expr.Var("x"))
     val f = Expr.Var("f")
     testAbstractEval(
-        Expr.Let("f", id, Expr.App(Expr.App(f, f), Expr.Const(42))),
-        State(persistentMapOf(/* ignored */ ), unboundedSetOf(Expr.Const(42), id)),
+      Expr.Let("f", id, Expr.App(Expr.App(f, f), Expr.Const(42))),
+      State(persistentMapOf(/* ignored */ ), unboundedSetOf(Expr.Const(42), id)),
     )
   }
 
@@ -284,16 +264,12 @@ class MonotoneTest {
     val v = Expr.Var("v")
     val a = Expr.Var("a")
     testAbstractEval(
-        Expr.Let(
-            "v",
-            Expr.Const(42),
-            Expr.Let(
-                "a",
-                Expr.Const(0),
-                Expr.Sequence(Expr.If(v, Expr.Set("a", Expr.Const(1)), Expr.Set("a", Expr.Const(2))), a),
-            ),
-        ),
-        State(persistentMapOf(/* ignored */ ), unboundedSetOf(Expr.Const(0), Expr.Const(2))),
+      Expr.Let(
+        "v",
+        Expr.Const(42),
+        Expr.Let("a", Expr.Const(0), Expr.Sequence(Expr.If(v, Expr.Set("a", Expr.Const(1)), Expr.Set("a", Expr.Const(2))), a)),
+      ),
+      State(persistentMapOf(/* ignored */ ), unboundedSetOf(Expr.Const(0), Expr.Const(2))),
     )
   }
 
@@ -308,41 +284,34 @@ class MonotoneTest {
       Expr.Let("f", id, Expr.App(Expr.App(f, f), Expr.Const(42)))
     }
     testAbstractEval(
-        Expr.Let(
-            "v",
-            `●`,
-            Expr.Let(
-                "a",
-                Expr.Const(0),
-                Expr.Sequence(Expr.If(v, Expr.Set("a", Expr.Const(1)), Expr.Set("a", Expr.Const(2))), a),
-            ),
-        ),
-        State(
-            persistentMapOf(/* ignored */ ),
-            unboundedSetOf(Expr.Const(0), Expr.Const(1), Expr.Const(2)),
-        ),
+      Expr.Let(
+        "v",
+        `●`,
+        Expr.Let("a", Expr.Const(0), Expr.Sequence(Expr.If(v, Expr.Set("a", Expr.Const(1)), Expr.Set("a", Expr.Const(2))), a)),
+      ),
+      State(persistentMapOf(/* ignored */ ), unboundedSetOf(Expr.Const(0), Expr.Const(1), Expr.Const(2))),
     )
   }
 
   @Test
   fun `fix uses widen`() {
     val defns =
-        object : Monotone<String, UnboundedSet<Int>>, Lattice<UnboundedSet<Int>> by possibilityLattice() {
-          override fun invoke(rec: (String) -> UnboundedSet<Int>, index: String) =
-              when (index) {
-                "natural_numbers" -> persistentSetOf(0) join rec(index)?.map { it + 1 }
-                "unproductive_cycle" -> persistentSetOf(42) join rec(index)
-                else -> throw IllegalArgumentException(index)
-              }
+      object : Monotone<String, UnboundedSet<Int>>, Lattice<UnboundedSet<Int>> by possibilityLattice() {
+        override fun invoke(rec: (String) -> UnboundedSet<Int>, index: String) =
+          when (index) {
+            "natural_numbers" -> persistentSetOf(0) join rec(index)?.map { it + 1 }
+            "unproductive_cycle" -> persistentSetOf(42) join rec(index)
+            else -> throw IllegalArgumentException(index)
+          }
 
-          // the power set lattice's height is unbounded, so repeated `join` wouldn't necessarily
-          // converge
-          override fun widen(prev: UnboundedSet<Int>, now: UnboundedSet<Int>) =
-              when {
-                prev != bottom && now != bottom && prev != now -> top
-                else -> prev join now
-              }
-        }
+        // the power set lattice's height is unbounded, so repeated `join` wouldn't necessarily
+        // converge
+        override fun widen(prev: UnboundedSet<Int>, now: UnboundedSet<Int>) =
+          when {
+            prev != bottom && now != bottom && prev != now -> top
+            else -> prev join now
+          }
+      }
 
     val results = defns.leastFixPoint(listOf("natural_numbers", "unproductive_cycle"))
     assertThat(results["natural_numbers"]).isEqualTo(defns.top)

@@ -163,7 +163,8 @@ private fun createTargetedR8RulesForTest(
   return TargetedR8RulesForTest(
     r8Rules =
       mapOf(
-        // For this integration test, we add the shrink rules to `r8-from-8.2.0` only as we want
+        // For this integration test, we add the shrink rules to `r8-from-8.2.0` only as we
+        // want
         // to test that the current AGP consumes the shrink rules from that location only, not
         // from the other locations.
         "META-INF/com.android.tools/r8-from-8.2.0/r8-from-8.2.0.ext" to r8Rules,

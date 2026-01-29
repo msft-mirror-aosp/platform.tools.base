@@ -571,7 +571,8 @@ class ScreenshotTest {
       }
     val appProject = build.androidApplication()
 
-    // Gradle test tasks fail when there are source files but no tests are executed starting in Gradle 9.0
+    // Gradle test tasks fail when there are source files but no tests are executed starting in
+    // Gradle 9.0
     build.sstExecutor().expectFailure().run(":app:validateDebugScreenshotTest")
 
     val indexHtmlReport = appProject.buildDir.resolve("reports/screenshotTest/preview/debug/index.html")
@@ -603,7 +604,8 @@ class ScreenshotTest {
       }
     val appProject = build.androidApplication()
 
-    // Gradle test tasks fail when there are source files but no tests are executed starting in Gradle 9.0
+    // Gradle test tasks fail when there are source files but no tests are executed starting in
+    // Gradle 9.0
     build.sstExecutor().expectFailure().run(":app:validateDebugScreenshotTest")
 
     val indexHtmlReport = appProject.buildDir.resolve("reports/screenshotTest/preview/debug/index.html")
@@ -621,7 +623,8 @@ class ScreenshotTest {
       rule.build {
         androidApplication {
           dependencies {
-            // Verify that no exception is thrown when ui-tooling is added as an screenshotTestImplementation dependency
+            // Verify that no exception is thrown when ui-tooling is added as an
+            // screenshotTestImplementation dependency
             remove("implementation", uiToolingDep)
             screenshotTestImplementation(uiToolingDep)
           }
@@ -668,7 +671,8 @@ class ScreenshotTest {
               create("flavor2") { it.dimension = "new" }
             }
           }
-          // Comment out the previews in ExampleTest to limit this test to running on the preview in TopLevelPreviewTest
+          // Comment out the previews in ExampleTest to limit this test to running on the preview
+          // in TopLevelPreviewTest
           files.update("src/screenshotTest/java/com/ExampleTest.kt").transform {
             """
                         /*
@@ -725,7 +729,8 @@ class ScreenshotTest {
     val build =
       rule.build {
         androidApplication {
-          // cannot set filter using the conventional command ./gradlew validateDebugScreenshotTest --tests "Pattern".
+          // cannot set filter using the conventional command ./gradlew
+          // validateDebugScreenshotTest --tests "Pattern".
           // https://github.com/gradle/gradle/issues/1228
           pluginCallbacks += FilterSetupCallback::class.java
         }

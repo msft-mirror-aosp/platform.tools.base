@@ -19,7 +19,8 @@ import com.android.ide.common.repository.AgpVersion
 import com.android.sdklib.AndroidMajorVersion
 import com.android.sdklib.AndroidVersion
 
-// TODO(b/419624430): This is duplicated from android-npw/src/com/android/tools/idea/npw/module/recipes/sharedMacros.kt,
+// TODO(b/419624430): This is duplicated from
+// android-npw/src/com/android/tools/idea/npw/module/recipes/sharedMacros.kt,
 // because the NPW and template-impl modules don't have a common module for shared code, but ideally
 // both should be replaced by Gradle project model.
 

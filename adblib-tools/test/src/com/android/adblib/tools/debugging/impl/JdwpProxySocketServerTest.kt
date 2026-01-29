@@ -131,7 +131,8 @@ class JdwpProxySocketServerTest : AdbLibToolsJdwpTestBase() {
     fakeAdb.disconnectDevice(jdwpSessionInfo.fakeDevice.deviceId)
 
     // Assert
-    // Note: On Windows, we get "java.io.IOException: The specified network name is no longer available"
+    // Note: On Windows, we get "java.io.IOException: The specified network name is no longer
+    // available"
     //       On Linux/Mac, we get "java.io.EOFException: Unexpected end of channel"
     exceptionRule.expect(IOException::class.java)
     jdwpSession.receivePacket()

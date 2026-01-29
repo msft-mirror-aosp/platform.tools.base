@@ -38,26 +38,26 @@ class AddJavascriptInterfaceDetector : Detector(), SourceCodeScanner {
   companion object {
     @JvmField
     val ISSUE =
-        Issue.create(
-                id = "AddJavascriptInterface",
-                //noinspection LintImplTextFormat
-                briefDescription = "`addJavascriptInterface` Called",
-                explanation =
-                    """
+      Issue.create(
+          id = "AddJavascriptInterface",
+          //noinspection LintImplTextFormat
+          briefDescription = "`addJavascriptInterface` Called",
+          explanation =
+            """
             For applications built for API levels below 17, `WebView#addJavascriptInterface` presents a \
             security hazard as JavaScript on the target web page has the ability to use reflection to access \
             the injected object's public fields and thus manipulate the host application in unintended ways.
             """,
-                moreInfo =
-                    "https://developer.android.com/reference/android/webkit/WebView.html#addJavascriptInterface(java.lang.Object,%20java.lang.String)",
-                category = Category.SECURITY,
-                priority = 9,
-                severity = Severity.WARNING,
-                androidSpecific = true,
-                implementation = Implementation(AddJavascriptInterfaceDetector::class.java, Scope.JAVA_FILE_SCOPE),
-            )
-            .addMoreInfo("https://support.google.com/faqs/answer/9095419?hl=en")
-            .addMoreInfo("https://goo.gle/AddJavascriptInterface")
+          moreInfo =
+            "https://developer.android.com/reference/android/webkit/WebView.html#addJavascriptInterface(java.lang.Object,%20java.lang.String)",
+          category = Category.SECURITY,
+          priority = 9,
+          severity = Severity.WARNING,
+          androidSpecific = true,
+          implementation = Implementation(AddJavascriptInterfaceDetector::class.java, Scope.JAVA_FILE_SCOPE),
+        )
+        .addMoreInfo("https://support.google.com/faqs/answer/9095419?hl=en")
+        .addMoreInfo("https://goo.gle/AddJavascriptInterface")
 
     const val WEB_VIEW = "android.webkit.WebView"
     const val ADD_JAVASCRIPT_INTERFACE = "addJavascriptInterface"
@@ -84,9 +84,9 @@ class AddJavascriptInterfaceDetector : Detector(), SourceCodeScanner {
     }
 
     val message =
-        "`WebView.addJavascriptInterface` should not be called with " +
-            "minSdkVersion < 17 for security reasons: JavaScript can use reflection " +
-            "to manipulate application"
+      "`WebView.addJavascriptInterface` should not be called with " +
+        "minSdkVersion < 17 for security reasons: JavaScript can use reflection " +
+        "to manipulate application"
     val incident = Incident(ISSUE, node, context.getNameLocation(node), message)
     context.report(incident, minSdkLessThan(17))
   }

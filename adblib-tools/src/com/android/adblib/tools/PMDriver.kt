@@ -42,7 +42,8 @@ import kotlinx.coroutines.withContext
 //
 // 3/ PM access. Initially the only ADB service supported was to spawn a "pm" executable using EXEC.
 //    Later API introduced a "cmd" light-weight executable which is a generalized binder service
-//    client ("pm" executable is limited to contacting "Package Manager" service and is heavy-weight).
+//    client ("pm" executable is limited to contacting "Package Manager" service and is
+// heavy-weight).
 //    "cmd" is also to be invoked over EXEC service. In API 30, a new ADB service "ABB" allowed to
 //    contact binder services without need for spawning an executable. Two flavors of ABB exist,
 //    one using cooked terminal (ABB) and one using raw terminal (ABB_EXEC).
@@ -53,7 +54,8 @@ import kotlinx.coroutines.withContext
 //
 // * If the device and adb host features mention "abb", ABB and ABB_EXEC service are used.
 //   In this case "streamed install" is always used
-// * ElseIf, the device and adb host features mention "cmd" then commands are sent to "cmd" over SHELL
+// * ElseIf, the device and adb host features mention "cmd" then commands are sent to "cmd" over
+// SHELL
 //   service for install session management (create/abandon) and EXEC service for write. Whether
 //   "install" or "multiple-install" is used is based on API.
 // * Else fallback to single apk install. The APK is pushed to the device if needed and "pm"

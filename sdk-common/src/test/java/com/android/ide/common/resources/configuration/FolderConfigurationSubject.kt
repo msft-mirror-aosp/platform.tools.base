@@ -22,113 +22,111 @@ import com.google.common.truth.FailureMetadata
 import com.google.common.truth.Subject
 import com.google.common.truth.Truth
 
-/**
- * Custom [Truth] subject for testing [FolderConfiguration] with a nicer API and better failure
- * messages.
- */
+/** Custom [Truth] subject for testing [FolderConfiguration] with a nicer API and better failure messages. */
 class FolderConfigurationSubject(failureMetadata: FailureMetadata, subject: FolderConfiguration?) :
-    Subject<FolderConfigurationSubject, FolderConfiguration>(failureMetadata, subject) {
+  Subject<FolderConfigurationSubject, FolderConfiguration>(failureMetadata, subject) {
 
-    fun isMatchFor(folderConfiguration: FolderConfiguration) {
-        if (!actual().isMatchFor(folderConfiguration)) {
-            fail("is match for " + folderConfiguration.toDisplayString())
-        }
+  fun isMatchFor(folderConfiguration: FolderConfiguration) {
+    if (!actual().isMatchFor(folderConfiguration)) {
+      fail("is match for " + folderConfiguration.toDisplayString())
+    }
+  }
+
+  fun isNotMatchFor(folderConfiguration: FolderConfiguration) {
+    if (actual().isMatchFor(folderConfiguration)) {
+      fail("is not match for " + folderConfiguration.toDisplayString())
+    }
+  }
+
+  fun hasNoLocale() {
+    val qualifier = actual().localeQualifier
+    if (qualifier != null) {
+      failWithBadResults("has no locale", "", "has", qualifier.shortDisplayValue)
+    }
+  }
+
+  fun hasLanguage(expected: String) {
+    val actualValue = actual().localeQualifier?.language
+
+    if (actualValue != expected) {
+      failWithBadResults("has language", expected, "has", actualValue)
+    }
+  }
+
+  fun hasRegion(expected: String) {
+    val actualValue = actual().localeQualifier?.region
+
+    if (actualValue != expected) {
+      failWithBadResults("has region", expected, "has", actualValue)
+    }
+  }
+
+  fun hasNoScreenDimension() {
+    val qualifier = actual().screenDimensionQualifier
+    if (qualifier != null) {
+      failWithBadResults("has no screen dimension", "", "has", qualifier.shortDisplayValue)
+    }
+  }
+
+  fun hasNoLayoutDirection() {
+    val qualifier = actual().layoutDirectionQualifier
+    if (qualifier != null && qualifier != qualifier.nullQualifier) {
+      failWithBadResults("has no layout direction", "", "has", qualifier.shortDisplayValue)
+    }
+  }
+
+  fun hasNoVersion() {
+    val qualifier = actual().versionQualifier
+    if (qualifier != null) {
+      failWithBadResults("has no version", "", "has", qualifier.shortDisplayValue)
+    }
+  }
+
+  fun hasVersion(expected: Int) {
+    val actualValue = actual().versionQualifier?.version
+    if (actualValue != expected) {
+      failWithBadResults("has version", expected, "has", actualValue)
+    }
+  }
+
+  fun hasScreenRound(expected: ScreenRound) {
+    val actualValue = actual().screenRoundQualifier?.value
+
+    if (actualValue != expected) {
+      failWithBadResults("has screen round", expected, "has", actualValue)
+    }
+  }
+
+  fun hasNoUiMode() {
+    val qualifier = actual().uiModeQualifier
+    if (qualifier != null) {
+      failWithBadResults("has no UI Mode", "", "has", qualifier.shortDisplayValue)
+    }
+  }
+
+  fun hasUiMode(expected: UiMode) {
+    val actualValue = actual().uiModeQualifier?.value
+
+    if (actualValue != expected) {
+      failWithBadResults("has UI Mode", expected, "has", actualValue)
+    }
+  }
+
+  fun hasDensity(expected: Density) {
+    val actualValue = actual().densityQualifier?.value
+
+    if (actualValue != expected) {
+      failWithBadResults("has Density", expected, "has", actualValue)
+    }
+  }
+
+  companion object {
+    private fun folderConfigurations(): Factory<FolderConfigurationSubject, FolderConfiguration> = Factory { failureMetadata, subject ->
+      FolderConfigurationSubject(failureMetadata, subject)
     }
 
-    fun isNotMatchFor(folderConfiguration: FolderConfiguration) {
-        if (actual().isMatchFor(folderConfiguration)) {
-            fail("is not match for " + folderConfiguration.toDisplayString())
-        }
-    }
-
-    fun hasNoLocale() {
-        val qualifier = actual().localeQualifier
-        if (qualifier != null) {
-            failWithBadResults("has no locale", "", "has", qualifier.shortDisplayValue)
-        }
-    }
-
-    fun hasLanguage(expected: String) {
-        val actualValue = actual().localeQualifier?.language
-
-        if (actualValue != expected) {
-            failWithBadResults("has language", expected, "has", actualValue)
-        }
-    }
-
-    fun hasRegion(expected: String) {
-        val actualValue = actual().localeQualifier?.region
-
-        if (actualValue != expected) {
-            failWithBadResults("has region", expected, "has", actualValue)
-        }
-    }
-
-    fun hasNoScreenDimension() {
-        val qualifier = actual().screenDimensionQualifier
-        if (qualifier != null) {
-            failWithBadResults("has no screen dimension", "", "has", qualifier.shortDisplayValue)
-        }
-    }
-
-    fun hasNoLayoutDirection() {
-        val qualifier = actual().layoutDirectionQualifier
-        if (qualifier != null && qualifier != qualifier.nullQualifier) {
-            failWithBadResults("has no layout direction", "", "has", qualifier.shortDisplayValue)
-        }
-    }
-
-    fun hasNoVersion() {
-        val qualifier = actual().versionQualifier
-        if (qualifier != null) {
-            failWithBadResults("has no version", "", "has", qualifier.shortDisplayValue)
-        }
-    }
-
-    fun hasVersion(expected: Int) {
-        val actualValue = actual().versionQualifier?.version
-        if (actualValue != expected) {
-            failWithBadResults("has version", expected, "has", actualValue)
-        }
-    }
-
-    fun hasScreenRound(expected: ScreenRound) {
-        val actualValue = actual().screenRoundQualifier?.value
-
-        if (actualValue != expected) {
-            failWithBadResults("has screen round", expected, "has", actualValue)
-        }
-    }
-
-    fun hasNoUiMode() {
-        val qualifier = actual().uiModeQualifier
-        if (qualifier != null) {
-            failWithBadResults("has no UI Mode", "", "has", qualifier.shortDisplayValue)
-        }
-    }
-
-    fun hasUiMode(expected: UiMode) {
-        val actualValue = actual().uiModeQualifier?.value
-
-        if (actualValue != expected) {
-            failWithBadResults("has UI Mode", expected, "has", actualValue)
-        }
-    }
-
-    fun hasDensity(expected: Density) {
-        val actualValue = actual().densityQualifier?.value
-
-        if (actualValue != expected) {
-            failWithBadResults("has Density", expected, "has", actualValue)
-        }
-    }
-
-    companion object {
-        private fun folderConfigurations(): Factory<FolderConfigurationSubject, FolderConfiguration> =
-                Factory { failureMetadata, subject -> FolderConfigurationSubject(failureMetadata, subject) }
-
-        @JvmStatic
-        fun assertThat(folderConfiguration: FolderConfiguration?): FolderConfigurationSubject =
-                Truth.assertAbout(folderConfigurations()).that(folderConfiguration)
-    }
+    @JvmStatic
+    fun assertThat(folderConfiguration: FolderConfiguration?): FolderConfigurationSubject =
+      Truth.assertAbout(folderConfigurations()).that(folderConfiguration)
+  }
 }

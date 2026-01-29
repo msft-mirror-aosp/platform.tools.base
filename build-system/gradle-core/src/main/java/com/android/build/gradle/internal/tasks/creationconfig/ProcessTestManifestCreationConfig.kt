@@ -211,7 +211,8 @@ abstract class BaseProcessTestManifestCreationConfig(val creationConfig: Compone
       creationConfig.manifestPlaceholdersCreationConfig?.placeholders
         ?: creationConfig.services.mapProperty(String::class.java, String::class.java)
 
-  // avoid delegate mechanism as it will fail with overriding name for testSuites and computeTaskNameInternal
+  // avoid delegate mechanism as it will fail with overriding name for testSuites and
+  // computeTaskNameInternal
   override val name: String
     get() = creationConfig.name
 

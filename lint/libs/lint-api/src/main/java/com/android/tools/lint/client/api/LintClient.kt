@@ -149,21 +149,10 @@ abstract class LintClient {
    *   maxVersion for a permission tag to be added to the
    */
   @Deprecated(
-      "Use the new report(Incident) method instead",
-      ReplaceWith(
-          "report(context, Incident(issue, message, location, fix), format)",
-          "com.android.tools.lint.detector.api.Incident",
-      ),
+    "Use the new report(Incident) method instead",
+    ReplaceWith("report(context, Incident(issue, message, location, fix), format)", "com.android.tools.lint.detector.api.Incident"),
   )
-  fun report(
-      context: Context,
-      issue: Issue,
-      severity: Severity,
-      location: Location,
-      message: String,
-      format: TextFormat,
-      fix: LintFix?,
-  ) {
+  fun report(context: Context, issue: Issue, severity: Severity, location: Location, message: String, format: TextFormat, fix: LintFix?) {
     val incident = Incident(issue, message, location, fix)
     incident.severity = severity
     report(context, incident, format)
@@ -289,10 +278,10 @@ abstract class LintClient {
     } catch (exception: Exception) {
       val message = exception.message ?: "${exception.javaClass.simpleName} attempting to read and parse $file"
       report(
-          client = this,
-          issue = IssueRegistry.LINT_ERROR,
-          message = TextFormat.TEXT.convertTo(message, TextFormat.RAW), // ensure \ paths are escaped etc
-          file = file,
+        client = this,
+        issue = IssueRegistry.LINT_ERROR,
+        message = TextFormat.TEXT.convertTo(message, TextFormat.RAW), // ensure \ paths are escaped etc
+        file = file,
       )
       null
     }
@@ -324,11 +313,7 @@ abstract class LintClient {
   /** Returns whether the given file exists */
   open fun fileExists(file: File): Boolean = file.isFile()
 
-  open fun fileExists(
-      file: File,
-      requireFile: Boolean = false,
-      requireDirectory: Boolean = false,
-  ): Boolean {
+  open fun fileExists(file: File, requireFile: Boolean = false, requireDirectory: Boolean = false): Boolean {
     return when {
       requireFile -> file.isFile
       requireDirectory -> file.isDirectory
@@ -366,11 +351,7 @@ abstract class LintClient {
    *
    * If unknown or unsupported by this [LintClient], returns [returnIfUnknown].
    */
-  open fun isEdited(
-      file: File,
-      returnIfUnknown: Boolean = true,
-      savedSinceMsAgo: Long = 5 * 60 * 1000L,
-  ): Boolean {
+  open fun isEdited(file: File, returnIfUnknown: Boolean = true, savedSinceMsAgo: Long = 5 * 60 * 1000L): Boolean {
     return returnIfUnknown
   }
 
@@ -599,14 +580,14 @@ abstract class LintClient {
    */
   open fun findResource(relativePath: String): File? {
     val top =
-        getSdkHome()
-            ?: run {
-              val file = File(relativePath)
-              return when {
-                file.exists() -> file.absoluteFile
-                else -> null
-              }
-            }
+      getSdkHome()
+        ?: run {
+          val file = File(relativePath)
+          return when {
+            file.exists() -> file.absoluteFile
+            else -> null
+          }
+        }
 
     // Looked up by ExternalAnnotationRepository
     if ("annotations.zip" == relativePath) {
@@ -656,9 +637,9 @@ abstract class LintClient {
     // IDEs or a gradle-integration of lint) have more context and can perform a more accurate
     // check
     if (
-        File(project.dir, SdkConstants.FN_BUILD_GRADLE).exists() ||
-            File(project.dir, SdkConstants.FN_BUILD_GRADLE_KTS).exists() ||
-            File(project.dir, SdkConstants.FN_BUILD_GRADLE_DECLARATIVE).exists()
+      File(project.dir, SdkConstants.FN_BUILD_GRADLE).exists() ||
+        File(project.dir, SdkConstants.FN_BUILD_GRADLE_KTS).exists() ||
+        File(project.dir, SdkConstants.FN_BUILD_GRADLE_DECLARATIVE).exists()
     ) {
       return true
     }
@@ -667,10 +648,10 @@ abstract class LintClient {
     if (parent != null && parent.name == SdkConstants.FD_SOURCES) {
       val root = parent.parentFile
       if (
-          root != null &&
-              (File(root, SdkConstants.FN_BUILD_GRADLE).exists() ||
-                  File(root, SdkConstants.FN_BUILD_GRADLE_KTS).exists() ||
-                  File(root, SdkConstants.FN_BUILD_GRADLE_DECLARATIVE).exists())
+        root != null &&
+          (File(root, SdkConstants.FN_BUILD_GRADLE).exists() ||
+            File(root, SdkConstants.FN_BUILD_GRADLE_KTS).exists() ||
+            File(root, SdkConstants.FN_BUILD_GRADLE_DECLARATIVE).exists())
       ) {
         return true
       }
@@ -685,14 +666,14 @@ abstract class LintClient {
 
   /** Information about class paths (sources, class files and libraries) usually associated with a project. */
   class ClassPathInfo(
-      val sourceFolders: List<File>,
-      val classFolders: List<File>,
-      private val libraries: List<File>,
-      private val nonProvidedLibraries: List<File>,
-      val testSourceFolders: List<File>,
-      val testLibraries: List<File>,
-      val generatedFolders: List<File>,
-      val klibs: List<File> = listOf(),
+    val sourceFolders: List<File>,
+    val classFolders: List<File>,
+    private val libraries: List<File>,
+    private val nonProvidedLibraries: List<File>,
+    val testSourceFolders: List<File>,
+    val testLibraries: List<File>,
+    val generatedFolders: List<File>,
+    val klibs: List<File> = listOf(),
   ) {
 
     fun getLibraries(includeProvided: Boolean): List<File> = if (includeProvided) libraries else nonProvidedLibraries
@@ -794,11 +775,7 @@ abstract class LintClient {
                 }
               }
 
-              val gen =
-                  File(
-                      projectDir,
-                      "target" + File.separator + "generated-sources" + File.separator + "r",
-                  )
+              val gen = File(projectDir, "target" + File.separator + "generated-sources" + File.separator + "r")
               if (gen.exists()) {
                 generated.add(gen)
               }
@@ -846,16 +823,16 @@ abstract class LintClient {
    */
   open fun getProject(dir: File, referenceDir: File): Project {
     val canonicalDir =
-        try {
-          // Attempt to use the canonical handle for the file, in case there
-          // are symlinks etc present (since when handling library projects,
-          // we also call getCanonicalFile to compute the result of appending
-          // relative paths, which can then resolve symlinks and end up with
-          // a different prefix)
-          dir.canonicalFile
-        } catch (ioe: IOException) {
-          dir
-        }
+      try {
+        // Attempt to use the canonical handle for the file, in case there
+        // are symlinks etc present (since when handling library projects,
+        // we also call getCanonicalFile to compute the result of appending
+        // relative paths, which can then resolve symlinks and end up with
+        // a different prefix)
+        dir.canonicalFile
+      } catch (ioe: IOException) {
+        dir
+      }
 
     val existingProject: Project? = dirToProject[canonicalDir]
     if (existingProject != null) {
@@ -871,12 +848,12 @@ abstract class LintClient {
   /** Returns true if this is a known project directory. */
   fun isKnownProjectDir(dir: File): Boolean {
     val canonicalDir =
-        try {
-          // See getProject()
-          dir.canonicalFile
-        } catch (ioe: IOException) {
-          dir
-        }
+      try {
+        // See getProject()
+        dir.canonicalFile
+      } catch (ioe: IOException) {
+        dir
+      }
     return dirToProject[canonicalDir] != null
   }
 
@@ -895,11 +872,11 @@ abstract class LintClient {
     // Lazy initialization since we'll want to overridden state (like this.sdkHome()) which
     // is not yet initialized when the class is instantiated
     get() =
-        _pathVariables
-            ?: PathVariables().apply {
-              addDefaultPathVariables(this)
-              _pathVariables = this
-            }
+      _pathVariables
+        ?: PathVariables().apply {
+          addDefaultPathVariables(this)
+          _pathVariables = this
+        }
 
   private var _pathVariables: PathVariables? = null // backing field for [pathVariables]
 
@@ -911,16 +888,16 @@ abstract class LintClient {
    */
   open fun registerProject(dir: File, project: Project) {
     val canonicalDir =
-        try {
-          // Attempt to use the canonical handle for the file, in case there
-          // are symlinks etc present (since when handling library projects,
-          // we also call getCanonicalFile to compute the result of appending
-          // relative paths, which can then resolve symlinks and end up with
-          // a different prefix)
-          dir.canonicalFile
-        } catch (ioe: IOException) {
-          dir
-        }
+      try {
+        // Attempt to use the canonical handle for the file, in case there
+        // are symlinks etc present (since when handling library projects,
+        // we also call getCanonicalFile to compute the result of appending
+        // relative paths, which can then resolve symlinks and end up with
+        // a different prefix)
+        dir.canonicalFile
+      } catch (ioe: IOException) {
+        dir
+      }
     if (!dirToProject.containsKey(canonicalDir)) {
       dirToProject[canonicalDir] = project
     }
@@ -994,27 +971,27 @@ abstract class LintClient {
     // when running outside of the IDE, where there isn't a live
     // instance already; this is overridden in the IDE client
     return platformLookup
-        ?: run {
-          val sdkHome = getSdkHome()
-          if (sdkHome != null) {
-            SimplePlatformLookup.get(sdkHome).also { platformLookup = it }
-          } else {
-            null
-          }
+      ?: run {
+        val sdkHome = getSdkHome()
+        if (sdkHome != null) {
+          SimplePlatformLookup.get(sdkHome).also { platformLookup = it }
+        } else {
+          null
         }
+      }
   }
 
   /** Represents a result of a CompileSdk lookup */
   class CompileSdkResult(
-      /**
-       * true if he obtained [target] was calculated from the [Project]'s specification false if the obtained [target] was calculated from
-       * the highest compilation target that is currently installed.
-       *
-       * This typically happens with plain java projects
-       */
-      val explicitlySpecified: Boolean,
-      /** The compile target to use for the give project. */
-      val target: IAndroidTarget?,
+    /**
+     * true if he obtained [target] was calculated from the [Project]'s specification false if the obtained [target] was calculated from the
+     * highest compilation target that is currently installed.
+     *
+     * This typically happens with plain java projects
+     */
+    val explicitlySpecified: Boolean,
+    /** The compile target to use for the give project. */
+    val target: IAndroidTarget?,
   )
 
   /**
@@ -1049,9 +1026,9 @@ abstract class LintClient {
     // is not known or not found, but having *any* SDK is better than not (without
     // it, most symbol resolution will fail.)
     return CompileSdkResult(
-        explicitlySpecified = false,
-        target = lookup.getLatestSdkTarget(includePreviews = false) // prefer stable
-            ?: lookup.getLatestSdkTarget(includePreviews = true),
+      explicitlySpecified = false,
+      target = lookup.getLatestSdkTarget(includePreviews = false) // prefer stable
+        ?: lookup.getLatestSdkTarget(includePreviews = true),
     )
   }
 
@@ -1237,10 +1214,7 @@ abstract class LintClient {
    * Recursively add all lint jars found recursively from the given collection of [LintModelAndroidLibrary] instances into the given
    * [lintJars] list.
    */
-  private fun addLintJarsFromDependencies(
-      lintJars: MutableList<File>,
-      libraries: Collection<LintModelLibrary>,
-  ) {
+  private fun addLintJarsFromDependencies(lintJars: MutableList<File>, libraries: Collection<LintModelLibrary>) {
     for (library in libraries) {
       addLintJarsFromDependency(lintJars, library)
     }
@@ -1316,11 +1290,7 @@ abstract class LintClient {
    * @param registry the main registry to add rules to
    * @return a new registry containing the passed in rules plus any custom rules, or the original registry if no custom rules were found
    */
-  open fun addCustomLintRules(
-      registry: IssueRegistry,
-      driver: LintDriver?,
-      warnDeprecated: Boolean,
-  ): IssueRegistry {
+  open fun addCustomLintRules(registry: IssueRegistry, driver: LintDriver?, warnDeprecated: Boolean): IssueRegistry {
     val jarFiles = findGlobalRuleJars(driver, warnDeprecated)
     if (jarFiles.isNotEmpty()) {
       val extraRegistries = JarFileIssueRegistry.get(this, jarFiles, null, driver)
@@ -1352,7 +1322,7 @@ abstract class LintClient {
    * @return a new class loader
    */
   open fun createUrlClassLoader(files: List<File>, parent: ClassLoader): ClassLoader =
-      URLClassLoader(files.mapNotNull { SdkUtils.fileToUrl(it) }.toTypedArray(), parent)
+    URLClassLoader(files.mapNotNull { SdkUtils.fileToUrl(it) }.toTypedArray(), parent)
 
   /**
    * Returns the merged manifest of the given project. This may return null if not called on the main project. Note that the file reference
@@ -1484,11 +1454,7 @@ abstract class LintClient {
    * @param format the message format to format as; defaults to [TextFormat.RAW], e.g. with backslashes and asterisks in the path escaped
    * @return a path formatted for user display
    */
-  open fun getDisplayPath(
-      file: File,
-      project: Project? = null,
-      format: TextFormat = TextFormat.TEXT,
-  ): String {
+  open fun getDisplayPath(file: File, project: Project? = null, format: TextFormat = TextFormat.TEXT): String {
     val base = project?.referenceDir ?: getRootDir()
     if (base != null) {
       val basePath = base.path
@@ -1600,21 +1566,14 @@ abstract class LintClient {
    * @param includeLibraries if true, include merged view of all library dependencies (this also requires all module dependencies)
    * @return the project resources, or null if not available
    */
-  @Deprecated(
-      "Use getResources(project, scope) instead",
-      replaceWith = ReplaceWith("getResources(project, scope"),
-  )
-  fun getResourceRepository(
-      project: Project,
-      includeModuleDependencies: Boolean,
-      includeLibraries: Boolean,
-  ): ResourceRepository {
+  @Deprecated("Use getResources(project, scope) instead", replaceWith = ReplaceWith("getResources(project, scope"))
+  fun getResourceRepository(project: Project, includeModuleDependencies: Boolean, includeLibraries: Boolean): ResourceRepository {
     val scope =
-        when {
-          includeLibraries -> ResourceRepositoryScope.ALL_DEPENDENCIES
-          includeModuleDependencies -> ResourceRepositoryScope.LOCAL_DEPENDENCIES
-          else -> ResourceRepositoryScope.PROJECT_ONLY
-        }
+      when {
+        includeLibraries -> ResourceRepositoryScope.ALL_DEPENDENCIES
+        includeModuleDependencies -> ResourceRepositoryScope.LOCAL_DEPENDENCIES
+        else -> ResourceRepositoryScope.PROJECT_ONLY
+      }
 
     return getResources(project, scope)
   }
@@ -1628,11 +1587,8 @@ abstract class LintClient {
    * @param item the resource item to look up a location handle for
    * @return a corresponding handle
    */
-  open fun createResourceItemHandle(
-      item: ResourceItem,
-      nameOnly: Boolean = false,
-      valueOnly: Boolean = true,
-  ): Location.ResourceItemHandle = Location.ResourceItemHandle(this, item, nameOnly, valueOnly)
+  open fun createResourceItemHandle(item: ResourceItem, nameOnly: Boolean = false, valueOnly: Boolean = true): Location.ResourceItemHandle =
+    Location.ResourceItemHandle(this, item, nameOnly, valueOnly)
 
   /**
    * Creates a [XmlPullParser] for the given XML file resource.
@@ -1643,11 +1599,11 @@ abstract class LintClient {
   @Throws(IOException::class)
   open fun createXmlPullParser(resourcePath: PathString): XmlPullParser? {
     val bytes =
-        try {
-          readBytes(resourcePath)
-        } catch (e: FileNotFoundException) {
-          return null
-        }
+      try {
+        readBytes(resourcePath)
+      } catch (e: FileNotFoundException) {
+        return null
+      }
     val parser = KXmlParser()
     parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, true)
     parser.setInput(ByteArrayInputStream(bytes), StandardCharsets.UTF_8.name())
@@ -1758,9 +1714,9 @@ abstract class LintClient {
     val basePathToCompare = if (caseSensitive) basePath else basePath.lowercase(l)
     val filePathToCompare = if (caseSensitive) filePath else filePath.lowercase(l)
     if (
-        basePathToCompare ==
-            (if (!filePathToCompare.isEmpty() && filePathToCompare[filePathToCompare.length - 1] == separatorChar) filePathToCompare
-            else filePathToCompare + separatorChar)
+      basePathToCompare ==
+        (if (!filePathToCompare.isEmpty() && filePathToCompare[filePathToCompare.length - 1] == separatorChar) filePathToCompare
+        else filePathToCompare + separatorChar)
     ) {
       return "."
     }
@@ -1798,11 +1754,11 @@ abstract class LintClient {
         continue
       }
       root =
-          if (root == null) {
-            project.dir
-          } else {
-            getCommonParent(root, project.dir)
-          }
+        if (root == null) {
+          project.dir
+        } else {
+          getCommonParent(root, project.dir)
+        }
     }
 
     // Workaround: we need the root project; it's not yet part of the model,
@@ -1813,9 +1769,9 @@ abstract class LintClient {
       // The settings file is the best marker for the root of the
       // Gradle project.
       if (
-          File(parent, SdkConstants.FN_SETTINGS_GRADLE).exists() ||
-              File(parent, SdkConstants.FN_SETTINGS_GRADLE_KTS).exists() ||
-              File(parent, SdkConstants.FN_SETTINGS_GRADLE_DECLARATIVE).exists()
+        File(parent, SdkConstants.FN_SETTINGS_GRADLE).exists() ||
+          File(parent, SdkConstants.FN_SETTINGS_GRADLE_KTS).exists() ||
+          File(parent, SdkConstants.FN_SETTINGS_GRADLE_DECLARATIVE).exists()
       ) {
         return parent
       }
@@ -1962,11 +1918,7 @@ abstract class LintClient {
      * source level.
      */
     @JvmStatic
-    fun getGradleDesugaring(
-        version: AgpVersion,
-        languageLevel: LanguageLevel?,
-        coreLibraryDesugaringEnabled: Boolean,
-    ): Set<Desugaring> {
+    fun getGradleDesugaring(version: AgpVersion, languageLevel: LanguageLevel?, coreLibraryDesugaringEnabled: Boolean): Set<Desugaring> {
       // Desugar runs if the Gradle plugin is 2.4.0 alpha 8 or higher...
       if (!version.isAtLeast(2, 4, 0, "alpha", 8, true)) {
         return Desugaring.NONE
@@ -1991,107 +1943,101 @@ abstract class LintClient {
      * method to be surfaced along with the normal report methods people access via code completion.
      */
     fun report(
-        client: LintClient,
-        issue: Issue,
-        message: String,
-        file: File? = null,
-        format: TextFormat = TextFormat.RAW,
-        fix: LintFix? = null,
-        configuration: Configuration? = null,
-        severity: Severity? = null,
-        context: Context? = null,
-        project: Project? = null,
-        mainProject: Project? = null,
-        driver: LintDriver? = null,
-        location: Location? = null,
+      client: LintClient,
+      issue: Issue,
+      message: String,
+      file: File? = null,
+      format: TextFormat = TextFormat.RAW,
+      fix: LintFix? = null,
+      configuration: Configuration? = null,
+      severity: Severity? = null,
+      context: Context? = null,
+      project: Project? = null,
+      mainProject: Project? = null,
+      driver: LintDriver? = null,
+      location: Location? = null,
     ) {
 
       val realLocation =
-          when {
-            location != null -> location
-            file != null -> Location.create(file)
-            context != null -> Location.create(context.file)
-            project != null -> Location.create(project.dir)
-            else -> error("Must supply location or file or project")
-          }
+        when {
+          location != null -> location
+          file != null -> Location.create(file)
+          context != null -> Location.create(context.file)
+          project != null -> Location.create(project.dir)
+          else -> error("Must supply location or file or project")
+        }
 
       val realFile =
-          when {
-            file != null -> file
-            else -> realLocation.file
-          }
+        when {
+          file != null -> file
+          else -> realLocation.file
+        }
 
       val realProject =
-          when {
-            project != null -> project
-            context != null -> context.project
-            else -> {
-              val dir = if (realFile.isDirectory) realFile else realFile.parentFile ?: File("").absoluteFile
-              var curr = dir
-              var projectDir: File? = null
-              // Look through existing projects containing this path
-              while (curr != null) {
-                if (client.dirToProject.containsKey(curr)) {
-                  projectDir = curr
-                  break
-                }
-                curr = curr.parentFile
+        when {
+          project != null -> project
+          context != null -> context.project
+          else -> {
+            val dir = if (realFile.isDirectory) realFile else realFile.parentFile ?: File("").absoluteFile
+            var curr = dir
+            var projectDir: File? = null
+            // Look through existing projects containing this path
+            while (curr != null) {
+              if (client.dirToProject.containsKey(curr)) {
+                projectDir = curr
+                break
               }
-              // If no existing project, at least pick the most reasonable guess
-              // for a project location (primarily used to make relative paths
-              // in error report)
-              while (projectDir == null && curr != null) {
-                if (client.isProjectDirectory(curr)) {
-                  projectDir = curr
-                  break
-                }
-                curr = curr.parentFile
-              }
-              client.getProject(projectDir ?: dir, projectDir ?: dir)
+              curr = curr.parentFile
             }
+            // If no existing project, at least pick the most reasonable guess
+            // for a project location (primarily used to make relative paths
+            // in error report)
+            while (projectDir == null && curr != null) {
+              if (client.isProjectDirectory(curr)) {
+                projectDir = curr
+                break
+              }
+              curr = curr.parentFile
+            }
+            client.getProject(projectDir ?: dir, projectDir ?: dir)
           }
+        }
 
       val realSeverity =
-          when {
-            severity != null -> severity
-            configuration != null -> configuration.getSeverity(issue)
-            context != null -> context.configuration.getSeverity(issue)
-            file != null ->
-                client.configurations.getConfigurationForFolder(if (file.isFile) file.parentFile else file)?.getSeverity(issue)
-                    ?: issue.defaultSeverity
-            project != null && driver != null -> project.getConfiguration(driver).getSeverity(issue)
-            else -> issue.defaultSeverity
-          }
+        when {
+          severity != null -> severity
+          configuration != null -> configuration.getSeverity(issue)
+          context != null -> context.configuration.getSeverity(issue)
+          file != null ->
+            client.configurations.getConfigurationForFolder(if (file.isFile) file.parentFile else file)?.getSeverity(issue)
+              ?: issue.defaultSeverity
+          project != null && driver != null -> project.getConfiguration(driver).getSeverity(issue)
+          else -> issue.defaultSeverity
+        }
 
       // Create a context to report this issue against
       val realContext =
-          when {
-            context != null -> context
-            else -> {
-              val realDriver =
-                  if (driver != null) {
-                    driver
-                  } else {
-                    val request = LintRequest(client, emptyList())
-                    LintDriver(
-                        object : IssueRegistry() {
-                          override val issues: List<Issue> = emptyList()
-                          override val vendor: Vendor = AOSP_VENDOR
-                        },
-                        client,
-                        request,
-                    )
-                  }
+        when {
+          context != null -> context
+          else -> {
+            val realDriver =
+              if (driver != null) {
+                driver
+              } else {
+                val request = LintRequest(client, emptyList())
+                LintDriver(
+                  object : IssueRegistry() {
+                    override val issues: List<Issue> = emptyList()
+                    override val vendor: Vendor = AOSP_VENDOR
+                  },
+                  client,
+                  request,
+                )
+              }
 
-              Context(
-                  realDriver,
-                  realProject,
-                  mainProject ?: realProject,
-                  realFile,
-                  if (realFile.isDirectory) "" else null,
-              )
-            }
+            Context(realDriver, realProject, mainProject ?: realProject, realFile, if (realFile.isDirectory) "" else null)
           }
+        }
 
       val incident = Incident(issue, realLocation, message, fix)
       incident.severity = realSeverity
@@ -2102,36 +2048,36 @@ abstract class LintClient {
     /** Convenience helper for Java calls into the above reporting method, since Java does not have default parameters. */
     fun report(client: LintClient, issue: Issue, message: String, file: File, project: Project?) {
       report(
-          client = client,
-          issue = issue,
-          message = message,
-          file = file,
-          project = project,
-          // ensure we call the main reporting method, not a recursive call to self:
-          driver = null,
+        client = client,
+        issue = issue,
+        message = message,
+        file = file,
+        project = project,
+        // ensure we call the main reporting method, not a recursive call to self:
+        driver = null,
       )
     }
 
     /** Convenience helper for Java calls into the above reporting method, since Java does not have default parameters. */
     fun report(
-        client: LintClient,
-        issue: Issue,
-        message: String,
-        driver: LintDriver,
-        project: Project,
-        location: Location?,
-        fix: LintFix?,
+      client: LintClient,
+      issue: Issue,
+      message: String,
+      driver: LintDriver,
+      project: Project,
+      location: Location?,
+      fix: LintFix?,
     ) {
       report(
-          client = client,
-          issue = issue,
-          message = message,
-          driver = driver,
-          project = project,
-          location = location,
-          fix = fix,
-          // ensure we call the main reporting method, not a recursive call to self:
-          file = null,
+        client = client,
+        issue = issue,
+        message = message,
+        driver = driver,
+        project = project,
+        location = location,
+        fix = fix,
+        // ensure we call the main reporting method, not a recursive call to self:
+        file = null,
       )
     }
   }
@@ -2139,6 +2085,6 @@ abstract class LintClient {
   /** True if lint should print the full stacktrace of internal errors. */
   open val printInternalErrorStackTrace: Boolean
     get() =
-        SdkConstants.VALUE_TRUE == System.getenv("LINT_PRINT_STACKTRACE") ||
-            SdkConstants.VALUE_TRUE == System.getProperty("lint.print-stacktrace")
+      SdkConstants.VALUE_TRUE == System.getenv("LINT_PRINT_STACKTRACE") ||
+        SdkConstants.VALUE_TRUE == System.getProperty("lint.print-stacktrace")
 }

@@ -355,8 +355,10 @@ class AnalysisTest {
         val result = Analysis.fromString(fileContent)
         val resultString = result.toString()
         if (fileName != "SingleApplicationLeak3.txt") {
-          // File SingleApplicationLeak3 is neglected because of LeakingStatusReason being in multi-line. It will parse
-          // successfully but toString() will convert them to single line causing the comparison to fail.
+          // File SingleApplicationLeak3 is neglected because of LeakingStatusReason being in
+          // multi-line. It will parse
+          // successfully but toString() will convert them to single line causing the comparison to
+          // fail.
           compareLeaks(fileContent.trim(), resultString.trim())
         }
         val convertBack = Analysis.fromString(resultString)

@@ -35,36 +35,30 @@ class BinderGetCallingInMainThreadDetector : Detector(), Detector.UastScanner {
   companion object {
     @JvmField
     val ISSUE =
-        Issue.create(
-            id = "BinderGetCallingInMainThread",
-            briefDescription = "Incorrect usage of getCallingUid() or getCallingPid()",
-            explanation =
-                """
+      Issue.create(
+        id = "BinderGetCallingInMainThread",
+        briefDescription = "Incorrect usage of getCallingUid() or getCallingPid()",
+        explanation =
+          """
                 `Binder.getCallingUid()` and `Binder.getCallingPid()` will return information about the current process if called \
                 inside a thread that is not handling a binder transaction. This can cause security issues. \
                 If you still want to use your own uid/pid, use `Process.myUid()` or `Process.myPid()`.
                 """,
-            category = Category.SECURITY,
-            priority = 9,
-            severity = Severity.ERROR,
-            androidSpecific = true,
-            implementation = Implementation(BinderGetCallingInMainThreadDetector::class.java, Scope.JAVA_FILE_SCOPE),
-        )
+        category = Category.SECURITY,
+        priority = 9,
+        severity = Severity.ERROR,
+        androidSpecific = true,
+        implementation = Implementation(BinderGetCallingInMainThreadDetector::class.java, Scope.JAVA_FILE_SCOPE),
+      )
 
     private val GET_CALLING_METHODS = Method("android.os.Binder", listOf("getCallingUid", "getCallingPid"))
     private val DISALLOWED_METHODS_LIST: List<Method> =
-        listOf(
-            Method("android.app.Activity", listOf("onCreate", "onRestart", "onStart")),
-            Method("android.app.Service", listOf("onCreate", "onBind", "onRebind")),
-            Method(
-                "android.app.Fragment",
-                listOf("onAttach", "onCreate", "onCreateView", "onStart", "onViewCreated"),
-            ),
-            Method(
-                "androidx.fragment.app.Fragment",
-                listOf("onAttach", "onCreate", "onCreateView", "onStart", "onViewCreated"),
-            ),
-        )
+      listOf(
+        Method("android.app.Activity", listOf("onCreate", "onRestart", "onStart")),
+        Method("android.app.Service", listOf("onCreate", "onBind", "onRebind")),
+        Method("android.app.Fragment", listOf("onAttach", "onCreate", "onCreateView", "onStart", "onViewCreated")),
+        Method("androidx.fragment.app.Fragment", listOf("onAttach", "onCreate", "onCreateView", "onStart", "onViewCreated")),
+      )
   }
 
   override fun getApplicableMethodNames() = GET_CALLING_METHODS.methodsNames
@@ -77,12 +71,12 @@ class BinderGetCallingInMainThreadDetector : Detector(), Detector.UastScanner {
       for ((className, methodNames) in DISALLOWED_METHODS_LIST) {
         if (context.evaluator.inheritsFrom(containingClass, className, true) && methodNames.contains(containingMethod.name)) {
           val incident =
-              Incident(
-                  ISSUE,
-                  node,
-                  context.getLocation(node),
-                  """Binder.${method.name}() should not be used inside ${containingMethod.name}()""",
-              )
+            Incident(
+              ISSUE,
+              node,
+              context.getLocation(node),
+              """Binder.${method.name}() should not be used inside ${containingMethod.name}()""",
+            )
           context.report(incident)
           return
         }

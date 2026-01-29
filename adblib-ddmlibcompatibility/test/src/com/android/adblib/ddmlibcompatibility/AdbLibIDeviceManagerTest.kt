@@ -90,7 +90,8 @@ class AdbLibIDeviceManagerTest {
     assertArrayEquals(arrayOf(IDevice.DeviceState.BOOTLOADER), iDeviceManagerListener.addedDevicesStateValues.toTypedArray())
     assertArrayEquals(arrayOf(IDevice.DeviceState.ONLINE), iDeviceManagerListener.deviceStateChangedValues.toTypedArray())
 
-    // Wait a little longer to ensure `IDeviceManagerListener` doesn't get any additional unexpected events
+    // Wait a little longer to ensure `IDeviceManagerListener` doesn't get any additional unexpected
+    // events
     delay(200)
     assertEquals(2, iDeviceManagerListener.events.size)
   }

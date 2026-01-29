@@ -219,7 +219,8 @@ internal class UsingAppInfoFlowUpdater(private val process: JdwpProcess) : JdwpP
         val vmInfo = amCapabilities.vmInfo
         return if (vmInfo == null) {
           // Note: If "app_info" is supported, then the "vmInfo" capability should also
-          // be supported (see https://android-review.googlesource.com/c/platform/frameworks/base/+/3086485)
+          // be supported (see
+          // https://android-review.googlesource.com/c/platform/frameworks/base/+/3086485)
           logger.info { "The result of 'am capabilities' does not contain a " + "'${AmCapabilitiesResult.VmInfo::class.simpleName}' value" }
           "<unknown>"
         } else {

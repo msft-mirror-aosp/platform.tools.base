@@ -361,7 +361,8 @@ class DslProxy private constructor(private val theInterface: Class<*>, internal 
           NamedDomainObjectContainerProxy(
             extractResolvedTypeParamFromReturn(method),
             dslRecorder.createChainedRecorder(propName),
-            propName, // this assumes that the containers are available everywhere (ie in the android block)
+            propName, // this assumes that the containers are available everywhere (ie in the
+            // android block)
           )
         ExtensiblePolymorphicDomainObjectContainer::class.java ->
           ExtensiblePolymorphicDomainObjectContainerProxy(

@@ -354,7 +354,8 @@ class ViewLayoutInspector(connection: Connection, private val environment: Inspe
         var capturingCallbackHandle =
           if (screenshotType == Screenshot.Type.SKP) {
             try {
-              // If we get null, it means the view is gone. It will be removed by the roots detector later.
+              // If we get null, it means the view is gone. It will be removed by the roots
+              // detector later.
               registerSkpCallback(rootView, captureExecutor, captureOutputStream) ?: return@runOnMainThread
             } catch (exception: Exception) {
               connection.sendEvent { errorEventBuilder.message = "Unable to register listener for 3d mode images: ${exception.message}" }

@@ -325,8 +325,10 @@ abstract class DesugarLibLintExtractor : TransformAction<DesugarLibLintExtractor
     val inputFile = inputArtifact.get().asFile
     val minSdkVersion = parameters.minSdkVersion.get()
 
-    // Search for the lint file based on compileSdkVersion specified by the user. If we are not able to find it,
-    // fallback to the lint file with a lower compileSdkVersion. Currently, the lowest compileSdkVersion for
+    // Search for the lint file based on compileSdkVersion specified by the user. If we are not able
+    // to find it,
+    // fallback to the lint file with a lower compileSdkVersion. Currently, the lowest
+    // compileSdkVersion for
     // lint files is 26.
     for (compileSdkVersion in parameters.compileSdkVersion.get() downTo 26) {
       val pattern =

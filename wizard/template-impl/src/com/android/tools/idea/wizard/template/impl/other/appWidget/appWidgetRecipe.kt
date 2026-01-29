@@ -100,7 +100,8 @@ fun RecipeExecutor.appWidgetRecipe(
     // android:clipToOutline is only available with S SDK
     mergeXml(stylesXmlV31(moduleData.themesData), resOut.resolve("values-v31/styles.xml"))
     // Restrict to generate the themes for v31 because
-    // @android:dimen/system_app_widget_background_radius and @android:dimen/system_app_widget_internal_padding are only available
+    // @android:dimen/system_app_widget_background_radius and
+    // @android:dimen/system_app_widget_internal_padding are only available
     // with S SDK
     mergeXml(themesXmlV31(moduleData.themesData, forDarkMode = false), resOut.resolve("values-v31/themes.xml"))
     mergeXml(themesXmlV31(moduleData.themesData, forDarkMode = true), resOut.resolve("values-night-v31/themes.xml"))

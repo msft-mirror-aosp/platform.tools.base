@@ -131,7 +131,8 @@ class AbiConfigurator(private val key: AbiConfigurationKey) {
                 )
               }
               if (toleratedInvalid.isNotEmpty()) {
-                // The user (or android studio) selected some illegal ABIs but they are known (probably old
+                // The user (or android studio) selected some illegal ABIs but they are known
+                // (probably old
                 // and deprecated) so we just issue an info message
                 infoln(
                   "ABIs [$ideBuildTargetAbi] set by " +
@@ -168,7 +169,8 @@ class AbiConfigurator(private val key: AbiConfigurationKey) {
         validAbis = configurationAbis
 
         // Warn if validAbis does not include at least one 64-bit ABI.
-        // See: https://android-developers.googleblog.com/2019/01/get-your-apps-ready-for-64-bit.html
+        // See:
+        // https://android-developers.googleblog.com/2019/01/get-your-apps-ready-for-64-bit.html
         if (validAbis.isNotEmpty() && !validAbis.any { supports64Bits.contains(it) }) {
           warnln(
             ABI_HAS_ONLY_32_BIT_SUPPORT,

@@ -426,7 +426,8 @@ abstract class AbstractProductFlavor(private val name: String) : BaseConfigImpl(
    */
   private fun computeRequestedAndFallBacks(
     requestedValues: List<String>
-  ): DimensionRequest { // default implementation is that the fallback's first item is the requested item.
+  ): DimensionRequest { // default implementation is that the fallback's first item is the requested
+    // item.
     return DimensionRequest(requestedValues[0], requestedValues.subList(1, requestedValues.size))
   }
 

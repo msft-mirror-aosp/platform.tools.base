@@ -40,7 +40,8 @@ interface KotlinMultiplatformExtension : KotlinExtension {
   fun jvm()
 }
 
-// This is already an extension method in the original class from KMP, so we need to reimplement it the same
+// This is already an extension method in the original class from KMP, so we need to reimplement it
+// the same
 // way except we directly handle the proxy/dslRecorder
 val NamedDomainObjectContainer<KotlinSourceSet>.androidMain: NamedDomainObjectProvider<KotlinSourceSet>
   get() {

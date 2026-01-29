@@ -39,10 +39,8 @@ class ImagePanelRenderer(private val isRecordGolden: Boolean) : ReportRenderer<S
     htmlWriter.endElement().endElement()
     htmlWriter
       .startElement("tbody")
-      .attribute(
-        "class",
-        "grid",
-      ) // this class will render a grid like background to better show the diff between png images with and without background
+      .attribute("class", "grid") // this class will render a grid like background to better show the diff between png
+      // images with and without background
       .startElement("tr")
     val texts = getTexts(ssImages)
     renderImage(htmlWriter, ssImages.golden.path, texts.goldenText)

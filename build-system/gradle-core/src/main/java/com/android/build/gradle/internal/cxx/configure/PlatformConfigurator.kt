@@ -324,11 +324,14 @@ class PlatformConfigurator(private val ndkRoot: File) {
 
     // NDK r26 and newer below here.
 
-    // If the user set android.ndk.suppressMinSdkVersionError to the current NDK's minimum SDK version,
-    // then we accept that they know what they're doing and allow the user's android.minSdk value to be used directly.
+    // If the user set android.ndk.suppressMinSdkVersionError to the current NDK's minimum SDK
+    // version,
+    // then we accept that they know what they're doing and allow the user's android.minSdk value to
+    // be used directly.
     if (ignoreMinSdkVersion == min) return minSdkVersion
 
-    // ...otherwise, we give them an error that indicates how to set android.ndk.suppressMinSdkVersionError if needed.
+    // ...otherwise, we give them an error that indicates how to set
+    // android.ndk.suppressMinSdkVersionError if needed.
     errorln(
       NDK_MIN_SDK_VERSION_TOO_LOW,
       "Platform version ${displayVersionString(minSdkVersion, displayVersion)} is unsupported by this NDK. Please change minSdk to at least $min to avoid undefined behavior. " +

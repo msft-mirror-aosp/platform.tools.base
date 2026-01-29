@@ -103,9 +103,9 @@ class ProjectInitializerTest {
   @Test
   fun testManualProject() {
     val library =
-        project(
-                manifest(
-                        """
+      project(
+          manifest(
+              """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="foo.bar2"
                     android:versionCode="1"
@@ -123,11 +123,11 @@ class ProjectInitializerTest {
                     </application>
 
                 </manifest>"""
-                    )
-                    .indented(),
-                java(
-                        "src/test/pkg/Loader.java",
-                        """
+            )
+            .indented(),
+          java(
+              "src/test/pkg/Loader.java",
+              """
                 package test.pkg;
 
                 @SuppressWarnings("ClassNameDiffersFromFileName")
@@ -141,11 +141,11 @@ class ProjectInitializerTest {
                         loadInBackground(mParam);
                     }
                 }""",
-                    )
-                    .indented(),
-                java(
-                        "src/test/pkg/NotInProject.java",
-                        """
+            )
+            .indented(),
+          java(
+              "src/test/pkg/NotInProject.java",
+              """
                 package test.pkg;
 
                 @SuppressWarnings("ClassNameDiffersFromFileName")
@@ -153,16 +153,16 @@ class ProjectInitializerTest {
                     private String foo = "/sdcard/foo";
                 }
                 """,
-                    )
-                    .indented(),
             )
-            .type(LIBRARY)
-            .name("Library")
+            .indented(),
+        )
+        .type(LIBRARY)
+        .name("Library")
 
     val main =
-        project(
-                manifest(
-                        """
+      project(
+          manifest(
+              """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="foo.bar2"
                     android:versionCode="1"
@@ -181,11 +181,11 @@ class ProjectInitializerTest {
 
                 </manifest>
                 """
-                    )
-                    .indented(),
-                xml(
-                        "res/values/strings.xml",
-                        """
+            )
+            .indented(),
+          xml(
+              "res/values/strings.xml",
+              """
                 <resources>
                     <string name="string1">String 1</string>
                     <string name="string1">String 2</string>
@@ -193,46 +193,46 @@ class ProjectInitializerTest {
                     <string name="string3">String 4</string>
                 </resources>
                 """,
-                    )
-                    .indented(),
-                xml(
-                        "res/values/not_in_project.xml",
-                        """
+            )
+            .indented(),
+          xml(
+              "res/values/not_in_project.xml",
+              """
                 <resources>
                     <string name="string2">String 1</string>
                     <string name="string2">String 2</string>
                 </resources>
                 """,
-                    )
-                    .indented(),
-                java(
-                        "test/Test.java",
-                        """
-                @SuppressWarnings({"MethodMayBeStatic", "ClassNameDiffersFromFileName"})
-                public class Test {
-                  String path = "/sdcard/file";
-                }""",
-                    )
-                    .indented(),
-                java(
-                        "generated/Generated.java",
-                        """
-                @SuppressWarnings({"MethodMayBeStatic", "ClassNameDiffersFromFileName"})
-                public class Test {
-                  String path = "/sdcard/file";
-                }""",
-                    )
-                    .indented(),
             )
-            .name("App")
-            .dependsOn(library)
+            .indented(),
+          java(
+              "test/Test.java",
+              """
+                @SuppressWarnings({"MethodMayBeStatic", "ClassNameDiffersFromFileName"})
+                public class Test {
+                  String path = "/sdcard/file";
+                }""",
+            )
+            .indented(),
+          java(
+              "generated/Generated.java",
+              """
+                @SuppressWarnings({"MethodMayBeStatic", "ClassNameDiffersFromFileName"})
+                public class Test {
+                  String path = "/sdcard/file";
+                }""",
+            )
+            .indented(),
+        )
+        .name("App")
+        .dependsOn(library)
 
     val root = temp.newFolder().canonicalFile.absoluteFile
 
     val configFile = File(root, "lint.xml")
     @Language("XML")
     val config =
-        """
+      """
             <lint
                 checkTestSources='false'
                 ignoreTestSources='false'
@@ -258,63 +258,63 @@ class ProjectInitializerTest {
     val cacheDir = temp.newFolder("cache$suffix")
     @Language("XML")
     val mergedManifestXml =
-        """
+      """
 
-        <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-            package="foo.bar2"
-            android:versionCode="1"
-            android:versionName="1.0" >
+      <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+          package="foo.bar2"
+          android:versionCode="1"
+          android:versionName="1.0" >
 
-            <uses-sdk android:minSdkVersion="14" />
+          <uses-sdk android:minSdkVersion="14" />
 
-            <permission
-                android:name="foo.permission.SEND_SMS"
-                android:description="@string/foo"
-                android:label="@string/foo" />
-            <permission
-                android:name="bar.permission.SEND_SMS"
-                android:description="@string/foo"
-                android:label="@string/foo" />
+          <permission
+              android:name="foo.permission.SEND_SMS"
+              android:description="@string/foo"
+              android:label="@string/foo" />
+          <permission
+              android:name="bar.permission.SEND_SMS"
+              android:description="@string/foo"
+              android:label="@string/foo" />
 
-            <application
-                android:icon="@drawable/ic_launcher"
-                android:label="@string/app_name" >
-            </application>
+          <application
+              android:icon="@drawable/ic_launcher"
+              android:label="@string/app_name" >
+          </application>
 
-        </manifest>
-        """
-            .trimIndent()
+      </manifest>
+      """
+        .trimIndent()
 
     val mergedManifest = temp.newFile("merged-manifest$suffix")
     Files.asCharSink(mergedManifest, Charsets.UTF_8).write(mergedManifestXml)
 
     @Language("XML")
     val baselineXml =
-        """
-        <issues format="4" by="lint unknown">
-            <issue
-                id="DuplicateDefinition"
-                message="`string3` has already been defined in this folder"
-                errorLine1="    &lt;string name=&quot;string3&quot;>String 4&lt;/string>"
-                errorLine2="            ~~~~~~~~~~~~~~">
-                <location
-                    file="res/values/strings.xml"
-                    line="8"
-                    column="13"/>
-                <location
-                    file="res/values/strings.xml"
-                    line="5"
-                    column="13"/>
-            </issue>
-        </issues>
-        """
-            .trimIndent()
+      """
+      <issues format="4" by="lint unknown">
+          <issue
+              id="DuplicateDefinition"
+              message="`string3` has already been defined in this folder"
+              errorLine1="    &lt;string name=&quot;string3&quot;>String 4&lt;/string>"
+              errorLine2="            ~~~~~~~~~~~~~~">
+              <location
+                  file="res/values/strings.xml"
+                  line="8"
+                  column="13"/>
+              <location
+                  file="res/values/strings.xml"
+                  line="5"
+                  column="13"/>
+          </issue>
+      </issues>
+      """
+        .trimIndent()
     val baseline = File(appProjectDir, "baseline.xml")
     Files.asCharSink(baseline, Charsets.UTF_8).write(baselineXml)
 
     @Language("XML")
     val descriptor =
-        """
+      """
             <project>
             <root dir="$root" />
             <sdk dir='$sdk'/>
@@ -335,7 +335,7 @@ class ProjectInitializerTest {
             </module>
             </project>
             """
-            .trimIndent()
+        .trimIndent()
     Files.asCharSink(File(root, "project.xml"), Charsets.UTF_8).write(descriptor)
 
     var assertionsChecked = 0
@@ -381,11 +381,11 @@ class ProjectInitializerTest {
 
     // TODO: https://youtrack.jetbrains.com/issue/KT-57715
     val expectedError =
-        if (useFirUast()) "WARN: ROOT/test.jar: ROOT/test.jar\n" + "java.nio.file.NoSuchFileException: ROOT/test.jar"
-        else "w: Classpath entry points to a non-existent location: ROOT/test.jar"
+      if (useFirUast()) "WARN: ROOT/test.jar: ROOT/test.jar\n" + "java.nio.file.NoSuchFileException: ROOT/test.jar"
+      else "w: Classpath entry points to a non-existent location: ROOT/test.jar"
 
     MainTest.checkDriver(
-        """
+      """
       baseline.xml: Hint: 1 error was filtered out because it is listed in the baseline file, baseline.xml [LintBaseline]
       project.xml:5: Error: test.jar (relative to ROOT) does not exist [LintError]
       <classpath jar="test.jar" />
@@ -403,27 +403,27 @@ class ProjectInitializerTest {
           AndroidManifest.xml:8: Previous permission here
       2 errors, 2 warnings (and 1 error filtered by baseline baseline.xml)
       """,
-        expectedError,
+      expectedError,
 
-        // Expected exit code
-        ERRNO_SUCCESS,
+      // Expected exit code
+      ERRNO_SUCCESS,
 
-        // Args
-        arrayOf(
-            if (useFirUast()) "" else "--XuseK1Uast",
-            "--check",
-            "UniquePermission,DuplicateDefinition,SdCardPath",
-            "--config",
-            configFile.path,
-            "--text",
-            "stdout",
-            "--project",
-            File(root, "project.xml").path,
-        ),
-        { it.replace(canonicalRoot, "ROOT").replace(root.path, "ROOT").replace(baseline.parentFile.path, "TESTROOT").dos2unix() },
-        listener,
-        null,
-        false,
+      // Args
+      arrayOf(
+        if (useFirUast()) "" else "--XuseK1Uast",
+        "--check",
+        "UniquePermission,DuplicateDefinition,SdCardPath",
+        "--config",
+        configFile.path,
+        "--text",
+        "stdout",
+        "--project",
+        File(root, "project.xml").path,
+      ),
+      { it.replace(canonicalRoot, "ROOT").replace(root.path, "ROOT").replace(baseline.parentFile.path, "TESTROOT").dos2unix() },
+      listener,
+      null,
+      false,
     )
 
     // Make sure we hit all our checks with the listener
@@ -436,7 +436,7 @@ class ProjectInitializerTest {
 
     @Language("XML")
     val descriptor =
-        """
+      """
             <project>
             <sdk dir='${TestUtils.getSdk()}'/>
             <module name="Foo:App" android="true" library="true" javaLanguage="1000" kotlinLanguage="1.3">
@@ -446,7 +446,7 @@ class ProjectInitializerTest {
             </module>
             </project>
             """
-            .trimIndent()
+        .trimIndent()
     val folder = File(root, "app")
     folder.mkdirs()
     val projectXml = File(folder, "project.xml")
@@ -454,17 +454,17 @@ class ProjectInitializerTest {
     val sourceFile = File(folder, "src/main/java/com/example/Foo.java")
     sourceFile.parentFile.mkdirs()
     Files.asCharSink(sourceFile, Charsets.UTF_8)
-        .write(
-            """
-            package com.example;
+      .write(
+        """
+        package com.example;
 
-            public class Foo {}
-            """
-                .trimIndent()
-        )
+        public class Foo {}
+        """
+          .trimIndent()
+      )
 
     MainTest.checkDriver(
-        """
+      """
             app: Error: No .class files were found in project "Foo:App", so none of the classfile based checks could be run. Does the project need to be built first? [LintError]
             project.xml:3: Error: Invalid Java language level "1000" [LintError]
             <module name="Foo:App" android="true" library="true" javaLanguage="1000" kotlinLanguage="1.3">
@@ -474,11 +474,11 @@ class ProjectInitializerTest {
               ~~~~~~~~~~~~~~~~~~~~~~~~~~
             3 errors
             """,
-        "",
-        ERRNO_SUCCESS,
-        arrayOf("--project", projectXml.path),
-        null,
-        null,
+      "",
+      ERRNO_SUCCESS,
+      arrayOf("--project", projectXml.path),
+      null,
+      null,
     )
   }
 
@@ -489,7 +489,7 @@ class ProjectInitializerTest {
 
     @Language("XML")
     val descriptor =
-        """
+      """
             <project>
             <sdk dir='${TestUtils.getSdk()}'/>
             <module name="Foo:App" android="true" library="true" javaLanguage="1000" kotlinLanguage="1.3">
@@ -499,14 +499,14 @@ class ProjectInitializerTest {
             </module>
             </project>
             """
-            .trimIndent()
+        .trimIndent()
     val folder = File(root, "app")
     folder.mkdirs()
     val projectXml = File(folder, "project.xml")
     Files.asCharSink(projectXml, Charsets.UTF_8).write(descriptor)
 
     MainTest.checkDriver(
-        """
+      """
             project.xml:3: Error: Invalid Java language level "1000" [LintError]
             <module name="Foo:App" android="true" library="true" javaLanguage="1000" kotlinLanguage="1.3">
             ^
@@ -515,11 +515,11 @@ class ProjectInitializerTest {
               ~~~~~~~~~~~~~~~~~~~~~~~~~~
             2 errors
             """,
-        "",
-        ERRNO_SUCCESS,
-        arrayOf("--project", projectXml.path),
-        null,
-        null,
+      "",
+      ERRNO_SUCCESS,
+      arrayOf("--project", projectXml.path),
+      null,
+      null,
     )
   }
 
@@ -527,11 +527,11 @@ class ProjectInitializerTest {
   fun testSimpleProject() {
     val root = temp.newFolder().canonicalFile.absoluteFile
     val projects =
-        lint()
-            .files(
-                java(
-                        "src/test/pkg/InterfaceMethodTest.java",
-                        """
+      lint()
+        .files(
+          java(
+              "src/test/pkg/InterfaceMethodTest.java",
+              """
                     package test.pkg;
 
                     @SuppressWarnings({"unused", "ClassNameDiffersFromFileName"})
@@ -545,11 +545,11 @@ class ProjectInitializerTest {
                         }
                     }
                     """,
-                    )
-                    .indented(),
-                java(
-                        "C.java",
-                        """
+            )
+            .indented(),
+          java(
+              "C.java",
+              """
                     import android.app.Fragment;
 
                     @SuppressWarnings({"MethodMayBeStatic", "ClassNameDiffersFromFileName"})
@@ -559,10 +559,10 @@ class ProjectInitializerTest {
                         Object host = fragment.getHost(); // Requires API 23
                       }
                     }""",
-                    )
-                    .indented(),
-                manifest(
-                        """
+            )
+            .indented(),
+          manifest(
+              """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="com.android.tools.lint.test"
                     android:versionCode="1"
@@ -572,25 +572,25 @@ class ProjectInitializerTest {
                         android:targetSdkVersion="22" />
 
                 </manifest>"""
-                    )
-                    .indented(),
-                xml(
-                        "res/values/not_in_project.xml",
-                        """
+            )
+            .indented(),
+          xml(
+              "res/values/not_in_project.xml",
+              """
                 <resources>
                     <string name="string2">String 1</string>
                     <string name="string2">String 2</string>
                 </resources>
                 """,
-                    )
-                    .indented(),
             )
-            .createProjects(root)
+            .indented(),
+        )
+        .createProjects(root)
     val projectDir = projects[0]
 
     @Language("XML")
     val descriptor =
-        """
+      """
             <project incomplete="true">
             <sdk dir='${TestUtils.getSdk()}'/>
             <root dir="$projectDir"/>
@@ -601,13 +601,13 @@ class ProjectInitializerTest {
             </module>
             </project>
             """
-            .trimIndent()
+        .trimIndent()
     val descriptorFile = File(root, "out1/out2/out3/project.xml")
     descriptorFile.parentFile?.mkdirs()
     Files.asCharSink(descriptorFile, Charsets.UTF_8).write(descriptor)
 
     MainTest.checkDriver(
-        """
+      """
             C.java:7: Error: Call requires API level 23 (current min is 15): android.app.Fragment#getHost [NewApi]
                 Object host = fragment.getHost(); // Requires API 23
                                        ~~~~~~~
@@ -619,15 +619,15 @@ class ProjectInitializerTest {
                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             2 errors, 1 warning
             """,
-        "",
+      "",
 
-        // Expected exit code
-        ERRNO_SUCCESS,
+      // Expected exit code
+      ERRNO_SUCCESS,
 
-        // Args
-        arrayOf("--project", descriptorFile.path),
-        null,
-        null,
+      // Args
+      arrayOf("--project", descriptorFile.path),
+      null,
+      null,
     )
   }
 
@@ -636,11 +636,11 @@ class ProjectInitializerTest {
     // Regression test for https://issuetracker.google.com/159169803
     val root = temp.newFolder().canonicalFile.absoluteFile
     val projects =
-        lint()
-            .files(
-                xml(
-                        "layout/AndroidManifest.xml",
-                        """
+      lint()
+        .files(
+          xml(
+              "layout/AndroidManifest.xml",
+              """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="com.android.tools.lint.test"
                     android:versionCode="1"
@@ -650,15 +650,15 @@ class ProjectInitializerTest {
                         android:targetSdkVersion="29" />
 
                 </manifest>""",
-                    )
-                    .indented()
             )
-            .createProjects(root)
+            .indented()
+        )
+        .createProjects(root)
     val projectDir = projects[0]
 
     @Language("XML")
     val descriptor =
-        """
+      """
             <project>
             <sdk dir='${TestUtils.getSdk()}'/>
             <root dir="$projectDir" />
@@ -667,21 +667,21 @@ class ProjectInitializerTest {
             </module>
             </project>
             """
-            .trimIndent()
+        .trimIndent()
     val descriptorFile = File(root, "project.xml")
     Files.asCharSink(descriptorFile, Charsets.UTF_8).write(descriptor)
 
     MainTest.checkDriver(
-        "No issues found.",
-        "",
+      "No issues found.",
+      "",
 
-        // Expected exit code
-        ERRNO_SUCCESS,
+      // Expected exit code
+      ERRNO_SUCCESS,
 
-        // Args
-        arrayOf("--check", "RequiredSize", "--project", descriptorFile.path),
-        null,
-        null,
+      // Args
+      arrayOf("--check", "RequiredSize", "--project", descriptorFile.path),
+      null,
+      null,
     )
   }
 
@@ -689,11 +689,11 @@ class ProjectInitializerTest {
   fun testGradleDetectorsFiring() { // Regression test for b/132992488
     val root = temp.newFolder().canonicalFile.absoluteFile
     val projects =
-        lint()
-            .files(
-                java(
-                        "src/main/pkg/MainActivity.java",
-                        """
+      lint()
+        .files(
+          java(
+              "src/main/pkg/MainActivity.java",
+              """
                     package pkg;
 
                     import android.app.Activity;
@@ -706,10 +706,10 @@ class ProjectInitializerTest {
                         }
                     }
                     """,
-                    )
-                    .indented(),
-                manifest(
-                        """
+            )
+            .indented(),
+          manifest(
+              """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="com.android.tools.lint.test"
                     android:versionCode="1"
@@ -719,24 +719,24 @@ class ProjectInitializerTest {
                         android:targetSdkVersion="22" />
 
                 </manifest>"""
-                    )
-                    .indented(),
-                xml(
-                        "res/values/strings.xml",
-                        """
+            )
+            .indented(),
+          xml(
+              "res/values/strings.xml",
+              """
                 <resources xmlns:tools="http://schemas.android.com/tools">
                     <string name="nam${'\ufeff'}e">Value</string>
                 </resources>""",
-                    )
-                    .indented(),
-                bytes("res/raw/sample.txt", "a\uFEFFb".toByteArray()),
             )
-            .createProjects(root)
+            .indented(),
+          bytes("res/raw/sample.txt", "a\uFEFFb".toByteArray()),
+        )
+        .createProjects(root)
     val projectDir = projects[0]
 
     @Language("XML")
     val descriptor =
-        """
+      """
             <project incomplete="true">
             <sdk dir='${TestUtils.getSdk()}'/>
             <root dir="$projectDir" />
@@ -748,26 +748,26 @@ class ProjectInitializerTest {
             </module>
             </project>
             """
-            .trimIndent()
+        .trimIndent()
     val descriptorFile = File(root, "project.xml")
     Files.asCharSink(descriptorFile, Charsets.UTF_8).write(descriptor)
 
     MainTest.checkDriver(
-        """
+      """
             res/values/strings.xml:2: Error: Found byte-order-mark in the middle of a file [ByteOrderMark]
                 <string name="nam﻿e">Value</string>
                                  ~
             1 error
             """,
-        "",
+      "",
 
-        // Expected exit code
-        ERRNO_SUCCESS,
+      // Expected exit code
+      ERRNO_SUCCESS,
 
-        // Args
-        arrayOf("--check", "ByteOrderMark", "--project", descriptorFile.path),
-        null,
-        null,
+      // Args
+      arrayOf("--check", "ByteOrderMark", "--project", descriptorFile.path),
+      null,
+      null,
     )
   }
 
@@ -777,10 +777,10 @@ class ProjectInitializerTest {
     // an AAR dependency and make its way into the merged manifest.
     val root = temp.newFolder().canonicalFile.absoluteFile
     val projects =
-        lint()
-            .files(
-                manifest(
-                        """
+      lint()
+        .files(
+          manifest(
+              """
                     <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                         package="com.android.tools.lint.test"
                         android:versionCode="1"
@@ -789,21 +789,21 @@ class ProjectInitializerTest {
                         <application />
 
                     </manifest>"""
-                    )
-                    .indented(),
-                xml(
-                        "res/values/not_in_project.xml",
-                        """
+            )
+            .indented(),
+          xml(
+              "res/values/not_in_project.xml",
+              """
                     <resources>
                         <string name="string2">String 1</string>
                         <string name="string2">String 2</string>
                     </resources>
                     """,
-                    )
-                    .indented(),
-                java(
-                        "src/main/java/test/pkg/Private.java",
-                        """package test.pkg;
+            )
+            .indented(),
+          java(
+              "src/main/java/test/pkg/Private.java",
+              """package test.pkg;
                     @SuppressWarnings("ClassNameDiffersFromFileName")
                     public class Private {
                         void test() {
@@ -812,10 +812,10 @@ class ProjectInitializerTest {
                         }
                     }
                     """,
-                    )
-                    .indented(),
             )
-            .createProjects(root)
+            .indented(),
+        )
+        .createProjects(root)
     val projectDir = projects[0]
 
     val aarFile = temp.newFile("foo-bar.aar")
@@ -823,7 +823,7 @@ class ProjectInitializerTest {
     val aar = temp.newFolder("aar-exploded")
     @Language("XML")
     val aarManifest =
-        """
+      """
                     <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                         package="com.android.tools.lint.test"
                         android:versionCode="1"
@@ -836,12 +836,12 @@ class ProjectInitializerTest {
     Files.asCharSink(File(aar, "AndroidManifest.xml"), Charsets.UTF_8).write(aarManifest)
 
     val allResources =
-        ("" +
-            "int string my_private_string 0x7f040000\n" +
-            "int string my_public_string 0x7f040001\n" +
-            "int layout my_private_layout 0x7f040002\n" +
-            "int id title 0x7f040003\n" +
-            "int style Theme_AppCompat_DayNight 0x7f070004")
+      ("" +
+        "int string my_private_string 0x7f040000\n" +
+        "int string my_public_string 0x7f040001\n" +
+        "int layout my_private_layout 0x7f040002\n" +
+        "int id title 0x7f040003\n" +
+        "int style Theme_AppCompat_DayNight 0x7f070004")
 
     val rFile = File(aar, FN_RESOURCE_TEXT)
     Files.asCharSink(rFile, Charsets.UTF_8).write(allResources)
@@ -853,7 +853,7 @@ class ProjectInitializerTest {
 
     @Language("XML")
     val descriptor =
-        """
+      """
             <project>
             <sdk dir='${TestUtils.getSdk()}'/>
             <root dir="$projectDir" />
@@ -864,30 +864,25 @@ class ProjectInitializerTest {
             </module>
             </project>
             """
-            .trimIndent()
+        .trimIndent()
     val descriptorFile = File(root, "project.xml")
     Files.asCharSink(descriptorFile, Charsets.UTF_8).write(descriptor)
 
     MainTest.checkDriver(
-        "" +
-            "src/main/java/test/pkg/Private.java:5: Warning: The resource @string/my_private_string is marked as private in foo-bar.aar [PrivateResource]\n" +
-            "                            int x = R.string.my_private_string; // ERROR\n" +
-            "                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
-            "0 errors, 1 warning\n",
-        "",
+      "" +
+        "src/main/java/test/pkg/Private.java:5: Warning: The resource @string/my_private_string is marked as private in foo-bar.aar [PrivateResource]\n" +
+        "                            int x = R.string.my_private_string; // ERROR\n" +
+        "                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
+        "0 errors, 1 warning\n",
+      "",
 
-        // Expected exit code
-        ERRNO_SUCCESS,
+      // Expected exit code
+      ERRNO_SUCCESS,
 
-        // Args
-        arrayOf(
-            "--check",
-            "MissingApplicationIcon,PrivateResource",
-            "--project",
-            descriptorFile.path,
-        ),
-        { it.dos2unix() },
-        null,
+      // Args
+      arrayOf("--check", "MissingApplicationIcon,PrivateResource", "--project", descriptorFile.path),
+      { it.dos2unix() },
+      null,
     )
   }
 
@@ -897,11 +892,11 @@ class ProjectInitializerTest {
     // an AAR dependency and make its way into the merged manifest.
     val root = temp.newFolder().canonicalFile.absoluteFile
     val projects =
-        lint()
-            .files(
-                java(
-                        "src/test/pkg/Child.java",
-                        """
+      lint()
+        .files(
+          java(
+              "src/test/pkg/Child.java",
+              """
                 package test.pkg;
 
                 import android.os.Parcel;
@@ -919,10 +914,10 @@ class ProjectInitializerTest {
                     }
                 }
                 """,
-                    )
-                    .indented()
             )
-            .createProjects(root)
+            .indented()
+        )
+        .createProjects(root)
     val projectDir = projects[0]
 
     /*
@@ -933,24 +928,24 @@ class ProjectInitializerTest {
         }
      */
     val jarFile =
-        jar(
-                "parent.jar",
-                base64gzip(
-                    "test/pkg/Parent.class",
-                    "" +
-                        "H4sIAAAAAAAAAF1Pu07DQBCcTRw7cQx5SHwAXaDgipQgmkhUFkRKlP5sn8IF" +
-                        "cxedL/wXFRJFPoCPQuw5qdBKo53Z2R3tz+/3EcAc0xRdXCYYJRgnmBDiB220" +
-                        "fyR0ZzcbQrSwlSKMcm3U8+G9UG4ti5qVaW5LWW+k04Gfxci/6oYwyb1qvNi/" +
-                        "bcVSOmX8PSFd2YMr1ZMOvuFJvtvJD5mhh5gT/q0QxmEqamm24qXYqZKlK2kq" +
-                        "Z3UlbBNspapDbnSNDn/B8fwScfFBxoSZaDnQu/0CfXLTQZ8xPokYMGbnPsWw" +
-                        "Xc9a18UfxkO3QyIBAAA=",
-                ),
-            )
-            .createFile(root)
+      jar(
+          "parent.jar",
+          base64gzip(
+            "test/pkg/Parent.class",
+            "" +
+              "H4sIAAAAAAAAAF1Pu07DQBCcTRw7cQx5SHwAXaDgipQgmkhUFkRKlP5sn8IF" +
+              "cxedL/wXFRJFPoCPQuw5qdBKo53Z2R3tz+/3EcAc0xRdXCYYJRgnmBDiB220" +
+              "fyR0ZzcbQrSwlSKMcm3U8+G9UG4ti5qVaW5LWW+k04Gfxci/6oYwyb1qvNi/" +
+              "bcVSOmX8PSFd2YMr1ZMOvuFJvtvJD5mhh5gT/q0QxmEqamm24qXYqZKlK2kq" +
+              "Z3UlbBNspapDbnSNDn/B8fwScfFBxoSZaDnQu/0CfXLTQZ8xPokYMGbnPsWw" +
+              "Xc9a18UfxkO3QyIBAAA=",
+          ),
+        )
+        .createFile(root)
 
     @Language("XML")
     val descriptor =
-        """
+      """
             <project>
             <sdk dir='${TestUtils.getSdk()}'/>
             <root dir="$projectDir" />
@@ -960,28 +955,28 @@ class ProjectInitializerTest {
             </module>
             </project>
             """
-            .trimIndent()
+        .trimIndent()
     val descriptorFile = File(root, "project.xml")
     Files.asCharSink(descriptorFile, Charsets.UTF_8).write(descriptor)
 
     MainTest.checkDriver(
-        "" +
-            // We only find this error if we correctly include the jar dependency
-            // which provides the parent class which implements Parcelable.
-            "src/test/pkg/Child.java:6: Error: This class implements Parcelable but does not provide a CREATOR field [ParcelCreator]\n"
-                .replace('/', File.separatorChar) +
-            "public class Child extends Parent {\n" +
-            "             ~~~~~\n" +
-            "1 error\n",
-        "",
+      "" +
+        // We only find this error if we correctly include the jar dependency
+        // which provides the parent class which implements Parcelable.
+        "src/test/pkg/Child.java:6: Error: This class implements Parcelable but does not provide a CREATOR field [ParcelCreator]\n"
+          .replace('/', File.separatorChar) +
+        "public class Child extends Parent {\n" +
+        "             ~~~~~\n" +
+        "1 error\n",
+      "",
 
-        // Expected exit code
-        ERRNO_SUCCESS,
+      // Expected exit code
+      ERRNO_SUCCESS,
 
-        // Args
-        arrayOf("--check", "ParcelCreator", "--project", descriptorFile.path),
-        null,
-        null,
+      // Args
+      arrayOf("--check", "ParcelCreator", "--project", descriptorFile.path),
+      null,
+      null,
     )
   }
 
@@ -991,10 +986,10 @@ class ProjectInitializerTest {
     val root = temp.newFolder().canonicalFile.absoluteFile
 
     val projects =
-        lint()
-            .files(
-                java(
-                        """
+      lint()
+        .files(
+          java(
+              """
                     package test.pkg;
 
                     import androidx.annotation.RequiresApi;
@@ -1012,12 +1007,12 @@ class ProjectInitializerTest {
                         }
                     }
                     """
-                    )
-                    .indented(),
-                SUPPORT_ANNOTATIONS_JAR,
-                xml(
-                        "project.xml",
-                        """
+            )
+            .indented(),
+          SUPPORT_ANNOTATIONS_JAR,
+          xml(
+              "project.xml",
+              """
             <project>
             <sdk dir='${TestUtils.getSdk()}'/>
             <module name="M" android="true" library="false">
@@ -1026,30 +1021,30 @@ class ProjectInitializerTest {
             </module>
             </project>
             """,
-                    )
-                    .indented(),
             )
-            .createProjects(root)
+            .indented(),
+        )
+        .createProjects(root)
     val projectDir = projects[0]
     val descriptorFile = File(projectDir, "project.xml")
 
     MainTest.checkDriver(
-        "" +
-            // We only find this error if we correctly include the jar dependency
-            // which provides the parent class which implements Parcelable.
-            "src/test/pkg/RequiresApiFieldTest.java:14: Error: Call requires API level 24 (current min is 1): Method24 [NewApi]\n" +
-            "        Log.d(\"zzzz\", \"ReferenceField24: \" + Method24());\n" +
-            "                                             ~~~~~~~~\n" +
-            "1 error\n",
-        "",
+      "" +
+        // We only find this error if we correctly include the jar dependency
+        // which provides the parent class which implements Parcelable.
+        "src/test/pkg/RequiresApiFieldTest.java:14: Error: Call requires API level 24 (current min is 1): Method24 [NewApi]\n" +
+        "        Log.d(\"zzzz\", \"ReferenceField24: \" + Method24());\n" +
+        "                                             ~~~~~~~~\n" +
+        "1 error\n",
+      "",
 
-        // Expected exit code
-        ERRNO_SUCCESS,
+      // Expected exit code
+      ERRNO_SUCCESS,
 
-        // Args
-        arrayOf("--check", "NewApi", "--project", descriptorFile.path),
-        { it.dos2unix() },
-        null,
+      // Args
+      arrayOf("--check", "NewApi", "--project", descriptorFile.path),
+      { it.dos2unix() },
+      null,
     )
   }
 
@@ -1057,24 +1052,24 @@ class ProjectInitializerTest {
   fun testNonAndroidProject() {
     val root = temp.newFolder().canonicalFile.absoluteFile
     val projects =
-        lint()
-            .files(
-                java(
-                        "C.java",
-                        """
+      lint()
+        .files(
+          java(
+              "C.java",
+              """
                     @SuppressWarnings({"MethodMayBeStatic", "ClassNameDiffersFromFileName"})
                     public class C {
                       String path = "/sdcard/file";
                     }""",
-                    )
-                    .indented()
             )
-            .createProjects(root)
+            .indented()
+        )
+        .createProjects(root)
     val projectDir = projects[0]
 
     @Language("XML")
     val descriptor =
-        """
+      """
             <project incomplete="true">
             <sdk dir='${TestUtils.getSdk()}'/>
             <root dir="$projectDir" />
@@ -1083,21 +1078,21 @@ class ProjectInitializerTest {
             </module>
             </project>
             """
-            .trimIndent()
+        .trimIndent()
     val descriptorFile = File(root, "project.xml")
     Files.asCharSink(descriptorFile, Charsets.UTF_8).write(descriptor)
 
     MainTest.checkDriver(
-        "No issues found.",
-        "",
+      "No issues found.",
+      "",
 
-        // Expected exit code
-        ERRNO_SUCCESS,
+      // Expected exit code
+      ERRNO_SUCCESS,
 
-        // Args
-        arrayOf("--project", descriptorFile.path),
-        null,
-        null,
+      // Args
+      arrayOf("--project", descriptorFile.path),
+      null,
+      null,
     )
   }
 
@@ -1105,11 +1100,11 @@ class ProjectInitializerTest {
   fun testJava8Libraries() {
     val root = temp.newFolder().canonicalFile.absoluteFile
     val projects =
-        lint()
-            .files(
-                java(
-                        "C.java",
-                        """
+      lint()
+        .files(
+          java(
+              "C.java",
+              """
                     import java.util.ArrayList;
                     import java.util.Arrays;
                     import java.util.Iterator;
@@ -1133,15 +1128,15 @@ class ProjectInitializerTest {
                         }
                     }
                     """,
-                    )
-                    .indented()
             )
-            .createProjects(root)
+            .indented()
+        )
+        .createProjects(root)
     val projectDir = projects[0]
 
     @Language("XML")
     val descriptor =
-        """
+      """
             <project>
             <sdk dir='${TestUtils.getSdk()}'/>
             <root dir="$projectDir" />
@@ -1151,26 +1146,26 @@ class ProjectInitializerTest {
             </module>
             </project>
             """
-            .trimIndent()
+        .trimIndent()
     val descriptorFile = File(root, "project.xml")
     Files.asCharSink(descriptorFile, Charsets.UTF_8).write(descriptor)
 
     MainTest.checkDriver(
-        """
+      """
             C.java:20: Error: Call requires API level 24 (current min is 1): java.util.Collection#parallelStream [NewApi]
                     Stream stream = collection.parallelStream(); // ERROR
                                                ~~~~~~~~~~~~~~
             1 error
             """,
-        "",
+      "",
 
-        // Expected exit code
-        ERRNO_SUCCESS,
+      // Expected exit code
+      ERRNO_SUCCESS,
 
-        // Args
-        arrayOf("--check", "NewApi", "--project", descriptorFile.path),
-        null,
-        null,
+      // Args
+      arrayOf("--check", "NewApi", "--project", descriptorFile.path),
+      null,
+      null,
     )
   }
 
@@ -1180,11 +1175,11 @@ class ProjectInitializerTest {
     val root = temp.newFolder().canonicalFile.absoluteFile
 
     val projects =
-        lint()
-            .projects(
-                project(
-                        java(
-                                """
+      lint()
+        .projects(
+          project(
+              java(
+                  """
                     package test.pkg;
                     import androidx.annotation.WorkerThread;
 
@@ -1196,10 +1191,10 @@ class ProjectInitializerTest {
                         }
                     }
                     """
-                            )
-                            .indented(),
-                        java(
-                                """
+                )
+                .indented(),
+              java(
+                  """
                 package test.pkg1;
 
                 public class Library1 {
@@ -1207,10 +1202,10 @@ class ProjectInitializerTest {
                     }
                 }
                 """
-                            )
-                            .indented(),
-                        java(
-                                """
+                )
+                .indented(),
+              java(
+                  """
                 package test.pkg2;
 
                 public class Library2 {
@@ -1218,39 +1213,39 @@ class ProjectInitializerTest {
                     }
                 }
                 """
-                            )
-                            .indented(),
-                        SUPPORT_ANNOTATIONS_JAR,
-                        // zip annotations file
-                        jar(
-                            "annotations.zip",
-                            xml(
-                                    "test/pkg1/annotations.xml",
-                                    """
+                )
+                .indented(),
+              SUPPORT_ANNOTATIONS_JAR,
+              // zip annotations file
+              jar(
+                "annotations.zip",
+                xml(
+                    "test/pkg1/annotations.xml",
+                    """
                     <root>
                       <item name="test.pkg1.Library1 void method1()">
                         <annotation name="androidx.annotation.UiThread"/>
                       </item>
                     </root>
                     """,
-                                )
-                                .indented(),
-                        ),
-                        // dir annotation files
-                        xml(
-                                "external-annotations/test/pkg2/annotations.xml",
-                                """
+                  )
+                  .indented(),
+              ),
+              // dir annotation files
+              xml(
+                  "external-annotations/test/pkg2/annotations.xml",
+                  """
                 <root>
                   <item name="test.pkg2.Library2 void method2()">
                     <annotation name="androidx.annotation.UiThread"/>
                   </item>
                 </root>
                 """,
-                            )
-                            .indented(),
-                        xml(
-                                "project.xml",
-                                """
+                )
+                .indented(),
+              xml(
+                  "project.xml",
+                  """
                 <project>
                 <root dir="$root/project" />
                 <sdk dir='${TestUtils.getSdk()}'/>
@@ -1264,33 +1259,33 @@ class ProjectInitializerTest {
                 </module>
                 </project>
             """,
-                            )
-                            .indented(),
-                    )
-                    .name("project")
+                )
+                .indented(),
             )
-            .createProjects(root)
+            .name("project")
+        )
+        .createProjects(root)
     val projectDir = projects[0]
     val descriptorFile = File(projectDir, "project.xml")
 
     MainTest.checkDriver(
-        "" +
-            "src/test/pkg/Client.java:7: Error: Method method1 must be called from the UI thread, currently inferred thread is worker thread [WrongThread]\n" +
-            "        new test.pkg1.Library1().method1();\n" +
-            "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
-            "src/test/pkg/Client.java:8: Error: Method method2 must be called from the UI thread, currently inferred thread is worker thread [WrongThread]\n" +
-            "        new test.pkg2.Library2().method2();\n" +
-            "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
-            "2 errors",
-        "",
+      "" +
+        "src/test/pkg/Client.java:7: Error: Method method1 must be called from the UI thread, currently inferred thread is worker thread [WrongThread]\n" +
+        "        new test.pkg1.Library1().method1();\n" +
+        "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
+        "src/test/pkg/Client.java:8: Error: Method method2 must be called from the UI thread, currently inferred thread is worker thread [WrongThread]\n" +
+        "        new test.pkg2.Library2().method2();\n" +
+        "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
+        "2 errors",
+      "",
 
-        // Expected exit code
-        ERRNO_SUCCESS,
+      // Expected exit code
+      ERRNO_SUCCESS,
 
-        // Args
-        arrayOf("--check", "WrongThread", "--project", descriptorFile.path),
-        { it.dos2unix() },
-        null,
+      // Args
+      arrayOf("--check", "WrongThread", "--project", descriptorFile.path),
+      { it.dos2unix() },
+      null,
     )
   }
 
@@ -1301,11 +1296,11 @@ class ProjectInitializerTest {
     val root = temp.newFolder().canonicalFile.absoluteFile
 
     val projects =
-        lint()
-            .projects(
-                project(
-                        java(
-                                """
+      lint()
+        .projects(
+          project(
+              java(
+                  """
                 package test.pkg;
                 import androidx.annotation.IntDef;
                 import java.lang.annotation.Retention;
@@ -1330,12 +1325,12 @@ class ProjectInitializerTest {
                     }
                 }
                 """
-                            )
-                            .indented(),
-                        SUPPORT_ANNOTATIONS_JAR,
-                        xml(
-                                "project.xml",
-                                """
+                )
+                .indented(),
+              SUPPORT_ANNOTATIONS_JAR,
+              xml(
+                  "project.xml",
+                  """
                 <project>
                 <root dir="$root/project" />
                 <sdk dir='${TestUtils.getSdk()}'/>
@@ -1345,31 +1340,31 @@ class ProjectInitializerTest {
                 </module>
                 </project>
             """,
-                            )
-                            .indented(),
-                    )
-                    .name("project")
+                )
+                .indented(),
             )
-            .createProjects(root)
+            .name("project")
+        )
+        .createProjects(root)
     val projectDir = projects[0]
     val descriptorFile = File(projectDir, "project.xml")
 
     MainTest.checkDriver(
-        """
+      """
             src/test/pkg/Java14Test.java:17: Warning: Switch statement on an int with known associated constant missing case LENGTH_INDEFINITE [SwitchIntDef]
                     return switch (duration) {
                            ^
             0 errors, 1 warning
             """,
-        "",
+      "",
 
-        // Expected exit code
-        ERRNO_SUCCESS,
+      // Expected exit code
+      ERRNO_SUCCESS,
 
-        // Args
-        arrayOf("--check", "SwitchIntDef", "--project", descriptorFile.path),
-        { it.dos2unix() },
-        null,
+      // Args
+      arrayOf("--check", "SwitchIntDef", "--project", descriptorFile.path),
+      { it.dos2unix() },
+      null,
     )
   }
 
@@ -1379,12 +1374,12 @@ class ProjectInitializerTest {
     val root = temp.newFolder().canonicalFile.absoluteFile
 
     val projects =
-        lint()
-            .projects(
-                project(
-                        source(
-                                "name.some-ext",
-                                """
+      lint()
+        .projects(
+          project(
+              source(
+                  "name.some-ext",
+                  """
                   -optimizationpasses 5
                   -dontusemixedcaseclassnames
                   -dontskipnonpubliclibraryclasses
@@ -1422,11 +1417,11 @@ class ProjectInitializerTest {
                     public static final android.os.Parcelable${"$"}Creator *;
                   }
                   """,
-                            )
-                            .indented(),
-                        xml(
-                                "project.xml",
-                                """
+                )
+                .indented(),
+              xml(
+                  "project.xml",
+                  """
                   <project>
                   <root dir="$root/project" />
                   <sdk dir='${TestUtils.getSdk()}'/>
@@ -1435,31 +1430,31 @@ class ProjectInitializerTest {
                   </module>
                   </project>
                   """,
-                            )
-                            .indented(),
-                    )
-                    .name("project")
+                )
+                .indented(),
             )
-            .createProjects(root)
+            .name("project")
+        )
+        .createProjects(root)
     val projectDir = projects[0]
     val descriptorFile = File(projectDir, "project.xml")
 
     MainTest.checkDriver(
-        """
+      """
       name.some-ext:21: Error: Obsolete ProGuard file; use -keepclasseswithmembers instead of -keepclasseswithmembernames [Proguard]
       -keepclasseswithmembernames class * {
       ^
       1 error
       """,
-        "",
+      "",
 
-        // Expected exit code
-        ERRNO_SUCCESS,
+      // Expected exit code
+      ERRNO_SUCCESS,
 
-        // Args
-        arrayOf("--check", "Proguard", "--project", descriptorFile.path),
-        { it.dos2unix() },
-        null,
+      // Args
+      arrayOf("--check", "Proguard", "--project", descriptorFile.path),
+      { it.dos2unix() },
+      null,
     )
   }
 
@@ -1471,53 +1466,53 @@ class ProjectInitializerTest {
     val crlf = File(root, "app/src/main/java/ClassCRLF.java")
     crlf.parentFile.mkdirs()
     crlf.writeText(
-        """
-        package com.example.foo.notification;
+      """
+      package com.example.foo.notification;
 
-        public class AppNotifBlockedReceiver extends BroadcastReceiver {
-            // content removed
-        }
-        """
-            .trimIndent()
-            .replace("\n", "\r\n")
+      public class AppNotifBlockedReceiver extends BroadcastReceiver {
+          // content removed
+      }
+      """
+        .trimIndent()
+        .replace("\n", "\r\n")
     )
     val lf = File(root, "app/src/main/java/ClassLF.java")
     lf.writeText(
-        """
-        package com.example.foo.tester.ui;
+      """
+      package com.example.foo.tester.ui;
 
-        public class DisableActivity extends Activity {
-        // Content removed
-        }
-        """
-            .trimIndent()
+      public class DisableActivity extends Activity {
+      // Content removed
+      }
+      """
+        .trimIndent()
     )
 
     @Language("XML")
     val descriptor =
-        """
-        <project>
-           <module android="true" compile-sdk-version="18" name="app">
-              <src file="app/src/main/java/ClassCRLF.java"/>
-              <src file="app/src/main/java/ClassLF.java"/>
-           </module>
-        </project>
-        """
-            .trimIndent()
+      """
+      <project>
+         <module android="true" compile-sdk-version="18" name="app">
+            <src file="app/src/main/java/ClassCRLF.java"/>
+            <src file="app/src/main/java/ClassLF.java"/>
+         </module>
+      </project>
+      """
+        .trimIndent()
     val descriptorFile = File(root, "descriptor.xml")
     descriptorFile.writeText(descriptor.replace("\n", "\r\n"))
 
     MainTest.checkDriver(
-        "No issues found.",
-        "The source file ClassCRLF.java does not appear to be in the right project location; its package implies .../com/example/foo/notification/ClassCRLF.java but it was found in ...src/main/java/ClassCRLF.java",
+      "No issues found.",
+      "The source file ClassCRLF.java does not appear to be in the right project location; its package implies .../com/example/foo/notification/ClassCRLF.java but it was found in ...src/main/java/ClassCRLF.java",
 
-        // Expected exit code
-        ERRNO_SUCCESS,
+      // Expected exit code
+      ERRNO_SUCCESS,
 
-        // Args
-        arrayOf("--project", descriptorFile.path),
-        { it.dos2unix() },
-        null,
+      // Args
+      arrayOf("--project", descriptorFile.path),
+      { it.dos2unix() },
+      null,
     )
   }
 
@@ -1528,16 +1523,16 @@ class ProjectInitializerTest {
     val root = temp.newFolder().canonicalFile.absoluteFile
 
     MainTest.checkDriver(
-        "",
-        "Project descriptor ROOT should be an XML descriptor file, not a directory",
+      "",
+      "Project descriptor ROOT should be an XML descriptor file, not a directory",
 
-        // Expected exit code
-        ERRNO_INVALID_ARGS,
+      // Expected exit code
+      ERRNO_INVALID_ARGS,
 
-        // Args
-        arrayOf("--project", root.path),
-        { it.replace(root.path, "ROOT") },
-        null,
+      // Args
+      arrayOf("--project", root.path),
+      { it.replace(root.path, "ROOT") },
+      null,
     )
   }
 
@@ -1545,9 +1540,9 @@ class ProjectInitializerTest {
   fun testLintXmlOutside() {
 
     val library =
-        project(
-                manifest(
-                        """
+      project(
+          manifest(
+              """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="foo.bar2"
                     android:versionCode="1"
@@ -1565,16 +1560,16 @@ class ProjectInitializerTest {
                     </application>
 
                 </manifest>"""
-                    )
-                    .indented()
             )
-            .type(LIBRARY)
-            .name("Library")
+            .indented()
+        )
+        .type(LIBRARY)
+        .name("Library")
 
     val main =
-        project(
-                manifest(
-                        """
+      project(
+          manifest(
+              """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="foo.bar2"
                     android:versionCode="1"
@@ -1593,18 +1588,18 @@ class ProjectInitializerTest {
 
                 </manifest>
                 """
-                    )
-                    .indented()
             )
-            .name("App")
-            .dependsOn(library)
+            .indented()
+        )
+        .name("App")
+        .dependsOn(library)
 
     val root = temp.newFolder().canonicalFile.absoluteFile
 
     val configFile = File(root, "foobar/lint.xml")
     @Language("XML")
     val config =
-        """
+      """
             <lint>
                 <!-- Reduce severity of UniquePermission from error to warning -->
                 <issue id="UniquePermission" severity="warning"/>
@@ -1626,7 +1621,7 @@ class ProjectInitializerTest {
 
     @Language("XML")
     val descriptor =
-        """
+      """
             <project>
             <root dir="$root" />
             <sdk dir='$sdk'/>
@@ -1640,66 +1635,57 @@ class ProjectInitializerTest {
             </module>
             </project>
             """
-            .trimIndent()
+        .trimIndent()
     Files.asCharSink(File(root, "project.xml"), Charsets.UTF_8).write(descriptor)
 
     val canonicalRoot = root.canonicalPath
     MainTest.checkDriver(
-        """
+      """
             ../Library/AndroidManifest.xml:8: Warning: Permission name SEND_SMS is not unique (appears in both foo.permission.SEND_SMS and bar.permission.SEND_SMS) [UniquePermission]
                 <permission android:name="bar.permission.SEND_SMS"
                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 AndroidManifest.xml:8: Previous permission here
             0 errors, 1 warning
             """,
-        "",
+      "",
 
-        // Expected exit code
-        ERRNO_SUCCESS,
+      // Expected exit code
+      ERRNO_SUCCESS,
 
-        // Args
-        arrayOf(
-            "--check",
-            "UniquePermission",
-            "--config",
-            configFile.path,
-            "--text",
-            "stdout",
-            "--project",
-            File(root, "project.xml").path,
-        ),
-        { it.replace(canonicalRoot, "ROOT").replace(root.path, "ROOT").dos2unix() },
-        null,
+      // Args
+      arrayOf("--check", "UniquePermission", "--config", configFile.path, "--text", "stdout", "--project", File(root, "project.xml").path),
+      { it.replace(canonicalRoot, "ROOT").replace(root.path, "ROOT").dos2unix() },
+      null,
     )
 
     val newConfigFile = File(root, "default.xml")
     configFile.renameTo(newConfigFile)
     MainTest.checkDriver(
-        """
+      """
             ../Library/AndroidManifest.xml:8: Warning: Permission name SEND_SMS is not unique (appears in both foo.permission.SEND_SMS and bar.permission.SEND_SMS) [UniquePermission]
                 <permission android:name="bar.permission.SEND_SMS"
                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                 AndroidManifest.xml:8: Previous permission here
             0 errors, 1 warning
             """,
-        "",
+      "",
 
-        // Expected exit code
-        ERRNO_SUCCESS,
+      // Expected exit code
+      ERRNO_SUCCESS,
 
-        // Args
-        arrayOf(
-            "--check",
-            "UniquePermission",
-            "--config",
-            newConfigFile.path,
-            "--text",
-            "stdout",
-            "--project",
-            File(root, "project.xml").path,
-        ),
-        { it.replace(canonicalRoot, "ROOT").replace(root.path, "ROOT").dos2unix() },
-        null,
+      // Args
+      arrayOf(
+        "--check",
+        "UniquePermission",
+        "--config",
+        newConfigFile.path,
+        "--text",
+        "stdout",
+        "--project",
+        File(root, "project.xml").path,
+      ),
+      { it.replace(canonicalRoot, "ROOT").replace(root.path, "ROOT").dos2unix() },
+      null,
     )
   }
 
@@ -1710,11 +1696,11 @@ class ProjectInitializerTest {
     // ...and make sure that manifests *not* named AndroidManifestXml
     val root = temp.newFolder().canonicalFile.absoluteFile
     val projects =
-        lint()
-            .files(
-                xml(
-                        "layout/SomethingNamedAndroidManifest.xml",
-                        """
+      lint()
+        .files(
+          xml(
+              "layout/SomethingNamedAndroidManifest.xml",
+              """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="com.android.tools.lint.test"
                     android:versionCode="1"
@@ -1724,22 +1710,22 @@ class ProjectInitializerTest {
                     </application>
                 </manifest>
                 """,
-                    )
-                    .indented(),
-                xml(
-                        "res/layout/layout.xml",
-                        """
+            )
+            .indented(),
+          xml(
+              "res/layout/layout.xml",
+              """
                 <merge/>
                 """,
-                    )
-                    .indented(),
             )
-            .createProjects(root)
+            .indented(),
+        )
+        .createProjects(root)
     val projectDir = projects[0]
 
     @Language("XML")
     val descriptor =
-        """
+      """
             <project incomplete="false">
             <sdk dir='${TestUtils.getSdk()}'/>
             <root dir="$projectDir"/>
@@ -1749,13 +1735,13 @@ class ProjectInitializerTest {
             </module>
             </project>
             """
-            .trimIndent()
+        .trimIndent()
     val descriptorFile = File(root, "out1/out2/out3/project.xml")
     descriptorFile.parentFile?.mkdirs()
     Files.asCharSink(descriptorFile, Charsets.UTF_8).write(descriptor)
 
     MainTest.checkDriver(
-        """
+      """
       layout/SomethingNamedAndroidManifest.xml:6: Error: The <uses-sdk> element must be a direct child of the <manifest> root element [WrongManifestParent]
             <uses-sdk android:minSdkVersion="10" android:targetSdkVersion="31" />
              ~~~~~~~~
@@ -1764,20 +1750,15 @@ class ProjectInitializerTest {
              ~~~~~~~~
       1 error, 1 warning
             """,
-        null,
+      null,
 
-        // Expected exit code
-        ERRNO_SUCCESS,
+      // Expected exit code
+      ERRNO_SUCCESS,
 
-        // Args
-        arrayOf(
-            "--check",
-            "RequiredSize,ManifestOrder,ContentDescription,WrongManifestParent",
-            "--project",
-            descriptorFile.path,
-        ),
-        null,
-        null,
+      // Args
+      arrayOf("--check", "RequiredSize,ManifestOrder,ContentDescription,WrongManifestParent", "--project", descriptorFile.path),
+      null,
+      null,
     )
   }
 
@@ -1785,34 +1766,25 @@ class ProjectInitializerTest {
   fun testFindPackage() {
     assertEquals("foo.bar", findPackage("package foo.bar;\n", File("Test.java")))
     assertEquals("foo.bar", findPackage("// Copyright 2021\npackage foo.bar;\n", File("Test.java")))
-    assertEquals(
-        "foo.bar",
-        findPackage("// package wrong; /*\npackage  foo. bar ;\n", File("Test.java")),
-    )
-    assertEquals(
-        "foo.bar",
-        findPackage("/* package wrong; */\npackage  foo .bar ;\n", File("Test.java")),
-    )
-    assertEquals(
-        "foo.bar",
-        findPackage("/* /* nested comment */ package wrong */\npackage foo.bar \n", File("x.kt")),
-    )
+    assertEquals("foo.bar", findPackage("// package wrong; /*\npackage  foo. bar ;\n", File("Test.java")))
+    assertEquals("foo.bar", findPackage("/* package wrong; */\npackage  foo .bar ;\n", File("Test.java")))
+    assertEquals("foo.bar", findPackage("/* /* nested comment */ package wrong */\npackage foo.bar \n", File("x.kt")))
     // Regression test for 195004772
     @Language("java")
     val source =
-        """
-        // Copyright 2007, Google Inc.
-        /** The classes in this is package provide a variety of utility services. */
-        @CheckReturnValue
-        @ParametersAreNonnullByDefault
-        @NullMarked
-        package com.google.common.util;
+      """
+      // Copyright 2007, Google Inc.
+      /** The classes in this is package provide a variety of utility services. */
+      @CheckReturnValue
+      @ParametersAreNonnullByDefault
+      @NullMarked
+      package com.google.common.util;
 
-        import javax.annotation.CheckReturnValue;
-        import javax.annotation.ParametersAreNonnullByDefault;
-        import org.jspecify.nullness.NullMarked;
-        """
-            .trimIndent()
+      import javax.annotation.CheckReturnValue;
+      import javax.annotation.ParametersAreNonnullByDefault;
+      import org.jspecify.nullness.NullMarked;
+      """
+        .trimIndent()
     assertEquals("com.google.common.util", findPackage(source, File("package-info.java")))
   }
 
@@ -1845,10 +1817,10 @@ class ProjectInitializerTest {
 
     fun checkFilesDoNotContainBuildRoot(dir: File) {
       val badFiles =
-          java.nio.file.Files.list(dir.toPath()).filter { it.isRegularFile() && it.readText(Charsets.UTF_8).contains("buildRoot") }.toList()
+        java.nio.file.Files.list(dir.toPath()).filter { it.isRegularFile() && it.readText(Charsets.UTF_8).contains("buildRoot") }.toList()
       assertTrue(
-          "The following files contain the buildRoot directory, " + "which should not happen: ${badFiles.joinToString()}",
-          badFiles.isEmpty(),
+        "The following files contain the buildRoot directory, " + "which should not happen: ${badFiles.joinToString()}",
+        badFiles.isEmpty(),
       )
     }
 
@@ -1865,9 +1837,9 @@ class ProjectInitializerTest {
     fun createJavaFile(path: String, @Language("JAVA") content: String): File = createFile(path, content)
 
     val configFile =
-        createXmlFile(
-            "configs/config.xml",
-            """
+      createXmlFile(
+        "configs/config.xml",
+        """
             <lint>
                 <issue id="all" severity="ignore" />
                 <issue id="MissingClass" severity="error" />
@@ -1876,12 +1848,12 @@ class ProjectInitializerTest {
                 <issue id="MissingSuperCall" severity="error" />
                 <issue id="ExactAlarm" severity="error" />
             </lint>""",
-        )
+      )
 
     // Project a:
     createJavaFile(
-        "java/com/google/a/Activity.java",
-        """
+      "java/com/google/a/Activity.java",
+      """
             package com.google.a;
 
             import android.util.Log;
@@ -1899,8 +1871,8 @@ class ProjectInitializerTest {
             }""",
     )
     createXmlFile(
-        "java/com/google/a/AndroidManifest.xml",
-        """
+      "java/com/google/a/AndroidManifest.xml",
+      """
             <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                 package="com.google.a">
 
@@ -1917,8 +1889,8 @@ class ProjectInitializerTest {
             </manifest>""",
     )
     createXmlFile(
-        "java/com/google/a/res/values/strings.xml",
-        """
+      "java/com/google/a/res/values/strings.xml",
+      """
             <resources>
                 <string name="a_string_used_in_a">a string used in a</string>
                 <string name="a_string_used_in_b">a string used in b</string>
@@ -1927,9 +1899,9 @@ class ProjectInitializerTest {
             </resources>""",
     )
     val projectA =
-        createXmlFile(
-            "out/java/com/google/a/project.xml",
-            """
+      createXmlFile(
+        "out/java/com/google/a/project.xml",
+        """
             <project>
             <root dir="$root" />
             <module
@@ -1945,13 +1917,13 @@ class ProjectInitializerTest {
             </module>
             </project>
             """,
-        )
+      )
     File(root, "out/java/com/google/a/lint_partial_results").mkdirs()
 
     // Project b:
     createJavaFile(
-        "java/com/google/b/Activity.java",
-        """
+      "java/com/google/b/Activity.java",
+      """
             package com.google.b;
 
             import android.util.Log;
@@ -1970,8 +1942,8 @@ class ProjectInitializerTest {
             }""",
     )
     createXmlFile(
-        "java/com/google/b/AndroidManifest.xml",
-        """
+      "java/com/google/b/AndroidManifest.xml",
+      """
             <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                 package="com.google.b">
 
@@ -1988,8 +1960,8 @@ class ProjectInitializerTest {
             </manifest>""",
     )
     createXmlFile(
-        "java/com/google/b/res/values/strings.xml",
-        """
+      "java/com/google/b/res/values/strings.xml",
+      """
             <resources>
                 <string name="b_string_used_in_b">b string used in b</string>
                 <string name="b_string_used_in_c">b string used in c</string>
@@ -1997,9 +1969,9 @@ class ProjectInitializerTest {
             </resources>""",
     )
     val projectB =
-        createXmlFile(
-            "out/java/com/google/b/project.xml",
-            """
+      createXmlFile(
+        "out/java/com/google/b/project.xml",
+        """
             <project>
             <root dir="$root" />
             <module
@@ -2021,13 +1993,13 @@ class ProjectInitializerTest {
                 partial-results-dir="out/java/com/google/a/lint_partial_results" />
             </project>
             """,
-        )
+      )
     File(root, "out/java/com/google/b/lint_partial_results").mkdirs()
 
     // Project onlyres:
     createXmlFile(
-        "java/com/google/onlyres/AndroidManifest.xml",
-        """
+      "java/com/google/onlyres/AndroidManifest.xml",
+      """
             <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                 package="com.google.onlyres">
 
@@ -2038,17 +2010,17 @@ class ProjectInitializerTest {
             </manifest>""",
     )
     createXmlFile(
-        "java/com/google/onlyres/res/values/strings.xml",
-        """
+      "java/com/google/onlyres/res/values/strings.xml",
+      """
             <resources>
                 <string name="onlyres_string_used_in_c">onlyres string used in c</string>
                 <string name="onlyres_string_unused">onlyres string unused</string>
             </resources>""",
     )
     val projectOnlyRes =
-        createXmlFile(
-            "out/java/com/google/onlyres/project.xml",
-            """
+      createXmlFile(
+        "out/java/com/google/onlyres/project.xml",
+        """
             <project>
             <root dir="$root" />
             <module
@@ -2063,13 +2035,13 @@ class ProjectInitializerTest {
             </module>
             </project>
             """,
-        )
+      )
     File(root, "out/java/com/google/onlyres/lint_partial_results").mkdirs()
 
     // Project c (the app):
     createJavaFile(
-        "java/com/google/c/Activity.java",
-        """
+      "java/com/google/c/Activity.java",
+      """
             package com.google.c;
 
             import android.util.Log;
@@ -2090,8 +2062,8 @@ class ProjectInitializerTest {
             }""",
     )
     createXmlFile(
-        "java/com/google/c/AndroidManifest.xml",
-        """
+      "java/com/google/c/AndroidManifest.xml",
+      """
             <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                 package="com.google.c">
 
@@ -2113,16 +2085,16 @@ class ProjectInitializerTest {
             </manifest>""",
     )
     createXmlFile(
-        "java/com/google/c/res/values/strings.xml",
-        """
+      "java/com/google/c/res/values/strings.xml",
+      """
             <resources>
                 <string name="c_string_used_in_c">c string used in c</string>
                 <string name="c_string_unused">c string unused</string>
             </resources>""",
     )
     createXmlFile(
-        "out/java/com/google/c/AndroidManifestMerged.xml",
-        """
+      "out/java/com/google/c/AndroidManifestMerged.xml",
+      """
             <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                 package="com.google.c">
 
@@ -2150,9 +2122,9 @@ class ProjectInitializerTest {
             </manifest>""",
     )
     val projectC =
-        createXmlFile(
-            "out/java/com/google/c/project.xml",
-            """
+      createXmlFile(
+        "out/java/com/google/c/project.xml",
+        """
             <project>
             <root dir="$root" />
             <module
@@ -2189,31 +2161,31 @@ class ProjectInitializerTest {
                 partial-results-dir="out/java/com/google/onlyres/lint_partial_results" />
             </project>
             """,
-        )
+      )
     File(root, "out/java/com/google/c/lint_partial_results").mkdirs()
 
     // Analyze project a.
     MainTest.checkDriver(
-        "",
-        "",
-        // Expected exit code
-        ERRNO_SUCCESS,
-        // Args
-        arrayOf(
-            "--config",
-            configFile.toString(),
-            "--project",
-            projectA.toString(),
-            "--analyze-only",
-            "--sdk-home",
-            TestUtils.getSdk().toString(),
-        ),
-        null,
-        null,
+      "",
+      "",
+      // Expected exit code
+      ERRNO_SUCCESS,
+      // Args
+      arrayOf(
+        "--config",
+        configFile.toString(),
+        "--project",
+        projectA.toString(),
+        "--analyze-only",
+        "--sdk-home",
+        TestUtils.getSdk().toString(),
+      ),
+      null,
+      null,
     )
 
     MainTest.checkDriver(
-        """
+      """
                 java/com/google/a/Activity.java:10: Error: Overriding method should call super.onStart [MissingSuperCall]
                     protected void onStart() {
                                    ~~~~~~~
@@ -2221,21 +2193,21 @@ class ProjectInitializerTest {
                         Log.d(TAG, "message");
                               ~~~
                 2 errors""",
-        "",
-        // Expected exit code
-        ERRNO_SUCCESS,
-        // Args
-        arrayOf(
-            "--config",
-            configFile.toString(),
-            "--project",
-            projectA.toString(),
-            "--report-only",
-            "--sdk-home",
-            TestUtils.getSdk().toString(),
-        ),
-        null,
-        null,
+      "",
+      // Expected exit code
+      ERRNO_SUCCESS,
+      // Args
+      arrayOf(
+        "--config",
+        configFile.toString(),
+        "--project",
+        projectA.toString(),
+        "--report-only",
+        "--sdk-home",
+        TestUtils.getSdk().toString(),
+      ),
+      null,
+      null,
     )
     checkFilesDoNotContainBuildRoot(File(root, "out/java/com/google/a/lint_partial_results"))
 
@@ -2244,26 +2216,26 @@ class ProjectInitializerTest {
 
     // Analyze project b.
     MainTest.checkDriver(
-        "",
-        "",
-        // Expected exit code
-        ERRNO_SUCCESS,
-        // Args
-        arrayOf(
-            "--config",
-            configFile.toString(),
-            "--project",
-            projectB.toString(),
-            "--analyze-only",
-            "--sdk-home",
-            TestUtils.getSdk().toString(),
-        ),
-        null,
-        null,
+      "",
+      "",
+      // Expected exit code
+      ERRNO_SUCCESS,
+      // Args
+      arrayOf(
+        "--config",
+        configFile.toString(),
+        "--project",
+        projectB.toString(),
+        "--analyze-only",
+        "--sdk-home",
+        TestUtils.getSdk().toString(),
+      ),
+      null,
+      null,
     )
 
     MainTest.checkDriver(
-        """
+      """
                 java/com/google/b/Activity.java:10: Error: Overriding method should call super.onStart [MissingSuperCall]
                     protected void onStart() {
                                    ~~~~~~~
@@ -2274,21 +2246,21 @@ class ProjectInitializerTest {
                         Log.d(TAG, "message");
                               ~~~
                 3 errors""",
-        "",
-        // Expected exit code
-        ERRNO_SUCCESS,
-        // Args
-        arrayOf(
-            "--config",
-            configFile.toString(),
-            "--project",
-            projectB.toString(),
-            "--report-only",
-            "--sdk-home",
-            TestUtils.getSdk().toString(),
-        ),
-        null,
-        null,
+      "",
+      // Expected exit code
+      ERRNO_SUCCESS,
+      // Args
+      arrayOf(
+        "--config",
+        configFile.toString(),
+        "--project",
+        projectB.toString(),
+        "--report-only",
+        "--sdk-home",
+        TestUtils.getSdk().toString(),
+      ),
+      null,
+      null,
     )
     checkFilesDoNotContainBuildRoot(File(root, "out/java/com/google/b/lint_partial_results"))
     // Delete definite issues.
@@ -2296,41 +2268,41 @@ class ProjectInitializerTest {
 
     // Analyze project onlyres.
     MainTest.checkDriver(
-        "",
-        "",
-        // Expected exit code
-        ERRNO_SUCCESS,
-        // Args
-        arrayOf(
-            "--config",
-            configFile.toString(),
-            "--project",
-            projectOnlyRes.toString(),
-            "--analyze-only",
-            "--sdk-home",
-            TestUtils.getSdk().toString(),
-        ),
-        null,
-        null,
+      "",
+      "",
+      // Expected exit code
+      ERRNO_SUCCESS,
+      // Args
+      arrayOf(
+        "--config",
+        configFile.toString(),
+        "--project",
+        projectOnlyRes.toString(),
+        "--analyze-only",
+        "--sdk-home",
+        TestUtils.getSdk().toString(),
+      ),
+      null,
+      null,
     )
 
     MainTest.checkDriver(
-        "No issues found.",
-        "",
-        // Expected exit code
-        ERRNO_SUCCESS,
-        // Args
-        arrayOf(
-            "--config",
-            configFile.toString(),
-            "--project",
-            projectOnlyRes.toString(),
-            "--report-only",
-            "--sdk-home",
-            TestUtils.getSdk().toString(),
-        ),
-        null,
-        null,
+      "No issues found.",
+      "",
+      // Expected exit code
+      ERRNO_SUCCESS,
+      // Args
+      arrayOf(
+        "--config",
+        configFile.toString(),
+        "--project",
+        projectOnlyRes.toString(),
+        "--report-only",
+        "--sdk-home",
+        TestUtils.getSdk().toString(),
+      ),
+      null,
+      null,
     )
     checkFilesDoNotContainBuildRoot(File(root, "out/java/com/google/onlyres/lint_partial_results"))
     // Delete definite issues.
@@ -2338,26 +2310,26 @@ class ProjectInitializerTest {
 
     // Analyze project c.
     MainTest.checkDriver(
-        "",
-        "",
-        // Expected exit code
-        ERRNO_SUCCESS,
-        // Args
-        arrayOf(
-            "--config",
-            configFile.toString(),
-            "--project",
-            projectC.toString(),
-            "--analyze-only",
-            "--sdk-home",
-            TestUtils.getSdk().toString(),
-        ),
-        null,
-        null,
+      "",
+      "",
+      // Expected exit code
+      ERRNO_SUCCESS,
+      // Args
+      arrayOf(
+        "--config",
+        configFile.toString(),
+        "--project",
+        projectC.toString(),
+        "--analyze-only",
+        "--sdk-home",
+        TestUtils.getSdk().toString(),
+      ),
+      null,
+      null,
     )
 
     MainTest.checkDriver(
-        """
+      """
                 java/com/google/c/Activity.java:10: Error: Overriding method should call super.onStart [MissingSuperCall]
                     protected void onStart() {
                                    ~~~~~~~
@@ -2383,21 +2355,21 @@ class ProjectInitializerTest {
                     <string name="a_string_unused">a string unused</string>
                             ~~~~~~~~~~~~~~~~~~~~~~
                 8 errors""",
-        "",
-        // Expected exit code
-        ERRNO_SUCCESS,
-        // Args
-        arrayOf(
-            "--config",
-            configFile.toString(),
-            "--project",
-            projectC.toString(),
-            "--report-only",
-            "--sdk-home",
-            TestUtils.getSdk().toString(),
-        ),
-        null,
-        null,
+      "",
+      // Expected exit code
+      ERRNO_SUCCESS,
+      // Args
+      arrayOf(
+        "--config",
+        configFile.toString(),
+        "--project",
+        projectC.toString(),
+        "--report-only",
+        "--sdk-home",
+        TestUtils.getSdk().toString(),
+      ),
+      null,
+      null,
     )
     checkFilesDoNotContainBuildRoot(File(root, "out/java/com/google/c/lint_partial_results"))
   }
@@ -2407,11 +2379,11 @@ class ProjectInitializerTest {
     // Regression test for b/248054901
     val root = temp.newFolder().canonicalFile.absoluteFile
     val projects =
-        lint()
-            .files(
-                xml(
-                        "project.xml",
-                        """
+      lint()
+        .files(
+          xml(
+              "project.xml",
+              """
                 <project>
                 <module name="test" android="true" library="false">
                 <src file="com/google/b244342092repro/ToBeChecked.java" test="true"/>
@@ -2419,11 +2391,11 @@ class ProjectInitializerTest {
                 </module>
                 </project>
                 """,
-                    )
-                    .indented(),
-                java(
-                        "com/google/b244342092repro/ToBeChecked.java",
-                        """
+            )
+            .indented(),
+          java(
+              "com/google/b244342092repro/ToBeChecked.java",
+              """
                 package com.google.b244342092repro;
                 final class ToBeChecked {
                   final ToBeIgnored ref = new ToBeIgnored();
@@ -2431,11 +2403,11 @@ class ProjectInitializerTest {
                   }
                 }
                 """,
-                    )
-                    .indented(),
-                java(
-                        "com/google/b244342092repro/gen/com/google/b244342092repro/ToBeIgnored.java",
-                        """
+            )
+            .indented(),
+          java(
+              "com/google/b244342092repro/gen/com/google/b244342092repro/ToBeIgnored.java",
+              """
                 package com.google.b244342092repro;
                 final class ToBeIgnored {
                   @org.junit.Ignore
@@ -2444,23 +2416,23 @@ class ProjectInitializerTest {
                   }
                 }
                 """,
-                    )
-                    .indented(),
             )
-            .createProjects(root)
+            .indented(),
+        )
+        .createProjects(root)
     val descriptorFile = File(projects[0], "project.xml")
 
     MainTest.checkDriver(
-        "No issues found.",
-        "",
+      "No issues found.",
+      "",
 
-        // Expected exit code
-        ERRNO_SUCCESS,
+      // Expected exit code
+      ERRNO_SUCCESS,
 
-        // Args
-        arrayOf("--check", "IgnoreWithoutReason", "--project", descriptorFile.path),
-        null,
-        null,
+      // Args
+      arrayOf("--check", "IgnoreWithoutReason", "--project", descriptorFile.path),
+      null,
+      null,
     )
   }
 
@@ -2469,11 +2441,11 @@ class ProjectInitializerTest {
     assumeTrue(useFirUast())
     val root = temp.newFolder().canonicalFile.absoluteFile
     val projects =
-        lint()
-            .files(
-                xml(
-                        "project.xml",
-                        """
+      lint()
+        .files(
+          xml(
+              "project.xml",
+              """
               <project>
                 <module name="common" library="true" android="false" compute_source_roots="false" kotlinPlatforms="JVM [1.8]">
                   <src file="com/example/Common.kt"/>
@@ -2484,11 +2456,11 @@ class ProjectInitializerTest {
                 </module>
               </project>
               """,
-                    )
-                    .indented(),
-                kotlin(
-                        "com/example/Common.kt",
-                        """
+            )
+            .indented(),
+          kotlin(
+              "com/example/Common.kt",
+              """
               package com.example
 
               interface Platform {
@@ -2496,11 +2468,11 @@ class ProjectInitializerTest {
               }
               expect fun getPlatform(): Platform
               """,
-                    )
-                    .indented(),
-                kotlin(
-                        "com/example/Desktop.kt",
-                        """
+            )
+            .indented(),
+          kotlin(
+              "com/example/Desktop.kt",
+              """
               package com.example
 
               class DesktopPlatform : Platform {
@@ -2510,28 +2482,28 @@ class ProjectInitializerTest {
 
               actual fun getPlatform(): Platform = DesktopPlatform()
               """,
-                    )
-                    .indented(),
             )
-            .createProjects(root)
+            .indented(),
+        )
+        .createProjects(root)
     val descriptorFile = File(projects[0], "project.xml")
 
     MainTest.checkDriver(
-        "No issues found.",
-        "",
-        // Expected exit code
-        ERRNO_SUCCESS,
-        // Args
-        arrayOf("--check", "IgnoreWithoutReason", "--project", descriptorFile.path),
-        null,
-        { driver, type, project, context ->
-          when (type) {
-            SCANNING_FILE -> {
-              context?.project?.ideaProject?.checkAnalysisApiServices()
-            }
-            else -> {}
+      "No issues found.",
+      "",
+      // Expected exit code
+      ERRNO_SUCCESS,
+      // Args
+      arrayOf("--check", "IgnoreWithoutReason", "--project", descriptorFile.path),
+      null,
+      { driver, type, project, context ->
+        when (type) {
+          SCANNING_FILE -> {
+            context?.project?.ideaProject?.checkAnalysisApiServices()
           }
-        },
+          else -> {}
+        }
+      },
     )
   }
 
@@ -2541,11 +2513,11 @@ class ProjectInitializerTest {
     assumeTrue(useFirUast())
     val root = temp.newFolder().canonicalFile.absoluteFile
     val projects =
-        lint()
-            .files(
-                xml(
-                        "project.xml",
-                        """
+      lint()
+        .files(
+          xml(
+              "project.xml",
+              """
               <project>
                 <module name="common" library="true" android="false" compute_source_roots="false" kotlinPlatforms="JVM [1.8]">
                   <src file="com/example/Common.kt"/>
@@ -2556,11 +2528,11 @@ class ProjectInitializerTest {
                 </module>
               </project>
               """,
-                    )
-                    .indented(),
-                kotlin(
-                        "com/example/Common.kt",
-                        """
+            )
+            .indented(),
+          kotlin(
+              "com/example/Common.kt",
+              """
               package com.example
 
               interface Platform {
@@ -2568,11 +2540,11 @@ class ProjectInitializerTest {
               }
               expect fun getPlatform(): Platform
               """,
-                    )
-                    .indented(),
-                kotlin(
-                        "com/example/Desktop.kt",
-                        """
+            )
+            .indented(),
+          kotlin(
+              "com/example/Desktop.kt",
+              """
               package com.example
 
               class DesktopPlatform : Platform {
@@ -2582,46 +2554,46 @@ class ProjectInitializerTest {
 
               actual fun getPlatform(): Platform = DesktopPlatform()
               """,
-                    )
-                    .indented(),
             )
-            .createProjects(root)
+            .indented(),
+        )
+        .createProjects(root)
     val descriptorFile = File(projects[0], "project.xml")
 
     MainTest.checkDriver(
-        "No issues found.",
-        "",
-        // Expected exit code
-        ERRNO_SUCCESS,
-        // Args
-        arrayOf("--check", "IgnoreWithoutReason", "--project", descriptorFile.path),
-        null,
-        { driver, type, project, context ->
-          when (type) {
-            SCANNING_FILE -> {
-              context!!
-              when (context.file.name) {
-                "Common.kt" -> {}
-                "Desktop.kt" -> {
-                  context as JavaContext
-                  val uFile = context.uastParser.parse(context)!!
-                  val file = uFile.sourcePsi as KtFile
-                  val func = file.declarations[1] as KtNamedFunction
-                  analyze(func) {
-                    assertTrue(
-                        "KMP should be enabled",
-                        (useSiteModule as KaSourceModule).languageVersionSettings.supportsFeature(LanguageFeature.MultiPlatformProjects),
-                    )
-                    val expectSymbols = func.symbol.getExpectsForActual()
-                    assertEquals(1, expectSymbols.size)
-                    assertTrue(expectSymbols[0].isExpect)
-                  }
+      "No issues found.",
+      "",
+      // Expected exit code
+      ERRNO_SUCCESS,
+      // Args
+      arrayOf("--check", "IgnoreWithoutReason", "--project", descriptorFile.path),
+      null,
+      { driver, type, project, context ->
+        when (type) {
+          SCANNING_FILE -> {
+            context!!
+            when (context.file.name) {
+              "Common.kt" -> {}
+              "Desktop.kt" -> {
+                context as JavaContext
+                val uFile = context.uastParser.parse(context)!!
+                val file = uFile.sourcePsi as KtFile
+                val func = file.declarations[1] as KtNamedFunction
+                analyze(func) {
+                  assertTrue(
+                    "KMP should be enabled",
+                    (useSiteModule as KaSourceModule).languageVersionSettings.supportsFeature(LanguageFeature.MultiPlatformProjects),
+                  )
+                  val expectSymbols = func.symbol.getExpectsForActual()
+                  assertEquals(1, expectSymbols.size)
+                  assertTrue(expectSymbols[0].isExpect)
                 }
               }
             }
-            else -> {}
           }
-        },
+          else -> {}
+        }
+      },
     )
   }
 
@@ -2629,22 +2601,22 @@ class ProjectInitializerTest {
   fun testKmpEnabledWithJustNative() {
     val root = temp.newFolder().canonicalFile.absoluteFile
     val projects =
-        lint()
-            .files(
-                xml(
-                        "project.xml",
-                        """
+      lint()
+        .files(
+          xml(
+              "project.xml",
+              """
               <project>
                 <module name="ioscode" library="true" android="false" compute_source_roots="false" kotlinPlatforms="Native [ios_arm64]">
                   <src file="com/example/Code.kt"/>
                 </module>
               </project>
               """,
-                    )
-                    .indented(),
-                kotlin(
-                        "com/example/Code.kt",
-                        """
+            )
+            .indented(),
+          kotlin(
+              "com/example/Code.kt",
+              """
               package com.example
 
               class Code {
@@ -2653,41 +2625,41 @@ class ProjectInitializerTest {
                 }
               }
               """,
-                    )
-                    .indented(),
             )
-            .createProjects(root)
+            .indented(),
+        )
+        .createProjects(root)
     val descriptorFile = File(projects[0], "project.xml")
 
     MainTest.checkDriver(
-        "No issues found.",
-        "",
-        // Expected exit code
-        ERRNO_SUCCESS,
-        // Args
-        arrayOf("--check", "IgnoreWithoutReason", "--project", descriptorFile.path),
-        null,
-        { driver, type, project, context ->
-          when (type) {
-            SCANNING_FILE -> {
-              context!!
-              when (context.file.name) {
-                "Code.kt" -> {
-                  context as JavaContext
-                  val uFile = context.uastParser.parse(context)!!
-                  val clz = uFile.classes[0].sourcePsi as KtClass
-                  analyze(clz) {
-                    assertTrue(
-                        "KMP should be enabled",
-                        (useSiteModule as KaSourceModule).languageVersionSettings.supportsFeature(LanguageFeature.MultiPlatformProjects),
-                    )
-                  }
+      "No issues found.",
+      "",
+      // Expected exit code
+      ERRNO_SUCCESS,
+      // Args
+      arrayOf("--check", "IgnoreWithoutReason", "--project", descriptorFile.path),
+      null,
+      { driver, type, project, context ->
+        when (type) {
+          SCANNING_FILE -> {
+            context!!
+            when (context.file.name) {
+              "Code.kt" -> {
+                context as JavaContext
+                val uFile = context.uastParser.parse(context)!!
+                val clz = uFile.classes[0].sourcePsi as KtClass
+                analyze(clz) {
+                  assertTrue(
+                    "KMP should be enabled",
+                    (useSiteModule as KaSourceModule).languageVersionSettings.supportsFeature(LanguageFeature.MultiPlatformProjects),
+                  )
                 }
               }
             }
-            else -> {}
           }
-        },
+          else -> {}
+        }
+      },
     )
   }
 
@@ -2706,193 +2678,193 @@ class ProjectInitializerTest {
 
     @Language("kotlin")
     val klibSourceFile =
-        """
-        package com.klib
+      """
+      package com.klib
 
-        annotation class LibAnnotation
+      annotation class LibAnnotation
 
-        fun libGlobalMethod(): Int {
-          return 2
-        }
+      fun libGlobalMethod(): Int {
+        return 2
+      }
 
-        fun libGlobalMethod(a: Int): Int {
-          return 3
-        }
+      fun libGlobalMethod(a: Int): Int {
+        return 3
+      }
 
-        fun libGlobalMethod2(a: Int): Int {
-          return 2
-        }
+      fun libGlobalMethod2(a: Int): Int {
+        return 2
+      }
 
-        val Int.globalProperty
-          get() = ""
+      val Int.globalProperty
+        get() = ""
 
-        val String.globalProperty
-          get() = 2
+      val String.globalProperty
+        get() = 2
 
-        val globalProperty = 2
+      val globalProperty = 2
 
-        val globalProperty2 = 3
+      val globalProperty2 = 3
 
-        const val LIB_CONST = ""
+      const val LIB_CONST = ""
 
-        open class LibClass {
+      open class LibClass {
 
-          val Int.valProp
-            get() = 0
+        val Int.valProp
+          get() = 0
 
-          val String.valProp
-            get() = 0
+        val String.valProp
+          get() = 0
 
-          val valProp = 0
+        val valProp = 0
 
-          var varProp = 1
+        var varProp = 1
 
-          val propWithGetter
-            get() = 1
+        val propWithGetter
+          get() = 1
 
-          val mutableListProp: MutableList<String> = mutableListOf()
+        val mutableListProp: MutableList<String> = mutableListOf()
 
-          var propWithField: Int = 0
-            get() = field + 1
-            set(value) {
-              field = value - 1
-            }
-
-          fun libMethod(arg: Int): Int = 1
-          fun libMethod(arg: Long): Long = 1
-
-          fun libMethod2(arg: Long): Long = 1
-
-          fun libMethod3(arg: Array<Long>): Array<Long> = arrayOf(1L)
-
-          fun <T> libGenericMethod(arg: T): Array<T>? = null
-
-          operator fun unaryPlus(): LibClass = this
-
-          companion object {
-            fun companionFunc(): Int = 2
-            val companionProp: Int = 3
+        var propWithField: Int = 0
+          get() = field + 1
+          set(value) {
+            field = value - 1
           }
 
-          object LibClassObject {
-            fun func(): Int = 1
-            val prop: Int = 2
-          }
+        fun libMethod(arg: Int): Int = 1
+        fun libMethod(arg: Long): Long = 1
+
+        fun libMethod2(arg: Long): Long = 1
+
+        fun libMethod3(arg: Array<Long>): Array<Long> = arrayOf(1L)
+
+        fun <T> libGenericMethod(arg: T): Array<T>? = null
+
+        operator fun unaryPlus(): LibClass = this
+
+        companion object {
+          fun companionFunc(): Int = 2
+          val companionProp: Int = 3
         }
 
-        object MyFirstObject {
-
-          fun bar(): Long = 2L
-
-          object MySecondObject {
-            val prop: Int = 1
-            fun foo(): Int = 2
-          }
+        object LibClassObject {
+          fun func(): Int = 1
+          val prop: Int = 2
         }
+      }
 
-        enum class ProtocolState {
-          WAITING {
-            override fun signal() = TALKING
-          },
+      object MyFirstObject {
 
-          TALKING {
-            override fun signal() = WAITING
-          };
+        fun bar(): Long = 2L
 
-          abstract fun signal(): ProtocolState
+        object MySecondObject {
+          val prop: Int = 1
+          fun foo(): Int = 2
         }
-        """
-            .trimIndent()
+      }
+
+      enum class ProtocolState {
+        WAITING {
+          override fun signal() = TALKING
+        },
+
+        TALKING {
+          override fun signal() = WAITING
+        };
+
+        abstract fun signal(): ProtocolState
+      }
+      """
+        .trimIndent()
 
     @Language("kotlin")
     val kotlinSourceFile =
-        """
-        package com.example
+      """
+      package com.example
 
-        import com.klib.LibClass
-        import com.klib.MyFirstObject
-        import com.klib.LibAnnotation
-        import com.klib.globalProperty
-        import com.klib.globalProperty2
-        import com.klib.libGlobalMethod
-        import com.klib.libGlobalMethod2
-        import com.klib.LIB_CONST
-        import com.klib.ProtocolState
+      import com.klib.LibClass
+      import com.klib.MyFirstObject
+      import com.klib.LibAnnotation
+      import com.klib.globalProperty
+      import com.klib.globalProperty2
+      import com.klib.libGlobalMethod
+      import com.klib.libGlobalMethod2
+      import com.klib.LIB_CONST
+      import com.klib.ProtocolState
 
-        @LibAnnotation
-        class Code {
-          fun hello() {
-            libGlobalMethod()
-            libGlobalMethod(1)
-            libGlobalMethod2(1)
+      @LibAnnotation
+      class Code {
+        fun hello() {
+          libGlobalMethod()
+          libGlobalMethod(1)
+          libGlobalMethod2(1)
 
-            globalProperty
-            1.globalProperty
-            "".globalProperty
-            globalProperty2
+          globalProperty
+          1.globalProperty
+          "".globalProperty
+          globalProperty2
 
-            LIB_CONST
+          LIB_CONST
 
-            val c = LibClass()
-            +c
+          val c = LibClass()
+          +c
 
-            LibClass.companionFunc()
-            LibClass.companionProp
-            LibClass.Companion
-            LibClass.Companion.companionFunc()
-            LibClass.Companion.companionProp
+          LibClass.companionFunc()
+          LibClass.companionProp
+          LibClass.Companion
+          LibClass.Companion.companionFunc()
+          LibClass.Companion.companionProp
 
-            LibClass.LibClassObject
-            LibClass.LibClassObject.func()
-            LibClass.LibClassObject.prop
+          LibClass.LibClassObject
+          LibClass.LibClassObject.func()
+          LibClass.LibClassObject.prop
 
-            MyFirstObject
-            MyFirstObject.bar()
-            MyFirstObject.MySecondObject
-            MyFirstObject.MySecondObject.prop
-            MyFirstObject.MySecondObject.foo()
+          MyFirstObject
+          MyFirstObject.bar()
+          MyFirstObject.MySecondObject
+          MyFirstObject.MySecondObject.prop
+          MyFirstObject.MySecondObject.foo()
 
-            ProtocolState.WAITING
-          }
-
-          fun LibClass.hello2() {
-            1.valProp
-            "".valProp
-            valProp
-            varProp = 2
-            varProp += 2
-            varProp--
-            ++varProp
-            varProp
-            propWithGetter
-            mutableListProp += "a"
-            propWithField
-
-            libMethod(1)
-            libMethod(1L)
-            libMethod2(1L)
-            libMethod3(arrayOf(1L))
-
-            libGenericMethod(1)
-          }
+          ProtocolState.WAITING
         }
 
-        @LibAnnotation
-        class OtherClass : LibClass()
-        """
-            .trimIndent()
+        fun LibClass.hello2() {
+          1.valProp
+          "".valProp
+          valProp
+          varProp = 2
+          varProp += 2
+          varProp--
+          ++varProp
+          varProp
+          propWithGetter
+          mutableListProp += "a"
+          propWithField
+
+          libMethod(1)
+          libMethod(1L)
+          libMethod2(1L)
+          libMethod3(arrayOf(1L))
+
+          libGenericMethod(1)
+        }
+      }
+
+      @LibAnnotation
+      class OtherClass : LibClass()
+      """
+        .trimIndent()
 
     val jarFile =
-        compiled(
-            "/mylib.jar",
-            kotlin(klibSourceFile),
-            0xad5b5f36,
-            """
+      compiled(
+        "/mylib.jar",
+        kotlin(klibSourceFile),
+        0xad5b5f36,
+        """
         META-INF/main.kotlin_module:
         H4sIAAAAAAAA/2NgYGBmYGBgAmJGBijgkubiSM7P1cvOyUwS4vfJTHLMy8sv
         SSzJzM/zLlFi0GIAAN24MXQ1AAAA
         """,
-            """
+        """
         com/klib/LibAnnotation.class:
         H4sIAAAAAAAA/4VQu07DQBCcvRASzMvhERxSQJUSh4gOGpBAsuQACo8m1dk5
         oYsdW8LnCLpUfBQFiij5KMSagoAUiWZ3dm52bnc/Pl/fAByhSaiH6ciNYh24
@@ -2903,7 +2875,7 @@ class ProjectInitializerTest {
         zieM+OSoKizBwjLKWOmj5GHVw5qHddicUfOwgc0+KMMWtvsQGeoZdr4AQXqC
         Bs8BAAA=
         """,
-            """
+        """
         com/klib/LibAnnotationKt.class:
         H4sIAAAAAAAA/21TQW/TSBT+xk4cx00TN7QLSaEsJUDpLrgEdhcEQmKLWFmE
         gmgVIfWAJqmVTuPYK8+k2r31xA/hzIFdhIT2gCqO/CjEG8fbpkkPnvfmve/7
@@ -2925,7 +2897,7 @@ class ProjectInitializerTest {
         hQZ0dRumj2s+Vnxcxyq5+Mmnpt/YBpO4CW8bsxJ5ibKELeFILKb+jERJYk7C
         krgosSTR+A40EcXyAQYAAA==
         """,
-            """
+        """
         com/klib/LibClass＄Companion.class:
         H4sIAAAAAAAA/5VSz08TQRT+Zna73S5Flh8qFPFnVUBkgXjDqAghqSlK0DQm
         HMx0WXHo7izZ3RKPPfGHePbCSePBNBz9o4xvtqUQTEy8vB/fm++9me/Nr98/
@@ -2942,7 +2914,7 @@ class ProjectInitializerTest {
         2B+mo6uE0dfHHGVOThpBFVOYzwfexyPym4Rfp7OTuzBqmKqhUsM0bpDHTA03
         cWsXLMVt3NlFKYWT4m6KQgorxVAe30sxnKL8B+qBmeDzAwAA
         """,
-            """
+        """
         com/klib/LibClass＄LibClassObject.class:
         H4sIAAAAAAAA/4VSTU8TURQ97810Oh0KnWJVKH4goHyoDBB3EhPkIxlTKwFC
         NKxey4ivnc6QmSlx2RU/xLUbZEGiiWlw548y3jeWirBwFu/ee+4997x37/z8
@@ -2959,7 +2931,7 @@ class ProjectInitializerTest {
         4kn6v1y0saiNRhdEOgeOh3hEU3maSk2TvJJhGKFnje5Bc1F2MebiDu6SxT0X
         9zG+BxbjASb2kIthxZiMkYlhxBhI/aEYgzHyvwHBBxvZzQMAAA==
         """,
-            """
+        """
         com/klib/LibClass.class:
         H4sIAAAAAAAA/41W3VcTRxT/zSYkmzXGTQSBIAoaIUQ0gN8G8bNIaEAF6kfp
         h0tYYSHZ0J0N1Tee/Bf61Jc+t+fUWo+eetrD8bF/VE/v7C5LsomtD9k79869
@@ -3000,7 +2972,7 @@ class ProjectInitializerTest {
         HB0cEY5hZ9zD0esM+rhwiHHkOE5zjHIYHGc5Us5snmOM4xLHOY4Jjosclzmu
         OFOTHNecwRTHXY4NjhmOEsdjjs1/AUjq5pxfDgAA
         """,
-            """
+        """
         com/klib/MyFirstObject＄MySecondObject.class:
         H4sIAAAAAAAA/41STU/bQBB9u3YcxwRwKKUQ+g2Uj7YYUG9FlSgtkqsQECDU
         ipOTuHSJYyOvg8otJ35Iz71QDkitVEX01h9VddaElNIe8GFn5s2+ebMz/vnr
@@ -3018,7 +2990,7 @@ class ProjectInitializerTest {
         6GLUxW3cIYu7Lu7h/g6YxAM83EFOwpIYk8hIGBK9qd8jkZco/AYxB3HN2wMA
         AA==
         """,
-            """
+        """
         com/klib/MyFirstObject.class:
         H4sIAAAAAAAA/21R30/TUBg997brum7KmAgDVERAAQ0F4otKjEgk6VJmImSJ
         2dPt1uBlXZu03SJve/IP8d0H4gOJJmbRN/8o43e7ib/ow/fj3HPOd+/X7z8+
@@ -3034,7 +3006,7 @@ class ProjectInitializerTest {
         LAM0rFFUt14iyiK9YT2zXsZ9ys8Iv06XmW5CczDjoOoQY44y5h3cwM0mWIJb
         WGgin8BKcDtBLoGRoJjViz8BtD1vnUcDAAA=
         """,
-            """
+        """
         com/klib/ProtocolState＄TALKING.class:
         H4sIAAAAAAAA/31TS2/TQBD+1ukjdVP6gJb0ARQaStJCXCpuRUhVq4LBjRCp
         gqCnTbKEbexdab2OOObMrwEuSBxQJG78KMTYDUWiLZY8j52ZzzPfeH/++vYd
@@ -3051,7 +3023,7 @@ class ProjectInitializerTest {
         o1dJ57BJ0iUv7buEIu5nCHfxILuc9LPQFIvHyPlY8rHsYwU3SOOmj1tYPQaL
         cRt3KB5jLcZ8jNnflXyZidkDAAA=
         """,
-            """
+        """
         com/klib/ProtocolState＄WAITING.class:
         H4sIAAAAAAAA/31TS2/TQBD+1ukjdVP6gJb0QSk0lKSFuFTcipCqVgWDGyFS
         wqGnTbKEbexdab2OOObMrwEuSBxQJG78KMTYDUWiLZY8j52ZzzPfeH/++vYd
@@ -3068,7 +3040,7 @@ class ProjectInitializerTest {
         9DrpHLZIuuSlfZdQxIMM4R4eZpeTfhaaYvEEOR9LPpZ9rOAWaaz6uI21E7AY
         d3CX4jHWY8zHmP0NVIYRE9kDAAA=
         """,
-            """
+        """
         com/klib/ProtocolState.class:
         H4sIAAAAAAAA/5VVWVPbVhT+rrxIVpzEmCxmaRIaN7GdgMAl6WLK7iQKxiTY
         cUrdJpWNQgWyNCPJTB/pS39If0GAmcIk046Hx/6oTs+VzRYwM33QvVfnfuc7
@@ -3096,184 +3068,184 @@ class ProjectInitializerTest {
         KXqySNBUEKhTEp0UBPDW37/Hz7RPE0OB+mmxioCKooolFS/wknYsqyihXAVz
         iblShegi6uK1S/9WflZcZF30/AfNuHOWXAgAAA==
         """,
-        )
+      )
 
     val klibFile =
-        KlibTestFile(
-            "/myklib.klib",
-            "" +
-                "H4sIAAAAAAAA/5WaBVxU3bbAJ+nubqS7le6WLqVz6FYQQbq7u0vpbpEUKQkB" +
-                "JaSRkBZQQB5+97534Rrv+85wfmeYmfXfe6+z9lrr7LVVFMAQJAAAAXB9UAJu" +
-                "HggATICZuYWxm60rm6YGKgD+5pcq12I4AAQEhJ/EMG6I2RnbwyzMXVx/Etcc" +
-                "qkbqYscAvL3skBIn7mHx9/cPj28KeiEwaOxc3qxQ6lOJhrQbHQzuD3x+SPPq" +
-                "3t5dAiJL0zF+y7pZDQX+z6P9g8AK9VQB9cujDn9JLrnxnCRO9E4exmi/Kcan" +
-                "pUHeK7kxxuLdhm9by7eXlDxyrXRkOFFTC8ud5u1yEUWIpF6J5wruZV9AVRTg" +
-                "EfiVw9kCrztU+e8x/VoVyDfGBHP+J9ogui1pAbM1l7J3dYaZu7Da2Fv8BAJe" +
-                "AQBXP67X5+m/r3tIfGyudo5sHBzsHHycAlxcXBx87Lxc7BwCvNxsLs6mbKYO" +
-                "dmw2tjATNkWYiZi9vYOrsSvMwZ7VxhWrFgjAxOLgvK/3UP8ZMBwYCYwC1gDb" +
-                "gS+BncBp4CpwDXgFDAdFgPJBBaA2UDtoCjQN+gzaBT0DR4GjwQXgGnAtuBfc" +
-                "B54Bvwfvgi/Al+AWSCtkBrILuYIkQzOhWdBX0HXoBjQSLgpuCG4Yzg/eH74S" +
-                "vgq+F34dPhAhFCEMoQChDWEcYQphBuE9wj7CAUIIYihiPmIz4lvEScQpxGnE" +
-                "Q8TviHlIxUglSHVIM0jzSAtIgcg/bksS/ognBPgvXfxeuQS3lWtmbuJmKWdv" +
-                "4XCtWrOfVJuYoH9/lh0naBhqSk5kazqeQkAhajLf+/y5bOtMni0KYoAGPZbs" +
-                "Q6rGptL6ySgSS7V3a6f7Imfm95yi/Em74PArsV5ueESLbCVgcMq89pJG+Ary" +
-                "RNODK/edEnuRY+f1EdgOKn9m4L/gb0BxhXcMPEarA3oGRTytmKpJTzHsGiI+" +
-                "TnJq8/sSnaPv1dFTNiwIFQKy+OGpPCiYk3hlNyMAZm1Ce5Bt4TEEH1xN8vYs" +
-                "ZbO6zbrGW47UZUwY65t99ba2z1yUhYdZkzotdtExd0jK950Huf6NGcepWg8l" +
-                "o2Eqd8LI0OV4nObhqsLN9j5trHlfre7Msb+jt3336KJ1iAjl41Vjv4/UnD6P" +
-                "U0NeRthzRrEtooVR7kFsdrYmMnLO8lRO3Y9d6/GKE2JDnoLvpMgtZ8iBY83N" +
-                "aFVHWSne6C4TpXhdWg1XQMuDRL58J5TEHt0ttnc7eXCenQHhnnC7n4S0pxuf" +
-                "qElWfGyvrLJBfiI/BltUoTSqY1/iF5S2+HZ/w4bOtnEWtV/DS0qRvTe4iUqU" +
-                "uEpRhUeIZQRSRPhGThyavEyB3X0oy/SiBZBlGuWqMRYaiPWAWMUcg2E4kOEK" +
-                "p23wdPjeqwQZvz4osja76ab789L17jefostWeHw5v9VmIFbpWE/57uVOrLP9" +
-                "sByU2hC5lWvLeQr9k+Xg3rYcEwezf81Ik5/M5qmmvhWJJk5Wa6qSsoMp5733" +
-                "sL5c2mEamPV4nZuSNULk7lTIIrp1GZIarjx00x9dzAsjtjWdZ35Eq6S01A33" +
-                "/Y6EvoSoiqqY6rd4jTAc4tkPdGKY2fIHG2KTwmfz92q5ap/GOI4MZBxl7nmd" +
-                "jmS2phVxKK1s8ygRB0d2NnTa+6P2lgmVzJPsNSFyEYY/gnpwJfmguWPwktT2" +
-                "+zWR8hJdsFW/v/Igi1xbPbJPARJPeOkfXN0jkh6029VaCFx03W8QknvTmJb2" +
-                "ameNNytuwD3rWMdPTzPs+67bEw/0tXOS4EeaKWJ58w9HvyiaWHZZVd9vDbLf" +
-                "OP/UVzU7qs+4nlobW8zELNXFPYtbBq3i8gMGM74bVKSMTqJeDQIwII56YIUy" +
-                "klacv57ewnTOj/YqGJT9UAIOZczEbBHPwvUM2Yl2ykOjeW5s0VAw8S5vF+0Q" +
-                "SJhJtqBvDMOaHVZe4I1fZeFuRWVPeItAzmr2bqLUucdBEoVYJr8PxYg+F1NY" +
-                "49xTqfgU/1K6p8qJypoEHoWWu2tC3C79XhcLYebImY24X7Fmi3+jZ1nguvu5" +
-                "rh62XD06vhTnXLDQK2ErlcC7r1UL/TaojwwC2kSCJPU7tNkILdA044+VBTYX" +
-                "BvrNXN33XyFt01VP98hbMJMUv4cxlADE1ugitIgp6uQqFSpDCDj7beTuvvyE" +
-                "TRkkeU6VVyyeZykKwfhQMF2oPbzilWy9MNA4NSPqMur9sh8lKxzez76oRTv5" +
-                "IrGSWYrJR1inOSH47nrOm2YJGoshvGTaSN7zb8b+rD5Lg9Io5i8JBrwpE/ax" +
-                "aAABvJtum92RggZcVt/B3U+TRJTwt4OOaHyaushoDsI8yF/OptJQpggkba60" +
-                "X0yl2rddvU8m9Vf3pS29eM4BWo7egrNa5CIVHG/X4uMdpEa2/hq1DXd5nrtE" +
-                "tni+qcOxtrPyxGZHtUOspvCsBWRT6BzLcDdhmEN4GSWenqOWLX6Z3w5apO6k" +
-                "fPidQU3JJQpXLd1B5kI4u4ZrRr1uAt3gDeniU5rnDJbYjYxDNEvVM0UggCr9" +
-                "hNd8cIdqdI4M+BM/Kz4xQFS1yIWqPOdjqCuCEGYwCED/ZpWlaD74DFynpnTv" +
-                "9HAAKZ3igIxL5iuvZUiPnMVJawSnEAm3TQ4ll05s3teiNN6mw21bjIFGQ6WJ" +
-                "PYXvx21VXZtfjO5y5HfDiXpTdeUZyuPtTrC4lpoJpDfrG+OF3k8htDX9qh6k" +
-                "DwdnRWH11W/NfoOR12daVhKGnumSzSUSqV/rpx/e4zVgwkcCsJ4u28+7S1Pj" +
-                "avfeme6sKUI5CF1zhiK0dgjl/hRsnVuygjN/Ag4tc3x7fOJDaVlc2Awzbih9" +
-                "eUGWpXeaVntZXMuyuUQp/rIlENDca8CLY1hiXtqQoqmGKVGqbaLGJqVWyUlt" +
-                "Dg5Wvr5/m8UvvUpDhtViQ8blt6KH7k/MUhUXsIY8pP+y0QdUWDQDADwTYGsa" +
-                "ymPUvBPUmIW4l5XMsnx4F0nJ+aNoG5OHGN1r+tEse3p1bR9Txv4XKf8u2bOZ" +
-                "SO6S2hsAiDlV5JEx9PGKbg13iBvbXM+caFxEoBviTS7k0pPmYiaGRiSsBa36" +
-                "FJilFm1qvcHH1tH9IHygGWW0izZHFHKIFfeOuEwVGjrEJ7uORRGrNI2svqXN" +
-                "apiG5LMmj+hBSj5Z6kjjay+62qiediiwcRn6seOeFDsP5kFR6GujvCG+Ox0M" +
-                "dG+KCtNEnHLxlATJlJlfhz57ra2bnqegkPzu4wr2WVR6FpbSfZYr4A/Hy5bm" +
-                "uEh77XSxkf7kePFuO16X61TI3vKH5/05R7RT+ytgo+Z3Aqp9Z+4cUJ+Mt0tn" +
-                "jS9qTR3W05B+UF+Fa3xc4J7IL3upf+7fquwgHn7iGHfutNvcMe1OsvHaSdqH" +
-                "tN8DQAKWfsbUSbiIw9E1h/oN/1k0Qa3gW8cKIDkgO2bFaB6/k/RQBDwy5h1d" +
-                "r/3kamHXjXkPyynwy4lP+Ac8vk/ZO0ukJ5sbzaIZOd95+qJjHnVMX+Gdn37D" +
-                "JxDpO+P4Rj1Zk1Y8st2x+3bXsubroFplNlMzwmqXujyxfYHWqesbKs89eVpU" +
-                "j6miOGu0ouIG5jfObIewWLXsGkNut+F429c2DLLDjO2LmvRD8d5mbySJ6K17" +
-                "P5r1vRiRs27HrH/fwmTcQRYka2FN70qnHlfgJD5x8Yjj4IKcOQ1XXdr/CX8R" +
-                "H/qhyWvPjvu1zMrobn1XY2Txz5SQRIKcWnYWMXUCDA+KPN7HtjJ/WA2cflI9" +
-                "csf+aOqrMq+RiOwRN3ZfSEs+edDrFh4v1VBR3j68pJbnkrDT6YDKVCG1th2N" +
-                "hQTUyCI1jWj4py0I7zXs4iFHEYFynV5J+AZ304O537T6kzkbv9YqK7ROj5E6" +
-                "ivgegDyrj1up7av14hU5+hRfZcXXpNn7bXX4zAkl5s0KLR7ih1oHnumdHF7t" +
-                "C45Q7KR2DjtNAf5uA3SqbruecJGqbFoNW888HtmmzDdEUxOF+G1ojan09Z6S" +
-                "HVM5JtxlfP4bDCXW0+hkg0vQ5oRvBbFMvS/mkHfSt9YdrLjRkUX2a8peY21x" +
-                "sdGLEylbfShcKVTZp5eayATYUYk2VH9wxT+D/2Gc90SGLGVBAEAr5E/GSfhf" +
-                "xgmztDd2dXM2/7V9umk80FCXwRl+KI6A/1ZB9rUoRFpKgGp5tmOyYSpPikW/" +
-                "/OSF/qD3t7H7Ld9gOJK09HkU6EzRgbghKlV5JhBMHLsCkB/6Wyv6pjy8kry1" +
-                "z3nxjhvO7eHeGUPNGzvtowJc8aqlGrKFh0oapRq6k16lhKWwUqj6iuRHioqh" +
-                "DZwXykNOVPfpBj3UJ0I42j/Bh/Kv17ZIH6Rj2xU5FPVac6Aq41k2U7xr5TeU" +
-                "elhqqTLJVVJ06rtphfvxcGFVoO8Lps1Qz0qp8Ri/U+IodT+BuVsCQWO1kIY1" +
-                "00FZUlz/yNwwcu46XYVi+Dvt9dWjwSeT4R9I9rpdGAskSBz2+UmK+66yZO/a" +
-                "DrJYVYrnLPMIHk5RolY+qswYbdXtOhQk5y5cCd6WUXMZbxnJeg+RVfwWbtPJ" +
-                "XVIxpKuX7bPzmXcRwWTp/eOSl6U9umk2V5htCP1dINbPDGln3XOxF9glElC7" +
-                "ZxghyDujQScP7k14wzmoPpRps4qmWurKSk4+rGEc6se0oqeO4UTqR0Nv3klm" +
-                "sd6n3IJtxrbyZTeaF4koQT4jsZFt5r/TazfKIRFaQxGsx/0QX8G7BzE04Otl" +
-                "X5Z492TbXln5AiDYaxKGWvCSoPhRh5CDspCGSlBnNA+W34s3LS3KmhYaOJT7" +
-                "xY7x8PZY4gf7lyu6phv6DRoQ4A6K4vVfGJfRkkDTxWedcPOSSytOP12NUATj" +
-                "syGrpaUO8GgfG0WKUluodJD3eyO5F4wfVoYkKVRcaaQeRel5GhZ0sG6KYch6" +
-                "hWgFsco739HEeyRCLpWT3+5nSfzM2UA3fYuoXOYuFkXIWVitU5Fjhqq62+H9" +
-                "Jz7FcHOzeCupLNIhnfV0I+2792KnY8I7RR8zYlFjeLlcOfoYu3gbCEKwRZbZ" +
-                "Boa6ffCn32UMOtUDCUo75Y2FO1xqTr89Pn0lg49phEUhRu1kvl0LL+DWG79N" +
-                "EaD1kJpg7sFGu2gwXouYPR3SHmumY+RacQE/ZoBaOw/IaPZTLLFW//s+Y8gd" +
-                "TgUiD8wKq3KP+UsFVVpSDzTch9uEHuUYkT7bs9mGNhzJ5X7snOkLeKfzp4YR" +
-                "dORZIx1Xx52GxJQZ8pW4Jk6ar0K6eRatiuBJxCBYr6sG9zPnwtdn9aWCu3xl" +
-                "sct63jfAU8Pbu5ldP2uERkEGOPM/T38bPh0c/vhK8EC+8o6nSQyGzX7iRSgd" +
-                "KunIk2r2bAh2Pnf/k6b6Zdfddhm5L9OYkmGrp4h3KNXnc9AdHfoDQ/XOu7dq" +
-                "EfBkw8iXlbVXNGU+6tuwMz9cGs6PhuDOB37uQlPtDg7AiocYBn9moQtHX9/N" +
-                "ivCj5wyeDjv44lXVf8RZrj33gOE7xy6Zz5iRArG9pz9AdsZ1HXsu2Q3W1vVB" +
-                "7WOEEWZ5x4RLpDtS9vLJ7nhDQtxWxEdMyXhHLErcOYoxvqEzmdyD0f3IFyyP" +
-                "TlHJ3KDdJuJF2MTVa1MqLVxPHB8L9Lx1bhVcc0fMXhnjs0tlWyjQ0KbSEV+P" +
-                "8zATPjfsq86MUk/AfnTHHrui/LFHa1XpYxVwNU0cD1Fj6vXpsS69wst0Lnd8" +
-                "HF+yY/mqbhx/hmNMx57h5cwx0iu1mhhJTKPMvlrlFUuv3saQyjM8nt2yhdlz" +
-                "Gp/FRPArzimHC62FTweTBw8aGSBexW8mAlCOaMkILtzODvNX44gggwNUcvRi" +
-                "WxLA0KQZxCttSuN0lPwctjscZqEFl7jC9XtLDA+cDztwIEwF+9Nn5P2mLqPV" +
-                "H+a1McpoqtWWiTNO21b04ms3EJ/qaAVu1RHKzkQ9qIkWFJ5JW7CRqvpwlLHz" +
-                "NtdhYPwK8MMhy6UsPxe4zhaeIv7JIePcdsiuHo6/8cWmRkZGECptODg4BgoL" +
-                "sIk7SQpyiMCzFOKw9znc8BpZYPh1aVMXm2qEKjl2WDVSXbUoPStCL3wuhCKB" +
-                "JKAGqEYCsoNiKcpH5OnZguziCXypMkB2yARi4mEIRZxv5054IlSAcLTS+jGH" +
-                "bqJ3ejTgMB7By/JJEihm+42f5hxz0V8iWw+KVI35UuTy3gmZxLljBg/xS2FK" +
-                "6VT8a6jrxbvMKdd9VAL+aajUt4cKc5azt4XZm0uam9oaO/+1oOPyy2WNHyM3" +
-                "uz6BJnB/tbbjypqKcv35j/P3rZH+d2v/bzv6ST622OYE/Xv28/wVs4+n62fL" +
-                "wczmEU5R5GSmbZOBtk0YXejwEqGq/tKoqibH6JEc0kqNiSCbVLPUKhwqW5QA" +
-                "DlegnwtBDINkAxSFECImGoAhyt2HIXaAnr03325nPJtuIDJ6dCm8dzT3RJ9W" +
-                "Lo52oF0vrsB24Dss/wtNObNeMcwDFlnkFqmFyMInJz1mw1BO0pIlX+litTb2" +
-                "hXEjjfuQ17M8r3Dii9RGi05cgviGp6A+W3KB4uTjB3GTFGti55iJT3xNTAVd" +
-                "uJWGTQg9R0s67wQyfH/oSa6eikRRTZTfufdOUK/hQ86M3FhVF0Gyoi6HEFH+" +
-                "qiMvNK/Xl1mr35yrBNop2EM2BOEyJjgYPxeCI6xYDdPNg/I0ErFS8I7fUR9X" +
-                "WCcAYWZ2drjVJCZipilJrXiLD7c7U2yZMPPLpSPM65jQPRJtlOCgiICG0DRI" +
-                "NIW02hrHvPXtCA6k7UkjekgTIdClRtXoLnHGOIoSSMFM7SqyXBPgjU7Lk8iV" +
-                "LbWlW5tnCeVA40zvQzo+wpyNiK6p55KdJW+sC2yYomGRFZot+vT8rVYML2aw" +
-                "u8pSvp0dLYzPNXZqMMyWhY7lNZK70hhPLmrsyRGalQP93GdCd+wIrdiziZFD" +
-                "USDTCZdz+CXzBCkkdoZYOvdj8ZqNgHX3QzrU05gjW1NjK6C8NvbuxfiHkxmj" +
-                "Qi1fzqOQel4ztdRw+bdpmuUSi1a+X1M8GwfTPKP29USrcnmOKCsDe+Cmip+w" +
-                "uMuOb8NAhnwWenxU0zpYepDKQgh6vy3bE5ov3FgY6K05n0x7nj4Nkq6hTdp9" +
-                "6ZdAsTqaWq2FJmVGICxz5g5PuF5z0LB0ZIaQVzUYlkWHYkjT/QqNwMAJRTsO" +
-                "CxJEZtrAiwxjo5sg0rz3OVEjbcCxwFDBL+XNUaTAydJDqeMz7xfVOSVf72bl" +
-                "tbOf93A8+IwxeRyW2ia3P66qoGfSuI9XD1g2vny+i+2+N74wQhY0b9e/K6Tm" +
-                "11nRaZUkYVOe2nb/7BUsKFWxGlWEQgIjELXUM5f9IuZwZMfE7PEbjosZSvbJ" +
-                "yJi+AdY5euxIcukFAR6rzN4Q0RR5slhZnFUVvte4ifiEmkX59tIUc1nBDFYN" +
-                "d1lV1OZBnDVkNLlOPvLtmL6o7SqVTrNbvL5xW0oUSvdEeVs8nOTnozpVyCft" +
-                "ou5Sqqi145oZVeaTpav5BIkeWbCV8t3bUr7+MWtMrWqMFh+5JTPXdh2typ70" +
-                "4rhYSWXr5deAqRNAvbsnmFVrLdnFdtAgNrluDt3ZhU+2a7ifOEi3KHG8lkzY" +
-                "SgmWz4ahOSMywoyOGPTgJMXp4QnK6wTiz+A9AalmQtsK8o5q8n0giKb6o1n+" +
-                "a8OSr3UP63MNzXjHZWRfDoGVxbaWiAMqdo+XSsf8kgYwfY266Ai+5BZqsH5n" +
-                "2d8XJkdzqn9nN/FMMRjtdXca2JP902NvtgmOjgnwqE7niSCQI2ZNYCxB93m0" +
-                "WM8IyQu0DJUZwdZo5E9gWZOPzWpPUcIVj8e2lmlLhZUpuQkq+whdrb/TYyie" +
-                "0Yz1Ey72VVgfq9qccvgJPxNkxnyrIEW+8VbGEl6wkT9rgxKuRpBOnfx4Q6Ag" +
-                "J3pwam5X9+lQ43lTtPAzGnfO8mhDyTvfrB4d1GiQv6SqO0KevHD10z9qEWVf" +
-                "Ulfzb/XtPDDloW/qZD3jQwLJ2dKXLyrFhvoh4vP1sNtTVwkYxPNG3COAi+GJ" +
-                "6O9l/97J3qFneP2JCCWcOIdBlvUyG8TbWmw3Jv6JNgXTo+dcTU3h7viX+NX5" +
-                "8FlIO3mVTMifpVtwrSGKJtoTRF/vF+TFGuBnW5TF+9uYfasZnwmpvPtZxnrG" +
-                "5KnnPukQ3VYMIHOit+Gz9AxIbkcrzU7SrKthtNeSYGK41J1tG+ObkJrCVeFe" +
-                "0kw7NzIE+3sAHfVcXkoNX30iP1ZQ41TN3fm6xvF1DNvCkQV50ANgngyVHVM5" +
-                "1YSnlr6XhTVTOsaHicSORPfr28UU94CBS6Eey0ovhr2uklclbdIW9zXRZ/5a" +
-                "HaZxwWPdkirzb7Knutunui1uSwNeSRzdGUWJ1G2XY47apZe6U6X8jZImpxoG" +
-                "MI0gxjovnoUvjsKZlWtixeMVMuV6dEfvi3bOyX+EH9GYkl1qOADAGfkfxPUf" +
-                "VZFf10P+Hd1ilpeNjVZW13FxYmOSBisTTUyMJk1gUzDeGiPAX1GP8KGDO831" +
-                "76kAfyrjYN5o9jq42pgZuxr/upjza3mqX8k7GpvaGFuaG5o62LH+VYX5B9Uh" +
-                "5r8FZDf8cbnWj91P6EANJfUPKjjDCmRyTQSPc+oTvHVtWerLOV27mxitMFno" +
-                "1VPG9OmMeqxkMzDuSmi7q2pd6l+i6re4DzwfXDhFCMncdAWeZhwtNO/N3QPv" +
-                "Z4p3Vc+2Rk3zZrbgZnjQ5Rg89jVtzdlpBlalzbM2V+Cn+H5uJsYHYmDPGCaB" +
-                "elr9eL32xg/9KUuGOxvnWWl2t6AhUydvshvR0dNYYkQ3Hwvl4M+gRtzbAwwZ" +
-                "k0Y3kNZ+hC9cRRM759zs92UTvcB6Gb2zaDuNBBoMlnTASLHrf/7+UvRhiJtg" +
-                "f/XdtgfkJl9m1UOMan2hfXUSvQ0Z2CEmeY6EYZuPfKcEM6AW1sZoL/1lB06H" +
-                "l8wYkmy+utMdx+FJwldsohOP5KCP2VU+grV45Z255nWfCPSB8rmEnqPMjZDg" +
-                "bm4y4DNEI0g/1am+9MYgSmzYlGgTttUjHRVKDSvOgofTA6Nv2C/jseSQz4mh" +
-                "1+WPG9jsGeHXaZWexILrHR7pT8hdUlBwgZ6zcgiwhD43TtRFKamogmrQc3XF" +
-                "N5Uk0IqPVKmVncZIvXcuEUbZxlblSULdtv40EppmtE3pg73gk57EachFFB82" +
-                "zkNP6C8HfWNlL03twk1sal2tRou6ychLq+bvCFIsl+/Pz0ScsuQfyNN0FrSe" +
-                "NzITgqePDEVzJsOPSfYBDrNuUgtIFbgWMEciSmleRqLrD3zj1K5P3EnK0GdR" +
-                "OId78kyOU0CNJsVMGhar/Cm/9bg6J9YkYELqhHuQr4FKsr7ECXOmNs+AdCBE" +
-                "pFdHbahXJhUzFdtILsvH0k+dpF8gqkbKO1QikkUTFy1Jh4i8KRqTaY9pIt1U" +
-                "rTPXgto/LW7CmQyjH1L0FRrzgimHWmsioLatT7uqNBqnA5TPvH3Y0ZcV/oqj" +
-                "JxyWM3BHajt0qXjGTJC7TAmV7cpYBxk1lKWGzNMAcfRz+4yXKZ6B5+XLPujT" +
-                "Y1RSmkycKPpB/MItIs8R86dgkXTTrn7FMKjsVxzPCrEWIKlPKPHFFQxFT5Jr" +
-                "GTHpAvxjuhMhpaMfgQAArj8WefB/NbvsHMzcbM1/mkgry1UD5UMjA4o1tcuy" +
-                "I6PvwBx/LWraebzox/7LYf3JL9wsebsaO1uau7r8E7dC9Avx6/66PTZ8zMv9" +
-                "T0CUfwTZX2f37ub/hEf9Rx7M3tTWzczc7J8QsW4Qnc1dHNycTc1/qSsgCAnw" +
-                "u20JiIDbx382KUD/hfkhjgP4j1HcLPJj3BLnuyH+n80KNzC/6wXyLQwyEHB7" +
-                "f8BvOnKzrE10iyB1m/DTPoHfAG9WOwluAfNAgD/Uxn+Du7mGj3sLNwcB/K5g" +
-                "+hvWzSVXvFssTSTAb2sAv4HdXC4gvAU7RAH8ac32N7ybz+Q4t3j+WIDfLDn8" +
-                "BnXzgZv6FsoeG/D3Hul/Q76ZS5Hevhv/Tf7bzJuJ0u2BPyD6yQJ/tr3fTQfM" +
-                "W6jxG6gbedbf4FDd4mAR/4Lzi3zrN2O9GSWYb4FN/xb4Zt71myZuxgf8W028" +
-                "IvtFE/8bfP6GJm77KUZywC8izN/A3PYysF9gbkaavwGkvAWs+SPw/yLO3+De" +
-                "njogij9xb0Sev0HGukXWuEG+GYH+DwSF+3HFvX55Xr9LpPjx3/8AgHFQOCUn" +
-                "AAA=",
-            -0x6b251479,
-            kotlin(klibSourceFile),
-        )
+      KlibTestFile(
+        "/myklib.klib",
+        "" +
+          "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" +
+          "AAA=",
+        -0x6b251479,
+        kotlin(klibSourceFile),
+      )
 
     fun getUastInfo(uFile: UFile): String {
       val sb = StringBuilder()
@@ -3328,12 +3300,12 @@ class ProjectInitializerTest {
       appendInfo("LIB_CONST", expressions[7].tryResolve().asSafely<PsiField>())
 
       val constructor =
-          expressions[8]
-              .asSafely<UDeclarationsExpression>()!!
-              .declarations[0]
-              .asSafely<ULocalVariable>()!!
-              .uastInitializer
-              .asSafely<UCallExpression>()!!
+        expressions[8]
+          .asSafely<UDeclarationsExpression>()!!
+          .declarations[0]
+          .asSafely<ULocalVariable>()!!
+          .uastInitializer
+          .asSafely<UCallExpression>()!!
       appendInfo("LibClass()", constructor.resolve().asSafely<PsiMethod>())
 
       // Yields null on KMP native because of b/458272425.
@@ -3341,10 +3313,7 @@ class ProjectInitializerTest {
 
       appendInfo("containingClass", constructor.resolve().asSafely<PsiMethod>()?.containingClass)
 
-      appendInfo(
-          "+c",
-          expressions[9].asSafely<UUnaryExpression>()!!.resolveOperator()?.asSafely<PsiMethod>(),
-      )
+      appendInfo("+c", expressions[9].asSafely<UUnaryExpression>()!!.resolveOperator()?.asSafely<PsiMethod>())
 
       appendInfo("LibClass.companionFunc()", expressions[10].tryResolve().asSafely<PsiMethod>())
 
@@ -3352,22 +3321,13 @@ class ProjectInitializerTest {
 
       appendInfo("LibClass.Companion", expressions[12].tryResolve().asSafely<PsiClass>())
 
-      appendInfo(
-          "LibClass.Companion.companionFunc()",
-          expressions[13].tryResolve().asSafely<PsiMethod>(),
-      )
+      appendInfo("LibClass.Companion.companionFunc()", expressions[13].tryResolve().asSafely<PsiMethod>())
 
-      appendInfo(
-          "LibClass.Companion.companionProp",
-          expressions[14].tryResolve().asSafely<PsiMethod>(),
-      )
+      appendInfo("LibClass.Companion.companionProp", expressions[14].tryResolve().asSafely<PsiMethod>())
 
       appendInfo("LibClass.LibClassObject", expressions[15].tryResolve().asSafely<PsiClass>())
 
-      appendInfo(
-          "LibClass.LibClassObject.func()",
-          expressions[16].tryResolve().asSafely<PsiMethod>(),
-      )
+      appendInfo("LibClass.LibClassObject.func()", expressions[16].tryResolve().asSafely<PsiMethod>())
 
       appendInfo("LibClass.LibClassObject.prop", expressions[17].tryResolve().asSafely<PsiMethod>())
 
@@ -3377,15 +3337,9 @@ class ProjectInitializerTest {
 
       appendInfo("MyFirstObject.MySecondObject", expressions[20].tryResolve().asSafely<PsiClass>())
 
-      appendInfo(
-          "MyFirstObject.MySecondObject.prop",
-          expressions[21].tryResolve().asSafely<PsiMethod>(),
-      )
+      appendInfo("MyFirstObject.MySecondObject.prop", expressions[21].tryResolve().asSafely<PsiMethod>())
 
-      appendInfo(
-          "MyFirstObject.MySecondObject.foo()",
-          expressions[22].tryResolve().asSafely<PsiMethod>(),
-      )
+      appendInfo("MyFirstObject.MySecondObject.foo()", expressions[22].tryResolve().asSafely<PsiMethod>())
 
       appendInfo("ProtocolState.WAITING", expressions[23].tryResolve().asSafely<PsiField>())
 
@@ -3397,58 +3351,31 @@ class ProjectInitializerTest {
 
       appendInfo("valProp", expressions2[2].tryResolve().asSafely<PsiMethod>())
 
-      appendInfo(
-          "varProp = 2",
-          expressions2[3].asSafely<UBinaryExpression>()!!.leftOperand.tryResolve().asSafely<PsiMethod>(),
-      )
+      appendInfo("varProp = 2", expressions2[3].asSafely<UBinaryExpression>()!!.leftOperand.tryResolve().asSafely<PsiMethod>())
 
-      appendInfo(
-          "varProp = 2 (operator)",
-          expressions2[3].asSafely<UBinaryExpression>()!!.resolveOperator().asSafely<PsiMethod>(),
-      )
+      appendInfo("varProp = 2 (operator)", expressions2[3].asSafely<UBinaryExpression>()!!.resolveOperator().asSafely<PsiMethod>())
 
-      appendInfo(
-          "varProp += 2",
-          expressions2[4].asSafely<UBinaryExpression>()!!.leftOperand.tryResolve().asSafely<PsiMethod>(),
-      )
+      appendInfo("varProp += 2", expressions2[4].asSafely<UBinaryExpression>()!!.leftOperand.tryResolve().asSafely<PsiMethod>())
 
-      appendInfo(
-          "varProp += 2 (operator)",
-          expressions2[4].asSafely<UBinaryExpression>()!!.resolveOperator().asSafely<PsiMethod>(),
-      )
+      appendInfo("varProp += 2 (operator)", expressions2[4].asSafely<UBinaryExpression>()!!.resolveOperator().asSafely<PsiMethod>())
 
-      appendInfo(
-          "varProp--",
-          expressions2[5].asSafely<UUnaryExpression>()!!.operand.tryResolve().asSafely<PsiMethod>(),
-      )
+      appendInfo("varProp--", expressions2[5].asSafely<UUnaryExpression>()!!.operand.tryResolve().asSafely<PsiMethod>())
 
-      appendInfo(
-          "varProp-- (operator)",
-          expressions2[5].asSafely<UUnaryExpression>()!!.resolveOperator().asSafely<PsiMethod>(),
-      )
+      appendInfo("varProp-- (operator)", expressions2[5].asSafely<UUnaryExpression>()!!.resolveOperator().asSafely<PsiMethod>())
 
-      appendInfo(
-          "++varProp",
-          expressions2[6].asSafely<UUnaryExpression>()!!.operand.tryResolve().asSafely<PsiMethod>(),
-      )
+      appendInfo("++varProp", expressions2[6].asSafely<UUnaryExpression>()!!.operand.tryResolve().asSafely<PsiMethod>())
 
-      appendInfo(
-          "++varProp (operator)",
-          expressions2[6].asSafely<UUnaryExpression>()!!.resolveOperator().asSafely<PsiMethod>(),
-      )
+      appendInfo("++varProp (operator)", expressions2[6].asSafely<UUnaryExpression>()!!.resolveOperator().asSafely<PsiMethod>())
 
       appendInfo("varProp", expressions2[7].tryResolve().asSafely<PsiMethod>())
 
       appendInfo("propWithGetter", expressions2[8].tryResolve().asSafely<PsiMethod>())
 
-      appendInfo(
-          "mutableListProp += \"a\"",
-          expressions2[9].asSafely<UBinaryExpression>()!!.leftOperand.tryResolve().asSafely<PsiMethod>(),
-      )
+      appendInfo("mutableListProp += \"a\"", expressions2[9].asSafely<UBinaryExpression>()!!.leftOperand.tryResolve().asSafely<PsiMethod>())
 
       appendInfo(
-          "mutableListProp += \"a\" (operator)",
-          expressions2[9].asSafely<UBinaryExpression>()!!.resolveOperator().asSafely<PsiMethod>(),
+        "mutableListProp += \"a\" (operator)",
+        expressions2[9].asSafely<UBinaryExpression>()!!.resolveOperator().asSafely<PsiMethod>(),
       )
 
       appendInfo("propWithField", expressions2[10].tryResolve().asSafely<PsiMethod>())
@@ -3469,38 +3396,38 @@ class ProjectInitializerTest {
     fun getUastInfo(descriptorFile: File): String? {
       var result: String? = null
       MainTest.checkDriver(
-          "No issues found.",
-          "",
-          // Expected exit code
-          ERRNO_SUCCESS,
-          // Args
-          arrayOf("--project", descriptorFile.path, "--XuseKlibLightElementProvider"),
-          null,
-          { driver, type, project, context ->
-            when (type) {
-              SCANNING_FILE -> {
-                context!!
-                when (context.file.name) {
-                  "Code.kt" -> {
-                    context as JavaContext
-                    val uFile = context.uastParser.parse(context)!!
-                    result = getUastInfo(uFile)
-                  }
+        "No issues found.",
+        "",
+        // Expected exit code
+        ERRNO_SUCCESS,
+        // Args
+        arrayOf("--project", descriptorFile.path, "--XuseKlibLightElementProvider"),
+        null,
+        { driver, type, project, context ->
+          when (type) {
+            SCANNING_FILE -> {
+              context!!
+              when (context.file.name) {
+                "Code.kt" -> {
+                  context as JavaContext
+                  val uFile = context.uastParser.parse(context)!!
+                  result = getUastInfo(uFile)
                 }
               }
-              else -> {}
             }
-          },
+            else -> {}
+          }
+        },
       )
       return result?.lineSequence()?.joinToString("\n") { it.trim() }?.trim()
     }
 
     val sourceWithKlibProject =
-        lint()
-            .files(
-                xml(
-                        "project.xml",
-                        """
+      lint()
+        .files(
+          xml(
+              "project.xml",
+              """
               <project>
                 <module name="mycode" library="true" android="false" compute_source_roots="false" kotlinPlatforms="Native [general]">
                   <src file="com/example/Code.kt"/>
@@ -3510,12 +3437,12 @@ class ProjectInitializerTest {
                 </module>-->
               </project>
               """,
-                    )
-                    .indented(),
-                kotlin("com/example/Code.kt", kotlinSourceFile).indented(),
-                klibFile,
             )
-            .createProjects(temp.newFolder().canonicalFile.absoluteFile)
+            .indented(),
+          kotlin("com/example/Code.kt", kotlinSourceFile).indented(),
+          klibFile,
+        )
+        .createProjects(temp.newFolder().canonicalFile.absoluteFile)
     val sourceWithKlibInfo = getUastInfo(File(sourceWithKlibProject[0], "project.xml"))
 
     // TODO(b/450898213): The following lines can be fixed by adding a fake Java module to the
@@ -3526,325 +3453,325 @@ class ProjectInitializerTest {
     //  cls?.superClass: null (should be PsiClass:Object)
 
     assertEquals(
-        """
-        Info for: libGlobalMethod()
-        method?.name: libGlobalMethod
-        method?.isConstructor: false
-        method?.containingClass?.qualifiedName: com.klib.Facade${'$'}libGlobalMethod
-        method?.returnType?.canonicalText: int
-        params:
+      """
+      Info for: libGlobalMethod()
+      method?.name: libGlobalMethod
+      method?.isConstructor: false
+      method?.containingClass?.qualifiedName: com.klib.Facade${'$'}libGlobalMethod
+      method?.returnType?.canonicalText: int
+      params:
 
-        Info for: libGlobalMethod(1)
-        method?.name: libGlobalMethod
-        method?.isConstructor: false
-        method?.containingClass?.qualifiedName: com.klib.Facade${'$'}libGlobalMethod
-        method?.returnType?.canonicalText: int
-        params: a: int
+      Info for: libGlobalMethod(1)
+      method?.name: libGlobalMethod
+      method?.isConstructor: false
+      method?.containingClass?.qualifiedName: com.klib.Facade${'$'}libGlobalMethod
+      method?.returnType?.canonicalText: int
+      params: a: int
 
-        Info for: libGlobalMethod2(1)
-        method?.name: libGlobalMethod2
-        method?.isConstructor: false
-        method?.containingClass?.qualifiedName: com.klib.Facade${'$'}libGlobalMethod2
-        method?.returnType?.canonicalText: int
-        params: a: int
+      Info for: libGlobalMethod2(1)
+      method?.name: libGlobalMethod2
+      method?.isConstructor: false
+      method?.containingClass?.qualifiedName: com.klib.Facade${'$'}libGlobalMethod2
+      method?.returnType?.canonicalText: int
+      params: a: int
 
-        Info for: globalProperty
-        method?.name: getGlobalProperty
-        method?.isConstructor: false
-        method?.containingClass?.qualifiedName: com.klib.Facade${'$'}globalProperty
-        method?.returnType?.canonicalText: int
-        params:
+      Info for: globalProperty
+      method?.name: getGlobalProperty
+      method?.isConstructor: false
+      method?.containingClass?.qualifiedName: com.klib.Facade${'$'}globalProperty
+      method?.returnType?.canonicalText: int
+      params:
 
-        Info for: 1.globalProperty
-        method?.name: getGlobalProperty
-        method?.isConstructor: false
-        method?.containingClass?.qualifiedName: com.klib.Facade${'$'}globalProperty
-        method?.returnType?.canonicalText: java.lang.String
-        params: ${'$'}this${'$'}globalProperty: int
+      Info for: 1.globalProperty
+      method?.name: getGlobalProperty
+      method?.isConstructor: false
+      method?.containingClass?.qualifiedName: com.klib.Facade${'$'}globalProperty
+      method?.returnType?.canonicalText: java.lang.String
+      params: ${'$'}this${'$'}globalProperty: int
 
-        Info for: "".globalProperty
-        method?.name: getGlobalProperty
-        method?.isConstructor: false
-        method?.containingClass?.qualifiedName: com.klib.Facade${'$'}globalProperty
-        method?.returnType?.canonicalText: int
-        params: ${'$'}this${'$'}globalProperty: java.lang.String
+      Info for: "".globalProperty
+      method?.name: getGlobalProperty
+      method?.isConstructor: false
+      method?.containingClass?.qualifiedName: com.klib.Facade${'$'}globalProperty
+      method?.returnType?.canonicalText: int
+      params: ${'$'}this${'$'}globalProperty: java.lang.String
 
-        Info for: globalProperty2
-        method?.name: getGlobalProperty2
-        method?.isConstructor: false
-        method?.containingClass?.qualifiedName: com.klib.Facade${'$'}globalProperty2
-        method?.returnType?.canonicalText: int
-        params:
+      Info for: globalProperty2
+      method?.name: getGlobalProperty2
+      method?.isConstructor: false
+      method?.containingClass?.qualifiedName: com.klib.Facade${'$'}globalProperty2
+      method?.returnType?.canonicalText: int
+      params:
 
-        Info for: LIB_CONST
-        field?.containingClass?.qualifiedName: com.klib.Facade${'$'}LIB_CONST
-        field?.type?.canonicalText: java.lang.String
-        field?.hasModifierProperty("private"): false
-        field?.hasModifierProperty("public"): true
+      Info for: LIB_CONST
+      field?.containingClass?.qualifiedName: com.klib.Facade${'$'}LIB_CONST
+      field?.type?.canonicalText: java.lang.String
+      field?.hasModifierProperty("private"): false
+      field?.hasModifierProperty("public"): true
 
-        Info for: LibClass()
-        method?.name: LibClass
-        method?.isConstructor: true
-        method?.containingClass?.qualifiedName: com.klib.LibClass
-        method?.returnType?.canonicalText: null
-        params:
-        UCallExpression.classReference: com.klib.LibClass
+      Info for: LibClass()
+      method?.name: LibClass
+      method?.isConstructor: true
+      method?.containingClass?.qualifiedName: com.klib.LibClass
+      method?.returnType?.canonicalText: null
+      params:
+      UCallExpression.classReference: com.klib.LibClass
 
-        Info for: containingClass:
-        cls?.supers?.joinToString():
-        cls?.superTypes?.joinToString(): PsiType:Object
-        cls?.superClass: null
-        cls?.superClassType: PsiType:Object
+      Info for: containingClass:
+      cls?.supers?.joinToString():
+      cls?.superTypes?.joinToString(): PsiType:Object
+      cls?.superClass: null
+      cls?.superClassType: PsiType:Object
 
-        Info for: +c
-        method?.name: unaryPlus
-        method?.isConstructor: false
-        method?.containingClass?.qualifiedName: com.klib.LibClass
-        method?.returnType?.canonicalText: com.klib.LibClass
-        params:
+      Info for: +c
+      method?.name: unaryPlus
+      method?.isConstructor: false
+      method?.containingClass?.qualifiedName: com.klib.LibClass
+      method?.returnType?.canonicalText: com.klib.LibClass
+      params:
 
-        Info for: LibClass.companionFunc()
-        method?.name: companionFunc
-        method?.isConstructor: false
-        method?.containingClass?.qualifiedName: com.klib.LibClass.Companion
-        method?.returnType?.canonicalText: int
-        params:
+      Info for: LibClass.companionFunc()
+      method?.name: companionFunc
+      method?.isConstructor: false
+      method?.containingClass?.qualifiedName: com.klib.LibClass.Companion
+      method?.returnType?.canonicalText: int
+      params:
 
-        Info for: LibClass.companionProp
-        method?.name: getCompanionProp
-        method?.isConstructor: false
-        method?.containingClass?.qualifiedName: com.klib.LibClass.Companion
-        method?.returnType?.canonicalText: int
-        params:
+      Info for: LibClass.companionProp
+      method?.name: getCompanionProp
+      method?.isConstructor: false
+      method?.containingClass?.qualifiedName: com.klib.LibClass.Companion
+      method?.returnType?.canonicalText: int
+      params:
 
-        Info for: LibClass.Companion:
-        cls?.supers?.joinToString():
-        cls?.superTypes?.joinToString(): PsiType:Object
-        cls?.superClass: null
-        cls?.superClassType: PsiType:Object
+      Info for: LibClass.Companion:
+      cls?.supers?.joinToString():
+      cls?.superTypes?.joinToString(): PsiType:Object
+      cls?.superClass: null
+      cls?.superClassType: PsiType:Object
 
-        Info for: LibClass.Companion.companionFunc()
-        method?.name: companionFunc
-        method?.isConstructor: false
-        method?.containingClass?.qualifiedName: com.klib.LibClass.Companion
-        method?.returnType?.canonicalText: int
-        params:
+      Info for: LibClass.Companion.companionFunc()
+      method?.name: companionFunc
+      method?.isConstructor: false
+      method?.containingClass?.qualifiedName: com.klib.LibClass.Companion
+      method?.returnType?.canonicalText: int
+      params:
 
-        Info for: LibClass.Companion.companionProp
-        method?.name: getCompanionProp
-        method?.isConstructor: false
-        method?.containingClass?.qualifiedName: com.klib.LibClass.Companion
-        method?.returnType?.canonicalText: int
-        params:
+      Info for: LibClass.Companion.companionProp
+      method?.name: getCompanionProp
+      method?.isConstructor: false
+      method?.containingClass?.qualifiedName: com.klib.LibClass.Companion
+      method?.returnType?.canonicalText: int
+      params:
 
-        Info for: LibClass.LibClassObject:
-        cls?.supers?.joinToString():
-        cls?.superTypes?.joinToString(): PsiType:Object
-        cls?.superClass: null
-        cls?.superClassType: PsiType:Object
+      Info for: LibClass.LibClassObject:
+      cls?.supers?.joinToString():
+      cls?.superTypes?.joinToString(): PsiType:Object
+      cls?.superClass: null
+      cls?.superClassType: PsiType:Object
 
-        Info for: LibClass.LibClassObject.func()
-        method?.name: func
-        method?.isConstructor: false
-        method?.containingClass?.qualifiedName: com.klib.LibClass.LibClassObject
-        method?.returnType?.canonicalText: int
-        params:
+      Info for: LibClass.LibClassObject.func()
+      method?.name: func
+      method?.isConstructor: false
+      method?.containingClass?.qualifiedName: com.klib.LibClass.LibClassObject
+      method?.returnType?.canonicalText: int
+      params:
 
-        Info for: LibClass.LibClassObject.prop
-        method?.name: getProp
-        method?.isConstructor: false
-        method?.containingClass?.qualifiedName: com.klib.LibClass.LibClassObject
-        method?.returnType?.canonicalText: int
-        params:
+      Info for: LibClass.LibClassObject.prop
+      method?.name: getProp
+      method?.isConstructor: false
+      method?.containingClass?.qualifiedName: com.klib.LibClass.LibClassObject
+      method?.returnType?.canonicalText: int
+      params:
 
-        Info for: MyFirstObject:
-        cls?.supers?.joinToString():
-        cls?.superTypes?.joinToString(): PsiType:Object
-        cls?.superClass: null
-        cls?.superClassType: PsiType:Object
+      Info for: MyFirstObject:
+      cls?.supers?.joinToString():
+      cls?.superTypes?.joinToString(): PsiType:Object
+      cls?.superClass: null
+      cls?.superClassType: PsiType:Object
 
-        Info for: MyFirstObject.bar()
-        method?.name: bar
-        method?.isConstructor: false
-        method?.containingClass?.qualifiedName: com.klib.MyFirstObject
-        method?.returnType?.canonicalText: long
-        params:
+      Info for: MyFirstObject.bar()
+      method?.name: bar
+      method?.isConstructor: false
+      method?.containingClass?.qualifiedName: com.klib.MyFirstObject
+      method?.returnType?.canonicalText: long
+      params:
 
-        Info for: MyFirstObject.MySecondObject:
-        cls?.supers?.joinToString():
-        cls?.superTypes?.joinToString(): PsiType:Object
-        cls?.superClass: null
-        cls?.superClassType: PsiType:Object
+      Info for: MyFirstObject.MySecondObject:
+      cls?.supers?.joinToString():
+      cls?.superTypes?.joinToString(): PsiType:Object
+      cls?.superClass: null
+      cls?.superClassType: PsiType:Object
 
-        Info for: MyFirstObject.MySecondObject.prop
-        method?.name: getProp
-        method?.isConstructor: false
-        method?.containingClass?.qualifiedName: com.klib.MyFirstObject.MySecondObject
-        method?.returnType?.canonicalText: int
-        params:
+      Info for: MyFirstObject.MySecondObject.prop
+      method?.name: getProp
+      method?.isConstructor: false
+      method?.containingClass?.qualifiedName: com.klib.MyFirstObject.MySecondObject
+      method?.returnType?.canonicalText: int
+      params:
 
-        Info for: MyFirstObject.MySecondObject.foo()
-        method?.name: foo
-        method?.isConstructor: false
-        method?.containingClass?.qualifiedName: com.klib.MyFirstObject.MySecondObject
-        method?.returnType?.canonicalText: int
-        params:
+      Info for: MyFirstObject.MySecondObject.foo()
+      method?.name: foo
+      method?.isConstructor: false
+      method?.containingClass?.qualifiedName: com.klib.MyFirstObject.MySecondObject
+      method?.returnType?.canonicalText: int
+      params:
 
-        Info for: ProtocolState.WAITING
-        field?.containingClass?.qualifiedName: com.klib.ProtocolState
-        field?.type?.canonicalText: com.klib.ProtocolState
-        field?.hasModifierProperty("private"): false
-        field?.hasModifierProperty("public"): true
+      Info for: ProtocolState.WAITING
+      field?.containingClass?.qualifiedName: com.klib.ProtocolState
+      field?.type?.canonicalText: com.klib.ProtocolState
+      field?.hasModifierProperty("private"): false
+      field?.hasModifierProperty("public"): true
 
-        Info for: 1.valProp
-        method?.name: getValProp
-        method?.isConstructor: false
-        method?.containingClass?.qualifiedName: com.klib.LibClass
-        method?.returnType?.canonicalText: int
-        params: ${'$'}this${'$'}valProp: int
+      Info for: 1.valProp
+      method?.name: getValProp
+      method?.isConstructor: false
+      method?.containingClass?.qualifiedName: com.klib.LibClass
+      method?.returnType?.canonicalText: int
+      params: ${'$'}this${'$'}valProp: int
 
-        Info for: "".valProp
-        method?.name: getValProp
-        method?.isConstructor: false
-        method?.containingClass?.qualifiedName: com.klib.LibClass
-        method?.returnType?.canonicalText: int
-        params: ${'$'}this${'$'}valProp: java.lang.String
+      Info for: "".valProp
+      method?.name: getValProp
+      method?.isConstructor: false
+      method?.containingClass?.qualifiedName: com.klib.LibClass
+      method?.returnType?.canonicalText: int
+      params: ${'$'}this${'$'}valProp: java.lang.String
 
-        Info for: valProp
-        method?.name: getValProp
-        method?.isConstructor: false
-        method?.containingClass?.qualifiedName: com.klib.LibClass
-        method?.returnType?.canonicalText: int
-        params:
+      Info for: valProp
+      method?.name: getValProp
+      method?.isConstructor: false
+      method?.containingClass?.qualifiedName: com.klib.LibClass
+      method?.returnType?.canonicalText: int
+      params:
 
-        Info for: varProp = 2
-        method?.name: setVarProp
-        method?.isConstructor: false
-        method?.containingClass?.qualifiedName: com.klib.LibClass
-        method?.returnType?.canonicalText: void
-        params: <set-?>: int
+      Info for: varProp = 2
+      method?.name: setVarProp
+      method?.isConstructor: false
+      method?.containingClass?.qualifiedName: com.klib.LibClass
+      method?.returnType?.canonicalText: void
+      params: <set-?>: int
 
-        Info for: varProp = 2 (operator)
-        method?.name: setVarProp
-        method?.isConstructor: false
-        method?.containingClass?.qualifiedName: com.klib.LibClass
-        method?.returnType?.canonicalText: void
-        params: <set-?>: int
+      Info for: varProp = 2 (operator)
+      method?.name: setVarProp
+      method?.isConstructor: false
+      method?.containingClass?.qualifiedName: com.klib.LibClass
+      method?.returnType?.canonicalText: void
+      params: <set-?>: int
 
-        Info for: varProp += 2
-        method?.name: setVarProp
-        method?.isConstructor: false
-        method?.containingClass?.qualifiedName: com.klib.LibClass
-        method?.returnType?.canonicalText: void
-        params: <set-?>: int
+      Info for: varProp += 2
+      method?.name: setVarProp
+      method?.isConstructor: false
+      method?.containingClass?.qualifiedName: com.klib.LibClass
+      method?.returnType?.canonicalText: void
+      params: <set-?>: int
 
-        Info for: varProp += 2 (operator)
-        method?.name: plus
-        method?.isConstructor: false
-        method?.containingClass?.qualifiedName: kotlin.Int
-        method?.returnType?.canonicalText: int
-        params: other: int
+      Info for: varProp += 2 (operator)
+      method?.name: plus
+      method?.isConstructor: false
+      method?.containingClass?.qualifiedName: kotlin.Int
+      method?.returnType?.canonicalText: int
+      params: other: int
 
-        Info for: varProp--
-        method?.name: setVarProp
-        method?.isConstructor: false
-        method?.containingClass?.qualifiedName: com.klib.LibClass
-        method?.returnType?.canonicalText: void
-        params: <set-?>: int
+      Info for: varProp--
+      method?.name: setVarProp
+      method?.isConstructor: false
+      method?.containingClass?.qualifiedName: com.klib.LibClass
+      method?.returnType?.canonicalText: void
+      params: <set-?>: int
 
-        Info for: varProp-- (operator)
-        method?.name: dec
-        method?.isConstructor: false
-        method?.containingClass?.qualifiedName: kotlin.Int
-        method?.returnType?.canonicalText: int
-        params:
+      Info for: varProp-- (operator)
+      method?.name: dec
+      method?.isConstructor: false
+      method?.containingClass?.qualifiedName: kotlin.Int
+      method?.returnType?.canonicalText: int
+      params:
 
-        Info for: ++varProp
-        method?.name: setVarProp
-        method?.isConstructor: false
-        method?.containingClass?.qualifiedName: com.klib.LibClass
-        method?.returnType?.canonicalText: void
-        params: <set-?>: int
+      Info for: ++varProp
+      method?.name: setVarProp
+      method?.isConstructor: false
+      method?.containingClass?.qualifiedName: com.klib.LibClass
+      method?.returnType?.canonicalText: void
+      params: <set-?>: int
 
-        Info for: ++varProp (operator)
-        method?.name: inc
-        method?.isConstructor: false
-        method?.containingClass?.qualifiedName: kotlin.Int
-        method?.returnType?.canonicalText: int
-        params:
+      Info for: ++varProp (operator)
+      method?.name: inc
+      method?.isConstructor: false
+      method?.containingClass?.qualifiedName: kotlin.Int
+      method?.returnType?.canonicalText: int
+      params:
 
-        Info for: varProp
-        method?.name: getVarProp
-        method?.isConstructor: false
-        method?.containingClass?.qualifiedName: com.klib.LibClass
-        method?.returnType?.canonicalText: int
-        params:
+      Info for: varProp
+      method?.name: getVarProp
+      method?.isConstructor: false
+      method?.containingClass?.qualifiedName: com.klib.LibClass
+      method?.returnType?.canonicalText: int
+      params:
 
-        Info for: propWithGetter
-        method?.name: getPropWithGetter
-        method?.isConstructor: false
-        method?.containingClass?.qualifiedName: com.klib.LibClass
-        method?.returnType?.canonicalText: int
-        params:
+      Info for: propWithGetter
+      method?.name: getPropWithGetter
+      method?.isConstructor: false
+      method?.containingClass?.qualifiedName: com.klib.LibClass
+      method?.returnType?.canonicalText: int
+      params:
 
-        Info for: mutableListProp += "a"
-        method?.name: null
-        method?.isConstructor: null
-        method?.containingClass?.qualifiedName: null
-        method?.returnType?.canonicalText: null
-        params: null
+      Info for: mutableListProp += "a"
+      method?.name: null
+      method?.isConstructor: null
+      method?.containingClass?.qualifiedName: null
+      method?.returnType?.canonicalText: null
+      params: null
 
-        Info for: mutableListProp += "a" (operator)
-        method?.name: plus
-        method?.isConstructor: false
-        method?.containingClass?.qualifiedName: kotlin.Facade${'$'}plus
-        method?.returnType?.canonicalText: java.lang.String
-        params: ${'$'}this${'$'}plus: java.lang.String, other: java.lang.Object
+      Info for: mutableListProp += "a" (operator)
+      method?.name: plus
+      method?.isConstructor: false
+      method?.containingClass?.qualifiedName: kotlin.Facade${'$'}plus
+      method?.returnType?.canonicalText: java.lang.String
+      params: ${'$'}this${'$'}plus: java.lang.String, other: java.lang.Object
 
-        Info for: propWithField
-        method?.name: getPropWithField
-        method?.isConstructor: false
-        method?.containingClass?.qualifiedName: com.klib.LibClass
-        method?.returnType?.canonicalText: int
-        params:
+      Info for: propWithField
+      method?.name: getPropWithField
+      method?.isConstructor: false
+      method?.containingClass?.qualifiedName: com.klib.LibClass
+      method?.returnType?.canonicalText: int
+      params:
 
-        Info for: libMethod(1)
-        method?.name: libMethod
-        method?.isConstructor: false
-        method?.containingClass?.qualifiedName: com.klib.LibClass
-        method?.returnType?.canonicalText: int
-        params: arg: int
+      Info for: libMethod(1)
+      method?.name: libMethod
+      method?.isConstructor: false
+      method?.containingClass?.qualifiedName: com.klib.LibClass
+      method?.returnType?.canonicalText: int
+      params: arg: int
 
-        Info for: libMethod(1L)
-        method?.name: libMethod
-        method?.isConstructor: false
-        method?.containingClass?.qualifiedName: com.klib.LibClass
-        method?.returnType?.canonicalText: long
-        params: arg: long
+      Info for: libMethod(1L)
+      method?.name: libMethod
+      method?.isConstructor: false
+      method?.containingClass?.qualifiedName: com.klib.LibClass
+      method?.returnType?.canonicalText: long
+      params: arg: long
 
-        Info for: libMethod2(1L)
-        method?.name: libMethod2
-        method?.isConstructor: false
-        method?.containingClass?.qualifiedName: com.klib.LibClass
-        method?.returnType?.canonicalText: long
-        params: arg: long
+      Info for: libMethod2(1L)
+      method?.name: libMethod2
+      method?.isConstructor: false
+      method?.containingClass?.qualifiedName: com.klib.LibClass
+      method?.returnType?.canonicalText: long
+      params: arg: long
 
-        Info for: libMethod3(arrayOf(1L))
-        method?.name: libMethod3
-        method?.isConstructor: false
-        method?.containingClass?.qualifiedName: com.klib.LibClass
-        method?.returnType?.canonicalText: java.lang.Long[]
-        params: arg: java.lang.Long[]
+      Info for: libMethod3(arrayOf(1L))
+      method?.name: libMethod3
+      method?.isConstructor: false
+      method?.containingClass?.qualifiedName: com.klib.LibClass
+      method?.returnType?.canonicalText: java.lang.Long[]
+      params: arg: java.lang.Long[]
 
-        Info for: libGenericMethod(1)
-        method?.name: libGenericMethod
-        method?.isConstructor: false
-        method?.containingClass?.qualifiedName: com.klib.LibClass
-        method?.returnType?.canonicalText: T[]
-        params: arg: T
-        """
-            .trimIndent(),
-        sourceWithKlibInfo,
+      Info for: libGenericMethod(1)
+      method?.name: libGenericMethod
+      method?.isConstructor: false
+      method?.containingClass?.qualifiedName: com.klib.LibClass
+      method?.returnType?.canonicalText: T[]
+      params: arg: T
+      """
+        .trimIndent(),
+      sourceWithKlibInfo,
     )
 
     // Uncomment to compare against source.
@@ -3915,19 +3842,19 @@ class ProjectInitializerTest {
     assumeTrue(useFirUast())
     val root = temp.newFolder().canonicalFile.absoluteFile
     val projects =
-        lint()
-            .files(
-                xml(
-                        "lint.xml",
-                        """
+      lint()
+        .files(
+          xml(
+              "lint.xml",
+              """
               <lint checkTestSources="true" checkGeneratedSources="true">
               </lint>
               """,
-                    )
-                    .indented(),
-                xml(
-                        "project.xml",
-                        """
+            )
+            .indented(),
+          xml(
+              "project.xml",
+              """
               <project>
                 <module name="test" android="true" library="false" compute_source_roots="false">
                   <src file="com/example/A.java" test="true"/>
@@ -3937,98 +3864,91 @@ class ProjectInitializerTest {
                 </module>
               </project>
               """,
-                    )
-                    .indented(),
-                java(
-                        "com/example/A.java",
-                        """
+            )
+            .indented(),
+          java(
+              "com/example/A.java",
+              """
               package com.example;
               class A {}
               """,
-                    )
-                    .indented(),
-                java(
-                        "com/example/B.java",
-                        """
+            )
+            .indented(),
+          java(
+              "com/example/B.java",
+              """
               package com.example;
               class B {}
               """,
-                    )
-                    .indented(),
-                java(
-                        "com/example/C.java",
-                        """
+            )
+            .indented(),
+          java(
+              "com/example/C.java",
+              """
               package com.example;
               class C {}
               """,
-                    )
-                    .indented(),
-                java(
-                        "com/example/D.java",
-                        """
+            )
+            .indented(),
+          java(
+              "com/example/D.java",
+              """
               package com.example;
               class D {}
               """,
-                    )
-                    .indented(),
             )
-            .createProjects(root)
+            .indented(),
+        )
+        .createProjects(root)
     val descriptorFile = File(projects[0], "project.xml")
     val configFile = File(projects[0], "lint.xml")
 
     var numFilesVisited = 0
 
     MainTest.checkDriver(
-        "No issues found.",
-        "",
+      "No issues found.",
+      "",
 
-        // Expected exit code
-        ERRNO_SUCCESS,
+      // Expected exit code
+      ERRNO_SUCCESS,
 
-        // Args
-        arrayOf(
-            "--check",
-            "SetAndClearCommunicationDevice",
-            "--project",
-            descriptorFile.path,
-            "--config",
-            configFile.path,
-        ),
-        null,
-        { driver, type, project, context ->
-          when (type) {
-            SCANNING_FILE -> {
-              context!!
-              when (context.file.name) {
-                "A.java" -> {
-                  context as JavaContext
-                  assertTrue(context.isTestSource)
-                  assertFalse(context.isGeneratedSource)
-                  ++numFilesVisited
-                }
-                "B.java" -> {
-                  context as JavaContext
-                  assertFalse(context.isTestSource)
-                  assertTrue(context.isGeneratedSource)
-                  ++numFilesVisited
-                }
-                "C.java" -> {
-                  context as JavaContext
-                  assertTrue(context.isTestSource)
-                  assertTrue(context.isGeneratedSource)
-                  ++numFilesVisited
-                }
-                "D.java" -> {
-                  context as JavaContext
-                  assertFalse(context.isTestSource)
-                  assertFalse(context.isGeneratedSource)
-                  ++numFilesVisited
-                }
+      // Args
+      arrayOf("--check", "SetAndClearCommunicationDevice", "--project", descriptorFile.path, "--config", configFile.path),
+      null,
+      { driver, type, project, context ->
+        when (type) {
+          SCANNING_FILE -> {
+            context!!
+            when (context.file.name) {
+              "A.java" -> {
+                context as JavaContext
+                assertTrue(context.isTestSource)
+                assertFalse(context.isGeneratedSource)
+                ++numFilesVisited
+              }
+              "B.java" -> {
+                context as JavaContext
+                assertFalse(context.isTestSource)
+                assertTrue(context.isGeneratedSource)
+                ++numFilesVisited
+              }
+              "C.java" -> {
+                context as JavaContext
+                assertTrue(context.isTestSource)
+                assertTrue(context.isGeneratedSource)
+                ++numFilesVisited
+              }
+              "D.java" -> {
+                context as JavaContext
+                assertFalse(context.isTestSource)
+                assertFalse(context.isGeneratedSource)
+                ++numFilesVisited
               }
             }
-            else -> {}
           }
-        },
+          else -> {}
+        }
+      },
     )
     assertEquals(4, numFilesVisited)
   }
@@ -4043,19 +3963,19 @@ class ProjectInitializerTest {
     // In particular, file C (both test and gen) should not be visited.
     val root = temp.newFolder().canonicalFile.absoluteFile
     val projects =
-        lint()
-            .files(
-                xml(
-                        "lint.xml",
-                        """
+      lint()
+        .files(
+          xml(
+              "lint.xml",
+              """
               <lint checkTestSources="true" checkGeneratedSources="false">
               </lint>
               """,
-                    )
-                    .indented(),
-                xml(
-                        "project.xml",
-                        """
+            )
+            .indented(),
+          xml(
+              "project.xml",
+              """
               <project>
                 <module name="test" android="true" library="false" compute_source_roots="false">
                   <src file="com/example/A.java" test="true"/>
@@ -4065,92 +3985,85 @@ class ProjectInitializerTest {
                 </module>
               </project>
               """,
-                    )
-                    .indented(),
-                java(
-                        "com/example/A.java",
-                        """
+            )
+            .indented(),
+          java(
+              "com/example/A.java",
+              """
               package com.example;
               class A {}
               """,
-                    )
-                    .indented(),
-                java(
-                        "com/example/B.java",
-                        """
+            )
+            .indented(),
+          java(
+              "com/example/B.java",
+              """
               package com.example;
               class B {}
               """,
-                    )
-                    .indented(),
-                java(
-                        "com/example/C.java",
-                        """
+            )
+            .indented(),
+          java(
+              "com/example/C.java",
+              """
               package com.example;
               class C {}
               """,
-                    )
-                    .indented(),
-                java(
-                        "com/example/D.java",
-                        """
+            )
+            .indented(),
+          java(
+              "com/example/D.java",
+              """
               package com.example;
               class D {}
               """,
-                    )
-                    .indented(),
             )
-            .createProjects(root)
+            .indented(),
+        )
+        .createProjects(root)
     val descriptorFile = File(projects[0], "project.xml")
     val configFile = File(projects[0], "lint.xml")
 
     var numFilesVisited = 0
 
     MainTest.checkDriver(
-        "No issues found.",
-        "",
+      "No issues found.",
+      "",
 
-        // Expected exit code
-        ERRNO_SUCCESS,
+      // Expected exit code
+      ERRNO_SUCCESS,
 
-        // Args
-        arrayOf(
-            "--check",
-            "SetAndClearCommunicationDevice",
-            "--project",
-            descriptorFile.path,
-            "--config",
-            configFile.path,
-        ),
-        null,
-        { driver, type, project, context ->
-          when (type) {
-            SCANNING_FILE -> {
-              context!!
-              when (context.file.name) {
-                "A.java" -> {
-                  context as JavaContext
-                  assertTrue(context.isTestSource)
-                  assertFalse(context.isGeneratedSource)
-                  ++numFilesVisited
-                }
-                "B.java" -> {
-                  fail("B.java should not be visited")
-                }
-                "C.java" -> {
-                  fail("C.java should not be visited")
-                }
-                "D.java" -> {
-                  context as JavaContext
-                  assertFalse(context.isTestSource)
-                  assertFalse(context.isGeneratedSource)
-                  ++numFilesVisited
-                }
+      // Args
+      arrayOf("--check", "SetAndClearCommunicationDevice", "--project", descriptorFile.path, "--config", configFile.path),
+      null,
+      { driver, type, project, context ->
+        when (type) {
+          SCANNING_FILE -> {
+            context!!
+            when (context.file.name) {
+              "A.java" -> {
+                context as JavaContext
+                assertTrue(context.isTestSource)
+                assertFalse(context.isGeneratedSource)
+                ++numFilesVisited
+              }
+              "B.java" -> {
+                fail("B.java should not be visited")
+              }
+              "C.java" -> {
+                fail("C.java should not be visited")
+              }
+              "D.java" -> {
+                context as JavaContext
+                assertFalse(context.isTestSource)
+                assertFalse(context.isGeneratedSource)
+                ++numFilesVisited
               }
             }
-            else -> {}
           }
-        },
+          else -> {}
+        }
+      },
     )
     assertEquals(2, numFilesVisited)
   }
@@ -4165,19 +4078,19 @@ class ProjectInitializerTest {
     // So we only visit normal and generated files (not test files, and not gen+test).
     val root = temp.newFolder().canonicalFile.absoluteFile
     val projects =
-        lint()
-            .files(
-                xml(
-                        "lint.xml",
-                        """
+      lint()
+        .files(
+          xml(
+              "lint.xml",
+              """
               <lint checkTestSources="false" checkGeneratedSources="true">
               </lint>
               """,
-                    )
-                    .indented(),
-                xml(
-                        "project.xml",
-                        """
+            )
+            .indented(),
+          xml(
+              "project.xml",
+              """
               <project>
                 <module name="test" android="true" library="false" compute_source_roots="false">
                   <src file="com/example/A.java" test="true"/>
@@ -4187,92 +4100,85 @@ class ProjectInitializerTest {
                 </module>
               </project>
               """,
-                    )
-                    .indented(),
-                java(
-                        "com/example/A.java",
-                        """
+            )
+            .indented(),
+          java(
+              "com/example/A.java",
+              """
               package com.example;
               class A {}
               """,
-                    )
-                    .indented(),
-                java(
-                        "com/example/B.java",
-                        """
+            )
+            .indented(),
+          java(
+              "com/example/B.java",
+              """
               package com.example;
               class B {}
               """,
-                    )
-                    .indented(),
-                java(
-                        "com/example/C.java",
-                        """
+            )
+            .indented(),
+          java(
+              "com/example/C.java",
+              """
               package com.example;
               class C {}
               """,
-                    )
-                    .indented(),
-                java(
-                        "com/example/D.java",
-                        """
+            )
+            .indented(),
+          java(
+              "com/example/D.java",
+              """
               package com.example;
               class D {}
               """,
-                    )
-                    .indented(),
             )
-            .createProjects(root)
+            .indented(),
+        )
+        .createProjects(root)
     val descriptorFile = File(projects[0], "project.xml")
     val configFile = File(projects[0], "lint.xml")
 
     var numFilesVisited = 0
 
     MainTest.checkDriver(
-        "No issues found.",
-        "",
+      "No issues found.",
+      "",
 
-        // Expected exit code
-        ERRNO_SUCCESS,
+      // Expected exit code
+      ERRNO_SUCCESS,
 
-        // Args
-        arrayOf(
-            "--check",
-            "SetAndClearCommunicationDevice",
-            "--project",
-            descriptorFile.path,
-            "--config",
-            configFile.path,
-        ),
-        null,
-        { driver, type, project, context ->
-          when (type) {
-            SCANNING_FILE -> {
-              context!!
-              when (context.file.name) {
-                "A.java" -> {
-                  fail("A.java should not be visited")
-                }
-                "B.java" -> {
-                  context as JavaContext
-                  assertFalse(context.isTestSource)
-                  assertTrue(context.isGeneratedSource)
-                  ++numFilesVisited
-                }
-                "C.java" -> {
-                  fail("C.java should not be visited")
-                }
-                "D.java" -> {
-                  context as JavaContext
-                  assertFalse(context.isTestSource)
-                  assertFalse(context.isGeneratedSource)
-                  ++numFilesVisited
-                }
+      // Args
+      arrayOf("--check", "SetAndClearCommunicationDevice", "--project", descriptorFile.path, "--config", configFile.path),
+      null,
+      { driver, type, project, context ->
+        when (type) {
+          SCANNING_FILE -> {
+            context!!
+            when (context.file.name) {
+              "A.java" -> {
+                fail("A.java should not be visited")
+              }
+              "B.java" -> {
+                context as JavaContext
+                assertFalse(context.isTestSource)
+                assertTrue(context.isGeneratedSource)
+                ++numFilesVisited
+              }
+              "C.java" -> {
+                fail("C.java should not be visited")
+              }
+              "D.java" -> {
+                context as JavaContext
+                assertFalse(context.isTestSource)
+                assertFalse(context.isGeneratedSource)
+                ++numFilesVisited
               }
             }
-            else -> {}
           }
-        },
+          else -> {}
+        }
+      },
     )
     assertEquals(2, numFilesVisited)
   }
@@ -4284,19 +4190,19 @@ class ProjectInitializerTest {
     // requiring the TEST_SOURCES scope or checkTestSources flag (unlike test Java/Kotlin sources).
     val root = temp.newFolder().canonicalFile.absoluteFile
     val projects =
-        lint()
-            .files(
-                xml(
-                        "lint.xml",
-                        """
+      lint()
+        .files(
+          xml(
+              "lint.xml",
+              """
               <lint checkTestSources="true" checkGeneratedSources="true">
               </lint>
               """,
-                    )
-                    .indented(),
-                xml(
-                        "project.xml",
-                        """
+            )
+            .indented(),
+          xml(
+              "project.xml",
+              """
               <project>
                 <module name="test" android="true" library="false" test="true" compute_source_roots="false">
                   <src file="com/example/A.java"/>
@@ -4307,11 +4213,11 @@ class ProjectInitializerTest {
                 </module>
               </project>
               """,
-                    )
-                    .indented(),
-                xml(
-                        "com/example/AndroidManifest.xml",
-                        """
+            )
+            .indented(),
+          xml(
+              "com/example/AndroidManifest.xml",
+              """
               <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                   package="com.example.app">
 
@@ -4329,11 +4235,11 @@ class ProjectInitializerTest {
 
               </manifest>
               """,
-                    )
-                    .indented(),
-                xml(
-                        "com/example/res/values/strings.xml",
-                        """
+            )
+            .indented(),
+          xml(
+              "com/example/res/values/strings.xml",
+              """
               <resources>
                 <string name="string1">String 1</string>
                 <string name="string1">String 2</string>
@@ -4341,86 +4247,79 @@ class ProjectInitializerTest {
                 <string name="string3">String 4</string>
               </resources>
               """,
-                    )
-                    .indented(),
-                java(
-                        "com/example/A.java",
-                        """
+            )
+            .indented(),
+          java(
+              "com/example/A.java",
+              """
               package com.example;
               class A {}
               """,
-                    )
-                    .indented(),
-                java(
-                        "com/example/B.java",
-                        """
+            )
+            .indented(),
+          java(
+              "com/example/B.java",
+              """
               package com.example;
               class B {}
               """,
-                    )
-                    .indented(),
             )
-            .createProjects(root)
+            .indented(),
+        )
+        .createProjects(root)
     val descriptorFile = File(projects[0], "project.xml")
     val configFile = File(projects[0], "lint.xml")
 
     var numFilesVisited = 0
 
     MainTest.checkDriver(
-        "No issues found.",
-        "",
+      "No issues found.",
+      "",
 
-        // Expected exit code
-        ERRNO_SUCCESS,
+      // Expected exit code
+      ERRNO_SUCCESS,
 
-        // Args
-        // These checks are chosen to get a scope that includes JAVA_FILE, MANIFEST, and
-        // RESOURCE_FILE (the values folders), and with no extra phases requested.
-        arrayOf(
-            "--check",
-            "ButtonOrder,ShortAlarm",
-            "--project",
-            descriptorFile.path,
-            "--config",
-            configFile.path,
-        ),
-        null,
-        { driver, type, project, context ->
-          when (type) {
-            SCANNING_FILE -> {
-              context!!
-              when (context.file.name) {
-                "A.java" -> {
-                  context as JavaContext
-                  assertEquals(true, context.project.isTestProject)
-                  assertTrue(context.isTestSource)
-                  assertFalse(context.isGeneratedSource)
-                  ++numFilesVisited
-                }
-                "B.java" -> {
-                  context as JavaContext
-                  assertEquals(true, context.project.isTestProject)
-                  assertTrue(context.isTestSource)
-                  assertTrue(context.isGeneratedSource)
-                  ++numFilesVisited
-                }
-                "strings.xml" -> {
-                  context as XmlContext
-                  assertEquals(true, context.project.isTestProject)
-                  assertTrue(context.isTestSource)
-                  ++numFilesVisited
-                }
-                "AndroidManifest.xml" -> {
-                  context as XmlContext
-                  assertEquals(true, context.project.isTestProject)
-                  assertTrue(context.isTestSource)
-                  ++numFilesVisited
-                }
+      // Args
+      // These checks are chosen to get a scope that includes JAVA_FILE, MANIFEST, and
+      // RESOURCE_FILE (the values folders), and with no extra phases requested.
+      arrayOf("--check", "ButtonOrder,ShortAlarm", "--project", descriptorFile.path, "--config", configFile.path),
+      null,
+      { driver, type, project, context ->
+        when (type) {
+          SCANNING_FILE -> {
+            context!!
+            when (context.file.name) {
+              "A.java" -> {
+                context as JavaContext
+                assertEquals(true, context.project.isTestProject)
+                assertTrue(context.isTestSource)
+                assertFalse(context.isGeneratedSource)
+                ++numFilesVisited
+              }
+              "B.java" -> {
+                context as JavaContext
+                assertEquals(true, context.project.isTestProject)
+                assertTrue(context.isTestSource)
+                assertTrue(context.isGeneratedSource)
+                ++numFilesVisited
+              }
+              "strings.xml" -> {
+                context as XmlContext
+                assertEquals(true, context.project.isTestProject)
+                assertTrue(context.isTestSource)
+                ++numFilesVisited
+              }
+              "AndroidManifest.xml" -> {
+                context as XmlContext
+                assertEquals(true, context.project.isTestProject)
+                assertTrue(context.isTestSource)
+                ++numFilesVisited
               }
             }
-            else -> {}
           }
-        },
+          else -> {}
+        }
+      },
     )
     assertEquals(4, numFilesVisited)
   }
@@ -4429,126 +4328,126 @@ class ProjectInitializerTest {
   fun testKMPProjectK2() {
     assumeTrue(useFirUast())
     val shared =
-        project(
-                kt(
-                    "src/commonMain/kotlin/pkg/Platform.kt",
-                    """
-                    package pkg
-                    interface Platform {
-                        val name: String
-                    }
-                    expect fun getPlatform(): Platform
-                    """
-                        .trimIndent(),
-                ),
-                kt(
-                    "src/commonMain/kotlin/pkg/Greeting.kt",
-                    """
-                    package pkg
-                    class Greeting {
-                        private val platform: Platform = getPlatform()
-                    }
-                    """
-                        .trimIndent(),
-                ),
-                kt(
-                    "src/androidMain/kotlin/pkg/Platform.kt",
-                    """
-                    package pkg
-                    class AndroidPlatform : Platform {
-                        override val name: String = "Android 34"
-                    }
-                    actual fun getPlatform(): Platform = AndroidPlatform()
-                    """
-                        .trimIndent(),
-                ),
-                kt(
-                    "src/iosMain/kotlin/pkg/Platform.kt",
-                    """
-                    package pkg
-                    import platform.UIKit.UIDevice
-                    class IOSPlatform: Platform {
-                        override val name: String = UIDevice.currentDevice.systemName() + " " + UIDevice.currentDevice.systemVersion
-                    }
-                    actual fun getPlatform(): Platform = IOSPlatform()
-                    """
-                        .trimIndent(),
-                ),
-                klib(
-                    "libs/SomeKlib.klib",
-                    "" +
-                        "H4sIAAAAAAAA/52Xe1BTVx7HL3kHApMXDykyCUgKKw0BfKwVuwGUAYI0Vsva" +
-                        "Gprk5iaQJSSQB4MPmIRUjARcFC1ixbVAi1P7h7Bry0zrlmLSggJaaq11dbYG" +
-                        "7aqruz62re6a7V7CqvdK7uWmlxkeczmf3/d7zsk5359cRqaEA7OPEEA+DIAD" +
-                        "QFqd2mawZry6IRKgI1/KMYdFIIbpzcFH8gEGgzFn5AL0SIu+wqi22sxai7jK" +
-                        "aJ3D0ahUKlClkpB9qwU6KlhKc8XRWye8k17PcKpntG942Pu5d1TkGY3i+eQq" +
-                        "yvsq5/v87Te5jgPDzG/GUlg6SeZA4bbur6Y+3Xq+6fRzC3KbB8IzB2uZjkpR" +
-                        "HbTi8KvSE4pLea05sFo64yNK+BYdXLEXV33MM+qtZr2xAlf6KOArFXxPAetg" +
-                        "6bF7X2B4DPJxVg/v/ist97LX33OTue496y3cDvMr5YrLOX5FeY6/KT/Bf7B8" +
-                        "2qnoLl91UuE0FGdluW8P3peZs+4n3P+VMN6uu0PKjBjPObJKslLlayo0q37a" +
-                        "2xfTyYf6yZFFE4sdFys7ujpfIx0X8Ecprzed5GxURAYcRn846miDhflxHcah" +
-                        "HUJa0FZRZNSZYI8QlkeVA5QAgRpnJZ8URMIv+Lg1+Oga1s01+Msvd4A6gY4M" +
-                        "1rHPgxxVh2oKjK7UOOTSxNylCm5JoPCBqQ0iETxiA27hhejCevNqrcagNqut" +
-                        "epPRguewkAJm0BjPUSD7Rqary3EhyrVvO3/o1ysuUPanvDWY1seUFN2tra21" +
-                        "ZjOP2R+wSE0Fra15LdJ3lrXvIedIUxLYKQnSFOlLTvsiOfOsoOAIlSQ1pEBh" +
-                        "S/+1682m+HF5VFgU+w+5w+tkJcVvylzuHb27mUd0L36at4ncYbdTnZxkXsBj" +
-                        "WsyDThes6aNQJlenNwQmV4dlrYYO0sUimk64SZzt33OJ1JBviZBZNDIZOTtf" +
-                        "Y+ElJ0fI8pP9vh7I7/lkb8+jcb7/Eei3e3qunjvo6Tu44cQtrlBHU0emiWgF" +
-                        "4gKa0CImP3pvZj9ej4X6neOF8Ia8HnuOfIMesBCXuOxyDVy7A9dCNNoCaIL0" +
-                        "AQ8g5gYMA9fTGCoKWL5rJbc4XjEiLW75vfvyzn29u9e6cu3rfLsonYLC9h3u" +
-                        "4+7dO52R6ZSAmILov65ZAUPW4IphI8RUq416ndYyd6OunciMIgnZ0i8PnWz3" +
-                        "Gs41j4yM7L9QaRgT9HZRaDHNE4nK29eV//2pu4e9/LdJoyu/gUz9X1zbXNat" +
-                        "v3E9jntxa2l929WvF/fncY5uGlh2ytD20s3udWER5soPix5k31nich7iO8+2" +
-                        "lB5ulB9o8zRY/tJYxqSSGKzG8wVfDu1vdGTMmFEsWO5rhJUcAfDObS7CDHzm" +
-                        "mmxmjdYSysHPQQAMemMVpLaqQzn+Y4ONrzZBNoN2DmXaN8icPLP2h8mxksE/" +
-                        "gsfAtKIXxAM+YPcW6rc3ym7t3Jy25mFXWplC3vxG4wDPydvYxSvhBhb2ztGh" +
-                        "vKUwYDWuFWEwKTVqTZW6QqtUGyGzSQ+FYk1MhCd5/Bu8navnOgbZYDtYP+x9" +
-                        "0OJelZnxbupvsqkBR9uaPzdHw//Aw3W0iIACsQljvYObSieIlChNluCWBq+B" +
-                        "L4/L0k6dKbkCnsr4HowoTC8unbgCnp7MGBsbnwbrxo9e9W1niETX+m5qO2tq" +
-                        "hUN5v1OUkFiK9AQWqVVhSGgllXBZUo5O8PZrduoobedAkaQwM5Vp7mNmZhVK" +
-                        "GkDoCpileviZN5wHrmGs+g6s93qptvY3Gu8+LxaJymavvtM/n3HAYvpwpy8J" +
-                        "z6sV/tiLa6oqQpm8xYSAEiX8PejcpUwMhI9I+AVXtpqMmkf98s7vUn0bL11q" +
-                        "ICmFFwVTU8Vv0+vqbl2t9PwwPfwZ88BXB9WHLi/8kdu/BPrAd7Z0und7a7b8" +
-                        "zlv/rr/NO//z4RvmEzvqm168x/r7BdnhpPdcd19f3RBdKfu4beW5ktzJPx3L" +
-                        "2/U1/UfqlpP+P6/9Vqx6SJqZtuq/HfNsg3W4cKctMZhLs8lkVf7faihTFnQL" +
-                        "o2AS5bwfnbDAoje52dei4Des0NUj1ygU9anzwiSz6z6fg3cXHR+avaQ+Lqte" +
-                        "yAVmriE8F8hLyqo2V2itIZ3q8UGGw/pt9cr6ZUtCASXjgvRGjcEGaTFO1flP" +
-                        "6blEuHfQ12FssF/CqzJZ4T+C8cJI4QBWC8UE0M/Thoo6i8EbHoEavhwxPNBY" +
-                        "IQh84OmuQ7YrC1CEWjTh2QYLg4dsDmJQvIwwALPlwYAhu4A4FIxDAnC6Cwwc" +
-                        "MtvzUTgbGodoJDBQyAi9EIX6BxoVrDXAYCIzLVreFBnAiOIYKGQijUah9lEA" +
-                        "rEiMwUIGQjaKlUQFgiRaAluVi8L8E4FBZkkCIA4KJKEBwTIlhi9kuItFcWqC" +
-                        "cR5nSwKqhCjaf4LR5sZDDJXIwCZGcWV0AtxnYiIB8YtQRSYIFJlNgljnASIx" +
-                        "paPQAgYx9NNESEB9EqoEi4lTAhHEMLQjY8tiFLicEBgRyAhIT0RVyA8PUuGZ" +
-                        "MIQhG5lX0KvZPi/0cSgKWW9YxDwzgq0XmUxSUdDSeaHIGERAM/r8+gKBfxp2" +
-                        "CGDiURgaay4GGXoIAJNRwJdxgYjwE/JZ9A4u+UkICpl7F5f7JAw94VJpMz8T" +
-                        "4C8qjMmdueOB/wFP4UXFXBYAAA==",
-                    0x2a5ba622,
-                    kotlin(
-                            """
+      project(
+          kt(
+            "src/commonMain/kotlin/pkg/Platform.kt",
+            """
+            package pkg
+            interface Platform {
+                val name: String
+            }
+            expect fun getPlatform(): Platform
+            """
+              .trimIndent(),
+          ),
+          kt(
+            "src/commonMain/kotlin/pkg/Greeting.kt",
+            """
+            package pkg
+            class Greeting {
+                private val platform: Platform = getPlatform()
+            }
+            """
+              .trimIndent(),
+          ),
+          kt(
+            "src/androidMain/kotlin/pkg/Platform.kt",
+            """
+            package pkg
+            class AndroidPlatform : Platform {
+                override val name: String = "Android 34"
+            }
+            actual fun getPlatform(): Platform = AndroidPlatform()
+            """
+              .trimIndent(),
+          ),
+          kt(
+            "src/iosMain/kotlin/pkg/Platform.kt",
+            """
+            package pkg
+            import platform.UIKit.UIDevice
+            class IOSPlatform: Platform {
+                override val name: String = UIDevice.currentDevice.systemName() + " " + UIDevice.currentDevice.systemVersion
+            }
+            actual fun getPlatform(): Platform = IOSPlatform()
+            """
+              .trimIndent(),
+          ),
+          klib(
+            "libs/SomeKlib.klib",
+            "" +
+              "H4sIAAAAAAAA/52Xe1BTVx7HL3kHApMXDykyCUgKKw0BfKwVuwGUAYI0Vsva" +
+              "Gprk5iaQJSSQB4MPmIRUjARcFC1ixbVAi1P7h7Bry0zrlmLSggJaaq11dbYG" +
+              "7aqruz62re6a7V7CqvdK7uWmlxkeczmf3/d7zsk5359cRqaEA7OPEEA+DIAD" +
+              "QFqd2mawZry6IRKgI1/KMYdFIIbpzcFH8gEGgzFn5AL0SIu+wqi22sxai7jK" +
+              "aJ3D0ahUKlClkpB9qwU6KlhKc8XRWye8k17PcKpntG942Pu5d1TkGY3i+eQq" +
+              "yvsq5/v87Te5jgPDzG/GUlg6SeZA4bbur6Y+3Xq+6fRzC3KbB8IzB2uZjkpR" +
+              "HbTi8KvSE4pLea05sFo64yNK+BYdXLEXV33MM+qtZr2xAlf6KOArFXxPAetg" +
+              "6bF7X2B4DPJxVg/v/ist97LX33OTue496y3cDvMr5YrLOX5FeY6/KT/Bf7B8" +
+              "2qnoLl91UuE0FGdluW8P3peZs+4n3P+VMN6uu0PKjBjPObJKslLlayo0q37a" +
+              "2xfTyYf6yZFFE4sdFys7ujpfIx0X8Ecprzed5GxURAYcRn846miDhflxHcah" +
+              "HUJa0FZRZNSZYI8QlkeVA5QAgRpnJZ8URMIv+Lg1+Oga1s01+Msvd4A6gY4M" +
+              "1rHPgxxVh2oKjK7UOOTSxNylCm5JoPCBqQ0iETxiA27hhejCevNqrcagNqut" +
+              "epPRguewkAJm0BjPUSD7Rqary3EhyrVvO3/o1ysuUPanvDWY1seUFN2tra21" +
+              "ZjOP2R+wSE0Fra15LdJ3lrXvIedIUxLYKQnSFOlLTvsiOfOsoOAIlSQ1pEBh" +
+              "S/+1682m+HF5VFgU+w+5w+tkJcVvylzuHb27mUd0L36at4ncYbdTnZxkXsBj" +
+              "WsyDThes6aNQJlenNwQmV4dlrYYO0sUimk64SZzt33OJ1JBviZBZNDIZOTtf" +
+              "Y+ElJ0fI8pP9vh7I7/lkb8+jcb7/Eei3e3qunjvo6Tu44cQtrlBHU0emiWgF" +
+              "4gKa0CImP3pvZj9ej4X6neOF8Ia8HnuOfIMesBCXuOxyDVy7A9dCNNoCaIL0" +
+              "AQ8g5gYMA9fTGCoKWL5rJbc4XjEiLW75vfvyzn29u9e6cu3rfLsonYLC9h3u" +
+              "4+7dO52R6ZSAmILov65ZAUPW4IphI8RUq416ndYyd6OunciMIgnZ0i8PnWz3" +
+              "Gs41j4yM7L9QaRgT9HZRaDHNE4nK29eV//2pu4e9/LdJoyu/gUz9X1zbXNat" +
+              "v3E9jntxa2l929WvF/fncY5uGlh2ytD20s3udWER5soPix5k31nich7iO8+2" +
+              "lB5ulB9o8zRY/tJYxqSSGKzG8wVfDu1vdGTMmFEsWO5rhJUcAfDObS7CDHzm" +
+              "mmxmjdYSysHPQQAMemMVpLaqQzn+Y4ONrzZBNoN2DmXaN8icPLP2h8mxksE/" +
+              "gsfAtKIXxAM+YPcW6rc3ym7t3Jy25mFXWplC3vxG4wDPydvYxSvhBhb2ztGh" +
+              "vKUwYDWuFWEwKTVqTZW6QqtUGyGzSQ+FYk1MhCd5/Bu8navnOgbZYDtYP+x9" +
+              "0OJelZnxbupvsqkBR9uaPzdHw//Aw3W0iIACsQljvYObSieIlChNluCWBq+B" +
+              "L4/L0k6dKbkCnsr4HowoTC8unbgCnp7MGBsbnwbrxo9e9W1niETX+m5qO2tq" +
+              "hUN5v1OUkFiK9AQWqVVhSGgllXBZUo5O8PZrduoobedAkaQwM5Vp7mNmZhVK" +
+              "GkDoCpileviZN5wHrmGs+g6s93qptvY3Gu8+LxaJymavvtM/n3HAYvpwpy8J" +
+              "z6sV/tiLa6oqQpm8xYSAEiX8PejcpUwMhI9I+AVXtpqMmkf98s7vUn0bL11q" +
+              "ICmFFwVTU8Vv0+vqbl2t9PwwPfwZ88BXB9WHLi/8kdu/BPrAd7Z0und7a7b8" +
+              "zlv/rr/NO//z4RvmEzvqm168x/r7BdnhpPdcd19f3RBdKfu4beW5ktzJPx3L" +
+              "2/U1/UfqlpP+P6/9Vqx6SJqZtuq/HfNsg3W4cKctMZhLs8lkVf7faihTFnQL" +
+              "o2AS5bwfnbDAoje52dei4Des0NUj1ygU9anzwiSz6z6fg3cXHR+avaQ+Lqte" +
+              "yAVmriE8F8hLyqo2V2itIZ3q8UGGw/pt9cr6ZUtCASXjgvRGjcEGaTFO1flP" +
+              "6blEuHfQ12FssF/CqzJZ4T+C8cJI4QBWC8UE0M/Thoo6i8EbHoEavhwxPNBY" +
+              "IQh84OmuQ7YrC1CEWjTh2QYLg4dsDmJQvIwwALPlwYAhu4A4FIxDAnC6Cwwc" +
+              "MtvzUTgbGodoJDBQyAi9EIX6BxoVrDXAYCIzLVreFBnAiOIYKGQijUah9lEA" +
+              "rEiMwUIGQjaKlUQFgiRaAluVi8L8E4FBZkkCIA4KJKEBwTIlhi9kuItFcWqC" +
+              "cR5nSwKqhCjaf4LR5sZDDJXIwCZGcWV0AtxnYiIB8YtQRSYIFJlNgljnASIx" +
+              "paPQAgYx9NNESEB9EqoEi4lTAhHEMLQjY8tiFLicEBgRyAhIT0RVyA8PUuGZ" +
+              "MIQhG5lX0KvZPi/0cSgKWW9YxDwzgq0XmUxSUdDSeaHIGERAM/r8+gKBfxp2" +
+              "CGDiURgaay4GGXoIAJNRwJdxgYjwE/JZ9A4u+UkICpl7F5f7JAw94VJpMz8T" +
+              "4C8qjMmdueOB/wFP4UXFXBYAAA==",
+            0x2a5ba622,
+            kotlin(
+                """
             package test.pkg
             import android.os.Parcelable
             abstract class Parent : Parcelable
                 """
-                        )
-                        .indented(),
-                    kotlin(
-                            """
+              )
+              .indented(),
+            kotlin(
+                """
                   package android.os
                   interface Parcelable
                   interface Parcel
                 """
-                        )
-                        .indented(),
-                ),
-            )
-            .type(LIBRARY)
-            .name("shared")
+              )
+              .indented(),
+          ),
+        )
+        .type(LIBRARY)
+        .name("shared")
 
     val androidApp =
-        project(
-                source(
-                        "src/main/$ANDROID_MANIFEST_XML",
-                        """
+      project(
+          source(
+              "src/main/$ANDROID_MANIFEST_XML",
+              """
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
               <uses-permission android:name="android.permission.INTERNET"/>
@@ -4568,20 +4467,20 @@ class ProjectInitializerTest {
               </application>
           </manifest>
         """,
-                    )
-                    .indented(),
-                xml(
-                        "src/main/res/values/styles.xml",
-                        """
+            )
+            .indented(),
+          xml(
+              "src/main/res/values/styles.xml",
+              """
             <resources>
                 <style name="AppTheme" parent="android:Theme.Material.NoActionBar"/>
             </resources>
           """,
-                    )
-                    .indented(),
-                kt(
-                        "src/main/java/pkg/android/MainActivity.kt",
-                        """
+            )
+            .indented(),
+          kt(
+              "src/main/java/pkg/android/MainActivity.kt",
+              """
             package pkg.android
 
             import android.os.Bundle
@@ -4632,11 +4531,11 @@ class ProjectInitializerTest {
                 }
             }
           """,
-                    )
-                    .indented(),
-                kt(
-                        "src/main/java/pkg/android/MyApplicationTheme.kt",
-                        """
+            )
+            .indented(),
+          kt(
+              "src/main/java/pkg/android/MyApplicationTheme.kt",
+              """
             package pkg.android
 
             import androidx.compose.foundation.isSystemInDarkTheme
@@ -4693,87 +4592,87 @@ class ProjectInitializerTest {
                 )
             }
           """,
-                    )
-                    .indented(),
-                kt(
-                    "src/main/java/pkg/android/expect.kt",
-                    """
-                    package pkg
-                    expect fun getPlatform() : Platform
-                    """
-                        .trimIndent(),
-                ),
-                kt(
-                    "src/main/java/pkg/android/actual.kt",
-                    """
-                    package pkg
-                    actual fun getPlatform() = TODO()
-                    """
-                        .trimIndent(),
-                ),
             )
-            .name("androidApp")
-            .dependsOn(shared, DependencyKind.DependsOn)
+            .indented(),
+          kt(
+            "src/main/java/pkg/android/expect.kt",
+            """
+            package pkg
+            expect fun getPlatform() : Platform
+            """
+              .trimIndent(),
+          ),
+          kt(
+            "src/main/java/pkg/android/actual.kt",
+            """
+            package pkg
+            actual fun getPlatform() = TODO()
+            """
+              .trimIndent(),
+          ),
+        )
+        .name("androidApp")
+        .dependsOn(shared, DependencyKind.DependsOn)
 
     val iosApp =
-        project(
-                source(
-                    "iosApp/ContentView.swift",
-                    """
-                    import SwiftUI
-                    import shared
+      project(
+          source(
+            "iosApp/ContentView.swift",
+            """
+            import SwiftUI
+            import shared
 
-                    struct ContentView: View {
-                        @ObservedObject private(set) var viewModel: ViewModel
+            struct ContentView: View {
+                @ObservedObject private(set) var viewModel: ViewModel
 
-                        var body: some View {
-                            Text(viewModel.text)
-                        }
-                    }
+                var body: some View {
+                    Text(viewModel.text)
+                }
+            }
 
-                    extension ContentView {
-                        class ViewModel: ObservableObject {
-                            @Published var text = "Loading..."
-                            init() {
-                                Greeting().greet { greeting, error in
-                                            DispatchQueue.main.async {
-                                                if let greeting = greeting {
-                                                    self.text = greeting
-                                                } else {
-                                                    self.text = error?.localizedDescription ?? "error"
-                                                }
-                                            }
+            extension ContentView {
+                class ViewModel: ObservableObject {
+                    @Published var text = "Loading..."
+                    init() {
+                        Greeting().greet { greeting, error in
+                                    DispatchQueue.main.async {
+                                        if let greeting = greeting {
+                                            self.text = greeting
+                                        } else {
+                                            self.text = error?.localizedDescription ?? "error"
                                         }
-                            }
-                        }
+                                    }
+                                }
                     }
-                    """
-                        .trimIndent(),
-                ),
-                source(
-                    "iosApp/iOSApp.swift",
-                    """
-                    import SwiftUI
+                }
+            }
+            """
+              .trimIndent(),
+          ),
+          source(
+            "iosApp/iOSApp.swift",
+            """
+            import SwiftUI
 
-                    @main
-                    struct iOSApp: App {
-                      var body: some Scene {
-                        WindowGroup {
-                                ContentView(viewModel: ContentView.ViewModel())
-                        }
-                      }
-                    }
-                    """
-                        .trimIndent(),
-                ),
-            )
-            .name("iosApp")
-            .dependsOn(shared, DependencyKind.DependsOn)
+            @main
+            struct iOSApp: App {
+              var body: some Scene {
+                WindowGroup {
+                        ContentView(viewModel: ContentView.ViewModel())
+                }
+              }
+            }
+            """
+              .trimIndent(),
+          ),
+        )
+        .name("iosApp")
+        .dependsOn(shared, DependencyKind.DependsOn)
 
     val root = temp.newFolder().canonicalFile.absoluteFile
     @Language("XML")
     val descriptor =
-        """
+      """
         <project>
           <sdk dir='${TestUtils.getSdk()}'/>
           <root dir="$root" />
@@ -4802,13 +4701,13 @@ class ProjectInitializerTest {
           </module>
         </project>
       """
-            .trimIndent()
+        .trimIndent()
 
     val projects = lint().projects(shared, androidApp, iosApp).createProjects(root)
     Files.asCharSink(File(root, "project.xml"), Charsets.UTF_8).write(descriptor)
 
     MainTest.checkDriver(
-        """
+      """
         src/main/res/values/styles.xml:2: Error: android:Theme.Material.NoActionBar requires API level 21 (current min is 1) [NewApi]
     <style name="AppTheme" parent="android:Theme.Material.NoActionBar"/>
                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -4829,11 +4728,11 @@ src/main/AndroidManifest.xml:7: Warning: You must set android:targetSdkVersion t
                              ~~~~
 1 error, 5 warnings
       """,
-        "",
-        ERRNO_SUCCESS,
-        arrayOf("--project", File(root, "project.xml").path),
-        { it.replace(root.canonicalPath, "ROOT").replace(root.path, "ROOT").dos2unix() },
-        { _, _, _, _ -> },
+      "",
+      ERRNO_SUCCESS,
+      arrayOf("--project", File(root, "project.xml").path),
+      { it.replace(root.canonicalPath, "ROOT").replace(root.path, "ROOT").dos2unix() },
+      { _, _, _, _ -> },
     )
   }
 
@@ -4841,126 +4740,126 @@ src/main/AndroidManifest.xml:7: Warning: You must set android:targetSdkVersion t
   fun testKMPProjectK2_explicitPlatform() {
     assumeTrue(useFirUast())
     val shared =
-        project(
-                kt(
-                    "src/commonMain/kotlin/pkg/Platform.kt",
-                    """
-                    package pkg
-                    interface Platform {
-                        val name: String
-                    }
-                    expect fun getPlatform(): Platform
-                    """
-                        .trimIndent(),
-                ),
-                kt(
-                    "src/commonMain/kotlin/pkg/Greeting.kt",
-                    """
-                    package pkg
-                    class Greeting {
-                        private val platform: Platform = getPlatform()
-                    }
-                    """
-                        .trimIndent(),
-                ),
-                kt(
-                    "src/androidMain/kotlin/pkg/Platform.kt",
-                    """
-                    package pkg
-                    class AndroidPlatform : Platform {
-                        override val name: String = "Android 34"
-                    }
-                    actual fun getPlatform(): Platform = AndroidPlatform()
-                    """
-                        .trimIndent(),
-                ),
-                kt(
-                    "src/iosMain/kotlin/pkg/Platform.kt",
-                    """
-                    package pkg
-                    import platform.UIKit.UIDevice
-                    class IOSPlatform: Platform {
-                        override val name: String = UIDevice.currentDevice.systemName() + " " + UIDevice.currentDevice.systemVersion
-                    }
-                    actual fun getPlatform(): Platform = IOSPlatform()
-                    """
-                        .trimIndent(),
-                ),
-                klib(
-                    "libs/SomeKlib.klib",
-                    "" +
-                        "H4sIAAAAAAAA/52Xe1BTVx7HL3kHApMXDykyCUgKKw0BfKwVuwGUAYI0Vsva" +
-                        "Gprk5iaQJSSQB4MPmIRUjARcFC1ixbVAi1P7h7Bry0zrlmLSggJaaq11dbYG" +
-                        "7aqruz62re6a7V7CqvdK7uWmlxkeczmf3/d7zsk5359cRqaEA7OPEEA+DIAD" +
-                        "QFqd2mawZry6IRKgI1/KMYdFIIbpzcFH8gEGgzFn5AL0SIu+wqi22sxai7jK" +
-                        "aJ3D0ahUKlClkpB9qwU6KlhKc8XRWye8k17PcKpntG942Pu5d1TkGY3i+eQq" +
-                        "yvsq5/v87Te5jgPDzG/GUlg6SeZA4bbur6Y+3Xq+6fRzC3KbB8IzB2uZjkpR" +
-                        "HbTi8KvSE4pLea05sFo64yNK+BYdXLEXV33MM+qtZr2xAlf6KOArFXxPAetg" +
-                        "6bF7X2B4DPJxVg/v/ist97LX33OTue496y3cDvMr5YrLOX5FeY6/KT/Bf7B8" +
-                        "2qnoLl91UuE0FGdluW8P3peZs+4n3P+VMN6uu0PKjBjPObJKslLlayo0q37a" +
-                        "2xfTyYf6yZFFE4sdFys7ujpfIx0X8Ecprzed5GxURAYcRn846miDhflxHcah" +
-                        "HUJa0FZRZNSZYI8QlkeVA5QAgRpnJZ8URMIv+Lg1+Oga1s01+Msvd4A6gY4M" +
-                        "1rHPgxxVh2oKjK7UOOTSxNylCm5JoPCBqQ0iETxiA27hhejCevNqrcagNqut" +
-                        "epPRguewkAJm0BjPUSD7Rqary3EhyrVvO3/o1ysuUPanvDWY1seUFN2tra21" +
-                        "ZjOP2R+wSE0Fra15LdJ3lrXvIedIUxLYKQnSFOlLTvsiOfOsoOAIlSQ1pEBh" +
-                        "S/+1682m+HF5VFgU+w+5w+tkJcVvylzuHb27mUd0L36at4ncYbdTnZxkXsBj" +
-                        "WsyDThes6aNQJlenNwQmV4dlrYYO0sUimk64SZzt33OJ1JBviZBZNDIZOTtf" +
-                        "Y+ElJ0fI8pP9vh7I7/lkb8+jcb7/Eei3e3qunjvo6Tu44cQtrlBHU0emiWgF" +
-                        "4gKa0CImP3pvZj9ej4X6neOF8Ia8HnuOfIMesBCXuOxyDVy7A9dCNNoCaIL0" +
-                        "AQ8g5gYMA9fTGCoKWL5rJbc4XjEiLW75vfvyzn29u9e6cu3rfLsonYLC9h3u" +
-                        "4+7dO52R6ZSAmILov65ZAUPW4IphI8RUq416ndYyd6OunciMIgnZ0i8PnWz3" +
-                        "Gs41j4yM7L9QaRgT9HZRaDHNE4nK29eV//2pu4e9/LdJoyu/gUz9X1zbXNat" +
-                        "v3E9jntxa2l929WvF/fncY5uGlh2ytD20s3udWER5soPix5k31nich7iO8+2" +
-                        "lB5ulB9o8zRY/tJYxqSSGKzG8wVfDu1vdGTMmFEsWO5rhJUcAfDObS7CDHzm" +
-                        "mmxmjdYSysHPQQAMemMVpLaqQzn+Y4ONrzZBNoN2DmXaN8icPLP2h8mxksE/" +
-                        "gsfAtKIXxAM+YPcW6rc3ym7t3Jy25mFXWplC3vxG4wDPydvYxSvhBhb2ztGh" +
-                        "vKUwYDWuFWEwKTVqTZW6QqtUGyGzSQ+FYk1MhCd5/Bu8navnOgbZYDtYP+x9" +
-                        "0OJelZnxbupvsqkBR9uaPzdHw//Aw3W0iIACsQljvYObSieIlChNluCWBq+B" +
-                        "L4/L0k6dKbkCnsr4HowoTC8unbgCnp7MGBsbnwbrxo9e9W1niETX+m5qO2tq" +
-                        "hUN5v1OUkFiK9AQWqVVhSGgllXBZUo5O8PZrduoobedAkaQwM5Vp7mNmZhVK" +
-                        "GkDoCpileviZN5wHrmGs+g6s93qptvY3Gu8+LxaJymavvtM/n3HAYvpwpy8J" +
-                        "z6sV/tiLa6oqQpm8xYSAEiX8PejcpUwMhI9I+AVXtpqMmkf98s7vUn0bL11q" +
-                        "ICmFFwVTU8Vv0+vqbl2t9PwwPfwZ88BXB9WHLi/8kdu/BPrAd7Z0und7a7b8" +
-                        "zlv/rr/NO//z4RvmEzvqm168x/r7BdnhpPdcd19f3RBdKfu4beW5ktzJPx3L" +
-                        "2/U1/UfqlpP+P6/9Vqx6SJqZtuq/HfNsg3W4cKctMZhLs8lkVf7faihTFnQL" +
-                        "o2AS5bwfnbDAoje52dei4Des0NUj1ygU9anzwiSz6z6fg3cXHR+avaQ+Lqte" +
-                        "yAVmriE8F8hLyqo2V2itIZ3q8UGGw/pt9cr6ZUtCASXjgvRGjcEGaTFO1flP" +
-                        "6blEuHfQ12FssF/CqzJZ4T+C8cJI4QBWC8UE0M/Thoo6i8EbHoEavhwxPNBY" +
-                        "IQh84OmuQ7YrC1CEWjTh2QYLg4dsDmJQvIwwALPlwYAhu4A4FIxDAnC6Cwwc" +
-                        "MtvzUTgbGodoJDBQyAi9EIX6BxoVrDXAYCIzLVreFBnAiOIYKGQijUah9lEA" +
-                        "rEiMwUIGQjaKlUQFgiRaAluVi8L8E4FBZkkCIA4KJKEBwTIlhi9kuItFcWqC" +
-                        "cR5nSwKqhCjaf4LR5sZDDJXIwCZGcWV0AtxnYiIB8YtQRSYIFJlNgljnASIx" +
-                        "paPQAgYx9NNESEB9EqoEi4lTAhHEMLQjY8tiFLicEBgRyAhIT0RVyA8PUuGZ" +
-                        "MIQhG5lX0KvZPi/0cSgKWW9YxDwzgq0XmUxSUdDSeaHIGERAM/r8+gKBfxp2" +
-                        "CGDiURgaay4GGXoIAJNRwJdxgYjwE/JZ9A4u+UkICpl7F5f7JAw94VJpMz8T" +
-                        "4C8qjMmdueOB/wFP4UXFXBYAAA==",
-                    0x2a5ba622,
-                    kotlin(
-                            """
+      project(
+          kt(
+            "src/commonMain/kotlin/pkg/Platform.kt",
+            """
+            package pkg
+            interface Platform {
+                val name: String
+            }
+            expect fun getPlatform(): Platform
+            """
+              .trimIndent(),
+          ),
+          kt(
+            "src/commonMain/kotlin/pkg/Greeting.kt",
+            """
+            package pkg
+            class Greeting {
+                private val platform: Platform = getPlatform()
+            }
+            """
+              .trimIndent(),
+          ),
+          kt(
+            "src/androidMain/kotlin/pkg/Platform.kt",
+            """
+            package pkg
+            class AndroidPlatform : Platform {
+                override val name: String = "Android 34"
+            }
+            actual fun getPlatform(): Platform = AndroidPlatform()
+            """
+              .trimIndent(),
+          ),
+          kt(
+            "src/iosMain/kotlin/pkg/Platform.kt",
+            """
+            package pkg
+            import platform.UIKit.UIDevice
+            class IOSPlatform: Platform {
+                override val name: String = UIDevice.currentDevice.systemName() + " " + UIDevice.currentDevice.systemVersion
+            }
+            actual fun getPlatform(): Platform = IOSPlatform()
+            """
+              .trimIndent(),
+          ),
+          klib(
+            "libs/SomeKlib.klib",
+            "" +
+              "H4sIAAAAAAAA/52Xe1BTVx7HL3kHApMXDykyCUgKKw0BfKwVuwGUAYI0Vsva" +
+              "Gprk5iaQJSSQB4MPmIRUjARcFC1ixbVAi1P7h7Bry0zrlmLSggJaaq11dbYG" +
+              "7aqruz62re6a7V7CqvdK7uWmlxkeczmf3/d7zsk5359cRqaEA7OPEEA+DIAD" +
+              "QFqd2mawZry6IRKgI1/KMYdFIIbpzcFH8gEGgzFn5AL0SIu+wqi22sxai7jK" +
+              "aJ3D0ahUKlClkpB9qwU6KlhKc8XRWye8k17PcKpntG942Pu5d1TkGY3i+eQq" +
+              "yvsq5/v87Te5jgPDzG/GUlg6SeZA4bbur6Y+3Xq+6fRzC3KbB8IzB2uZjkpR" +
+              "HbTi8KvSE4pLea05sFo64yNK+BYdXLEXV33MM+qtZr2xAlf6KOArFXxPAetg" +
+              "6bF7X2B4DPJxVg/v/ist97LX33OTue496y3cDvMr5YrLOX5FeY6/KT/Bf7B8" +
+              "2qnoLl91UuE0FGdluW8P3peZs+4n3P+VMN6uu0PKjBjPObJKslLlayo0q37a" +
+              "2xfTyYf6yZFFE4sdFys7ujpfIx0X8Ecprzed5GxURAYcRn846miDhflxHcah" +
+              "HUJa0FZRZNSZYI8QlkeVA5QAgRpnJZ8URMIv+Lg1+Oga1s01+Msvd4A6gY4M" +
+              "1rHPgxxVh2oKjK7UOOTSxNylCm5JoPCBqQ0iETxiA27hhejCevNqrcagNqut" +
+              "epPRguewkAJm0BjPUSD7Rqary3EhyrVvO3/o1ysuUPanvDWY1seUFN2tra21" +
+              "ZjOP2R+wSE0Fra15LdJ3lrXvIedIUxLYKQnSFOlLTvsiOfOsoOAIlSQ1pEBh" +
+              "S/+1682m+HF5VFgU+w+5w+tkJcVvylzuHb27mUd0L36at4ncYbdTnZxkXsBj" +
+              "WsyDThes6aNQJlenNwQmV4dlrYYO0sUimk64SZzt33OJ1JBviZBZNDIZOTtf" +
+              "Y+ElJ0fI8pP9vh7I7/lkb8+jcb7/Eei3e3qunjvo6Tu44cQtrlBHU0emiWgF" +
+              "4gKa0CImP3pvZj9ej4X6neOF8Ia8HnuOfIMesBCXuOxyDVy7A9dCNNoCaIL0" +
+              "AQ8g5gYMA9fTGCoKWL5rJbc4XjEiLW75vfvyzn29u9e6cu3rfLsonYLC9h3u" +
+              "4+7dO52R6ZSAmILov65ZAUPW4IphI8RUq416ndYyd6OunciMIgnZ0i8PnWz3" +
+              "Gs41j4yM7L9QaRgT9HZRaDHNE4nK29eV//2pu4e9/LdJoyu/gUz9X1zbXNat" +
+              "v3E9jntxa2l929WvF/fncY5uGlh2ytD20s3udWER5soPix5k31nich7iO8+2" +
+              "lB5ulB9o8zRY/tJYxqSSGKzG8wVfDu1vdGTMmFEsWO5rhJUcAfDObS7CDHzm" +
+              "mmxmjdYSysHPQQAMemMVpLaqQzn+Y4ONrzZBNoN2DmXaN8icPLP2h8mxksE/" +
+              "gsfAtKIXxAM+YPcW6rc3ym7t3Jy25mFXWplC3vxG4wDPydvYxSvhBhb2ztGh" +
+              "vKUwYDWuFWEwKTVqTZW6QqtUGyGzSQ+FYk1MhCd5/Bu8navnOgbZYDtYP+x9" +
+              "0OJelZnxbupvsqkBR9uaPzdHw//Aw3W0iIACsQljvYObSieIlChNluCWBq+B" +
+              "L4/L0k6dKbkCnsr4HowoTC8unbgCnp7MGBsbnwbrxo9e9W1niETX+m5qO2tq" +
+              "hUN5v1OUkFiK9AQWqVVhSGgllXBZUo5O8PZrduoobedAkaQwM5Vp7mNmZhVK" +
+              "GkDoCpileviZN5wHrmGs+g6s93qptvY3Gu8+LxaJymavvtM/n3HAYvpwpy8J" +
+              "z6sV/tiLa6oqQpm8xYSAEiX8PejcpUwMhI9I+AVXtpqMmkf98s7vUn0bL11q" +
+              "ICmFFwVTU8Vv0+vqbl2t9PwwPfwZ88BXB9WHLi/8kdu/BPrAd7Z0und7a7b8" +
+              "zlv/rr/NO//z4RvmEzvqm168x/r7BdnhpPdcd19f3RBdKfu4beW5ktzJPx3L" +
+              "2/U1/UfqlpP+P6/9Vqx6SJqZtuq/HfNsg3W4cKctMZhLs8lkVf7faihTFnQL" +
+              "o2AS5bwfnbDAoje52dei4Des0NUj1ygU9anzwiSz6z6fg3cXHR+avaQ+Lqte" +
+              "yAVmriE8F8hLyqo2V2itIZ3q8UGGw/pt9cr6ZUtCASXjgvRGjcEGaTFO1flP" +
+              "6blEuHfQ12FssF/CqzJZ4T+C8cJI4QBWC8UE0M/Thoo6i8EbHoEavhwxPNBY" +
+              "IQh84OmuQ7YrC1CEWjTh2QYLg4dsDmJQvIwwALPlwYAhu4A4FIxDAnC6Cwwc" +
+              "MtvzUTgbGodoJDBQyAi9EIX6BxoVrDXAYCIzLVreFBnAiOIYKGQijUah9lEA" +
+              "rEiMwUIGQjaKlUQFgiRaAluVi8L8E4FBZkkCIA4KJKEBwTIlhi9kuItFcWqC" +
+              "cR5nSwKqhCjaf4LR5sZDDJXIwCZGcWV0AtxnYiIB8YtQRSYIFJlNgljnASIx" +
+              "paPQAgYx9NNESEB9EqoEi4lTAhHEMLQjY8tiFLicEBgRyAhIT0RVyA8PUuGZ" +
+              "MIQhG5lX0KvZPi/0cSgKWW9YxDwzgq0XmUxSUdDSeaHIGERAM/r8+gKBfxp2" +
+              "CGDiURgaay4GGXoIAJNRwJdxgYjwE/JZ9A4u+UkICpl7F5f7JAw94VJpMz8T" +
+              "4C8qjMmdueOB/wFP4UXFXBYAAA==",
+            0x2a5ba622,
+            kotlin(
+                """
             package test.pkg
             import android.os.Parcelable
             abstract class Parent : Parcelable
                 """
-                        )
-                        .indented(),
-                    kotlin(
-                            """
+              )
+              .indented(),
+            kotlin(
+                """
                   package android.os
                   interface Parcelable
                   interface Parcel
                 """
-                        )
-                        .indented(),
-                ),
-            )
-            .type(LIBRARY)
-            .name("project1")
+              )
+              .indented(),
+          ),
+        )
+        .type(LIBRARY)
+        .name("project1")
 
     val androidApp =
-        project(
-                source(
-                        "src/main/$ANDROID_MANIFEST_XML",
-                        """
+      project(
+          source(
+              "src/main/$ANDROID_MANIFEST_XML",
+              """
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
               <uses-permission android:name="android.permission.INTERNET"/>
@@ -4980,20 +4879,20 @@ src/main/AndroidManifest.xml:7: Warning: You must set android:targetSdkVersion t
               </application>
           </manifest>
         """,
-                    )
-                    .indented(),
-                xml(
-                        "src/main/res/values/styles.xml",
-                        """
+            )
+            .indented(),
+          xml(
+              "src/main/res/values/styles.xml",
+              """
             <resources>
                 <style name="AppTheme" parent="android:Theme.Material.NoActionBar"/>
             </resources>
           """,
-                    )
-                    .indented(),
-                kt(
-                        "src/main/java/pkg/android/MainActivity.kt",
-                        """
+            )
+            .indented(),
+          kt(
+              "src/main/java/pkg/android/MainActivity.kt",
+              """
             package pkg.android
 
             import android.os.Bundle
@@ -5044,11 +4943,11 @@ src/main/AndroidManifest.xml:7: Warning: You must set android:targetSdkVersion t
                 }
             }
           """,
-                    )
-                    .indented(),
-                kt(
-                        "src/main/java/pkg/android/MyApplicationTheme.kt",
-                        """
+            )
+            .indented(),
+          kt(
+              "src/main/java/pkg/android/MyApplicationTheme.kt",
+              """
             package pkg.android
 
             import androidx.compose.foundation.isSystemInDarkTheme
@@ -5105,87 +5004,87 @@ src/main/AndroidManifest.xml:7: Warning: You must set android:targetSdkVersion t
                 )
             }
           """,
-                    )
-                    .indented(),
-                kt(
-                    "src/main/java/pkg/android/expect.kt",
-                    """
-                    package pkg
-                    expect fun getPlatform() : Platform
-                    """
-                        .trimIndent(),
-                ),
-                kt(
-                    "src/main/java/pkg/android/actual.kt",
-                    """
-                    package pkg
-                    actual fun getPlatform() = TODO()
-                    """
-                        .trimIndent(),
-                ),
             )
-            .name("project2")
-            .dependsOn(shared, DependencyKind.DependsOn)
+            .indented(),
+          kt(
+            "src/main/java/pkg/android/expect.kt",
+            """
+            package pkg
+            expect fun getPlatform() : Platform
+            """
+              .trimIndent(),
+          ),
+          kt(
+            "src/main/java/pkg/android/actual.kt",
+            """
+            package pkg
+            actual fun getPlatform() = TODO()
+            """
+              .trimIndent(),
+          ),
+        )
+        .name("project2")
+        .dependsOn(shared, DependencyKind.DependsOn)
 
     val iosApp =
-        project(
-                source(
-                    "iosApp/ContentView.swift",
-                    """
-                    import SwiftUI
-                    import shared
+      project(
+          source(
+            "iosApp/ContentView.swift",
+            """
+            import SwiftUI
+            import shared
 
-                    struct ContentView: View {
-                        @ObservedObject private(set) var viewModel: ViewModel
+            struct ContentView: View {
+                @ObservedObject private(set) var viewModel: ViewModel
 
-                        var body: some View {
-                            Text(viewModel.text)
-                        }
-                    }
+                var body: some View {
+                    Text(viewModel.text)
+                }
+            }
 
-                    extension ContentView {
-                        class ViewModel: ObservableObject {
-                            @Published var text = "Loading..."
-                            init() {
-                                Greeting().greet { greeting, error in
-                                            DispatchQueue.main.async {
-                                                if let greeting = greeting {
-                                                    self.text = greeting
-                                                } else {
-                                                    self.text = error?.localizedDescription ?? "error"
-                                                }
-                                            }
+            extension ContentView {
+                class ViewModel: ObservableObject {
+                    @Published var text = "Loading..."
+                    init() {
+                        Greeting().greet { greeting, error in
+                                    DispatchQueue.main.async {
+                                        if let greeting = greeting {
+                                            self.text = greeting
+                                        } else {
+                                            self.text = error?.localizedDescription ?? "error"
                                         }
-                            }
-                        }
+                                    }
+                                }
                     }
-                    """
-                        .trimIndent(),
-                ),
-                source(
-                    "iosApp/iOSApp.swift",
-                    """
-                    import SwiftUI
+                }
+            }
+            """
+              .trimIndent(),
+          ),
+          source(
+            "iosApp/iOSApp.swift",
+            """
+            import SwiftUI
 
-                    @main
-                    struct iOSApp: App {
-                      var body: some Scene {
-                        WindowGroup {
-                                ContentView(viewModel: ContentView.ViewModel())
-                        }
-                      }
-                    }
-                    """
-                        .trimIndent(),
-                ),
-            )
-            .name("project3")
-            .dependsOn(shared, DependencyKind.DependsOn)
+            @main
+            struct iOSApp: App {
+              var body: some Scene {
+                WindowGroup {
+                        ContentView(viewModel: ContentView.ViewModel())
+                }
+              }
+            }
+            """
+              .trimIndent(),
+          ),
+        )
+        .name("project3")
+        .dependsOn(shared, DependencyKind.DependsOn)
 
     val root = temp.newFolder().canonicalFile.absoluteFile
     @Language("XML")
     val descriptor =
-        """
+      """
         <project>
           <sdk dir='${TestUtils.getSdk()}'/>
           <root dir="$root" />
@@ -5214,13 +5113,13 @@ src/main/AndroidManifest.xml:7: Warning: You must set android:targetSdkVersion t
           </module>
         </project>
       """
-            .trimIndent()
+        .trimIndent()
 
     lint().projects(shared, androidApp, iosApp).createProjects(root)
     Files.asCharSink(File(root, "project.xml"), Charsets.UTF_8).write(descriptor)
 
     MainTest.checkDriver(
-        """
+      """
         src/main/res/values/styles.xml:2: Error: android:Theme.Material.NoActionBar requires API level 21 (current min is 1) [NewApi]
     <style name="AppTheme" parent="android:Theme.Material.NoActionBar"/>
                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -5241,11 +5140,11 @@ src/main/AndroidManifest.xml:7: Warning: You must set android:targetSdkVersion t
                              ~~~~
 1 error, 5 warnings
       """,
-        "",
-        ERRNO_SUCCESS,
-        arrayOf("--project", File(root, "project.xml").path),
-        { it.replace(root.canonicalPath, "ROOT").replace(root.path, "ROOT").dos2unix() },
-        { _, _, _, _ -> },
+      "",
+      ERRNO_SUCCESS,
+      arrayOf("--project", File(root, "project.xml").path),
+      { it.replace(root.canonicalPath, "ROOT").replace(root.path, "ROOT").dos2unix() },
+      { _, _, _, _ -> },
     )
   }
 
@@ -5253,130 +5152,132 @@ src/main/AndroidManifest.xml:7: Warning: You must set android:targetSdkVersion t
   fun testKMPProjectK2_common_klib() {
     assumeTrue(useFirUast())
     val shared =
-        project(
-                // TODO
-                //   Here we leave `androidMain/.../Platform.kt` out of the klib because `kotlinc-native`
-                //   gives an error on conflicting overloads of `actual fun getPlatform()`, and it's
-                //   strange for the Android-specific file to be passed to `kotlinc-native`.
-                //   If we have neither, `kotlinc-native` will complain that there's no corresponding
-                //   `actual` to the `expect`.
-                klib(
-                    "build/common.klib",
-                    "" +
-                        "H4sIAAAAAAAA/6WXDzzT+R/Hv/N3bJj8G04ZQ8LMn1ZCNyvKQqjLuC4282dh" +
-                        "Y7ZQd0TKn/zthIQjNS6XSu6a4nR+kjJ/kkJdvy6kf64/SgrxG/e7u+/3bIvf" +
-                        "77vHY4/H/ryfe79f3/dn79fbc4u0jCLwx4UBwBccUAXoQcFUbjjH8ovtSoA8" +
-                        "+ENPsWEIUBiDLTpSHYDD4QsitaGR0YwQJpXDZQdF48KYnAWcwICAgOCAAD6y" +
-                        "5TVxWiv1w/5C6VTnnFBUsDyNUFWIQiEAK7U8FV59Px+tnYzWrk8m2qoZXmjp" +
-                        "s7P4eDnEgt+Qq4q9ZtDSpngkUJVG25B74HRIAf8+4QN5trrUvRqdSalH22HR" +
-                        "dZS1FBlKuVx0lMJ+BjPteVjp9K/rP34kh5muL3PIbsly3spzL5l9uztZSrrX" +
-                        "IF628Gi4Z+WBYlMklyC4XtWpmWx3+c21ZxFNluaNYbK2pV77nWmsl5dK8+Ms" +
-                        "PeST8moVrGrN8MQM+dr6nIyNylbUOtQGZQuq7c+oAYwJHGHH/9ZKSrmqAKHj" +
-                        "Fpmgn6SwOwmwT6+s91K3IZWYAEoJmI3vpYVqysOlUkJeyMEA4HMpSepq/kNd" +
-                        "DpvBDBEtbWbug93NePRVQzUTTTkD5J7HiFElMob3vYyRhave6OnYm1wn91Pt" +
-                        "HaXN134NGw07nuHm038Vk5I9/aFELblbj/QEwXEKtU3iZk0OqHNUiiiZjXHP" +
-                        "V5xRIaqUmVw+62jz+YrT3G35Lk9X8RSGbJWP7jBe1ztS9VbZ/M53j4f+3XC7" +
-                        "w3SnkZdxT0b69I8Uai3166+wGcwhwYsq8lA4fGagJOM3dsO9katdUW7wo9Ya" +
-                        "5XE+K1TPUm9qDFlfK+4meZIGEBqa97IHXIrirIovrdPP2veg9ebUtoHyumB0" +
-                        "RZeZu7S6Y48SQh221dzcA9892R92n9pR4/fd3TiAb37UpyXha6IW7dx0qd8p" +
-                        "9tNnu2Zsxs+O6bW6R77c1gSbE/phORWmLhQ6RaLQaKjQ9CAaN8SVGcwSSk0X" +
-                        "18Wp8jRN/SwYzUVfOeYNZzzKCw4fU4lUUkzLiGFz3r17G52dAn9sNMLz0xjG" +
-                        "5p98pPVoVd52TSBu4OleGD63VjAoOCkoFhwhVyedENS2HNl+8EmdoKGlmCIH" +
-                        "B3xVSf2KKJjVevsmrInNVkv+yZU2lnrZH+Y7J+anddf2CrPokngu1aEFceIi" +
-                        "JR/Jc1I0jZUdii3hREFWxo8UmX5sYR1F9i5FX31F8rIDnt7L3JCob/upl5ya" +
-                        "9S0iMx0CVmOP4aTK6djC+Zy2EPw+cxLCqiTmpAfNicHeGBQYTmVTOQwWM1qk" +
-                        "0kE5W8nSVuqt/ta3ilq9HrT49ZQZCU4cHrBjtvqmrTRgajgmar2S2jaLeeKy" +
-                        "knlf/RdD/iuDxsQvVTy/YRin6rzXfNk+9ea19H440HoS0aOblpiw+dIOQ2P7" +
-                        "E5k7E170E6wvmJ/i96XWyDl07uOZHXVrSZ0qvVcUWJ08XXa34PCgU87U3YsF" +
-                        "Vjj0yZvVMvadnvxy33zXLbvORLomhLa/Nj9+9uUkxs9/LOlq3oE1x+64Vvq/" +
-                        "LWoo8yiKvdVbmhJ7hOmpxD/O+uI47hBiorC/AF0huJForxPY7rthY8L295o6" +
-                        "q9Cz0WNZdaSinDu97kTr+1NONDx3/HPssCx2020q0fr5vUr/zcGw692GTqQx" +
-                        "Zrilvld8aNbG135q+bQveDVcon/XvTx6c/sT3Tn9LaSmBFhhk3fDltATwYzw" +
-                        "+Z4IFtcTr+QHAf13QzQ6iv24ts/yukX3GlsbAgGPJ9hYr8YT6s7hV9ta1/Za" +
-                        "4sh3tnZ2dXR0vXEXCG51dVpeh3nLDjydfOH8/fdGx+Ke7h0wIpkjHWph3hlI" +
-                        "/SGHNhucvsl5rEXTSi36Z2bS2SeOybY5GMvFY3xwutNywSNaanh3MxwsVGe+" +
-                        "tTAKSeRUYU4fJbaWBrQ0GovOmK+NtqC2iCx3srQT6mD1vpl0MrKE0MIj/uKC" +
-                        "SU0y1i3ACGAOh00Kj/F7dIeBXcSL0bIq+DVtBJNXRoYncg5NpMc3rFpvQE4N" +
-                        "VTrVbTI+ax8q4zjG1A5hp5cbmu7Q7qs3CWlmmg59szZv9Dalc6qqO8MsJUnp" +
-                        "ZUGDUhRGBb3XrE9XrX5sZievS+11w/JnacOZru8jBleGS+8IUMiYLJgJQL5D" +
-                        "dzvGPIKdMput4Bh5omacnPI6f78FbGqq4d+W3lTd9NkLdIr8pmpKohF+psq9" +
-                        "IVe7ydal4klrcRT3YePmQETNGUOjH8oOrlv3YE62wlYt3pCw3C0SOwIFki2C" +
-                        "ymQEB0Uv/Idwzzyv3KyPIk5Mob3dKnBIZWWcB8/Mbti24IrXw9DJD3voe9vb" +
-                        "95VHe+eP9CVPmq6+/Pj3ccqL7oMJJQ0BxhM4O61EaTOT0/EVd/mpF0Z2e2ga" +
-                        "nMGer+dZRQFIB7SWTWLZmMuu8/Gux7eYfzMxFXfILV1VQz6BoBm7023Tbypz" +
-                        "pVh/NX74a2EePECShVkGKkVoP1hcdmBQ9FI8kCoIEM5ghtGpHOpSnJCWqPgI" +
-                        "Fp0bHrSAMjR4znX+xFy4QDtHw7V5xNCA+W531j34u4bwC2oSU9UT9VOR1MAw" +
-                        "akiQf2RYyFLSNv4Uy2ruWXiUIhZW0TM86LHVQqHN1dy13fLGo7lCHg/uj66n" +
-                        "mjeOLsMsxxnDXHAEZTmYsYKcKdV0D0wOcUh+p+A7tC+/EIlmRcLskGevuPxR" +
-                        "OG84bvlmIdPn/0sWLzZZx25HZjMRJfvbR22WMev4wRtk2ZoqgxqiuoK36sND" +
-                        "+c367QE5Pzr3YJRzDYd39uZtzxuV4qE7bo1W+pjHl8XcVnRgpjcXjCvy7k5y" +
-                        "fTdkP/N/xWx81R5xAZZw8fpPbxvHzvnfmv5AGqdtuzL8c5rzT42b+kwr485a" +
-                        "PHfu0yPZwf7VfH178g+kHR6VE1+O9VtePPNr2Kp/b7zzkpx7Q8XqQEVa8YpQ" +
-                        "Voevda9nSjnCjZCKVTg5tDanqUstNS5gQjPGlSqQbZtsyMgn+ebNvsVOOmWh" +
-                        "Ku/NFpcHkXzmpAvc1zZ5R1ihBUxSzywXJR2bxeL4/1e/pTQN9pMwvL/olqGh" +
-                        "aDm02CtX36cfhs3f+KTDqEfKwk+QEjse/EfFobJDgjhLOts6IsKFeXNj/WMJ" +
-                        "tksBGUoEMZiB4Vx6EH0pRIxEonCZYuwRc2v+F14YiyN8IYoHk1IExO2UCgD0" +
-                        "+nvDlP0DIykcAQlfAwqf3zRBBHXg724D70faEEIUlPDPjVMMD7wGaEJ4XTBA" +
-                        "7I4lBga24GgIbK00IGGPEIMDu2d1CE5BBhDj4sWgwEZQD4IqgaJEmW8xTLAD" +
-                        "g6anJweIMZRiUGBXogFBvYeiwAZODAtsC1AQliUcEOFqFtGqyyCYSRAG7CgW" +
-                        "AVKFgOwVAFHOQkxdYAugBeHsE8X502EsIitoQ4yIokFNhJgMwbPaGMK0VvwE" +
-                        "E2QmxMDB0wwKf/ApOF4kXJwayyFwHaQI+D/Go5iMwRMMC4GGfBL655hcRL7Q" +
-                        "Hu8Hof8eiIvA6EAwWkoLMeDBuAigIQQYIBEIGpCLIGMg5FqJ5L8G5ZK5UsqS" +
-                        "uH8NzL+4snLzwgkfpsJ3vOfuPPAfJ0MmAZEVAAA=",
-                    0x411ab151,
-                    kt(
-                        "src/commonMain/kotlin/pkg/Platform.kt",
-                        """
-                        package pkg
-                        interface Platform {
-                            val name: String
-                        }
-                        expect fun getPlatform(): Platform
-                        """
-                            .trimIndent(),
-                    ),
-                    kt(
-                        "src/commonMain/kotlin/pkg/Greeting.kt",
-                        """
-                        package pkg
-                        class Greeting {
-                            private val platform: Platform = getPlatform()
-                        }
-                        """
-                            .trimIndent(),
-                    ),
-                    kt(
-                        "src/iosMain/kotlin/pkg/Platform.kt",
-                        """
-                        package pkg
-                        class IOSPlatform: Platform {
-                            override val name: String = "iOS platform name"
-                        }
-                        actual fun getPlatform(): Platform = IOSPlatform()
-                        """
-                            .trimIndent(),
-                    ),
-                ),
-                kt(
-                    "src/androidMain/kotlin/pkg/Platform.kt",
-                    """
-                    package pkg
-                    class AndroidPlatform : Platform {
-                        override val name: String = "Android 34"
-                    }
-                    actual fun getPlatform(): Platform = AndroidPlatform()
-                    """
-                        .trimIndent(),
-                ),
-            )
-            .type(LIBRARY)
-            .name("shared")
+      project(
+          // TODO
+          //   Here we leave `androidMain/.../Platform.kt` out of the klib because
+          // `kotlinc-native`
+          //   gives an error on conflicting overloads of `actual fun getPlatform()`, and it's
+          //   strange for the Android-specific file to be passed to `kotlinc-native`.
+          //   If we have neither, `kotlinc-native` will complain that there's no
+          // corresponding
+          //   `actual` to the `expect`.
+          klib(
+            "build/common.klib",
+            "" +
+              "H4sIAAAAAAAA/6WXDzzT+R/Hv/N3bJj8G04ZQ8LMn1ZCNyvKQqjLuC4282dh" +
+              "Y7ZQd0TKn/zthIQjNS6XSu6a4nR+kjJ/kkJdvy6kf64/SgrxG/e7u+/3bIvf" +
+              "77vHY4/H/ryfe79f3/dn79fbc4u0jCLwx4UBwBccUAXoQcFUbjjH8ovtSoA8" +
+              "+ENPsWEIUBiDLTpSHYDD4QsitaGR0YwQJpXDZQdF48KYnAWcwICAgOCAAD6y" +
+              "5TVxWiv1w/5C6VTnnFBUsDyNUFWIQiEAK7U8FV59Px+tnYzWrk8m2qoZXmjp" +
+              "s7P4eDnEgt+Qq4q9ZtDSpngkUJVG25B74HRIAf8+4QN5trrUvRqdSalH22HR" +
+              "dZS1FBlKuVx0lMJ+BjPteVjp9K/rP34kh5muL3PIbsly3spzL5l9uztZSrrX" +
+              "IF628Gi4Z+WBYlMklyC4XtWpmWx3+c21ZxFNluaNYbK2pV77nWmsl5dK8+Ms" +
+              "PeST8moVrGrN8MQM+dr6nIyNylbUOtQGZQuq7c+oAYwJHGHH/9ZKSrmqAKHj" +
+              "Fpmgn6SwOwmwT6+s91K3IZWYAEoJmI3vpYVqysOlUkJeyMEA4HMpSepq/kNd" +
+              "DpvBDBEtbWbug93NePRVQzUTTTkD5J7HiFElMob3vYyRhave6OnYm1wn91Pt" +
+              "HaXN134NGw07nuHm038Vk5I9/aFELblbj/QEwXEKtU3iZk0OqHNUiiiZjXHP" +
+              "V5xRIaqUmVw+62jz+YrT3G35Lk9X8RSGbJWP7jBe1ztS9VbZ/M53j4f+3XC7" +
+              "w3SnkZdxT0b69I8Uai3166+wGcwhwYsq8lA4fGagJOM3dsO9katdUW7wo9Ya" +
+              "5XE+K1TPUm9qDFlfK+4meZIGEBqa97IHXIrirIovrdPP2veg9ebUtoHyumB0" +
+              "RZeZu7S6Y48SQh221dzcA9892R92n9pR4/fd3TiAb37UpyXha6IW7dx0qd8p" +
+              "9tNnu2Zsxs+O6bW6R77c1gSbE/phORWmLhQ6RaLQaKjQ9CAaN8SVGcwSSk0X" +
+              "18Wp8jRN/SwYzUVfOeYNZzzKCw4fU4lUUkzLiGFz3r17G52dAn9sNMLz0xjG" +
+              "5p98pPVoVd52TSBu4OleGD63VjAoOCkoFhwhVyedENS2HNl+8EmdoKGlmCIH" +
+              "B3xVSf2KKJjVevsmrInNVkv+yZU2lnrZH+Y7J+anddf2CrPokngu1aEFceIi" +
+              "JR/Jc1I0jZUdii3hREFWxo8UmX5sYR1F9i5FX31F8rIDnt7L3JCob/upl5ya" +
+              "9S0iMx0CVmOP4aTK6djC+Zy2EPw+cxLCqiTmpAfNicHeGBQYTmVTOQwWM1qk" +
+              "0kE5W8nSVuqt/ta3ilq9HrT49ZQZCU4cHrBjtvqmrTRgajgmar2S2jaLeeKy" +
+              "knlf/RdD/iuDxsQvVTy/YRin6rzXfNk+9ea19H440HoS0aOblpiw+dIOQ2P7" +
+              "E5k7E170E6wvmJ/i96XWyDl07uOZHXVrSZ0qvVcUWJ08XXa34PCgU87U3YsF" +
+              "Vjj0yZvVMvadnvxy33zXLbvORLomhLa/Nj9+9uUkxs9/LOlq3oE1x+64Vvq/" +
+              "LWoo8yiKvdVbmhJ7hOmpxD/O+uI47hBiorC/AF0huJForxPY7rthY8L295o6" +
+              "q9Cz0WNZdaSinDu97kTr+1NONDx3/HPssCx2020q0fr5vUr/zcGw692GTqQx" +
+              "Zrilvld8aNbG135q+bQveDVcon/XvTx6c/sT3Tn9LaSmBFhhk3fDltATwYzw" +
+              "+Z4IFtcTr+QHAf13QzQ6iv24ts/yukX3GlsbAgGPJ9hYr8YT6s7hV9ta1/Za" +
+              "4sh3tnZ2dXR0vXEXCG51dVpeh3nLDjydfOH8/fdGx+Ke7h0wIpkjHWph3hlI" +
+              "/SGHNhucvsl5rEXTSi36Z2bS2SeOybY5GMvFY3xwutNywSNaanh3MxwsVGe+" +
+              "tTAKSeRUYU4fJbaWBrQ0GovOmK+NtqC2iCx3srQT6mD1vpl0MrKE0MIj/uKC" +
+              "SU0y1i3ACGAOh00Kj/F7dIeBXcSL0bIq+DVtBJNXRoYncg5NpMc3rFpvQE4N" +
+              "VTrVbTI+ax8q4zjG1A5hp5cbmu7Q7qs3CWlmmg59szZv9Dalc6qqO8MsJUnp" +
+              "ZUGDUhRGBb3XrE9XrX5sZievS+11w/JnacOZru8jBleGS+8IUMiYLJgJQL5D" +
+              "dzvGPIKdMput4Bh5omacnPI6f78FbGqq4d+W3lTd9NkLdIr8pmpKohF+psq9" +
+              "IVe7ydal4klrcRT3YePmQETNGUOjH8oOrlv3YE62wlYt3pCw3C0SOwIFki2C" +
+              "ymQEB0Uv/Idwzzyv3KyPIk5Mob3dKnBIZWWcB8/Mbti24IrXw9DJD3voe9vb" +
+              "95VHe+eP9CVPmq6+/Pj3ccqL7oMJJQ0BxhM4O61EaTOT0/EVd/mpF0Z2e2ga" +
+              "nMGer+dZRQFIB7SWTWLZmMuu8/Gux7eYfzMxFXfILV1VQz6BoBm7023Tbypz" +
+              "pVh/NX74a2EePECShVkGKkVoP1hcdmBQ9FI8kCoIEM5ghtGpHOpSnJCWqPgI" +
+              "Fp0bHrSAMjR4znX+xFy4QDtHw7V5xNCA+W531j34u4bwC2oSU9UT9VOR1MAw" +
+              "akiQf2RYyFLSNv4Uy2ruWXiUIhZW0TM86LHVQqHN1dy13fLGo7lCHg/uj66n" +
+              "mjeOLsMsxxnDXHAEZTmYsYKcKdV0D0wOcUh+p+A7tC+/EIlmRcLskGevuPxR" +
+              "OG84bvlmIdPn/0sWLzZZx25HZjMRJfvbR22WMev4wRtk2ZoqgxqiuoK36sND" +
+              "+c367QE5Pzr3YJRzDYd39uZtzxuV4qE7bo1W+pjHl8XcVnRgpjcXjCvy7k5y" +
+              "fTdkP/N/xWx81R5xAZZw8fpPbxvHzvnfmv5AGqdtuzL8c5rzT42b+kwr485a" +
+              "PHfu0yPZwf7VfH178g+kHR6VE1+O9VtePPNr2Kp/b7zzkpx7Q8XqQEVa8YpQ" +
+              "Voevda9nSjnCjZCKVTg5tDanqUstNS5gQjPGlSqQbZtsyMgn+ebNvsVOOmWh" +
+              "Ku/NFpcHkXzmpAvc1zZ5R1ihBUxSzywXJR2bxeL4/1e/pTQN9pMwvL/olqGh" +
+              "aDm02CtX36cfhs3f+KTDqEfKwk+QEjse/EfFobJDgjhLOts6IsKFeXNj/WMJ" +
+              "tksBGUoEMZiB4Vx6EH0pRIxEonCZYuwRc2v+F14YiyN8IYoHk1IExO2UCgD0" +
+              "+nvDlP0DIykcAQlfAwqf3zRBBHXg724D70faEEIUlPDPjVMMD7wGaEJ4XTBA" +
+              "7I4lBga24GgIbK00IGGPEIMDu2d1CE5BBhDj4sWgwEZQD4IqgaJEmW8xTLAD" +
+              "g6anJweIMZRiUGBXogFBvYeiwAZODAtsC1AQliUcEOFqFtGqyyCYSRAG7CgW" +
+              "AVKFgOwVAFHOQkxdYAugBeHsE8X502EsIitoQ4yIokFNhJgMwbPaGMK0VvwE" +
+              "E2QmxMDB0wwKf/ApOF4kXJwayyFwHaQI+D/Go5iMwRMMC4GGfBL655hcRL7Q" +
+              "Hu8Hof8eiIvA6EAwWkoLMeDBuAigIQQYIBEIGpCLIGMg5FqJ5L8G5ZK5UsqS" +
+              "uH8NzL+4snLzwgkfpsJ3vOfuPPAfJ0MmAZEVAAA=",
+            0x411ab151,
+            kt(
+              "src/commonMain/kotlin/pkg/Platform.kt",
+              """
+              package pkg
+              interface Platform {
+                  val name: String
+              }
+              expect fun getPlatform(): Platform
+              """
+                .trimIndent(),
+            ),
+            kt(
+              "src/commonMain/kotlin/pkg/Greeting.kt",
+              """
+              package pkg
+              class Greeting {
+                  private val platform: Platform = getPlatform()
+              }
+              """
+                .trimIndent(),
+            ),
+            kt(
+              "src/iosMain/kotlin/pkg/Platform.kt",
+              """
+              package pkg
+              class IOSPlatform: Platform {
+                  override val name: String = "iOS platform name"
+              }
+              actual fun getPlatform(): Platform = IOSPlatform()
+              """
+                .trimIndent(),
+            ),
+          ),
+          kt(
+            "src/androidMain/kotlin/pkg/Platform.kt",
+            """
+            package pkg
+            class AndroidPlatform : Platform {
+                override val name: String = "Android 34"
+            }
+            actual fun getPlatform(): Platform = AndroidPlatform()
+            """
+              .trimIndent(),
+          ),
+        )
+        .type(LIBRARY)
+        .name("shared")
 
     val androidApp =
-        project(
-                source(
-                        "src/main/$ANDROID_MANIFEST_XML",
-                        """
+      project(
+          source(
+              "src/main/$ANDROID_MANIFEST_XML",
+              """
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
               <uses-permission android:name="android.permission.INTERNET"/>
@@ -5396,20 +5297,20 @@ src/main/AndroidManifest.xml:7: Warning: You must set android:targetSdkVersion t
               </application>
           </manifest>
         """,
-                    )
-                    .indented(),
-                xml(
-                        "src/main/res/values/styles.xml",
-                        """
+            )
+            .indented(),
+          xml(
+              "src/main/res/values/styles.xml",
+              """
             <resources>
                 <style name="AppTheme" parent="android:Theme.Material.NoActionBar"/>
             </resources>
           """,
-                    )
-                    .indented(),
-                kt(
-                        "src/main/java/pkg/android/MainActivity.kt",
-                        """
+            )
+            .indented(),
+          kt(
+              "src/main/java/pkg/android/MainActivity.kt",
+              """
             package pkg.android
 
             import android.os.Bundle
@@ -5460,11 +5361,11 @@ src/main/AndroidManifest.xml:7: Warning: You must set android:targetSdkVersion t
                 }
             }
           """,
-                    )
-                    .indented(),
-                kt(
-                        "src/main/java/pkg/android/MyApplicationTheme.kt",
-                        """
+            )
+            .indented(),
+          kt(
+              "src/main/java/pkg/android/MyApplicationTheme.kt",
+              """
             package pkg.android
 
             import androidx.compose.foundation.isSystemInDarkTheme
@@ -5521,87 +5422,87 @@ src/main/AndroidManifest.xml:7: Warning: You must set android:targetSdkVersion t
                 )
             }
           """,
-                    )
-                    .indented(),
-                kt(
-                    "src/main/java/pkg/android/expect.kt",
-                    """
-                    package pkg
-                    expect fun getPlatform() : Platform
-                    """
-                        .trimIndent(),
-                ),
-                kt(
-                    "src/main/java/pkg/android/actual.kt",
-                    """
-                    package pkg
-                    actual fun getPlatform() = TODO()
-                    """
-                        .trimIndent(),
-                ),
             )
-            .name("androidApp")
-            .dependsOn(shared, DependencyKind.DependsOn)
+            .indented(),
+          kt(
+            "src/main/java/pkg/android/expect.kt",
+            """
+            package pkg
+            expect fun getPlatform() : Platform
+            """
+              .trimIndent(),
+          ),
+          kt(
+            "src/main/java/pkg/android/actual.kt",
+            """
+            package pkg
+            actual fun getPlatform() = TODO()
+            """
+              .trimIndent(),
+          ),
+        )
+        .name("androidApp")
+        .dependsOn(shared, DependencyKind.DependsOn)
 
     val iosApp =
-        project(
-                source(
-                    "iosApp/ContentView.swift",
-                    """
-                    import SwiftUI
-                    import shared
+      project(
+          source(
+            "iosApp/ContentView.swift",
+            """
+            import SwiftUI
+            import shared
 
-                    struct ContentView: View {
-                        @ObservedObject private(set) var viewModel: ViewModel
+            struct ContentView: View {
+                @ObservedObject private(set) var viewModel: ViewModel
 
-                        var body: some View {
-                            Text(viewModel.text)
-                        }
-                    }
+                var body: some View {
+                    Text(viewModel.text)
+                }
+            }
 
-                    extension ContentView {
-                        class ViewModel: ObservableObject {
-                            @Published var text = "Loading..."
-                            init() {
-                                Greeting().greet { greeting, error in
-                                            DispatchQueue.main.async {
-                                                if let greeting = greeting {
-                                                    self.text = greeting
-                                                } else {
-                                                    self.text = error?.localizedDescription ?? "error"
-                                                }
-                                            }
+            extension ContentView {
+                class ViewModel: ObservableObject {
+                    @Published var text = "Loading..."
+                    init() {
+                        Greeting().greet { greeting, error in
+                                    DispatchQueue.main.async {
+                                        if let greeting = greeting {
+                                            self.text = greeting
+                                        } else {
+                                            self.text = error?.localizedDescription ?? "error"
                                         }
-                            }
-                        }
+                                    }
+                                }
                     }
-                    """
-                        .trimIndent(),
-                ),
-                source(
-                    "iosApp/iOSApp.swift",
-                    """
-                    import SwiftUI
+                }
+            }
+            """
+              .trimIndent(),
+          ),
+          source(
+            "iosApp/iOSApp.swift",
+            """
+            import SwiftUI
 
-                    @main
-                    struct iOSApp: App {
-                      var body: some Scene {
-                        WindowGroup {
-                                ContentView(viewModel: ContentView.ViewModel())
-                        }
-                      }
-                    }
-                    """
-                        .trimIndent(),
-                ),
-            )
-            .name("iosApp")
-            .dependsOn(shared, DependencyKind.DependsOn)
+            @main
+            struct iOSApp: App {
+              var body: some Scene {
+                WindowGroup {
+                        ContentView(viewModel: ContentView.ViewModel())
+                }
+              }
+            }
+            """
+              .trimIndent(),
+          ),
+        )
+        .name("iosApp")
+        .dependsOn(shared, DependencyKind.DependsOn)
 
     val root = temp.newFolder().canonicalFile.absoluteFile
     @Language("XML")
     val descriptor =
-        """
+      """
         <project>
           <sdk dir='${TestUtils.getSdk()}'/>
           <root dir="$root" />
@@ -5627,13 +5528,13 @@ src/main/AndroidManifest.xml:7: Warning: You must set android:targetSdkVersion t
           </module>
         </project>
       """
-            .trimIndent()
+        .trimIndent()
 
     val projects = lint().projects(shared, androidApp, iosApp).createProjects(root)
     Files.asCharSink(File(root, "project.xml"), Charsets.UTF_8).write(descriptor)
 
     MainTest.checkDriver(
-        """
+      """
         src/main/res/values/styles.xml:2: Error: android:Theme.Material.NoActionBar requires API level 21 (current min is 1) [NewApi]
     <style name="AppTheme" parent="android:Theme.Material.NoActionBar"/>
                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -5654,11 +5555,11 @@ src/main/AndroidManifest.xml:7: Warning: You must set android:targetSdkVersion t
                              ~~~~
 1 error, 5 warnings
       """,
-        "",
-        ERRNO_SUCCESS,
-        arrayOf("--project", File(root, "project.xml").path),
-        { it.replace(root.canonicalPath, "ROOT").replace(root.path, "ROOT").dos2unix() },
-        { _, _, _, _ -> },
+      "",
+      ERRNO_SUCCESS,
+      arrayOf("--project", File(root, "project.xml").path),
+      { it.replace(root.canonicalPath, "ROOT").replace(root.path, "ROOT").dos2unix() },
+      { _, _, _, _ -> },
     )
   }
 
@@ -5668,75 +5569,75 @@ src/main/AndroidManifest.xml:7: Warning: You must set android:targetSdkVersion t
     assumeTrue(useFirUast())
 
     val shared =
-        project(
-                kt(
-                    "src/commonMain/kotlin/pkg/Platform.kt",
-                    """
-                    package pkg
-                    interface Platform {
-                        val name: String
-                    }
-                    interface Hello {
-                        fun hello(): String
-                    }
-                    expect fun getPlatform(): Platform
-                    object CommonMainHello : Hello {
-                        val commonMain = "commonMain"
-                        override fun hello() = "Hello " + commonMain + "!"
-                    }
-                    """
-                        .trimIndent(),
-                ),
-                kt(
-                    "src/commonMain/kotlin/pkg/Greeting.kt",
-                    """
-                    package pkg
-                    class Greeting {
-                        private val platform: Platform = getPlatform()
-                    }
-                    """
-                        .trimIndent(),
-                ),
-                kt(
-                    "src/androidMain/kotlin/pkg/Platform.kt",
-                    """
-                    package pkg
-                    class AndroidPlatform : Platform {
-                        override val name: String = AndroidMainHello().hello()
-                    }
-                    class AndroidMainHello: Hello {
-                        val androidMain = "androidMain"
-                        override fun hello() = "Hello " + androidMain + "!"
-                    }
-                    actual fun getPlatform(): Platform = AndroidPlatform()
-                    """
-                        .trimIndent(),
-                ),
-                kt(
-                    "src/iosMain/kotlin/pkg/Platform.kt",
-                    """
-                    package pkg
+      project(
+          kt(
+            "src/commonMain/kotlin/pkg/Platform.kt",
+            """
+            package pkg
+            interface Platform {
+                val name: String
+            }
+            interface Hello {
+                fun hello(): String
+            }
+            expect fun getPlatform(): Platform
+            object CommonMainHello : Hello {
+                val commonMain = "commonMain"
+                override fun hello() = "Hello " + commonMain + "!"
+            }
+            """
+              .trimIndent(),
+          ),
+          kt(
+            "src/commonMain/kotlin/pkg/Greeting.kt",
+            """
+            package pkg
+            class Greeting {
+                private val platform: Platform = getPlatform()
+            }
+            """
+              .trimIndent(),
+          ),
+          kt(
+            "src/androidMain/kotlin/pkg/Platform.kt",
+            """
+            package pkg
+            class AndroidPlatform : Platform {
+                override val name: String = AndroidMainHello().hello()
+            }
+            class AndroidMainHello: Hello {
+                val androidMain = "androidMain"
+                override fun hello() = "Hello " + androidMain + "!"
+            }
+            actual fun getPlatform(): Platform = AndroidPlatform()
+            """
+              .trimIndent(),
+          ),
+          kt(
+            "src/iosMain/kotlin/pkg/Platform.kt",
+            """
+            package pkg
 
-                    class IOSPlatform: Platform {
-                        override val name: String = IosMainHello().hello()
-                    }
-                    class IosMainHello: Hello {
-                        val iosMain = "iosMain"
-                        override fun hello() = "Hello " + iosMain + "!"
-                    }
-                    actual fun getPlatform(): Platform = IOSPlatform()
-                    """
-                        .trimIndent(),
-                ),
-            )
-            .type(LIBRARY)
-            .name("shared")
+            class IOSPlatform: Platform {
+                override val name: String = IosMainHello().hello()
+            }
+            class IosMainHello: Hello {
+                val iosMain = "iosMain"
+                override fun hello() = "Hello " + iosMain + "!"
+            }
+            actual fun getPlatform(): Platform = IOSPlatform()
+            """
+              .trimIndent(),
+          ),
+        )
+        .type(LIBRARY)
+        .name("shared")
 
     val androidApp =
-        project(
-                source(
-                        "src/main/$ANDROID_MANIFEST_XML",
-                        """
+      project(
+          source(
+              "src/main/$ANDROID_MANIFEST_XML",
+              """
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
               <uses-permission android:name="android.permission.INTERNET"/>
@@ -5756,20 +5657,20 @@ src/main/AndroidManifest.xml:7: Warning: You must set android:targetSdkVersion t
               </application>
           </manifest>
         """,
-                    )
-                    .indented(),
-                xml(
-                        "src/main/res/values/styles.xml",
-                        """
+            )
+            .indented(),
+          xml(
+              "src/main/res/values/styles.xml",
+              """
             <resources>
                 <style name="AppTheme" parent="android:Theme.Material.NoActionBar"/>
             </resources>
           """,
-                    )
-                    .indented(),
-                kt(
-                        "src/main/java/pkg/android/MainActivity.kt",
-                        """
+            )
+            .indented(),
+          kt(
+              "src/main/java/pkg/android/MainActivity.kt",
+              """
             package pkg.android
 
             @Composable
@@ -5790,97 +5691,97 @@ src/main/AndroidManifest.xml:7: Warning: You must set android:targetSdkVersion t
                 }
             }
           """,
-                    )
-                    .indented(),
-                kt(
-                    "src/main/java/pkg/android/expect.kt",
-                    """
-                    package pkg
-                    expect fun getPlatform() : Platform
-                    """
-                        .trimIndent(),
-                ),
-                kt(
-                    "src/main/java/pkg/android/actual.kt",
-                    """
-                    package pkg
-                    actual fun getPlatform() = TODO()
-                    """
-                        .trimIndent(),
-                ),
             )
-            .name("androidApp")
-            .dependsOn(shared, DependencyKind.DependsOn)
+            .indented(),
+          kt(
+            "src/main/java/pkg/android/expect.kt",
+            """
+            package pkg
+            expect fun getPlatform() : Platform
+            """
+              .trimIndent(),
+          ),
+          kt(
+            "src/main/java/pkg/android/actual.kt",
+            """
+            package pkg
+            actual fun getPlatform() = TODO()
+            """
+              .trimIndent(),
+          ),
+        )
+        .name("androidApp")
+        .dependsOn(shared, DependencyKind.DependsOn)
 
     val iosApp =
-        project(
-                source(
-                    "iosApp/ContentView.swift",
-                    """
-                    import SwiftUI
-                    import shared
+      project(
+          source(
+            "iosApp/ContentView.swift",
+            """
+            import SwiftUI
+            import shared
 
-                    struct ContentView: View {
-                        @ObservedObject private(set) var viewModel: ViewModel
+            struct ContentView: View {
+                @ObservedObject private(set) var viewModel: ViewModel
 
-                        var body: some View {
-                            Text(viewModel.text)
-                        }
-                    }
+                var body: some View {
+                    Text(viewModel.text)
+                }
+            }
 
-                    extension ContentView {
-                        class ViewModel: ObservableObject {
-                            @Published var text = "Loading..."
-                            init() {
-                                Greeting().greet { greeting, error in
-                                            DispatchQueue.main.async {
-                                                if let greeting = greeting {
-                                                    self.text = greeting
-                                                } else {
-                                                    self.text = error?.localizedDescription ?? "error"
-                                                }
-                                            }
+            extension ContentView {
+                class ViewModel: ObservableObject {
+                    @Published var text = "Loading..."
+                    init() {
+                        Greeting().greet { greeting, error in
+                                    DispatchQueue.main.async {
+                                        if let greeting = greeting {
+                                            self.text = greeting
+                                        } else {
+                                            self.text = error?.localizedDescription ?? "error"
                                         }
-                            }
-                        }
+                                    }
+                                }
                     }
-                    """
-                        .trimIndent(),
-                ),
-                source(
-                    "iosApp/iOSApp.swift",
-                    """
-                    import SwiftUI
+                }
+            }
+            """
+              .trimIndent(),
+          ),
+          source(
+            "iosApp/iOSApp.swift",
+            """
+            import SwiftUI
 
-                    @main
-                    struct iOSApp: App {
-                      var body: some Scene {
-                        WindowGroup {
-                                ContentView(viewModel: ContentView.ViewModel())
-                        }
-                      }
-                    }
-                    """
-                        .trimIndent(),
-                ),
-                kt(
-                    "src/IosHello.kt",
-                    """
-                    class IosHello: pkg.Hello {
-                        val iosApp = "iosApp"
-                        fun hello(str: String) = "Hello " + iosApp + "!"
-                    }
-                    """
-                        .trimIndent(),
-                ),
-            )
-            .name("iosApp")
-            .dependsOn(shared, DependencyKind.DependsOn)
+            @main
+            struct iOSApp: App {
+              var body: some Scene {
+                WindowGroup {
+                        ContentView(viewModel: ContentView.ViewModel())
+                }
+              }
+            }
+            """
+              .trimIndent(),
+          ),
+          kt(
+            "src/IosHello.kt",
+            """
+            class IosHello: pkg.Hello {
+                val iosApp = "iosApp"
+                fun hello(str: String) = "Hello " + iosApp + "!"
+            }
+            """
+              .trimIndent(),
+          ),
+        )
+        .name("iosApp")
+        .dependsOn(shared, DependencyKind.DependsOn)
 
     val root = temp.newFolder().canonicalFile.absoluteFile
     @Language("XML")
     val descriptor =
-        """
+      """
         <project>
           <sdk dir='${TestUtils.getSdk()}'/>
           <root dir="$root" />
@@ -5908,14 +5809,14 @@ src/main/AndroidManifest.xml:7: Warning: You must set android:targetSdkVersion t
           </module>
         </project>
       """
-            .trimIndent()
+        .trimIndent()
 
     val task = lint().issues(HelloDetector.ISSUE).projects(shared, androidApp, iosApp).allowMissingSdk()
     val projects = task.createProjects(root)
     Files.asCharSink(File(root, "project.xml"), Charsets.UTF_8).write(descriptor)
 
     MainTest.checkDriver(
-        """
+      """
         src/main/res/values/styles.xml:2: Error: android:Theme.Material.NoActionBar requires API level 21 (current min is 1) [NewApi]
     <style name="AppTheme" parent="android:Theme.Material.NoActionBar"/>
                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -5936,38 +5837,38 @@ src/main/AndroidManifest.xml:7: Warning: You must set android:targetSdkVersion t
                              ~~~~
 1 error, 5 warnings
       """,
-        "",
-        ERRNO_SUCCESS,
-        arrayOf("--project", File(root, "project.xml").path),
-        { it.replace(root.canonicalPath, "ROOT").replace(root.path, "ROOT").dos2unix() },
-        { _, _, _, _ -> },
+      "",
+      ERRNO_SUCCESS,
+      arrayOf("--project", File(root, "project.xml").path),
+      { it.replace(root.canonicalPath, "ROOT").replace(root.path, "ROOT").dos2unix() },
+      { _, _, _, _ -> },
     )
 
     task
-        .skipTestModes(TestMode.PARTIAL) // TODO no iosApp with `TestMode.PARTIAL`
-        .allowDuplicates()
-        .run()
-        .expect(
-            """
-            ../iosApp/src/IosHello.kt:1: Warning: This class (with fields [iosApp] and methods [getIosApp, hello, IosHello]) shouldn't extend pkg.Hello [HelloDetectorIssue]
-            class IosHello: pkg.Hello {
-            ^
-            src/main/java/pkg/android/MainActivity.kt:8: Warning: This class (with fields [androidApp] and methods [getAndroidApp, hello, ]) shouldn't extend pkg.Hello [HelloDetectorIssue]
-            val androidAppHello = object : pkg.Hello {
-                                  ^
-            ../shared/src/androidMain/kotlin/pkg/Platform.kt:5: Warning: This class (with fields [androidMain] and methods [getAndroidMain, hello, AndroidMainHello]) shouldn't extend pkg.Hello [HelloDetectorIssue]
-            class AndroidMainHello: Hello {
-            ^
-            ../shared/src/iosMain/kotlin/pkg/Platform.kt:6: Warning: This class (with fields [iosMain] and methods [getIosMain, hello, IosMainHello]) shouldn't extend pkg.Hello [HelloDetectorIssue]
-            class IosMainHello: Hello {
-            ^
-            ../shared/src/commonMain/kotlin/pkg/Platform.kt:9: Warning: This class (with fields [commonMain, INSTANCE] and methods [getCommonMain, hello, CommonMainHello]) shouldn't extend pkg.Hello [HelloDetectorIssue]
-            object CommonMainHello : Hello {
-            ^
-            0 errors, 5 warnings
-            """
-                .trimIndent()
-        )
+      .skipTestModes(TestMode.PARTIAL) // TODO no iosApp with `TestMode.PARTIAL`
+      .allowDuplicates()
+      .run()
+      .expect(
+        """
+        ../iosApp/src/IosHello.kt:1: Warning: This class (with fields [iosApp] and methods [getIosApp, hello, IosHello]) shouldn't extend pkg.Hello [HelloDetectorIssue]
+        class IosHello: pkg.Hello {
+        ^
+        src/main/java/pkg/android/MainActivity.kt:8: Warning: This class (with fields [androidApp] and methods [getAndroidApp, hello, ]) shouldn't extend pkg.Hello [HelloDetectorIssue]
+        val androidAppHello = object : pkg.Hello {
+                              ^
+        ../shared/src/androidMain/kotlin/pkg/Platform.kt:5: Warning: This class (with fields [androidMain] and methods [getAndroidMain, hello, AndroidMainHello]) shouldn't extend pkg.Hello [HelloDetectorIssue]
+        class AndroidMainHello: Hello {
+        ^
+        ../shared/src/iosMain/kotlin/pkg/Platform.kt:6: Warning: This class (with fields [iosMain] and methods [getIosMain, hello, IosMainHello]) shouldn't extend pkg.Hello [HelloDetectorIssue]
+        class IosMainHello: Hello {
+        ^
+        ../shared/src/commonMain/kotlin/pkg/Platform.kt:9: Warning: This class (with fields [commonMain, INSTANCE] and methods [getCommonMain, hello, CommonMainHello]) shouldn't extend pkg.Hello [HelloDetectorIssue]
+        object CommonMainHello : Hello {
+        ^
+        0 errors, 5 warnings
+        """
+          .trimIndent()
+      )
   }
 
   @After
@@ -6003,15 +5904,15 @@ src/main/AndroidManifest.xml:7: Warning: You must set android:targetSdkVersion t
     companion object {
       const val commonHello = "pkg.Hello"
       val ISSUE =
-          Issue.create(
-              id = "HelloDetectorIssue",
-              briefDescription = "Not applicable",
-              explanation = "Not applicable",
-              category = Category.CORRECTNESS,
-              priority = 10,
-              severity = Severity.WARNING,
-              implementation = Implementation(HelloDetector::class.java, Scope.JAVA_FILE_SCOPE),
-          )
+        Issue.create(
+          id = "HelloDetectorIssue",
+          briefDescription = "Not applicable",
+          explanation = "Not applicable",
+          category = Category.CORRECTNESS,
+          priority = 10,
+          severity = Severity.WARNING,
+          implementation = Implementation(HelloDetector::class.java, Scope.JAVA_FILE_SCOPE),
+        )
     }
   }
 }

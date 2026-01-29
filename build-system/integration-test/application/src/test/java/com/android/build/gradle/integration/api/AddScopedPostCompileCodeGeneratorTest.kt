@@ -336,7 +336,8 @@ abstract class AddScopedPostCompileCodeGeneratorTask : DefaultTask() {
     // For a static method, arguments start at index 0.
     methodVisitor.visitVarInsn(Opcodes.ALOAD, 0)
 
-    // Instruction 2: Call the instance method 'someFunction()' on the object currently on the stack (client).
+    // Instruction 2: Call the instance method 'someFunction()' on the object currently on the stack
+    // (client).
     methodVisitor.visitMethodInsn(
       Opcodes.INVOKEINTERFACE,
       CLIENT_INTERFACE_INTERNAL_NAME, // Owner class

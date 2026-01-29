@@ -62,36 +62,31 @@ class DiscouragedDetector : AbstractAnnotationDetector(), XmlScanner, SourceCode
 
   override fun isApplicableAnnotationUsage(type: AnnotationUsageType): Boolean {
     return type == METHOD_CALL ||
-        type == METHOD_REFERENCE ||
-        type == CLASS_REFERENCE ||
-        type == METHOD_OVERRIDE ||
-        type == EXTENDS ||
-        type == FIELD_REFERENCE ||
-        type == XML_REFERENCE
+      type == METHOD_REFERENCE ||
+      type == CLASS_REFERENCE ||
+      type == METHOD_OVERRIDE ||
+      type == EXTENDS ||
+      type == FIELD_REFERENCE ||
+      type == XML_REFERENCE
   }
 
-  override fun visitAnnotationUsage(
-      context: XmlContext,
-      reference: Node,
-      annotationInfo: AnnotationInfo,
-      usageInfo: AnnotationUsageInfo,
-  ) {
+  override fun visitAnnotationUsage(context: XmlContext, reference: Node, annotationInfo: AnnotationInfo, usageInfo: AnnotationUsageInfo) {
     usageInfo.referenced ?: return
     val location =
-        if (reference is Attr) {
-          context.getValueLocation(reference)
-        } else {
-          context.getNameLocation(reference)
-        }
+      if (reference is Attr) {
+        context.getValueLocation(reference)
+      } else {
+        context.getNameLocation(reference)
+      }
     val message = getMessage(annotationInfo)
     context.report(ISSUE, reference, location, message)
   }
 
   override fun visitAnnotationUsage(
-      context: JavaContext,
-      element: UElement,
-      annotationInfo: AnnotationInfo,
-      usageInfo: AnnotationUsageInfo,
+    context: JavaContext,
+    element: UElement,
+    annotationInfo: AnnotationInfo,
+    usageInfo: AnnotationUsageInfo,
   ) {
     usageInfo.referenced ?: return
     val location = context.getNameLocation(element)
@@ -129,47 +124,43 @@ class DiscouragedDetector : AbstractAnnotationDetector(), XmlScanner, SourceCode
       }
 
       val (fix, replacementFuncName) =
-          when {
-            context.evaluator.isMemberInSubClassOf(method, CLASS_SCHEDULED_EXECUTOR_SERVICE) -> {
-              scheduleAtFixedRateFix(SCHEDULE_WITH_FIXED_DELAY) to SCHEDULE_WITH_FIXED_DELAY
-            }
-            context.evaluator.isMemberInSubClassOf(method, CLASS_TIMER) -> {
-              if (method.parameterList.getParameter(1)?.type == PsiTypes.longType()) {
-                scheduleAtFixedRateFix(SCHEDULE) to SCHEDULE
-              } else {
-                // No quick-fix because there is no Timer.schedule(..., Date firstTime, ...) function.
-                null to SCHEDULE
-              }
-            }
-            // No incident to report.
-            else -> return
+        when {
+          context.evaluator.isMemberInSubClassOf(method, CLASS_SCHEDULED_EXECUTOR_SERVICE) -> {
+            scheduleAtFixedRateFix(SCHEDULE_WITH_FIXED_DELAY) to SCHEDULE_WITH_FIXED_DELAY
           }
+          context.evaluator.isMemberInSubClassOf(method, CLASS_TIMER) -> {
+            if (method.parameterList.getParameter(1)?.type == PsiTypes.longType()) {
+              scheduleAtFixedRateFix(SCHEDULE) to SCHEDULE
+            } else {
+              // No quick-fix because there is no Timer.schedule(..., Date firstTime, ...)
+              // function.
+              null to SCHEDULE
+            }
+          }
+          // No incident to report.
+          else -> return
+        }
 
       context.report(
-          Incident()
-              .issue(ISSUE)
-              .scope(node)
-              .location(context.getLocation(node))
-              .message(
-                  "Use of `scheduleAtFixedRate` is strongly discouraged because it can lead to " +
-                      "unexpected behavior when Android processes become cached " +
-                      "(tasks may unexpectedly execute hundreds or thousands of times " +
-                      "in quick succession when a process changes from cached to uncached); " +
-                      "prefer using `${replacementFuncName}`"
-              )
-              .fix(fix),
-          isAndroidProject(),
+        Incident()
+          .issue(ISSUE)
+          .scope(node)
+          .location(context.getLocation(node))
+          .message(
+            "Use of `scheduleAtFixedRate` is strongly discouraged because it can lead to " +
+              "unexpected behavior when Android processes become cached " +
+              "(tasks may unexpectedly execute hundreds or thousands of times " +
+              "in quick succession when a process changes from cached to uncached); " +
+              "prefer using `${replacementFuncName}`"
+          )
+          .fix(fix),
+        isAndroidProject(),
       )
     }
   }
 
   override fun getApplicableAttributes(): Collection<String> =
-      setOf(
-          ATTR_MIN_ASPECT_RATIO,
-          ATTR_MAX_ASPECT_RATIO,
-          ATTR_SCREEN_ORIENTATION,
-          ATTR_RESIZEABLE_ACTIVITY,
-      )
+    setOf(ATTR_MIN_ASPECT_RATIO, ATTR_MAX_ASPECT_RATIO, ATTR_SCREEN_ORIENTATION, ATTR_RESIZEABLE_ACTIVITY)
 
   override fun visitAttribute(context: XmlContext, attribute: Attr) {
     if (SdkConstants.ANDROID_URI != attribute.namespaceURI) {
@@ -180,24 +171,24 @@ class DiscouragedDetector : AbstractAnnotationDetector(), XmlScanner, SourceCode
       ATTR_MIN_ASPECT_RATIO,
       ATTR_MAX_ASPECT_RATIO -> {
         val message =
-            "Minimum and maximum aspect ratios will be ignored in most cases, starting from Android 16. " +
-                "Android is moving toward a model where apps are expected to adapt to " +
-                "various orientations, display sizes, and aspect ratios."
+          "Minimum and maximum aspect ratios will be ignored in most cases, starting from Android 16. " +
+            "Android is moving toward a model where apps are expected to adapt to " +
+            "various orientations, display sizes, and aspect ratios."
         context.report(ISSUE, attribute, context.getLocation(attribute), message, fix)
       }
       ATTR_SCREEN_ORIENTATION -> {
         val message =
-            "Fixed screen orientations will be ignored in most cases, starting from Android 16. " +
-                "Android is moving toward a model where apps are expected to adapt to " +
-                "various orientations, display sizes, and aspect ratios."
+          "Fixed screen orientations will be ignored in most cases, starting from Android 16. " +
+            "Android is moving toward a model where apps are expected to adapt to " +
+            "various orientations, display sizes, and aspect ratios."
         context.report(ISSUE, attribute, context.getLocation(attribute), message, fix)
       }
       ATTR_RESIZEABLE_ACTIVITY -> {
         if (attribute.value == "false") {
           val message =
-              "Setting `resizeableActivity` to `false` will be ignored in most cases, starting from Android 16. " +
-                  "Android is moving toward a model where apps are expected to adapt to " +
-                  "various orientations, display sizes, and aspect ratios."
+            "Setting `resizeableActivity` to `false` will be ignored in most cases, starting from Android 16. " +
+              "Android is moving toward a model where apps are expected to adapt to " +
+              "various orientations, display sizes, and aspect ratios."
           context.report(ISSUE, attribute, context.getLocation(attribute), message, fix)
         }
       }
@@ -213,30 +204,30 @@ class DiscouragedDetector : AbstractAnnotationDetector(), XmlScanner, SourceCode
     const val CLASS_TIMER = "java.util.Timer"
 
     private val IMPLEMENTATION =
-        Implementation(
-            DiscouragedDetector::class.java,
-            EnumSet.of(Scope.MANIFEST, Scope.RESOURCE_FILE, Scope.JAVA_FILE),
-            MANIFEST_SCOPE,
-            RESOURCE_FILE_SCOPE,
-            JAVA_FILE_SCOPE,
-        )
+      Implementation(
+        DiscouragedDetector::class.java,
+        EnumSet.of(Scope.MANIFEST, Scope.RESOURCE_FILE, Scope.JAVA_FILE),
+        MANIFEST_SCOPE,
+        RESOURCE_FILE_SCOPE,
+        JAVA_FILE_SCOPE,
+      )
 
     /** Usage of elements that are discouraged against. */
     @JvmField
     val ISSUE =
-        create(
-            id = "DiscouragedApi",
-            briefDescription = "Using discouraged APIs",
-            explanation =
-                """
+      create(
+        id = "DiscouragedApi",
+        briefDescription = "Using discouraged APIs",
+        explanation =
+          """
                 Discouraged APIs are allowed and are not deprecated, but they may be unfit for \
                 common use (e.g. due to slow performance or subtle behavior).
                 """,
-            category = Category.CORRECTNESS,
-            priority = 2,
-            severity = Severity.WARNING,
-            implementation = IMPLEMENTATION,
-            platforms = Platform.UNSPECIFIED,
-        )
+        category = Category.CORRECTNESS,
+        priority = 2,
+        severity = Severity.WARNING,
+        implementation = IMPLEMENTATION,
+        platforms = Platform.UNSPECIFIED,
+      )
   }
 }

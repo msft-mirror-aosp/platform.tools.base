@@ -77,7 +77,8 @@ sealed class FusedLibraryInternalArtifactType<T : FileSystemLocation>(kind: Arti
 
   object MERGED_CONSUMER_PROGUARD_RULES : FusedLibraryInternalArtifactType<RegularFile>(FILE), Replaceable
 
-  // The R.txt of dependency resources packaged in the AAR for generating the R class in consuming modules.
+  // The R.txt of dependency resources packaged in the AAR for generating the R class in consuming
+  // modules.
   object COMPILE_SYMBOL_LIST : FusedLibraryInternalArtifactType<RegularFile>(FILE), Replaceable
 
   object DEPENDENCY_VALIDATION : FusedLibraryInternalArtifactType<Directory>(DIRECTORY), Replaceable

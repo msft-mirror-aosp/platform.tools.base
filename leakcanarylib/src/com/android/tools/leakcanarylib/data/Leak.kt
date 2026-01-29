@@ -29,7 +29,8 @@ data class Leak(
     return (if (retainedByteSize >= 0) "$retainedByteSize bytes retained by leaking objects\n" else "") +
       (if (leakTraceCount > 1) "Displaying only 1 leak trace out of $leakTraceCount with the same signature\n" else "") +
       "Signature: $signature\n" +
-      displayedLeakTrace.first() // Guaranteed to have at least one element when there is a valid leak. Also, leakTraceCount and
+      displayedLeakTrace.first() // Guaranteed to have at least one element when there is a valid leak. Also,
+    // leakTraceCount and
     // displayedLeakTrace are inter-related as specified in LeakParser.
   }
 

@@ -140,7 +140,8 @@ interface UsesLibraryDependencyCacheBuildService {
       .let {
         libraryDependencyCacheBuildService.setDisallowChanges(it)
         task.usesService(it)
-        // LibraryDependencyCacheBuildService uses MavenCoordinatesCacheBuildService, so we also need to set the following
+        // LibraryDependencyCacheBuildService uses MavenCoordinatesCacheBuildService, so we also
+        // need to set the following
         task.usesService(
           getBuildService<MavenCoordinatesCacheBuildService, MavenCoordinatesCacheBuildService.Parameters>(
             task.project.gradle.sharedServices

@@ -90,15 +90,15 @@ import org.jetbrains.uast.util.isConstructorCall
  * TODO: See if we can do statically imported methods and fields as well?
  */
 class FullyQualifyNamesTestMode :
-    UastSourceTransformationTestMode(
-        description = "Names replaced with Fully Qualified Names",
-        "TestMode.FULLY_QUALIFIED",
-        "qualified-imports",
-    ) {
+  UastSourceTransformationTestMode(
+    description = "Names replaced with Fully Qualified Names",
+    "TestMode.FULLY_QUALIFIED",
+    "qualified-imports",
+  ) {
   override val diffExplanation: String =
-      // first line shorter: expecting to prefix that line with
-      // "org.junit.ComparisonFailure: "
-      """
+    // first line shorter: expecting to prefix that line with
+    // "org.junit.ComparisonFailure: "
+    """
         The user is allowed to use fully
         qualified names, or import aliases, in the source code. This
         test mode replaces symbols with fully qualified names and imports
@@ -109,14 +109,9 @@ class FullyQualifyNamesTestMode :
         specific to fully qualified names, you can turn off this test mode using
         `.skipTestModes($fieldName)`.
         """
-          .trimIndent()
+      .trimIndent()
 
-  override fun transform(
-      source: String,
-      context: JavaContext,
-      root: UFile,
-      clientData: MutableMap<String, Any>,
-  ): MutableList<Edit> {
+  override fun transform(source: String, context: JavaContext, root: UFile, clientData: MutableMap<String, Any>): MutableList<Edit> {
     // Edits at given offsets. By storing it this way
     // we can avoid a few cases where multiple PSI elements redundantly
     // refer to the same element; when we just recorded insertions
@@ -124,43 +119,43 @@ class FullyQualifyNamesTestMode :
     val editMap = mutableMapOf<Int, Edit>()
 
     root.acceptSourceFile(
-        object : TypeVisitor(context, source) {
-          override fun checkClassReference(node: UElement, cls: PsiClass, offset: Int, name: String) {
-            val fqn = cls.qualifiedName ?: return
-            editMap[offset] = replace(offset, offset + name.length, fqn)
-          }
-
-          override fun allowKotlinCoreTypes(): Boolean = false
-
-          override fun checkFieldReference(node: UElement, field: PsiField) {
-            checkMember(node, field)
-          }
-
-          override fun checkMethodReference(node: UElement, method: PsiMethod) {
-            checkMember(node, method)
-          }
-
-          private fun checkMember(node: UElement, member: PsiMember) {
-            val parent = skipParenthesizedExprUp(node.uastParent)
-            if (parent is UQualifiedReferenceExpression && parent.receiver.skipParenthesizedExprDown() !== node) {
-              return
-            }
-            if (
-                member.modifierList?.hasModifierProperty(PsiModifier.FINAL) == true &&
-                    parent != null &&
-                    parent.isAssignment() &&
-                    (parent as UBinaryExpression).leftOperand.skipParenthesizedExprDown() == node &&
-                    member.containingClass == node.getParentOfType<UClass>()?.javaPsi
-            ) {
-              // If a variable is final, we have to initialize it without a qualified
-              // expression
-              return
-            }
-            val qualified = getQualifiedName(node, member) ?: return
-            val range = node.sourcePsi?.textRange ?: return
-            editMap[range.startOffset] = replace(range.startOffset, range.endOffset, qualified)
-          }
+      object : TypeVisitor(context, source) {
+        override fun checkClassReference(node: UElement, cls: PsiClass, offset: Int, name: String) {
+          val fqn = cls.qualifiedName ?: return
+          editMap[offset] = replace(offset, offset + name.length, fqn)
         }
+
+        override fun allowKotlinCoreTypes(): Boolean = false
+
+        override fun checkFieldReference(node: UElement, field: PsiField) {
+          checkMember(node, field)
+        }
+
+        override fun checkMethodReference(node: UElement, method: PsiMethod) {
+          checkMember(node, method)
+        }
+
+        private fun checkMember(node: UElement, member: PsiMember) {
+          val parent = skipParenthesizedExprUp(node.uastParent)
+          if (parent is UQualifiedReferenceExpression && parent.receiver.skipParenthesizedExprDown() !== node) {
+            return
+          }
+          if (
+            member.modifierList?.hasModifierProperty(PsiModifier.FINAL) == true &&
+              parent != null &&
+              parent.isAssignment() &&
+              (parent as UBinaryExpression).leftOperand.skipParenthesizedExprDown() == node &&
+              member.containingClass == node.getParentOfType<UClass>()?.javaPsi
+          ) {
+            // If a variable is final, we have to initialize it without a qualified
+            // expression
+            return
+          }
+          val qualified = getQualifiedName(node, member) ?: return
+          val range = node.sourcePsi?.textRange ?: return
+          editMap[range.startOffset] = replace(range.startOffset, range.endOffset, qualified)
+        }
+      }
     )
 
     return editMap.values.toMutableList()
@@ -176,10 +171,10 @@ class FullyQualifyNamesTestMode :
           val symbol = expression.resolveToCall()?.successfulCallOrNull<KaCallableMemberCall<*, *>>()?.symbol ?: return null
 
           if (
-              symbol.isExtension ||
-                  symbol is KaPropertySymbol && !(symbol.isStatic || symbol.isTopLevel) ||
-                  symbol is KaNamedFunctionSymbol && !(symbol.isStatic || symbol.isTopLevel) ||
-                  symbol is KaJavaFieldSymbol && !symbol.isStatic
+            symbol.isExtension ||
+              symbol is KaPropertySymbol && !(symbol.isStatic || symbol.isTopLevel) ||
+              symbol is KaNamedFunctionSymbol && !(symbol.isStatic || symbol.isTopLevel) ||
+              symbol is KaJavaFieldSymbol && !symbol.isStatic
           ) {
             return null
           }
@@ -263,10 +258,10 @@ class FullyQualifyNamesTestMode :
       // delegation
       if (!source.regionMatches(start, fqn, nameStart, nameLength)) {
         if (
-            context.uastFile!!.imports.none {
-              val alias = (it.sourcePsi as? KtImportDirective)?.importPath?.alias?.toString()
-              alias == name
-            }
+          context.uastFile!!.imports.none {
+            val alias = (it.sourcePsi as? KtImportDirective)?.importPath?.alias?.toString()
+            alias == name
+          }
         ) {
           // Probably something like a MutableMap reference or other Kotlin syntactic
           // sugar such that the source reference (e.g. MutableMap<String> or Array<File>)
@@ -292,10 +287,7 @@ class FullyQualifyNamesTestMode :
       return super.visitSimpleNameReferenceExpression(node)
     }
 
-    protected open fun allowClassReference(
-        node: USimpleNameReferenceExpression,
-        parent: UQualifiedReferenceExpression,
-    ): Boolean {
+    protected open fun allowClassReference(node: USimpleNameReferenceExpression, parent: UQualifiedReferenceExpression): Boolean {
       return true
     }
 
@@ -420,10 +412,10 @@ class FullyQualifyNamesTestMode :
         val erased = context.evaluator.erasure(type.deepComponentType)
         val cls = context.evaluator.getTypeClass(erased)
         cls?.let { replaceClassReference(it, typeReference, typeReference.type) }
-            ?: run {
-              val offset = typeReference.sourcePsi?.textOffset ?: return
-              checkTypeReference(typeReference, cls, offset, type)
-            }
+          ?: run {
+            val offset = typeReference.sourcePsi?.textOffset ?: return
+            checkTypeReference(typeReference, cls, offset, type)
+          }
       }
     }
 

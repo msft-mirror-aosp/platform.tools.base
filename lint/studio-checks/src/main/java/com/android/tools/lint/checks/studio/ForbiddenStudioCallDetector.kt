@@ -44,141 +44,141 @@ class ForbiddenStudioCallDetector : Detector(), SourceCodeScanner {
 
     @JvmField
     val ADD_TO_STDLIB_USAGE =
-        Issue.create(
-            id = "AddToStdlibUsage",
-            briefDescription = "Do not use `addToStdlib`",
-            explanation = "The `addToStdlib` package is unstable and should be avoided.",
-            category = CORRECTNESS,
-            severity = Severity.WARNING,
-            platforms = STUDIO_PLATFORMS,
-            implementation = IMPLEMENTATION,
-        )
+      Issue.create(
+        id = "AddToStdlibUsage",
+        briefDescription = "Do not use `addToStdlib`",
+        explanation = "The `addToStdlib` package is unstable and should be avoided.",
+        category = CORRECTNESS,
+        severity = Severity.WARNING,
+        platforms = STUDIO_PLATFORMS,
+        implementation = IMPLEMENTATION,
+      )
 
     @JvmField
     val KOTLIN_JS_PACKAGE =
-        Issue.create(
-            id = "KotlinJsUsage",
-            briefDescription = "Do not use `org.jetbrains.kotlin.js.*`",
-            explanation =
-                """
+      Issue.create(
+        id = "KotlinJsUsage",
+        briefDescription = "Do not use `org.jetbrains.kotlin.js.*`",
+        explanation =
+          """
           The `org.jetbrains.kotlin.js` packages contain a lot of general, useful extension \
           functions which can be accidentally imported. In some cases, there are alternatives \
           in better packages; in other cases, it's best to create a local version. We \
           generally don't want dependencies on javascript packages in the codebase.
           """,
-            category = CORRECTNESS,
-            severity = Severity.WARNING,
-            platforms = STUDIO_PLATFORMS,
-            implementation = IMPLEMENTATION,
-        )
+        category = CORRECTNESS,
+        severity = Severity.WARNING,
+        platforms = STUDIO_PLATFORMS,
+        implementation = IMPLEMENTATION,
+      )
 
     @JvmField
     val INTERN =
-        Issue.create(
-            id = "NoInterning",
-            briefDescription = "Do not intern strings",
-            explanation =
-                """
+      Issue.create(
+        id = "NoInterning",
+        briefDescription = "Do not intern strings",
+        explanation =
+          """
                 Strings should not be interned; you are better off managing \
                 your own string cache.
                 """,
-            category = CORRECTNESS,
-            severity = Severity.ERROR,
-            platforms = STUDIO_PLATFORMS,
-            implementation = IMPLEMENTATION,
-            //noinspection LintImplUnexpectedDomain
-            moreInfo = "https://shipilev.net/jvm/anatomy-quarks/10-string-intern/",
-        )
+        category = CORRECTNESS,
+        severity = Severity.ERROR,
+        platforms = STUDIO_PLATFORMS,
+        implementation = IMPLEMENTATION,
+        //noinspection LintImplUnexpectedDomain
+        moreInfo = "https://shipilev.net/jvm/anatomy-quarks/10-string-intern/",
+      )
 
     @JvmField
     val FILES_COPY =
-        Issue.create(
-            id = "NoNioFilesCopy",
-            briefDescription = "Do not use `java.nio.file.Files.copy(Path, Path)`",
-            explanation =
-                """
+      Issue.create(
+        id = "NoNioFilesCopy",
+        briefDescription = "Do not use `java.nio.file.Files.copy(Path, Path)`",
+        explanation =
+          """
                 `java.nio.file.Files.copy(Path, Path)` propagates the readonly bit \
                 on Windows, this can result in a file that can't be overwritten the \
                 next time. Instead, use `FileUtils.copyFile(Path, Path)` or Kotlin's \
                 `File#copyTo(File)`.
                 """,
-            category = CORRECTNESS,
-            severity = Severity.ERROR,
-            platforms = STUDIO_PLATFORMS,
-            implementation = IMPLEMENTATION,
-            moreInfo = "https://issuetracker.google.com/182063560",
-        )
+        category = CORRECTNESS,
+        severity = Severity.ERROR,
+        platforms = STUDIO_PLATFORMS,
+        implementation = IMPLEMENTATION,
+        moreInfo = "https://issuetracker.google.com/182063560",
+      )
 
     @JvmField
     val MOCKITO_WHEN =
-        Issue.create(
-            id = "MockitoWhen",
-            briefDescription = "Do not use Mockito's `when` from Kotlin",
-            explanation =
-                """
+      Issue.create(
+        id = "MockitoWhen",
+        briefDescription = "Do not use Mockito's `when` from Kotlin",
+        explanation =
+          """
                 Using Mockito's `when` from Kotlin requires you to surround the method \
                 call in backticks, since `when` is a hard keyword in Kotlin. Instead, use \
                 the `whenever` extension method.
                 """,
-            category = CORRECTNESS,
-            enabledByDefault = false,
-            severity = Severity.ERROR,
-            platforms = STUDIO_PLATFORMS,
-            implementation = IMPLEMENTATION,
-        )
+        category = CORRECTNESS,
+        enabledByDefault = false,
+        severity = Severity.ERROR,
+        platforms = STUDIO_PLATFORMS,
+        implementation = IMPLEMENTATION,
+      )
 
     @JvmField
     val IS_EAP =
-        Issue.create(
-            id = "ApplicationManagerIsEap",
-            briefDescription = "Do not use `Application.isEap`",
-            explanation =
-                """
+      Issue.create(
+        id = "ApplicationManagerIsEap",
+        briefDescription = "Do not use `Application.isEap`",
+        explanation =
+          """
               `com.intellij.openapi.application.Application.isEap` depends on the underlying intellij platform prebuilt, rather than the version of Studio released.
 
               Instead, consider using a StudioFlag with ChannelDefault.
               """,
-            category = CORRECTNESS,
-            severity = Severity.ERROR,
-            platforms = STUDIO_PLATFORMS,
-            implementation = IMPLEMENTATION,
-        )
+        category = CORRECTNESS,
+        severity = Severity.ERROR,
+        platforms = STUDIO_PLATFORMS,
+        implementation = IMPLEMENTATION,
+      )
 
     val ADD_DEPENDENCY =
-        Issue.create(
-            id = "AddDependencyUsage",
-            briefDescription = "Consider using DependenciesHelper for adding dependencies",
-            explanation =
-                """
+      Issue.create(
+        id = "AddDependencyUsage",
+        briefDescription = "Consider using DependenciesHelper for adding dependencies",
+        explanation =
+          """
             Often adding artifacts or plugins to project require changing catalog file. \
             There are some specific cases when catalog should be omitted. All this logic \
             lives inside `DependenciesHelper` so prefer using it instead of adding artifact \
             (with `DependenciesModel.addArtifact/addPlatformArtifact`) or \
             plugin (with `PluginsModel.applyPlugin`) directly.
                 """,
-            category = CORRECTNESS,
-            enabledByDefault = false,
-            severity = Severity.ERROR,
-            platforms = STUDIO_PLATFORMS,
-            implementation = IMPLEMENTATION,
-        )
+        category = CORRECTNESS,
+        enabledByDefault = false,
+        severity = Severity.ERROR,
+        platforms = STUDIO_PLATFORMS,
+        implementation = IMPLEMENTATION,
+      )
 
     @JvmField
     val DISPOSE_DIRECTLY =
-        Issue.create(
-            id = "DisposeDirectly",
-            briefDescription = "Do not call `Disposable.dispose()` directly",
-            explanation =
-                """
+      Issue.create(
+        id = "DisposeDirectly",
+        briefDescription = "Do not call `Disposable.dispose()` directly",
+        explanation =
+          """
             Calling `Disposable.dispose()` directly will not correctly dispose all the \
             disposable tree, which will lead to a memory leak. Use 'Disposer.dispose()' \
             instead.
           """,
-            category = CORRECTNESS,
-            severity = Severity.ERROR,
-            platforms = STUDIO_PLATFORMS,
-            implementation = IMPLEMENTATION,
-        )
+        category = CORRECTNESS,
+        severity = Severity.ERROR,
+        platforms = STUDIO_PLATFORMS,
+        implementation = IMPLEMENTATION,
+      )
   }
 
   override fun getApplicableUastTypes(): List<Class<out UElement>> = listOf(UCallExpression::class.java, UImportStatement::class.java)
@@ -189,12 +189,7 @@ class ForbiddenStudioCallDetector : Detector(), SourceCodeScanner {
         val reference = node.importReference
         val name = reference?.sourcePsi?.text
         if (name != null && name.startsWith(KOTLIN_JS_PACKAGE_PREFIX)) {
-          context.report(
-              KOTLIN_JS_PACKAGE,
-              node,
-              context.getLocation(reference),
-              "Avoid using methods from the `kotlin.js` package",
-          )
+          context.report(KOTLIN_JS_PACKAGE, node, context.getLocation(reference), "Avoid using methods from the `kotlin.js` package")
         }
       }
 
@@ -202,10 +197,10 @@ class ForbiddenStudioCallDetector : Detector(), SourceCodeScanner {
         val resolved = node.resolve() ?: return
         if (context.evaluator.getPackage(resolved)?.qualifiedName == ADD_TO_STDLIB_PACKAGE_FQ_NAME) {
           context.report(
-              ADD_TO_STDLIB_USAGE,
-              node,
-              context.getCallLocation(node, includeReceiver = false, includeArguments = true),
-              "Avoid using methods from the unstable `addToStdlib` package",
+            ADD_TO_STDLIB_USAGE,
+            node,
+            context.getCallLocation(node, includeReceiver = false, includeArguments = true),
+            "Avoid using methods from the unstable `addToStdlib` package",
           )
         }
       }
@@ -213,125 +208,110 @@ class ForbiddenStudioCallDetector : Detector(), SourceCodeScanner {
   }
 
   override fun getApplicableMethodNames(): List<String> =
-      listOf(
-          "intern",
-          "copy",
-          "when",
-          "addArtifact",
-          "applyPlugin",
-          "addPlatformArtifact",
-          "isEAP",
-          "dispose",
-      )
+    listOf("intern", "copy", "when", "addArtifact", "applyPlugin", "addPlatformArtifact", "isEAP", "dispose")
 
   override fun visitMethodCall(context: JavaContext, node: UCallExpression, method: PsiMethod) {
     // String#intern
     if (method.name == "intern" && context.evaluator.isMemberInClass(method, JAVA_LANG_STRING)) {
       context.report(
-          INTERN,
-          node,
-          context.getCallLocation(node, includeReceiver = false, includeArguments = true),
-          "Do not intern strings; if reusing strings is truly necessary build a local cache",
+        INTERN,
+        node,
+        context.getCallLocation(node, includeReceiver = false, includeArguments = true),
+        "Do not intern strings; if reusing strings is truly necessary build a local cache",
       )
     }
     // Files#copy
     if (
-        method.name == "copy" &&
-            method.isVarArgs() &&
-            context.evaluator.isMemberInClass(method, "java.nio.file.Files") &&
-            context.evaluator.parameterHasType(method, 0, "java.nio.file.Path") &&
-            context.evaluator.parameterHasType(method, 1, "java.nio.file.Path")
+      method.name == "copy" &&
+        method.isVarArgs() &&
+        context.evaluator.isMemberInClass(method, "java.nio.file.Files") &&
+        context.evaluator.parameterHasType(method, 0, "java.nio.file.Path") &&
+        context.evaluator.parameterHasType(method, 1, "java.nio.file.Path")
     ) {
       context.report(
-          FILES_COPY,
-          node,
-          context.getCallLocation(node, includeReceiver = false, includeArguments = true),
-          "Do not use `java.nio.file.Files.copy(Path, Path)`. " +
-              "Instead, use `FileUtils.copyFile(Path, Path)` or Kotlin's `File#copyTo(File)`",
+        FILES_COPY,
+        node,
+        context.getCallLocation(node, includeReceiver = false, includeArguments = true),
+        "Do not use `java.nio.file.Files.copy(Path, Path)`. " +
+          "Instead, use `FileUtils.copyFile(Path, Path)` or Kotlin's `File#copyTo(File)`",
       )
     }
 
     // Mockito#when
     if (
-        method.name == "when" &&
-            isKotlin(node.lang) &&
-            (context.evaluator.isMemberInClass(method, "org.mockito.Mockito") ||
-                context.evaluator.isMemberInClass(method, "org.mockito.stubbing.Stubber"))
+      method.name == "when" &&
+        isKotlin(node.lang) &&
+        (context.evaluator.isMemberInClass(method, "org.mockito.Mockito") ||
+          context.evaluator.isMemberInClass(method, "org.mockito.stubbing.Stubber"))
     ) {
       val fix =
-          fix()
-              .replace()
-              .name("Use `whenever`")
-              .range(context.getCallLocation(node, includeReceiver = true, includeArguments = false))
-              .all()
-              .with("whenever")
-              .imports("org.mockito.kotlin.whenever")
-              .build()
+        fix()
+          .replace()
+          .name("Use `whenever`")
+          .range(context.getCallLocation(node, includeReceiver = true, includeArguments = false))
+          .all()
+          .with("whenever")
+          .imports("org.mockito.kotlin.whenever")
+          .build()
       context.report(
-          MOCKITO_WHEN,
-          node,
-          context.getCallLocation(node, includeReceiver = false, includeArguments = true),
-          "Do not use `Mockito.when` from Kotlin; use `org.mockito.kotlin.whenever` instead",
-          fix,
+        MOCKITO_WHEN,
+        node,
+        context.getCallLocation(node, includeReceiver = false, includeArguments = true),
+        "Do not use `Mockito.when` from Kotlin; use `org.mockito.kotlin.whenever` instead",
+        fix,
       )
     }
     // Application.isEAP
     if (method.name == "isEAP" && context.evaluator.isMemberInClass(method, "com.intellij.openapi.application.Application")) {
       context.report(
-          IS_EAP,
-          node,
-          context.getCallLocation(node, includeReceiver = false, includeArguments = true),
-          "Do not use `com.intellij.openapi.application.Application.isEap`. " +
-              "`Application.isEap` depends on the underlying intellij platform prebuilt, rather than the version of Studio released. " +
-              "Instead, consider using a StudioFlag.`",
+        IS_EAP,
+        node,
+        context.getCallLocation(node, includeReceiver = false, includeArguments = true),
+        "Do not use `com.intellij.openapi.application.Application.isEap`. " +
+          "`Application.isEap` depends on the underlying intellij platform prebuilt, rather than the version of Studio released. " +
+          "Instead, consider using a StudioFlag.`",
       )
     }
 
     // DependenciesModel#addArtifact/addPlatformArtifact
     if (
-        (method.name == "addArtifact" || method.name == "addPlatformArtifact") &&
-            context.evaluator.isMemberInClass(
-                method,
-                "com.android.tools.idea.gradle.dsl.api.dependencies.DependenciesModel",
-            )
+      (method.name == "addArtifact" || method.name == "addPlatformArtifact") &&
+        context.evaluator.isMemberInClass(method, "com.android.tools.idea.gradle.dsl.api.dependencies.DependenciesModel")
     ) {
       context.report(
-          ADD_DEPENDENCY,
-          node,
-          context.getCallLocation(node, includeReceiver = false, includeArguments = true),
-          "Do not use `addArtifact` or `addPlatformArtifact`, prefer `DependenciesHelper`",
+        ADD_DEPENDENCY,
+        node,
+        context.getCallLocation(node, includeReceiver = false, includeArguments = true),
+        "Do not use `addArtifact` or `addPlatformArtifact`, prefer `DependenciesHelper`",
       )
     }
     // PluginsModel#applyPlugin
     if (
-        (method.name == "applyPlugin" || method.name == "addPlatformArtifact") &&
-            context.evaluator.isMemberInClass(
-                method,
-                "com.android.tools.idea.gradle.dsl.api.settings.PluginsModel",
-            )
+      (method.name == "applyPlugin" || method.name == "addPlatformArtifact") &&
+        context.evaluator.isMemberInClass(method, "com.android.tools.idea.gradle.dsl.api.settings.PluginsModel")
     ) {
       context.report(
-          ADD_DEPENDENCY,
-          node,
-          context.getCallLocation(node, includeReceiver = false, includeArguments = true),
-          "Do not use `PluginsModel.applyPlugin`, prefer `DependenciesHelper`",
+        ADD_DEPENDENCY,
+        node,
+        context.getCallLocation(node, includeReceiver = false, includeArguments = true),
+        "Do not use `PluginsModel.applyPlugin`, prefer `DependenciesHelper`",
       )
     }
     // Disposible#dispose
     if (
-        method.name == "dispose" &&
-            method.parameterList.parametersCount == 0 &&
-            context.evaluator.isMemberInClass(method, "com.intellij.openapi.Disposable")
+      method.name == "dispose" &&
+        method.parameterList.parametersCount == 0 &&
+        context.evaluator.isMemberInClass(method, "com.intellij.openapi.Disposable")
     ) {
       val receiver = node.receiver
       if (receiver is USuperExpression) {
         return
       }
       context.report(
-          DISPOSE_DIRECTLY,
-          node,
-          context.getCallLocation(node, includeReceiver = false, includeArguments = true),
-          "Do not call `Disposable.dispose()` directly, use `Disposer.dispose()` instead",
+        DISPOSE_DIRECTLY,
+        node,
+        context.getCallLocation(node, includeReceiver = false, includeArguments = true),
+        "Do not call `Disposable.dispose()` directly, use `Disposer.dispose()` instead",
       )
     }
   }

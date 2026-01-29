@@ -262,7 +262,8 @@ class CaptureExecutor(
         this.rootView = rootView
         this.isXr = isXr
 
-        // only send a screenshot if bitmaps are enabled or if the current screenshot type is SKP
+        // only send a screenshot if bitmaps are enabled or if the current screenshot type is
+        // SKP
         if (state.enableBitmapScreenshot || screenshotSettings.type == LayoutInspectorViewProtocol.Screenshot.Type.SKP) {
           this.screenshot =
             LayoutInspectorViewProtocol.Screenshot.newBuilder()

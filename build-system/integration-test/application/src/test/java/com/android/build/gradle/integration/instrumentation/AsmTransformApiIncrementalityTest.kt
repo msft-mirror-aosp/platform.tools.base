@@ -83,7 +83,8 @@ class AsmTransformApiIncrementalityTest {
       .file("src/main/java/com/example/myapplication/ClassExtendsAClassThatExtendsAnotherClassAndImplementsTwoInterfaces.kt")
       .delete()
 
-    // remove feature class ClassExtendsAnAppClass inheritance from ClassExtendsAClassThatExtendsAnotherClassAndImplementsTwoInterfaces
+    // remove feature class ClassExtendsAnAppClass inheritance from
+    // ClassExtendsAClassThatExtendsAnotherClassAndImplementsTwoInterfaces
     project
       .getSubproject(":feature")
       .file("src/main/java/com/example/feature/ClassExtendsAnAppClass.kt")

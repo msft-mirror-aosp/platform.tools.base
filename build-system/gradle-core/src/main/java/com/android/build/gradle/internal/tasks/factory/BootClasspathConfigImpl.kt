@@ -70,7 +70,8 @@ class BootClasspathConfigImpl(
     val versionedSdkLoader = versionedSdkLoaderService.versionedSdkLoader
 
     // we need to get a TaskCreationService to call computeClasspath
-    // TODO refactor what we need out of TaskCreationServices? (creating yet another service class would not be great)
+    // TODO refactor what we need out of TaskCreationServices? (creating yet another service class
+    // would not be great)
     val taskService = TaskCreationServicesImpl(projectServices)
 
     property.set(
@@ -106,7 +107,8 @@ class BootClasspathConfigImpl(
     val versionedSdkLoader = versionedSdkLoaderService.versionedSdkLoader
 
     // we need to get a TaskCreationService to call computeClasspath
-    // TODO refactor what we need out of TaskCreationServices? (creating yet another service class would not be great)
+    // TODO refactor what we need out of TaskCreationServices? (creating yet another service class
+    // would not be great)
     val taskService = TaskCreationServicesImpl(projectServices)
 
     property.set(

@@ -405,8 +405,9 @@ class InstallTestTest : DeployRunnerTestBase() {
       assertHistory(
         device,
         "getprop",
-        "pm install -r -t \"/data/local/tmp/simple.apk\"", // ,"rm \"/data/local/tmp/simple.apk\"" TODO: ddmlib doesn't remove when
-                                                          // installation fails
+        "pm install -r -t \"/data/local/tmp/simple.apk\"", // ,"rm \"/data/local/tmp/simple.apk\""
+        // TODO: ddmlib doesn't remove when
+        // installation fails
       )
       assertMetrics(runner.metrics, "DELTAINSTALL:API_NOT_SUPPORTED", "INSTALL:INSTALL_FAILED_VERSION_DOWNGRADE")
     } else if (device.api < 24) {

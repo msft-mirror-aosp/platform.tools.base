@@ -218,7 +218,8 @@ class ModelBuilder<ExtensionT : CommonExtension>(
             AndroidArtifacts.ArtifactType.JAR,
           ) {
             // Make a copy of the runtime classpath configuration and replace all non-project
-            // dependencies with a self dependency. This makes sure Gradle skips any resolution
+            // dependencies with a self dependency. This makes sure Gradle skips any
+            // resolution
             // for external libraries.
             it.copyRecursive().apply {
               isCanBeConsumed = false
@@ -233,7 +234,8 @@ class ModelBuilder<ExtensionT : CommonExtension>(
           .associateNotNull {
             // Requesting artifacts because asking for the resolution root is more expensive
             val resolvedVariantName = it.variant.attributes.getAttribute(VariantAttr.ATTRIBUTE)?.name ?: return@associateNotNull null
-            // At this point we know this is an Android project because of the variant attribute
+            // At this point we know this is an Android project because of the variant
+            // attribute
             val resolvedArtifact =
               ResolvedArtifact(
                 mainArtifactResult = it,
@@ -245,7 +247,8 @@ class ModelBuilder<ExtensionT : CommonExtension>(
               )
             // Note: Additional artifacts shouldn't be relevant to this query as everything
             // will be subprojects, not published libraries.
-            // Note: This must be a project info at this point, but being lenient just in case it's not.
+            // Note: This must be a project info at this point, but being lenient just in case
+            // it's not.
             libraryService.getLibrary(resolvedArtifact, AdditionalArtifacts.EMPTY).projectInfo?.let { it to resolvedVariantName }
           }
     )
@@ -1507,7 +1510,8 @@ class ModelBuilder<ExtensionT : CommonExtension>(
             if (projectOptions[BooleanOption.DISABLE_ALL_CONSTRAINTS]) {
               false // No constraints applied at all
             } else if (!projectOptions[BooleanOption.USE_DEPENDENCY_CONSTRAINTS]) {
-              false // Only android test is being constrained, but in this case we care about the main artifact
+              false // Only android test is being constrained, but in this case we care about
+              // the main artifact
             } else if (projectOptions[BooleanOption.EXCLUDE_LIBRARY_COMPONENTS_FROM_CONSTRAINTS]) {
               it.componentType.isApk // Only apps are being constrained
             } else {

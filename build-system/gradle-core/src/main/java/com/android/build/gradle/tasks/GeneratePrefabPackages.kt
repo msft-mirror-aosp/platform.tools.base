@@ -175,7 +175,8 @@ private fun getPrefabCliInputs(abiName: String, cliStagedInput: File, realPackag
       // Try to create a short base path for the package. Prefab packages can have relatively
       // long subfolder structures and this file is already nested inside build/intermediates.
       // For example,
-      //     app/build/intermediates/cxx/refs/lib/2u45445o/modules/foo/libs/android.arm64-v8a/libfoo.so
+      //
+      // app/build/intermediates/cxx/refs/lib/2u45445o/modules/foo/libs/android.arm64-v8a/libfoo.so
       // Fortunately, these packages don't contain payload so we don't need to worry about
       // the user's own include folder structures which can be arbitrarily deep.
       val sha = shortSha256Of(patched.packageInfo)

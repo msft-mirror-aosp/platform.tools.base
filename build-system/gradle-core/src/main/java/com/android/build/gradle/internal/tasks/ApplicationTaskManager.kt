@@ -116,7 +116,8 @@ class ApplicationTaskManager(
       // path is passed into the Data Binding annotation processor which uses it to know about
       // all available features.
       //
-      // <p>see: {@link TaskManager#setDataBindingAnnotationProcessorParams(ComponentCreationConfig)}
+      // <p>see: {@link
+      // TaskManager#setDataBindingAnnotationProcessorParams(ComponentCreationConfig)}
       taskFactory.register(DataBindingExportFeatureNamespacesTask.CreationAction(variant))
     }
 

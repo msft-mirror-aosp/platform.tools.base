@@ -202,7 +202,8 @@ class AndroidTestLogcatPlugin(private val logger: Logger = getLogger(), private 
 
       // Use regular expression to find start of the logcat for the crash
       // Should be similar to this line:
-      // 10-27 15:26:52.863 22058 22058 E AndroidRuntime: Process: com.example.myapplication4, PID: 22058
+      // 10-27 15:26:52.863 22058 22058 E AndroidRuntime: Process: com.example.myapplication4, PID:
+      // 22058
       if (!crashHappened.get() && line.matches(crashLogcatStartMatcher)) {
         crashLogcatFile = File(generateLogcatFileName(targetTestProcessName, "crash-report"))
         crashLogcatWriter = crashLogcatFile.outputStream().bufferedWriter()

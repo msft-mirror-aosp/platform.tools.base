@@ -285,7 +285,8 @@ internal class AdbHostServicesImpl(
     // https://cs.android.com/android/platform/superproject/+/3a52886262ae22477a7d8ffb12adba64daf6aafa:packages/modules/adb/client/commandline.cpp;l=209
     // wait-for-TRANSPORT-STATE
     // where TRANSPORT: "local" | "usb" | "any"
-    //           STATE: "device" | "recovery" | "rescue" | "sideload" | "bootloader" | "any" | "disconnect"
+    //           STATE: "device" | "recovery" | "rescue" | "sideload" | "bootloader" | "any" |
+    // "disconnect"
     val tracker = TimeoutTracker(host.timeProvider, timeout, unit)
     val service = "wait-for-${transport.toQueryString()}-${deviceState.toQueryString()}"
     serviceRunner.runHostDeviceQuery2(device, service, tracker, OkayDataExpectation.NOT_EXPECTED).also {

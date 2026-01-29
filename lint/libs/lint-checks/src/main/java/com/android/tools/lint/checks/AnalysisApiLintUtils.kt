@@ -49,8 +49,8 @@ import org.jetbrains.uast.toUElementOfType
 internal fun KaSession.getFunctionLikeSymbol(ktElement: KtElement): KaFunctionSymbol? {
   val callInfo = ktElement.resolveToCall() ?: return null
   return callInfo.singleFunctionCallOrNull()?.symbol
-      ?: callInfo.singleConstructorCallOrNull()?.symbol
-      ?: callInfo.singleCallOrNull<KaAnnotationCall>()?.symbol
+    ?: callInfo.singleConstructorCallOrNull()?.symbol
+    ?: callInfo.singleCallOrNull<KaAnnotationCall>()?.symbol
 }
 
 /**
@@ -69,11 +69,7 @@ internal fun ULambdaExpression.getThisParameter(resolveProviderService: BaseKotl
   // Note: includeExplicitParameters seems to currently do the opposite of what you might expect; it
   // must be true to be able to find the implicit <this> parameter.
   val parameters =
-      resolveProviderService.getImplicitParameters(
-          ktLambdaExpression,
-          this,
-          includeExplicitParameters = true,
-      ) as List<UParameter>
+    resolveProviderService.getImplicitParameters(ktLambdaExpression, this, includeExplicitParameters = true) as List<UParameter>
   return parameters.firstOrNull { (it.javaPsi as? PsiParameter)?.name == KotlinExtensionConstants.LAMBDA_THIS_PARAMETER_NAME }
 }
 
@@ -82,13 +78,13 @@ internal fun ULambdaExpression.getThisParameter(resolveProviderService: BaseKotl
  * lambda expression, otherwise null.
  */
 internal fun KaSession.getImplicitReceiverIfFromLambdaExpr(
-    ktExpression: KtExpression,
-    resolveProviderService: BaseKotlinUastResolveProviderService,
+  ktExpression: KtExpression,
+  resolveProviderService: BaseKotlinUastResolveProviderService,
 ): UParameter? =
-    getImplicitReceiverValue(ktExpression)
-        ?.getImplicitReceiverPsi()
-        ?.toUElementOfType<ULambdaExpression>()
-        ?.getThisParameter(resolveProviderService)
+  getImplicitReceiverValue(ktExpression)
+    ?.getImplicitReceiverPsi()
+    ?.toUElementOfType<ULambdaExpression>()
+    ?.getThisParameter(resolveProviderService)
 
 /** Returns the PSI for [this], which will be the owning lambda expression or the surrounding class. */
 internal fun KaImplicitReceiverValue.getImplicitReceiverPsi(): PsiElement? {
@@ -104,21 +100,22 @@ internal fun KaImplicitReceiverValue.getImplicitReceiverPsi(): PsiElement? {
 /** Returns the implicit receiver value of the call-like expression [ktExpression] (can include property accesses, for example). */
 internal fun KaSession.getImplicitReceiverValue(ktExpression: KtExpression): KaImplicitReceiverValue? {
   val partiallyAppliedSymbol =
-      when (val call = ktExpression.resolveToCall()?.singleCallOrNull<KaCall>()) {
-        // Note: Calls that are a `KaCompoundAccessCall` (especially, `KaCompoundArrayAccessCall`) are
-        // quite complex, as such a call essentially contains multiple calls. For example, in:
-        //
-        // m["a"] += "b"
-        //
-        // we can have MutableMap.get, String?.plus, MutableMap.set. We get the implicit receiver of
-        // the second call, which can only exist in this example if the extension function also
-        // requires a dispatch receiver (an instance of a class in which the extension function is
-        // declared).
-        is KaCompoundAccessCall -> call.compoundOperation.operationPartiallyAppliedSymbol
-        is KaCallableMemberCall<*, *> -> call.partiallyAppliedSymbol
-        else -> null
-      } ?: return null
+    when (val call = ktExpression.resolveToCall()?.singleCallOrNull<KaCall>()) {
+      // Note: Calls that are a `KaCompoundAccessCall` (especially, `KaCompoundArrayAccessCall`)
+      // are
+      // quite complex, as such a call essentially contains multiple calls. For example, in:
+      //
+      // m["a"] += "b"
+      //
+      // we can have MutableMap.get, String?.plus, MutableMap.set. We get the implicit receiver of
+      // the second call, which can only exist in this example if the extension function also
+      // requires a dispatch receiver (an instance of a class in which the extension function is
+      // declared).
+      is KaCompoundAccessCall -> call.compoundOperation.operationPartiallyAppliedSymbol
+      is KaCallableMemberCall<*, *> -> call.partiallyAppliedSymbol
+      else -> null
+    } ?: return null
 
   return partiallyAppliedSymbol.extensionReceiver as? KaImplicitReceiverValue
-      ?: partiallyAppliedSymbol.dispatchReceiver as? KaImplicitReceiverValue
+    ?: partiallyAppliedSymbol.dispatchReceiver as? KaImplicitReceiverValue
 }

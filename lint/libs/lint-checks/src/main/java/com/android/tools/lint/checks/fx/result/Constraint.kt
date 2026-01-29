@@ -29,8 +29,8 @@ import kotlinx.collections.immutable.plus
  * invocations, we discharge the constraints if they turn out always true, or report errors if they fail.
  */
 data class Constraint<out FX>(
-    val concreteUpperbounds: ConcreteUpperBounds<@UnsafeVariance FX>?,
-    val symbolicUpperbounds: SymbolicUpperBounds<@UnsafeVariance FX>? = persistentMapOf(),
+  val concreteUpperbounds: ConcreteUpperBounds<@UnsafeVariance FX>?,
+  val symbolicUpperbounds: SymbolicUpperBounds<@UnsafeVariance FX>? = persistentMapOf(),
 ) {
   constructor(vararg concreteUpperBounds: Pair<Type.Sym.Invoke<FX>, FX>) : this(persistentMapOf(*concreteUpperBounds))
 
@@ -39,13 +39,13 @@ data class Constraint<out FX>(
     val c1 = concreteUpperbounds.formatAsBounds()
     val c2 = symbolicUpperbounds.formatAsBounds()
     val c =
-        when {
-          c1.isEmpty() && c2.isEmpty() -> null
-          c1.isEmpty() -> c2
-          c2.isEmpty() -> c1
-          c1 == c2 -> c1
-          else -> "$c1, $c2"
-        }
+      when {
+        c1.isEmpty() && c2.isEmpty() -> null
+        c1.isEmpty() -> c2
+        c2.isEmpty() -> c1
+        c1 == c2 -> c1
+        else -> "$c1, $c2"
+      }
     return if (c == null) "" else " (where $c)"
   }
 
@@ -55,29 +55,28 @@ data class Constraint<out FX>(
     val MostPermissive: Constraint<Nothing> = Constraint(persistentMapOf(), persistentMapOf())
     val LeastPermissive: Constraint<Nothing> = Constraint(null, null)
 
-    fun <FX> concrete(
-        upperbound: FX,
-        leftHandSides: UnboundedSet<Type.Sym<FX>>,
-    ): ConcreteUpperBounds<FX>? = leftHandSides?.assoc { it to upperbound }
+    fun <FX> concrete(upperbound: FX, leftHandSides: UnboundedSet<Type.Sym<FX>>): ConcreteUpperBounds<FX>? =
+      leftHandSides?.assoc { it to upperbound }
 
     /** A lattice on the concrete effect [FX] induces a lattice on the [Constraint]s */
     fun <FX> domain(onConcrete: Lattice<FX>): Lattice<Constraint<FX>> =
-        Lattice.Companion.product(
-            ::Constraint,
-            Constraint<FX>::concreteUpperbounds,
-            Constraint<FX>::symbolicUpperbounds,
-            // For upper-bound constraints, joining means conjunction.
-            // The absence of an entry means there's no constraint on it (i.e. trivial, most permissive
-            // upperbound).
-            Lattice.Companion.pointWise(onConcrete.dual()),
-            Lattice.Companion.pointWise(possibilityLattice()),
-        )
+      Lattice.Companion.product(
+        ::Constraint,
+        Constraint<FX>::concreteUpperbounds,
+        Constraint<FX>::symbolicUpperbounds,
+        // For upper-bound constraints, joining means conjunction.
+        // The absence of an entry means there's no constraint on it (i.e. trivial, most
+        // permissive
+        // upperbound).
+        Lattice.Companion.pointWise(onConcrete.dual()),
+        Lattice.Companion.pointWise(possibilityLattice()),
+      )
   }
 }
 
 internal typealias ConcreteUpperBounds<FX> = PersistentMap<Type.Sym<FX>, FX>
 
 operator fun <FX> Constraint<FX>.plus(constraint: Pair<Type.Sym<FX>, FX>): Constraint<FX> =
-    copy(concreteUpperbounds = concreteUpperbounds?.plus(constraint))
+  copy(concreteUpperbounds = concreteUpperbounds?.plus(constraint))
 
 internal typealias SymbolicUpperBounds<FX> = PersistentMap<Type.Sym.Invoke<FX>, UnboundedSet<Type.Sym<FX>>>

@@ -110,7 +110,8 @@ class DependencyConstraintsIntegrationTest {
           .trimIndent()
       )
     }
-    // Failures indicate runtime-compile constraint is applied for main artifact (failure to downgrade)
+    // Failures indicate runtime-compile constraint is applied for main artifact (failure to
+    // downgrade)
     listOf(lib, app)
       .assertConstrained(
         "debugCompileClasspath",
@@ -123,7 +124,8 @@ class DependencyConstraintsIntegrationTest {
 
     // This won't fail because the constraints we only ever apply this for app android test.
     lib.assertNotConstrained("debugAndroidTestRuntimeClasspath")
-    // Failures indicate runtime-androidTestRuntime constraint is applied for app (failure to downgrade)
+    // Failures indicate runtime-androidTestRuntime constraint is applied for app (failure to
+    // downgrade)
     app.assertConstrained(
       "debugAndroidTestRuntimeClasspath",
       """
@@ -158,7 +160,8 @@ class DependencyConstraintsIntegrationTest {
     }
     // This won't fail because no constraints are applied for libraries
     lib.assertNotConstrained("debugCompileClasspath")
-    // Failures indicate runtime-compile constraint is applied for main artifact (failure to downgrade)
+    // Failures indicate runtime-compile constraint is applied for main artifact (failure to
+    // downgrade)
     app.assertConstrained(
       "debugCompileClasspath",
       """
@@ -170,7 +173,8 @@ class DependencyConstraintsIntegrationTest {
 
     // This won't fail because the constraints we only ever apply this for app android test.
     lib.assertNotConstrained("debugAndroidTestRuntimeClasspath")
-    // Failures indicate runtime-androidTestRuntime constraint is applied for app (failure to downgrade)
+    // Failures indicate runtime-androidTestRuntime constraint is applied for app (failure to
+    // downgrade)
     app.assertConstrained(
       "debugAndroidTestRuntimeClasspath",
       """

@@ -417,7 +417,8 @@ private fun filterProjectDependenciesWithNonAndroidVariants(root: ResolvedCompon
     dependencies.forEach {
       if (
         it is ResolvedDependencyResult
-        // ResolvedVariantResult getResolvedVariant() should not return null, but there seems to be
+        // ResolvedVariantResult getResolvedVariant() should not return null, but there seems to
+        // be
         // some corner cases when it is null. https://issuetracker.google.com/214259374
         && (it.resolvedVariant == null || it.resolvedVariant.owner is ProjectComponentIdentifier) && it.selected !in seen
       ) {

@@ -68,7 +68,8 @@ private fun stripSuffix(name: String, suffix: String, pattern: Pattern): String 
   val finalName = name.stripSuffix(suffix)
   if (finalName == name) {
     // pattern is expected to be either of [ACTIVITY_NAME_PATTERN] or [FRAGMENT_NAME_PATTERN], both
-    // have digits pattern at the end because Studio suggests appending numbers to Activity or Fragment
+    // have digits pattern at the end because Studio suggests appending numbers to Activity or
+    // Fragment
     // classes if they have a duplicate name. This matcher is to preserve those digits.
     // E.g. "MainActivity3" is converted to "Main3"
     val m = pattern.matcher(name)
@@ -159,7 +160,8 @@ class AssetNameConverter(private val type: Type, private val name: String) {
       Type.LAYOUT -> {
         val layoutPrefix = layoutPrefixWithTrailingUnderscore
         val layoutName = camelCaseToUnderlines(className)
-        // We are going to add layoutNamePrefix to the result, so make sure we don't have that string already.
+        // We are going to add layoutNamePrefix to the result, so make sure we don't have that
+        // string already.
         layoutPrefix + layoutName.replaceFirst(layoutPrefix, "", false)
       }
       Type.RESOURCE -> camelCaseToUnderlines(className)

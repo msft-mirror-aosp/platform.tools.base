@@ -81,7 +81,8 @@ class AmInstrumentationRunner(
       "am",
       "instrument",
       "-r", // Outputs results in raw format
-      "-w", // Forces am instrument to wait until the instrumentation terminates before terminating itself.
+      "-w", // Forces am instrument to wait until the instrumentation terminates before
+      // terminating itself.
       "${instrumentationTargetPackageId}/${instrumentationRunnerClass}",
     )
   }

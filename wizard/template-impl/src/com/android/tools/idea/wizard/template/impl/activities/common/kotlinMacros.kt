@@ -64,6 +64,7 @@ fun RecipeExecutor.addMaterial3Dependency() {
 
 fun RecipeExecutor.addSupportWearableDependency() {
   addDependency("com.google.android.support:wearable:+", minRev = "2.8.1")
-  // This is needed for the com.google.android.support:wearable as a provided dependency otherwise it's warned by lint
+  // This is needed for the com.google.android.support:wearable as a provided dependency otherwise
+  // it's warned by lint
   addDependency("com.google.android.wearable:wearable:+", "provided", minRev = "2.8.1")
 }

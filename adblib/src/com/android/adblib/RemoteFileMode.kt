@@ -81,7 +81,7 @@ private constructor(
 
   /**
    * - Regular File Standard file d Directory Folder containing files l Symbolic Link Pointer to another file c Character Device Terminal,
-   * keyboard, etc. b Block Device Hard disk, CD-ROM, etc. p Pipe (FIFO) Inter-process communication s Socket Network communication link
+   *   keyboard, etc. b Block Device Hard disk, CD-ROM, etc. p Pipe (FIFO) Inter-process communication s Socket Network communication link
    */
   val fileTypePrefix: Char
     get() {

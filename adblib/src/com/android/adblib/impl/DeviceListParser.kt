@@ -163,7 +163,8 @@ internal class DeviceListTextParser(val format: DeviceInfoFormat) : DeviceListPa
     }
     val serialNumber = matcher.group(1)
     if (serialNumber == null || serialNumber.isEmpty()) {
-      // TODO: If there is a "transport_id" field, we could expose the device, as it can be identified
+      // TODO: If there is a "transport_id" field, we could expose the device, as it can be
+      // identified
       // with a "host-transport-id" prefix.
       result.addError("Device serial number is empty", lineIndex, lineText)
       return

@@ -76,7 +76,8 @@ abstract class LinkManifestForAssetPackTask : NonIncrementalTask() {
           resourceOutputApk = File(File(linkedManifestsDirectory.get().asFile, assetPackName), "${assetPackName}.ap_"),
           componentType = ComponentTypeImpl.BASE_APK,
           // debuggable = false,
-          // Bundletool assumes this field will be filled in for the module, even though it won't be used for the asset pack.
+          // Bundletool assumes this field will be filled in for the module, even though it
+          // won't be used for the asset pack.
           packageId = 0xFF,
         )
 

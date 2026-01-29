@@ -381,8 +381,10 @@ internal class SyncConnection(
         byteCount >= 0 -> {
           val extraDataString = AdbProtocolUtils.bufferToByteDumpString(workBuffer.afterChannelRead())
           val message = "The 'sync' service sent unexpected data when an EOF was expected: $extraDataString"
-          // Note: We log a "warning" here (in addition to throwing an exception) because this condition indicates
-          // an implementation error either in `adblib` or in adb server or in adb daemon. In all cases, logging can
+          // Note: We log a "warning" here (in addition to throwing an exception) because this
+          // condition indicates
+          // an implementation error either in `adblib` or in adb server or in adb daemon. In all
+          // cases, logging can
           // be useful to help identify the root cause of such an event.
           logger.warn(message)
           throw AdbProtocolErrorException(message)

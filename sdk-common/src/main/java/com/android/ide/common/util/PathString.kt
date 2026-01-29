@@ -522,7 +522,8 @@ private constructor(
     }
 
     if (other.isAbsolute) {
-      // Windows-specific paths: If the other root is just a slash and this root contains a drive specifier,
+      // Windows-specific paths: If the other root is just a slash and this root contains a drive
+      // specifier,
       // use this drive specifier combined with the slash.
       if (otherRoot != null && otherRoot.prefixEndIndex == 1) {
         val indexOfDriveSeparator = path.lastIndexOf(':', prefixEndIndex)

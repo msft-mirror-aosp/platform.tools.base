@@ -55,79 +55,79 @@ class PrivateApiDetector : Detector(), SourceCodeScanner {
     /** Using hidden/private APIs. */
     @JvmField
     val PRIVATE_API =
-        Issue.create(
-            id = "PrivateApi",
-            briefDescription = "Using Private APIs",
-            explanation =
-                """
+      Issue.create(
+        id = "PrivateApi",
+        briefDescription = "Using Private APIs",
+        explanation =
+          """
             Using reflection to access hidden/private Android APIs is not safe; it will often not work on \
             devices from other vendors, and it may suddenly stop working (if the API is removed) or crash \
             spectacularly (if the API behavior changes, since there are no guarantees for compatibility).
             """,
-            moreInfo = "https://developer.android.com/preview/restrictions-non-sdk-interfaces",
-            category = Category.CORRECTNESS,
-            priority = 6,
-            severity = Severity.WARNING,
-            androidSpecific = true,
-            implementation = Implementation(PrivateApiDetector::class.java, Scope.JAVA_FILE_SCOPE),
-        )
+        moreInfo = "https://developer.android.com/preview/restrictions-non-sdk-interfaces",
+        category = Category.CORRECTNESS,
+        priority = 6,
+        severity = Severity.WARNING,
+        androidSpecific = true,
+        implementation = Implementation(PrivateApiDetector::class.java, Scope.JAVA_FILE_SCOPE),
+      )
 
     @JvmField
     val DISCOURAGED_PRIVATE_API =
-        Issue.create(
-            id = "DiscouragedPrivateApi",
-            briefDescription = "Using Discouraged Private API",
-            explanation =
-                """
+      Issue.create(
+        id = "DiscouragedPrivateApi",
+        briefDescription = "Using Discouraged Private API",
+        explanation =
+          """
             Usage of restricted non-SDK interface may throw an exception at runtime. Accessing \
             non-SDK methods or fields through reflection has a high likelihood to break your app \
             between versions, and is being restricted to facilitate future app compatibility.
             """,
-            moreInfo = "https://developer.android.com/preview/restrictions-non-sdk-interfaces",
-            category = Category.CORRECTNESS,
-            priority = 6,
-            severity = Severity.WARNING,
-            androidSpecific = true,
-            implementation = Implementation(PrivateApiDetector::class.java, Scope.JAVA_FILE_SCOPE),
-        )
+        moreInfo = "https://developer.android.com/preview/restrictions-non-sdk-interfaces",
+        category = Category.CORRECTNESS,
+        priority = 6,
+        severity = Severity.WARNING,
+        androidSpecific = true,
+        implementation = Implementation(PrivateApiDetector::class.java, Scope.JAVA_FILE_SCOPE),
+      )
 
     @JvmField
     val SOON_BLOCKED_PRIVATE_API =
-        Issue.create(
-            id = "SoonBlockedPrivateApi",
-            briefDescription = "Using Soon-to-Be Blocked Private API",
-            explanation =
-                """
+      Issue.create(
+        id = "SoonBlockedPrivateApi",
+        briefDescription = "Using Soon-to-Be Blocked Private API",
+        explanation =
+          """
             Usage of restricted non-SDK interface will throw an exception at runtime. Accessing \
             non-SDK methods or fields through reflection has a high likelihood to break your app \
             between versions, and is being restricted to facilitate future app compatibility.
             """,
-            moreInfo = "https://developer.android.com/preview/restrictions-non-sdk-interfaces",
-            category = Category.CORRECTNESS,
-            priority = 6,
-            severity = Severity.ERROR,
-            androidSpecific = true,
-            implementation = Implementation(PrivateApiDetector::class.java, Scope.JAVA_FILE_SCOPE),
-        )
+        moreInfo = "https://developer.android.com/preview/restrictions-non-sdk-interfaces",
+        category = Category.CORRECTNESS,
+        priority = 6,
+        severity = Severity.ERROR,
+        androidSpecific = true,
+        implementation = Implementation(PrivateApiDetector::class.java, Scope.JAVA_FILE_SCOPE),
+      )
 
     @JvmField
     val BLOCKED_PRIVATE_API =
-        Issue.create(
-            id = "BlockedPrivateApi",
-            briefDescription = "Using Blocked Private API",
-            explanation =
-                """
+      Issue.create(
+        id = "BlockedPrivateApi",
+        briefDescription = "Using Blocked Private API",
+        explanation =
+          """
             Usage of restricted non-SDK interface is forbidden for this targetSDK. Accessing \
             non-SDK methods or fields through reflection has a high likelihood to break your app \
             between versions, and is being restricted to facilitate future app compatibility.
             """,
-            moreInfo = "https://developer.android.com/preview/restrictions-non-sdk-interfaces",
-            category = Category.CORRECTNESS,
-            priority = 6,
-            severity = Severity.FATAL,
-            androidSpecific = true,
-            implementation = Implementation(PrivateApiDetector::class.java, Scope.JAVA_FILE_SCOPE),
-        )
+        moreInfo = "https://developer.android.com/preview/restrictions-non-sdk-interfaces",
+        category = Category.CORRECTNESS,
+        priority = 6,
+        severity = Severity.FATAL,
+        androidSpecific = true,
+        implementation = Implementation(PrivateApiDetector::class.java, Scope.JAVA_FILE_SCOPE),
+      )
 
     private const val LOAD_CLASS = "loadClass"
     private const val FOR_NAME = "forName"
@@ -136,15 +136,15 @@ class PrivateApiDetector : Detector(), SourceCodeScanner {
     private const val GET_DECLARED_METHOD = "getDeclaredMethod"
     private const val GET_DECLARED_FIELD = "getDeclaredField"
     private val KOTLIN_REFLECTION_METHODS =
-        listOf(
-            "members", // this is available in kotlin-stdlib, the rest are in kotlin-reflect
-            "declaredMembers",
-            "declaredFunctions",
-            "declaredMemberFunctions",
-            "declaredMemberProperties",
-        )
+      listOf(
+        "members", // this is available in kotlin-stdlib, the rest are in kotlin-reflect
+        "declaredMembers",
+        "declaredFunctions",
+        "declaredMemberFunctions",
+        "declaredMemberProperties",
+      )
     private const val ERROR_MESSAGE =
-        "Accessing internal APIs via reflection is not " + "supported and may not work on all devices or in the future"
+      "Accessing internal APIs via reflection is not " + "supported and may not work on all devices or in the future"
   }
 
   private var client: LintClient? = null
@@ -171,7 +171,7 @@ class PrivateApiDetector : Detector(), SourceCodeScanner {
   // ---- Implements JavaPsiScanner ----
 
   override fun getApplicableMethodNames(): List<String> =
-      listOf(FOR_NAME, LOAD_CLASS, GET_DECLARED_CONSTRUCTOR, GET_DECLARED_METHOD, GET_DECLARED_FIELD)
+    listOf(FOR_NAME, LOAD_CLASS, GET_DECLARED_CONSTRUCTOR, GET_DECLARED_METHOD, GET_DECLARED_FIELD)
 
   override fun getApplicableReferenceNames(): List<String> = KOTLIN_REFLECTION_METHODS
 
@@ -194,11 +194,7 @@ class PrivateApiDetector : Detector(), SourceCodeScanner {
     }
   }
 
-  override fun visitReference(
-      context: JavaContext,
-      reference: UReferenceExpression,
-      referenced: PsiElement,
-  ) {
+  override fun visitReference(context: JavaContext, reference: UReferenceExpression, referenced: PsiElement) {
     // Kotlin reflection is harder to analyze statically, there are multiple ways of
     // finally matching a method from the collection of declared members, etc. We heuristically
     // try to match the strings we see with method and field names from the private API list.
@@ -241,17 +237,10 @@ class PrivateApiDetector : Detector(), SourceCodeScanner {
     }
   }
 
-  private fun getMethodDescriptor(
-      arguments: List<UExpression>,
-      context: JavaContext,
-      methodName: String,
-  ): String? {
+  private fun getMethodDescriptor(arguments: List<UExpression>, context: JavaContext, methodName: String): String? {
     val argTypes =
-        if (arguments.size >= 2) arguments.subList(1, arguments.size).mapNotNull { getJavaClassType(it) }.toTypedArray() else emptyArray()
-    return context.evaluator.constructMethodDescription(
-        method = methodName,
-        argumentTypes = argTypes,
-    )
+      if (arguments.size >= 2) arguments.subList(1, arguments.size).mapNotNull { getJavaClassType(it) }.toTypedArray() else emptyArray()
+    return context.evaluator.constructMethodDescription(method = methodName, argumentTypes = argTypes)
   }
 
   private fun checkGetDeclaredField(context: JavaContext, call: UCallExpression) {
@@ -390,67 +379,62 @@ class PrivateApiDetector : Detector(), SourceCodeScanner {
     return TypeEvaluator.evaluate(element)
   }
 
-  private fun reportIssue(
-      context: JavaContext,
-      restriction: Restriction?,
-      api: String,
-      call: UCallExpression,
-  ) {
+  private fun reportIssue(context: JavaContext, restriction: Restriction?, api: String, call: UCallExpression) {
     val targetSdk = context.project.targetSdk
 
     fun fatal() {
       context.report(
-          BLOCKED_PRIVATE_API,
-          call,
-          context.getLocation(call),
-          "Reflective access to $api is forbidden when targeting API $targetSdk and above",
+        BLOCKED_PRIVATE_API,
+        call,
+        context.getLocation(call),
+        "Reflective access to $api is forbidden when targeting API $targetSdk and above",
       )
     }
 
     fun error() {
       context.report(
-          SOON_BLOCKED_PRIVATE_API,
-          call,
-          context.getLocation(call),
-          "Reflective access to $api will throw an exception when targeting API $targetSdk and above",
+        SOON_BLOCKED_PRIVATE_API,
+        call,
+        context.getLocation(call),
+        "Reflective access to $api will throw an exception when targeting API $targetSdk and above",
       )
     }
 
     fun warning() {
       context.report(
-          DISCOURAGED_PRIVATE_API,
-          call,
-          context.getLocation(call),
-          "Reflective access to $api, which is not part of the public SDK and therefore likely to change in future Android releases",
+        DISCOURAGED_PRIVATE_API,
+        call,
+        context.getLocation(call),
+        "Reflective access to $api, which is not part of the public SDK and therefore likely to change in future Android releases",
       )
     }
 
     when (restriction) {
       Restriction.DENY -> fatal()
       Restriction.MAYBE_MAX_O ->
-          if (isAllowed(context, call, targetSdk, AndroidVersion.VersionCodes.O)) {
-            warning()
-          } else {
-            error()
-          }
+        if (isAllowed(context, call, targetSdk, AndroidVersion.VersionCodes.O)) {
+          warning()
+        } else {
+          error()
+        }
       Restriction.MAYBE_MAX_P ->
-          if (isAllowed(context, call, targetSdk, AndroidVersion.VersionCodes.P)) {
-            warning()
-          } else {
-            error()
-          }
+        if (isAllowed(context, call, targetSdk, AndroidVersion.VersionCodes.P)) {
+          warning()
+        } else {
+          error()
+        }
       Restriction.MAYBE_MAX_Q ->
-          if (isAllowed(context, call, targetSdk, AndroidVersion.VersionCodes.Q)) {
-            warning()
-          } else {
-            error()
-          }
+        if (isAllowed(context, call, targetSdk, AndroidVersion.VersionCodes.Q)) {
+          warning()
+        } else {
+          error()
+        }
       Restriction.MAYBE_MAX_R ->
-          if (isAllowed(context, call, targetSdk, AndroidVersion.VersionCodes.R)) {
-            warning()
-          } else {
-            error()
-          }
+        if (isAllowed(context, call, targetSdk, AndroidVersion.VersionCodes.R)) {
+          warning()
+        } else {
+          error()
+        }
       Restriction.MAYBE -> warning()
       else -> return // nothing to report
     }
@@ -461,12 +445,7 @@ class PrivateApiDetector : Detector(), SourceCodeScanner {
    * check which guarantees that we are running on [apiLevel] or older. This is true if the [ApiConstraint] does not include any higher API
    * levels.
    */
-  private fun isAllowed(
-      context: JavaContext,
-      element: UCallExpression,
-      targetSdk: Int,
-      apiLevel: Int,
-  ): Boolean {
+  private fun isAllowed(context: JavaContext, element: UCallExpression, targetSdk: Int, apiLevel: Int): Boolean {
     if (targetSdk <= apiLevel) {
       return true
     }

@@ -221,7 +221,8 @@ class ConfigurationPerSourceSetTest {
       .contains(
         "proPlayDebug: debug-1.0.0.jar, main-1.0.0.jar, play-1.0.0.jar, pro-1.0.0.jar, pro-play-1.0.0.jar, pro-play-debug-1.0.0.jar;"
       )
-    // The main jar is included in the nested component dependencies because useGlobalConfiguration is set to true.
+    // The main jar is included in the nested component dependencies because useGlobalConfiguration
+    // is set to true.
     ScannerSubject.assertThat(result.stdout).contains("proPlayDebugUnitTest: main-1.0.0.jar, test-1.0.0.jar;")
     ScannerSubject.assertThat(result.stdout)
       .contains(

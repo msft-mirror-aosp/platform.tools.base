@@ -293,7 +293,8 @@ abstract class ProcessTestManifest : ManifestProcessorTask() {
                 // have an overrideLibrary tag, b/436878535.
                 ManifestMerger2.Invoker.Feature.DISABLE_MINSDKLIBRARY_CHECK,
                 ManifestMerger2.Invoker.Feature.REMOVE_TOOLS_DECLARATIONS,
-                // TODO: b/457683746, remove <uses-sdk> or version related attributes from it.
+                // TODO: b/457683746, remove <uses-sdk> or version related attributes from
+                // it.
                 ManifestMerger2.Invoker.Feature.USES_SDK_IN_MANIFEST_LENIENT_HANDLING,
               )
               .toTypedArray()

@@ -23,27 +23,27 @@ class WatchFaceFormatVersionDetectorTest : AbstractCheckTest() {
 
   fun testDocumentationExample() {
     lint()
-        .files(manifestWithoutProperty(), declarativeWatchFaceFile())
-        .run()
-        .expect(
-            """
-            AndroidManifest.xml:5: Error: The Watch Face Format version property must be set [WatchFaceFormatMissingVersion]
-                <application
-                 ~~~~~~~~~~~
-            1 error
-            """
-                .trimIndent()
-        )
+      .files(manifestWithoutProperty(), declarativeWatchFaceFile())
+      .run()
+      .expect(
+        """
+        AndroidManifest.xml:5: Error: The Watch Face Format version property must be set [WatchFaceFormatMissingVersion]
+            <application
+             ~~~~~~~~~~~
+        1 error
+        """
+          .trimIndent()
+      )
   }
 
   fun `test the WFF version property is not required when there are no declarative watch face files`() {
     lint()
-        .files(
-            manifestWithoutProperty()
-            // no DWF file
-        )
-        .run()
-        .expectClean()
+      .files(
+        manifestWithoutProperty()
+        // no DWF file
+      )
+      .run()
+      .expectClean()
   }
 
   fun `test the WFF version property is set`() {
@@ -52,58 +52,58 @@ class WatchFaceFormatVersionDetectorTest : AbstractCheckTest() {
 
   fun `test the WFF version property value is missing`() {
     lint()
-        .files(
-            manifestWith(watchFaceFormatVersionProperty(value = null))
-            // this should work even when there is no DWF file
-        )
-        .run()
-        .expect(
-            """
+      .files(
+        manifestWith(watchFaceFormatVersionProperty(value = null))
+        // this should work even when there is no DWF file
+      )
+      .run()
+      .expect(
+        """
           AndroidManifest.xml:9: Error: The android:value attribute is missing [WatchFaceFormatMissingVersion]
                   <property android:name="$WATCH_FACE_FORMAT_VERSION_PROPERTY" />
                    ~~~~~~~~
           1 error
       """
-                .trimIndent()
-        )
-        .expectFixDiffs(
-            """
-            Fix for AndroidManifest.xml line 9: Set value="1":
-            @@ -13 +13
-            -         <property android:name="com.google.wear.watchface.format.version" />
-            +         <property
-            +             android:name="com.google.wear.watchface.format.version"
-            +             android:value="1" />
-            """
-                .trimIndent()
-        )
+          .trimIndent()
+      )
+      .expectFixDiffs(
+        """
+        Fix for AndroidManifest.xml line 9: Set value="1":
+        @@ -13 +13
+        -         <property android:name="com.google.wear.watchface.format.version" />
+        +         <property
+        +             android:name="com.google.wear.watchface.format.version"
+        +             android:value="1" />
+        """
+          .trimIndent()
+      )
   }
 
   fun `test the WFF version property value is invalid`() {
     lint()
-        .files(
-            manifestWith(watchFaceFormatVersionProperty(value = "invalid"))
-            // this should work even when there is no DWF file
-        )
-        .run()
-        .expect(
-            """
-            AndroidManifest.xml:9: Error: The Watch Face Format version is invalid [WatchFaceFormatInvalidVersion]
-                    <property android:name="com.google.wear.watchface.format.version" android:value="invalid" />
-                                                                                      ~~~~~~~~~~~~~~~~~~~~~~~
-            1 error
-            """
-                .trimIndent()
-        )
+      .files(
+        manifestWith(watchFaceFormatVersionProperty(value = "invalid"))
+        // this should work even when there is no DWF file
+      )
+      .run()
+      .expect(
+        """
+        AndroidManifest.xml:9: Error: The Watch Face Format version is invalid [WatchFaceFormatInvalidVersion]
+                <property android:name="com.google.wear.watchface.format.version" android:value="invalid" />
+                                                                                  ~~~~~~~~~~~~~~~~~~~~~~~
+        1 error
+        """
+          .trimIndent()
+      )
   }
 
   // Regression test for b/423518025
   fun `test the WFF version is valid when using manifest placeholders`() {
     lint()
-        .files(
-            manifestWith(watchFaceFormatVersionProperty(value = "\${wff_version}")),
-            gradle(
-                    """
+      .files(
+        manifestWith(watchFaceFormatVersionProperty(value = "\${wff_version}")),
+        gradle(
+            """
                 android {
                     flavorDimensions "wff_version"
                     productFlavors {
@@ -114,20 +114,20 @@ class WatchFaceFormatVersionDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-                )
-                .indented(),
-        )
-        .run()
-        .expectClean()
+          )
+          .indented(),
+      )
+      .run()
+      .expectClean()
   }
 
   // Regression test for b/423518025
   fun `test an error is reported when the placeholder value is invalid`() {
     lint()
-        .files(
-            manifestWith(watchFaceFormatVersionProperty(value = "\${wff_version}")),
-            gradle(
-                    """
+      .files(
+        manifestWith(watchFaceFormatVersionProperty(value = "\${wff_version}")),
+        gradle(
+            """
                 android {
                     flavorDimensions "wff_version"
                     productFlavors {
@@ -138,19 +138,19 @@ class WatchFaceFormatVersionDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-                )
-                .indented(),
-        )
-        .run()
-        .expect(
-            """
-            src/main/AndroidManifest.xml:9: Error: The Watch Face Format version is invalid [WatchFaceFormatInvalidVersion]
-                    <property android:name="com.google.wear.watchface.format.version" android:value="＄{wff_version}" />
-                                                                                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            1 error
-            """
-                .trimIndent()
-        )
+          )
+          .indented(),
+      )
+      .run()
+      .expect(
+        """
+        src/main/AndroidManifest.xml:9: Error: The Watch Face Format version is invalid [WatchFaceFormatInvalidVersion]
+                <property android:name="com.google.wear.watchface.format.version" android:value="＄{wff_version}" />
+                                                                                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        1 error
+        """
+          .trimIndent()
+      )
   }
 
   // Regression test for b/423518025
@@ -159,18 +159,18 @@ class WatchFaceFormatVersionDetectorTest : AbstractCheckTest() {
   }
 
   private fun declarativeWatchFaceFile() =
-      xml(
-          "res/raw/watch_face.xml",
-          """
+    xml(
+      "res/raw/watch_face.xml",
+      """
           <WatchFace />
         """,
-      )
+    )
 
   private fun manifestWithoutProperty() = manifestWith(null)
 
   private fun manifestWith(watchFaceFormatVersionProperty: String?): TestFile =
-      manifest(
-              """
+    manifest(
+        """
           <manifest xmlns:android="http://schemas.android.com/apk/res/android"
               package="test.pkg">
               <uses-sdk android:minSdkVersion="33" />
@@ -183,9 +183,9 @@ class WatchFaceFormatVersionDetectorTest : AbstractCheckTest() {
               </application>
           </manifest>
         """
-          )
-          .indented()
+      )
+      .indented()
 
   private fun watchFaceFormatVersionProperty(value: String? = "1") =
-      "<property android:name=\"$WATCH_FACE_FORMAT_VERSION_PROPERTY\" ${value?.let { "android:value=\"$value\" " } ?: ""}/>"
+    "<property android:name=\"$WATCH_FACE_FORMAT_VERSION_PROPERTY\" ${value?.let { "android:value=\"$value\" " } ?: ""}/>"
 }

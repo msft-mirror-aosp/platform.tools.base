@@ -384,7 +384,8 @@ class LineShellCollector(bufferCapacity: Int = 256) : ShellCollector<String> {
       return
     }
 
-    // The following is intentionally a tail-call so that the current method does not need to allocate
+    // The following is intentionally a tail-call so that the current method does not need to
+    // allocate
     // a continuation state.
     emitLines(lines, collector)
   }

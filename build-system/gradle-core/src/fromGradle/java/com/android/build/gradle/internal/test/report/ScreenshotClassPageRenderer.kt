@@ -42,7 +42,8 @@ internal class ScreenshotClassPageRenderer(reportType: ReportType, isRecordGolde
   }
 
   fun renderTests(htmlWriter: SimpleHtmlWriter?) {
-    // show test images even for a successful test so that users can view what images were saved or see diff if it was below threshold
+    // show test images even for a successful test so that users can view what images were saved or
+    // see diff if it was below threshold
     for (test in getResults().results) {
       htmlWriter!!
         .startElement("div")

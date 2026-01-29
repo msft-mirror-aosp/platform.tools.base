@@ -137,7 +137,8 @@ class Aapt2DaemonImpl(
     try {
       processOutput.delegate = waitForTask
       Aapt2DaemonUtil.requestCompile(writer, request)
-      // Temporary workaround for b/111629686, manually generate the partial R file for raw and non xml res.
+      // Temporary workaround for b/111629686, manually generate the partial R file for raw and non
+      // xml res.
       request.partialRFile?.apply {
         if (request.inputDirectoryName.startsWith("raw") || !request.inputFile.path.endsWith(".xml")) {
           val type = request.inputDirectoryName.substringBefore('-')

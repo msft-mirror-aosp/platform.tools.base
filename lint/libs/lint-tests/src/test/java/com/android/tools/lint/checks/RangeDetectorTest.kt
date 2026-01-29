@@ -32,9 +32,9 @@ class RangeDetectorTest : AbstractCheckTest() {
 
   fun testRange() {
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
                 package test.pkg;
 
                 import androidx.annotation.FloatRange;
@@ -196,13 +196,13 @@ class RangeDetectorTest : AbstractCheckTest() {
                     }
                 }
                 """
-                )
-                .indented(),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
 src/test/pkg/RangeTest.java:32: Error: Expected length 5 (was 4) [Range]
         printExact("1234"); // ERROR
                    ~~~~~~
@@ -328,16 +328,16 @@ src/test/pkg/RangeTest.java:158: Error: Expected length 5 (was 7) [Range]
                           ~~~~~~~~~
 41 errors, 0 warnings
 """
-        )
+      )
   }
 
   /** Test @IntRange and @FloatRange support annotation applied to arrays and vargs. */
   fun testRangesMultiple() {
     lint()
-        .files(
-            java(
-                    "src/test/pkg/RangesMultiple.java",
-                    """
+      .files(
+        java(
+            "src/test/pkg/RangesMultiple.java",
+            """
                 package test.pkg;
                 import androidx.annotation.FloatRange;
                 import androidx.annotation.IntRange;
@@ -390,13 +390,13 @@ src/test/pkg/RangeTest.java:158: Error: Expected length 5 (was 7) [Range]
                 }
 
                 """,
-                )
-                .indented(),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
 src/test/pkg/RangesMultiple.java:20: Error: Value must be ≥ 10.0 (was 5) [Range]
         a[0] = /*Value must be ≥ 10.0 and ≤ 15.0 (was 5f)*/5f/**/; // ERROR
                                                            ~~
@@ -423,17 +423,17 @@ src/test/pkg/RangesMultiple.java:36: Error: Value must be ≥ 10 (was 0) [Range]
                                                            ~~~~~~~~~~~~~~~~~
 8 errors, 0 warnings
         """
-        )
+      )
   }
 
   fun testNegativeFloatRange() {
     // Regression test for https://code.google.com/p/android/issues/detail?id=219246
     // Make sure we correctly handle negative ranges for floats
     lint()
-        .files(
-            java(
-                    "src/test/pkg/FloatRangeTest.java",
-                    """
+      .files(
+        java(
+            "src/test/pkg/FloatRangeTest.java",
+            """
                 package test.pkg;
 
                 import androidx.annotation.FloatRange;
@@ -450,13 +450,13 @@ src/test/pkg/RangesMultiple.java:36: Error: Value must be ≥ 10 (was 0) [Range]
                     }
                 }
                 """,
-                )
-                .indented(),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
 src/test/pkg/FloatRangeTest.java:8: Error: Value must be ≥ -90.0 (was -150.0) [Range]
         call(-150.0); // ERROR
              ~~~~~~
@@ -465,108 +465,108 @@ src/test/pkg/FloatRangeTest.java:10: Error: Value must be ≤ -5.0 (was -3.0) [R
              ~~~~
 2 errors, 0 warnings
 """
-        )
+      )
   }
 
   // TODO: http://b.android.com/220686
   fun ignore_testSnackbarDuration() {
     lint()
-        .files(
-            java(
-                "src/test/pkg/SnackbarTest.java",
-                "" +
-                    "package test.pkg;\n" +
-                    "\n" +
-                    "import android.support.design.widget.Snackbar;\n" +
-                    "\n" +
-                    "public class SnackbarTest {\n" +
-                    "    public Snackbar makeSnackbar(@Snackbar.Duration int duration) {\n" +
-                    "        return null;\n" +
-                    "    }\n" +
-                    "\n" +
-                    "    public void test() {\n" +
-                    "        makeSnackbar(Snackbar.LENGTH_LONG); // OK\n" +
-                    "        makeSnackbar(100); // OK\n" +
-                    "        makeSnackbar(-100); // ERROR\n" +
-                    "    }\n" +
-                    "}\n",
-            ),
-            java(
-                "src/android/support/design/widget/Snackbar.java",
-                "" +
-                    "package android.support.design.widget;\n" +
-                    "\n" +
-                    "import androidx.annotation.IntDef;\n" +
-                    "import androidx.annotation.IntRange;\n" +
-                    "\n" +
-                    "import java.lang.annotation.Retention;\n" +
-                    "import java.lang.annotation.RetentionPolicy;\n" +
-                    "\n" +
-                    "public class Snackbar {\n" +
-                    // In the real class definition, this annotation is there,
-                    // but in the compiled design library, since it has source
-                    // retention, the @IntDef is missing and only the @IntRange
-                    // remains. Therefore, it's been extracted into the external
-                    // database. We don't want to count it twice so don't repeat
-                    // it here:
-                    // "    @IntDef({LENGTH_INDEFINITE, LENGTH_SHORT, LENGTH_LONG})\n" +
-                    "    @IntRange(from = 1)\n" +
-                    "    @Retention(RetentionPolicy.SOURCE)\n" +
-                    "    public @interface Duration {}\n" +
-                    "\n" +
-                    "    public static final int LENGTH_INDEFINITE = -2;\n" +
-                    "    public static final int LENGTH_SHORT = -1;\n" +
-                    "    public static final int LENGTH_LONG = 0;\n" +
-                    "}\n",
-            ),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .issues(RangeDetector.RANGE, TypedefDetector.TYPE_DEF)
-        .run()
-        .expect(
-            """
+      .files(
+        java(
+          "src/test/pkg/SnackbarTest.java",
+          "" +
+            "package test.pkg;\n" +
+            "\n" +
+            "import android.support.design.widget.Snackbar;\n" +
+            "\n" +
+            "public class SnackbarTest {\n" +
+            "    public Snackbar makeSnackbar(@Snackbar.Duration int duration) {\n" +
+            "        return null;\n" +
+            "    }\n" +
+            "\n" +
+            "    public void test() {\n" +
+            "        makeSnackbar(Snackbar.LENGTH_LONG); // OK\n" +
+            "        makeSnackbar(100); // OK\n" +
+            "        makeSnackbar(-100); // ERROR\n" +
+            "    }\n" +
+            "}\n",
+        ),
+        java(
+          "src/android/support/design/widget/Snackbar.java",
+          "" +
+            "package android.support.design.widget;\n" +
+            "\n" +
+            "import androidx.annotation.IntDef;\n" +
+            "import androidx.annotation.IntRange;\n" +
+            "\n" +
+            "import java.lang.annotation.Retention;\n" +
+            "import java.lang.annotation.RetentionPolicy;\n" +
+            "\n" +
+            "public class Snackbar {\n" +
+            // In the real class definition, this annotation is there,
+            // but in the compiled design library, since it has source
+            // retention, the @IntDef is missing and only the @IntRange
+            // remains. Therefore, it's been extracted into the external
+            // database. We don't want to count it twice so don't repeat
+            // it here:
+            // "    @IntDef({LENGTH_INDEFINITE, LENGTH_SHORT, LENGTH_LONG})\n" +
+            "    @IntRange(from = 1)\n" +
+            "    @Retention(RetentionPolicy.SOURCE)\n" +
+            "    public @interface Duration {}\n" +
+            "\n" +
+            "    public static final int LENGTH_INDEFINITE = -2;\n" +
+            "    public static final int LENGTH_SHORT = -1;\n" +
+            "    public static final int LENGTH_LONG = 0;\n" +
+            "}\n",
+        ),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .issues(RangeDetector.RANGE, TypedefDetector.TYPE_DEF)
+      .run()
+      .expect(
+        """
 src/test/pkg/SnackbarTest.java:13: Error: Must be one of: Snackbar.LENGTH_INDEFINITE, Snackbar.LENGTH_SHORT, Snackbar.LENGTH_LONG or value must be ≥ 1 (was -100) [WrongConstant]
         makeSnackbar(-100); // ERROR
                      ~~~~
 1 errors, 0 warnings
         """
-        )
+      )
   }
 
   fun testSizeAnnotations() {
     lint()
-        .files(
-            java(
-                "" +
-                    "package pkg.my.myapplication;\n" +
-                    "\n" +
-                    "import androidx.annotation.NonNull;\n" +
-                    "import androidx.annotation.Size;\n" +
-                    "\n" +
-                    "public class SizeTest2 {\n" +
-                    "    @Size(3)\n" +
-                    "    public float[] toLinear(float r, float g, float b) {\n" +
-                    "        return toLinear(new float[] { r, g, b });\n" +
-                    "    }\n" +
-                    "\n" +
-                    "    @NonNull\n" +
-                    "    public float[] toLinear(@NonNull @Size(min = 3) float[] v) {\n" +
-                    "        return v;\n" +
-                    "    }\n" +
-                    "}\n"
-            ),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expectClean()
+      .files(
+        java(
+          "" +
+            "package pkg.my.myapplication;\n" +
+            "\n" +
+            "import androidx.annotation.NonNull;\n" +
+            "import androidx.annotation.Size;\n" +
+            "\n" +
+            "public class SizeTest2 {\n" +
+            "    @Size(3)\n" +
+            "    public float[] toLinear(float r, float g, float b) {\n" +
+            "        return toLinear(new float[] { r, g, b });\n" +
+            "    }\n" +
+            "\n" +
+            "    @NonNull\n" +
+            "    public float[] toLinear(@NonNull @Size(min = 3) float[] v) {\n" +
+            "        return v;\n" +
+            "    }\n" +
+            "}\n"
+        ),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expectClean()
   }
 
   fun testMergedRanges() {
     // Regression test for 205016549 and 205017694
     lint()
-        .files(
-            kotlin(
-                    """
+      .files(
+        kotlin(
+            """
                 package test.pkg
 
                 import android.content.Context
@@ -589,10 +589,10 @@ src/test/pkg/SnackbarTest.java:13: Error: Must be one of: Snackbar.LENGTH_INDEFI
                     }
                 }
                 """
-                )
-                .indented(),
-            java(
-                    """
+          )
+          .indented(),
+        java(
+            """
                 package test.pkg;
 
                 import androidx.annotation.IntRange;
@@ -623,19 +623,19 @@ src/test/pkg/SnackbarTest.java:13: Error: Must be one of: Snackbar.LENGTH_INDEFI
                     }
                 }
                 """
-                )
-                .indented(),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expectClean()
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expectClean()
   }
 
   fun testOverlappingRanges() {
     lint()
-        .files(
-            java(
-                """
+      .files(
+        java(
+          """
                 package pkg.my.myapplication;
 
                 import androidx.annotation.IntRange;
@@ -707,26 +707,26 @@ src/test/pkg/SnackbarTest.java:13: Error: Must be one of: Snackbar.LENGTH_INDEFI
                     }
                 }
                 """
-            ),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expectInlinedMessages()
+        ),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expectInlinedMessages()
   }
 
   fun testConstructor() {
     val expected =
-        """
+      """
 src/test/pkg/ConstructorTest.java:14: Error: Value must be ≥ 5 (was 3) [Range]
         new ConstructorTest(1, 3);
                                ~
 1 errors, 0 warnings
 """
     lint()
-        .files(
-            java(
-                    "src/test/pkg/ConstructorTest.java",
-                    """
+      .files(
+        java(
+            "src/test/pkg/ConstructorTest.java",
+            """
                 package test.pkg;
                 import androidx.annotation.DrawableRes;
                 import androidx.annotation.IntRange;
@@ -749,188 +749,190 @@ src/test/pkg/ConstructorTest.java:14: Error: Value must be ≥ 5 (was 3) [Range]
                     }
                 }
                 """,
-                )
-                .indented(),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expect(expected)
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(expected)
   }
 
   fun testConstrainedIntRanges() {
     // Regression test for https://code.google.com/p/android/issues/detail?id=188351
 
     lint()
-        .files(
-            java(
-                "" +
-                    "package test.pkg;\n" +
-                    "\n" +
-                    "import androidx.annotation.IntRange;\n" +
-                    "\n" +
-                    "public class X {\n" +
-                    "    public int forcedMeasureHeight = -1;\n" +
-                    "\n" +
-                    "    public void testVariable() {\n" +
-                    "        int parameter = -1;\n" +
-                    "        if (parameter >= 0) {\n" +
-                    "            method(parameter); // OK\n" +
-                    "        }\n" +
-                    "    }\n" +
-                    "\n" +
-                    "    public void testOk1(boolean ok) {\n" +
-                    "        if (forcedMeasureHeight >= 0) {\n" +
-                    "            method(forcedMeasureHeight); // OK\n" +
-                    "        }\n" +
-                    "        if (ok && forcedMeasureHeight >= 0) {\n" +
-                    "            method(forcedMeasureHeight); // OK\n" +
-                    "        }\n" +
-                    "    }\n" +
-                    "\n" +
-                    "    public void testError(boolean ok, int unrelated) {\n" +
-                    // Disabled for now -- we're not passing allowFieldInitializers()
-                    // into the ConstantEvaluator since it's risky to be complaining
-                    // about invalid values for a non-final field which could easily
-                    // have been reassigned anywhere to something compatible.
-                    // "        method(/*Value must be ≥ 0 (was -1)*/forcedMeasureHeight/**/); // ERROR\n" +
-                    // "        if (ok && unrelated >= 0) {\n" +
-                    // "            method(/*Value must be ≥ 0 (was -1)*/forcedMeasureHeight/**/); //
-                    // ERROR\n" +
-                    // "        }\n" +
-                    "        method(forcedMeasureHeight); // ERROR\n" +
-                    "        if (ok && unrelated >= 0) {\n" +
-                    "            method(forcedMeasureHeight); // ERROR\n" +
-                    "        }\n" +
-                    "    }\n" +
-                    "\n" +
-                    "    public void method(@IntRange(from=0) int parameter) {\n" +
-                    "    }\n" +
-                    "}\n"
-            ),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expectInlinedMessages()
+      .files(
+        java(
+          "" +
+            "package test.pkg;\n" +
+            "\n" +
+            "import androidx.annotation.IntRange;\n" +
+            "\n" +
+            "public class X {\n" +
+            "    public int forcedMeasureHeight = -1;\n" +
+            "\n" +
+            "    public void testVariable() {\n" +
+            "        int parameter = -1;\n" +
+            "        if (parameter >= 0) {\n" +
+            "            method(parameter); // OK\n" +
+            "        }\n" +
+            "    }\n" +
+            "\n" +
+            "    public void testOk1(boolean ok) {\n" +
+            "        if (forcedMeasureHeight >= 0) {\n" +
+            "            method(forcedMeasureHeight); // OK\n" +
+            "        }\n" +
+            "        if (ok && forcedMeasureHeight >= 0) {\n" +
+            "            method(forcedMeasureHeight); // OK\n" +
+            "        }\n" +
+            "    }\n" +
+            "\n" +
+            "    public void testError(boolean ok, int unrelated) {\n" +
+            // Disabled for now -- we're not passing allowFieldInitializers()
+            // into the ConstantEvaluator since it's risky to be complaining
+            // about invalid values for a non-final field which could easily
+            // have been reassigned anywhere to something compatible.
+            // "        method(/*Value must be ≥ 0 (was -1)*/forcedMeasureHeight/**/); //
+            // ERROR\n" +
+            // "        if (ok && unrelated >= 0) {\n" +
+            // "            method(/*Value must be ≥ 0 (was -1)*/forcedMeasureHeight/**/);
+            // //
+            // ERROR\n" +
+            // "        }\n" +
+            "        method(forcedMeasureHeight); // ERROR\n" +
+            "        if (ok && unrelated >= 0) {\n" +
+            "            method(forcedMeasureHeight); // ERROR\n" +
+            "        }\n" +
+            "    }\n" +
+            "\n" +
+            "    public void method(@IntRange(from=0) int parameter) {\n" +
+            "    }\n" +
+            "}\n"
+        ),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expectInlinedMessages()
   }
 
   fun testIntRangeOnTernaryOperators() {
 
     lint()
-        .files(
-            java(
-                "" +
-                    "package test.pkg;\n" +
-                    "\n" +
-                    "import androidx.annotation.IntRange;\n" +
-                    "\n" +
-                    "import java.util.ArrayList;\n" +
-                    "import java.util.List;\n" +
-                    "\n" +
-                    "public class X {\n" +
-                    "    @SuppressWarnings(\"MismatchedQueryAndUpdateOfCollection\")\n" +
-                    "    private List<String> mItems = new ArrayList<>();\n" +
-                    "\n" +
-                    "    @IntRange(from = 0)\n" +
-                    "    public int test1() {\n" +
-                    "        return mItems == null ? 0 : mItems.size(); // OK\n" +
-                    "    }\n" +
-                    "\n" +
-                    "    @IntRange(from = 0)\n" +
-                    "    public int test2() {\n" +
-                    "        return 0; // OK\n" +
-                    "    }\n" +
-                    "\n" +
-                    "    @IntRange(from = 0)\n" +
-                    "    public int test3() {\n" +
-                    "        return mItems.size(); // OK\n" +
-                    "    }\n" +
-                    "\n" +
-                    "    @IntRange(from = 0)\n" +
-                    "    public int test4() {\n" +
-                    "        if (mItems == null) {\n" +
-                    "            return 0;\n" +
-                    "        } else {\n" +
-                    "            return mItems.size();\n" +
-                    "        }\n" +
-                    "    }\n" +
-                    "\n" +
-                    "    @IntRange(from = 0)\n" +
-                    "    public int testError() {\n" +
-                    "        return mItems == null ? /*Value must be ≥ 0 (was -1)*/-1/**/ : mItems.size(); // ERROR\n" +
-                    "\n" +
-                    "    }\n" +
-                    "}\n"
-            ),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expectInlinedMessages()
+      .files(
+        java(
+          "" +
+            "package test.pkg;\n" +
+            "\n" +
+            "import androidx.annotation.IntRange;\n" +
+            "\n" +
+            "import java.util.ArrayList;\n" +
+            "import java.util.List;\n" +
+            "\n" +
+            "public class X {\n" +
+            "    @SuppressWarnings(\"MismatchedQueryAndUpdateOfCollection\")\n" +
+            "    private List<String> mItems = new ArrayList<>();\n" +
+            "\n" +
+            "    @IntRange(from = 0)\n" +
+            "    public int test1() {\n" +
+            "        return mItems == null ? 0 : mItems.size(); // OK\n" +
+            "    }\n" +
+            "\n" +
+            "    @IntRange(from = 0)\n" +
+            "    public int test2() {\n" +
+            "        return 0; // OK\n" +
+            "    }\n" +
+            "\n" +
+            "    @IntRange(from = 0)\n" +
+            "    public int test3() {\n" +
+            "        return mItems.size(); // OK\n" +
+            "    }\n" +
+            "\n" +
+            "    @IntRange(from = 0)\n" +
+            "    public int test4() {\n" +
+            "        if (mItems == null) {\n" +
+            "            return 0;\n" +
+            "        } else {\n" +
+            "            return mItems.size();\n" +
+            "        }\n" +
+            "    }\n" +
+            "\n" +
+            "    @IntRange(from = 0)\n" +
+            "    public int testError() {\n" +
+            "        return mItems == null ? /*Value must be ≥ 0 (was -1)*/-1/**/ : mItems.size(); // ERROR\n" +
+            "\n" +
+            "    }\n" +
+            "}\n"
+        ),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expectInlinedMessages()
   }
 
   fun testRangeInKotlin() {
     // Regression test for https://issuetracker.google.com/66892728
 
     lint()
-        .files(
-            // TODO: Test @IntRange to make sure UAST doesn't replace it with @kotlin.IntRange
-            kotlin(
-                "" +
-                    "package test.pkg\n" +
-                    "\n" +
-                    "import androidx.annotation.FloatRange\n" +
-                    "import android.util.Log\n" +
-                    "\n" +
-                    "fun foo(@FloatRange(from = 0.0, to = 25.0) radius: Float) {\n" +
-                    "    bar(radius)\n" +
-                    "}\n" +
-                    "\n" +
-                    "fun bar(@FloatRange(from = 0.0, to = 25.0) radius: Float) {\n" +
-                    "    Log.d(\"AppLog\", \"Radius:\" + radius)\n" +
-                    "}"
-            ),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expectClean()
+      .files(
+        // TODO: Test @IntRange to make sure UAST doesn't replace it with @kotlin.IntRange
+        kotlin(
+          "" +
+            "package test.pkg\n" +
+            "\n" +
+            "import androidx.annotation.FloatRange\n" +
+            "import android.util.Log\n" +
+            "\n" +
+            "fun foo(@FloatRange(from = 0.0, to = 25.0) radius: Float) {\n" +
+            "    bar(radius)\n" +
+            "}\n" +
+            "\n" +
+            "fun bar(@FloatRange(from = 0.0, to = 25.0) radius: Float) {\n" +
+            "    Log.d(\"AppLog\", \"Radius:\" + radius)\n" +
+            "}"
+        ),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expectClean()
   }
 
   fun testRangesFromKotlin() {
     lint()
-        .files(
-            kotlin(
-                "" +
-                    "package test.pkg\n" +
-                    "\n" +
-                    "import androidx.annotation.FloatRange\n" +
-                    "import androidx.annotation.IntRange\n" +
-                    "\n" +
-                    "fun check(@FloatRange(from = 0.0, to = 25.0) radius: Float) {\n" +
-                    "}\n" +
-                    "\n" +
-                    "fun check(@IntRange(from = 0, to = 25) radius: Int) {\n" +
-                    "}\n" +
-                    "\n" +
-                    "fun wrong() {\n" +
-                    "    check(10) // OK\n" +
-                    "    check(10.0f) // OK\n" +
-                    "    check(100) // ERROR\n" +
-                    "    check(100.0f) // ERROR\n" +
-                    "}"
-            ),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .testModes(TestMode.DEFAULT)
-        .run()
-        .expect(
-            "" +
-                "src/test/pkg/test.kt:15: Error: Value must be ≤ 25 (was 100) [Range]\n" +
-                "    check(100) // ERROR\n" +
-                "          ~~~\n" +
-                "src/test/pkg/test.kt:16: Error: Value must be ≤ 25.0 (was 100.0) [Range]\n" +
-                "    check(100.0f) // ERROR\n" +
-                "          ~~~~~~\n" +
-                "2 errors, 0 warnings"
-        )
+      .files(
+        kotlin(
+          "" +
+            "package test.pkg\n" +
+            "\n" +
+            "import androidx.annotation.FloatRange\n" +
+            "import androidx.annotation.IntRange\n" +
+            "\n" +
+            "fun check(@FloatRange(from = 0.0, to = 25.0) radius: Float) {\n" +
+            "}\n" +
+            "\n" +
+            "fun check(@IntRange(from = 0, to = 25) radius: Int) {\n" +
+            "}\n" +
+            "\n" +
+            "fun wrong() {\n" +
+            "    check(10) // OK\n" +
+            "    check(10.0f) // OK\n" +
+            "    check(100) // ERROR\n" +
+            "    check(100.0f) // ERROR\n" +
+            "}"
+        ),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .testModes(TestMode.DEFAULT)
+      .run()
+      .expect(
+        "" +
+          "src/test/pkg/test.kt:15: Error: Value must be ≤ 25 (was 100) [Range]\n" +
+          "    check(100) // ERROR\n" +
+          "          ~~~\n" +
+          "src/test/pkg/test.kt:16: Error: Value must be ≤ 25.0 (was 100.0) [Range]\n" +
+          "    check(100.0f) // ERROR\n" +
+          "          ~~~~~~\n" +
+          "2 errors, 0 warnings"
+      )
   }
 
   fun test69366129() {
@@ -938,9 +940,9 @@ src/test/pkg/ConstructorTest.java:14: Error: Value must be ≥ 5 (was 3) [Range]
     // 69366129: Range bug after upgrading Android Studio - Value must be ≤ 1.0 (was 100) less
 
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
                     package test.pkg;
                     import androidx.annotation.FloatRange;
                     import java.util.Random;
@@ -957,21 +959,21 @@ src/test/pkg/ConstructorTest.java:14: Error: Value must be ≥ 5 (was 3) [Range]
                         }
                     }
                     """
-                )
-                .indented(),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expectClean()
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expectClean()
   }
 
   fun test79907796() {
     // Regression test for
     // 79907796: Range Check fails for arrays with size greater than 30
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
                     package test.pkg;
                     import androidx.annotation.Size;
                     import java.util.Random;
@@ -987,12 +989,12 @@ src/test/pkg/ConstructorTest.java:14: Error: Value must be ≥ 5 (was 3) [Range]
                         }
                     }
                     """
-                )
-                .indented(),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expectClean()
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expectClean()
   }
 
   fun testKotlinArraySize() {
@@ -1000,9 +1002,9 @@ src/test/pkg/ConstructorTest.java:14: Error: Value must be ≥ 5 (was 3) [Range]
     // Regression test for
     // 79907796: Range Check fails for arrays with size greater than 30
     lint()
-        .files(
-            kotlin(
-                    """
+      .files(
+        kotlin(
+            """
                     package test.pkg
                     import androidx.annotation.Size
 
@@ -1018,96 +1020,96 @@ src/test/pkg/ConstructorTest.java:14: Error: Value must be ≥ 5 (was 3) [Range]
                         }
                     }
                     """
-                )
-                .indented(),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
             src/test/pkg/SizeTest.kt:12: Error: Expected size 5 (was 4) [Range]
                     method(array2) // ERROR
                            ~~~~~~
             1 errors, 0 warnings
             """
-        )
+      )
   }
 
   fun testRangeAnnotationsInCompiledJars() {
     lint()
-        .files(
-            java(
-                "package test.pkg;\n" +
-                    "\n" +
-                    "import androidx.annotation.FloatRange;\n" +
-                    "import androidx.annotation.IntRange;\n" +
-                    "import jar.jar.AnnotationsClass;\n" +
-                    "\n" +
-                    "public class TestClass {\n" +
-                    "  public static void callMethod() {\n" +
-                    "    AnnotationsClass.floatParamBetween0And100(50); // Within Range\n" +
-                    "    AnnotationsClass.floatParamBetween0And100(552); // Outside Range\n" +
-                    "\n" +
-                    "    AnnotationsClass.intParamBetween0And255(51); // Within Range\n" +
-                    "    AnnotationsClass.intParamBetween0And255(551); // Outside Range\n" +
-                    "\n" +
-                    "    inClassIntParamFrom0To255(52); // Within Range\n" +
-                    "    inClassIntParamFrom0To255(550); // Outside Range\n" +
-                    "\n" +
-                    "    inClassFloatParamFrom0To100(53); // Within Range\n" +
-                    "    inClassFloatParamFrom0To100(549); // Outside Range\n" +
-                    "  }\n" +
-                    "\n" +
-                    "  private static void inClassIntParamFrom0To255(@IntRange(from = 0, to = 255) int i) {}\n" +
-                    "  private static void inClassFloatParamFrom0To100(@FloatRange(from = 0, to = 100) float f) {}\n" +
-                    "}\n"
-            ),
-            bytecode(
-                "bin/classes",
-                java(
-                    "package jar.jar;\n" +
-                        "\n" +
-                        "import androidx.annotation.FloatRange;\n" +
-                        "import androidx.annotation.IntRange;\n" +
-                        "\n" +
-                        "public class AnnotationsClass {\n" +
-                        "   public static void floatParamBetween0And100(@FloatRange(from = 0.0D,to = 100.0D) float f) {\n" +
-                        "   }\n" +
-                        "\n" +
-                        "   public static void intParamBetween0And255(@IntRange(from = 0L,to = 255L) int i) {\n" +
-                        "   }\n" +
-                        "}"
-                ),
-                0xbcbf9445,
-                "jar/jar/AnnotationsClass.class:" +
-                    "H4sIAAAAAAAAAIWQ20pCQRSG//GwNTW0g50LgiLrom2BdFFElgiKVFgEXY46" +
-                    "xojOyN6jPVdXQRc9QA9VrdloRUINzJrT/631r3l7f3kFcISNBMJYjWEthnUG" +
-                    "50QqaU4ZwrndO4bIhW4JhnRNKnE56DWEd8sbXbpZanc1N9fc471zYR6FUPmi" +
-                    "ah3k88Tkyhbdqg+UkT1RUUPpS4ICsTDCKyqlDTdSK59hp8ZVy9Oy5fqDfl97" +
-                    "xuVfz27ZFqlz9SCOKW/b0z0Ho8EQMto5ux+fFqSasHNYKFg7FWtn+686FTWq" +
-                    "Eh2nH28+GBI3euA1RVnavrM/zF90ue/vd/iQpxBBlD6lwz3Xzt8ihoyVuV0q" +
-                    "4l41OqJpsIkQfbwdYbJPPEXb3TqtzDrYewZ7CnqLUXSCSwdTiNMMBdLl4BWT" +
-                    "sjgSFGdsoiRpUyVMI11ChshZzP1HJ7/peUtXkUW6ikU6WyaElU81KfZVPQIA" +
-                    "AA==",
-            ),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expect(
-            "src/test/pkg/TestClass.java:10: Error: Value must be ≤ 100.0 (was 552) [Range]\n" +
-                "    AnnotationsClass.floatParamBetween0And100(552); // Outside Range\n" +
-                "                                              ~~~\n" +
-                "src/test/pkg/TestClass.java:13: Error: Value must be ≤ 255 (was 551) [Range]\n" +
-                "    AnnotationsClass.intParamBetween0And255(551); // Outside Range\n" +
-                "                                            ~~~\n" +
-                "src/test/pkg/TestClass.java:16: Error: Value must be ≤ 255 (was 550) [Range]\n" +
-                "    inClassIntParamFrom0To255(550); // Outside Range\n" +
-                "                              ~~~\n" +
-                "src/test/pkg/TestClass.java:19: Error: Value must be ≤ 100.0 (was 549) [Range]\n" +
-                "    inClassFloatParamFrom0To100(549); // Outside Range\n" +
-                "                                ~~~\n" +
-                "4 errors, 0 warnings"
-        )
+      .files(
+        java(
+          "package test.pkg;\n" +
+            "\n" +
+            "import androidx.annotation.FloatRange;\n" +
+            "import androidx.annotation.IntRange;\n" +
+            "import jar.jar.AnnotationsClass;\n" +
+            "\n" +
+            "public class TestClass {\n" +
+            "  public static void callMethod() {\n" +
+            "    AnnotationsClass.floatParamBetween0And100(50); // Within Range\n" +
+            "    AnnotationsClass.floatParamBetween0And100(552); // Outside Range\n" +
+            "\n" +
+            "    AnnotationsClass.intParamBetween0And255(51); // Within Range\n" +
+            "    AnnotationsClass.intParamBetween0And255(551); // Outside Range\n" +
+            "\n" +
+            "    inClassIntParamFrom0To255(52); // Within Range\n" +
+            "    inClassIntParamFrom0To255(550); // Outside Range\n" +
+            "\n" +
+            "    inClassFloatParamFrom0To100(53); // Within Range\n" +
+            "    inClassFloatParamFrom0To100(549); // Outside Range\n" +
+            "  }\n" +
+            "\n" +
+            "  private static void inClassIntParamFrom0To255(@IntRange(from = 0, to = 255) int i) {}\n" +
+            "  private static void inClassFloatParamFrom0To100(@FloatRange(from = 0, to = 100) float f) {}\n" +
+            "}\n"
+        ),
+        bytecode(
+          "bin/classes",
+          java(
+            "package jar.jar;\n" +
+              "\n" +
+              "import androidx.annotation.FloatRange;\n" +
+              "import androidx.annotation.IntRange;\n" +
+              "\n" +
+              "public class AnnotationsClass {\n" +
+              "   public static void floatParamBetween0And100(@FloatRange(from = 0.0D,to = 100.0D) float f) {\n" +
+              "   }\n" +
+              "\n" +
+              "   public static void intParamBetween0And255(@IntRange(from = 0L,to = 255L) int i) {\n" +
+              "   }\n" +
+              "}"
+          ),
+          0xbcbf9445,
+          "jar/jar/AnnotationsClass.class:" +
+            "H4sIAAAAAAAAAIWQ20pCQRSG//GwNTW0g50LgiLrom2BdFFElgiKVFgEXY46" +
+            "xojOyN6jPVdXQRc9QA9VrdloRUINzJrT/631r3l7f3kFcISNBMJYjWEthnUG" +
+            "50QqaU4ZwrndO4bIhW4JhnRNKnE56DWEd8sbXbpZanc1N9fc471zYR6FUPmi" +
+            "ah3k88Tkyhbdqg+UkT1RUUPpS4ICsTDCKyqlDTdSK59hp8ZVy9Oy5fqDfl97" +
+            "xuVfz27ZFqlz9SCOKW/b0z0Ho8EQMto5ux+fFqSasHNYKFg7FWtn+686FTWq" +
+            "Eh2nH28+GBI3euA1RVnavrM/zF90ue/vd/iQpxBBlD6lwz3Xzt8ihoyVuV0q" +
+            "4l41OqJpsIkQfbwdYbJPPEXb3TqtzDrYewZ7CnqLUXSCSwdTiNMMBdLl4BWT" +
+            "sjgSFGdsoiRpUyVMI11ChshZzP1HJ7/peUtXkUW6ikU6WyaElU81KfZVPQIA" +
+            "AA==",
+        ),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        "src/test/pkg/TestClass.java:10: Error: Value must be ≤ 100.0 (was 552) [Range]\n" +
+          "    AnnotationsClass.floatParamBetween0And100(552); // Outside Range\n" +
+          "                                              ~~~\n" +
+          "src/test/pkg/TestClass.java:13: Error: Value must be ≤ 255 (was 551) [Range]\n" +
+          "    AnnotationsClass.intParamBetween0And255(551); // Outside Range\n" +
+          "                                            ~~~\n" +
+          "src/test/pkg/TestClass.java:16: Error: Value must be ≤ 255 (was 550) [Range]\n" +
+          "    inClassIntParamFrom0To255(550); // Outside Range\n" +
+          "                              ~~~\n" +
+          "src/test/pkg/TestClass.java:19: Error: Value must be ≤ 100.0 (was 549) [Range]\n" +
+          "    inClassFloatParamFrom0To100(549); // Outside Range\n" +
+          "                                ~~~\n" +
+          "4 errors, 0 warnings"
+      )
   }
 
   fun testFlow() {
@@ -1117,9 +1119,9 @@ src/test/pkg/ConstructorTest.java:14: Error: Value must be ≥ 5 (was 3) [Range]
     // doesn't look beyond the previous assignment to alpha
     // when trying to figure out the range
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
                 package test.pkg;
                 import android.graphics.drawable.Drawable;
                 public class AlphaTest {
@@ -1133,19 +1135,19 @@ src/test/pkg/ConstructorTest.java:14: Error: Value must be ≥ 5 (was 3) [Range]
                     }
                 }
                 """
-                )
-                .indented()
-        )
-        .run()
-        .expectClean()
+          )
+          .indented()
+      )
+      .run()
+      .expectClean()
   }
 
   fun testAndroidXBug() {
     // Regression test for bug uncovered by continuous androidx+studio integration build
     lint()
-        .files(
-            kotlin(
-                    """
+      .files(
+        kotlin(
+            """
                 package test.pkg
                 import androidx.annotation.IntRange
                 import androidx.annotation.Size
@@ -1163,10 +1165,10 @@ src/test/pkg/ConstructorTest.java:14: Error: Value must be ≥ 5 (was 3) [Range]
                     return false
                 }
                 """
-                )
-                .indented(),
-            kotlin(
-                    """
+          )
+          .indented(),
+        kotlin(
+            """
                 package test.pkg
                 abstract class ColorSpace {
                     internal companion object {
@@ -1175,20 +1177,20 @@ src/test/pkg/ConstructorTest.java:14: Error: Value must be ≥ 5 (was 3) [Range]
                     }
                 }
                 """
-                )
-                .indented(),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expectClean()
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expectClean()
   }
 
   fun testRangeMessages() {
     // See https://issuetracker.google.com/202193843
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
                 package test.pkg;
 
                 import android.annotation.SuppressLint;
@@ -1240,14 +1242,14 @@ src/test/pkg/ConstructorTest.java:14: Error: Value must be ≥ 5 (was 3) [Range]
                     }
                 }
                 """
-                )
-                .indented(),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .textFormat(TextFormat.RAW)
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .textFormat(TextFormat.RAW)
+      .run()
+      .expect(
+        """
             src/test/pkg/CursorTest.java:11: Error: Value must be ≥ 0 but `getColumnIndex` can be -1 [Range]
                     csr.getString(csr.getColumnIndex(columnName)); // ERROR 1
                                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1268,14 +1270,14 @@ src/test/pkg/ConstructorTest.java:14: Error: Value must be ≥ 5 (was 3) [Range]
                                    ~~
             6 errors, 0 warnings
             """
-        )
+      )
   }
 
   fun testDefaultAnnotationUsageSite() {
     lint()
-        .files(
-            kotlin(
-                    """
+      .files(
+        kotlin(
+            """
                 package test.pkg
 
                 import androidx.annotation.IntRange
@@ -1293,13 +1295,13 @@ src/test/pkg/ConstructorTest.java:14: Error: Value must be ≥ 5 (was 3) [Range]
                     api.bar = 10 // OK 3
                 }
                 """
-                )
-                .indented(),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
             src/test/pkg/Api.kt:11: Error: Value must be ≥ 10 (was 0) [Range]
                 api.foo = 0  // WARN 1
                           ~
@@ -1308,17 +1310,17 @@ src/test/pkg/ConstructorTest.java:14: Error: Value must be ≥ 5 (was 3) [Range]
                           ~
             2 errors, 0 warnings
             """
-        )
+      )
   }
 
   fun testEncoding() {
     val project =
-        getProjectDir(
-            null,
-            manifest().minSdk(28),
-            java(
-                    "src/test/pkg/FloatRangeTest.java",
-                    """
+      getProjectDir(
+        null,
+        manifest().minSdk(28),
+        java(
+            "src/test/pkg/FloatRangeTest.java",
+            """
                 package test.pkg;
 
                 import androidx.annotation.FloatRange;
@@ -1334,18 +1336,18 @@ src/test/pkg/ConstructorTest.java:14: Error: Value must be ≥ 5 (was 3) [Range]
                     }
                 }
                 """,
-                )
-                .indented(),
-            SUPPORT_ANNOTATIONS_JAR,
-            xml(
-                "baseline.xml",
-                """
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+        xml(
+          "baseline.xml",
+          """
                 <issues format="6" by="lint 7.0.0-dev" type="baseline" client="cli" name="cli" variant="all" version="7.0.0-dev">
 
                 </issues>
                 """,
-            ),
-        )
+        ),
+      )
 
     val baselineFile = File(project, "baseline.xml")
     val xmlReport = File(project, "xml-report.xml")
@@ -1364,61 +1366,61 @@ src/test/pkg/ConstructorTest.java:14: Error: Value must be ≥ 5 (was 3) [Range]
       defaultCharsetField.set(null, null)
 
       MainTest.checkDriver(
-          "" +
-              "src/test/pkg/FloatRangeTest.java:8: Error: Value must be ≥ -90.0 (was -150.0) [Range]\n" +
-              "        call(-150.0); // ERROR\n" +
-              "             ~~~~~~\n" +
-              "1 error",
-          "", // Expected exit code
-          ERRNO_SUCCESS,
-          arrayOf(
-              "-q",
-              "--check",
-              "Range",
-              "--baseline",
-              baselineFile.path,
-              "--update-baseline",
-              "--write-reference-baseline",
-              baselineFile.path,
-              "--text",
-              textReport.path,
-              "--text",
-              "stdout",
-              "--sarif",
-              sarifReport.path,
-              "--html",
-              htmlReport.path,
-              "--xml",
-              xmlReport.path,
-              "--disable",
-              "LintError",
-              project.path,
-          ),
-          null,
-          null,
+        "" +
+          "src/test/pkg/FloatRangeTest.java:8: Error: Value must be ≥ -90.0 (was -150.0) [Range]\n" +
+          "        call(-150.0); // ERROR\n" +
+          "             ~~~~~~\n" +
+          "1 error",
+        "", // Expected exit code
+        ERRNO_SUCCESS,
+        arrayOf(
+          "-q",
+          "--check",
+          "Range",
+          "--baseline",
+          baselineFile.path,
+          "--update-baseline",
+          "--write-reference-baseline",
+          baselineFile.path,
+          "--text",
+          textReport.path,
+          "--text",
+          "stdout",
+          "--sarif",
+          sarifReport.path,
+          "--html",
+          htmlReport.path,
+          "--xml",
+          xmlReport.path,
+          "--disable",
+          "LintError",
+          project.path,
+        ),
+        null,
+        null,
       )
 
       assertEquals(
-          """
-          <?xml version="1.0" encoding="UTF-8"?>
-          <issues>
+        """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <issues>
 
-              <issue
-                  id="Range"
-                  message="Value must be ≥ -90.0 (was -150.0)"
-                  errorLine1="        call(-150.0); // ERROR"
-                  errorLine2="             ~~~~~~">
-                  <location
-                      file="src/test/pkg/FloatRangeTest.java"
-                      line="8"
-                      column="14"/>
-              </issue>
+            <issue
+                id="Range"
+                message="Value must be ≥ -90.0 (was -150.0)"
+                errorLine1="        call(-150.0); // ERROR"
+                errorLine2="             ~~~~~~">
+                <location
+                    file="src/test/pkg/FloatRangeTest.java"
+                    line="8"
+                    column="14"/>
+            </issue>
 
-          </issues>
-          """
-              .trimIndent()
-              .trim(),
-          LintBaselineTest.readBaseline(baselineFile).trim().dos2unix(), // b/209433064
+        </issues>
+        """
+          .trimIndent()
+          .trim(),
+        LintBaselineTest.readBaseline(baselineFile).trim().dos2unix(), // b/209433064
       )
 
       assertTrue(textReport.readText().contains("Value must be ≥ -90.0 (was -150.0)"))
@@ -1433,9 +1435,9 @@ src/test/pkg/ConstructorTest.java:14: Error: Value must be ≥ 5 (was 3) [Range]
 
   fun testConstraintLayoutAlpha() {
     lint()
-        .files(
-            kotlin(
-                    """
+      .files(
+        kotlin(
+            """
             package test.pkg
 
             fun bug() {
@@ -1446,12 +1448,12 @@ src/test/pkg/ConstructorTest.java:14: Error: Value must be ≥ 5 (was 3) [Range]
                 }
             }
             """
-                )
-                .indented(),
-            bytecode(
-                "libs/constraintlayout_compose.jar",
-                kotlin(
-                        """
+          )
+          .indented(),
+        bytecode(
+          "libs/constraintlayout_compose.jar",
+          kotlin(
+              """
               package test.pkg
 
               import androidx.annotation.FloatRange
@@ -1477,15 +1479,15 @@ src/test/pkg/ConstructorTest.java:14: Error: Value must be ≥ 5 (was 3) [Range]
 
               fun ConstraintSet(description: ConstraintSetScope.() -> Unit): ConstraintSet = TODO()
               """
-                    )
-                    .indented(),
-                0xc1e90cdd,
-                """
+            )
+            .indented(),
+          0xc1e90cdd,
+          """
           META-INF/main.kotlin_module:
           H4sIAAAAAAAA/2NgYGBmYGBgBGIOBijgUuHiKEktLtEryE4XEnDOzysuKUrM
           zAtOzi9I9S4RYgsBynmXKDFoMQAA2Cn4Qz4AAAA=
           """,
-                """
+          """
           test/pkg/ConstrainScope.class:
           H4sIAAAAAAAA/3VS3WoTURD+zu5ms9ms6aat/RWtrdY2ajctXggWtbZEAqlC
           KqHQq9NkbU+T7Jack9DL4I3v4QMIgiJ4IaGXPo1PIM7ZxOAP7oEzM9/MfDNn
@@ -1503,7 +1505,7 @@ src/test/pkg/ConstructorTest.java:14: Error: Value must be ≥ 5 (was 3) [Range]
           lsq4WcYyVkjFrTJuY/UITOIO1o6QlchJrEvYElOJMiORkZiQ8CXyEpM/AfrQ
           xmKqAwAA
           """,
-                """
+          """
           test/pkg/ConstrainScopeKt.class:
           H4sIAAAAAAAA/4VTW08TQRT+Zlt6A6QtIqXIRUEpKGwhPllCMFySjQWNRRLD
           03Q71G23u83sbINv/Bb/hEYTJT76o4xnty1yEXiYc5vvfOfMnrO//3z7AeAF
@@ -1521,7 +1523,7 @@ src/test/pkg/ConstructorTest.java:14: Error: Value must be ≥ 5 (was 3) [Range]
           RhLjpJdDTBwrPVSCtE4nznqOhmIoF6k+sEnRHNWbOELEQN7ApIGHmDIwjRkD
           s3h0BObhMeaOEPcw4GHeQ9LDEw9PPSx4KPwFPliVELgEAAA=
           """,
-                """
+          """
           test/pkg/ConstraintSet.class:
           H4sIAAAAAAAA/21OTUvDQBB9s9U2xq9ErcQ/YdrizZMIQqAiGPCS0zZdyzbp
           pnSnxWN/lwfp2R8lThQ8OQNv3rxh3szn1/sHgBv0CZdsPKfLapbeN87zSlvH
@@ -1530,7 +1532,7 @@ src/test/pkg/ConstructorTest.java:14: Error: Value must be ≥ 5 (was 3) [Range]
           3qxXpXmwtSFcPa8d24V5sd5OanPnXMOarWx15QD28BsK5z94hgupQ3Hel+wW
           6GToZQgyHCAUisMMRzguQB4nOC2gPCKP+BucDmzHPAEAAA==
           """,
-                """
+          """
           test/pkg/ConstraintSetScope.class:
           H4sIAAAAAAAA/4VUW08TQRT+Zlu6ZUFoi3KVglKVW9lSES8lJGokqSlorGIM
           D2a6XevQ7S7ZnTb6xm/xF+iTt8QQH/1RxjNLy0VuTXou35z5zpk5Z/bP3x+/
@@ -1551,17 +1553,17 @@ src/test/pkg/ConstructorTest.java:14: Error: Value must be ≥ 5 (was 3) [Range]
           99qV9pG+T3+dtR0ND0J5GwXSa4TeoNQ3txAp4lYR00XMYJZMzBUxj+wWWIAF
           mFvoDmAEyAWIBegJMBWgn+4uRPL/APUI4MjCBQAA
           """,
-            ),
-        )
-        .run()
-        .expectClean()
+        ),
+      )
+      .run()
+      .expectClean()
   }
 
   fun test335003904() {
     lint()
-        .files(
-            java(
-                    """
+      .files(
+        java(
+            """
             package test.pkg;
 
             import androidx.annotation.IntRange;
@@ -1576,18 +1578,18 @@ src/test/pkg/ConstructorTest.java:14: Error: Value must be ≥ 5 (was 3) [Range]
                 }
             }
             """
-                )
-                .indented(),
-            SUPPORT_ANNOTATIONS_JAR,
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
         src/test/pkg/RangeTest.java:11: Error: Value must be ≥ 0 but atLeastMinusOne can be -1 [Range]
               atLeastZero = atLeastMinusOne; // ERROR
                             ~~~~~~~~~~~~~~~
         1 errors, 0 warnings
         """
-        )
+      )
   }
 }

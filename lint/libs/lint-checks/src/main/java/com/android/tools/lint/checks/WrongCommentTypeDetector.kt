@@ -60,11 +60,11 @@ class WrongCommentTypeDetector : Detector(), SourceCodeScanner {
 
     @JvmField
     val ISSUE =
-        Issue.create(
-            id = "WrongCommentType",
-            briefDescription = "Wrong Comment Type",
-            explanation =
-                """
+      Issue.create(
+        id = "WrongCommentType",
+        briefDescription = "Wrong Comment Type",
+        explanation =
+          """
           This check flags any block comments which look like they had been intended to \
           be KDoc or javadoc comments instead.
 
@@ -80,267 +80,268 @@ class WrongCommentTypeDetector : Detector(), SourceCodeScanner {
           ```
           (see https://stackoverflow.com/questions/5172841/non-javadoc-meaning)
           """,
-            category = Category.CORRECTNESS,
-            priority = 9,
-            severity = Severity.WARNING,
-            implementation = IMPLEMENTATION,
-        )
+        category = Category.CORRECTNESS,
+        priority = 9,
+        severity = Severity.WARNING,
+        implementation = IMPLEMENTATION,
+      )
   }
 
   override fun getApplicableUastTypes(): List<Class<out UElement>> = listOf(UMethod::class.java, UClass::class.java, UField::class.java)
 
   override fun createUastHandler(context: JavaContext): UElementHandler =
-      object : UElementHandler() {
-        private val seen = mutableSetOf<PsiElement>()
+    object : UElementHandler() {
+      private val seen = mutableSetOf<PsiElement>()
 
-        private fun findComment(source: PsiElement): PsiElement? {
-          // Find the starting PSI element of the class/method/field to start searching
-          // backwards from (across whitespace) to find the preceding comment.
-          val begin =
-              when (source) {
-                is PsiModifierListOwner -> source.modifierList
-                is KtParameter -> source.modifierList ?: source
-                is KtModifierListOwner -> {
-                  // In some cases, the KDOC comment is not *before* the modifier
-                  // list, but *inside* of it. For example, consider the following two
-                  // source code snippets, which only differ in that the second one has
-                  // an extra space at the beginning
-                  //    " /* @test Test */\nclass Test" =>
-                  //         KtImportList PsiWhiteSpace PsiComment PsiWhiteSpace PsiClass
-                  //                                                                |
-                  //                                                         LeafPsiElement("class") ...
-                  //    "/* @test Test */\nclass Test" =>
-                  //          KtImportList         PsiClass
-                  //                            /      |        \
-                  //                   PsiComment PsiWhiteSpace LeafPsiElement("class") ...
+      private fun findComment(source: PsiElement): PsiElement? {
+        // Find the starting PSI element of the class/method/field to start searching
+        // backwards from (across whitespace) to find the preceding comment.
+        val begin =
+          when (source) {
+            is PsiModifierListOwner -> source.modifierList
+            is KtParameter -> source.modifierList ?: source
+            is KtModifierListOwner -> {
+              // In some cases, the KDOC comment is not *before* the modifier
+              // list, but *inside* of it. For example, consider the following two
+              // source code snippets, which only differ in that the second one has
+              // an extra space at the beginning
+              //    " /* @test Test */\nclass Test" =>
+              //         KtImportList PsiWhiteSpace PsiComment PsiWhiteSpace PsiClass
+              //                                                                |
+              //                                                         LeafPsiElement("class")
+              // ...
+              //    "/* @test Test */\nclass Test" =>
+              //          KtImportList         PsiClass
+              //                            /      |        \
+              //                   PsiComment PsiWhiteSpace LeafPsiElement("class") ...
+              //
+              // Special case this by looking for the comment as the first child; if found
+              // we're done:
+              if (source.firstChild is PsiComment) {
+                return source.firstChild
+              } else source
+            }
+            else -> return null
+          }
+        begin ?: return null
+        var curr = begin.prev()
+        while (curr != null) {
+          when (curr) {
+            is PsiComment -> {
+              return curr
+            }
+            is PsiWhiteSpace -> {
+              curr = curr.prev()
+            }
+            else -> {
+              return null
+            }
+          }
+        }
+        return null
+      }
+
+      private fun isPrivate(element: UElement): Boolean {
+        return when (val source = element.sourcePsi) {
+          is PsiModifierListOwner -> {
+            context.evaluator.isPrivate(source)
+          }
+          is KtModifierListOwner -> {
+            source.modifierList?.hasModifier(KtTokens.PRIVATE_KEYWORD) == true
+          }
+          else -> false
+        }
+      }
+
+      private fun checkComment(element: UElement) {
+        val source = element.sourcePsi ?: return
+        if (!seen.add(source)) {
+          // prevent duplicates for things like properties where a single source element maps to
+          // multiple UAST elements
+          return
+        }
+        if (isPrivate(element)) {
+          return
+        }
+        val comment = findComment(source) ?: return
+        if (comment is PsiDocComment || comment is KDoc) {
+          return
+        }
+
+        val text = comment.text
+        if (!text.startsWith("/*") || text.startsWith("/**")) {
+          return
+        }
+        if (text.contains("(non-Javadoc)")) {
+          return
+        }
+        val tag = getFirstTag(comment, text) ?: return
+        val commentType = if (isKotlin(element.getLanguage())) "KDoc" else "javadoc"
+        val type = (tag as? LeafPsiElement)?.elementType
+        val tagText =
+          if ((type as? KtToken)?.tokenId == 8) {
+            // We can't use type == KDocTokens.KDOC_LPAR yet (until 252)
+            //    PsiElement(KDOC_TEXT)(' [Kotlin]')
+            //    PsiElement(KDOC_LPAR)('(')
+            //    PsiElement(KDOC_TEXT)('https://kotlinlang.org')
+            //    PsiElement(KDOC_RPAR)(')')
+            //
+            // Therefore, previous TEXT's suffix after `[`
+            // followed by `(`, link text, and `)`.
+            buildString {
+              append('[')
+              append(tag.prevSibling.text.substringAfter('['))
+              append('(')
+              append(tag.nextSibling.text)
+              append(')')
+            }
+          } else {
+            tag.text.substringBefore("\n")
+          }
+        val delta = text.indexOf(tagText)
+        val location =
+          if (delta != -1) {
+            context.getRangeLocation(comment, delta, tagText.length)
+          } else {
+            context.getLocation(comment)
+          }
+        context.report(
+          ISSUE,
+          comment,
+          location,
+          "This block comment looks like it was intended to be a $commentType comment",
+          fix().replace().text("/*").with("/**").range(context.getLocation(comment)).autoFix().build(),
+        )
+      }
+
+      private fun getFirstTag(node: PsiElement, comment: String): PsiElement? {
+        if (!comment.contains("@") && !comment.contains("[")) {
+          return null
+        }
+        val content =
+          "/**\n" +
+            comment.removeSurrounding("/*", "*/").split("\n").joinToString("\n") { "* ${it.trim().removePrefix("*").trim()}" } +
+            "*/"
+
+        try {
+          if (isKotlin(node.language)) {
+            val docComment = createKDocFromText(node.project, content)
+
+            for (section in docComment.getAllSections()) {
+              var curr = section.firstChild ?: return null
+              while (true) {
+                val tag = curr
+                if (tag is KDocTag && isValidTagName(tag.name)) {
+                  if (tag.text.contains(".")) {
+                    return null
+                  }
+                  return tag
+                } else if (tag is LeafPsiElement) {
+                  val type = tag.elementType
+                  // /**
+                  // * [Kotl
+                  // * in](https://kotlinlang.org) is made by [JetBrains][1]
+                  // * [1]: https://www.jetbrains.com/
+                  // */
                   //
-                  // Special case this by looking for the comment as the first child; if found
-                  // we're done:
-                  if (source.firstChild is PsiComment) {
-                    return source.firstChild
-                  } else source
+                  // is parsed as:
+                  //
+                  //  KDOC_SECTION
+                  //    PsiElement(KDOC_LEADING_ASTERISK)('*')
+                  //    PsiElement(KDOC_TEXT)(' ')
+                  //    PsiElement(KDOC_MARKDOWN_INLINE_LINK)('[Kotlin](https://kotlinlang.org)')
+                  //    PsiElement(KDOC_TEXT)(' is made by [JetBrains][1]')
+                  //    PsiWhiteSpace('\n ')
+                  //    PsiElement(KDOC_LEADING_ASTERISK)('*')
+                  //    PsiElement(KDOC_TEXT)(' [1]: https://www.jetbrains.com/')
+                  // TODO: once 252 is merged, the following is no-op.
+                  if (type == KDocTokens.MARKDOWN_INLINE_LINK) {
+                    return tag
+                  }
+                  // After https://youtrack.jetbrains.com/issue/KT-74555
+                  //
+                  //  KDOC_SECTION
+                  //    PsiElement(KDOC_LEADING_ASTERISK)('*')
+                  //    PsiElement(KDOC_TEXT)(' [Kotlin]')
+                  //    PsiElement(KDOC_LPAR)('(')
+                  //    PsiElement(KDOC_TEXT)('https://kotlinlang.org')
+                  //    PsiElement(KDOC_RPAR)(')')
+                  //    PsiElement(KDOC_TEXT)(' is made by [JetBrains][1]')
+                  //    PsiWhiteSpace('\n ')
+                  //    PsiElement(KDOC_LEADING_ASTERISK)('*')
+                  //    PsiElement(KDOC_TEXT)(' [1]: https://www.jetbrains.com/')
+                  if ((type as? KtToken)?.tokenId == 8) {
+                    // We can't use type == KDocTokens.KDOC_LPAR yet (until 252)
+                    val prevText = tag.prevSibling.text
+                    val l = prevText.indexOf('[')
+                    val r = prevText.indexOf(']')
+                    if (l != -1 && r != -1 && l < r) {
+                      return tag
+                    }
+                  }
                 }
-                else -> return null
-              }
-          begin ?: return null
-          var curr = begin.prev()
-          while (curr != null) {
-            when (curr) {
-              is PsiComment -> {
-                return curr
-              }
-              is PsiWhiteSpace -> {
-                curr = curr.prev()
-              }
-              else -> {
-                return null
+                curr = curr.nextSibling ?: break
               }
             }
+            return null
+          } else {
+            val factory = JavaPsiFacade.getElementFactory(node.project)
+            val docComment = factory.createDocCommentFromText(content)
+            for (child in docComment.children) {
+              if (child is PsiInlineDocTag) {
+                val name = child.name
+                // TODO: Should we include {@code} too? And what about {@see} ?
+                if (name == "link" || name == "linkplain" || name == "inheritDoc") {
+                  return child
+                }
+              }
+            }
+            // (docComment.tags does not seem to include PsiInlineDocTags, so they're
+            // handled separately above)
+            return docComment.tags.firstOrNull { isValidTagName(it.name) }
+          }
+        } catch (ignore: Throwable) {
+          // Malformed comments
+          if (LintClient.isUnitTest) {
+            throw ignore
           }
           return null
         }
-
-        private fun isPrivate(element: UElement): Boolean {
-          return when (val source = element.sourcePsi) {
-            is PsiModifierListOwner -> {
-              context.evaluator.isPrivate(source)
-            }
-            is KtModifierListOwner -> {
-              source.modifierList?.hasModifier(KtTokens.PRIVATE_KEYWORD) == true
-            }
-            else -> false
-          }
-        }
-
-        private fun checkComment(element: UElement) {
-          val source = element.sourcePsi ?: return
-          if (!seen.add(source)) {
-            // prevent duplicates for things like properties where a single source element maps to
-            // multiple UAST elements
-            return
-          }
-          if (isPrivate(element)) {
-            return
-          }
-          val comment = findComment(source) ?: return
-          if (comment is PsiDocComment || comment is KDoc) {
-            return
-          }
-
-          val text = comment.text
-          if (!text.startsWith("/*") || text.startsWith("/**")) {
-            return
-          }
-          if (text.contains("(non-Javadoc)")) {
-            return
-          }
-          val tag = getFirstTag(comment, text) ?: return
-          val commentType = if (isKotlin(element.getLanguage())) "KDoc" else "javadoc"
-          val type = (tag as? LeafPsiElement)?.elementType
-          val tagText =
-              if ((type as? KtToken)?.tokenId == 8) {
-                // We can't use type == KDocTokens.KDOC_LPAR yet (until 252)
-                //    PsiElement(KDOC_TEXT)(' [Kotlin]')
-                //    PsiElement(KDOC_LPAR)('(')
-                //    PsiElement(KDOC_TEXT)('https://kotlinlang.org')
-                //    PsiElement(KDOC_RPAR)(')')
-                //
-                // Therefore, previous TEXT's suffix after `[`
-                // followed by `(`, link text, and `)`.
-                buildString {
-                  append('[')
-                  append(tag.prevSibling.text.substringAfter('['))
-                  append('(')
-                  append(tag.nextSibling.text)
-                  append(')')
-                }
-              } else {
-                tag.text.substringBefore("\n")
-              }
-          val delta = text.indexOf(tagText)
-          val location =
-              if (delta != -1) {
-                context.getRangeLocation(comment, delta, tagText.length)
-              } else {
-                context.getLocation(comment)
-              }
-          context.report(
-              ISSUE,
-              comment,
-              location,
-              "This block comment looks like it was intended to be a $commentType comment",
-              fix().replace().text("/*").with("/**").range(context.getLocation(comment)).autoFix().build(),
-          )
-        }
-
-        private fun getFirstTag(node: PsiElement, comment: String): PsiElement? {
-          if (!comment.contains("@") && !comment.contains("[")) {
-            return null
-          }
-          val content =
-              "/**\n" +
-                  comment.removeSurrounding("/*", "*/").split("\n").joinToString("\n") { "* ${it.trim().removePrefix("*").trim()}" } +
-                  "*/"
-
-          try {
-            if (isKotlin(node.language)) {
-              val docComment = createKDocFromText(node.project, content)
-
-              for (section in docComment.getAllSections()) {
-                var curr = section.firstChild ?: return null
-                while (true) {
-                  val tag = curr
-                  if (tag is KDocTag && isValidTagName(tag.name)) {
-                    if (tag.text.contains(".")) {
-                      return null
-                    }
-                    return tag
-                  } else if (tag is LeafPsiElement) {
-                    val type = tag.elementType
-                    // /**
-                    // * [Kotl
-                    // * in](https://kotlinlang.org) is made by [JetBrains][1]
-                    // * [1]: https://www.jetbrains.com/
-                    // */
-                    //
-                    // is parsed as:
-                    //
-                    //  KDOC_SECTION
-                    //    PsiElement(KDOC_LEADING_ASTERISK)('*')
-                    //    PsiElement(KDOC_TEXT)(' ')
-                    //    PsiElement(KDOC_MARKDOWN_INLINE_LINK)('[Kotlin](https://kotlinlang.org)')
-                    //    PsiElement(KDOC_TEXT)(' is made by [JetBrains][1]')
-                    //    PsiWhiteSpace('\n ')
-                    //    PsiElement(KDOC_LEADING_ASTERISK)('*')
-                    //    PsiElement(KDOC_TEXT)(' [1]: https://www.jetbrains.com/')
-                    // TODO: once 252 is merged, the following is no-op.
-                    if (type == KDocTokens.MARKDOWN_INLINE_LINK) {
-                      return tag
-                    }
-                    // After https://youtrack.jetbrains.com/issue/KT-74555
-                    //
-                    //  KDOC_SECTION
-                    //    PsiElement(KDOC_LEADING_ASTERISK)('*')
-                    //    PsiElement(KDOC_TEXT)(' [Kotlin]')
-                    //    PsiElement(KDOC_LPAR)('(')
-                    //    PsiElement(KDOC_TEXT)('https://kotlinlang.org')
-                    //    PsiElement(KDOC_RPAR)(')')
-                    //    PsiElement(KDOC_TEXT)(' is made by [JetBrains][1]')
-                    //    PsiWhiteSpace('\n ')
-                    //    PsiElement(KDOC_LEADING_ASTERISK)('*')
-                    //    PsiElement(KDOC_TEXT)(' [1]: https://www.jetbrains.com/')
-                    if ((type as? KtToken)?.tokenId == 8) {
-                      // We can't use type == KDocTokens.KDOC_LPAR yet (until 252)
-                      val prevText = tag.prevSibling.text
-                      val l = prevText.indexOf('[')
-                      val r = prevText.indexOf(']')
-                      if (l != -1 && r != -1 && l < r) {
-                        return tag
-                      }
-                    }
-                  }
-                  curr = curr.nextSibling ?: break
-                }
-              }
-              return null
-            } else {
-              val factory = JavaPsiFacade.getElementFactory(node.project)
-              val docComment = factory.createDocCommentFromText(content)
-              for (child in docComment.children) {
-                if (child is PsiInlineDocTag) {
-                  val name = child.name
-                  // TODO: Should we include {@code} too? And what about {@see} ?
-                  if (name == "link" || name == "linkplain" || name == "inheritDoc") {
-                    return child
-                  }
-                }
-              }
-              // (docComment.tags does not seem to include PsiInlineDocTags, so they're
-              // handled separately above)
-              return docComment.tags.firstOrNull { isValidTagName(it.name) }
-            }
-          } catch (ignore: Throwable) {
-            // Malformed comments
-            if (LintClient.isUnitTest) {
-              throw ignore
-            }
-            return null
-          }
-        }
-
-        private fun isValidTagName(name: String?): Boolean {
-          // Only allow lower cased doc tags -- most tags are, and this
-          // avoids false positives on commented out code that contains
-          // annotations (such as /** @Deprecated */ which would otherwise
-          // look like a doc tag -- thankfully, annotations tend to be
-          // capitalized
-          name ?: return false
-          return name[0].isLowerCase()
-        }
-
-        private fun PsiElement.prev(): PsiElement? {
-          return prevSibling ?: parent?.prev()
-        }
-
-        private tailrec fun UElement.getLanguage(): Language {
-          sourcePsi?.language?.let {
-            return it
-          }
-          return uastParent!!.getLanguage()
-        }
-
-        override fun visitClass(node: UClass) {
-          checkComment(node)
-        }
-
-        override fun visitMethod(node: UMethod) {
-          checkComment(node)
-        }
-
-        override fun visitField(node: UField) {
-          checkComment(node)
-        }
       }
+
+      private fun isValidTagName(name: String?): Boolean {
+        // Only allow lower cased doc tags -- most tags are, and this
+        // avoids false positives on commented out code that contains
+        // annotations (such as /** @Deprecated */ which would otherwise
+        // look like a doc tag -- thankfully, annotations tend to be
+        // capitalized
+        name ?: return false
+        return name[0].isLowerCase()
+      }
+
+      private fun PsiElement.prev(): PsiElement? {
+        return prevSibling ?: parent?.prev()
+      }
+
+      private tailrec fun UElement.getLanguage(): Language {
+        sourcePsi?.language?.let {
+          return it
+        }
+        return uastParent!!.getLanguage()
+      }
+
+      override fun visitClass(node: UClass) {
+        checkComment(node)
+      }
+
+      override fun visitMethod(node: UMethod) {
+        checkComment(node)
+      }
+
+      override fun visitField(node: UField) {
+        checkComment(node)
+      }
+    }
 
   override fun sameMessage(issue: Issue, new: String, old: String): Boolean {
     return true

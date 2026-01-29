@@ -207,7 +207,8 @@ class ResourceShrinkerTest(private val r8OptimizedShrinking: Boolean) {
         "deflated  res/layout/webview.xml",
       ) +
         if (r8OptimizedShrinking) {
-          // R8 team: We don't track reflective usage in optimized shrinking (strict mode implied)
+          // R8 team: We don't track reflective usage in optimized shrinking (strict mode
+          // implied)
           emptyList()
         } else {
           listOf(
@@ -273,7 +274,8 @@ class ResourceShrinkerTest(private val r8OptimizedShrinking: Boolean) {
         "res/g0.xml",
       ) +
         if (r8OptimizedShrinking) {
-          // R8 team: We don't track reflective usage in optimized shrinking (strict mode implied)
+          // R8 team: We don't track reflective usage in optimized shrinking (strict mode
+          // implied)
           emptyList()
         } else {
           listOf(

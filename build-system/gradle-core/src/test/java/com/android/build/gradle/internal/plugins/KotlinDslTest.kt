@@ -351,7 +351,8 @@ class KotlinDslTest {
     val externalNativeBuild: com.android.build.gradle.internal.dsl.ExternalNativeBuild =
       android.externalNativeBuild as com.android.build.gradle.internal.dsl.ExternalNativeBuild
 
-    // Using apply as made the intentionally not source compatible change here: Ib3e58c50c4a5af2ebc11882fc48d75b1e4f410fe
+    // Using apply as made the intentionally not source compatible change here:
+    // Ib3e58c50c4a5af2ebc11882fc48d75b1e4f410fe
     externalNativeBuild.ndkBuild.apply {
       assertThat(path).isNull()
       path = File("path1")
@@ -370,7 +371,8 @@ class KotlinDslTest {
       assertThatPath(buildStagingDirectory).endsWith("buildStagingDirectory3")
     }
 
-    // Using apply as made the intentionally not source compatible change here: Ib3e58c50c4a5af2ebc11882fc48d75b1e4f410fe
+    // Using apply as made the intentionally not source compatible change here:
+    // Ib3e58c50c4a5af2ebc11882fc48d75b1e4f410fe
     externalNativeBuild.cmake.apply {
       assertThat(path).isNull()
       path = File("path1")

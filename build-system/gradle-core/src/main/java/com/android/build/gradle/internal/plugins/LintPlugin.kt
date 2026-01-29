@@ -162,7 +162,8 @@ abstract class LintPlugin : Plugin<Project> {
         it.description = "Generates the lint report for just the fatal issues for project `${project.name}`"
       }
 
-    // Avoid reading the lintOptions DSL and build directory before the build author can customize them
+    // Avoid reading the lintOptions DSL and build directory before the build author can customize
+    // them
     project.afterEvaluate {
       dslOperationsRegistrar.executeDslFinalizationBlocks()
 

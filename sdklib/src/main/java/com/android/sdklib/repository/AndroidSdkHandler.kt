@@ -300,7 +300,8 @@ constructor(
           localLocation,
           getAllModules(),
           sourceProviders,
-          // If we have a local sdk path set, set up the old-style loader so we can parse any legacy
+          // If we have a local sdk path set, set up the old-style loader so we can parse any
+          // legacy
           // packages.
           localLocation?.let { LegacyLocalRepoLoader(it) },
           LegacyRemoteRepoLoader(),

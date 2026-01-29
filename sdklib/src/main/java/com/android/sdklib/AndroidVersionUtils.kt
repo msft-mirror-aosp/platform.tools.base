@@ -117,12 +117,15 @@ fun AndroidVersion.getApiNameAndDetails(
       // recent.
       // In this case, because this method is supposed to display the release name, we will look
       // for alternative options.
-      // It is possible that Studio knows the name if it's currently a preview. This is normally caught
-      // in [getFullReleaseName] but in case of direct call here with [AndroidVersion.featureLevel]
+      // It is possible that Studio knows the name if it's currently a preview. This is normally
+      // caught
+      // in [getFullReleaseName] but in case of direct call here with
+      // [AndroidVersion.featureLevel]
       // it is possible that we are called with a preview API. In this case we will attempt to
       // display the codename. However, we cannot be certain that this is in fact a preview
       // so we will not use that term.
-      // TODO(267390396): add testing for this. It's currently untestable because it relies on static data that cannot be injected.
+      // TODO(267390396): add testing for this. It's currently untestable because it relies on
+      // static data that cannot be injected.
       val relName = SdkVersionInfo.getReleaseVersionString(apiLevel)
       val codeName =
         if (relName == null) {
@@ -244,7 +247,8 @@ fun AndroidVersion.getReleaseNameAndDetails(includeApiLevel: Boolean = false, in
     val knownCodeName = SdkVersionInfo.getCodeName(apiLevel)
 
     if (knownCodeName != null) {
-      // TODO(267390396): add testing for this. It's currently untestable because it relies on static data that cannot be injected.
+      // TODO(267390396): add testing for this. It's currently untestable because it relies on
+      // static data that cannot be injected.
       name.append("Android $knownCodeName")
       if (includeApiLevel) {
         name.append(" (API \"$apiStringWithoutExtension\"")

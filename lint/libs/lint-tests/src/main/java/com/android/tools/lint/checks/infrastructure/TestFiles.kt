@@ -211,11 +211,12 @@ object TestFiles {
       val resources = map[type] ?: continue
       sb.append("    public static final class ").append(type).append(" {\n")
       for (resource in resources) {
-        sb.append("        public static final int ")
-            .append(resource!!.name)
-            .append(" = 0x")
-            .append(Integer.toHexString(id++))
-            .append(";\n")
+        sb
+          .append("        public static final int ")
+          .append(resource!!.name)
+          .append(" = 0x")
+          .append(Integer.toHexString(id++))
+          .append(";\n")
       }
       sb.append("    }\n")
     }
@@ -226,11 +227,11 @@ object TestFiles {
   @JvmStatic
   fun bytes(to: String, bytes: ByteArray): BinaryTestFile {
     val producer: BytecodeProducer =
-        object : BytecodeProducer() {
-          override fun produce(): ByteArray {
-            return bytes
-          }
+      object : BytecodeProducer() {
+        override fun produce(): ByteArray {
+          return bytes
         }
+      }
     return BinaryTestFile(to, producer)
   }
 
@@ -247,12 +248,7 @@ object TestFiles {
   }
 
   @JvmStatic
-  fun toBase64gzipJava(
-      bytes: ByteArray,
-      indent: Int,
-      indentStart: Boolean,
-      includeEmptyPrefix: Boolean,
-  ): String {
+  fun toBase64gzipJava(bytes: ByteArray, indent: Int, indentStart: Boolean, includeEmptyPrefix: Boolean): String {
     val base64 = toBase64gzipString(bytes)
     val indentString = StringBuilder()
     for (i in 0 until indent) {
@@ -275,12 +271,7 @@ object TestFiles {
   }
 
   @JvmStatic
-  fun toBase64gzipKotlin(
-      bytes: ByteArray,
-      indent: Int,
-      indentStart: Boolean,
-      includeQuotes: Boolean,
-  ): String {
+  fun toBase64gzipKotlin(bytes: ByteArray, indent: Int, indentStart: Boolean, includeQuotes: Boolean): String {
     val base64 = toBase64gzipString(bytes).replace('$', '＄')
     val indentString = StringBuilder()
     for (i in 0 until indent) {
@@ -366,12 +357,12 @@ object TestFiles {
     val escaped = encoded.replace('＄', '$')
     val bytes = Base64.getDecoder().decode(escaped)
     return BinaryTestFile(
-        to,
-        object : BytecodeProducer() {
-          override fun produce(): ByteArray {
-            return bytes
-          }
-        },
+      to,
+      object : BytecodeProducer() {
+        override fun produce(): ByteArray {
+          return bytes
+        }
+      },
     )
   }
 
@@ -392,12 +383,12 @@ object TestFiles {
   @JvmStatic
   fun getByteProducerForBase64gzip(encoded: String): ByteProducer {
     val escaped =
-        encoded // Recover any $'s we've converted to ＄ to better handle Kotlin raw strings
-            .replace('＄', '$') // Whitespace is not significant in base64 but isn't handled properly by
-            // the base64 decoder
-            .replace(" ", "")
-            .replace("\n", "")
-            .replace("\t", "")
+      encoded // Recover any $'s we've converted to ＄ to better handle Kotlin raw strings
+        .replace('＄', '$') // Whitespace is not significant in base64 but isn't handled properly by
+        // the base64 decoder
+        .replace(" ", "")
+        .replace("\n", "")
+        .replace("\t", "")
     val gzipBytes = Base64.getDecoder().decode(escaped)
     try {
       val stream = GZIPInputStream(ByteArrayInputStream(gzipBytes))
@@ -409,9 +400,9 @@ object TestFiles {
       }
     } catch (e: ZipException) {
       val message =
-          "The unit test data is not in gzip format. Perhaps this was\n" +
-              "encoded using base64() instead of base64gzip? If so, the base64gzip data\n" +
-              "should have been:\n${toBase64gzip(gzipBytes)}"
+        "The unit test data is not in gzip format. Perhaps this was\n" +
+          "encoded using base64() instead of base64gzip? If so, the base64gzip data\n" +
+          "should have been:\n${toBase64gzip(gzipBytes)}"
       error(message)
     }
   }
@@ -456,18 +447,18 @@ object TestFiles {
     // language=TEXT
     val newline = "\n"
     val source =
-        // language=XML
-        "" +
-            "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
-            "<classpath>\n" +
-            "    <classpathentry kind=\"src\" path=\"src\"/>\n" +
-            "    <classpathentry kind=\"src\" path=\"gen\"/>\n" +
-            "    <classpathentry kind=\"con\" path=\"com.android.ide.eclipse.adt.ANDROID_FRAMEWORK\"/>\n" +
-            "    <classpathentry kind=\"con\" path=\"com.android.ide.eclipse.adt.LIBRARIES\"/>\n" +
-            "    <classpathentry kind=\"output\" path=\"bin/classes\"/>\n" +
-            "    <classpathentry kind=\"output\" path=\"build/intermediates/javac/debug/classes\"/>\n" +
-            extraLibraries.joinToString(newline) { "    <classpathentry kind=\"lib\" path=\"$it\"/>" } +
-            "\n</classpath>"
+      // language=XML
+      "" +
+        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+        "<classpath>\n" +
+        "    <classpathentry kind=\"src\" path=\"src\"/>\n" +
+        "    <classpathentry kind=\"src\" path=\"gen\"/>\n" +
+        "    <classpathentry kind=\"con\" path=\"com.android.ide.eclipse.adt.ANDROID_FRAMEWORK\"/>\n" +
+        "    <classpathentry kind=\"con\" path=\"com.android.ide.eclipse.adt.LIBRARIES\"/>\n" +
+        "    <classpathentry kind=\"output\" path=\"bin/classes\"/>\n" +
+        "    <classpathentry kind=\"output\" path=\"build/intermediates/javac/debug/classes\"/>\n" +
+        extraLibraries.joinToString(newline) { "    <classpathentry kind=\"lib\" path=\"$it\"/>" } +
+        "\n</classpath>"
     return source(".classpath", source)
   }
 
@@ -476,12 +467,8 @@ object TestFiles {
   fun metadataKlib(to: String, vararg files: TestFile): MetadataKlibTestFile = metadataKlib(to, files, null, null)
 
   @JvmStatic
-  fun metadataKlib(
-      to: String,
-      files: Array<out TestFile>,
-      checksum: Long?,
-      encoded: String?,
-  ): MetadataKlibTestFile = MetadataKlibTestFile(to, files, checksum, encoded)
+  fun metadataKlib(to: String, files: Array<out TestFile>, checksum: Long?, encoded: String?): MetadataKlibTestFile =
+    MetadataKlibTestFile(to, files, checksum, encoded)
 
   @Deprecated("") // Use the method with the checksum instead
   @JvmStatic
@@ -511,12 +498,12 @@ object TestFiles {
    */
   @JvmStatic
   fun binaryStub(
-      into: String,
-      /** The test source files to be stubbed */
-      stubSources: List<TestFile>,
-      /** Any library-only (needed for compilation, but not to be packaged) dependencies */
-      compileOnly: List<TestFile> = emptyList(),
-      byteOnly: Boolean = true,
+    into: String,
+    /** The test source files to be stubbed */
+    stubSources: List<TestFile>,
+    /** Any library-only (needed for compilation, but not to be packaged) dependencies */
+    compileOnly: List<TestFile> = emptyList(),
+    byteOnly: Boolean = true,
   ): TestFile {
     val default = if (byteOnly) BytecodeTestFile.Type.BYTECODE_ONLY else BytecodeTestFile.Type.SOURCE_AND_BYTECODE
     val type = getCompileType(default, *stubSources.toTypedArray())
@@ -534,15 +521,15 @@ object TestFiles {
    */
   @JvmStatic
   fun mavenLibrary(
-      artifact: String,
-      /** The test source files to be stubbed */
-      stubSources: List<TestFile>,
-      /** Any library-only (needed for compilation, but not to be packaged) dependencies */
-      compileOnly: List<TestFile> = emptyList(),
-      byteOnly: Boolean = true,
-      // TODO: Preserve artifact name, and then in test infrastructure, make sure
-      // all exploded-aar files are accounted for in the dependency graph!
-      // Maybe even build dependency graph here with a PomBuilder?
+    artifact: String,
+    /** The test source files to be stubbed */
+    stubSources: List<TestFile>,
+    /** Any library-only (needed for compilation, but not to be packaged) dependencies */
+    compileOnly: List<TestFile> = emptyList(),
+    byteOnly: Boolean = true,
+    // TODO: Preserve artifact name, and then in test infrastructure, make sure
+    // all exploded-aar files are accounted for in the dependency graph!
+    // Maybe even build dependency graph here with a PomBuilder?
   ): TestFile {
     val default = if (byteOnly) BytecodeTestFile.Type.BYTECODE_ONLY else BytecodeTestFile.Type.SOURCE_AND_BYTECODE
     val type = getCompileType(default, *stubSources.toTypedArray())
@@ -556,10 +543,10 @@ object TestFiles {
    */
   @JvmStatic
   fun mavenLibrary(
-      artifact: String,
-      /** The test source files to be stubbed */
-      vararg files: TestFile,
-      byteOnly: Boolean = true,
+    artifact: String,
+    /** The test source files to be stubbed */
+    vararg files: TestFile,
+    byteOnly: Boolean = true,
   ): TestFile {
     val default = if (byteOnly) BytecodeTestFile.Type.BYTECODE_ONLY else BytecodeTestFile.Type.SOURCE_AND_BYTECODE
     val type = getCompileType(default, *files)
@@ -592,10 +579,7 @@ object TestFiles {
     return CompiledSourceFile(into, type, source, checksum, encoded)
   }
 
-  private fun getCompileType(
-      default: BytecodeTestFile.Type,
-      vararg sources: TestFile,
-  ): BytecodeTestFile.Type {
+  private fun getCompileType(default: BytecodeTestFile.Type, vararg sources: TestFile): BytecodeTestFile.Type {
     for (source in sources) {
       val targetRelativePath = source.targetRelativePath
       if (targetRelativePath.endsWith(DOT_JAVA) || targetRelativePath.endsWith(DOT_KT)) {
@@ -632,25 +616,25 @@ object TestFiles {
   private fun isLintJar(file: File): Boolean {
     val name = file.name
     return ((name.startsWith("lint-") ||
-        name.startsWith("kotlin-compiler") ||
-        name.startsWith("uast-") ||
-        name.startsWith("intellij-core") ||
-        name.endsWith("uast.jar") || // bazel
-        name.startsWith("android.sdktools.lint") || // IJ ADT
-        name.endsWith(".lint-api-base") || // IJ BASE
-        name.endsWith("lint-api.jar") || // bazel
-        name.endsWith(".lint.checks-base") || // IJ
-        name.endsWith("lint-checks.jar") || // bazel
-        name.endsWith(".lint-model-base") || // IJ
-        name.endsWith("lint-model.jar") || // bazel
-        name.startsWith("lint-model") || // Gradle
-        name.endsWith(".testutils") ||
-        name.endsWith("testutils.jar") ||
-        name.startsWith("testutils-") ||
-        name.endsWith(".lint.tests") ||
-        name.endsWith("lint-tests.jar") ||
-        name == "main" && file.path.contains("lint-tests")) || // Gradle
-        name.endsWith(".lint.cli"))
+      name.startsWith("kotlin-compiler") ||
+      name.startsWith("uast-") ||
+      name.startsWith("intellij-core") ||
+      name.endsWith("uast.jar") || // bazel
+      name.startsWith("android.sdktools.lint") || // IJ ADT
+      name.endsWith(".lint-api-base") || // IJ BASE
+      name.endsWith("lint-api.jar") || // bazel
+      name.endsWith(".lint.checks-base") || // IJ
+      name.endsWith("lint-checks.jar") || // bazel
+      name.endsWith(".lint-model-base") || // IJ
+      name.endsWith("lint-model.jar") || // bazel
+      name.startsWith("lint-model") || // Gradle
+      name.endsWith(".testutils") ||
+      name.endsWith("testutils.jar") ||
+      name.startsWith("testutils-") ||
+      name.endsWith(".lint.tests") ||
+      name.endsWith("lint-tests.jar") ||
+      name == "main" && file.path.contains("lint-tests")) || // Gradle
+      name.endsWith(".lint.cli"))
   }
 
   class LibraryReferenceTestFile(to: String, file: File) : TestFile() {

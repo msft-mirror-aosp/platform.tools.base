@@ -98,77 +98,54 @@ class AppLinksAutoVerifyDetector : Detector(), XmlScanner {
           val packageNames = getPackageNameFromJson(value.mJsonFile)
           if (!packageNames.contains(packageName)) {
             reportError(
-                context,
-                host,
-                context.getLocation(host),
-                String.format(
-                    "This host does not support app links to your app. Checks the Digital Asset Links JSON file: %s",
-                    jsonPath,
-                ),
+              context,
+              host,
+              context.getLocation(host),
+              String.format("This host does not support app links to your app. Checks the Digital Asset Links JSON file: %s", jsonPath),
             )
           }
         }
         STATUS_HTTP_CONNECT_FAIL ->
-            reportWarning(
-                context,
-                host,
-                context.getLocation(host),
-                String.format("Connection to Digital Asset Links JSON file %s fails", jsonPath),
-            )
+          reportWarning(
+            context,
+            host,
+            context.getLocation(host),
+            String.format("Connection to Digital Asset Links JSON file %s fails", jsonPath),
+          )
         STATUS_MALFORMED_URL ->
-            reportError(
-                context,
-                host,
-                context.getLocation(host),
-                String.format(
-                    "Malformed URL of Digital Asset Links JSON file: %s. An unknown protocol is specified",
-                    jsonPath,
-                ),
-            )
+          reportError(
+            context,
+            host,
+            context.getLocation(host),
+            String.format("Malformed URL of Digital Asset Links JSON file: %s. An unknown protocol is specified", jsonPath),
+          )
         STATUS_UNKNOWN_HOST ->
-            reportWarning(
-                context,
-                host,
-                context.getLocation(host),
-                String.format(
-                    "Unknown host: %s. Check if the host exists, and check your network connection",
-                    key,
-                ),
-            )
+          reportWarning(
+            context,
+            host,
+            context.getLocation(host),
+            String.format("Unknown host: %s. Check if the host exists, and check your network connection", key),
+          )
         STATUS_NOT_FOUND ->
-            reportError(
-                context,
-                host,
-                context.getLocation(host),
-                String.format("Digital Asset Links JSON file %s is not found on the host", jsonPath),
-            )
+          reportError(
+            context,
+            host,
+            context.getLocation(host),
+            String.format("Digital Asset Links JSON file %s is not found on the host", jsonPath),
+          )
         STATUS_WRONG_JSON_SYNTAX ->
-            reportError(
-                context,
-                host,
-                context.getLocation(host),
-                String.format("%s has incorrect JSON syntax", jsonPath),
-            )
+          reportError(context, host, context.getLocation(host), String.format("%s has incorrect JSON syntax", jsonPath))
         STATUS_JSON_PARSE_FAIL ->
-            reportError(
-                context,
-                host,
-                context.getLocation(host),
-                String.format("Parsing JSON file %s fails", jsonPath),
-            )
+          reportError(context, host, context.getLocation(host), String.format("Parsing JSON file %s fails", jsonPath))
         HttpURLConnection.HTTP_MOVED_PERM,
         HttpURLConnection.HTTP_MOVED_TEMP -> {}
         else ->
-            reportWarning(
-                context,
-                host,
-                context.getLocation(host),
-                String.format(
-                    "HTTP request for Digital Asset Links JSON file %1\$s fails. HTTP response code: %2\$s",
-                    jsonPath,
-                    value.mStatus,
-                ),
-            )
+          reportWarning(
+            context,
+            host,
+            context.getLocation(host),
+            String.format("HTTP request for Digital Asset Links JSON file %1\$s fails. HTTP response code: %2\$s", jsonPath, value.mStatus),
+          )
       }
     }
   }
@@ -222,9 +199,9 @@ class AppLinksAutoVerifyDetector : Detector(), XmlScanner {
   internal class HttpResult
   @VisibleForTesting
   constructor(
-      /* HTTP response code or others errors related to HTTP connection, JSON file parsing. */
-      val mStatus: Int,
-      val mJsonFile: JsonElement?,
+    /* HTTP response code or others errors related to HTTP connection, JSON file parsing. */
+    val mStatus: Int,
+    val mJsonFile: JsonElement?,
   )
 
   companion object {
@@ -232,18 +209,18 @@ class AppLinksAutoVerifyDetector : Detector(), XmlScanner {
 
     @JvmField
     val ISSUE: Issue =
-        create(
-                "AppLinksAutoVerify",
-                "App Links Auto Verification Failure",
-                "Ensures that app links are correctly set and associated with website.",
-                Category.CORRECTNESS,
-                5,
-                Severity.ERROR,
-                IMPLEMENTATION,
-            )
-            .addMoreInfo("https://g.co/appindexing/applinks")
-            .setAliases(mutableListOf("AppLinksAutoVerifyError", "AppLinksAutoVerifyWarning"))
-            .setEnabledByDefault(false)
+      create(
+          "AppLinksAutoVerify",
+          "App Links Auto Verification Failure",
+          "Ensures that app links are correctly set and associated with website.",
+          Category.CORRECTNESS,
+          5,
+          Severity.ERROR,
+          IMPLEMENTATION,
+        )
+        .addMoreInfo("https://g.co/appindexing/applinks")
+        .setAliases(mutableListOf("AppLinksAutoVerifyError", "AppLinksAutoVerifyWarning"))
+        .setEnabledByDefault(false)
 
     private const val ATTRIBUTE_AUTO_VERIFY = "autoVerify"
     private const val JSON_RELATIVE_PATH = "/.well-known/assetlinks.json"
@@ -359,10 +336,10 @@ class AppLinksAutoVerifyDetector : Detector(), XmlScanner {
       if (variant != null) {
         val placeHolders = variant.manifestPlaceholders
         val name =
-            hostname.substring(
-                SdkConstants.MANIFEST_PLACEHOLDER_PREFIX.length,
-                hostname.length - SdkConstants.MANIFEST_PLACEHOLDER_SUFFIX.length,
-            )
+          hostname.substring(
+            SdkConstants.MANIFEST_PLACEHOLDER_PREFIX.length,
+            hostname.length - SdkConstants.MANIFEST_PLACEHOLDER_SUFFIX.length,
+          )
         return placeHolders[name]
       }
       return null

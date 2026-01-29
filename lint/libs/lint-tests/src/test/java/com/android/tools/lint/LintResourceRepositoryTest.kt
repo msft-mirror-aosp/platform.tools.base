@@ -74,29 +74,29 @@ class LintResourceRepositoryTest {
   @Test
   fun testRepository() {
     checkRepository(
-        xml(
-                "res/values/test.xml",
-                """
+      xml(
+          "res/values/test.xml",
+          """
                     <resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
                         <string name="string1">String 1</string>
                         <string name="string2">String 2</string>
                         <string name="js_dialog_title" msgid="7464775045615023241">"På siden på \"<xliff:g id="TITLE">%s</xliff:g>\" står der:"</string>
                     </resources>
                     """,
-            )
-            .indented(),
-        xml(
-                "res/values-v11/values.xml",
-                """
+        )
+        .indented(),
+      xml(
+          "res/values-v11/values.xml",
+          """
                 <resources>
                     <dimen name="activity_horizontal_margin">16dp</dimen>
                 </resources>
                 """,
-            )
-            .indented(),
-        xml(
-            "res/values/styles.xml",
-            """
+        )
+        .indented(),
+      xml(
+        "res/values/styles.xml",
+        """
                 <resources>
                     <style name="Notification.Header" parent="">
                         <item name="paddingTop">@dimen/notification_header_padding_top</item>
@@ -105,10 +105,10 @@ class LintResourceRepositoryTest {
                     </style>
                 </resources>
                 """,
-        ),
-        xml(
-                "res/values/duplicates.xml",
-                """
+      ),
+      xml(
+          "res/values/duplicates.xml",
+          """
                 <resources>
                     <item type="id" name="name" />
                     <dimen name="activity_horizontal_margin">16dp</dimen>
@@ -153,11 +153,11 @@ class LintResourceRepositoryTest {
                     </plurals>
                 </resources>
                 """,
-            )
-            .indented(),
-        xml(
-                "res/layout/activity_main.xml",
-                """
+        )
+        .indented(),
+      xml(
+          "res/layout/activity_main.xml",
+          """
                 <androidx.constraintlayout.widget.ConstraintLayout
                         xmlns:android="http://schemas.android.com/apk/res/android"
                         xmlns:tools="http://schemas.android.com/tools"
@@ -166,49 +166,49 @@ class LintResourceRepositoryTest {
                         android:layout_height="match_parent"
                         tools:context=".MainActivity"/>
                 """,
-            )
-            .indented(),
-        image("res/drawable/ic_launcher.png", 48, 48).fill(10, 10, 20, 20, -0xff0001),
-        image("res/drawable-xhdpi-v4/ic_launcher2.png", 48, 48).fill(10, 10, 20, 20, -0xff0001),
+        )
+        .indented(),
+      image("res/drawable/ic_launcher.png", 48, 48).fill(10, 10, 20, 20, -0xff0001),
+      image("res/drawable-xhdpi-v4/ic_launcher2.png", 48, 48).fill(10, 10, 20, 20, -0xff0001),
     ) { name, repository, root ->
       val namespace = ResourceNamespace.TODO()
       assertEquals(
-          name,
-          "array, attr, dimen, drawable, id, layout, plurals, string, " + "style, styleable",
-          repository.getResourceTypes(namespace).sorted().joinToString { it.getName() },
+        name,
+        "array, attr, dimen, drawable, id, layout, plurals, string, " + "style, styleable",
+        repository.getResourceTypes(namespace).sorted().joinToString { it.getName() },
       )
 
       assertEquals(
-          name,
-          "js_dialog_title, string1, string2",
-          repository.getResourceNames(namespace, ResourceType.STRING).sorted().joinToString { it },
+        name,
+        "js_dialog_title, string1, string2",
+        repository.getResourceNames(namespace, ResourceType.STRING).sorted().joinToString { it },
       )
 
       assertEquals(
-          "namespace:apk/res-auto\n" +
-              "  @array/typography (value) config=default source=/app/res/values/duplicates.xml;  [\"Ages 1, 3-5\",Age: 5 1/2+]\n" +
-              "  @attr/content (value) config=default source=/app/res/values/duplicates.xml;  []\n" +
-              "  @attr/contentId (value) config=default source=/app/res/values/duplicates.xml;  []\n" +
-              "  @attr/fastScrollOverlayPosition (value) config=default source=/app/res/values/duplicates.xml;  [floating=0,atThumb=1,aboveThumb=2]\n" +
-              "  @attr/windowSoftInputMode (value) config=default source=/app/res/values/duplicates.xml;  [stateUnspecified=0,stateUnchanged=1]\n" +
-              "  @dimen/activity_horizontal_margin (value) config=API 11 source=/app/res/values-v11/values.xml;  16dp\n" +
-              "  @dimen/activity_horizontal_margin (value) config=default source=/app/res/values/duplicates.xml;  16dp\n" +
-              "  @dimen/negative (value) config=default source=/app/res/values/duplicates.xml;  -16dp\n" +
-              "  @dimen/positive (value) config=default source=/app/res/values/duplicates.xml;  16dp\n" +
-              "  @drawable/ic_launcher (file) config=default source=/app/res/drawable/ic_launcher.png;  /app/res/drawable/ic_launcher.png\n" +
-              "  @drawable/ic_launcher2 (file) config=X-High Density,API 4 source=/app/res/drawable-xhdpi-v4/ic_launcher2.png;  X-High Density\n" +
-              "  @id/name (value) config=default source=/app/res/values/duplicates.xml;  \n" +
-              "  @layout/activity_main (file) config=default source=/app/res/layout/activity_main.xml;  /app/res/layout/activity_main.xml\n" +
-              "  @plurals/my_plural (value) config=default source=/app/res/values/duplicates.xml;  [one=@string/hello1,few=@string/hello2,other=@string/hello3]\n" +
-              "  @string/js_dialog_title (value) config=default source=/app/res/values/test.xml;  På siden på \"\${TITLE}\" står der: raw:\"På siden på \\\"<xliff:g id=\"TITLE\">%s</xliff:g>\\\" står der:\"\n"
-                  .dos2unix() +
-              "  @string/string1 (value) config=default source=/app/res/values/test.xml;  String 1\n" +
-              "  @string/string2 (value) config=default source=/app/res/values/test.xml;  String 2\n" +
-              "  @style/MyStyle (value) config=default source=/app/res/values/duplicates.xml;  parent=ResourceReference{namespace=apk/res/android, type=style, name=Theme.Holo.Light.DarkActionBar} [android:layout_margin,android:layout_marginLeft,android:layout_marginTop,android:layout_marginBottom]\n" +
-              "  @style/MyStyle.Another (value) config=default source=/app/res/values/duplicates.xml;  parent=ResourceReference{namespace=apk/res-auto, type=style, name=MyStyle} [android:layout_margin]\n" +
-              "  @style/Notification.Header (value) config=default source=/app/res/values/styles.xml;  parent=null [paddingTop,paddingBottom,gravity]\n" +
-              "  @styleable/ContentFrame (value) config=default source=/app/res/values/duplicates.xml;  {[][][stateUnspecified=0,stateUnchanged=1][floating=0,atThumb=1,aboveThumb=2]}\n",
-          repository.prettyPrint(root).dos2unix(),
+        "namespace:apk/res-auto\n" +
+          "  @array/typography (value) config=default source=/app/res/values/duplicates.xml;  [\"Ages 1, 3-5\",Age: 5 1/2+]\n" +
+          "  @attr/content (value) config=default source=/app/res/values/duplicates.xml;  []\n" +
+          "  @attr/contentId (value) config=default source=/app/res/values/duplicates.xml;  []\n" +
+          "  @attr/fastScrollOverlayPosition (value) config=default source=/app/res/values/duplicates.xml;  [floating=0,atThumb=1,aboveThumb=2]\n" +
+          "  @attr/windowSoftInputMode (value) config=default source=/app/res/values/duplicates.xml;  [stateUnspecified=0,stateUnchanged=1]\n" +
+          "  @dimen/activity_horizontal_margin (value) config=API 11 source=/app/res/values-v11/values.xml;  16dp\n" +
+          "  @dimen/activity_horizontal_margin (value) config=default source=/app/res/values/duplicates.xml;  16dp\n" +
+          "  @dimen/negative (value) config=default source=/app/res/values/duplicates.xml;  -16dp\n" +
+          "  @dimen/positive (value) config=default source=/app/res/values/duplicates.xml;  16dp\n" +
+          "  @drawable/ic_launcher (file) config=default source=/app/res/drawable/ic_launcher.png;  /app/res/drawable/ic_launcher.png\n" +
+          "  @drawable/ic_launcher2 (file) config=X-High Density,API 4 source=/app/res/drawable-xhdpi-v4/ic_launcher2.png;  X-High Density\n" +
+          "  @id/name (value) config=default source=/app/res/values/duplicates.xml;  \n" +
+          "  @layout/activity_main (file) config=default source=/app/res/layout/activity_main.xml;  /app/res/layout/activity_main.xml\n" +
+          "  @plurals/my_plural (value) config=default source=/app/res/values/duplicates.xml;  [one=@string/hello1,few=@string/hello2,other=@string/hello3]\n" +
+          "  @string/js_dialog_title (value) config=default source=/app/res/values/test.xml;  På siden på \"\${TITLE}\" står der: raw:\"På siden på \\\"<xliff:g id=\"TITLE\">%s</xliff:g>\\\" står der:\"\n"
+            .dos2unix() +
+          "  @string/string1 (value) config=default source=/app/res/values/test.xml;  String 1\n" +
+          "  @string/string2 (value) config=default source=/app/res/values/test.xml;  String 2\n" +
+          "  @style/MyStyle (value) config=default source=/app/res/values/duplicates.xml;  parent=ResourceReference{namespace=apk/res/android, type=style, name=Theme.Holo.Light.DarkActionBar} [android:layout_margin,android:layout_marginLeft,android:layout_marginTop,android:layout_marginBottom]\n" +
+          "  @style/MyStyle.Another (value) config=default source=/app/res/values/duplicates.xml;  parent=ResourceReference{namespace=apk/res-auto, type=style, name=MyStyle} [android:layout_margin]\n" +
+          "  @style/Notification.Header (value) config=default source=/app/res/values/styles.xml;  parent=null [paddingTop,paddingBottom,gravity]\n" +
+          "  @styleable/ContentFrame (value) config=default source=/app/res/values/duplicates.xml;  {[][][stateUnspecified=0,stateUnchanged=1][floating=0,atThumb=1,aboveThumb=2]}\n",
+        repository.prettyPrint(root).dos2unix(),
       )
 
       fun indexInEscaped(s: String, char: Char, from: Int = 0): Int {
@@ -249,23 +249,23 @@ class LintResourceRepositoryTest {
         // See [LintResourcePersistenceTest]; including it here since it's a more
         // complex set of resources.
         val expected =
-            "http://schemas.android.com/apk/res-auto;;${"$"}ROOT/app/res/values/duplicates.xml\n" +
-                "${"$"}ROOT/app/res/values-v11/values.xml\n" +
-                "${"$"}ROOT/app/res/drawable-xhdpi-v4/ic_launcher2.png\n" +
-                "${"$"}ROOT/app/res/drawable/ic_launcher.png\n" +
-                "${"$"}ROOT/app/res/layout/activity_main.xml\n" +
-                "${"$"}ROOT/app/res/values/test.xml\n" +
-                "${"$"}ROOT/app/res/values/styles.xml\n" +
-                "+array:typography,0,V40011027d,13001402f7,;\\\"Ages 1\\, 3-5\\\",Age\\: 5 1/2\\+,;\n" +
-                "+attr:content,0,V80017033f,3200170369,;reference:;contentId,0,V800180372,340018039e,;reference:;fastScrollOverlayPosition,0,V8001f04b0,f00230575,;enum:floating:0,atThumb:1,aboveThumb:2,;windowSoftInputMode,0,V8001903a7,f001e04a7,;flags:stateUnspecified:0,stateUnchanged:1,;\n" +
-                "+dimen:activity_horizontal_margin,0,V400020033,3900020068,;\"16dp\";activity_horizontal_margin,1,V400010010,3900010045,;\"16dp\";negative,0,V400040095,28000400b9,;\"-16dp\";positive,0,V40003006d,2700030090,;\"16dp\";\n" +
-                "+drawable:ic_launcher,3,F;ic_launcher2,2,F;\n" +
-                "+id:name,0,V400010010,220001002e,;\"\";\n" +
-                "+layout:activity_main,4,F;\n" +
-                "+plurals:my_plural,0,V400250593,e00290657,;one:@string/hello1,few:@string/hello2,other:@string/hello3,;\n" +
-                "+string:js_dialog_title,5,V40003009e,840003011e,;\"På siden på \\\"\${TITLE}\\\" står der\\:\"\\\"På siden på \\\\\\\"<xliff\\:g id=\\\"TITLE\\\">%s</xliff\\:g>\\\\\\\" står der\\:\\\";string1,5,V400010044,2c0001006c,;\"String 1\";string2,5,V400020071,2c00020099,;\"String 2\";\n" +
-                "+style:MyStyle,0,V4000600bf,c000b0210,;Dandroid\\:Theme.Holo.Light.DarkActionBar,android\\:layout_margin:5dp,android\\:layout_marginLeft:@dimen/positive,android\\:layout_marginTop:@dimen/negative,android\\:layout_marginBottom:-5dp,;MyStyle.Another,0,V4000d0216,c000f0277,;Nandroid\\:layout_margin:5dp,;Notification.Header,6,V1400020031,1c00060174,;EpaddingTop:@dimen/notification_header_padding_top,paddingBottom:@dimen/notification_header_padding_bottom,gravity:top,;\n" +
-                "+styleable:ContentFrame,0,V40016030f,180024058e,;-content:reference:-contentId:reference:-windowSoftInputMode:flags:stateUnspecified:0,stateUnchanged:1,-fastScrollOverlayPosition:enum:floating:0,atThumb:1,aboveThumb:2,;\n"
+          "http://schemas.android.com/apk/res-auto;;${"$"}ROOT/app/res/values/duplicates.xml\n" +
+            "${"$"}ROOT/app/res/values-v11/values.xml\n" +
+            "${"$"}ROOT/app/res/drawable-xhdpi-v4/ic_launcher2.png\n" +
+            "${"$"}ROOT/app/res/drawable/ic_launcher.png\n" +
+            "${"$"}ROOT/app/res/layout/activity_main.xml\n" +
+            "${"$"}ROOT/app/res/values/test.xml\n" +
+            "${"$"}ROOT/app/res/values/styles.xml\n" +
+            "+array:typography,0,V40011027d,13001402f7,;\\\"Ages 1\\, 3-5\\\",Age\\: 5 1/2\\+,;\n" +
+            "+attr:content,0,V80017033f,3200170369,;reference:;contentId,0,V800180372,340018039e,;reference:;fastScrollOverlayPosition,0,V8001f04b0,f00230575,;enum:floating:0,atThumb:1,aboveThumb:2,;windowSoftInputMode,0,V8001903a7,f001e04a7,;flags:stateUnspecified:0,stateUnchanged:1,;\n" +
+            "+dimen:activity_horizontal_margin,0,V400020033,3900020068,;\"16dp\";activity_horizontal_margin,1,V400010010,3900010045,;\"16dp\";negative,0,V400040095,28000400b9,;\"-16dp\";positive,0,V40003006d,2700030090,;\"16dp\";\n" +
+            "+drawable:ic_launcher,3,F;ic_launcher2,2,F;\n" +
+            "+id:name,0,V400010010,220001002e,;\"\";\n" +
+            "+layout:activity_main,4,F;\n" +
+            "+plurals:my_plural,0,V400250593,e00290657,;one:@string/hello1,few:@string/hello2,other:@string/hello3,;\n" +
+            "+string:js_dialog_title,5,V40003009e,840003011e,;\"På siden på \\\"\${TITLE}\\\" står der\\:\"\\\"På siden på \\\\\\\"<xliff\\:g id=\\\"TITLE\\\">%s</xliff\\:g>\\\\\\\" står der\\:\\\";string1,5,V400010044,2c0001006c,;\"String 1\";string2,5,V400020071,2c00020099,;\"String 2\";\n" +
+            "+style:MyStyle,0,V4000600bf,c000b0210,;Dandroid\\:Theme.Holo.Light.DarkActionBar,android\\:layout_margin:5dp,android\\:layout_marginLeft:@dimen/positive,android\\:layout_marginTop:@dimen/negative,android\\:layout_marginBottom:-5dp,;MyStyle.Another,0,V4000d0216,c000f0277,;Nandroid\\:layout_margin:5dp,;Notification.Header,6,V1400020031,1c00060174,;EpaddingTop:@dimen/notification_header_padding_top,paddingBottom:@dimen/notification_header_padding_bottom,gravity:top,;\n" +
+            "+styleable:ContentFrame,0,V40016030f,180024058e,;-content:reference:-contentId:reference:-windowSoftInputMode:flags:stateUnspecified:0,stateUnchanged:1,-fastScrollOverlayPosition:enum:floating:0,atThumb:1,aboveThumb:2,;\n"
         val actual = serialize(repository)
         assertEquals(expected, format(actual))
         val reserialized = serialize(deserialize(actual) as LintResourceRepository)
@@ -318,10 +318,7 @@ class LintResourceRepositoryTest {
       pluralDescription.append(value)
       pluralDescription.append("\n")
     }
-    assertEquals(
-        "" + "one:@string/hello1\n" + "few:@string/hello2\n" + "other:@string/hello3\n",
-        pluralDescription.toString(),
-    )
+    assertEquals("" + "one:@string/hello1\n" + "few:@string/hello2\n" + "other:@string/hello3\n", pluralDescription.toString())
 
     // Lookup by quantity name
     assertEquals("@string/hello2", pluralValue.getValue("few"))
@@ -341,8 +338,8 @@ class LintResourceRepositoryTest {
       styleDescription.append("\n")
     }
     assertEquals(
-        "" + "android:layout_margin\n" + "android:layout_marginLeft\n" + "android:layout_marginTop\n" + "android:layout_marginBottom\n",
-        styleDescription.toString(),
+      "" + "android:layout_margin\n" + "android:layout_marginLeft\n" + "android:layout_marginTop\n" + "android:layout_marginBottom\n",
+      styleDescription.toString(),
     )
   }
 
@@ -382,10 +379,7 @@ class LintResourceRepositoryTest {
     for ((k, v) in value2.attributeValues.toSortedMap()) {
       desc2.append("  $k:$v\n")
     }
-    assertEquals(
-        "" + "windowSoftInputMode:[FLAGS]\n" + "  stateUnchanged:1\n" + "  stateUnspecified:0\n",
-        desc2.toString(),
-    )
+    assertEquals("" + "windowSoftInputMode:[FLAGS]\n" + "  stateUnchanged:1\n" + "  stateUnspecified:0\n", desc2.toString())
   }
 
   private fun checkStyleable(repository: ResourceRepository, namespace: ResourceNamespace) {
@@ -396,24 +390,20 @@ class LintResourceRepositoryTest {
     val styleValue = attr.resourceValue as StyleableResourceValue
     val styleDescription = StringBuilder()
     styleValue.allAttributes
-        .sortedBy { it.name }
-        .forEach { a -> styleDescription.append("${a.name}:${a.value}:${a.formats.toSortedSet()}:${a.attributeValues.toSortedMap()}\n") }
+      .sortedBy { it.name }
+      .forEach { a -> styleDescription.append("${a.name}:${a.value}:${a.formats.toSortedSet()}:${a.attributeValues.toSortedMap()}\n") }
 
     assertEquals(
-        "" +
-            "content:null:[REFERENCE]:{}\n" +
-            "contentId:null:[REFERENCE]:{}\n" +
-            "fastScrollOverlayPosition:null:[ENUM]:{aboveThumb=2, atThumb=1, floating=0}\n" +
-            "windowSoftInputMode:null:[FLAGS]:{stateUnchanged=1, stateUnspecified=0}\n",
-        styleDescription.toString(),
+      "" +
+        "content:null:[REFERENCE]:{}\n" +
+        "contentId:null:[REFERENCE]:{}\n" +
+        "fastScrollOverlayPosition:null:[ENUM]:{aboveThumb=2, atThumb=1, floating=0}\n" +
+        "windowSoftInputMode:null:[FLAGS]:{stateUnchanged=1, stateUnspecified=0}\n",
+      styleDescription.toString(),
     )
   }
 
-  private fun checkDensity(
-      repository: ResourceRepository,
-      namespace: ResourceNamespace,
-      root: File,
-  ) {
+  private fun checkDensity(repository: ResourceRepository, namespace: ResourceNamespace, root: File) {
     val drawables = repository.getResources(namespace, ResourceType.DRAWABLE, "ic_launcher2")
     assertEquals(1, drawables.size)
     // String: copying since just substrings from total string
@@ -422,8 +412,8 @@ class LintResourceRepositoryTest {
     val description = StringBuilder()
     description.append("${drawable.type.displayName}/${drawable.name}: ${densityValue.resourceDensity}: ${densityValue.value}")
     assertEquals(
-        "Drawable/ic_launcher2: X-High Density: /app/res/drawable-xhdpi-v4/ic_launcher2.png",
-        description.toString().replace(root.path, "").dos2unix(),
+      "Drawable/ic_launcher2: X-High Density: /app/res/drawable-xhdpi-v4/ic_launcher2.png",
+      description.toString().replace(root.path, "").dos2unix(),
     )
 
     // For file based resources the value is the path; make sure we
@@ -442,9 +432,9 @@ class LintResourceRepositoryTest {
   }
 
   private fun checkRepository(
-      vararg files: TestFile,
-      includeAgpRepository: Boolean = true,
-      assertions: (String, ResourceRepository, File) -> Unit,
+    vararg files: TestFile,
+    includeAgpRepository: Boolean = true,
+    assertions: (String, ResourceRepository, File) -> Unit,
   ) {
     val root = temporaryFolder.root
     val desc = ProjectDescription(*files).name("app")
@@ -453,30 +443,17 @@ class LintResourceRepositoryTest {
 
     val client = LintCliClient(LintClient.CLIENT_UNIT_TESTS)
     val standardRepo =
-        if (includeAgpRepository)
-            TestLintClient.getResources(
-                ResourceNamespace.RES_AUTO,
-                null,
-                listOf(Pair("app", listOf(res))),
-                true,
-            )
-        else null
+      if (includeAgpRepository) TestLintClient.getResources(ResourceNamespace.RES_AUTO, null, listOf(Pair("app", listOf(res))), true)
+      else null
 
-    val lintRepo =
-        LintResourceRepository.createFromFolder(
-            client,
-            sequenceOf(res),
-            null,
-            null,
-            ResourceNamespace.TODO(),
-        )
+    val lintRepo = LintResourceRepository.createFromFolder(client, sequenceOf(res), null, null, ResourceNamespace.TODO())
 
     for (pair in
-        sequenceOf(
-            if (standardRepo != null) Pair("Backed by XML (using AGP resource repositories)", standardRepo) else null,
-            Pair("Backed by serialization", deserialize(serialize(lintRepo))),
-            Pair("Backed by XML (using lint's folder processor)", lintRepo),
-        )) {
+      sequenceOf(
+        if (standardRepo != null) Pair("Backed by XML (using AGP resource repositories)", standardRepo) else null,
+        Pair("Backed by serialization", deserialize(serialize(lintRepo))),
+        Pair("Backed by XML (using lint's folder processor)", lintRepo),
+      )) {
       pair ?: continue
       assertions(pair.first, pair.second, root)
     }
@@ -500,30 +477,30 @@ class LintResourceRepositoryTest {
   @Test
   fun testEmptyAndHiddenFiles() {
     checkRepository(
-        xml(
-                "res/values/test.xml",
-                """
+      xml(
+          "res/values/test.xml",
+          """
                     <resources>
                         <string name="string1">String 1</string>
                     </resources>
                     """,
-            )
-            .indented(),
-        xml(
-                "res/values/.ignore.xml",
-                """
+        )
+        .indented(),
+      xml(
+          "res/values/.ignore.xml",
+          """
                     <resources>
                         <string name="ignore">Ignore</string>
                     </resources>
                     """,
-            )
-            .indented(),
-        xml("res/values/empty.xml", ""),
-        includeAgpRepository = false,
+        )
+        .indented(),
+      xml("res/values/empty.xml", ""),
+      includeAgpRepository = false,
     ) { _, repository, root ->
       assertEquals(
-          "namespace:apk/res-auto\n" + "  @string/string1 (value) config=default source=/app/res/values/test.xml;  String 1\n",
-          repository.prettyPrint(root).dos2unix(),
+        "namespace:apk/res-auto\n" + "  @string/string1 (value) config=default source=/app/res/values/test.xml;  String 1\n",
+        repository.prettyPrint(root).dos2unix(),
       )
     }
   }
@@ -531,20 +508,20 @@ class LintResourceRepositoryTest {
   @Test
   fun testLocation() {
     checkRepository(
-        xml(
-                "res/values/test.xml",
-                """
+      xml(
+          "res/values/test.xml",
+          """
         <resources>
             <!-- PREFIX --><string name="string1">String 1</string><!-- SUFFIX -->
         </resources>
         """,
-            )
-            .indented(),
-        includeAgpRepository = false,
+        )
+        .indented(),
+      includeAgpRepository = false,
     ) { _, repository, root ->
       assertEquals(
-          "namespace:apk/res-auto\n" + "  @string/string1 (value) config=default source=/app/res/values/test.xml;  String 1\n",
-          repository.prettyPrint(root).dos2unix(),
+        "namespace:apk/res-auto\n" + "  @string/string1 (value) config=default source=/app/res/values/test.xml;  String 1\n",
+        repository.prettyPrint(root).dos2unix(),
       )
 
       if (repository is LintResourceRepository) {
@@ -556,12 +533,12 @@ class LintResourceRepositoryTest {
         location!!
         val codeWithLocation = location.getErrorLines(textProvider = { client.getSourceText(it) })!!
         assertEquals(
-            """
-            <!-- PREFIX --><string name="string1">String 1</string><!-- SUFFIX -->
-                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            """
-                .trimIndent(),
-            codeWithLocation.trimIndent(),
+          """
+          <!-- PREFIX --><string name="string1">String 1</string><!-- SUFFIX -->
+                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+          """
+            .trimIndent(),
+          codeWithLocation.trimIndent(),
         )
       }
     }
@@ -570,28 +547,28 @@ class LintResourceRepositoryTest {
   @Test
   fun testIgnore() {
     checkRepository(
-        xml(
-                "res/values/test.xml",
-                """
+      xml(
+          "res/values/test.xml",
+          """
         <resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="SdCardPath, DuplicateResources">
             <string name="string1" tools:ignore="DuplicateString">String 1</string>
             <string name="string2">String 2</string>
         </resources>
         """,
-            )
-            .indented(),
-        includeAgpRepository = false,
+        )
+        .indented(),
+      includeAgpRepository = false,
     ) { _, repository, root ->
       assertEquals(
-          """
-          namespace:apk/res-auto
-            @string/string1 (value) config=default source=/app/res/values/test.xml;  String 1
-              (ignores: SdCardPath,DuplicateResources,DuplicateString)
-            @string/string2 (value) config=default source=/app/res/values/test.xml;  String 2
-              (ignores: SdCardPath,DuplicateResources)
-          """
-              .trimIndent(),
-          repository.prettyPrint(root).dos2unix().trim(),
+        """
+        namespace:apk/res-auto
+          @string/string1 (value) config=default source=/app/res/values/test.xml;  String 1
+            (ignores: SdCardPath,DuplicateResources,DuplicateString)
+          @string/string2 (value) config=default source=/app/res/values/test.xml;  String 2
+            (ignores: SdCardPath,DuplicateResources)
+        """
+          .trimIndent(),
+        repository.prettyPrint(root).dos2unix().trim(),
       )
     }
   }
@@ -599,10 +576,10 @@ class LintResourceRepositoryTest {
   @Test
   fun testCheckRecovery() {
     lint()
-        .sdkHome(TestUtils.getSdk().toFile())
-        .files(
-            manifest(
-                    """
+      .sdkHome(TestUtils.getSdk().toFile())
+      .files(
+        manifest(
+            """
                 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                     package="test.pkg">
                     <uses-sdk android:minSdkVersion="14" />
@@ -614,88 +591,88 @@ class LintResourceRepositoryTest {
                     </application>
                 </manifest>
                 """
-                )
-                .indented(),
-            xml(
-                    "res/values/values.xml",
-                    """
+          )
+          .indented(),
+        xml(
+            "res/values/values.xml",
+            """
                 <resources>
                     <string name="location_process">Location Process</string>
                 </resources>
                 """,
-                )
-                .indented(),
-            xml(
-                    "res/values/bools.xml",
-                    """
+          )
+          .indented(),
+        xml(
+            "res/values/bools.xml",
+            """
                 <resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
                     <bool name="enable_wearable_location_service">true</bool>
                 </resources>
                 """,
-                )
-                .indented(),
-            xml(
-                    "res/values-en-rUS/values.xml",
-                    """
+          )
+          .indented(),
+        xml(
+            "res/values-en-rUS/values.xml",
+            """
                 <resources>
                     <string name="location_process">Location Process (English)</string>
                 </resources>
                 """,
-                )
-                .indented(),
-            xml(
-                    "res/values-watch/bools.xml",
-                    """
+          )
+          .indented(),
+        xml(
+            "res/values-watch/bools.xml",
+            """
                 <resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
                     <bool name="enable_wearable_location_service">false</bool>
                 </resources>
                 """,
-                )
-                .indented(),
-            xml(
-                    "res/xml/backup.xml",
-                    """
+          )
+          .indented(),
+        xml(
+            "res/xml/backup.xml",
+            """
                 <full-backup-content>
                      <include domain="file" path="dd"/>
                      <exclude domain="file" path="dd/fo3o.txt"/>
                      <exclude domain="file" path="dd/ss/foo.txt"/>
                 </full-backup-content>
                 """,
-                )
-                .indented(),
-            xml(
-                    "res/xml-mcc/backup.xml",
-                    """
+          )
+          .indented(),
+        xml(
+            "res/xml-mcc/backup.xml",
+            """
                 <full-backup-content>
                      <include domain="file" path="mcc"/>
                 </full-backup-content>
                 """,
-                )
-                .indented(),
-            kotlin(
-                    """
+          )
+          .indented(),
+        kotlin(
+            """
                 fun test() = TODO()
                 """
-                )
-                .indented(),
-        )
-        .issues(RepositoryRecoveryDetector.ISSUE)
-        .allowAbsolutePathsInMessages(true)
-        // This behavior does not apply to the AGP resource repository so would fail
-        // TestMode.RESOURCE_REPOSITORIES
-        .testModes(TestMode.PARTIAL)
-        .run()
-        .expectMatches(
-            Pattern.quote(
-                "build/lint-resources.xml: Warning: Failed to deserialize cached resource repository.\n" +
-                    "This is an internal lint error which typically means that lint is being passed a\n" +
-                    "serialized file that was created with an older version of lint or with a different\n" +
-                    "set of path variable names. Attempting to gracefully recover.\n" +
-                    "The serialized content was:\n" +
-                    "mangled2\n" +
-                    "Stack: java.lang.StringIndexOutOfBoundsException: Index 8 out of bounds for length"
-            ) + ".*\\) \\[LintWarning]\n" + "0 errors, 1 warning"
-        )
+          )
+          .indented(),
+      )
+      .issues(RepositoryRecoveryDetector.ISSUE)
+      .allowAbsolutePathsInMessages(true)
+      // This behavior does not apply to the AGP resource repository so would fail
+      // TestMode.RESOURCE_REPOSITORIES
+      .testModes(TestMode.PARTIAL)
+      .run()
+      .expectMatches(
+        Pattern.quote(
+          "build/lint-resources.xml: Warning: Failed to deserialize cached resource repository.\n" +
+            "This is an internal lint error which typically means that lint is being passed a\n" +
+            "serialized file that was created with an older version of lint or with a different\n" +
+            "set of path variable names. Attempting to gracefully recover.\n" +
+            "The serialized content was:\n" +
+            "mangled2\n" +
+            "Stack: java.lang.StringIndexOutOfBoundsException: Index 8 out of bounds for length"
+        ) + ".*\\) \\[LintWarning]\n" + "0 errors, 1 warning"
+      )
   }
 
   /** Detector used by [testCheckRecovery] */
@@ -730,18 +707,18 @@ class LintResourceRepositoryTest {
       // While we are here, check that the resource repository contents is correct.
       val resources = repository.prettyPrint(project.dir)
       assertEquals(
-          """
-          namespace:apk/res-auto
-            @bool/enable_wearable_location_service (value) config=Watch,API 20 source=/res/values-watch/bools.xml;  false
-            @bool/enable_wearable_location_service (value) config=default source=/res/values/bools.xml;  true
-            @string/location_process (value) config=default source=/res/values/values.xml;  Location Process
-            @string/location_process (value) config=en,US source=/res/values-en-rUS/values.xml;  Location Process (English)
-            @xml/backup (file) config=default source=/res/xml/backup.xml;  /res/xml/backup.xml
-            @xml/backup (file) config=mcc source=/res/xml-mcc/backup.xml;  /res/xml-mcc/backup.xml
+        """
+        namespace:apk/res-auto
+          @bool/enable_wearable_location_service (value) config=Watch,API 20 source=/res/values-watch/bools.xml;  false
+          @bool/enable_wearable_location_service (value) config=default source=/res/values/bools.xml;  true
+          @string/location_process (value) config=default source=/res/values/values.xml;  Location Process
+          @string/location_process (value) config=en,US source=/res/values-en-rUS/values.xml;  Location Process (English)
+          @xml/backup (file) config=default source=/res/xml/backup.xml;  /res/xml/backup.xml
+          @xml/backup (file) config=mcc source=/res/xml-mcc/backup.xml;  /res/xml-mcc/backup.xml
 
-          """
-              .trimIndent(),
-          resources.dos2unix(),
+        """
+          .trimIndent(),
+        resources.dos2unix(),
       )
     }
 
@@ -766,33 +743,33 @@ class LintResourceRepositoryTest {
       val repository: ResourceRepository = client.getResources(project, ResourceRepositoryScope.PROJECT_ONLY)
       val resources = repository.prettyPrint(project.dir)
       assertEquals(
-          """
-          namespace:apk/res-auto
-            @bool/enable_wearable_location_service (value) config=Watch,API 20 source=/res/values-watch/bools.xml;  false
-            @bool/enable_wearable_location_service (value) config=default source=/res/values/bools.xml;  true
-            @string/location_process (value) config=default source=/res/values/values.xml;  Location Process
-            @string/location_process (value) config=en,US source=/res/values-en-rUS/values.xml;  Location Process (English)
-            @xml/backup (file) config=default source=/res/xml/backup.xml;  /res/xml/backup.xml
-            @xml/backup (file) config=mcc source=/res/xml-mcc/backup.xml;  /res/xml-mcc/backup.xml
+        """
+        namespace:apk/res-auto
+          @bool/enable_wearable_location_service (value) config=Watch,API 20 source=/res/values-watch/bools.xml;  false
+          @bool/enable_wearable_location_service (value) config=default source=/res/values/bools.xml;  true
+          @string/location_process (value) config=default source=/res/values/values.xml;  Location Process
+          @string/location_process (value) config=en,US source=/res/values-en-rUS/values.xml;  Location Process (English)
+          @xml/backup (file) config=default source=/res/xml/backup.xml;  /res/xml/backup.xml
+          @xml/backup (file) config=mcc source=/res/xml-mcc/backup.xml;  /res/xml-mcc/backup.xml
 
-          """
-              .trimIndent(),
-          resources.dos2unix(),
+        """
+          .trimIndent(),
+        resources.dos2unix(),
       )
     }
 
     companion object {
       @JvmField
       val ISSUE =
-          Issue.create(
-              id = "_ResourceRepositoryRecovery",
-              briefDescription = "Lint check for testing out resource recovery",
-              explanation = "Tests mangling the resource repository and making sure it's manually created",
-              category = Category.TESTING,
-              priority = 10,
-              severity = Severity.WARNING,
-              implementation = Implementation(RepositoryRecoveryDetector::class.java, EnumSet.of(Scope.JAVA_FILE)),
-          )
+        Issue.create(
+          id = "_ResourceRepositoryRecovery",
+          briefDescription = "Lint check for testing out resource recovery",
+          explanation = "Tests mangling the resource repository and making sure it's manually created",
+          category = Category.TESTING,
+          priority = 10,
+          severity = Severity.WARNING,
+          implementation = Implementation(RepositoryRecoveryDetector::class.java, EnumSet.of(Scope.JAVA_FILE)),
+        )
     }
   }
 }

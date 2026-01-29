@@ -57,7 +57,8 @@ abstract class JdkImageTransform : TransformAction<JdkImageTransform.Parameters>
 
   override fun transform(outputs: TransformOutputs) {
     val outputDir = outputs.dir("output")
-    // This is a temporary directory containing intermediate outputs, which must be cleaned up after the transform.
+    // This is a temporary directory containing intermediate outputs, which must be cleaned up after
+    // the transform.
     val tempDir = outputDir.resolve("temp")
     val jdkImageDir = outputDir.resolve(JDK_IMAGE_OUTPUT_DIR)
 

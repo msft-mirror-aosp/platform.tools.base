@@ -84,10 +84,10 @@ internal class Module<FX : Any>(val classes: Map<ClassId, ClassBody<FX>>) {
   operator fun get(impl: Type.MethodRef): MethodBody<FX>? {
     val methodRef = impl.method
     fun lookUp(cl: ClassId): MethodBody<FX>? =
-        when (val classImpl = classes[cl]) {
-          null -> null
-          else -> classImpl.methods[methodRef] ?: classImpl.supers.firstNotNullOfOrNull(::lookUp)
-        }
+      when (val classImpl = classes[cl]) {
+        null -> null
+        else -> classImpl.methods[methodRef] ?: classImpl.supers.firstNotNullOfOrNull(::lookUp)
+      }
 
     return lookUp(impl.klass)
   }
@@ -104,14 +104,14 @@ internal class Module<FX : Any>(val classes: Map<ClassId, ClassBody<FX>>) {
   private fun getSAM(intf: ClassId): Map.Entry<MethodId, MethodBody<FX>>? {
     val header = classes[intf] ?: return null
     val abstractMethods =
-        header.methods.filter { (_, header) ->
-          when (val s = header.status) {
-            is MethodBody.Status.Abstract -> true
-            is MethodBody.Status.ForChecking -> s.body == null
-            is MethodBody.Status.ForInference,
-            is MethodBody.Status.BasicConstructor -> false
-          }
+      header.methods.filter { (_, header) ->
+        when (val s = header.status) {
+          is MethodBody.Status.Abstract -> true
+          is MethodBody.Status.ForChecking -> s.body == null
+          is MethodBody.Status.ForInference,
+          is MethodBody.Status.BasicConstructor -> false
         }
+      }
     return when (val n = abstractMethods.size) {
       0 -> header.supers.firstNotNullOfOrNull(::getSAM)
       1 -> abstractMethods.asSequence().first()
@@ -120,21 +120,17 @@ internal class Module<FX : Any>(val classes: Map<ClassId, ClassBody<FX>>) {
   }
 
   // TODO (b/417750068)
-  internal fun findMethodByName(
-      name: String,
-      receiver: ClassId,
-      args: List<Type<FX>>,
-  ): Type.MethodRef {
+  internal fun findMethodByName(name: String, receiver: ClassId, args: List<Type<FX>>): Type.MethodRef {
     val cl = classes[receiver] ?: throw MethodLookupException.NotFound(name) // TODO search superclasses?
     val candidates =
-        cl.methods.filterKeys { id ->
-          id.name == name &&
-              when {
-                // TODO may be ellipsis or not
-                id.paramTags.lastOrNull() == ClassId.Array -> args.size >= id.paramTags.size - 1
-                else -> id.paramTags.size == args.size
-              }
-        }
+      cl.methods.filterKeys { id ->
+        id.name == name &&
+          when {
+            // TODO may be ellipsis or not
+            id.paramTags.lastOrNull() == ClassId.Array -> args.size >= id.paramTags.size - 1
+            else -> id.paramTags.size == args.size
+          }
+      }
     return when (candidates.size) {
       0 -> throw MethodLookupException.NotFound(name)
       1 -> Type.MethodRef(receiver, candidates.asSequence().first().key)
@@ -165,34 +161,34 @@ internal class Module<FX : Any>(val classes: Map<ClassId, ClassBody<FX>>) {
     }
 
     fun addGuardedSubclass(
-        context: JavaContext,
-        source: UElement,
-        guard: EffectAnnotation.Explicit<FX>,
-        base: UClass,
-        sam: PsiMethod,
+      context: JavaContext,
+      source: UElement,
+      guard: EffectAnnotation.Explicit<FX>,
+      base: UClass,
+      sam: PsiMethod,
     ): ClassId =
-        ClassId.of(guard.annotated, base.javaPsi).also { id ->
-          classes.computeIfAbsent(id) {
-            val baseBody = buildClass(context, base)
-            val baseMethodId = MethodId(sam)
-            val baseMethod = baseBody.methods[baseMethodId]!!
-            ClassBody(
-                supers = listOf(ClassId.of(base.javaPsi)),
-                methods =
-                    persistentMapOf(
-                        baseMethodId to
-                            MethodBody(
-                                domains = baseMethod.domains,
-                                initEnvironment = baseMethod.initEnvironment,
-                                returnTypeAnnotation = baseMethod.returnTypeAnnotation,
-                                status = MethodBody.Status.ForChecking(guard, null),
-                                source = source,
-                            )
-                    ),
-                initEnvironment = baseBody.initEnvironment,
-            )
-          }
+      ClassId.of(guard.annotated, base.javaPsi).also { id ->
+        classes.computeIfAbsent(id) {
+          val baseBody = buildClass(context, base)
+          val baseMethodId = MethodId(sam)
+          val baseMethod = baseBody.methods[baseMethodId]!!
+          ClassBody(
+            supers = listOf(ClassId.of(base.javaPsi)),
+            methods =
+              persistentMapOf(
+                baseMethodId to
+                  MethodBody(
+                    domains = baseMethod.domains,
+                    initEnvironment = baseMethod.initEnvironment,
+                    returnTypeAnnotation = baseMethod.returnTypeAnnotation,
+                    status = MethodBody.Status.ForChecking(guard, null),
+                    source = source,
+                  )
+              ),
+            initEnvironment = baseBody.initEnvironment,
+          )
         }
+      }
 
     fun addLocalFunction(localFun: LocalFun) {
       val (classId, fnId) = containerChain(localFun.uast) ?: return
@@ -217,21 +213,21 @@ internal class Module<FX : Any>(val classes: Map<ClassId, ClassBody<FX>>) {
 
     private fun buildClass(context: JavaContext, klass: UClass): ClassBody<FX> {
       val outerEnv: Env<Nothing> =
-          when {
-            klass.isStatic -> Env.empty
-            else -> // Assume enclosing class/method has been indexed
-            klass.getContainingUMethod()?.let { method ->
-                  val (methodClass, methodDesc) = Type.MethodRef(method.javaPsi)
-                  val impl = classes[methodClass] ?: return@let null
-                  val body = impl.methods[methodDesc] ?: return@let null
-                  body.initEnvironment
-                }
-                    ?: klass.getContainingUClass()?.let { cl ->
-                      if (klass.isStatic) return@let null
-                      classes[ClassId.of(cl.javaPsi)]?.initEnvironment
-                    }
-                    ?: Env.empty
-          }
+        when {
+          klass.isStatic -> Env.empty
+          else -> // Assume enclosing class/method has been indexed
+          klass.getContainingUMethod()?.let { method ->
+              val (methodClass, methodDesc) = Type.MethodRef(method.javaPsi)
+              val impl = classes[methodClass] ?: return@let null
+              val body = impl.methods[methodDesc] ?: return@let null
+              body.initEnvironment
+            }
+              ?: klass.getContainingUClass()?.let { cl ->
+                if (klass.isStatic) return@let null
+                classes[ClassId.of(cl.javaPsi)]?.initEnvironment
+              }
+              ?: Env.empty
+        }
 
       val outerTypeParams = outerEnv.types + klass.javaPsi.typeParams()
 
@@ -239,64 +235,64 @@ internal class Module<FX : Any>(val classes: Map<ClassId, ClassBody<FX>>) {
       val klassAsType = PsiClassAdapter.translate(outerTypeParams.keys, klass.javaPsi)
 
       val (typeParams, receivers) =
-          when {
-            klass.isFinal -> outerTypeParams to outerEnv.virtualReceivers.put(klassId, klassAsType)
-            else -> {
-              val recv = Sym.This(klassId)
-              outerTypeParams.put(recv.uniqueName, persistentSetOf(klassAsType)) to outerEnv.virtualReceivers.put(klassId, recv)
-            }
+        when {
+          klass.isFinal -> outerTypeParams to outerEnv.virtualReceivers.put(klassId, klassAsType)
+          else -> {
+            val recv = Sym.This(klassId)
+            outerTypeParams.put(recv.uniqueName, persistentSetOf(klassAsType)) to outerEnv.virtualReceivers.put(klassId, recv)
           }
+        }
 
       val typeParamNames = typeParams.keys
 
       val env =
-          Env(
-              types = typeParams,
-              vars =
-                  klass.fields.fold(outerEnv.vars) { env, f ->
-                    val fParam = f.javaPsi as PsiField
-                    when {
-                      f.isStatic -> env
-                      else -> env.put(fParam.name, PsiTypeAdapter.translate(typeParamNames, fParam.type))
-                    }
-                  },
-              funs = outerEnv.funs,
-              virtualReceivers = receivers,
-          )
+        Env(
+          types = typeParams,
+          vars =
+            klass.fields.fold(outerEnv.vars) { env, f ->
+              val fParam = f.javaPsi as PsiField
+              when {
+                f.isStatic -> env
+                else -> env.put(fParam.name, PsiTypeAdapter.translate(typeParamNames, fParam.type))
+              }
+            },
+          funs = outerEnv.funs,
+          virtualReceivers = receivers,
+        )
 
       val classAdapter: TypeAdapter<PsiClass> =
-          when {
-            // HACK: "instantiate" inner-class with the same type arguments
-            typeParams.isNotEmpty() ->
-                object : TypeAdapter<PsiClass> by PsiClassAdapter {
-                  val location = ClassId.of(klass.javaPsi)
-                  val type = Type.Application(location, typeParams.map { Sym.Param(it.key) })
+        when {
+          // HACK: "instantiate" inner-class with the same type arguments
+          typeParams.isNotEmpty() ->
+            object : TypeAdapter<PsiClass> by PsiClassAdapter {
+              val location = ClassId.of(klass.javaPsi)
+              val type = Type.Application(location, typeParams.map { Sym.Param(it.key) })
 
-                  override fun translate(env: Set<String>, repr: PsiClass) =
-                      when {
-                        repr is PsiAnonymousClass && ClassId.of(repr) == location -> type
-                        else -> PsiClassAdapter.translate(env, repr)
-                      }
+              override fun translate(env: Set<String>, repr: PsiClass) =
+                when {
+                  repr is PsiAnonymousClass && ClassId.of(repr) == location -> type
+                  else -> PsiClassAdapter.translate(env, repr)
                 }
-            else -> PsiClassAdapter
-          }
+            }
+          else -> PsiClassAdapter
+        }
 
       return ClassBody<FX>(
-          supers = klass.javaPsi.supers.map(ClassId::of),
-          methods =
-              klass.methods.asList().assoc { method ->
-                val env = if (method.javaPsi.isStatic()) Env.empty else env
-                MethodId(method.javaPsi) to buildMethod(context, method, env, classAdapter)
-              },
-          initEnvironment = env,
+        supers = klass.javaPsi.supers.map(ClassId::of),
+        methods =
+          klass.methods.asList().assoc { method ->
+            val env = if (method.javaPsi.isStatic()) Env.empty else env
+            MethodId(method.javaPsi) to buildMethod(context, method, env, classAdapter)
+          },
+        initEnvironment = env,
       )
     }
 
     private fun buildMethod(
-        context: JavaContext,
-        method: UMethod,
-        classEnv: Env<Nothing>,
-        classAdapter: TypeAdapter<PsiClass>,
+      context: JavaContext,
+      method: UMethod,
+      classEnv: Env<Nothing>,
+      classAdapter: TypeAdapter<PsiClass>,
     ): MethodBody<FX> {
       val initTypeParams: TypeBounds<Nothing> = classEnv.types + method.javaPsi.typeParams()
       val (moreTypeParams, domains) = generateDomain(context, initTypeParams.keys, method, classAdapter)
@@ -304,38 +300,38 @@ internal class Module<FX : Any>(val classes: Map<ClassId, ClassBody<FX>>) {
 
       val params = method.javaPsi.parameters
       val (initEnv, paramDomains) =
-          when (domains.size) {
-            params.size -> classEnv.vars to domains
-            params.size + 1 -> classEnv.vars to domains.subList(1, domains.size)
-            else -> throw IllegalStateException("Got domains $domains for method ${method.name} with parameters $params")
-          }
+        when (domains.size) {
+          params.size -> classEnv.vars to domains
+          params.size + 1 -> classEnv.vars to domains.subList(1, domains.size)
+          else -> throw IllegalStateException("Got domains $domains for method ${method.name} with parameters $params")
+        }
       val env =
-          when (val status = method.getOverloadingStatus()) {
-            is OverloadingStatus.None -> paramDomains.foldIndexed(initEnv) { i, env, dom -> env + (params[i].name!! to dom) }
-            is OverloadingStatus.Primary ->
-                paramDomains
-                    .foldIndexed(initEnv) { i, env, dom -> env + (params[i].name!! to dom) }
-                    .also { overloadingCache[status.source] = it }
-            is OverloadingStatus.Secondary -> overloadingCache[status.source]!!
-          }
+        when (val status = method.getOverloadingStatus()) {
+          is OverloadingStatus.None -> paramDomains.foldIndexed(initEnv) { i, env, dom -> env + (params[i].name!! to dom) }
+          is OverloadingStatus.Primary ->
+            paramDomains
+              .foldIndexed(initEnv) { i, env, dom -> env + (params[i].name!! to dom) }
+              .also { overloadingCache[status.source] = it }
+          is OverloadingStatus.Secondary -> overloadingCache[status.source]!!
+        }
       val body = method.uastBody
       var methodEnv = classEnv.copy(types = typeParams, vars = env)
 
       return MethodBody(
-          domains = domains,
-          initEnvironment = methodEnv,
-          returnTypeAnnotation = returnType(typeParams.keys, method.javaPsi, classAdapter),
-          status =
-              when (val ann = annotationParser.parseMethodAnnotations(context, method)) {
-                is EffectAnnotation.Implicit ->
-                    when {
-                      body != null -> MethodBody.Status.ForInference(body, ann)
-                      method.isConstructor -> MethodBody.Status.BasicConstructor
-                      else -> MethodBody.Status.Abstract
-                    }
-                is EffectAnnotation.Explicit -> MethodBody.Status.ForChecking(ann, body)
-              },
-          source = method,
+        domains = domains,
+        initEnvironment = methodEnv,
+        returnTypeAnnotation = returnType(typeParams.keys, method.javaPsi, classAdapter),
+        status =
+          when (val ann = annotationParser.parseMethodAnnotations(context, method)) {
+            is EffectAnnotation.Implicit ->
+              when {
+                body != null -> MethodBody.Status.ForInference(body, ann)
+                method.isConstructor -> MethodBody.Status.BasicConstructor
+                else -> MethodBody.Status.Abstract
+              }
+            is EffectAnnotation.Explicit -> MethodBody.Status.ForChecking(ann, body)
+          },
+        source = method,
       )
     }
 
@@ -347,39 +343,39 @@ internal class Module<FX : Any>(val classes: Map<ClassId, ClassBody<FX>>) {
 
       val params = fnUast.valueParameters
       val (initEnv, paramDomains) =
-          when (domains.size) {
-            params.size -> classEnv.vars to domains
-            params.size + 1 -> classEnv.vars to domains.subList(1, domains.size)
-            else -> throw IllegalStateException("Got domains $domains for method ${fnUast.nameFromSource} with parameters $params")
-          }
+        when (domains.size) {
+          params.size -> classEnv.vars to domains
+          params.size + 1 -> classEnv.vars to domains.subList(1, domains.size)
+          else -> throw IllegalStateException("Got domains $domains for method ${fnUast.nameFromSource} with parameters $params")
+        }
       val env =
-          paramDomains.foldIndexed(initEnv) { i, env, dom ->
-            val param = params[i].javaPsi as PsiParameter
-            env + (param.name to dom)
-          }
+        paramDomains.foldIndexed(initEnv) { i, env, dom ->
+          val param = params[i].javaPsi as PsiParameter
+          env + (param.name to dom)
+        }
       val body = fnUast.body
       var methodEnv = classEnv.copy(types = typeParams, vars = env)
 
       val ann = annotationParser.parseAnnotations(fnUast.uAnnotations)
 
       return MethodBody(
-          domains = domains,
-          initEnvironment = methodEnv,
-          returnTypeAnnotation = KtTypeReferenceAdapter.translate(typeParams.keys, fn.typeReference),
-          status =
-              when (ann) {
-                null -> MethodBody.Status.ForInference(body, EffectAnnotation.None)
-                else -> MethodBody.Status.ForChecking(EffectAnnotation.Explicit(ann, fnUast), body)
-              },
-          source = fnUast,
+        domains = domains,
+        initEnvironment = methodEnv,
+        returnTypeAnnotation = KtTypeReferenceAdapter.translate(typeParams.keys, fn.typeReference),
+        status =
+          when (ann) {
+            null -> MethodBody.Status.ForInference(body, EffectAnnotation.None)
+            else -> MethodBody.Status.ForChecking(EffectAnnotation.Explicit(ann, fnUast), body)
+          },
+        source = fnUast,
       )
     }
 
     private fun generateDomain(
-        context: JavaContext,
-        classTypeParams: Set<String>,
-        method: UMethod,
-        classAdapter: TypeAdapter<PsiClass>,
+      context: JavaContext,
+      classTypeParams: Set<String>,
+      method: UMethod,
+      classAdapter: TypeAdapter<PsiClass>,
     ): Pair<TypeBounds<Nothing>, List<Type<Nothing>>> {
       val params = method.uastParameters
       var typeBounds: TypeBounds<Nothing> = persistentMapOf()
@@ -388,26 +384,26 @@ internal class Module<FX : Any>(val classes: Map<ClassId, ClassBody<FX>>) {
       fun <T> addDomain(bound: T, adapter: TypeAdapter<T>, genParam: () -> Sym<Nothing>) {
         val translatedBound = adapter.translate(classTypeParams, bound)
         domains.add(
-            when {
-              translatedBound is Type.Ellipsis && !adapter.isFinal(bound) ->
-                  Type.Ellipsis(genParam()).also {
-                    val x = it.element
-                    if (x is Sym.Param) typeBounds += x.name to persistentSetOf(translatedBound.element)
-                  }
-              translatedBound is Type.Application &&
-                  translatedBound.constructor == ClassId.Array &&
-                  translatedBound.args.isNotEmpty() &&
-                  !adapter.isFinal(bound) -> {
-                val (elemBound, reconstruct) = translatedBound.arrayDeepComponentTypeAndContext()
-                val x = genParam()
-                if (x is Sym.Param) typeBounds += x.name to persistentSetOf(elemBound)
-                reconstruct(x)
+          when {
+            translatedBound is Type.Ellipsis && !adapter.isFinal(bound) ->
+              Type.Ellipsis(genParam()).also {
+                val x = it.element
+                if (x is Sym.Param) typeBounds += x.name to persistentSetOf(translatedBound.element)
               }
-              translatedBound is Sym.Param -> translatedBound
-              translatedBound is Sym.This -> translatedBound
-              adapter.isFinal(bound) -> translatedBound
-              else -> genParam().also { if (it is Sym.Param) typeBounds += it.name to persistentSetOf(translatedBound) }
+            translatedBound is Type.Application &&
+              translatedBound.constructor == ClassId.Array &&
+              translatedBound.args.isNotEmpty() &&
+              !adapter.isFinal(bound) -> {
+              val (elemBound, reconstruct) = translatedBound.arrayDeepComponentTypeAndContext()
+              val x = genParam()
+              if (x is Sym.Param) typeBounds += x.name to persistentSetOf(elemBound)
+              reconstruct(x)
             }
+            translatedBound is Sym.Param -> translatedBound
+            translatedBound is Sym.This -> translatedBound
+            adapter.isFinal(bound) -> translatedBound
+            else -> genParam().also { if (it is Sym.Param) typeBounds += it.name to persistentSetOf(translatedBound) }
+          }
         )
       }
 
@@ -426,51 +422,44 @@ internal class Module<FX : Any>(val classes: Map<ClassId, ClassBody<FX>>) {
             when (val baseClass = baseType.resolve()) {
               // TODO hack
               null ->
-                  when (baseType) {
-                    is PsiClassReferenceType -> {
-                      val fqn = baseType.reference.qualifiedName
-                      val functionPrefix = "kotlin.jvm.functions.Function"
-                      when {
-                        fqn.startsWith(functionPrefix) -> {
-                          // FIXME proper type parameters from arity
-                          val bound = Type.Application<Nothing>(ClassId.of(fqn), listOf())
-                          val typeParam = Type.Companion.genParam(paramPsi.name)
-                          domains.add(typeParam)
-                          typeBounds += typeParam.name to persistentSetOf(bound)
-                        }
-                        else -> todo()
+                when (baseType) {
+                  is PsiClassReferenceType -> {
+                    val fqn = baseType.reference.qualifiedName
+                    val functionPrefix = "kotlin.jvm.functions.Function"
+                    when {
+                      fqn.startsWith(functionPrefix) -> {
+                        // FIXME proper type parameters from arity
+                        val bound = Type.Application<Nothing>(ClassId.of(fqn), listOf())
+                        val typeParam = Type.Companion.genParam(paramPsi.name)
+                        domains.add(typeParam)
+                        typeBounds += typeParam.name to persistentSetOf(bound)
                       }
+                      else -> todo()
                     }
-                    else -> todo()
                   }
+                  else -> todo()
+                }
               else -> {
                 val baseMethods = baseClass.methods.filter { it.body == null }
                 require(baseMethods.size == 1) { "TODO: report annotation on non-SAM interface `${baseClass.name}`" }
                 val baseMethod = baseMethods.first()
                 val paramAnn =
-                    with(annotationParser) {
-                      val bases = nearestBaseAnns(context.evaluator, arrayOf(baseMethod))
-                      resolveAnnotations(context, EffectAnnotation.Explicit(ann, param), bases)
-                    }
-                val paramModifiedClassId =
-                    addGuardedSubclass(
-                        context,
-                        param,
-                        paramAnn,
-                        baseClass.toUElement() as UClass,
-                        baseMethod,
-                    )
+                  with(annotationParser) {
+                    val bases = nearestBaseAnns(context.evaluator, arrayOf(baseMethod))
+                    resolveAnnotations(context, EffectAnnotation.Explicit(ann, param), bases)
+                  }
+                val paramModifiedClassId = addGuardedSubclass(context, param, paramAnn, baseClass.toUElement() as UClass, baseMethod)
                 addDomain(
-                    paramModifiedClassId,
-                    object : TypeAdapter<ClassId> {
-                      override fun translate(env: Set<String>, repr: ClassId): Type<Nothing> {
-                        val base = PsiTypeAdapter.translate(env, baseType) as Type.Application
-                        return Type.Application(paramModifiedClassId, base.args)
-                      }
+                  paramModifiedClassId,
+                  object : TypeAdapter<ClassId> {
+                    override fun translate(env: Set<String>, repr: ClassId): Type<Nothing> {
+                      val base = PsiTypeAdapter.translate(env, baseType) as Type.Application
+                      return Type.Application(paramModifiedClassId, base.args)
+                    }
 
-                      override fun isFinal(repr: ClassId) = false
-                    },
-                    { Type.Companion.genParam(paramPsi.name) },
+                    override fun isFinal(repr: ClassId) = false
+                  },
+                  { Type.Companion.genParam(paramPsi.name) },
                 )
               }
             }
@@ -480,10 +469,7 @@ internal class Module<FX : Any>(val classes: Map<ClassId, ClassBody<FX>>) {
       return typeBounds to domains
     }
 
-    private fun generateDomain(
-        classTypeParams: Set<String>,
-        fn: KtNamedFunction,
-    ): Pair<TypeBounds<Nothing>, List<Type<Nothing>>> {
+    private fun generateDomain(classTypeParams: Set<String>, fn: KtNamedFunction): Pair<TypeBounds<Nothing>, List<Type<Nothing>>> {
       val params = fn.valueParameters
       var typeBounds: TypeBounds<Nothing> = persistentMapOf()
       val domains = ArrayList<Type<Nothing>>(params.size + 1)
@@ -491,34 +477,29 @@ internal class Module<FX : Any>(val classes: Map<ClassId, ClassBody<FX>>) {
       fun <T> addDomain(bound: T, adapter: TypeAdapter<T>, genParam: () -> Sym<Nothing>) {
         val translatedBound = adapter.translate(classTypeParams, bound)
         domains.add(
-            when {
-              translatedBound is Sym.Param -> translatedBound
-              translatedBound is Sym.This -> translatedBound
-              adapter.isFinal(bound) -> translatedBound
-              else -> genParam().also { if (it is Sym.Param) typeBounds += it.name to persistentSetOf(translatedBound) }
-            }
+          when {
+            translatedBound is Sym.Param -> translatedBound
+            translatedBound is Sym.This -> translatedBound
+            adapter.isFinal(bound) -> translatedBound
+            else -> genParam().also { if (it is Sym.Param) typeBounds += it.name to persistentSetOf(translatedBound) }
+          }
         )
       }
 
       fn.receiverTypeReference?.let { recvType ->
         addDomain(
-            recvType,
-            KtTypeReferenceAdapter,
-            {
-              val t = KtTypeReferenceAdapter.translate(classTypeParams, recvType) as Type.Application
-              Sym.This(t.constructor)
-            },
+          recvType,
+          KtTypeReferenceAdapter,
+          {
+            val t = KtTypeReferenceAdapter.translate(classTypeParams, recvType) as Type.Application
+            Sym.This(t.constructor)
+          },
         )
       }
 
       for (param in params) {
         when (val ann = annotationParser.parseAnnotations(/* TODO */ param.annotations.mapNotNull { it.toUElement() as? UAnnotation })) {
-          null ->
-              addDomain(
-                  param.typeReference,
-                  KtTypeReferenceAdapter,
-                  { Type.Companion.genParam(param.name!!) },
-              )
+          null -> addDomain(param.typeReference, KtTypeReferenceAdapter, { Type.Companion.genParam(param.name!!) })
           else -> {
             println("TODO: support annotation on parameter `${param.name!!}` of local function `${fn.name}`: $ann")
           }
@@ -528,23 +509,21 @@ internal class Module<FX : Any>(val classes: Map<ClassId, ClassBody<FX>>) {
     }
 
     private fun PsiTypeParameterListOwner.typeParams(): TypeBounds<Nothing> =
-        typeParameters.fold(persistentMapOf()) { m: TypeBounds<Nothing>, param ->
-          // TODO: store the bounds, useful as finitization hints and possibly other things
-          m.put(param.name!!, persistentSetOf())
-        }
+      typeParameters.fold(persistentMapOf()) { m: TypeBounds<Nothing>, param ->
+        // TODO: store the bounds, useful as finitization hints and possibly other things
+        m.put(param.name!!, persistentSetOf())
+      }
 
     private fun KtTypeParameterListOwner.typeParams(): TypeBounds<Nothing> =
-        typeParameters.fold(persistentMapOf()) { m: TypeBounds<Nothing>, param ->
-          // TODO: store the bounds, useful as finitization hints and possibly other things
-          m.put(param.name!!, persistentSetOf())
-        }
+      typeParameters.fold(persistentMapOf()) { m: TypeBounds<Nothing>, param ->
+        // TODO: store the bounds, useful as finitization hints and possibly other things
+        m.put(param.name!!, persistentSetOf())
+      }
 
     private fun UMethod.getOverloadingStatus(): OverloadingStatus {
       val methodSource = sourcePsi as? KtFunction ?: return OverloadingStatus.None
       return if (
-          methodSource.annotationEntries.any {
-            it.shortName?.asString() == JvmStandardClassIds.JVM_OVERLOADS_FQ_NAME.shortName().asString()
-          }
+        methodSource.annotationEntries.any { it.shortName?.asString() == JvmStandardClassIds.JVM_OVERLOADS_FQ_NAME.shortName().asString() }
       ) {
         val firstMethod = (uastParent as? UClass)?.uastDeclarations?.find { it.sourcePsi === methodSource } as? UMethod
         when {
@@ -565,16 +544,10 @@ internal class Module<FX : Any>(val classes: Map<ClassId, ClassBody<FX>>) {
         val zs = c.initEnvironment.types
         val methods = c.methods
         val paramBounds =
-            when {
-              zs.isEmpty() -> ""
-              else ->
-                  zs.asSequence()
-                      .joinToString(
-                          prefix = "<",
-                          postfix = ">",
-                          transform = { (x, b) -> showBound(x, b) },
-                      )
-            }
+          when {
+            zs.isEmpty() -> ""
+            else -> zs.asSequence().joinToString(prefix = "<", postfix = ">", transform = { (x, b) -> showBound(x, b) })
+          }
         println("  - $id$paramBounds (${methods.size}):")
         for ((mId, mSummary) in methods) {
           println("    + $mId: $mSummary")
@@ -599,22 +572,16 @@ internal class Module<FX : Any>(val classes: Map<ClassId, ClassBody<FX>>) {
 
     /** When both the method's annotation and its supers' are present */
     fun resolveAnnotations(
-        context: JavaContext,
-        targetAnn: EffectAnnotation.Explicit<FX>,
-        bases: List<EffectAnnotation.Explicit<FX>>,
+      context: JavaContext,
+      targetAnn: EffectAnnotation.Explicit<FX>,
+      bases: List<EffectAnnotation.Explicit<FX>>,
     ): EffectAnnotation.Explicit<FX>
 
     /** When the method doesn't have annotation, but its supers do */
-    fun inheritAnnotations(
-        evaluator: JavaEvaluator,
-        bases: List<EffectAnnotation.Explicit<FX>>,
-    ): EffectAnnotation.Implicit<FX>
+    fun inheritAnnotations(evaluator: JavaEvaluator, bases: List<EffectAnnotation.Explicit<FX>>): EffectAnnotation.Implicit<FX>
 
     companion object {
-      fun <FX : Any> AnnotationParser<FX>.parseMethodAnnotations(
-          context: JavaContext,
-          method: UMethod,
-      ): EffectAnnotation<FX> {
+      fun <FX : Any> AnnotationParser<FX>.parseMethodAnnotations(context: JavaContext, method: UMethod): EffectAnnotation<FX> {
         val evaluator = context.evaluator
         val bases = nearestBaseAnns(evaluator, method.javaPsi.findSuperMethods())
         return when (val targetAnn = parseMethodImmediateAnnotations(evaluator, method)) {
@@ -624,59 +591,55 @@ internal class Module<FX : Any>(val classes: Map<ClassId, ClassBody<FX>>) {
       }
 
       internal fun <FX : Any> AnnotationParser<FX>.nearestBaseAnns(
-          evaluator: JavaEvaluator,
-          baseMethods: Array<PsiMethod>,
+        evaluator: JavaEvaluator,
+        baseMethods: Array<PsiMethod>,
       ): List<EffectAnnotation.Explicit<FX>> =
-          baseMethods.flatMap { base ->
-            val baseMethod = base.toUElement() as UMethod
-            when (val baseAnn = parseMethodImmediateAnnotations(evaluator, baseMethod)) {
-              null -> nearestBaseAnns(evaluator, base.findSuperMethods())
-              else -> listOf(EffectAnnotation.Explicit(baseAnn, baseMethod))
-            }
+        baseMethods.flatMap { base ->
+          val baseMethod = base.toUElement() as UMethod
+          when (val baseAnn = parseMethodImmediateAnnotations(evaluator, baseMethod)) {
+            null -> nearestBaseAnns(evaluator, base.findSuperMethods())
+            else -> listOf(EffectAnnotation.Explicit(baseAnn, baseMethod))
           }
+        }
     }
   }
 }
 
 internal fun UMethod.isKtProperty() =
-    when (sourcePsi) {
-      is KtProperty,
-      is KtPropertyAccessor -> true
-      else -> false
-    }
+  when (sourcePsi) {
+    is KtProperty,
+    is KtPropertyAccessor -> true
+    else -> false
+  }
 
 internal data class LocalFun(val uast: ULambdaExpression, val sourcePsi: KtNamedFunction)
 
 internal fun containerChain(fnUast: ULambdaExpression): Pair<ClassId.Local, MethodId>? {
   val methods =
-      fnUast.withContainingElements
-          .filter { it is UMethod || it is ULambdaExpression && (it.sourcePsi as? KtNamedFunction)?.name != null || it is UClass }
-          .takeWhile { it !is UClass }
-          .mapTo(mutableListOf()) {
-            when (it) {
-              is UMethod -> MethodId(it.javaPsi)
-              is ULambdaExpression -> MethodId(it.sourcePsi as KtNamedFunction)
-              else -> throw IllegalStateException()
-            }
-          }
-          .reversed()
+    fnUast.withContainingElements
+      .filter { it is UMethod || it is ULambdaExpression && (it.sourcePsi as? KtNamedFunction)?.name != null || it is UClass }
+      .takeWhile { it !is UClass }
+      .mapTo(mutableListOf()) {
+        when (it) {
+          is UMethod -> MethodId(it.javaPsi)
+          is ULambdaExpression -> MethodId(it.sourcePsi as KtNamedFunction)
+          else -> throw IllegalStateException()
+        }
+      }
+      .reversed()
   if (methods.size < 2) {
     return null // TODO(b/438815669)
   }
   val selfId = methods.last()
-  val classId =
-      ClassId.Local(
-          ClassId.of(fnUast.getContainingUClass()!!.javaPsi),
-          methods.subList(0, methods.size - 1),
-      )
+  val classId = ClassId.Local(ClassId.of(fnUast.getContainingUClass()!!.javaPsi), methods.subList(0, methods.size - 1))
   return classId to selfId
 }
 
 private fun <FX> Type<FX>.arrayDeepComponentTypeAndContext(): Pair<Type<FX>, (Type<FX>) -> Type<FX>> =
-    when {
-      this is Type.Application && this.constructor == ClassId.Array && this.args.isNotEmpty() -> {
-        val (elem, ctx) = this.args.first().arrayDeepComponentTypeAndContext()
-        elem to { Type.Application(ClassId.Array, listOf(ctx(it))) }
-      }
-      else -> this to { it }
+  when {
+    this is Type.Application && this.constructor == ClassId.Array && this.args.isNotEmpty() -> {
+      val (elem, ctx) = this.args.first().arrayDeepComponentTypeAndContext()
+      elem to { Type.Application(ClassId.Array, listOf(ctx(it))) }
     }
+    else -> this to { it }
+  }

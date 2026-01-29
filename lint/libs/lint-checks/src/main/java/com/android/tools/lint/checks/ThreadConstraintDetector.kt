@@ -63,8 +63,8 @@ import org.jetbrains.uast.resolveToUElement
  * module, or assumed for primitives.
  */
 abstract class ThreadConstraintDetector<T : Enum<T>>(
-    protected val lattice: ThreadConstraintLattice<T>,
-    initialAssumptions: AssumptionTable<ThreadConstraint<T>> = persistentMapOf(),
+  protected val lattice: ThreadConstraintLattice<T>,
+  initialAssumptions: AssumptionTable<ThreadConstraint<T>> = persistentMapOf(),
 ) : JoinEffectDetector<ThreadConstraint<T>>(lattice, initialAssumptions) {
 
   protected abstract val violationIssue: Issue
@@ -76,210 +76,198 @@ abstract class ThreadConstraintDetector<T : Enum<T>>(
     get() = lattice.encoder
 
   override fun report(context: Context, error: Error<ThreadConstraint<T>>) =
-      when (error) {
-        is Error.ExceedingAnnotation -> {
-          val callLabel =
-              when ((error.site.tryResolveUDeclaration() as? UMethod)?.isKtProperty()) {
-                true -> "Property call"
-                else -> "Call"
+    when (error) {
+      is Error.ExceedingAnnotation -> {
+        val callLabel =
+          when ((error.site.tryResolveUDeclaration() as? UMethod)?.isKtProperty()) {
+            true -> "Property call"
+            else -> "Call"
+          }
+        val message =
+          when {
+            error.calleeLowerBound == lattice.NoThread ->
+              "$callLabel has an unsatisfiable thread requirement, but context is allowing ${error.callerAnnotation}"
+            else -> "$callLabel must be from ${error.calleeLowerBound}, but context is allowing ${error.callerAnnotation}"
+          }
+        context.report(violationIssue, context.locationOf(error.site), message)
+      }
+      is Error.IntroducingTop -> {
+        val site = error.site
+        val t1 = error.first
+        val t2 = error.next
+        val message =
+          when (val parentSite = site.uastParent) {
+            is UIfExpression ->
+              when (site) {
+                parentSite.condition -> "Condition must run from $t1, while branches must run from $t2"
+                else -> "Branch must run from $t2, incompatible with the other that must run from $t1"
               }
-          val message =
-              when {
-                error.calleeLowerBound == lattice.NoThread ->
-                    "$callLabel has an unsatisfiable thread requirement, but context is allowing ${error.callerAnnotation}"
-                else -> "$callLabel must be from ${error.calleeLowerBound}, but context is allowing ${error.callerAnnotation}"
+            is UExpressionList,
+            is UBlockExpression -> "Statement must run from $t2, incompatible with earlier code that must run from $t1"
+            is USwitchExpression ->
+              when (site) {
+                parentSite.expression -> "Condition must run from $t1, while branches must run from $t2"
+                else -> "Branch must run from $t2, incompatible with the another that must run from $t1"
               }
-          context.report(violationIssue, context.locationOf(error.site), message)
-        }
-        is Error.IntroducingTop -> {
-          val site = error.site
-          val t1 = error.first
-          val t2 = error.next
-          val message =
-              when (val parentSite = site.uastParent) {
-                is UIfExpression ->
-                    when (site) {
-                      parentSite.condition -> "Condition must run from $t1, while branches must run from $t2"
-                      else -> "Branch must run from $t2, incompatible with the other that must run from $t1"
-                    }
-                is UExpressionList,
-                is UBlockExpression -> "Statement must run from $t2, incompatible with earlier code that must run from $t1"
-                is USwitchExpression ->
-                    when (site) {
-                      parentSite.expression -> "Condition must run from $t1, while branches must run from $t2"
-                      else -> "Branch must run from $t2, incompatible with the another that must run from $t1"
-                    }
-                else -> "Expression results in an unsatisfiable thread requirement ($t2, after inferred $t1)"
-              }
-          context.report(unsatisfiableConstraintIssue, context.locationOf(site), message)
-        }
-        is Error.CallingTop ->
-            context.report(
-                unsatisfiableConstraintIssue,
-                context.locationOf(error.source),
-                "Call results in an unsatisfiable thread requirement",
-            )
-        is Error.FailingConstraint -> {
-          val call = error.site
-          val paramToArg =
-              when (val method = (call as? UCallExpression)?.resolveToUElement()) {
-                is UMethod -> {
-                  val params = method.uastParameters
-                  val receiver = call.receiver
-                  buildMap {
-                    if (receiver != null) put("this", receiver)
-                    for ((x, v) in params zip call.valueArguments) {
-                      put((x.javaPsi as PsiParameter).name, v)
-                    }
-                  }
+            else -> "Expression results in an unsatisfiable thread requirement ($t2, after inferred $t1)"
+          }
+        context.report(unsatisfiableConstraintIssue, context.locationOf(site), message)
+      }
+      is Error.CallingTop ->
+        context.report(
+          unsatisfiableConstraintIssue,
+          context.locationOf(error.source),
+          "Call results in an unsatisfiable thread requirement",
+        )
+      is Error.FailingConstraint -> {
+        val call = error.site
+        val paramToArg =
+          when (val method = (call as? UCallExpression)?.resolveToUElement()) {
+            is UMethod -> {
+              val params = method.uastParameters
+              val receiver = call.receiver
+              buildMap {
+                if (receiver != null) put("this", receiver)
+                for ((x, v) in params zip call.valueArguments) {
+                  put((x.javaPsi as PsiParameter).name, v)
                 }
-                else -> mapOf()
               }
-          when (val constraints = error.constraints) {
-            null ->
-                context.report(
-                    violationIssue,
-                    context.locationOf(call),
-                    "Call fails thread requirements on arguments",
-                )
-            else -> {
-              assert(constraints.isNotEmpty())
-              val concreteReasons =
-                  constraints.mapNotNull { failure ->
-                    when (val arg = paramToArg[failure.invocation.chain.first]) {
-                      null -> null
-                      else -> arg to failure
+            }
+            else -> mapOf()
+          }
+        when (val constraints = error.constraints) {
+          null -> context.report(violationIssue, context.locationOf(call), "Call fails thread requirements on arguments")
+          else -> {
+            assert(constraints.isNotEmpty())
+            val concreteReasons =
+              constraints.mapNotNull { failure ->
+                when (val arg = paramToArg[failure.invocation.chain.first]) {
+                  null -> null
+                  else -> arg to failure
+                }
+              }
+            when {
+              concreteReasons.isEmpty() -> {
+                val message =
+                  constraints.joinToString(" ") { (symCall, expectedUpper, inferredLower) ->
+                    val (param, chain) = symCall.chain
+                    when {
+                      chain.size == 1 && chain.first().name == "invoke" ->
+                        "Argument at `$param` must run from $expectedUpper, but is requiring $inferredLower."
+                      else ->
+                        "Argument at `$param` must allow calling `${chain.joinToString(".") {"${it.name}()"}}` from $expectedUpper, but that call is requiring $inferredLower."
                     }
                   }
-              when {
-                concreteReasons.isEmpty() -> {
+                context.report(violationIssue, context.locationOf(call), message)
+              }
+              // If have concrete locations, report some, sloppily skipping some others (e.g. the
+              // receiver) for now.
+              else ->
+                for ((arg, failure) in concreteReasons) {
+                  val (symCall, expectedUpper, inferredLower) = failure
+                  val (_, chain) = symCall.chain
+                  // Friendlier message for special cases
                   val message =
-                      constraints.joinToString(" ") { (symCall, expectedUpper, inferredLower) ->
-                        val (param, chain) = symCall.chain
-                        when {
-                          chain.size == 1 && chain.first().name == "invoke" ->
-                              "Argument at `$param` must run from $expectedUpper, but is requiring $inferredLower."
-                          else ->
-                              "Argument at `$param` must allow calling `${chain.joinToString(".") {"${it.name}()"}}` from $expectedUpper, but that call is requiring $inferredLower."
-                        }
-                      }
-                  context.report(violationIssue, context.locationOf(call), message)
-                }
-                // If have concrete locations, report some, sloppily skipping some others (e.g. the
-                // receiver) for now.
-                else ->
-                    for ((arg, failure) in concreteReasons) {
-                      val (symCall, expectedUpper, inferredLower) = failure
-                      val (_, chain) = symCall.chain
-                      // Friendlier message for special cases
-                      val message =
-                          when {
-                            chain.size == 1 && chain.first().name == "invoke" ->
-                                "Argument must run from $expectedUpper, but is requiring $inferredLower"
-                            else ->
-                                "Argument must allow calling `${chain.joinToString(".") {"${it.name}()"}}` from $expectedUpper, but that call is requiring $inferredLower"
-                          }
-                      context.report(violationIssue, context.locationOf(arg), message)
+                    when {
+                      chain.size == 1 && chain.first().name == "invoke" ->
+                        "Argument must run from $expectedUpper, but is requiring $inferredLower"
+                      else ->
+                        "Argument must allow calling `${chain.joinToString(".") {"${it.name}()"}}` from $expectedUpper, but that call is requiring $inferredLower"
                     }
-              }
-            }
-          }
-        }
-        is Error.ConflictingAnnotations -> {
-          val (self, bases) = error
-          val baseAnnotations = bases.groupBy(keySelector = { it.annotated }, valueTransform = { it.origin as? UMethod })
-
-          fun <T> Iterable<T>.join(size: Int, format: (T) -> String): String = buildString {
-            for ((i, elem) in this@join.withIndex()) {
-              val sep =
-                  when {
-                    i == 0 -> ""
-                    size > 1 && i == size - 1 -> ", and "
-                    else -> ","
-                  }
-              append("$sep${format(elem)}")
-            }
-          }
-
-          fun originStr(origins: List<UMethod?>): String {
-            val originStrs =
-                origins.mapNotNullTo(mutableListOf()) {
-                  when (val baseName = it?.getContainingUClass()?.javaPsi?.name) {
-                    null -> null
-                    else -> "super method `$baseName.${it.name}(…)`"
-                  }
+                  context.report(violationIssue, context.locationOf(arg), message)
                 }
-            if (null in origins) originStrs.add("a super method")
-            return originStrs.join(originStrs.size) { it }
+            }
           }
-
-          val baseStr = baseAnnotations.entries.join(baseAnnotations.size) { (ann, origins) -> "$ann (from ${originStr(origins)})" }
-
-          context.report(
-              violationIssue,
-              context.locationOf(self.origin),
-              "${self.annotated} restricts $baseStr",
-          )
-        }
-        is Error.ConflictingInference -> {
-          val baseAnn = error.conflictingBase.annotated
-          val baseStr =
-              when (val baseName = (error.conflictingBase.origin as? UMethod)?.getContainingUClass()?.javaPsi?.name) {
-                null -> "a super method"
-                else -> "super method `$baseName.${error.conflictingBase.origin.name}(…)`"
-              }
-
-          val message =
-              when (error.inferredLowerBound) {
-                lattice.NoThread -> "Call has an unsatisfiable thread requirement, but $baseStr is allowing $baseAnn"
-                else -> "Call must be from ${error.inferredLowerBound}, but $baseStr is allowing $baseAnn"
-              }
-
-          context.report(violationIssue, context.locationOf(error.site), message)
         }
       }
+      is Error.ConflictingAnnotations -> {
+        val (self, bases) = error
+        val baseAnnotations = bases.groupBy(keySelector = { it.annotated }, valueTransform = { it.origin as? UMethod })
+
+        fun <T> Iterable<T>.join(size: Int, format: (T) -> String): String = buildString {
+          for ((i, elem) in this@join.withIndex()) {
+            val sep =
+              when {
+                i == 0 -> ""
+                size > 1 && i == size - 1 -> ", and "
+                else -> ","
+              }
+            append("$sep${format(elem)}")
+          }
+        }
+
+        fun originStr(origins: List<UMethod?>): String {
+          val originStrs =
+            origins.mapNotNullTo(mutableListOf()) {
+              when (val baseName = it?.getContainingUClass()?.javaPsi?.name) {
+                null -> null
+                else -> "super method `$baseName.${it.name}(…)`"
+              }
+            }
+          if (null in origins) originStrs.add("a super method")
+          return originStrs.join(originStrs.size) { it }
+        }
+
+        val baseStr = baseAnnotations.entries.join(baseAnnotations.size) { (ann, origins) -> "$ann (from ${originStr(origins)})" }
+
+        context.report(violationIssue, context.locationOf(self.origin), "${self.annotated} restricts $baseStr")
+      }
+      is Error.ConflictingInference -> {
+        val baseAnn = error.conflictingBase.annotated
+        val baseStr =
+          when (val baseName = (error.conflictingBase.origin as? UMethod)?.getContainingUClass()?.javaPsi?.name) {
+            null -> "a super method"
+            else -> "super method `$baseName.${error.conflictingBase.origin.name}(…)`"
+          }
+
+        val message =
+          when (error.inferredLowerBound) {
+            lattice.NoThread -> "Call has an unsatisfiable thread requirement, but $baseStr is allowing $baseAnn"
+            else -> "Call must be from ${error.inferredLowerBound}, but $baseStr is allowing $baseAnn"
+          }
+
+        context.report(violationIssue, context.locationOf(error.site), message)
+      }
+    }
 
   private fun Context.locationOf(site: UElement) = client.getUastParser(project).createLocation(site)
 
   override fun resolveAnnotations(
-      context: JavaContext,
-      targetAnn: Explicit<ThreadConstraint<T>>,
-      baseAnns: List<Explicit<ThreadConstraint<T>>>,
+    context: JavaContext,
+    targetAnn: Explicit<ThreadConstraint<T>>,
+    baseAnns: List<Explicit<ThreadConstraint<T>>>,
   ): Explicit<ThreadConstraint<T>> =
-      targetAnn.also {
-        val conflicts = baseAnns.filter { !(lattice.precede(targetAnn.annotated, it.annotated)) }
-        if (conflicts.isNotEmpty()) {
-          report(context, Error.ConflictingAnnotations(targetAnn, conflicts))
-        }
+    targetAnn.also {
+      val conflicts = baseAnns.filter { !(lattice.precede(targetAnn.annotated, it.annotated)) }
+      if (conflicts.isNotEmpty()) {
+        report(context, Error.ConflictingAnnotations(targetAnn, conflicts))
       }
+    }
 
   override fun inheritAnnotations(
-      evaluator: JavaEvaluator,
-      baseAnns: List<Explicit<ThreadConstraint<T>>>,
+    evaluator: JavaEvaluator,
+    baseAnns: List<Explicit<ThreadConstraint<T>>>,
   ): EffectAnnotation.Implicit<ThreadConstraint<T>> =
-      when {
-        baseAnns.isEmpty() -> EffectAnnotation.None
-        else -> EffectAnnotation.Implicit(baseAnns)
-      }
+    when {
+      baseAnns.isEmpty() -> EffectAnnotation.None
+      else -> EffectAnnotation.Implicit(baseAnns)
+    }
 
-  override fun parseMethodImmediateAnnotations(
-      evaluator: JavaEvaluator,
-      method: UMethod,
-  ): ThreadConstraint<T>? {
+  override fun parseMethodImmediateAnnotations(evaluator: JavaEvaluator, method: UMethod): ThreadConstraint<T>? {
     fun fromMethod() = parseAnnotations(evaluator.getAnnotations(method.javaPsi, false))
     fun fromClass() = parseAnnotations(evaluator.getAnnotations(method.getContainingUClass()?.javaPsi, false))
     fun fromClassOrDefault() =
-        when {
-          // Constructors don't inherit from class annotations.
-          // If it's trivial, it's `@AnyThread`. Otherwise, it's inferred.
-          method.isConstructor -> if (method.uastBody == null) lattice.AnyThread else null
-          // Properties only inherit from class annotation if they're open.
-          // Otherwise, trivial properties are `@AnyThread`, and user-written {g,s}etters are
-          // inferred.
-          method.sourcePsi is KtProperty -> if (method.isFinal) lattice.AnyThread else fromClass()
-          method.sourcePsi is KtPropertyAccessor -> if (method.isFinal) null else fromClass()
-          else -> fromClass()
-        }
+      when {
+        // Constructors don't inherit from class annotations.
+        // If it's trivial, it's `@AnyThread`. Otherwise, it's inferred.
+        method.isConstructor -> if (method.uastBody == null) lattice.AnyThread else null
+        // Properties only inherit from class annotation if they're open.
+        // Otherwise, trivial properties are `@AnyThread`, and user-written {g,s}etters are
+        // inferred.
+        method.sourcePsi is KtProperty -> if (method.isFinal) lattice.AnyThread else fromClass()
+        method.sourcePsi is KtPropertyAccessor -> if (method.isFinal) null else fromClass()
+        else -> fromClass()
+      }
 
     return fromMethod() ?: fromClassOrDefault()
   }
@@ -304,11 +292,11 @@ abstract class ThreadConstraintDetector<T : Enum<T>>(
     internal fun isLeastPermissive() = cases == 0UL
 
     override fun toString() =
-        when {
-          isMostPermissive() -> "`@AnyThread`"
-          isLeastPermissive() -> "`@NoThread`"
-          else -> tag.threadTag.enumConstants.asSequence().filterIndexed { i, _ -> cases and (1UL shl i) != 0UL }.joinToString("|")
-        }
+      when {
+        isMostPermissive() -> "`@AnyThread`"
+        isLeastPermissive() -> "`@NoThread`"
+        else -> tag.threadTag.enumConstants.asSequence().filterIndexed { i, _ -> cases and (1UL shl i) != 0UL }.joinToString("|")
+      }
   }
 
   /**
@@ -336,12 +324,12 @@ abstract class ThreadConstraintDetector<T : Enum<T>>(
 
     /** Micro-optimized constructor, reusing common instances */
     private fun of(cases: ULong): ThreadConstraint<T> =
-        when {
-          cases == 0UL -> NoThread
-          cases == fullCases -> AnyThread
-          cases.countOneBits() == 1 -> cache[cases.countTrailingZeroBits()]
-          else -> ThreadConstraint(this, cases)
-        }
+      when {
+        cases == 0UL -> NoThread
+        cases == fullCases -> AnyThread
+        cases.countOneBits() == 1 -> cache[cases.countTrailingZeroBits()]
+        else -> ThreadConstraint(this, cases)
+      }
 
     override val bottom = AnyThread
     override val top = NoThread
@@ -349,28 +337,28 @@ abstract class ThreadConstraintDetector<T : Enum<T>>(
     override fun precede(first: ThreadConstraint<T>, second: ThreadConstraint<T>) = (first.cases and second.cases) == second.cases
 
     override fun joinOf(first: ThreadConstraint<T>, second: ThreadConstraint<T>) =
-        when {
-          first == second -> first
-          first.isMostPermissive() -> second
-          second.isMostPermissive() -> first
-          // Only last case needed. Above cases are micro-optimization re-using common instances
-          else -> of(first.cases and second.cases)
-        }
+      when {
+        first == second -> first
+        first.isMostPermissive() -> second
+        second.isMostPermissive() -> first
+        // Only last case needed. Above cases are micro-optimization re-using common instances
+        else -> of(first.cases and second.cases)
+      }
 
     override fun meetOf(first: ThreadConstraint<T>, second: ThreadConstraint<T>) =
-        when {
-          first == second -> first
-          first.isLeastPermissive() -> second
-          second.isLeastPermissive() -> first
-          // Only last case needed. Above cases are micro-optimization re-using common instances
-          else -> of(first.cases or second.cases)
-        }
+      when {
+        first == second -> first
+        first.isLeastPermissive() -> second
+        second.isLeastPermissive() -> first
+        // Only last case needed. Above cases are micro-optimization re-using common instances
+        else -> of(first.cases or second.cases)
+      }
 
     val encoder: Encoder<ThreadConstraint<T>> =
-        when {
-          fullCases < Byte.MAX_VALUE.toULong() -> Encoder.byte.adapt({ it.cases.toByte() }, { of(it.toULong()) })
-          else -> Encoder.int.adapt({ it.cases.toInt() }, { of(it.toULong()) })
-        }
+      when {
+        fullCases < Byte.MAX_VALUE.toULong() -> Encoder.byte.adapt({ it.cases.toByte() }, { of(it.toULong()) })
+        else -> Encoder.int.adapt({ it.cases.toInt() }, { of(it.toULong()) })
+      }
 
     companion object {
       inline fun <reified T : Enum<T>> of(): ThreadConstraintLattice<T> = ThreadConstraintLattice(T::class.java)

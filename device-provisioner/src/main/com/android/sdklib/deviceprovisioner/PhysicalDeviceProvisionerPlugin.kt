@@ -96,7 +96,8 @@ class PhysicalDeviceProvisionerPlugin(val scope: CoroutineScope, private val dev
               when (handle) {
                 null -> PhysicalDeviceHandle(serialNumber, scope.createChildScope(isSupervisor = true), newState)
                 else ->
-                  // The device is already connected by either USB or Wi-Fi, and we got a new
+                  // The device is already connected by either USB or Wi-Fi, and we got a
+                  // new
                   // connection via the other interface
                   handle.apply { updateState(device, newState) }
               }

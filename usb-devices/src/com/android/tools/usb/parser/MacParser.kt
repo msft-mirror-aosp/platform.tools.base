@@ -77,16 +77,20 @@ class MacParser : OutputParser {
   object USBDeclarationCollector : Collector<String, MutableList<MutableList<String>>, MutableList<MutableList<String>>> {
     override fun accumulator() =
       BiConsumer<MutableList<MutableList<String>>, String> { stringGroups, line ->
-        // looks for a specific line, creates a new MutableList<String> and append it to the List of Lists, otherwise add non-empty lines to
+        // looks for a specific line, creates a new MutableList<String> and append it to the List
+        // of Lists, otherwise add non-empty lines to
         // the last List of strings
         if (line.isEmpty()) return@BiConsumer
         if (line.matches(NAME_REGEX)) {
           stringGroups.add(ArrayList())
         }
 
-        // system_profiler may include error messages at the start of its output. stringGroups will be empty in this case since we haven't
-        // yet encountered a line that matches NAME_REGEX. We can safely ignore such lines since they won't contain any information about a
-        // USB device, and trying to call stringGroups.last() will generate an exception since the list is empty.
+        // system_profiler may include error messages at the start of its output. stringGroups
+        // will be empty in this case since we haven't
+        // yet encountered a line that matches NAME_REGEX. We can safely ignore such lines since
+        // they won't contain any information about a
+        // USB device, and trying to call stringGroups.last() will generate an exception since the
+        // list is empty.
         if (!stringGroups.isEmpty()) {
           stringGroups.last().add(line)
         }

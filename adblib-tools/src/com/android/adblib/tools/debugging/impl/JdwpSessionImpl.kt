@@ -184,7 +184,8 @@ internal class JdwpSessionImpl(
       // See bug 178655046: There was a race condition in JDWP connection handling
       // for many years that resulted in APNM packets sometimes being sent before
       // the JDWP handshake.
-      // This was eventually fixed in https://android-review.googlesource.com/c/platform/art/+/1569323
+      // This was eventually fixed in
+      // https://android-review.googlesource.com/c/platform/art/+/1569323
       // by making sure such packets are not sent until the handshake is sent.
       // Given the "APNM" packet is redundant with the "HELO" packet, we simply ignore
       // such pre-handshake packets.

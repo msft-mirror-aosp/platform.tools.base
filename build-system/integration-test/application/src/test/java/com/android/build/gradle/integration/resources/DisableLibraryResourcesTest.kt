@@ -213,7 +213,8 @@ class DisableLibraryResourcesTest {
 
   @Test
   fun testEnablingLibraryResourcesUsingAndroidResourcesDsl() {
-    // instead of using buildFeatures, use androidResources.enable = true to enable resource processing
+    // instead of using buildFeatures, use androidResources.enable = true to enable resource
+    // processing
     project.getSubproject("localLib").buildFile.appendText("android.androidResources.enable = true")
     project.getSubproject("leafLib").buildFile.appendText("${System.lineSeparator()}android.androidResources.enable = true")
 

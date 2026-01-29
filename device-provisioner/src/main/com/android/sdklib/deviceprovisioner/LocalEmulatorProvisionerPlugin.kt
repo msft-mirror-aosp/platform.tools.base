@@ -302,7 +302,8 @@ class LocalEmulatorDeviceHandle(
           logger.debug { "${logName()} Processing: $message" }
           when (message) {
             is AvdInfoUpdate -> {
-              // First, apply any updates immediately that don't need a restart to take effect or
+              // First, apply any updates immediately that don't need a restart to take effect
+              // or
               // shouldn't trigger the AvdChangedError.
               if (!activeAvdInfo.isSameMetadata(message.avdInfo)) {
                 activeAvdInfo = activeAvdInfo.copyMetadata(message.avdInfo)
@@ -367,7 +368,8 @@ class LocalEmulatorDeviceHandle(
             }
             is BootStatusUpdate -> {
               // On a transition from not booted to booted, read the properties from the device.
-              // bootStatus is always reset when connectedDevice becomes null, so connectedDevice
+              // bootStatus is always reset when connectedDevice becomes null, so
+              // connectedDevice
               // is guaranteed to become non-null before bootStatus becomes true
               val connectedDevice = connectedDevice
               if (connectedDevice != null && !bootStatus && message.bootStatus.isBooted) {
@@ -435,10 +437,12 @@ class LocalEmulatorDeviceHandle(
               }
             }
             is TransitionResult -> {
-              // Closure-based approaches (e.g. onFailure) inhibit smart-cast on pendingTransition
+              // Closure-based approaches (e.g. onFailure) inhibit smart-cast on
+              // pendingTransition
               val e = message.result.exceptionOrNull()
               if (e != null) {
-                // Note that we only complete on exception; if it succeeded we still wait for the
+                // Note that we only complete on exception; if it succeeded we still wait for
+                // the
                 // state to change before we signal completion
                 pendingTransition?.completion?.completeExceptionally(e)
                 pendingTransition = null

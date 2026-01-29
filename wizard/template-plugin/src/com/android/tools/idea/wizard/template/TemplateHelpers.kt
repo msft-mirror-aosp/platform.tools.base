@@ -191,7 +191,8 @@ It is recommended to avoid this method in favor of using androidX dependencies d
   return androidXCoordinate
 }
 
-// From https://github.com/JetBrains/kotlin/blob/master/core/descriptors/src/org/jetbrains/kotlin/renderer/KeywordStringsGenerated.java
+// From
+// https://github.com/JetBrains/kotlin/blob/master/core/descriptors/src/org/jetbrains/kotlin/renderer/KeywordStringsGenerated.java
 private val kotlinKeywords =
   listOf(
     "package",

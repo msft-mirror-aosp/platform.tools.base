@@ -54,9 +54,9 @@ abstract class UastParser {
    * @return true if the preparation succeeded; false if there were errors
    */
   open fun prepare(
-      contexts: List<JavaContext>,
-      javaLanguageLevel: LanguageLevel? = null,
-      kotlinLanguageLevel: LanguageVersionSettings? = null,
+    contexts: List<JavaContext>,
+    javaLanguageLevel: LanguageLevel? = null,
+    kotlinLanguageLevel: LanguageVersionSettings? = null,
   ): Boolean {
     prepared = true
     return true
@@ -86,12 +86,7 @@ abstract class UastParser {
 
   abstract fun getLocation(context: JavaContext, element: UElement): Location
 
-  abstract fun getCallLocation(
-      context: JavaContext,
-      call: UCallExpression,
-      includeReceiver: Boolean,
-      includeArguments: Boolean,
-  ): Location
+  abstract fun getCallLocation(context: JavaContext, call: UCallExpression, includeReceiver: Boolean, includeArguments: Boolean): Location
 
   abstract fun getFile(file: PsiFile): File?
 
@@ -111,21 +106,9 @@ abstract class UastParser {
    * @param toDelta Offset delta to apply to the ending offset
    * @return a location for the given node
    */
-  abstract fun getRangeLocation(
-      context: JavaContext,
-      from: PsiElement,
-      fromDelta: Int,
-      to: PsiElement,
-      toDelta: Int,
-  ): Location
+  abstract fun getRangeLocation(context: JavaContext, from: PsiElement, fromDelta: Int, to: PsiElement, toDelta: Int): Location
 
-  abstract fun getRangeLocation(
-      context: JavaContext,
-      from: UElement,
-      fromDelta: Int,
-      to: UElement,
-      toDelta: Int,
-  ): Location
+  abstract fun getRangeLocation(context: JavaContext, from: UElement, fromDelta: Int, to: UElement, toDelta: Int): Location
 
   /**
    * Like [getRangeLocation] but both offsets are relative to the starting offset of the given node. This is sometimes more convenient than
@@ -137,19 +120,9 @@ abstract class UastParser {
    * @param toDelta Offset delta to apply to the starting offset
    * @return a location for the given node
    */
-  abstract fun getRangeLocation(
-      context: JavaContext,
-      from: PsiElement,
-      fromDelta: Int,
-      toDelta: Int,
-  ): Location
+  abstract fun getRangeLocation(context: JavaContext, from: PsiElement, fromDelta: Int, toDelta: Int): Location
 
-  abstract fun getRangeLocation(
-      context: JavaContext,
-      from: UElement,
-      fromDelta: Int,
-      toDelta: Int,
-  ): Location
+  abstract fun getRangeLocation(context: JavaContext, from: UElement, fromDelta: Int, toDelta: Int): Location
 
   /**
    * Returns a [Location] for the given node. This attempts to pick a shorter location range than the entire node; for a class or method for
@@ -167,30 +140,30 @@ abstract class UastParser {
   class UastSourceList
   @Deprecated("Do not pass allContexts")
   constructor(
-      val parser: UastParser,
-      val allContexts: List<JavaContext>,
-      val srcContexts: List<JavaContext>,
-      val testContexts: List<JavaContext>,
-      val testFixturesContexts: List<JavaContext>,
-      val generatedContexts: List<JavaContext>,
-      val gradleKtsContexts: List<JavaContext>,
+    val parser: UastParser,
+    val allContexts: List<JavaContext>,
+    val srcContexts: List<JavaContext>,
+    val testContexts: List<JavaContext>,
+    val testFixturesContexts: List<JavaContext>,
+    val generatedContexts: List<JavaContext>,
+    val gradleKtsContexts: List<JavaContext>,
   ) {
     @Suppress("DEPRECATION")
     constructor(
-        parser: UastParser,
-        srcContexts: List<JavaContext>,
-        testContexts: List<JavaContext>,
-        testFixturesContexts: List<JavaContext>,
-        generatedContexts: List<JavaContext>,
-        gradleKtsContexts: List<JavaContext>,
+      parser: UastParser,
+      srcContexts: List<JavaContext>,
+      testContexts: List<JavaContext>,
+      testFixturesContexts: List<JavaContext>,
+      generatedContexts: List<JavaContext>,
+      gradleKtsContexts: List<JavaContext>,
     ) : this(
-        parser,
-        concat(srcContexts, testContexts, testFixturesContexts, generatedContexts, gradleKtsContexts),
-        srcContexts,
-        testContexts,
-        testFixturesContexts,
-        generatedContexts,
-        gradleKtsContexts,
+      parser,
+      concat(srcContexts, testContexts, testFixturesContexts, generatedContexts, gradleKtsContexts),
+      srcContexts,
+      testContexts,
+      testFixturesContexts,
+      generatedContexts,
+      gradleKtsContexts,
     )
   }
 

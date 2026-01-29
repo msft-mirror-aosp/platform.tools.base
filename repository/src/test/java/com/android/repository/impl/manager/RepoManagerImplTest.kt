@@ -220,10 +220,12 @@ class RepoManagerImplTest {
       // Make sure that we actually created piggyback tasks and not separate loads
       assertThat(loaderInvocationCount.get()).isEqualTo(1)
 
-      // Unblock the first loader invocation. Its task is cancelled, so its result will be ignored.
+      // Unblock the first loader invocation. Its task is cancelled, so its result will be
+      // ignored.
       canPerformLoad.release()
 
-      // Wait a bit so that both second and third caller can fallback; one should create a new task
+      // Wait a bit so that both second and third caller can fallback; one should create a new
+      // task
       // and the other should piggyback. (We have no way to observe piggyback task creation, so we
       // have to delay a bit to avoid the second task completing its load before the third task
       // falls back.)

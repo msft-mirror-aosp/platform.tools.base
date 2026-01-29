@@ -318,8 +318,10 @@ internal constructor(
             initializeProjectLocation(
               description.testClass,
               description.methodName,
-              // this is supposed to be the name of the project, but we really want the main folder
-              // that will contain the build and other elements like the maven repo. therefore we
+              // this is supposed to be the name of the project, but we really want the main
+              // folder
+              // that will contain the build and other elements like the maven repo. therefore
+              // we
               // pass null instead
               projectName = null,
             )

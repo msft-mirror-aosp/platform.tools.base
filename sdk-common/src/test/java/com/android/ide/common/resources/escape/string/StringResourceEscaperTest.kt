@@ -49,8 +49,14 @@ class StringResourceEscaperTest {
 
   @Test
   fun escape_newlines() {
-    assertThat(StringResourceEscaper.escape("""
-""", true)).isEqualTo("""\n""")
+    assertThat(
+        StringResourceEscaper.escape(
+          """
+""",
+          true,
+        )
+      )
+      .isEqualTo("""\n""")
   }
 
   @Test

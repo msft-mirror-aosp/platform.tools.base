@@ -275,7 +275,8 @@ class SyncCommandHandler : DeviceCommandHandler("sync") {
   private fun readSendHeader(input: InputStream, output: OutputStream): SendHeader {
     // Bytes 0-3: 'SEND'
     // Bytes 4-7: request size (little endian)
-    // Bytes 8-xx: An utf-8 string with the remote file path followed by ',' followed by the permissions as a string
+    // Bytes 8-xx: An utf-8 string with the remote file path followed by ',' followed by the
+    // permissions as a string
     val length = readLength(input)
     val bytes = readExactly(input, length)
     val header = String(bytes, UTF_8)

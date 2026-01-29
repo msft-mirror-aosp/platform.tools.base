@@ -180,7 +180,8 @@ class CompileCommandsEncoder(val file: File, initialBufferSize: Int = BYTEBUFFER
     ras.seek(bufferStartPosition)
     ras.write(map.array(), 0, map.position())
     bufferStartPosition += map.position()
-    // Type cast is required when this code is compiled by JDK 9+ and runs on JDK 8. See b/165948891 and
+    // Type cast is required when this code is compiled by JDK 9+ and runs on JDK 8. See b/165948891
+    // and
     // https://stackoverflow.com/questions/61267495/exception-in-thread-main-java-lang-nosuchmethoderror-java-nio-bytebuffer-flip
     (map as Buffer).clear()
   }

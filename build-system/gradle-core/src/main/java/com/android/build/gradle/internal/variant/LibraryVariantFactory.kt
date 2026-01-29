@@ -144,8 +144,10 @@ class LibraryVariantFactory(dslServices: DslServices) :
       projectServices,
       dataBindingOverride = null,
       mlModelBindingOverride = false,
-      // We only create android resources tasks for unit test components when the tested component is
-      // a library variant and the user specifies to includeAndroidResources. Otherwise, the tested
+      // We only create android resources tasks for unit test components when the tested component
+      // is
+      // a library variant and the user specifies to includeAndroidResources. Otherwise, the
+      // tested
       // resources and assets are just copied as the unit test resources and assets output.
       includeAndroidResources = includeAndroidResources,
     )

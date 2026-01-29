@@ -975,7 +975,8 @@ class JourneysConnectedTest {
       }
 
       // Clear the fields which we cannot compare:
-      // - The default IDs -- we already compared ID above using the actual ID from run started event.
+      // - The default IDs -- we already compared ID above using the actual ID from run started
+      // event.
       // - The start and end timestamp of the journey.
       val actualEventForCompare =
         actualEvent

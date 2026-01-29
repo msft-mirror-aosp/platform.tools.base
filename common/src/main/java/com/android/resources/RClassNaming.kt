@@ -14,18 +14,19 @@
  * limitations under the License.
  */
 @file:JvmName("RClassNaming")
+
 package com.android.resources
 
 /** Returns the name of the field in an RClass based on the resource name. */
 fun getFieldNameByResourceName(styleName: String): String {
-    var i = 0
-    val n = styleName.length
-    while (i < n) {
-        val c = styleName[i]
-        if (c == '.' || c == '-' || c == ':') {
-            return styleName.replace('.', '_').replace('-', '_').replace(':', '_')
-        }
-        i++
+  var i = 0
+  val n = styleName.length
+  while (i < n) {
+    val c = styleName[i]
+    if (c == '.' || c == '-' || c == ':') {
+      return styleName.replace('.', '_').replace('-', '_').replace(':', '_')
     }
-    return styleName
+    i++
+  }
+  return styleName
 }

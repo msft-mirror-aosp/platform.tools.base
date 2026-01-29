@@ -51,10 +51,12 @@ abstract class FilterShrinkerRulesTransform : TransformAction<FilterShrinkerRule
       // this will handle inputs that look like this:
       // input/
       // ├── lib0/
-      // |   ├── proguard.txt (optional, legacy Proguard rules coming from an Android library subproject)
+      // |   ├── proguard.txt (optional, legacy Proguard rules coming from an Android library
+      // subproject)
       // │   └── META-INF/
       // |       ├── proguard/ (optional, legacy Proguard rules coming from a JAR)
-      // │       └── com.android.tools/ (optional, targeted shrink rules coming from a JAR or classes.jar of an AAR)
+      // │       └── com.android.tools/ (optional, targeted shrink rules coming from a JAR or
+      // classes.jar of an AAR)
       // │           ├── r8[...][...]
       // │           └── proguard[...][...]
       // ├── lib1/

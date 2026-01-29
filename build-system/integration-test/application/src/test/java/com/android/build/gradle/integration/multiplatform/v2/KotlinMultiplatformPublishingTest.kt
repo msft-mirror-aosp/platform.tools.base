@@ -43,7 +43,8 @@ class KotlinMultiplatformPublishingTest {
       .withGradleOptions { withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON) }
       .from {
         settings { addRepository("repo") }
-        // Simple producer using new AGP-KMP plugin, exposing android and common target by default
+        // Simple producer using new AGP-KMP plugin, exposing android and common target by
+        // default
         androidKotlinMultiplatformLibrary(":producer") {
           applyPlugin(PluginType.MAVEN_PUBLISH)
           group = "com.example.producer"

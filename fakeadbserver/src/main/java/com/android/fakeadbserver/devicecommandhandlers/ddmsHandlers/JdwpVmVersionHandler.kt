@@ -25,7 +25,8 @@ import java.nio.ByteOrder
 class JdwpVmVersionHandler : JdwpPacketHandler {
 
   override fun handlePacket(device: DeviceState, client: ClientState, packet: JdwpPacket, jdwpHandlerOutput: JdwpHandlerOutput): Boolean {
-    // See https://docs.oracle.com/javase/8/docs/platform/jpda/jdwp/jdwp-protocol.html#JDWP_VirtualMachine_Version
+    // See
+    // https://docs.oracle.com/javase/8/docs/platform/jpda/jdwp/jdwp-protocol.html#JDWP_VirtualMachine_Version
     // string description	Text information on the VM version
     // int    jdwpMajor     Major JDWP Version number
     // int    jdwpMinor     Minor JDWP Version number

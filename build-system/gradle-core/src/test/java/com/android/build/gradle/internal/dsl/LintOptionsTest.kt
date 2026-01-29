@@ -242,7 +242,8 @@ class LintOptionsTest {
 
   @Suppress("DEPRECATION")
   companion object {
-    // Helpers for the legacy lintOptions block where the severity overrides were not exposed as collections
+    // Helpers for the legacy lintOptions block where the severity overrides were not exposed as
+    // collections
     val com.android.build.api.dsl.LintOptions.informational
       get() = (this as LintOptions).severityOverridesMap.filterValues { it == INFORMATIONAL }.keys
 

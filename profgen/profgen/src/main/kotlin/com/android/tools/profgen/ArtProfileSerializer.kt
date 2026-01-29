@@ -430,7 +430,8 @@ enum class ArtProfileSerializer(
   METADATA_FOR_N(MetadataVersion.V_001.versionBytes, byteArrayOf('p', 'r', 'm', '\u0000'), MetadataVersion.V_001) {
     override fun write(os: OutputStream, profileData: Map<DexFile, DexFileData>, apkName: String) =
       with(os) {
-        // Write the profile data in a byte array first. The array will need to be compressed before
+        // Write the profile data in a byte array first. The array will need to be compressed
+        // before
         // writing it in the final output stream.
         val profileBytes = createCompressibleBody(profileData.entries.sortedBy { it.key.name }, apkName)
         writeUInt8(profileData.size) // number of dex files
@@ -686,7 +687,8 @@ enum class ArtProfileSerializer(
   V0_1_0_P(byteArrayOf('0', '1', '0', '\u0000')) {
     override fun write(os: OutputStream, profileData: Map<DexFile, DexFileData>, apkName: String) =
       with(os) {
-        // Write the profile data in a byte array first. The array will need to be compressed before
+        // Write the profile data in a byte array first. The array will need to be compressed
+        // before
         // writing it in the final output stream.
         val profileBytes = createCompressibleBody(profileData.entries.sortedBy { it.key.name }, apkName)
         writeUInt8(profileData.size) // number of dex files
@@ -842,7 +844,8 @@ enum class ArtProfileSerializer(
   V0_0_9_OMR1(byteArrayOf('0', '0', '9', '\u0000')) {
     override fun write(os: OutputStream, profileData: Map<DexFile, DexFileData>, apkName: String) =
       with(os) {
-        // Write the profile data in a byte array first. The array will need to be compressed before
+        // Write the profile data in a byte array first. The array will need to be compressed
+        // before
         // writing it in the final output stream.
         val profileBytes = createCompressibleBody(profileData.entries.sortedBy { it.key.name }, apkName)
         writeUInt8(profileData.size) // number of dex files

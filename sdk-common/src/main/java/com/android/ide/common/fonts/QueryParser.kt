@@ -229,7 +229,8 @@ class QueryParser {
     NUMBER, // A floating point number >= 0.0f
     SEPARATOR, // "|"
     WEIGHT, // "wght", "weight" keywords
-    WEIGHT_SYNONYM, // Keywords with weight associations like: "thin", "bold", "regular", "black", etc
+    WEIGHT_SYNONYM, // Keywords with weight associations like: "thin", "bold", "regular", "black",
+    // etc
     WIDTH, // "width", "wdth" keywords
   }
 

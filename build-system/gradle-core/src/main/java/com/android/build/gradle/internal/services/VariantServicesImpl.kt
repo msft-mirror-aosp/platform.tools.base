@@ -40,7 +40,8 @@ class VariantServicesImpl(projectServices: ProjectServices, private val forUnitT
   // whether the properties have been locked already
   private var propertiesLockStatus = false
 
-  // flag to know whether to enable compatibility mode for properties that back old API returning the
+  // flag to know whether to enable compatibility mode for properties that back old API returning
+  // the
   // direct value.
   private val compatibilityMode = projectServices.projectOptions[BooleanOption.ENABLE_LEGACY_API]
 

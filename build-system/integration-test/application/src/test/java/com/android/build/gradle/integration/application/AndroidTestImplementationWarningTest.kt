@@ -30,24 +30,18 @@ import org.junit.Test
 class AndroidTestImplementationWarningTest {
 
   @get:Rule
-  val rule = GradleRule.from {
-    androidApplication {
-      pluginCallbacks += DisableAndroidTestCallback::class.java
-      dependencies {
-        androidTestImplementation("com.google.guava:guava:19.0")
+  val rule =
+    GradleRule.from {
+      androidApplication {
+        pluginCallbacks += DisableAndroidTestCallback::class.java
+        dependencies { androidTestImplementation("com.google.guava:guava:19.0") }
       }
     }
-  }
 
   class DisableAndroidTestCallback : ApplicationComponentCallback {
 
-    override fun handleExtension(
-      project: Project,
-      androidComponents: ApplicationAndroidComponentsExtension,
-    ) {
-      androidComponents.beforeVariants { variantBuilder ->
-        variantBuilder.deviceTests[DeviceTestBuilder.ANDROID_TEST_TYPE]?.enable = false
-      }
+    override fun handleExtension(project: Project, androidComponents: ApplicationAndroidComponentsExtension) {
+      androidComponents.beforeVariants { variantBuilder -> variantBuilder.deviceTests[DeviceTestBuilder.ANDROID_TEST_TYPE]?.enable = false }
     }
   }
 
@@ -57,11 +51,8 @@ class AndroidTestImplementationWarningTest {
     val models = result.container.getProject(":app")
     val issues = models.issues?.syncIssues ?: throw RuntimeException("Missing issues model")
     val warning = issues.find { it.message.contains("androidTestImplementation") }
-    assertWithMessage("Cannot find expected warning that some dependencies are ignore")
-      .that(warning).isNotNull()
+    assertWithMessage("Cannot find expected warning that some dependencies are ignore").that(warning).isNotNull()
     assertThat(warning?.severity).isEqualTo(SyncIssue.SEVERITY_WARNING)
-    assertThat(warning?.message).contains(
-      "androidTestImplementation dependencies are ignored because androidTest is disabled."
-    )
+    assertThat(warning?.message).contains("androidTestImplementation dependencies are ignored because androidTest is disabled.")
   }
 }

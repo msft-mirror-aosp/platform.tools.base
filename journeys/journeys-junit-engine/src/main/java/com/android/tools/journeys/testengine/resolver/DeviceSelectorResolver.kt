@@ -67,7 +67,8 @@ class DeviceSelectorResolver : SelectorResolver {
         match(
           Match.exact(it) {
             setOf(
-              // We use a `DeviceSpecificDirectorySelector` instead of a simple `DirectorySelector`
+              // We use a `DeviceSpecificDirectorySelector` instead of a simple
+              // `DirectorySelector`
               // to ensure JUnit 5 resolves tests uniquely for each device.
               //
               // Consider the scenario with two devices (Device1, Device2) and a single
@@ -76,7 +77,8 @@ class DeviceSelectorResolver : SelectorResolver {
               // JUnit 5 will not resolve it again for Device2, as it considers it already
               // processed. This prevents the tests in the directory from running on Device2.
               //
-              // By creating unique `DeviceSpecificDirectorySelector` instances (one per device),
+              // By creating unique `DeviceSpecificDirectorySelector` instances (one per
+              // device),
               // we ensure that tests within a directory are resolved and executed
               // for every target device.
               DeviceSpecificDirectorySelector(selector.deviceSerialId, JourneysTestEngineInput.journeysInputDir)

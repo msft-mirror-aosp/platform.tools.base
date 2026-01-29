@@ -197,7 +197,8 @@ class DexArchiveBuilderTaskDelegate(
         }
 
         // all work items have been submitted, now wait for completion.
-        // TODO (gavra): use build services in worker actions so ClassFileProviderFactory are not closed too early
+        // TODO (gavra): use build services in worker actions so ClassFileProviderFactory are not
+        // closed too early
         workerExecutor.await()
 
         loggerWrapper.verbose("Done with all dex archive conversions")

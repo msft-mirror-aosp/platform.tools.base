@@ -128,7 +128,8 @@ class StableResourceIDsTest {
         "com.example.app:color/my_color_b = 0x7f020001", // kept from previous run
         "com.example.app:color/my_color_c = 0x7f020002", // should use old ID
         "com.example.app:color/my_color_bb = 0x7f020003", // should use first unused ID
-        "com.example.app:styleable/ds = 0x7f030000", // styleable[] ID doesn't matter but is kept
+        "com.example.app:styleable/ds = 0x7f030000", // styleable[] ID doesn't matter but is
+        // kept
         "com.example.app:attr/attr_a = 0x7f010000",
         "com.example.app:attr/attr_b = 0x7f010001",
         "com.example.app:attr/attr_c = 0x7f010002",
@@ -219,7 +220,8 @@ class StableResourceIDsTest {
     assertThat(stableIdsTxt)
       .containsAllOf(
         "com.example.app:color/my_color_a = 0x7f020000",
-        "com.example.app:color/my_color_bb = 0x7f020001", // Re-numbered, not preserving previous values
+        "com.example.app:color/my_color_bb = 0x7f020001", // Re-numbered, not preserving
+        // previous values
         "com.example.app:color/my_color_c = 0x7f020002",
         "com.example.app:styleable/ds = 0x7f030000",
         "com.example.app:attr/attr_a = 0x7f010000",

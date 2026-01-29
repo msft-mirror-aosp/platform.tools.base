@@ -31,7 +31,8 @@ class CompileSdkSetThroughDSLFinalizeBlock {
   val rule =
     GradleRule.from {
       androidApplication(createMinimumProject = false) {
-        // only set up namespace and manifest, but not the compileSdk as it'll come via the plugin.
+        // only set up namespace and manifest, but not the compileSdk as it'll come via the
+        // plugin.
         android { namespace = "com.example.app" }
         files.setupMinimumManifest()
         pluginCallbacks += MyCallback::class.java

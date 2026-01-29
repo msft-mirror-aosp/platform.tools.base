@@ -120,7 +120,8 @@ object LinkEvalDominators {
 
 private data class DFSResult<T>(
   val instances: List<T?>,
-  val parents: IntArray, // Predecessors not involved in DFS, but lumped in here for 1 pass. Paper did same.
+  val parents: IntArray, // Predecessors not involved in DFS, but lumped in here for 1 pass. Paper did
+  // same.
   val predecessors: Array<IntArray?>,
 )
 

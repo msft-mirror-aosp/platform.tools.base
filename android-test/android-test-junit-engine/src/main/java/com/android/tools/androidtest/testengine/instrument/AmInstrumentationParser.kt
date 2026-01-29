@@ -262,7 +262,8 @@ class AmInstrumentationParser(
         !wasInstrumentationStartedReported && !instrumentationEnded -> ERROR_NO_TEST_RESULTS
         // Less than the expected number of tests were seen/completed
         notEnoughTestsError != null -> notEnoughTestsError
-        // The instrumentation fatally failed while being in -e log true mode. Resulting in only the
+        // The instrumentation fatally failed while being in -e log true mode. Resulting in only
+        // the
         // stream containing the exception.
         streamMsg.contains(FATAL_ERROR_MSG) -> streamMsg
         else -> null

@@ -64,7 +64,7 @@ import org.jetbrains.uast.util.isArrayInitializer
 
 class RestrictToDetector : AbstractAnnotationDetector(), SourceCodeScanner {
   override fun applicableAnnotations(): List<String> =
-      listOf(RESTRICT_TO_ANNOTATION.oldName(), RESTRICT_TO_ANNOTATION.newName(), "VisibleForTesting")
+    listOf(RESTRICT_TO_ANNOTATION.oldName(), RESTRICT_TO_ANNOTATION.newName(), "VisibleForTesting")
 
   override fun inheritAnnotation(annotation: String): Boolean {
     // Require restriction annotations to be annotated everywhere
@@ -76,10 +76,10 @@ class RestrictToDetector : AbstractAnnotationDetector(), SourceCodeScanner {
   }
 
   override fun visitAnnotationUsage(
-      context: JavaContext,
-      element: UElement,
-      annotationInfo: AnnotationInfo,
-      usageInfo: AnnotationUsageInfo,
+    context: JavaContext,
+    element: UElement,
+    annotationInfo: AnnotationInfo,
+    usageInfo: AnnotationUsageInfo,
   ) {
     val type = usageInfo.type
     if (type == AnnotationUsageType.EXTENDS && element is UTypeReferenceExpression) {
@@ -99,10 +99,10 @@ class RestrictToDetector : AbstractAnnotationDetector(), SourceCodeScanner {
     if (RESTRICT_TO_ANNOTATION.isEquals(qualifiedName)) {
       checkRestrictTo(context, element, member, annotation, usageInfo, true)
     } else if (
-        qualifiedName.endsWith(VISIBLE_FOR_TESTING_SUFFIX) &&
-            member != null &&
-            type != AnnotationUsageType.METHOD_OVERRIDE &&
-            type != AnnotationUsageType.METHOD_CALL_PARAMETER
+      qualifiedName.endsWith(VISIBLE_FOR_TESTING_SUFFIX) &&
+        member != null &&
+        type != AnnotationUsageType.METHOD_OVERRIDE &&
+        type != AnnotationUsageType.METHOD_CALL_PARAMETER
     ) {
       checkVisibleForTesting(context, element, member, annotation, usageInfo)
     }
@@ -135,14 +135,14 @@ class RestrictToDetector : AbstractAnnotationDetector(), SourceCodeScanner {
 
     //noinspection AndroidLintExternalAnnotations
     val annotations =
-        if (this is UField) {
-          // https://youtrack.jetbrains.com/issue/KTIJ-33663
-          // Technically, @VisibleForTesting is not applicable to field, hence dropped.
-          // To keep the old behavior, examine the annotations at the source level.
-          this.sourceAnnotations
-        } else {
-          this.uAnnotations
-        }
+      if (this is UField) {
+        // https://youtrack.jetbrains.com/issue/KTIJ-33663
+        // Technically, @VisibleForTesting is not applicable to field, hence dropped.
+        // To keep the old behavior, examine the annotations at the source level.
+        this.sourceAnnotations
+      } else {
+        this.uAnnotations
+      }
 
     for (annotation in annotations) {
       val name = annotation.qualifiedName ?: continue
@@ -186,11 +186,11 @@ class RestrictToDetector : AbstractAnnotationDetector(), SourceCodeScanner {
   }
 
   private fun checkVisibleForTesting(
-      context: JavaContext,
-      node: UElement,
-      member: PsiMember,
-      annotation: UAnnotation,
-      usageInfo: AnnotationUsageInfo,
+    context: JavaContext,
+    node: UElement,
+    member: PsiMember,
+    annotation: UAnnotation,
+    usageInfo: AnnotationUsageInfo,
   ) {
     val visibility = getVisibilityNotForTesting(annotation, getVisibility(member))
     if (visibility == VISIBILITY_NONE) { // not the default
@@ -257,83 +257,75 @@ class RestrictToDetector : AbstractAnnotationDetector(), SourceCodeScanner {
   }
 
   private fun reportVisibilityError(
-      context: JavaContext,
-      node: UElement,
-      annotation: UAnnotation,
-      usageInfo: AnnotationUsageInfo,
-      desc: String,
+    context: JavaContext,
+    node: UElement,
+    annotation: UAnnotation,
+    usageInfo: AnnotationUsageInfo,
+    desc: String,
   ) {
     val type =
-        when (node) {
-          is UTypeReferenceExpression -> "class"
-          else -> "method"
-        }
+      when (node) {
+        is UTypeReferenceExpression -> "class"
+        else -> "method"
+      }
     val message =
-        when (usageInfo.type) {
-          CLASS_REFERENCE_AS_IMPLICIT_DECLARATION_TYPE -> {
-            val typeText = (usageInfo.referenced as? PsiClass)?.name
-            "This declaration implicitly references ${typeText?.plus(",") ?: "a type"} " +
-                "which should only be accessed from tests or within $desc scope"
-          }
-          else -> "This $type should only be accessed from tests or within $desc scope"
+      when (usageInfo.type) {
+        CLASS_REFERENCE_AS_IMPLICIT_DECLARATION_TYPE -> {
+          val typeText = (usageInfo.referenced as? PsiClass)?.name
+          "This declaration implicitly references ${typeText?.plus(",") ?: "a type"} " +
+            "which should only be accessed from tests or within $desc scope"
         }
+        else -> "This $type should only be accessed from tests or within $desc scope"
+      }
     val location: Location =
-        if (node is UCallExpression) {
-          context.getCallLocation(node, false, false)
-        } else {
-          context.getLocation(node)
-        }
+      if (node is UCallExpression) {
+        context.getCallLocation(node, false, false)
+      } else {
+        context.getLocation(node)
+      }
 
     val issue =
-        when (annotation.qualifiedName) {
-          INTELLIJ_VISIBLE_FOR_TESTING_ANNOTATION -> TEST_VISIBILITY_INTELLIJ
-          else -> TEST_VISIBILITY
-        }
+      when (annotation.qualifiedName) {
+        INTELLIJ_VISIBLE_FOR_TESTING_ANNOTATION -> TEST_VISIBILITY_INTELLIJ
+        else -> TEST_VISIBILITY
+      }
 
     report(context, issue, node, location, message)
   }
 
   // TODO: Test XML access of restricted classes
   private fun checkRestrictTo(
-      context: JavaContext,
-      node: UElement,
-      method: PsiMember?,
-      annotation: UAnnotation,
-      usageInfo: AnnotationUsageInfo,
-      applyClassAnnotationsToMembers: Boolean = true,
+    context: JavaContext,
+    node: UElement,
+    method: PsiMember?,
+    annotation: UAnnotation,
+    usageInfo: AnnotationUsageInfo,
+    applyClassAnnotationsToMembers: Boolean = true,
   ) {
     val scope = getRestrictionScope(annotation)
     if (scope != 0) {
-      checkRestrictTo(
-          context,
-          node,
-          method,
-          annotation,
-          usageInfo,
-          scope,
-          applyClassAnnotationsToMembers,
-      )
+      checkRestrictTo(context, node, method, annotation, usageInfo, scope, applyClassAnnotationsToMembers)
     }
   }
 
   private fun checkRestrictTo(
-      context: JavaContext,
-      node: UElement,
-      member: PsiMember?,
-      annotation: UAnnotation,
-      usageInfo: AnnotationUsageInfo,
-      scope: Int,
-      applyClassAnnotationsToMembers: Boolean = true,
+    context: JavaContext,
+    node: UElement,
+    member: PsiMember?,
+    annotation: UAnnotation,
+    usageInfo: AnnotationUsageInfo,
+    scope: Int,
+    applyClassAnnotationsToMembers: Boolean = true,
   ) {
 
     val containingClass =
-        when {
-          node is UTypeReferenceExpression -> PsiTypesUtil.getPsiClass(node.type)
-          member != null -> member.containingClass
-          node is UCallExpression -> node.classReference?.resolve() as? PsiClass?
-          node is UClass -> node.javaPsi
-          else -> null
-        }
+      when {
+        node is UTypeReferenceExpression -> PsiTypesUtil.getPsiClass(node.type)
+        member != null -> member.containingClass
+        node is UCallExpression -> node.classReference?.resolve() as? PsiClass?
+        node is UClass -> node.javaPsi
+        else -> null
+      }
 
     containingClass ?: return
 
@@ -350,7 +342,7 @@ class RestrictToDetector : AbstractAnnotationDetector(), SourceCodeScanner {
     }
 
     if (
-        usageInfo.anyCloser { it.qualifiedName == RESTRICT_TO_ANNOTATION.oldName() || it.qualifiedName == RESTRICT_TO_ANNOTATION.newName() }
+      usageInfo.anyCloser { it.qualifiedName == RESTRICT_TO_ANNOTATION.oldName() || it.qualifiedName == RESTRICT_TO_ANNOTATION.newName() }
     ) {
       return
     }
@@ -359,15 +351,15 @@ class RestrictToDetector : AbstractAnnotationDetector(), SourceCodeScanner {
       val evaluator = context.evaluator
       val thisCoordinates = evaluator.getLibrary(node) ?: context.project.mavenCoordinate
       val methodCoordinates =
-          evaluator.getLibrary(member)
-              ?: run {
-                if (thisCoordinates != null && member !is PsiCompiledElement) {
-                  // Local source?
-                  context.evaluator.getProject(member)?.mavenCoordinate
-                } else {
-                  null
-                }
-              }
+        evaluator.getLibrary(member)
+          ?: run {
+            if (thisCoordinates != null && member !is PsiCompiledElement) {
+              // Local source?
+              context.evaluator.getProject(member)?.mavenCoordinate
+            } else {
+              null
+            }
+          }
       val thisGroup = thisCoordinates?.groupId
       val methodGroup = methodCoordinates?.groupId
       if (thisGroup != methodGroup && methodGroup != null) {
@@ -379,28 +371,28 @@ class RestrictToDetector : AbstractAnnotationDetector(), SourceCodeScanner {
       val evaluator = context.evaluator
       val thisCoordinates = evaluator.getLibrary(node) ?: context.project.mavenCoordinate
       val methodCoordinates =
-          evaluator.getLibrary(member)
-              ?: run {
-                if (thisCoordinates != null && member !is PsiCompiledElement) {
-                  // Local source?
-                  context.evaluator.getProject(member)?.mavenCoordinate
-                } else {
-                  null
-                }
-              }
+        evaluator.getLibrary(member)
+          ?: run {
+            if (thisCoordinates != null && member !is PsiCompiledElement) {
+              // Local source?
+              context.evaluator.getProject(member)?.mavenCoordinate
+            } else {
+              null
+            }
+          }
       val thisGroup = thisCoordinates?.groupId
       val methodGroup = methodCoordinates?.groupId
       if (methodGroup != null && (thisGroup == null || !sameLibraryGroupPrefix(thisGroup, methodGroup))) {
         val expectedPrefix =
-            methodGroup.lastIndexOf('.').let {
-              if (it < 0) {
-                "\"\""
-              } else {
-                methodGroup.substring(0, it)
-              }
+          methodGroup.lastIndexOf('.').let {
+            if (it < 0) {
+              "\"\""
+            } else {
+              methodGroup.substring(0, it)
             }
+          }
         val where =
-            "from within the same library group prefix (referenced groupId=`$methodGroup` with prefix $expectedPrefix${if (thisGroup != null) " from groupId=`$thisGroup`" else ""})"
+          "from within the same library group prefix (referenced groupId=`$methodGroup` with prefix $expectedPrefix${if (thisGroup != null) " from groupId=`$thisGroup`" else ""})"
         reportRestriction(where, containingClass, member, context, node, usageInfo)
       }
     } else if (scope and RESTRICT_TO_LIBRARY != 0 && member != null) {
@@ -423,11 +415,11 @@ class RestrictToDetector : AbstractAnnotationDetector(), SourceCodeScanner {
         if (project != null && project != context.project) {
           val coordinates = project.mavenCoordinate
           val name =
-              if (coordinates != null) {
-                "${coordinates.groupId}:${coordinates.artifactId}"
-              } else {
-                project.name
-              }
+            if (coordinates != null) {
+              "${coordinates.groupId}:${coordinates.artifactId}"
+            } else {
+              project.name
+            }
           val where = "from within the same library ($name)"
           reportRestriction(where, containingClass, member, context, node, usageInfo)
         }
@@ -473,24 +465,24 @@ class RestrictToDetector : AbstractAnnotationDetector(), SourceCodeScanner {
   }
 
   private fun reportRestriction(
-      where: String?,
-      containingClass: PsiClass,
-      member: PsiMember?,
-      context: JavaContext,
-      node: UElement,
-      usageInfo: AnnotationUsageInfo,
+    where: String?,
+    containingClass: PsiClass,
+    member: PsiMember?,
+    context: JavaContext,
+    node: UElement,
+    usageInfo: AnnotationUsageInfo,
   ) {
     var api: String
     api =
-        if (member == null || member is PsiMethod && member.isConstructor) {
-          member?.name ?: (containingClass.name + " constructor")
-        } else
-        //noinspection LintImplPsiEquals
-        if (containingClass == member) {
-          member.name ?: "class"
-        } else {
-          containingClass.name + "." + member.name
-        }
+      if (member == null || member is PsiMethod && member.isConstructor) {
+        member?.name ?: (containingClass.name + " constructor")
+      } else
+      //noinspection LintImplPsiEquals
+      if (containingClass == member) {
+        member.name ?: "class"
+      } else {
+        containingClass.name + "." + member.name
+      }
 
     var locationNode = node
     if (node is UCallExpression) {
@@ -532,11 +524,11 @@ class RestrictToDetector : AbstractAnnotationDetector(), SourceCodeScanner {
     }
 
     val location =
-        if (locationNode is UCallExpression) {
-          context.getCallLocation(locationNode, false, false)
-        } else {
-          context.getLocation(locationNode)
-        }
+      if (locationNode is UCallExpression) {
+        context.getCallLocation(locationNode, false, false)
+      } else {
+        context.getLocation(locationNode)
+      }
     report(context, RESTRICTED, node, location, message, null)
   }
 
@@ -564,11 +556,11 @@ class RestrictToDetector : AbstractAnnotationDetector(), SourceCodeScanner {
 
     fun getVisibility(member: PsiMember): Int {
       val defaultForLanguage =
-          when (member.language) {
-            is KotlinLanguage -> VISIBILITY_PUBLIC
-            is JavaLanguage -> VISIBILITY_PACKAGE_PRIVATE
-            else -> VISIBILITY_NONE
-          }
+        when (member.language) {
+          is KotlinLanguage -> VISIBILITY_PUBLIC
+          is JavaLanguage -> VISIBILITY_PACKAGE_PRIVATE
+          else -> VISIBILITY_NONE
+        }
 
       val modifierList = member.modifierList ?: return defaultForLanguage
 
@@ -614,12 +606,12 @@ class RestrictToDetector : AbstractAnnotationDetector(), SourceCodeScanner {
         // The other annotations, which have parameters to specify production visibility
         else -> {
           val value =
-              annotation.findDeclaredAttributeValue(ATTR_OTHERWISE)
-                  // Guava within Google3:
-                  ?: annotation.findDeclaredAttributeValue(ATTR_PRODUCTION_VISIBILITY)
-                  // Used in many android versions like
-                  // com.android.internal.annotations.VisibleForTesting
-                  ?: annotation.findDeclaredAttributeValue(ATTR_VISIBILITY)
+            annotation.findDeclaredAttributeValue(ATTR_OTHERWISE)
+              // Guava within Google3:
+              ?: annotation.findDeclaredAttributeValue(ATTR_PRODUCTION_VISIBILITY)
+              // Used in many android versions like
+              // com.android.internal.annotations.VisibleForTesting
+              ?: annotation.findDeclaredAttributeValue(ATTR_VISIBILITY)
           if (value is ULiteralExpression) {
             val v = value.value
             if (v is Int) {
@@ -654,7 +646,7 @@ class RestrictToDetector : AbstractAnnotationDetector(), SourceCodeScanner {
             val psi = annotation.sourcePsi
             if (psi is ClsAnnotationImpl) {
               val otherwise =
-                  psi.findAttribute(ATTR_OTHERWISE) ?: psi.findAttribute(ATTR_PRODUCTION_VISIBILITY) ?: psi.findAttribute(ATTR_VISIBILITY)
+                psi.findAttribute(ATTR_OTHERWISE) ?: psi.findAttribute(ATTR_PRODUCTION_VISIBILITY) ?: psi.findAttribute(ATTR_VISIBILITY)
               val v = otherwise?.attributeValue
               if (v is JvmAnnotationConstantValue) {
                 val constant = v.constantValue
@@ -759,11 +751,11 @@ class RestrictToDetector : AbstractAnnotationDetector(), SourceCodeScanner {
     /** Using a restricted API. */
     @JvmField
     val RESTRICTED =
-        Issue.create(
-            id = "RestrictedApi",
-            briefDescription = "Restricted API",
-            explanation =
-                """
+      Issue.create(
+        id = "RestrictedApi",
+        briefDescription = "Restricted API",
+        explanation =
+          """
                 This API has been flagged with a restriction that has not been met.
 
                 Examples of API restrictions:
@@ -772,20 +764,20 @@ class RestrictToDetector : AbstractAnnotationDetector(), SourceCodeScanner {
                 * Method can only be accessed from tests.
 
                 You can add your own API restrictions with the `@RestrictTo` annotation.""",
-            category = Category.CORRECTNESS,
-            priority = 4,
-            severity = Severity.ERROR,
-            implementation = IMPLEMENTATION,
-        )
+        category = Category.CORRECTNESS,
+        priority = 4,
+        severity = Severity.ERROR,
+        implementation = IMPLEMENTATION,
+      )
 
     /** Using an intended-for-tests API */
     @JvmField
     val TEST_VISIBILITY =
-        Issue.create(
-            id = "VisibleForTests",
-            briefDescription = "Visible Only For Tests",
-            explanation =
-                """
+      Issue.create(
+        id = "VisibleForTests",
+        briefDescription = "Visible Only For Tests",
+        explanation =
+          """
                 This check looks for accesses from production code (e.g. not tests) where \
                 the access would not have been allowed with the intended production \
                 visibility.
@@ -805,26 +797,26 @@ class RestrictToDetector : AbstractAnnotationDetector(), SourceCodeScanner {
                 "one step down" from the testing visibility. For example, if the testing \
                 visibility is public, the production visibility is assumed to be package-private.
                 """,
-            category = Category.CORRECTNESS,
-            priority = 4,
-            severity = Severity.WARNING,
-            implementation = IMPLEMENTATION,
-        )
+        category = Category.CORRECTNESS,
+        priority = 4,
+        severity = Severity.WARNING,
+        implementation = IMPLEMENTATION,
+      )
 
     @JvmField
     val TEST_VISIBILITY_INTELLIJ =
-        Issue.create(
-            id = "VisibleForTests",
-            briefDescription = "Visible Only For Tests",
-            explanation =
-                """
+      Issue.create(
+        id = "VisibleForTests",
+        briefDescription = "Visible Only For Tests",
+        explanation =
+          """
                 This check looks for accesses from production code (e.g. not tests) where \
                 the access would not have been allowed if its visibility was not relaxed for \
                 testing purposes.""",
-            category = Category.CORRECTNESS,
-            priority = 4,
-            severity = Severity.WARNING,
-            implementation = IMPLEMENTATION,
-        )
+        category = Category.CORRECTNESS,
+        priority = 4,
+        severity = Severity.WARNING,
+        implementation = IMPLEMENTATION,
+      )
   }
 }

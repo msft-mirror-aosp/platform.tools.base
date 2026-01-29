@@ -152,8 +152,10 @@ abstract class FusedLibraryDependencyValidationTask : NonIncrementalGlobalTask()
           {
             when (it.dependency) {
               is ResolvedDependencyResult -> {
-                // Check case where :libA <- :libB <- :libC, where only :libA and :libC are included
-                // i.e., a not included component must not have a dependency on an included component
+                // Check case where :libA <- :libB <- :libC, where only :libA and :libC are
+                // included
+                // i.e., a not included component must not have a dependency on an included
+                // component
                 // This check prevents cyclic dependencies.
                 val parent = it.parentId
                 val id = it.dependency.selected.id

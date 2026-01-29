@@ -163,7 +163,8 @@ class AppProcessNameRetrieverTest : AdbLibToolsTestBase() {
 
       // Act
       launch {
-          // delay closing `appProcess` to give `AppProcessNameRetriever` time to start process name retrieval
+          // delay closing `appProcess` to give `AppProcessNameRetriever` time to start process
+          // name retrieval
           delay(500)
         }
         .invokeOnCompletion { (appProcess as AppProcessImpl).close() }

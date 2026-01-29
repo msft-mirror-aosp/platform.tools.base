@@ -117,8 +117,10 @@ internal suspend fun executeAbbCommand(
   val abbCommand = connectedDevice.session.deviceServices.abbCommand(deviceSelector, command.split(" "))
   setAbbProtocol(abbCommand, adbService)
 
-  // TODO(b/298475728): Revisit this when we are closer to having a working implementation of `IDevice`
-  // If `shutdownOutput` is true then we get a "java.lang.SecurityException: Files still open" exception
+  // TODO(b/298475728): Revisit this when we are closer to having a working implementation of
+  // `IDevice`
+  // If `shutdownOutput` is true then we get a "java.lang.SecurityException: Files still open"
+  // exception
   // when executing a "package install-commit" command after the "package install-write" command
   // since the package manager doesn't handle shutdown correctly.
   abbCommand.shutdownOutputForExecProtocol(shutdownOutput)

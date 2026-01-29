@@ -286,8 +286,10 @@ class AsmInstrumentationManagerTest(private val testMode: TestMode) {
         listOf("f1" to listOf(FirstVisitorAnnotation::class.java.name), "f2" to listOf(FirstVisitorAnnotation::class.java.name)),
     )
 
-    // ClassExtendsOneClassAndImplementsTwoInterfaces.f2 should be annotated with FirstVisitorAnnotation
-    // ClassExtendsOneClassAndImplementsTwoInterfaces.f3 should be annotated with SecondVisitorAnnotation
+    // ClassExtendsOneClassAndImplementsTwoInterfaces.f2 should be annotated with
+    // FirstVisitorAnnotation
+    // ClassExtendsOneClassAndImplementsTwoInterfaces.f3 should be annotated with
+    // SecondVisitorAnnotation
 
     checkInstrumentedClassAnnotatedMethods(
       instrumentedClassesLoader = instrumentedClassesLoader,
@@ -297,7 +299,8 @@ class AsmInstrumentationManagerTest(private val testMode: TestMode) {
     )
 
     // The above annotated methods should be inherited
-    // ClassExtendsAClassThatExtendsAnotherClassAndImplementsTwoInterfaces.f4 should be annotated with
+    // ClassExtendsAClassThatExtendsAnotherClassAndImplementsTwoInterfaces.f4 should be annotated
+    // with
     // SecondVisitorAnnotation
 
     checkInstrumentedClassAnnotatedMethods(
@@ -431,8 +434,10 @@ class AsmInstrumentationManagerTest(private val testMode: TestMode) {
       expectedAnnotatedMethods = emptyList(),
     )
 
-    // ClassExtendsOneClassAndImplementsTwoInterfaces.f2 should be annotated with FirstVisitorAnnotation
-    // ClassExtendsOneClassAndImplementsTwoInterfaces.f3 should be annotated with SecondVisitorAnnotation
+    // ClassExtendsOneClassAndImplementsTwoInterfaces.f2 should be annotated with
+    // FirstVisitorAnnotation
+    // ClassExtendsOneClassAndImplementsTwoInterfaces.f3 should be annotated with
+    // SecondVisitorAnnotation
 
     checkInstrumentedClassAnnotatedMethods(
       instrumentedClassesLoader = instrumentedClassesLoader,
@@ -442,7 +447,8 @@ class AsmInstrumentationManagerTest(private val testMode: TestMode) {
     )
 
     // The above annotated methods should be inherited
-    // ClassExtendsAClassThatExtendsAnotherClassAndImplementsTwoInterfaces.f4 should be annotated with
+    // ClassExtendsAClassThatExtendsAnotherClassAndImplementsTwoInterfaces.f4 should be annotated
+    // with
     // SecondVisitorAnnotation but is filtered out
 
     checkInstrumentedClassAnnotatedMethods(

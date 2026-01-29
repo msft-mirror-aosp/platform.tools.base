@@ -345,7 +345,8 @@ fun parseVersion(part: String, config: ConfigDescription): Boolean {
   val dot = part.indexOf('.')
   val sdkVersion = (if (dot == -1) part.substring(1) else part.substring(1, dot)).toIntOrNull()?.toShort() ?: return false
   val minorVersion = if (dot == -1) 0 else part.substring(dot + 1).toIntOrNull()?.toShort() ?: return false
-  // sdkVersion of 0 is not really valid, even though we allow it to be parsed. Therefore, if it's 0,
+  // sdkVersion of 0 is not really valid, even though we allow it to be parsed. Therefore, if it's
+  // 0,
   // we shouldn't allow a minorVersion (unless it's also 0).
   if (sdkVersion == 0.toShort() && minorVersion > 0) return false
   config.sdkVersion = sdkVersion

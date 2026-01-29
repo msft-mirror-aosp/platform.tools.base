@@ -105,8 +105,10 @@ class JdwpProcessChangeFlowTest {
       val processUpdatesList = CopyOnWriteArrayList<JdwpProcessChange>()
       launch {
         // Start a client
-        // It triggers one `addedProcesses` update, followed by several `updatedPropertiesProcesses`
-        // updates as a result of properties being updated from HELO, FEAT, and other DDMS packages
+        // It triggers one `addedProcesses` update, followed by several
+        // `updatedPropertiesProcesses`
+        // updates as a result of properties being updated from HELO, FEAT, and other DDMS
+        // packages
         fakeDevice.startClient(pid10, 0, "a.b.c.e", false)
         yieldUntil { processUpdatesList.size >= 2 }
         with(processUpdatesList[0]) {

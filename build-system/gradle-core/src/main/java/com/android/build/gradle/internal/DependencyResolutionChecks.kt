@@ -75,7 +75,8 @@ fun registerDependencyCheck(project: Project, projectOptions: ProjectOptions) {
         error(errorMessage)
       } else {
         project.logger.warn("$errorMessage\nRun with --info for a stacktrace.")
-        // TODO b/80230357: Heuristically sanitized stacktrace to show what triggered the resolution.
+        // TODO b/80230357: Heuristically sanitized stacktrace to show what triggered the
+        // resolution.
         if (project.logger.isEnabled(LogLevel.INFO)) {
           project.logger.info(Throwables.getStackTraceAsString(RuntimeException(errorMessage)))
         }

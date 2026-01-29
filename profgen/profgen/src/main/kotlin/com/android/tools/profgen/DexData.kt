@@ -42,7 +42,8 @@ fun Apk(file: File, name: String = ""): Apk {
       if (fileNameMatches == null) {
         continue
       }
-      // Take just the filename without the path, which is later compared with the one from the profile itself
+      // Take just the filename without the path, which is later compared with the one from the
+      // profile itself
       val (dexFileName) = fileNameMatches.destructured
       zipFile.getInputStream(zipEntry)!!.use { inputStream ->
         val dex = parseDexFile(inputStream.readBytes(), dexFileName)
@@ -83,8 +84,10 @@ class DexFile internal constructor(internal val header: DexHeader, val dexChecks
   internal val methodPool = ArrayList<DexMethod>(header.methodIds.size)
   internal val definedMethods = HashSet<Int>()
 
-  // we don't really care about any of the details of classes, just what index it corresponds to in the
-  // type pool, and we can use the type pool to determine its descriptor, so in this case we only need an IntArray.
+  // we don't really care about any of the details of classes, just what index it corresponds to in
+  // the
+  // type pool, and we can use the type pool to determine its descriptor, so in this case we only
+  // need an IntArray.
   internal val classDefPool = IntArray(header.classDefs.size)
 
   companion object : Comparator<DexFile> {

@@ -170,7 +170,8 @@ internal class AdbWriteBackOutputChannel(
     isClosed = true
     pipe.close()
 
-    // Closing the scope ensures any pending write operation on this destination channel is cancelled
+    // Closing the scope ensures any pending write operation on this destination channel is
+    // cancelled
     thisScope.cancel("${this::class.simpleName} has been closed")
 
     // Close the destination channel if required

@@ -81,7 +81,8 @@ internal class ScreenshotClassPageRenderer : PageRenderer<ClassTestResults>() {
   }
 
   fun renderTests(htmlWriter: SimpleHtmlWriter?) {
-    // show test images even for a successful test so that users can view what images were saved or see diff if it was below threshold
+    // show test images even for a successful test so that users can view what images were saved or
+    // see diff if it was below threshold
     for (test in results.results) {
       htmlWriter!!
         .startElement("div")

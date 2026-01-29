@@ -560,7 +560,8 @@ class DslDecorator(supportedPropertyTypes: List<SupportedPropertyType>) {
     if (property.supportedPropertyType == SupportedPropertyType.Collection.Map) {
       GeneratorAdapter(Opcodes.ACC_PUBLIC.or(Opcodes.ACC_SYNTHETIC), extraSetter, null, null, classWriter).apply {
         checkExperimentalGuard(generatedClass, property, experimentalGuards)
-        // val newMap = HashMap(argument) // Take a copy so e.g. field = field doesn't clear the field!
+        // val newMap = HashMap(argument) // Take a copy so e.g. field = field doesn't clear the
+        // field!
         // __backingField.clear()
         // __backingField.putAll(newMap)
         newInstance(HASH_MAP)
@@ -579,7 +580,8 @@ class DslDecorator(supportedPropertyTypes: List<SupportedPropertyType>) {
       }
     } else {
       GeneratorAdapter(Opcodes.ACC_PUBLIC.or(Opcodes.ACC_SYNTHETIC), extraSetter, null, null, classWriter).apply {
-        // val newList = ArrayList(argument) // Take a copy so e.g. field = field doesn't clear the field!
+        // val newList = ArrayList(argument) // Take a copy so e.g. field = field doesn't clear
+        // the field!
         // __backingField.clear()
         // __backingField.addAll(newList)
         newInstance(ARRAY_LIST)

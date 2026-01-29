@@ -221,7 +221,8 @@ data class ResStringPoolHeader(
 
 /** This structure defines a span of style information associated with a string in the pool. */
 data class ResStringPoolSpan(
-  // this is the name of the span  -- that is, the name of the XML tag that defined it. The special
+  // this is the name of the span  -- that is, the name of the XML tag that defined it. The
+  // special
   // value END indicates the end of an array of spans.
   val name: ResStringPoolRef,
   // The range of characters in the string that this span applies to.

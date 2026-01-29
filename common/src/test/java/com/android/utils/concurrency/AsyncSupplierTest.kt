@@ -99,7 +99,8 @@ class AsyncSupplierTest {
     var counter = 0
     val virtualExecutor = VirtualTimeScheduler()
 
-    // For testing, we create a CachedAsyncSupplier that is always out of date and will always compute the new value
+    // For testing, we create a CachedAsyncSupplier that is always out of date and will always
+    // compute the new value
     val expensiveSupplier =
       CachedAsyncSupplier(compute = { ++counter }, isUpToDate = { false }, executor = MoreExecutors.newDirectExecutorService())
     AsyncSupplierRefresher(asyncSupplier = expensiveSupplier, executor = virtualExecutor, refreshDuration = Duration.ofSeconds(30))

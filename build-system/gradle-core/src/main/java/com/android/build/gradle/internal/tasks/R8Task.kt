@@ -875,7 +875,8 @@ abstract class R8ToolParameters {
               File(it.outputFile).readText(),
               it.outputFile,
               manifestFileRequired = true,
-              manifestParsingAllowedProvider = null, // Always allow manifest parsing as this should be called only in the execution phase
+              manifestParsingAllowedProvider = null, // Always allow manifest parsing as this should be called only in
+              // the execution phase
               THROW_ON_ERROR_ISSUE_REPORTER,
             )
             .isolatedSplits

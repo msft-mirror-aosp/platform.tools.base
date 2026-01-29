@@ -15,9 +15,5 @@
  */
 package com.android.ide.common.resources.sampledata
 
-/** Holder for the sample data cache  */
-class SampleDataHolder(
-    val name: String,
-    val lastModification: Long,
-    val fileSizeMb: Int,
-    val contents: ByteArray)
+/** Holder for the sample data cache */
+class SampleDataHolder(val name: String, val lastModification: Long, val fileSizeMb: Int, val contents: ByteArray)

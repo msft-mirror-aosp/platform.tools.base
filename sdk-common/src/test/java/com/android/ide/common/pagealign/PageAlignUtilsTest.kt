@@ -40,7 +40,8 @@ import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream
 import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream
 import org.junit.Test
 
-// First bytes of ndk/28.0.12433566/toolchains/llvm/prebuilt/linux-x86_64/lib/aarch64-unknown-linux-musl/libc++abi.so
+// First bytes of
+// ndk/28.0.12433566/toolchains/llvm/prebuilt/linux-x86_64/lib/aarch64-unknown-linux-musl/libc++abi.so
 val SO_FILE_16K_ALIGNED =
   byteArrayOf(
     127,
@@ -1238,7 +1239,8 @@ class PageAlignUtilsTest {
     assertThat(problem.toString()).contains("RELRO is not a prefix and its start is not 16 KB aligned")
   }
 
-  // Example found at: ndk/23.2.8568313/toolchains/llvm/prebuilt/linux-x86_64/python3/lib/libpython3.so
+  // Example found at:
+  // ndk/23.2.8568313/toolchains/llvm/prebuilt/linux-x86_64/python3/lib/libpython3.so
   @Test
   fun `direct readElfAlignmentProblems on unaligned RELRO end`() {
     val stream =
@@ -1604,7 +1606,8 @@ class PageAlignUtilsTest {
     assertThat(checkPageAlign(input)).isEqualTo(PageAlignCheckResult.IsNotAligned64bitElf)
   }
 
-  // First bytes of 21.4.7075529/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/arm-linux-androideabi/29/libc++.so
+  // First bytes of
+  // 21.4.7075529/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/arm-linux-androideabi/29/libc++.so
   @Test
   fun `so file is actually a linker script`() {
     val input = ByteArrayInputStream(byteArrayOf(73, 78, 80, 85, 84, 40, 45, 108, 99, 43, 43))

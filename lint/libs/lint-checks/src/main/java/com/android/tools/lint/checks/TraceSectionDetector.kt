@@ -52,24 +52,19 @@ class TraceSectionDetector : Detector(), SourceCodeScanner {
   override fun visitMethodCall(context: JavaContext, node: UCallExpression, method: PsiMethod) {
     val result = searchForMatchingTraceSection(context, node)
     val message =
-        when (result) {
-          FOUND_NOTHING -> return
-          FOUND_SUSPEND ->
-              "The `${node.methodName}()` call is not always closed with a matching " +
-                  "`${endName(node.methodName)}()` because the code in between may suspend"
-          FOUND_RETURN ->
-              "The `${node.methodName}()` call is not always closed with a matching " +
-                  "`${endName(node.methodName)}()` because the code in between may return early"
-          FOUND_EXCEPTION ->
-              "The `${node.methodName}()` call is not always closed with a matching " +
-                  "`${endName(node.methodName)}()` because the code in between may throw an exception"
-        }
-    context.report(
-        UNCLOSED_TRACE,
-        node,
-        context.getCallLocation(node, includeReceiver = false, includeArguments = false),
-        message,
-    )
+      when (result) {
+        FOUND_NOTHING -> return
+        FOUND_SUSPEND ->
+          "The `${node.methodName}()` call is not always closed with a matching " +
+            "`${endName(node.methodName)}()` because the code in between may suspend"
+        FOUND_RETURN ->
+          "The `${node.methodName}()` call is not always closed with a matching " +
+            "`${endName(node.methodName)}()` because the code in between may return early"
+        FOUND_EXCEPTION ->
+          "The `${node.methodName}()` call is not always closed with a matching " +
+            "`${endName(node.methodName)}()` because the code in between may throw an exception"
+      }
+    context.report(UNCLOSED_TRACE, node, context.getCallLocation(node, includeReceiver = false, includeArguments = false), message)
   }
 
   /** Return the name of the matching end-section call. */
@@ -80,11 +75,11 @@ class TraceSectionDetector : Detector(), SourceCodeScanner {
   companion object {
     @JvmField
     val STRICT_MODE =
-        BooleanOption(
-            "strict",
-            "Whether to assume any method call could throw an exception",
-            false,
-            """
+      BooleanOption(
+        "strict",
+        "Whether to assume any method call could throw an exception",
+        false,
+        """
           In strict mode, this check assumes that any method call in between begin-section and \
           end-section pairs could potentially throw an exception. Strict mode is useful for \
           situations where unchecked Java exceptions are caught and do not necessarily result in \
@@ -96,15 +91,15 @@ class TraceSectionDetector : Detector(), SourceCodeScanner {
           all Java method calls need to be guarded using a finally block so ensure the trace is \
           always ended.
           """,
-        )
+      )
 
     @JvmField
     val UNCLOSED_TRACE =
-        Issue.create(
-                id = "UnclosedTrace",
-                briefDescription = "Incorrect trace section usage",
-                explanation =
-                    """
+      Issue.create(
+          id = "UnclosedTrace",
+          briefDescription = "Incorrect trace section usage",
+          explanation =
+            """
             Calls to begin trace sections must be followed by corresponding calls to end those \
             trace sections. Care must be taken to ensure that begin-section / end-section pairs \
             are properly nested, and that functions do not return when there are still unclosed \
@@ -157,13 +152,13 @@ class TraceSectionDetector : Detector(), SourceCodeScanner {
             }
             ```
             """,
-                category = Category.CORRECTNESS,
-                priority = 2,
-                severity = Severity.WARNING,
-                androidSpecific = true,
-                implementation = Implementation(TraceSectionDetector::class.java, Scope.JAVA_FILE_SCOPE),
-            )
-            .setOptions(listOf(STRICT_MODE))
+          category = Category.CORRECTNESS,
+          priority = 2,
+          severity = Severity.WARNING,
+          androidSpecific = true,
+          implementation = Implementation(TraceSectionDetector::class.java, Scope.JAVA_FILE_SCOPE),
+        )
+        .setOptions(listOf(STRICT_MODE))
 
     private const val PLATFORM_TRACE_FQN = "android.os.Trace"
     private const val ANDROIDX_TRACE_FQN = "androidx.tracing.Trace"
@@ -180,9 +175,9 @@ class TraceSectionDetector : Detector(), SourceCodeScanner {
     private const val TRACE_END = "traceEnd"
 
     private class AstSearchContext(
-        val context: JavaContext,
-        val isBeginCall: (call: UCallExpression) -> Boolean,
-        val isEndCall: (call: UCallExpression) -> Boolean,
+      val context: JavaContext,
+      val isBeginCall: (call: UCallExpression) -> Boolean,
+      val isEndCall: (call: UCallExpression) -> Boolean,
     )
 
     enum class SearchResult {
@@ -192,76 +187,69 @@ class TraceSectionDetector : Detector(), SourceCodeScanner {
       FOUND_SUSPEND,
     }
 
-    private fun searchForMatchingTraceSection(
-        context: JavaContext,
-        node: UCallExpression,
-    ): SearchResult {
+    private fun searchForMatchingTraceSection(context: JavaContext, node: UCallExpression): SearchResult {
       val searchContext =
-          if (isPlatformPublicBeginCall(node)) {
-            AstSearchContext(context, ::isPlatformPublicBeginCall, ::isPlatformPublicEndCall)
-          } else if (isPlatformSystemBeginCall(node)) {
-            AstSearchContext(context, ::isPlatformSystemBeginCall, ::isPlatformSystemEndCall)
-          } else if (isAndroidXBeginCall(node)) {
-            AstSearchContext(context, ::isAndroidXBeginCall, ::isAndroidXEndCall)
-          } else {
-            return FOUND_NOTHING
-          }
+        if (isPlatformPublicBeginCall(node)) {
+          AstSearchContext(context, ::isPlatformPublicBeginCall, ::isPlatformPublicEndCall)
+        } else if (isPlatformSystemBeginCall(node)) {
+          AstSearchContext(context, ::isPlatformSystemBeginCall, ::isPlatformSystemEndCall)
+        } else if (isAndroidXBeginCall(node)) {
+          AstSearchContext(context, ::isAndroidXBeginCall, ::isAndroidXEndCall)
+        } else {
+          return FOUND_NOTHING
+        }
 
       val containingMethod = node.getParentOfType<UMethod>() ?: return FOUND_NOTHING
       val strictMode = STRICT_MODE.getValue(context)
       val graph =
-          ControlFlowGraph.create(
-              containingMethod,
-              builder =
-                  object :
-                      ControlFlowGraph.Companion.Builder(
-                          strictMode,
-                          trackCallThrows = true,
-                          trackUncheckedExceptions = false,
-                      ) {
-                    override fun canThrow(reference: UElement, method: PsiMethod): Boolean {
-                      val name = method.name
-                      // Ignore exceptions for begin and end calls. Technically,
-                      // android.os.Trace.beginSection() will throw an IllegalArgumentException if passed
-                      // a string longer than 127 characters, but that's a separate issue.
-                      if (
-                          name == TRACE_IS_ENABLED ||
-                              name == TRACE_IS_TAG_ENABLED ||
-                              name == BEGIN_SECTION ||
-                              name == END_SECTION ||
-                              name == TRACE_BEGIN ||
-                              name == TRACE_END
-                      ) {
-                        val containing = method.containingClass?.qualifiedName
-                        if (containing == PLATFORM_TRACE_FQN || containing == ANDROIDX_TRACE_FQN) {
-                          return false
-                        }
-                      }
+        ControlFlowGraph.create(
+          containingMethod,
+          builder =
+            object : ControlFlowGraph.Companion.Builder(strictMode, trackCallThrows = true, trackUncheckedExceptions = false) {
+              override fun canThrow(reference: UElement, method: PsiMethod): Boolean {
+                val name = method.name
+                // Ignore exceptions for begin and end calls. Technically,
+                // android.os.Trace.beginSection() will throw an IllegalArgumentException if
+                // passed
+                // a string longer than 127 characters, but that's a separate issue.
+                if (
+                  name == TRACE_IS_ENABLED ||
+                    name == TRACE_IS_TAG_ENABLED ||
+                    name == BEGIN_SECTION ||
+                    name == END_SECTION ||
+                    name == TRACE_BEGIN ||
+                    name == TRACE_END
+                ) {
+                  val containing = method.containingClass?.qualifiedName
+                  if (containing == PLATFORM_TRACE_FQN || containing == ANDROIDX_TRACE_FQN) {
+                    return false
+                  }
+                }
 
-                      return super.canThrow(reference, method)
-                    }
+                return super.canThrow(reference, method)
+              }
 
-                    override fun checkBranchPaths(conditional: UExpression): ControlFlowGraph.FollowBranch {
-                      val selector = conditional.findSelector()
-                      if (selector is UCallExpression) {
-                        val resolved = selector.resolve()
-                        val methodName = resolved?.name
-                        val classFqn = resolved?.containingClass?.qualifiedName
-                        val isAndroidXCall = classFqn == ANDROIDX_TRACE_FQN
-                        val isPlatformCall = classFqn == PLATFORM_TRACE_FQN
-                        if (
-                            ((isAndroidXCall || isPlatformCall) && methodName == TRACE_IS_ENABLED) ||
-                                (isPlatformCall && methodName == TRACE_IS_TAG_ENABLED)
-                        ) {
-                          // For the purpose of this lint check, assume Trace.isEnabled() and
-                          // Trace.isTagEnabled() are always true
-                          return ControlFlowGraph.FollowBranch.THEN
-                        }
-                      }
-                      return super.checkBranchPaths(conditional)
-                    }
-                  },
-          )
+              override fun checkBranchPaths(conditional: UExpression): ControlFlowGraph.FollowBranch {
+                val selector = conditional.findSelector()
+                if (selector is UCallExpression) {
+                  val resolved = selector.resolve()
+                  val methodName = resolved?.name
+                  val classFqn = resolved?.containingClass?.qualifiedName
+                  val isAndroidXCall = classFqn == ANDROIDX_TRACE_FQN
+                  val isPlatformCall = classFqn == PLATFORM_TRACE_FQN
+                  if (
+                    ((isAndroidXCall || isPlatformCall) && methodName == TRACE_IS_ENABLED) ||
+                      (isPlatformCall && methodName == TRACE_IS_TAG_ENABLED)
+                  ) {
+                    // For the purpose of this lint check, assume Trace.isEnabled() and
+                    // Trace.isTagEnabled() are always true
+                    return ControlFlowGraph.FollowBranch.THEN
+                  }
+                }
+                return super.checkBranchPaths(conditional)
+              }
+            },
+        )
 
       val graphNode = graph.getNode(node) ?: return FOUND_NOTHING
       return dfs(searchContext, graphNode, 0, false)
@@ -309,10 +297,10 @@ class TraceSectionDetector : Detector(), SourceCodeScanner {
      * @param node the beginSection() node
      */
     private fun dfs(
-        searchContext: AstSearchContext,
-        node: ControlFlowGraph.Node<UElement>,
-        traceSectionCount: Int,
-        viaException: Boolean,
+      searchContext: AstSearchContext,
+      node: ControlFlowGraph.Node<UElement>,
+      traceSectionCount: Int,
+      viaException: Boolean,
     ): SearchResult {
       if (node.visit > 0) {
         // Node already visited; don't search this path again
@@ -349,13 +337,7 @@ class TraceSectionDetector : Detector(), SourceCodeScanner {
       }
 
       for ((_, next, _, isException) in node) {
-        val other =
-            dfs(
-                searchContext,
-                next,
-                openTraceSectionCount,
-                viaException = viaException || isException,
-            )
+        val other = dfs(searchContext, next, openTraceSectionCount, viaException = viaException || isException)
         if (other != FOUND_NOTHING) {
           return other
         }

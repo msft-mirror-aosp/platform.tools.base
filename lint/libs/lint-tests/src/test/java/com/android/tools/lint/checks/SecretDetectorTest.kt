@@ -21,16 +21,16 @@ import com.android.tools.lint.detector.api.Detector
 class SecretDetectorTest : AbstractCheckTest() {
 
   private val generativeModelStubKt =
-      kotlin(
-              """
+    kotlin(
+        """
           package com.google.ai.client.generativeai
 
           /*HIDE-FROM-DOCUMENTATION*/
 
           class GenerativeModel(val modelName: String, val apiKey: String)
         """
-          )
-          .indented()
+      )
+      .indented()
 
   override fun getDetector(): Detector {
     return SecretDetector()
@@ -38,9 +38,9 @@ class SecretDetectorTest : AbstractCheckTest() {
 
   fun testDocumentationExample() {
     lint()
-        .files(
-            kotlin(
-                    """
+      .files(
+        kotlin(
+            """
               package com.pkg.keydemo
 
               import com.google.ai.client.generativeai.GenerativeModel
@@ -52,13 +52,13 @@ class SecretDetectorTest : AbstractCheckTest() {
                 val model2 = GenerativeModel("name", "AIzadGhpcyBpcyBhbm90aGVy_IHQ-akd==")
               }
           """
-                )
-                .indented(),
-            generativeModelStubKt,
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+        generativeModelStubKt,
+      )
+      .run()
+      .expect(
+        """
           src/com/pkg/keydemo/test.kt:8: Warning: This argument looks like an API key that has come from source code; API keys should not be included in source code [SecretInSource]
             val model1 = GenerativeModel("name", KEY)
                                                  ~~~
@@ -67,19 +67,21 @@ class SecretDetectorTest : AbstractCheckTest() {
                                                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
           0 errors, 2 warnings
           """
-        )
+      )
   }
 
   fun testKeys() {
     lint()
-        .files(
-            // This makes the project look like a Gradle project; the check will not report the use of a
-            // field from a different file unless the project looks like a Gradle project because the
-            // check tries to see whether the field is in a generated file.
-            kts(""),
-            generativeModelStubKt,
-            java(
-                    """
+      .files(
+        // This makes the project look like a Gradle project; the check will not report the use
+        // of a
+        // field from a different file unless the project looks like a Gradle project because
+        // the
+        // check tries to see whether the field is in a generated file.
+        kts(""),
+        generativeModelStubKt,
+        java(
+            """
                 package com.pkg.keydemo;
 
                 public class JKeys {
@@ -90,10 +92,10 @@ class SecretDetectorTest : AbstractCheckTest() {
 
                 }
                 """
-                )
-                .indented(),
-            java(
-                    """
+          )
+          .indented(),
+        java(
+            """
                 package com.pkg.keydemo;
 
                 import com.google.ai.client.generativeai.GenerativeModel;
@@ -112,10 +114,10 @@ class SecretDetectorTest : AbstractCheckTest() {
                   }
                 }
                 """
-                )
-                .indented(),
-            kotlin(
-                    """
+          )
+          .indented(),
+        kotlin(
+            """
               package com.pkg.keydemo
 
               val KEY_TOP = "AIzadGhpcyBpcyBhbm90aGVy_IHQ-akd=="
@@ -132,10 +134,10 @@ class SecretDetectorTest : AbstractCheckTest() {
                 }
               }
           """
-                )
-                .indented(),
-            kotlin(
-                    """
+          )
+          .indented(),
+        kotlin(
+            """
               package com.pkg.keydemo
 
               import com.google.ai.client.generativeai.GenerativeModel
@@ -154,12 +156,12 @@ class SecretDetectorTest : AbstractCheckTest() {
                 val model8 = GenerativeModel("name", s)
               }
           """
-                )
-                .indented(),
-        )
-        .run()
-        .expect(
-            """
+          )
+          .indented(),
+      )
+      .run()
+      .expect(
+        """
         src/main/java/com/pkg/keydemo/KeyDemo.java:9: Warning: This argument looks like an API key that has come from source code; API keys should not be included in source code [SecretInSource]
             GenerativeModel model1 = new GenerativeModel("name", "AIzaYWJjZGVmZ2hp-MTIzNDU2-YX_ZGQ");
                                                                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -189,6 +191,6 @@ class SecretDetectorTest : AbstractCheckTest() {
                                                ~
         0 errors, 9 warnings
         """
-        )
+      )
   }
 }

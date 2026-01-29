@@ -49,7 +49,8 @@ fun mapMergingElements(
       processCancellationChecker.check()
       if (higherPriorityChildren.isNullOrEmpty()) {
         // We did not find any nodes in merged manifest that match this key. This means:
-        // Either, the node key is null in which case we match with the first element with same type.
+        // Either, the node key is null in which case we match with the first element with same
+        // type.
         // Or, this is a unique node being added to merged manifest.
         val matchingNode =
           if (lowerPriorityChild.key == null) {
@@ -111,7 +112,8 @@ fun mapSingleDeclarationNodeTypes(
     }
   } else {
     if (nodesWithoutFeatureFlag.isNotEmpty()) {
-      // When we have low priority child without feature flag, and we find an existing child with no feature flag,
+      // When we have low priority child without feature flag, and we find an existing child with no
+      // feature flag,
       // we have found our match(they have node type, key and no feature flags).
       val firstNodeWithoutFlag = nodesWithoutFeatureFlag.first()
       mappedNodes.add(lowerPriorityChild to Optional.ofNullable(firstNodeWithoutFlag))

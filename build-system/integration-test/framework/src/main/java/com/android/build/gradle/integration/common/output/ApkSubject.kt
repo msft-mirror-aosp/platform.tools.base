@@ -313,8 +313,10 @@ class ApkSubject(metadata: FailureMetadata, actual: Zip) : AbstractAndroidArchiv
     lazy(LazyThreadSafetyMode.NONE) {
       buildList {
         var index = 2
-        // we cannot just take al these entries. we have to do the same that the runtime does, which
-        // is search from 2, increasing the index each time. If there is a gap in the indices, then
+        // we cannot just take al these entries. we have to do the same that the runtime does,
+        // which
+        // is search from 2, increasing the index each time. If there is a gap in the indices,
+        // then
         // the rest is ignored.
         do {
           val path = actual().getEntry("classes$index.dex") ?: return@buildList

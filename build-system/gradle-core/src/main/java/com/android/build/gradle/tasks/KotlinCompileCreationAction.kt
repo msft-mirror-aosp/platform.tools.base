@@ -76,7 +76,8 @@ class KotlinCompileCreationAction(creationConfig: BuiltInKotlinCreationConfig, p
     creationConfig.services.builtInKotlinServices.kotlinAndroidProjectExtension.compilerOptions.jvmTarget.convention(javaCompileJvmTarget)
 
     // Also ensure that the user doesn't set a different JVM target for Kotlin compile tasks.
-    // This check needs to run at execution time as `kotlinCompileJvmTarget` may not be finalized yet.
+    // This check needs to run at execution time as `kotlinCompileJvmTarget` may not be finalized
+    // yet.
     inputs.property("javaCompileJvmTarget", javaCompileJvmTarget)
     doFirst {
       val kotlinCompileJvmTarget = compilerOptions.jvmTarget.get()

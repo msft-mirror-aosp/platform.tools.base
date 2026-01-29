@@ -75,9 +75,12 @@ fun importViewBindingClass(
   language: Language,
 ) =
   renderIf(isViewBindingSupported) {
-    // The databinding class is generated in the root application package. But in case that is ever
-    // unavailable, the containing class's package is used instead. That may be incorrect, but it's
-    // better than having no import statement; at least the user will see that the statement doesn't
+    // The databinding class is generated in the root application package. But in case that is
+    // ever
+    // unavailable, the containing class's package is used instead. That may be incorrect, but
+    // it's
+    // better than having no import statement; at least the user will see that the statement
+    // doesn't
     // resolve, and may be able to fix it themselves.
     val escapedPackageName =
       if (language == Language.Kotlin) {

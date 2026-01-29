@@ -37,43 +37,44 @@ import org.jetbrains.kotlin.psi.psiUtil.parameterIndex
 object PsiBuilderUtils {
 
   internal fun KtProperty.buildLightField(containingClass: PsiClass?): LightFieldBuilder =
-      LightFieldBuilder(
-              manager,
-              name.orAnonymous(this),
-              // There's a little cycle dep here as LightFiled require `type` when constructed while the
-              // TypeElement used to get `type` need the LightField as `parent` when constructed. This is
-              // an API issue of `LightFieldBuilder` as it does not implement the super constructor with
-              // lazy type initialization. We assign `containingFile` as the parent here instead, which
-              // should be side effect free as the TypeElement cannot be fetched from LightField.
-              typeReference?.let { buildCompiledTypeFromReference(it, containingFile) } ?: PsiTypes.nullType(),
-          )
-          .apply { this.containingClass = containingClass }
+    LightFieldBuilder(
+        manager,
+        name.orAnonymous(this),
+        // There's a little cycle dep here as LightFiled require `type` when constructed while
+        // the
+        // TypeElement used to get `type` need the LightField as `parent` when constructed.
+        // This is
+        // an API issue of `LightFieldBuilder` as it does not implement the super constructor
+        // with
+        // lazy type initialization. We assign `containingFile` as the parent here instead,
+        // which
+        // should be side effect free as the TypeElement cannot be fetched from LightField.
+        typeReference?.let { buildCompiledTypeFromReference(it, containingFile) } ?: PsiTypes.nullType(),
+      )
+      .apply { this.containingClass = containingClass }
 
   internal fun KtFunction.buildLightMethod(containingClass: PsiClass?): LightMethodBuilder =
-      LightMethodBuilder(manager, language, name.orAnonymous(this)).apply {
-        this.containingClass = containingClass
-        isConstructor = this@buildLightMethod is KtConstructor<*>
-        if (!isConstructor) {
-          setMethodReturnType {
-            val ktTypeReference = typeReference ?: return@setMethodReturnType null
-            buildCompiledTypeFromReference(ktTypeReference, this)
-          }
-        }
-        for (param in valueParameters) {
-          val name = param.name ?: continue
-          val ktTypeReference = param.typeReference ?: continue
-          addParameter(name, buildCompiledTypeFromReference(ktTypeReference, this))
-        }
-        for (param in this@buildLightMethod.typeParameters) {
-          val name = param.name ?: continue
-          addTypeParameter(LightTypeParameterBuilder(name, this, param.parameterIndex()))
+    LightMethodBuilder(manager, language, name.orAnonymous(this)).apply {
+      this.containingClass = containingClass
+      isConstructor = this@buildLightMethod is KtConstructor<*>
+      if (!isConstructor) {
+        setMethodReturnType {
+          val ktTypeReference = typeReference ?: return@setMethodReturnType null
+          buildCompiledTypeFromReference(ktTypeReference, this)
         }
       }
+      for (param in valueParameters) {
+        val name = param.name ?: continue
+        val ktTypeReference = param.typeReference ?: continue
+        addParameter(name, buildCompiledTypeFromReference(ktTypeReference, this))
+      }
+      for (param in this@buildLightMethod.typeParameters) {
+        val name = param.name ?: continue
+        addTypeParameter(LightTypeParameterBuilder(name, this, param.parameterIndex()))
+      }
+    }
 
-  private fun buildCompiledTypeFromReference(
-      ktTypeReference: KtTypeReference,
-      parent: PsiElement,
-  ): PsiType {
+  private fun buildCompiledTypeFromReference(ktTypeReference: KtTypeReference, parent: PsiElement): PsiType {
     // TODO: This likely won't work for non-class types, and that would be a much harder issue to
     // fix. Refer to
     // https://github.com/JetBrains/kotlin/blob/master/compiler/light-classes/src/org/jetbrains/kotlin/asJava/classes/ultraLightUtils.kt#L202

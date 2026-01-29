@@ -36,10 +36,10 @@ import java.util.Locale
  * detector usage.
  */
 open class ConfigurationHierarchy(
-    val client: LintClient,
+  val client: LintClient,
 
-    /** The root folder where lint.xml configuration search should end, or null. */
-    var rootDir: File? = defaultRootDir,
+  /** The root folder where lint.xml configuration search should end, or null. */
+  var rootDir: File? = defaultRootDir,
 ) {
   private val dirToConfiguration: MutableMap<File, Configuration> = HashMap()
   private val projectToConfiguration: MutableMap<Project, Configuration> = HashMap()
@@ -52,12 +52,12 @@ open class ConfigurationHierarchy(
   var overrides: Configuration? = null
 
   fun getConfigurationForProject(
-      project: Project,
-      /**
-       * Create a configuration for the given directory. If the configuration parameter is not null, this corresponds to a
-       * LintXmlConfiguration that should be included in the inheritance chain.
-       */
-      create: ((File, Configuration?) -> Configuration?) = lintXmlCreator,
+    project: Project,
+    /**
+     * Create a configuration for the given directory. If the configuration parameter is not null, this corresponds to a
+     * LintXmlConfiguration that should be included in the inheritance chain.
+     */
+    create: ((File, Configuration?) -> Configuration?) = lintXmlCreator,
   ): Configuration {
     val prev = dirToConfiguration[project.dir]
     if (prev != null && prev !== NONE) {
@@ -67,11 +67,11 @@ open class ConfigurationHierarchy(
     val dir = project.dir
     val file = dir.getLintXmlFile()
     val default =
-        if (file.isFile) {
-          LintXmlConfiguration.create(this, file).also { it.fileLevel = false }
-        } else {
-          null
-        }
+      if (file.isFile) {
+        LintXmlConfiguration.create(this, file).also { it.fileLevel = false }
+      } else {
+        null
+      }
 
     val configuration = create(dir, default) ?: ProjectPlaceholderConfiguration(this, dir)
     projectToConfiguration[project] = configuration
@@ -153,11 +153,11 @@ open class ConfigurationHierarchy(
     val configurationDir = configuration.dir ?: return null
     val dir = getParentFolder(configurationDir)
     val parent =
-        if (dir != null && dir != rootDir) {
-          getConfigurationForFolder(dir, null)
-        } else {
-          null
-        }
+      if (dir != null && dir != rootDir) {
+        getConfigurationForFolder(dir, null)
+      } else {
+        null
+      }
     if (parent != null) {
       setParent(configuration, parent)
       if (!configuration.fileLevel) {
@@ -228,14 +228,14 @@ open class ConfigurationHierarchy(
    * the parenting chain.
    */
   fun createLintOptionsConfiguration(
-      project: Project,
-      lintOptions: LintModelLintOptions,
-      fatalOnly: Boolean,
-      /** The lint.xml configuration in the project root directory, if any. */
-      default: Configuration?,
-      configFactory: (() -> LintOptionsConfiguration) = {
-        LintOptionsConfiguration(this, lintOptions, fatalOnly).also { it.associatedLocation = Location.create(project.dir) }
-      },
+    project: Project,
+    lintOptions: LintModelLintOptions,
+    fatalOnly: Boolean,
+    /** The lint.xml configuration in the project root directory, if any. */
+    default: Configuration?,
+    configFactory: (() -> LintOptionsConfiguration) = {
+      LintOptionsConfiguration(this, lintOptions, fatalOnly).also { it.associatedLocation = Location.create(project.dir) }
+    },
   ): Configuration {
     return createChainedConfigurations(project, default, configFactory) {
       val lintConfigXml = lintOptions.lintConfig
@@ -254,38 +254,38 @@ open class ConfigurationHierarchy(
    * configuration. Note that only the override configuration is required; the other two are optional, and are omitted if null.
    */
   fun createChainedConfigurations(
-      project: Project,
-      /** The lint.xml configuration in the project root directory, if any. */
-      middle: Configuration?,
-      /** Creates the new configuration that should be the primary configuration for the project. */
-      createFirst: (() -> Configuration),
-      /**
-       * Optionally creates the new configuration that should be the last/fallback configuration for the project (also known as the scope
-       * leaf; see [getScopeLeaf])
-       */
-      createLast: (() -> Configuration?) = { null },
+    project: Project,
+    /** The lint.xml configuration in the project root directory, if any. */
+    middle: Configuration?,
+    /** Creates the new configuration that should be the primary configuration for the project. */
+    createFirst: (() -> Configuration),
+    /**
+     * Optionally creates the new configuration that should be the last/fallback configuration for the project (also known as the scope
+     * leaf; see [getScopeLeaf])
+     */
+    createLast: (() -> Configuration?) = { null },
   ): Configuration {
     val dir = project.dir
 
     val primary =
-        createFirst().apply {
-          this.dir = dir
-          fileLevel = false
-        }
+      createFirst().apply {
+        this.dir = dir
+        fileLevel = false
+      }
 
     val auxiliary = createLast()
 
     // Set up parent chains
     val parentFolder = dir.parentFile
     val parent =
-        //noinspection FileComparisons
-        if (middle != null && parentOf[middle] != null) {
-          parentOf[middle] ?: NONE
-        } else if (parentFolder != null && dir != rootDir) {
-          getConfigurationForFolder(parentFolder) ?: NONE
-        } else {
-          NONE
-        }
+      //noinspection FileComparisons
+      if (middle != null && parentOf[middle] != null) {
+        parentOf[middle] ?: NONE
+      } else if (parentFolder != null && dir != rootDir) {
+        getConfigurationForFolder(parentFolder) ?: NONE
+      } else {
+        NONE
+      }
 
     if (auxiliary != null) {
       if (middle != null) {
@@ -329,12 +329,7 @@ open class ConfigurationHierarchy(
       if (!fallback.exists()) {
         val warned = ourAlreadyWarned ?: HashSet<File>().also { ourAlreadyWarned = it }
         if (warned.add(fallback)) {
-          client.log(
-              Severity.ERROR,
-              null,
-              "Warning: Configuration file %1\$s does not exist",
-              fallback,
-          )
+          client.log(Severity.ERROR, null, "Warning: Configuration file %1\$s does not exist", fallback)
         }
       } else {
         val xmlConfiguration = LintXmlConfiguration.create(this, fallback)
@@ -376,11 +371,7 @@ open class ConfigurationHierarchy(
    * of the configuration to something other than [Severity.IGNORE] but we want the severity to be what was configured in the original
    * severity context (lint.xml etc), not just the default severity.
    */
-  fun getDefinedSeverityWithoutOverride(
-      source: Configuration,
-      issue: Issue,
-      visibleDefault: Severity = issue.defaultSeverity,
-  ): Severity? {
+  fun getDefinedSeverityWithoutOverride(source: Configuration, issue: Issue, visibleDefault: Severity = issue.defaultSeverity): Severity? {
     if (source == overrides || overrides == null) {
       return null
     }
@@ -403,75 +394,63 @@ open class ConfigurationHierarchy(
 
     /** Represents absence of a configuration; used in the cache to remember places we've looked where nothing was found. */
     private val NONE =
-        object :
-            Configuration(
-                ConfigurationHierarchy(
-                    object : LintClient() {
-                      private fun unsupported(): Nothing {
-                        error("Not supported")
-                      }
+      object :
+        Configuration(
+          ConfigurationHierarchy(
+            object : LintClient() {
+              private fun unsupported(): Nothing {
+                error("Not supported")
+              }
 
-                      override fun report(context: Context, incident: Incident, format: TextFormat) {
-                        unsupported()
-                      }
+              override fun report(context: Context, incident: Incident, format: TextFormat) {
+                unsupported()
+              }
 
-                      override fun log(
-                          severity: Severity,
-                          exception: Throwable?,
-                          format: String?,
-                          vararg args: Any,
-                      ) {
-                        unsupported()
-                      }
+              override fun log(severity: Severity, exception: Throwable?, format: String?, vararg args: Any) {
+                unsupported()
+              }
 
-                      override val xmlParser: XmlParser
-                        get() = unsupported()
+              override val xmlParser: XmlParser
+                get() = unsupported()
 
-                      override fun getUastParser(project: Project?): UastParser {
-                        unsupported()
-                      }
+              override fun getUastParser(project: Project?): UastParser {
+                unsupported()
+              }
 
-                      override fun getGradleVisitor(): GradleVisitor {
-                        unsupported()
-                      }
+              override fun getGradleVisitor(): GradleVisitor {
+                unsupported()
+              }
 
-                      override fun readFile(file: File): CharSequence {
-                        unsupported()
-                      }
+              override fun readFile(file: File): CharSequence {
+                unsupported()
+              }
 
-                      override fun getResources(
-                          project: Project,
-                          scope: ResourceRepositoryScope,
-                      ): ResourceRepository {
-                        unsupported()
-                      }
-                    }
-                )
-            ) {
-          override var baselineFile: File? = null
+              override fun getResources(project: Project, scope: ResourceRepositoryScope): ResourceRepository {
+                unsupported()
+              }
+            }
+          )
+        ) {
+        override var baselineFile: File? = null
 
-          override fun ignore(context: Context, issue: Issue, location: Location?, message: String) {}
+        override fun ignore(context: Context, issue: Issue, location: Location?, message: String) {}
 
-          override fun ignore(issue: Issue, file: File) {}
+        override fun ignore(issue: Issue, file: File) {}
 
-          override fun ignore(issueId: String, file: File) {}
+        override fun ignore(issueId: String, file: File) {}
 
-          override fun setSeverity(issue: Issue, severity: Severity?) {}
+        override fun setSeverity(issue: Issue, severity: Severity?) {}
 
-          override fun addConfiguredIssues(
-              targetMap: MutableMap<String, Severity>,
-              registry: IssueRegistry,
-              specificOnly: Boolean,
-          ) {}
+        override fun addConfiguredIssues(targetMap: MutableMap<String, Severity>, registry: IssueRegistry, specificOnly: Boolean) {}
 
-          override fun getOption(issue: Issue, name: String, default: String?): String? = default
+        override fun getOption(issue: Issue, name: String, default: String?): String? = default
 
-          override fun getOption(option: Option): Any? = null
+        override fun getOption(option: Option): Any? = null
 
-          override fun getOptionAsFile(issue: Issue, name: String, default: File?): File? = default
+        override fun getOptionAsFile(issue: Issue, name: String, default: File?): File? = default
 
-          override fun toString(): String = "NONE"
-        }
+        override fun toString(): String = "NONE"
+      }
   }
 
   /**
@@ -499,12 +478,12 @@ open class ConfigurationHierarchy(
       sb.append("  ").append(id).append(" [label=\"")
       val vars = client.pathVariables
       val description =
-          when (configuration) {
-            NONE -> "NONE"
-            is LintXmlConfiguration -> vars.toPathString(configuration.configFile)
-            is ProjectPlaceholderConfiguration -> "Placeholder: ${vars.toPathString(configuration.dir?.path ?: "")}"
-            else -> configuration.javaClass.simpleName
-          }
+        when (configuration) {
+          NONE -> "NONE"
+          is LintXmlConfiguration -> vars.toPathString(configuration.configFile)
+          is ProjectPlaceholderConfiguration -> "Placeholder: ${vars.toPathString(configuration.dir?.path ?: "")}"
+          else -> configuration.javaClass.simpleName
+        }
       if (configuration == overrides) {
         sb.append("Override: ")
       }
@@ -551,10 +530,7 @@ open class ConfigurationHierarchy(
    * file on the fly, and then delegate the updating actions to it. (We do this by parenting the new configuration to our current parent,
    * and then changing our parent to the new configuration.)
    */
-  private inner class ProjectPlaceholderConfiguration(
-      configurations: ConfigurationHierarchy,
-      dir: File,
-  ) : Configuration(configurations) {
+  private inner class ProjectPlaceholderConfiguration(configurations: ConfigurationHierarchy, dir: File) : Configuration(configurations) {
     init {
       this.dir = dir
       fallback?.let { setParent(it) }
@@ -564,11 +540,7 @@ open class ConfigurationHierarchy(
       return parent?.isEnabled(issue) ?: super.isEnabled(issue)
     }
 
-    override fun getDefinedSeverity(
-        issue: Issue,
-        source: Configuration,
-        visibleDefault: Severity,
-    ): Severity? {
+    override fun getDefinedSeverity(issue: Issue, source: Configuration, visibleDefault: Severity): Severity? {
       return parent?.getDefinedSeverity(issue, source, visibleDefault) ?: super.getDefinedSeverity(issue, source, visibleDefault)
     }
 
@@ -581,28 +553,24 @@ open class ConfigurationHierarchy(
     }
 
     override fun validateIssueIds(
-        client: LintClient,
-        driver: LintDriver,
-        project: Project?,
-        registry: IssueRegistry,
-        allowed: Set<String>,
+      client: LintClient,
+      driver: LintDriver,
+      project: Project?,
+      registry: IssueRegistry,
+      allowed: Set<String>,
     ) {
       parent?.validateIssueIds(client, driver, project, registry, allowed)
     }
 
-    override fun addConfiguredIssues(
-        targetMap: MutableMap<String, Severity>,
-        registry: IssueRegistry,
-        specificOnly: Boolean,
-    ) {
+    override fun addConfiguredIssues(targetMap: MutableMap<String, Severity>, registry: IssueRegistry, specificOnly: Boolean) {
       parent?.addConfiguredIssues(targetMap, registry, specificOnly)
     }
 
     override fun getLocalIssueConfigLocation(
-        issue: String,
-        specificOnly: Boolean,
-        severityOnly: Boolean,
-        source: Configuration,
+      issue: String,
+      specificOnly: Boolean,
+      severityOnly: Boolean,
+      source: Configuration,
     ): Location? {
       return parent?.getLocalIssueConfigLocation(issue, specificOnly, severityOnly, source)
     }
@@ -617,12 +585,12 @@ open class ConfigurationHierarchy(
       val xmlFile = dir?.getLintXmlFile() ?: return
       if (!xmlFile.isFile) {
         xmlFile.writeText(
-            """
-            <?xml version="1.0" encoding="UTF-8"?>
-            <lint>
-            </lint>
-            """
-                .trimIndent()
+          """
+          <?xml version="1.0" encoding="UTF-8"?>
+          <lint>
+          </lint>
+          """
+            .trimIndent()
         )
         val configuration = LintXmlConfiguration.create(configurations, xmlFile)
         configuration.fileLevel = false

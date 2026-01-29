@@ -232,7 +232,8 @@ private fun ivyRepoMock(repoName: String, repoUrl: String): IvyArtifactRepositor
   }
 
 // TODO: simulate breaking change in internal API?
-//    I.e. -- implement ResolvedComponentResultInternal, but throw error error in "getRepositoryName"?
+//    I.e. -- implement ResolvedComponentResultInternal, but throw error error in
+// "getRepositoryName"?
 
 private fun createModuleComponentInternal(group: String, name: String, version: String, repositoryName: String) =
   FakeResolvedComponentResultInternal(createModuleComponent(group, name, version), repositoryName)

@@ -436,7 +436,8 @@ class FusedLibraryClassesVerificationTest(private val publicationOnlyMode: Boole
           dependencies {
             include(project(":$ANDROID_LIB_MANY_TRANSITIVE_DEPS"))
 
-            // :androidLib1 is also a transitive dependency from $ANDROID_LIB_MANY_TRANSITIVE_DEPS via :androidLib2
+            // :androidLib1 is also a transitive dependency from $ANDROID_LIB_MANY_TRANSITIVE_DEPS
+            // via :androidLib2
             include(project(":androidLib1"))
           }
         }

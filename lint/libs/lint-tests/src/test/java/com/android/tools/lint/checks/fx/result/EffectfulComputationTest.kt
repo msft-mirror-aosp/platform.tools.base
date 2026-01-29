@@ -46,11 +46,7 @@ class EffectfulComputationTest : EffectfulComputation<UnboundedSet<String>>, Lat
 
   @Test
   fun `lastM returns last computation and join all effects`() {
-    val runForLast =
-        lastM(
-            instrumentedStrLen(),
-            listOf(StringExpr("foo"), StringExpr("bar"), StringExpr("apple")),
-        )!!
+    val runForLast = lastM(instrumentedStrLen(), listOf(StringExpr("foo"), StringExpr("bar"), StringExpr("apple")))!!
     Truth.assertThat(runForLast.value).isEqualTo("apple".length)
     Truth.assertThat(runForLast.effect).isEqualTo(unboundedSetOf("foo", "bar", "apple"))
   }
@@ -69,13 +65,7 @@ class EffectfulComputationTest : EffectfulComputation<UnboundedSet<String>>, Lat
 
   @Test
   fun `foldM accumulates result and joins effects`() {
-    val runFold =
-        foldM(
-            1,
-            Int::times,
-            instrumentedStrLen(),
-            listOf(StringExpr("foo"), StringExpr("bar"), StringExpr("apple")),
-        )
+    val runFold = foldM(1, Int::times, instrumentedStrLen(), listOf(StringExpr("foo"), StringExpr("bar"), StringExpr("apple")))
     Truth.assertThat(runFold.value).isEqualTo("foo".length * "bar".length * "apple".length)
     Truth.assertThat(runFold.effect).isEqualTo(unboundedSetOf("foo", "bar", "apple"))
   }
@@ -86,14 +76,14 @@ class EffectfulComputationTest : EffectfulComputation<UnboundedSet<String>>, Lat
    */
   private fun instrumentedStrLen(): (StringExpr) -> Result<Int, UnboundedSet<String>> {
     return fun(s) =
-        Result(
-            value = s.str.length,
-            effect =
-                when (s.str) {
-                  "null" -> null
-                  else -> unboundedSetOf(s.str)
-                },
-        )
+      Result(
+        value = s.str.length,
+        effect =
+          when (s.str) {
+            "null" -> null
+            else -> unboundedSetOf(s.str)
+          },
+      )
   }
 
   private class StringExpr(val str: String) : UExpression {

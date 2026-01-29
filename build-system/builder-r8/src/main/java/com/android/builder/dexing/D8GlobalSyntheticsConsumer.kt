@@ -36,7 +36,8 @@ class D8GlobalSyntheticsConsumer(val globalSyntheticsOutput: Path) : GlobalSynth
           // when context exist, each global file name is computed based on the class that
           // global synthetics are generated from
           globalSyntheticsOutput.resolve(
-            // context.binaryName + .class is guaranteed to be the same as classFileRelativePath
+            // context.binaryName + .class is guaranteed to be the same as
+            // classFileRelativePath
             DexFilePerClassFile.getGlobalSyntheticOutputRelativePath(context.binaryName + ".class")
           )
         } else {

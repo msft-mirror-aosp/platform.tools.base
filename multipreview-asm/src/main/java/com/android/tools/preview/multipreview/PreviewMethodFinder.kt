@@ -47,7 +47,8 @@ class PreviewMethodFinder(
     private val TILE_PREVIEW_METHOD_DESCRIPTORS =
       setOf(
         "()$TILE_PREVIEW_DATA", // no parameters and returns a TilePreviewData
-        "($ANDROID_CONTEXT)$TILE_PREVIEW_DATA", // a single Context parameter and returns a TilePreviewData
+        "($ANDROID_CONTEXT)$TILE_PREVIEW_DATA", // a single Context parameter and returns a
+        // TilePreviewData
       )
 
     private const val WEAR_TILE_PREVIEW_ANNOTATION = "Landroidx/wear/tiles/tooling/preview/Preview;"
