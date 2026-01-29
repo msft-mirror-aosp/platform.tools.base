@@ -20,24 +20,15 @@ import com.android.adblib.tools.debugging.packets.JdwpPacketView
 
 object DdmsPacketConstants {
 
-    /**
-     * Command set to use as the [JdwpPacketView.cmdSet]
-     */
-    const val DDMS_CMD_SET = 0xc7 // 'G' + 128
+  /** Command set to use as the [JdwpPacketView.cmdSet] */
+  const val DDMS_CMD_SET = 0xc7 // 'G' + 128
 
-    /**
-     * Command ID to use as the [JdwpPacketView.cmd]
-     */
-    const val DDMS_CMD = 0x01
+  /** Command ID to use as the [JdwpPacketView.cmd] */
+  const val DDMS_CMD = 0x01
 
-    /**
-     * # of bytes in a chunk header
-     */
-    const val DDMS_CHUNK_HEADER_LENGTH = 8 // 4-byte type, 4-byte len
+  /** # of bytes in a chunk header */
+  const val DDMS_CHUNK_HEADER_LENGTH = 8 // 4-byte type, 4-byte len
 
-    /**
-     * DDMS packets use the same byte ordering as [JDWP packets][JdwpPacketView].
-     */
-    val DDMS_CHUNK_BYTE_ORDER = PACKET_BYTE_ORDER
+  /** DDMS packets use the same byte ordering as [JDWP packets][JdwpPacketView]. */
+  val DDMS_CHUNK_BYTE_ORDER = PACKET_BYTE_ORDER
 }
-

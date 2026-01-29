@@ -25,58 +25,49 @@ import com.android.adblib.tools.debugging.packets.JdwpPacketView
 import com.android.adblib.tools.debugging.packets.payloadLength
 import java.nio.ByteBuffer
 
-/**
- * Creates instances of [PayloadProvider] optimized for specific
- * [payload length][JdwpPacketView.payloadLength] values.
- */
+/** Creates instances of [PayloadProvider] optimized for specific [payload length][JdwpPacketView.payloadLength] values. */
 internal open class PayloadProviderFactory(
-    session: AdbSession,
-    private val maxInMemoryPayloadLength: Int =
-        session.property(AdbLibToolsProperties.SHARED_JDWP_PACKET_IN_MEMORY_MAX_PAYLOAD_LENGTH)
+  session: AdbSession,
+  private val maxInMemoryPayloadLength: Int = session.property(AdbLibToolsProperties.SHARED_JDWP_PACKET_IN_MEMORY_MAX_PAYLOAD_LENGTH),
 ) {
 
-    private val logger = adbLogger(session)
+  private val logger = adbLogger(session)
 
-    /**
-     * Creates a [PayloadProvider] instance for the given [packetPayload] of [packet],
-     * optimized according to the [payload length][JdwpPacketView.payloadLength].
-     */
-    suspend fun create(packet: JdwpPacketView, packetPayload: AdbInputChannel): PayloadProvider {
-        val payloadLength = packet.payloadLength
-        return when {
-            payloadLength <= 0 -> {
-                PayloadProvider.emptyPayload()
-            }
+  /**
+   * Creates a [PayloadProvider] instance for the given [packetPayload] of [packet], optimized according to the
+   * [payload length][JdwpPacketView.payloadLength].
+   */
+  suspend fun create(packet: JdwpPacketView, packetPayload: AdbInputChannel): PayloadProvider {
+    val payloadLength = packet.payloadLength
+    return when {
+      payloadLength <= 0 -> {
+        PayloadProvider.emptyPayload()
+      }
 
-            payloadLength <= maxInMemoryPayloadLength -> {
-                // Load payload in memory
-                val payload = ByteBuffer.allocate(payloadLength)
-                packetPayload.readExactly(payload)
-                payload.flip()
-                // Wrap it in a thread-safe PayloadProvider
-                PayloadProvider.forByteBuffer(payload)
-            }
+      payloadLength <= maxInMemoryPayloadLength -> {
+        // Load payload in memory
+        val payload = ByteBuffer.allocate(payloadLength)
+        packetPayload.readExactly(payload)
+        payload.flip()
+        // Wrap it in a thread-safe PayloadProvider
+        PayloadProvider.forByteBuffer(payload)
+      }
 
-            else -> {
-                assert(payloadLength > maxInMemoryPayloadLength)
-                createLargePacketProvider(packet, packetPayload, payloadLength)
-            }
-        }.also {
-            logger.verbose { "Created payload provider '$it' for a payload of $payloadLength byte(s)" }
-        }
-    }
+      else -> {
+        assert(payloadLength > maxInMemoryPayloadLength)
+        createLargePacketProvider(packet, packetPayload, payloadLength)
+      }
+    }.also { logger.verbose { "Created payload provider '$it' for a payload of $payloadLength byte(s)" } }
+  }
 
-    /**
-     * Default implementation for "large" packets: create an [AdbInputChannelSlice] wrapping the
-     * packet payload.
-     */
-    protected open fun createLargePacketProvider(
-        packet: JdwpPacketView,
-        packetPayload: AdbInputChannel,
-        packetPayloadLength: Int
-    ): PayloadProvider {
-        // Create a "slice" input channel for the payload, then wrap it into a payload provider
-        val channelSlice = AdbInputChannelSlice(packetPayload, packetPayloadLength)
-        return PayloadProvider.forInputChannel(channelSlice)
-    }
+  /** Default implementation for "large" packets: create an [AdbInputChannelSlice] wrapping the packet payload. */
+  protected open fun createLargePacketProvider(
+    packet: JdwpPacketView,
+    packetPayload: AdbInputChannel,
+    packetPayloadLength: Int,
+  ): PayloadProvider {
+    // Create a "slice" input channel for the payload, then wrap it into a payload provider
+    val channelSlice = AdbInputChannelSlice(packetPayload, packetPayloadLength)
+    return PayloadProvider.forInputChannel(channelSlice)
+  }
 }

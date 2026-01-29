@@ -19,33 +19,32 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
-/**
- * Allows synchronized updates to the [value][MutableStateFlow.value] of a [MutableStateFlow].
- */
+/** Allows synchronized updates to the [value][MutableStateFlow.value] of a [MutableStateFlow]. */
 @JvmInline
 internal value class AtomicStateFlow<T>(private val sourceFlow: MutableStateFlow<T>) {
 
-    val value: T
-        get() { return sourceFlow.value }
-
-    /**
-     * Atomically updates the value of [sourceFlow], calling [updater] to compute the new
-     * [value][MutableStateFlow.value] given the current [value][MutableStateFlow.value].
-     *
-     * This method is **thread-safe** and can be safely invoked from concurrent coroutines without
-     * external synchronization.
-     */
-    fun update(updater: (T) -> T) {
-        synchronized(sourceFlow) {
-            val currentValue = sourceFlow.value
-            val newValue = updater(currentValue)
-            if (newValue != currentValue) {
-                sourceFlow.value = newValue
-            }
-        }
+  val value: T
+    get() {
+      return sourceFlow.value
     }
 
-    fun asStateFlow(): StateFlow<T> {
-        return sourceFlow.asStateFlow()
+  /**
+   * Atomically updates the value of [sourceFlow], calling [updater] to compute the new [value][MutableStateFlow.value] given the current
+   * [value][MutableStateFlow.value].
+   *
+   * This method is **thread-safe** and can be safely invoked from concurrent coroutines without external synchronization.
+   */
+  fun update(updater: (T) -> T) {
+    synchronized(sourceFlow) {
+      val currentValue = sourceFlow.value
+      val newValue = updater(currentValue)
+      if (newValue != currentValue) {
+        sourceFlow.value = newValue
+      }
     }
+  }
+
+  fun asStateFlow(): StateFlow<T> {
+    return sourceFlow.asStateFlow()
+  }
 }

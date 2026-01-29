@@ -15,9 +15,7 @@
  */
 package com.android.adblib.tools.debugging.impl
 
-/**
- * A component that provides access to an [AbstractJdwpProcess]
- */
+/** A component that provides access to an [AbstractJdwpProcess] */
 internal interface AbstractJdwpProcessDelegateProvider {
-    suspend fun abstractJdwpProcess(): AbstractJdwpProcess
+  suspend fun abstractJdwpProcess(): AbstractJdwpProcess
 }

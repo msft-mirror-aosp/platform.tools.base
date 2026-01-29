@@ -25,30 +25,27 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
 
 /**
- * A [TcpServer] that run on the local host, and serves as a (volatile) inventory
- * of processes running on various Android device.
+ * A [TcpServer] that run on the local host, and serves as a (volatile) inventory of processes running on various Android device.
  *
- * See the [ProcessInventoryServerProto] class for the [requests][ProcessInventoryServerProto.Request]
- * and [responses][ProcessInventoryServerProto.Response] it supports.
+ * See the [ProcessInventoryServerProto] class for the [requests][ProcessInventoryServerProto.Request] and
+ * [responses][ProcessInventoryServerProto.Response] it supports.
  */
-internal class ProcessInventoryServer(
-    private val session: AdbSession,
-    private val config: ProcessInventoryServerConfiguration
-) : TcpServer {
+internal class ProcessInventoryServer(private val session: AdbSession, private val config: ProcessInventoryServerConfiguration) :
+  TcpServer {
 
-    /**
-     * [CoroutineScope] shared by all [ProcessInventoryServerInstance] so we can ensure [close]
-     * cancels everything (even potentially pending server instances).
-     */
-    private val scope = session.scope.createChildScope(isSupervisor = true)
+  /**
+   * [CoroutineScope] shared by all [ProcessInventoryServerInstance] so we can ensure [close] cancels everything (even potentially pending
+   * server instances).
+   */
+  private val scope = session.scope.createChildScope(isSupervisor = true)
 
-    override fun launch(serverSocket: AdbServerSocket): Job {
-        // Starts a server instance in our scope
-        // Note that we don't need to close the server socket, it is handled by the callee.
-        return ProcessInventoryServerInstance(session, config, scope, serverSocket).runAsync()
-    }
+  override fun launch(serverSocket: AdbServerSocket): Job {
+    // Starts a server instance in our scope
+    // Note that we don't need to close the server socket, it is handled by the callee.
+    return ProcessInventoryServerInstance(session, config, scope, serverSocket).runAsync()
+  }
 
-    override fun close() {
-        scope.cancel("${this::class.java.simpleName} has been closed")
-    }
+  override fun close() {
+    scope.cancel("${this::class.java.simpleName} has been closed")
+  }
 }

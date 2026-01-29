@@ -16,35 +16,28 @@
 package com.android.adblib.tools.debugging.packets.ddms
 
 import com.android.adblib.tools.debugging.packets.JdwpPacketView
-import com.android.adblib.tools.debugging.packets.impl.MutableJdwpPacket
 import com.android.adblib.tools.debugging.packets.ddms.DdmsPacketConstants.DDMS_CHUNK_HEADER_LENGTH
+import com.android.adblib.tools.debugging.packets.impl.MutableJdwpPacket
 import java.nio.ByteBuffer
 
 object JdwpPacketFactory {
 
-    /**
-     * Creates a [JdwpPacketView] wrapping a given DDM chunk [chunkType] and [chunkPayload].
-     */
-    fun createDdmsPacket(
-        jdwpPacketId: Int,
-        chunkType: DdmsChunkType,
-        chunkPayload: ByteBuffer
-    ): JdwpPacketView {
-        // Serialize chunk into a ByteBuffer
-        val serializedChunk =
-            ByteBuffer.allocate(DDMS_CHUNK_HEADER_LENGTH + chunkPayload.remaining())
-        serializedChunk.order(DdmsPacketConstants.DDMS_CHUNK_BYTE_ORDER)
-        serializedChunk.putInt(chunkType.value)
-        serializedChunk.putInt(chunkPayload.remaining())
-        serializedChunk.put(chunkPayload)
-        serializedChunk.flip()
+  /** Creates a [JdwpPacketView] wrapping a given DDM chunk [chunkType] and [chunkPayload]. */
+  fun createDdmsPacket(jdwpPacketId: Int, chunkType: DdmsChunkType, chunkPayload: ByteBuffer): JdwpPacketView {
+    // Serialize chunk into a ByteBuffer
+    val serializedChunk = ByteBuffer.allocate(DDMS_CHUNK_HEADER_LENGTH + chunkPayload.remaining())
+    serializedChunk.order(DdmsPacketConstants.DDMS_CHUNK_BYTE_ORDER)
+    serializedChunk.putInt(chunkType.value)
+    serializedChunk.putInt(chunkPayload.remaining())
+    serializedChunk.put(chunkPayload)
+    serializedChunk.flip()
 
-        // Create a JDWP command packet that wraps the ByteBuffer
-        return MutableJdwpPacket.createCommandPacket(
-            jdwpPacketId,
-            DdmsPacketConstants.DDMS_CMD_SET,
-            DdmsPacketConstants.DDMS_CMD,
-            serializedChunk
-        )
-    }
+    // Create a JDWP command packet that wraps the ByteBuffer
+    return MutableJdwpPacket.createCommandPacket(
+      jdwpPacketId,
+      DdmsPacketConstants.DDMS_CMD_SET,
+      DdmsPacketConstants.DDMS_CMD,
+      serializedChunk,
+    )
+  }
 }

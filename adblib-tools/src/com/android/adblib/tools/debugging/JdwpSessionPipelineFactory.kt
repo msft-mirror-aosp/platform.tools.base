@@ -21,56 +21,40 @@ import com.android.adblib.CoroutineScopeCache
 import com.android.adblib.tools.debugging.utils.ConcurrentAutoCloseableCollection
 
 /**
- * A component that creates instances of [JdwpSessionPipeline] each time a new JDWP session
- * is established. [JdwpSessionPipelineFactory] instances are registered with
- * [AdbSession.addJdwpSessionPipelineFactory].
+ * A component that creates instances of [JdwpSessionPipeline] each time a new JDWP session is established. [JdwpSessionPipelineFactory]
+ * instances are registered with [AdbSession.addJdwpSessionPipelineFactory].
  *
  * @see AdbSession.addJdwpSessionPipelineFactory
  */
 interface JdwpSessionPipelineFactory {
 
-    /**
-     * The priority of this factory, higher priority factories will be called before lower
-     * priority factories, meaning their [JdwpSessionPipeline] will be "closer" to the
-     * [JdwpSessionPipeline] corresponding to the direct connection to the external
-     * debugger (e.g. Android Studio or IntelliJ).
-     */
-    val priority: Int
+  /**
+   * The priority of this factory, higher priority factories will be called before lower priority factories, meaning their
+   * [JdwpSessionPipeline] will be "closer" to the [JdwpSessionPipeline] corresponding to the direct connection to the external debugger
+   * (e.g. Android Studio or IntelliJ).
+   */
+  val priority: Int
 
-    /**
-     * Creates a [JdwpSessionPipeline] connected to the given [previousPipeline],
-     * or return `null` if the factory is not active for some reason.
-     *
-     * @param device The [ConnectedDevice] corresponding to the underlying JDWP session
-     * @param pid The process id corresponding to the underlying JDWP session
-     * @param previousPipeline The [JdwpSessionPipeline] the new end point should forward packets to
-     * and from
-     */
-    fun create(
-        device: ConnectedDevice,
-        pid: Int,
-        previousPipeline: JdwpSessionPipeline
-    ): JdwpSessionPipeline?
+  /**
+   * Creates a [JdwpSessionPipeline] connected to the given [previousPipeline], or return `null` if the factory is not active for some
+   * reason.
+   *
+   * @param device The [ConnectedDevice] corresponding to the underlying JDWP session
+   * @param pid The process id corresponding to the underlying JDWP session
+   * @param previousPipeline The [JdwpSessionPipeline] the new end point should forward packets to and from
+   */
+  fun create(device: ConnectedDevice, pid: Int, previousPipeline: JdwpSessionPipeline): JdwpSessionPipeline?
 }
 
-/**
- * The [CoroutineScopeCache.Key] for the list of [JdwpSessionPipelineFactory]
- */
+/** The [CoroutineScopeCache.Key] for the list of [JdwpSessionPipelineFactory] */
 private val JdwpSessionPipelineFactoryKey =
-    CoroutineScopeCache.Key<ConcurrentAutoCloseableCollection<JdwpSessionPipelineFactory>>("JdwpSessionPipelineFactoryListKey")
+  CoroutineScopeCache.Key<ConcurrentAutoCloseableCollection<JdwpSessionPipelineFactory>>("JdwpSessionPipelineFactoryListKey")
 
-/**
- * The list of [JdwpSessionPipelineFactory] associated to this [AdbSession]
- */
+/** The list of [JdwpSessionPipelineFactory] associated to this [AdbSession] */
 internal val AdbSession.jdwpSessionPipelineFactoryList: ConcurrentAutoCloseableCollection<JdwpSessionPipelineFactory>
-    get() = this.cache.getOrPut(JdwpSessionPipelineFactoryKey) {
-        ConcurrentAutoCloseableCollection<JdwpSessionPipelineFactory>()
-    }
+  get() = this.cache.getOrPut(JdwpSessionPipelineFactoryKey) { ConcurrentAutoCloseableCollection<JdwpSessionPipelineFactory>() }
 
-/**
- * Adds a [JdwpSessionPipelineFactory] for [SharedJdwpSession] of this [AdbSession]
- */
+/** Adds a [JdwpSessionPipelineFactory] for [SharedJdwpSession] of this [AdbSession] */
 fun AdbSession.addJdwpSessionPipelineFactory(factory: JdwpSessionPipelineFactory) {
-    jdwpSessionPipelineFactoryList.add(factory)
+  jdwpSessionPipelineFactoryList.add(factory)
 }
-

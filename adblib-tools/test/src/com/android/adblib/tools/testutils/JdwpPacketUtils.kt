@@ -31,35 +31,30 @@ import com.android.adblib.utils.ResizableBuffer
 /**
  * Returns an in-memory copy of this [JdwpPacketView].
  *
- * @throws IllegalArgumentException if [JdwpPacketView.payload] does not contain exactly
- * [JdwpPacketView.length] minus [JdwpPacketConstants.PACKET_HEADER_LENGTH] bytes
- *
  * @param workBuffer (Optional) The [ResizableBuffer] used to transfer data
+ * @throws IllegalArgumentException if [JdwpPacketView.payload] does not contain exactly [JdwpPacketView.length] minus
+ *   [JdwpPacketConstants.PACKET_HEADER_LENGTH] bytes
  */
-internal suspend fun JdwpPacketView.toMutable(
-    workBuffer: ResizableBuffer = ResizableBuffer()
-): MutableJdwpPacket {
+internal suspend fun JdwpPacketView.toMutable(workBuffer: ResizableBuffer = ResizableBuffer()): MutableJdwpPacket {
 
-    // Copy header
-    workBuffer.clear()
-    workBuffer.appendJdwpHeader(this)
+  // Copy header
+  workBuffer.clear()
+  workBuffer.appendJdwpHeader(this)
 
-    val mutableJdwpPacket = MutableJdwpPacket()
-    mutableJdwpPacket.parseHeader(workBuffer.forChannelWrite())
+  val mutableJdwpPacket = MutableJdwpPacket()
+  mutableJdwpPacket.parseHeader(workBuffer.forChannelWrite())
 
-    // Copy payload into our workBuffer
-    workBuffer.clear()
-    val copyChannel = ByteBufferAdbOutputChannel(workBuffer)
-    val byteCount = withPayload { payload ->
-        copyChannel.write(payload)
-    }
-    checkPacketLength(byteCount)
+  // Copy payload into our workBuffer
+  workBuffer.clear()
+  val copyChannel = ByteBufferAdbOutputChannel(workBuffer)
+  val byteCount = withPayload { payload -> copyChannel.write(payload) }
+  checkPacketLength(byteCount)
 
-    // Make a copy into our own ByteBuffer
-    val bufferCopy = workBuffer.forChannelWrite().copy()
+  // Make a copy into our own ByteBuffer
+  val bufferCopy = workBuffer.forChannelWrite().copy()
 
-    // Make an input channel for it
-    mutableJdwpPacket.payloadProvider = PayloadProvider.forByteBuffer(bufferCopy)
+  // Make an input channel for it
+  mutableJdwpPacket.payloadProvider = PayloadProvider.forByteBuffer(bufferCopy)
 
-    return mutableJdwpPacket
+  return mutableJdwpPacket
 }

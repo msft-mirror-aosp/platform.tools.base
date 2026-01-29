@@ -31,44 +31,44 @@ internal val FAILURE_PATTERN = Pattern.compile("Failure\\s+\\[(([^:]*)(:.*)?)\\]
 
 internal class InstallResult(result: String) {
 
-    val errorMessage : String
-    val errorCode : String
-    val success : Boolean
+  val errorMessage: String
+  val errorCode: String
+  val success: Boolean
 
-    init {
-        var tmpErrorMessage = ""
-        var tmpErrorCode = ""
-        var tmpSuccess = true
-        // TODO: We should have a flow returning lines instead of breaking the output down
-        val lines = result.split("\n")
+  init {
+    var tmpErrorMessage = ""
+    var tmpErrorCode = ""
+    var tmpSuccess = true
+    // TODO: We should have a flow returning lines instead of breaking the output down
+    val lines = result.split("\n")
 
-        lines.forEach {
-            if (it.isEmpty()) {
-                return@forEach
-            }
+    lines.forEach {
+      if (it.isEmpty()) {
+        return@forEach
+      }
 
-            if (it.startsWith(SUCCESS_OUTPUT)) {
-                tmpSuccess = true
-                tmpErrorMessage = ""
-                return@forEach
-            }
+      if (it.startsWith(SUCCESS_OUTPUT)) {
+        tmpSuccess = true
+        tmpErrorMessage = ""
+        return@forEach
+      }
 
-            tmpSuccess = false
-            val m: Matcher = FAILURE_PATTERN.matcher(it)
-            if (m.matches()) {
-                tmpErrorMessage = m.group(1) // e.g.: INSTALL_FAILED_TEST_ONLY: installPackageLI
-                tmpErrorCode = m.group(2) // e.g.: INSTALL_FAILED_TEST_ONLY
-            } else {
-                if (tmpErrorMessage.isEmpty()) {
-                    tmpErrorMessage = "Unknown failure: '$it'"
-                    tmpErrorCode = "UNKNOWN"
-                } else {
-                    tmpErrorMessage += "\n $it"
-                }
-            }
+      tmpSuccess = false
+      val m: Matcher = FAILURE_PATTERN.matcher(it)
+      if (m.matches()) {
+        tmpErrorMessage = m.group(1) // e.g.: INSTALL_FAILED_TEST_ONLY: installPackageLI
+        tmpErrorCode = m.group(2) // e.g.: INSTALL_FAILED_TEST_ONLY
+      } else {
+        if (tmpErrorMessage.isEmpty()) {
+          tmpErrorMessage = "Unknown failure: '$it'"
+          tmpErrorCode = "UNKNOWN"
+        } else {
+          tmpErrorMessage += "\n $it"
         }
-        errorMessage = tmpErrorMessage
-        errorCode = tmpErrorCode
-        success = tmpSuccess
+      }
     }
+    errorMessage = tmpErrorMessage
+    errorCode = tmpErrorCode
+    success = tmpSuccess
+  }
 }

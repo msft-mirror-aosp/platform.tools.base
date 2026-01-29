@@ -16,80 +16,79 @@
 package com.android.adblib.tools
 
 import com.android.adblib.ByteBufferAdbInputChannel
-import org.junit.Test
 import com.android.adblib.EmptyAdbInputChannel
 import com.android.adblib.readText
 import com.android.adblib.testingutils.CoroutineTestUtils.runBlockingWithTimeout
-import org.junit.Assert
-import org.junit.Assert.assertArrayEquals
 import java.nio.ByteBuffer
 import java.nio.channels.ClosedChannelException
 import java.util.UUID
+import org.junit.Assert
+import org.junit.Assert.assertArrayEquals
+import org.junit.Test
 
 class AdbInputChannelInputStreamTest {
 
-    @Test
-    fun inputStream_emptyChannel_ReadsNothing() = runBlockingWithTimeout {
-        // Prepare
-        val bufferSize = 12
-        val expected = ByteArray(0)
-        val inputChannel = EmptyAdbInputChannel()
+  @Test
+  fun inputStream_emptyChannel_ReadsNothing() = runBlockingWithTimeout {
+    // Prepare
+    val bufferSize = 12
+    val expected = ByteArray(0)
+    val inputChannel = EmptyAdbInputChannel()
 
-        // Act
-        val actual = AdbInputChannelInputStream(inputChannel, bufferSize).readAllBytes()
+    // Act
+    val actual = AdbInputChannelInputStream(inputChannel, bufferSize).readAllBytes()
 
-        // Assert
-        assertArrayEquals(expected, actual)
-    }
+    // Assert
+    assertArrayEquals(expected, actual)
+  }
 
-    @Test
-    fun inputStream_singleRead_ReadsAll() = runBlockingWithTimeout {
-        // Prepare
-        val randomString = UUID.randomUUID().toString()
-        val expected = randomString.toByteArray()
-        val bufferSize = randomString.length
-        val inputBuffer = ByteBuffer.wrap(expected)
-        val inputChannel = ByteBufferAdbInputChannel(inputBuffer)
+  @Test
+  fun inputStream_singleRead_ReadsAll() = runBlockingWithTimeout {
+    // Prepare
+    val randomString = UUID.randomUUID().toString()
+    val expected = randomString.toByteArray()
+    val bufferSize = randomString.length
+    val inputBuffer = ByteBuffer.wrap(expected)
+    val inputChannel = ByteBufferAdbInputChannel(inputBuffer)
 
-        // Act
-        val actual = AdbInputChannelInputStream(inputChannel, bufferSize).readAllBytes()
+    // Act
+    val actual = AdbInputChannelInputStream(inputChannel, bufferSize).readAllBytes()
 
-        // Assert
-        assertArrayEquals(expected, actual)
-    }
+    // Assert
+    assertArrayEquals(expected, actual)
+  }
 
-    @Test
-    fun inputStream_multipleReads_ReadsAll() = runBlockingWithTimeout {
-        // Prepare
-        val randomString = UUID.randomUUID().toString()
-        val bufferSize = randomString.length
-        val expected = randomString.repeat(3).toByteArray()
-        val inputBuffer = ByteBuffer.wrap(expected)
-        val inputChannel = ByteBufferAdbInputChannel(inputBuffer)
+  @Test
+  fun inputStream_multipleReads_ReadsAll() = runBlockingWithTimeout {
+    // Prepare
+    val randomString = UUID.randomUUID().toString()
+    val bufferSize = randomString.length
+    val expected = randomString.repeat(3).toByteArray()
+    val inputBuffer = ByteBuffer.wrap(expected)
+    val inputChannel = ByteBufferAdbInputChannel(inputBuffer)
 
-        // Act
-        val actual = AdbInputChannelInputStream(inputChannel, bufferSize).readAllBytes()
+    // Act
+    val actual = AdbInputChannelInputStream(inputChannel, bufferSize).readAllBytes()
 
-        // Assert
-        assertArrayEquals(expected, actual)
-    }
+    // Assert
+    assertArrayEquals(expected, actual)
+  }
 
-    @Test
-    fun inputStream_closesUnderlyingChannel() = runBlockingWithTimeout {
-        // Prepare
-        val randomString = UUID.randomUUID().toString().repeat(3)
-        val bufferSize = randomString.length
-        val expected = randomString.toByteArray()
-        val inputBuffer = ByteBuffer.wrap(expected)
-        val inputChannel = ByteBufferAdbInputChannel(inputBuffer)
+  @Test
+  fun inputStream_closesUnderlyingChannel() = runBlockingWithTimeout {
+    // Prepare
+    val randomString = UUID.randomUUID().toString().repeat(3)
+    val bufferSize = randomString.length
+    val expected = randomString.toByteArray()
+    val inputBuffer = ByteBuffer.wrap(expected)
+    val inputChannel = ByteBufferAdbInputChannel(inputBuffer)
 
-        // Act
-        AdbInputChannelInputStream(inputChannel, bufferSize).close()
+    // Act
+    AdbInputChannelInputStream(inputChannel, bufferSize).close()
 
-        try {
-            inputChannel.readText(12)
-            Assert.fail("Fail: Channel should be closed")
-        } catch (_: ClosedChannelException) {
-        }
-    }
+    try {
+      inputChannel.readText(12)
+      Assert.fail("Fail: Channel should be closed")
+    } catch (_: ClosedChannelException) {}
+  }
 }

@@ -16,36 +16,30 @@
 package com.android.adblib.tools.debugging.packets.ddms.chunks
 
 import com.android.adblib.testingutils.CoroutineTestUtils.runBlockingWithTimeout
-import com.android.adblib.tools.debugging.packets.impl.PayloadProvider
 import com.android.adblib.tools.debugging.packets.ddms.DdmsChunkType
 import com.android.adblib.tools.debugging.packets.ddms.EphemeralDdmsChunk
+import com.android.adblib.tools.debugging.packets.impl.PayloadProvider
 import com.android.adblib.utils.ResizableBuffer
 import org.junit.Assert
 import org.junit.Test
 
 class DdmsFeatChunkTest {
 
-    @Test
-    fun testParsingWithAllFieldsWorks() = runBlockingWithTimeout {
-        // Prepare
-        val payload = run {
-            val buffer = ResizableBuffer()
-            DdmsFeatChunk.writePayload(
-                buffer,
-                listOf("a", "b", "foo", "bar")
-            )
-            buffer.forChannelWrite()
-        }
-        val chunk = EphemeralDdmsChunk(
-            type = DdmsChunkType.FEAT,
-            length = payload.remaining(),
-            payloadProvider = PayloadProvider.forByteBuffer(payload)
-        )
-
-        // Act
-        val featChunk = DdmsFeatChunk.parse(chunk)
-
-        // Assert
-        Assert.assertEquals(listOf("a", "b", "foo", "bar"), featChunk.features)
+  @Test
+  fun testParsingWithAllFieldsWorks() = runBlockingWithTimeout {
+    // Prepare
+    val payload = run {
+      val buffer = ResizableBuffer()
+      DdmsFeatChunk.writePayload(buffer, listOf("a", "b", "foo", "bar"))
+      buffer.forChannelWrite()
     }
+    val chunk =
+      EphemeralDdmsChunk(type = DdmsChunkType.FEAT, length = payload.remaining(), payloadProvider = PayloadProvider.forByteBuffer(payload))
+
+    // Act
+    val featChunk = DdmsFeatChunk.parse(chunk)
+
+    // Assert
+    Assert.assertEquals(listOf("a", "b", "foo", "bar"), featChunk.features)
+  }
 }

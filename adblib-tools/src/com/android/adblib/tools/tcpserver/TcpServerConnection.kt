@@ -18,66 +18,49 @@ package com.android.adblib.tools.tcpserver
 import com.android.adblib.AdbChannel
 import com.android.adblib.AdbSession
 import com.android.adblib.tools.tcpserver.impl.TcpServerWithFailoverConnection
-import kotlinx.coroutines.CoroutineScope
 import java.time.Duration
+import kotlinx.coroutines.CoroutineScope
 
 /**
- * Allows connecting to a TCP server that may be volatile, i.e. implementations may retry
- * the socket connection, or even restart the TCP server if needed.
+ * Allows connecting to a TCP server that may be volatile, i.e. implementations may retry the socket connection, or even restart the TCP
+ * server if needed.
  */
 internal interface TcpServerConnection : AutoCloseable {
 
+  /**
+   * Executes [block] passing a socket [AdbChannel] connected to the underlying TCP server.
+   *
+   * See [createWithFailoverConnection] for specific details about retry policy and server execution behavior.
+   */
+  suspend fun <R> withClientSocket(block: suspend (newServerStarted: Boolean, socket: AdbChannel) -> R): R
+
+  companion object {
+
     /**
-     * Executes [block] passing a socket [AdbChannel] connected to the underlying
-     * TCP server.
+     * Creates a new instance of a [TcpServerConnection] that can dynamically connect to an existing server or start a new one as needed.
      *
-     * See [createWithFailoverConnection] for specific details about retry policy and server
-     * execution behavior.
+     * For each call to [TcpServerConnection.withClientSocket], the returned [TcpServerConnection] either connects to an existing TCP server
+     * running at a given local host [port], or starts a new [TcpServer] (if the connection failed). The given [retryPolicy] is used
+     * whenever there is a failure, so that starting TCP servers concurrently is supported, i.e. a failure to connect/start a server, leads
+     * to a retry.
+     *
+     * @param session The [AdbSession] to use for logging and [CoroutineScope]
+     * @param tcpServer The [TcpServer] implementation to run if there is no already active server at [port].
+     * @param [port] The TCP port to connect to. This should be a "well known" port of this particular [TcpServer] implementation, so that
+     *   multiple instances of this [TcpServerConnection] running on separate processes can connect to the same port, i.e. running
+     *   [TcpServer] implementation.
+     * @param connectTimeout Timeout when trying to connect to an existing server
+     * @param retryPolicy The [RetryPolicy] to use when executing a [TcpServerConnection.withClientSocket] operation, i.e. the "retry"
+     *   behavior when a server (or operation) failure occurs during a call to [TcpServerConnection.withClientSocket]
      */
-    suspend fun <R> withClientSocket(
-        block: suspend (newServerStarted: Boolean, socket: AdbChannel) -> R
-    ): R
-
-    companion object {
-
-        /**
-         * Creates a new instance of a [TcpServerConnection] that can dynamically connect to
-         * an existing server or start a new one as needed.
-         *
-         * For each call to [TcpServerConnection.withClientSocket], the returned
-         * [TcpServerConnection] either connects to an existing TCP server running at a given
-         * local host [port], or starts a new [TcpServer] (if the connection failed). The given
-         * [retryPolicy] is used whenever there is a failure, so that starting TCP servers
-         * concurrently is supported, i.e. a failure to connect/start a server, leads
-         * to a retry.
-         *
-         * @param session The [AdbSession] to use for logging and [CoroutineScope]
-         * @param tcpServer The [TcpServer] implementation to run if there is no
-         * already active server at [port].
-         * @param [port] The TCP port to connect to. This should be a "well known" port
-         * of this particular [TcpServer] implementation, so that multiple instances of
-         * this [TcpServerConnection] running on separate processes can connect to the
-         * same port, i.e. running [TcpServer] implementation.
-         * @param connectTimeout Timeout when trying to connect to an existing server
-         * @param retryPolicy The [RetryPolicy] to use when executing a
-         * [TcpServerConnection.withClientSocket] operation, i.e. the "retry" behavior
-         * when a server (or operation) failure occurs during a call to
-         * [TcpServerConnection.withClientSocket]
-         */
-        fun createWithFailoverConnection(
-            session: AdbSession,
-            tcpServer: TcpServer,
-            port: Int,
-            connectTimeout: Duration,
-            retryPolicy: RetryPolicy,
-        ): TcpServerConnection {
-            return TcpServerWithFailoverConnection(
-                session,
-                tcpServer,
-                port,
-                connectTimeout,
-                retryPolicy
-            )
-        }
+    fun createWithFailoverConnection(
+      session: AdbSession,
+      tcpServer: TcpServer,
+      port: Int,
+      connectTimeout: Duration,
+      retryPolicy: RetryPolicy,
+    ): TcpServerConnection {
+      return TcpServerWithFailoverConnection(session, tcpServer, port, connectTimeout, retryPolicy)
     }
+  }
 }

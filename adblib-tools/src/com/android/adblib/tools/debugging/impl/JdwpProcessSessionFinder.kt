@@ -21,31 +21,26 @@ import com.android.adblib.tools.debugging.JdwpProcess
 import com.android.adblib.tools.debugging.utils.ConcurrentAutoCloseableCollection
 
 /**
- * Extension point an [AdbSession] should use to find the [AdbSession] that is responsible
- * for opening JDWP connections through [JdwpProcess] instances.
+ * Extension point an [AdbSession] should use to find the [AdbSession] that is responsible for opening JDWP connections through
+ * [JdwpProcess] instances.
  */
 interface JdwpProcessSessionFinder {
 
-    /**
-     * Returns the [AdbSession] that [forSession] should delegate [JdwpProcess]
-     * instances to. If no delegation should occur, returns [forSession].
-     */
-    fun findDelegateSession(forSession: AdbSession): AdbSession
+  /**
+   * Returns the [AdbSession] that [forSession] should delegate [JdwpProcess] instances to. If no delegation should occur, returns
+   * [forSession].
+   */
+  fun findDelegateSession(forSession: AdbSession): AdbSession
 }
 
 private val JdwpProcessSessionFinderListKey =
-    CoroutineScopeCache.Key<ConcurrentAutoCloseableCollection<JdwpProcessSessionFinder>>(
-        JdwpProcessSessionFinder::class.simpleName!!
-    )
+  CoroutineScopeCache.Key<ConcurrentAutoCloseableCollection<JdwpProcessSessionFinder>>(JdwpProcessSessionFinder::class.simpleName!!)
 
 internal val AdbSession.jdwpProcessSessionFinderList: ConcurrentAutoCloseableCollection<JdwpProcessSessionFinder>
-    get() {
-        return this.cache.getOrPut(JdwpProcessSessionFinderListKey) {
-            ConcurrentAutoCloseableCollection()
-        }
-    }
+  get() {
+    return this.cache.getOrPut(JdwpProcessSessionFinderListKey) { ConcurrentAutoCloseableCollection() }
+  }
 
 fun AdbSession.addJdwpProcessSessionFinder(sessionFinder: JdwpProcessSessionFinder) {
-    jdwpProcessSessionFinderList.add(sessionFinder)
+  jdwpProcessSessionFinderList.add(sessionFinder)
 }
-

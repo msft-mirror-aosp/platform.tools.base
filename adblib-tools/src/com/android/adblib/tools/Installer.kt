@@ -17,9 +17,9 @@ package com.android.adblib.tools
 
 import com.android.adblib.AdbDeviceServices
 import com.android.adblib.DeviceSelector
-import kotlinx.coroutines.withContext
 import java.nio.file.Path
 import java.time.Duration
+import kotlinx.coroutines.withContext
 
 /**
  * Install an application made of a list of apks path [apks].
@@ -31,22 +31,20 @@ import java.time.Duration
  * @param [options] the install options. e.g.: {"-t", "-r"}.
  * @param [timeout] the total amount of time allowed to install, including all sub-commands
  *
- * This function throws [InstallException] if there was an error reported by the installer on the
- * device.
- * This function throws [AdbProtocolErrorException], [AdbFailResponseException], or [IOException]
- * if there was a lower level communication error during execution of the underlying install commands.
+ * This function throws [InstallException] if there was an error reported by the installer on the device. This function throws
+ * [AdbProtocolErrorException], [AdbFailResponseException], or [IOException] if there was a lower level communication error during execution
+ * of the underlying install commands.
  */
-
 suspend fun AdbDeviceServices.install(
-    device: DeviceSelector,
-    apks : List<Path>,
-    options : List<String> = listOf(),
-    timeout : Duration = Duration.ofMinutes(5),
-) : InstallMetrics{
-    return withContext(session.host.ioDispatcher) { // Make sure we NEVER run on EDT
-        session.host.timeProvider.withErrorTimeout(timeout) {
-            val client = PMDriver(this@install, device)
-            client.install(apks, options)
-        }
+  device: DeviceSelector,
+  apks: List<Path>,
+  options: List<String> = listOf(),
+  timeout: Duration = Duration.ofMinutes(5),
+): InstallMetrics {
+  return withContext(session.host.ioDispatcher) { // Make sure we NEVER run on EDT
+    session.host.timeProvider.withErrorTimeout(timeout) {
+      val client = PMDriver(this@install, device)
+      client.install(apks, options)
     }
+  }
 }

@@ -15,9 +15,7 @@
  */
 package com.android.adblib.tools.debugging
 
-/**
- * A component that holds onto a [JdwpProcess]
- */
+/** A component that holds onto a [JdwpProcess] */
 interface JdwpProcessHolder {
-    val jdwpProcessValue: JdwpProcess
+  val jdwpProcessValue: JdwpProcess
 }

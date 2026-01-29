@@ -16,7 +16,6 @@
 package com.android.adblib.tools.debugging.packets.ddms.chunks
 
 import com.android.adblib.readNBytes
-import com.android.adblib.readRemaining
 import com.android.adblib.tools.debugging.packets.ddms.ChunkDataParsing.readInt
 import com.android.adblib.tools.debugging.packets.ddms.ChunkDataParsing.readString
 import com.android.adblib.tools.debugging.packets.ddms.ChunkDataWriting
@@ -27,40 +26,33 @@ import com.android.adblib.utils.ResizableBuffer
 
 internal data class DdmsFeatChunk(val features: List<String>) {
 
-    companion object {
+  companion object {
 
-        internal suspend fun parse(
-            chunk: DdmsChunkView,
-            workBuffer: ResizableBuffer = ResizableBuffer()
-        ): DdmsFeatChunk {
-            // Read payload into "buffer"
-            workBuffer.clear()
-            val buffer = chunk.withPayload { payload ->
-                payload.readNBytes(workBuffer, chunk.length)
-                workBuffer.afterChannelRead()
-            }
-
-            buffer.order(DDMS_CHUNK_BYTE_ORDER)
-            val count = readInt(buffer)
-            val features = ArrayList<String>()
-            for (i in 0 until count) {
-                val length = readInt(buffer)
-                val feature = readString(buffer, length)
-                features.add(feature)
-            }
-
-            // All done, return chunk
-            return DdmsFeatChunk(features)
+    internal suspend fun parse(chunk: DdmsChunkView, workBuffer: ResizableBuffer = ResizableBuffer()): DdmsFeatChunk {
+      // Read payload into "buffer"
+      workBuffer.clear()
+      val buffer =
+        chunk.withPayload { payload ->
+          payload.readNBytes(workBuffer, chunk.length)
+          workBuffer.afterChannelRead()
         }
 
-        internal fun writePayload(
-            buffer: ResizableBuffer,
-            features: List<String>
-        ) {
-            ChunkDataWriting.writeInt(buffer, features.size)
-            features.forEach { feature ->
-                ChunkDataWriting.writeLengthPrefixedString(buffer, feature)
-            }
-        }
+      buffer.order(DDMS_CHUNK_BYTE_ORDER)
+      val count = readInt(buffer)
+      val features = ArrayList<String>()
+      for (i in 0 until count) {
+        val length = readInt(buffer)
+        val feature = readString(buffer, length)
+        features.add(feature)
+      }
+
+      // All done, return chunk
+      return DdmsFeatChunk(features)
     }
+
+    internal fun writePayload(buffer: ResizableBuffer, features: List<String>) {
+      ChunkDataWriting.writeInt(buffer, features.size)
+      features.forEach { feature -> ChunkDataWriting.writeLengthPrefixedString(buffer, feature) }
+    }
+  }
 }

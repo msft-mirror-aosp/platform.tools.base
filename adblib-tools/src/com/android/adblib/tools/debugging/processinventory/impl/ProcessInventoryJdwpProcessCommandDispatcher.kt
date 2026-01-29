@@ -30,6 +30,7 @@ import com.android.adblib.tools.debugging.resumeProcessImpl
 import com.android.adblib.utils.logIOCompletionErrors
 import com.android.adblib.withProcessPrefix
 import com.google.protobuf.TextFormat
+import java.io.IOException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
@@ -37,201 +38,182 @@ import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.onSubscription
 import kotlinx.coroutines.launch
-import java.io.IOException
 
-/**
- * Implementation of [ExternalJdwpProcessCommandDispatcher] that connects to a remote
- * [ProcessInventoryServer]
- */
+/** Implementation of [ExternalJdwpProcessCommandDispatcher] that connects to a remote [ProcessInventoryServer] */
 internal class ProcessInventoryJdwpProcessCommandDispatcher(
-    private val serverConnection: ProcessInventoryServerConnection,
-    override val process: JdwpProcess
+  private val serverConnection: ProcessInventoryServerConnection,
+  override val process: JdwpProcess,
 ) : ExternalJdwpProcessCommandDispatcher {
 
-    private val session: AdbSession
-        get() = process.device.session
+  private val session: AdbSession
+    get() = process.device.session
 
-    private val logger = adbLogger(session).withProcessPrefix(process.device, process.pid)
+  private val logger = adbLogger(session).withProcessPrefix(process.device, process.pid)
 
-    private val processDispatchedCommandsDeferred by lazy(LazyThreadSafetyMode.SYNCHRONIZED) {
-        process.scope.launch {
-            runCatching {
-                processDispatchedCommands()
-            }.onFailure { throwable ->
-                logger.logIOCompletionErrors(throwable)
+  private val processDispatchedCommandsDeferred by
+    lazy(LazyThreadSafetyMode.SYNCHRONIZED) {
+      process.scope.launch {
+        runCatching { processDispatchedCommands() }.onFailure { throwable -> logger.logIOCompletionErrors(throwable) }
+      }
+      CompletableDeferred<Unit>()
+    }
+
+  override suspend fun start() {
+    processDispatchedCommandsDeferred.await()
+  }
+
+  /** Sends the [command] to the process inventory server for dispatching */
+  override suspend fun executeCommand(command: ProcessCommand) {
+    serverConnection.withConnectionForDevice(process.device) {
+      logger.verbose { "Sending command $command for execution on device ${process.device}" }
+
+      // The command UUID (used to match with the reply)
+      val commandUuid = process.device.session.generateUniqueUUID()
+
+      coroutineScope {
+        // Set up a "reply handler" before sending the command so we are ready
+        val replyProcessingCoroutineReady = CompletableDeferred<Unit>()
+        val replyDeferred = async {
+          processCommandReplySharedFlow
+            .onSubscription { replyProcessingCoroutineReady.complete(Unit) }
+            .first { replyProto ->
+              logger.verbose { "Received reply from device connection: ${TextFormat.shortDebugString(replyProto)}" }
+              if (replyProto.commandUuid == commandUuid) {
+                when (replyProto.commandResultCase) {
+                  CommandResultCase.COMMAND_IGNORED -> {
+                    // Keep collecting: command ignored by peer
+                    false
+                  }
+
+                  CommandResultCase.COMMAND_EXECUTED_OK -> {
+                    // Stop collecting: command was executed correctly
+                    true
+                  }
+
+                  CommandResultCase.COMMAND_EXECUTED_WITH_ERROR -> {
+                    // Stop collecting: command was executed with an error
+                    true
+                  }
+
+                  CommandResultCase.COMMANDRESULT_NOT_SET,
+                  null -> {
+                    // Keep collecting: command not supported by peer
+                    false
+                  }
+                }
+              } else {
+                // Keep collecting: reply to some other command
+                false
+              }
             }
         }
-        CompletableDeferred<Unit>()
-    }
+        replyProcessingCoroutineReady.await()
 
-    override suspend fun start() {
-        processDispatchedCommandsDeferred.await()
-    }
+        // Send command to peers
+        sendProcessCommand(command.toProcessCommandProto(commandUuid))
 
-    /**
-     * Sends the [command] to the process inventory server for dispatching
-     */
-    override suspend fun executeCommand(command: ProcessCommand) {
-        serverConnection.withConnectionForDevice(process.device) {
-            logger.verbose { "Sending command $command for execution on device ${process.device}" }
-
-            // The command UUID (used to match with the reply)
-            val commandUuid = process.device.session.generateUniqueUUID()
-
-            coroutineScope {
-                // Set up a "reply handler" before sending the command so we are ready
-                val replyProcessingCoroutineReady = CompletableDeferred<Unit>()
-                val replyDeferred = async {
-                    processCommandReplySharedFlow.onSubscription {
-                        replyProcessingCoroutineReady.complete(Unit)
-                    }.first { replyProto ->
-                        logger.verbose { "Received reply from device connection: ${TextFormat.shortDebugString(replyProto)}" }
-                        if (replyProto.commandUuid == commandUuid) {
-                            when (replyProto.commandResultCase) {
-                                CommandResultCase.COMMAND_IGNORED -> {
-                                    // Keep collecting: command ignored by peer
-                                    false
-                                }
-
-                                CommandResultCase.COMMAND_EXECUTED_OK -> {
-                                    // Stop collecting: command was executed correctly
-                                    true
-                                }
-
-                                CommandResultCase.COMMAND_EXECUTED_WITH_ERROR -> {
-                                    // Stop collecting: command was executed with an error
-                                    true
-                                }
-
-                                CommandResultCase.COMMANDRESULT_NOT_SET, null -> {
-                                    // Keep collecting: command not supported by peer
-                                    false
-                                }
-                            }
-                        } else {
-                            // Keep collecting: reply to some other command
-                            false
-                        }
-                    }
-                }
-                replyProcessingCoroutineReady.await()
-
-                // Send command to peers
-                sendProcessCommand(command.toProcessCommandProto(commandUuid))
-
-                // Wait for the reply from the peer than handled the command
-                val replyProto = replyDeferred.await()
-                logger.debug { "Received reply: $replyProto" }
-                if (replyProto.hasCommandExecutedWithError()) {
-                    throw IOException(replyProto.commandExecutedWithError)
-                }
-            }
+        // Wait for the reply from the peer than handled the command
+        val replyProto = replyDeferred.await()
+        logger.debug { "Received reply: $replyProto" }
+        if (replyProto.hasCommandExecutedWithError()) {
+          throw IOException(replyProto.commandExecutedWithError)
         }
+      }
     }
+  }
 
-    /**
-     * Process commands targeted at this [process]
-     */
-    private suspend fun processDispatchedCommands() {
-        // Use the device flow, and filter to this process only
-        serverConnection.withConnectionForDevice(process.device) {
-            val connectionForDevice = this
+  /** Process commands targeted at this [process] */
+  private suspend fun processDispatchedCommands() {
+    // Use the device flow, and filter to this process only
+    serverConnection.withConnectionForDevice(process.device) {
+      val connectionForDevice = this
 
-            connectionForDevice.processCommandSharedFlow.onSubscription {
-                logger.debug { "Dispatching commands from device connection $connectionForDevice" }
-                processDispatchedCommandsDeferred.complete(Unit)
-            }.filter { processCommand ->
-                processCommand.pid == process.pid
-            }.collect { processCommand ->
-                logger.debug { "Process ${processCommand.pid} command received: ${TextFormat.shortDebugString(processCommand)}" }
-                runCatching {
-                    when (processCommand.commandCase) {
-                        ProcessInventoryServerProto.ProcessCommand.CommandCase.RESUME_JDWP_PROCESS -> {
-                            // We want to execute the command only if this process instances is
-                            // holding on the JDWP session *and* the process is waiting
-                            process.resumeProcessImpl.resumeProcessIfJdwpSessionHolder()
-                        }
-
-                        else -> {
-                            logger.info { "Unsupported process command: $processCommand" }
-                            false // not handled
-                        }
-                    }
-                }.onFailure { t ->
-                    logger.logIOCompletionErrors(t)
-                    connectionForDevice.sendErrorCommandReply(processCommand, t)
-                }.onSuccess { handled ->
-                    if (handled) {
-                        connectionForDevice.sendOkCommandReply(processCommand)
-                    } else {
-                        connectionForDevice.sendIgnoredCommandReply(processCommand)
-                    }
+      connectionForDevice.processCommandSharedFlow
+        .onSubscription {
+          logger.debug { "Dispatching commands from device connection $connectionForDevice" }
+          processDispatchedCommandsDeferred.complete(Unit)
+        }
+        .filter { processCommand -> processCommand.pid == process.pid }
+        .collect { processCommand ->
+          logger.debug { "Process ${processCommand.pid} command received: ${TextFormat.shortDebugString(processCommand)}" }
+          runCatching {
+              when (processCommand.commandCase) {
+                ProcessInventoryServerProto.ProcessCommand.CommandCase.RESUME_JDWP_PROCESS -> {
+                  // We want to execute the command only if this process instances is
+                  // holding on the JDWP session *and* the process is waiting
+                  process.resumeProcessImpl.resumeProcessIfJdwpSessionHolder()
                 }
+
+                else -> {
+                  logger.info { "Unsupported process command: $processCommand" }
+                  false // not handled
+                }
+              }
+            }
+            .onFailure { t ->
+              logger.logIOCompletionErrors(t)
+              connectionForDevice.sendErrorCommandReply(processCommand, t)
+            }
+            .onSuccess { handled ->
+              if (handled) {
+                connectionForDevice.sendOkCommandReply(processCommand)
+              } else {
+                connectionForDevice.sendIgnoredCommandReply(processCommand)
+              }
             }
         }
     }
+  }
 
-    override fun toString(): String {
-        return "${this::class.java.simpleName}(process=$process)"
+  override fun toString(): String {
+    return "${this::class.java.simpleName}(process=$process)"
+  }
+
+  companion object {
+
+    private fun ProcessCommand.toProcessCommandProto(commandUuid: String): ProcessInventoryServerProto.ProcessCommand {
+      return when (this) {
+        is ProcessCommand.ResumeJdwpProcess -> {
+          ProcessInventoryServerProto.ProcessCommand.newBuilder()
+            .setCommandUuid(commandUuid)
+            .setPid(pid)
+            .setResumeJdwpProcess(ProcessInventoryServerProto.ProcessCommand.ResumeJdwpProcess.newBuilder().build())
+            .build()
+        }
+      }
     }
 
-    companion object {
-
-        private fun ProcessCommand.toProcessCommandProto(commandUuid: String): ProcessInventoryServerProto.ProcessCommand {
-            return when (this) {
-                is ProcessCommand.ResumeJdwpProcess -> {
-                    ProcessInventoryServerProto.ProcessCommand
-                        .newBuilder()
-                        .setCommandUuid(commandUuid)
-                        .setPid(pid)
-                        .setResumeJdwpProcess(
-                            ProcessInventoryServerProto.ProcessCommand.ResumeJdwpProcess
-                                .newBuilder()
-                                .build()
-                        )
-                        .build()
-                }
-            }
-        }
-
-        private suspend fun ConnectionForDevice.sendOkCommandReply(
-            processCommand: ProcessInventoryServerProto.ProcessCommand
-        ) {
-            sendProcessCommandReply(
-                ProcessInventoryServerProto.ProcessCommandReply
-                    .newBuilder()
-                    .setCommandUuid(processCommand.commandUuid)
-                    .setPid(processCommand.pid)
-                    .setCommandExecutedOk(true)
-                    .build()
-            )
-        }
-
-        private suspend fun ConnectionForDevice.sendIgnoredCommandReply(
-            processCommand: ProcessInventoryServerProto.ProcessCommand
-        ) {
-            sendProcessCommandReply(
-                ProcessInventoryServerProto.ProcessCommandReply
-                    .newBuilder()
-                    .setCommandUuid(processCommand.commandUuid)
-                    .setPid(processCommand.pid)
-                    .setCommandIgnored(true)
-                    .build()
-            )
-        }
-
-        private suspend fun ConnectionForDevice.sendErrorCommandReply(
-            processCommand: ProcessInventoryServerProto.ProcessCommand,
-            t: Throwable
-        ) {
-            sendProcessCommandReply(
-                ProcessInventoryServerProto.ProcessCommandReply
-                    .newBuilder()
-                    .setCommandUuid(processCommand.commandUuid)
-                    .setPid(processCommand.pid)
-                    .setCommandExecutedWithError(t.message)
-                    .build()
-            )
-        }
+    private suspend fun ConnectionForDevice.sendOkCommandReply(processCommand: ProcessInventoryServerProto.ProcessCommand) {
+      sendProcessCommandReply(
+        ProcessInventoryServerProto.ProcessCommandReply.newBuilder()
+          .setCommandUuid(processCommand.commandUuid)
+          .setPid(processCommand.pid)
+          .setCommandExecutedOk(true)
+          .build()
+      )
     }
+
+    private suspend fun ConnectionForDevice.sendIgnoredCommandReply(processCommand: ProcessInventoryServerProto.ProcessCommand) {
+      sendProcessCommandReply(
+        ProcessInventoryServerProto.ProcessCommandReply.newBuilder()
+          .setCommandUuid(processCommand.commandUuid)
+          .setPid(processCommand.pid)
+          .setCommandIgnored(true)
+          .build()
+      )
+    }
+
+    private suspend fun ConnectionForDevice.sendErrorCommandReply(
+      processCommand: ProcessInventoryServerProto.ProcessCommand,
+      t: Throwable,
+    ) {
+      sendProcessCommandReply(
+        ProcessInventoryServerProto.ProcessCommandReply.newBuilder()
+          .setCommandUuid(processCommand.commandUuid)
+          .setPid(processCommand.pid)
+          .setCommandExecutedWithError(t.message)
+          .build()
+      )
+    }
+  }
 }

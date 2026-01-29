@@ -18,30 +18,19 @@ package com.android.adblib.tools.debugging.utils
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import java.time.Duration
 
-/**
- * Keeps track of a single [Job] in the given [scope]
- */
-internal class JobTracker(private val scope: CoroutineScope): AutoCloseable {
-    private var currentJob: Job? = null
+/** Keeps track of a single [Job] in the given [scope] */
+internal class JobTracker(private val scope: CoroutineScope) : AutoCloseable {
+  private var currentJob: Job? = null
 
-    /**
-     * Cancels the currently running [Job] (if any) and [launches][CoroutineScope.launch] a new
-     * one executing [action].
-     */
-    fun cancelPreviousAndLaunch(
-        action: suspend CoroutineScope.() -> Unit
-    ) {
-        currentJob?.cancel()
-        currentJob = scope.launch {
-            action()
-        }
-    }
+  /** Cancels the currently running [Job] (if any) and [launches][CoroutineScope.launch] a new one executing [action]. */
+  fun cancelPreviousAndLaunch(action: suspend CoroutineScope.() -> Unit) {
+    currentJob?.cancel()
+    currentJob = scope.launch { action() }
+  }
 
-    override fun close() {
-        currentJob?.cancel("${this::class.simpleName} has been closed")
-    }
+  override fun close() {
+    currentJob?.cancel("${this::class.simpleName} has been closed")
+  }
 }

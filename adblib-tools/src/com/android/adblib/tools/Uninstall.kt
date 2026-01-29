@@ -19,18 +19,22 @@ import com.android.adblib.AdbChannel
 import com.android.adblib.AdbDeviceServices
 import com.android.adblib.DeviceSelector
 import com.android.adblib.TextShellCollector
-import kotlinx.coroutines.flow.first
 import java.time.Duration
 import java.util.concurrent.TimeoutException
+import kotlinx.coroutines.flow.first
 
 class UninstallResult(val output: String) {
 
-    val status: Status = when {
-        (output == "Success") -> Status.SUCCESS
-        else -> Status.FAILURE
+  val status: Status =
+    when {
+      (output == "Success") -> Status.SUCCESS
+      else -> Status.FAILURE
     }
 
-    enum class Status { SUCCESS, FAILURE }
+  enum class Status {
+    SUCCESS,
+    FAILURE,
+  }
 }
 
 /**
@@ -41,24 +45,23 @@ class UninstallResult(val output: String) {
  * @param [device] the [DeviceSelector] corresponding to the target device
  * @param [applicationID] the application idenfier (usually a package formatted name).
  * @param [options] parameters directly passed to package manager
- * @param [timeout] timeout tracking the command execution, tracking starts *after* the
- *   device connection has been successfully established. If the command takes more time than
- *   the timeout, a [TimeoutException] is thrown and the underlying [AdbChannel] is closed.
+ * @param [timeout] timeout tracking the command execution, tracking starts *after* the device connection has been successfully established.
+ *   If the command takes more time than the timeout, a [TimeoutException] is thrown and the underlying [AdbChannel] is closed.
  */
 suspend fun AdbDeviceServices.uninstall(
-    // The specific device to talk to via the service above
-    device: DeviceSelector,
-    // The applicationID on that device for that userID
-    applicationID: String,
-    // The options for uninstall, passed directly to the package manager
-    options: List<String> = emptyList(),
-    // Timeout
-    timeout : Duration = Duration.ofSeconds(10)
+  // The specific device to talk to via the service above
+  device: DeviceSelector,
+  // The applicationID on that device for that userID
+  applicationID: String,
+  // The options for uninstall, passed directly to the package manager
+  options: List<String> = emptyList(),
+  // Timeout
+  timeout: Duration = Duration.ofSeconds(10),
 ): UninstallResult {
-    // TODO Improve perf by supporting 'cmd uninstall' and 'abb package uninstall' variants.
-    val opts = options.joinToString(" ")
-    var cmd = "pm uninstall $opts $applicationID"
-    val flow = this.shell(device, cmd, TextShellCollector(), commandTimeout = timeout)
-    val output = flow.first()
-    return UninstallResult(output)
+  // TODO Improve perf by supporting 'cmd uninstall' and 'abb package uninstall' variants.
+  val opts = options.joinToString(" ")
+  var cmd = "pm uninstall $opts $applicationID"
+  val flow = this.shell(device, cmd, TextShellCollector(), commandTimeout = timeout)
+  val output = flow.first()
+  return UninstallResult(output)
 }

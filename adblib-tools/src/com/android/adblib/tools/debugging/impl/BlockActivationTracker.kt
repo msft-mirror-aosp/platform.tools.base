@@ -28,20 +28,20 @@ import kotlinx.coroutines.flow.update
  */
 internal class BlockActivationTracker {
 
-    private val activationCountStateFlow = MutableStateFlow(0)
+  private val activationCountStateFlow = MutableStateFlow(0)
 
-    val activationCount = activationCountStateFlow.asStateFlow()
+  val activationCount = activationCountStateFlow.asStateFlow()
 
-    inline fun <R> track(block: () -> R): R {
-        activationCountStateFlow.update { it + 1 }
-        return try {
-            block()
-        } finally {
-            activationCountStateFlow.update { it - 1 }
-        }
+  inline fun <R> track(block: () -> R): R {
+    activationCountStateFlow.update { it + 1 }
+    return try {
+      block()
+    } finally {
+      activationCountStateFlow.update { it - 1 }
     }
+  }
 
-    suspend fun waitWhileActive() {
-        activationCountStateFlow.first { it == 0 }
-    }
+  suspend fun waitWhileActive() {
+    activationCountStateFlow.first { it == 0 }
+  }
 }

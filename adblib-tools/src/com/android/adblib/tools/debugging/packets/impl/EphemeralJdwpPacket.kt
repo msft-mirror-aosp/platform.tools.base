@@ -28,197 +28,164 @@ import com.android.adblib.utils.ResizableBuffer
 import kotlinx.coroutines.sync.Mutex
 
 /**
- * Base class for [JdwpPacketView] implementation that are immutable and wrap the
- * [JdwpPacketView] `payload` with a [PayloadProvider] instance.
+ * Base class for [JdwpPacketView] implementation that are immutable and wrap the [JdwpPacketView] `payload` with a [PayloadProvider]
+ * instance.
  */
-internal abstract class AbstractJdwpPacketView protected constructor(
-    final override val id: Int,
-    final override val length: Int,
-    protected val flagsAndWord: FlagsAndWord,
-    protected val payloadProvider: PayloadProvider
+internal abstract class AbstractJdwpPacketView
+protected constructor(
+  final override val id: Int,
+  final override val length: Int,
+  protected val flagsAndWord: FlagsAndWord,
+  protected val payloadProvider: PayloadProvider,
 ) : JdwpPacketView, AutoCloseable, ThreadSafetySupport {
 
-    override val isThreadSafeAndImmutable: Boolean
-        get() = payloadProvider.isThreadSafeAndImmutable
+  override val isThreadSafeAndImmutable: Boolean
+    get() = payloadProvider.isThreadSafeAndImmutable
 
-    override val flags: Int
-        get() = flagsAndWord.flags
+  override val flags: Int
+    get() = flagsAndWord.flags
 
-    override val cmdSet: Int
-        get() = flagsAndWord.cmdSet
+  override val cmdSet: Int
+    get() = flagsAndWord.cmdSet
 
-    override val cmd: Int
-        get() = flagsAndWord.cmd
+  override val cmd: Int
+    get() = flagsAndWord.cmd
 
-    override val errorCode: Int
-        get() = flagsAndWord.errorCode
+  override val errorCode: Int
+    get() = flagsAndWord.errorCode
 
-    override suspend fun acquirePayload(): AdbInputChannel {
-        return payloadProvider.acquirePayload()
-    }
+  override suspend fun acquirePayload(): AdbInputChannel {
+    return payloadProvider.acquirePayload()
+  }
 
-    override fun releasePayload() {
-        payloadProvider.releasePayload()
-    }
+  override fun releasePayload() {
+    payloadProvider.releasePayload()
+  }
 
-    abstract override suspend fun toOffline(workBuffer: ResizableBuffer): JdwpPacketView
+  abstract override suspend fun toOffline(workBuffer: ResizableBuffer): JdwpPacketView
 
-    override fun close() {
-        payloadProvider.close()
-    }
+  override fun close() {
+    payloadProvider.close()
+  }
 
-    override fun toString(): String {
-        return toStringImpl()
-    }
+  override fun toString(): String {
+    return toStringImpl()
+  }
 }
 
 /**
- * A [JdwpPacketView] implementation that is immutable and wraps the [JdwpPacketView] `payload`
- * with a [PayloadProvider] instance.
+ * A [JdwpPacketView] implementation that is immutable and wraps the [JdwpPacketView] `payload` with a [PayloadProvider] instance.
  *
- * Producers of [EphemeralJdwpPacket] instances call [shutdown] when a packet payload is
- * not available anymore (e.g. when the underlying socket data has been consumed), at which
- * point consumers won't have access to the packet payload, i.e. [JdwpPacketView.withPayload]
+ * Producers of [EphemeralJdwpPacket] instances call [shutdown] when a packet payload is not available anymore (e.g. when the underlying
+ * socket data has been consumed), at which point consumers won't have access to the packet payload, i.e. [JdwpPacketView.withPayload]
  * throws an [IllegalStateException].
  *
  * Note: This implementation is *not* thread-safe.
  */
-internal open class EphemeralJdwpPacket private constructor(
+internal open class EphemeralJdwpPacket
+private constructor(id: Int, length: Int, flagsAndWord: FlagsAndWord, payloadProvider: PayloadProvider) :
+  AbstractJdwpPacketView(id, length, flagsAndWord, payloadProvider) {
+
+  private constructor(
     id: Int,
     length: Int,
-    flagsAndWord: FlagsAndWord,
-    payloadProvider: PayloadProvider
-) : AbstractJdwpPacketView(id, length, flagsAndWord, payloadProvider) {
+    flags: Int,
+    cmdSet: Int,
+    cmd: Int,
+    errorCode: Int,
+    payloadProvider: PayloadProvider,
+  ) : this(id, length, FlagsAndWord(flags, cmdSet, cmd, errorCode), payloadProvider) {
+    require(length >= PACKET_HEADER_LENGTH) { "length  value '$flags' should be within greater than $PACKET_HEADER_LENGTH" }
+  }
 
-    private constructor(
-        id: Int,
-        length: Int,
-        flags: Int,
-        cmdSet: Int,
-        cmd: Int,
-        errorCode: Int,
-        payloadProvider: PayloadProvider
-    ): this(id, length, FlagsAndWord(flags, cmdSet, cmd, errorCode), payloadProvider) {
-        require(length >= PACKET_HEADER_LENGTH) { "length  value '$flags' should be within greater than $PACKET_HEADER_LENGTH" }
+  override suspend fun toOffline(workBuffer: ResizableBuffer): JdwpPacketView {
+    return when {
+      isThreadSafeAndImmutable -> {
+        // thread-safe and immutable implies "offline"
+        this
+      }
+      else -> {
+        // Returns an offline, thread-safe version of this instance
+        OfflineJdwpPacket(id = id, length = length, flagsAndWord = flagsAndWord, payloadProvider = payloadProvider.toOffline(workBuffer))
+      }
+    }
+  }
+
+  open suspend fun shutdown(workBuffer: ResizableBuffer = ResizableBuffer()) {
+    payloadProvider.shutdown(workBuffer)
+  }
+
+  override fun toString(): String {
+    return toStringImpl()
+  }
+
+  companion object {
+
+    @Suppress("FunctionName") // constructor like syntax
+    fun Command(id: Int, length: Int, cmdSet: Int, cmd: Int, payloadProvider: PayloadProvider): EphemeralJdwpPacket {
+      return EphemeralJdwpPacket(
+        id = id,
+        length = length,
+        flags = 0,
+        cmdSet = cmdSet,
+        cmd = cmd,
+        errorCode = 0,
+        payloadProvider = payloadProvider,
+      )
     }
 
-    override suspend fun toOffline(workBuffer: ResizableBuffer): JdwpPacketView {
-        return when {
-          isThreadSafeAndImmutable -> {
-              // thread-safe and immutable implies "offline"
-              this
-          }
-          else -> {
-              // Returns an offline, thread-safe version of this instance
-              OfflineJdwpPacket(
-                  id = id,
-                  length = length,
-                  flagsAndWord = flagsAndWord,
-                  payloadProvider = payloadProvider.toOffline(workBuffer)
-              )
-          }
-        }
+    @Suppress("FunctionName") // constructor like syntax
+    fun Reply(id: Int, length: Int, errorCode: Int, payloadProvider: PayloadProvider): EphemeralJdwpPacket {
+      return EphemeralJdwpPacket(
+        id = id,
+        length = length,
+        flags = JdwpPacketConstants.REPLY_PACKET_FLAG,
+        cmdSet = 0,
+        cmd = 0,
+        errorCode = errorCode,
+        payloadProvider = payloadProvider,
+      )
     }
 
-    open suspend fun shutdown(workBuffer: ResizableBuffer = ResizableBuffer()) {
-        payloadProvider.shutdown(workBuffer)
+    fun fromPacket(source: JdwpPacketView, payload: AdbInputChannel): EphemeralJdwpPacket {
+      return fromPacket(source = source, payload = AdbRewindableInputChannel.forInputChannel(payload))
     }
 
-    override fun toString(): String {
-        return toStringImpl()
+    fun fromPacket(source: JdwpPacketView, payload: AdbRewindableInputChannel): EphemeralJdwpPacket {
+      return fromPacket(source = source, payloadProvider = PayloadProvider.forInputChannel(payload))
     }
 
-    companion object {
+    fun fromPacket(source: JdwpPacketView, payloadProvider: PayloadProvider): EphemeralJdwpPacket {
+      return if (source.isCommand) {
+        Command(id = source.id, length = source.length, cmdSet = source.cmdSet, cmd = source.cmd, payloadProvider = payloadProvider)
+      } else {
 
-        @Suppress("FunctionName") // constructor like syntax
-        fun Command(id: Int, length: Int, cmdSet: Int, cmd: Int, payloadProvider: PayloadProvider): EphemeralJdwpPacket {
-            return EphemeralJdwpPacket(
-                id = id,
-                length = length,
-                flags = 0,
-                cmdSet = cmdSet,
-                cmd = cmd,
-                errorCode = 0,
-                payloadProvider = payloadProvider
-            )
-        }
+        Reply(id = source.id, length = source.length, errorCode = source.errorCode, payloadProvider = payloadProvider)
+      }
+    }
+  }
 
-        @Suppress("FunctionName") // constructor like syntax
-        fun Reply(id: Int, length: Int, errorCode: Int, payloadProvider: PayloadProvider): EphemeralJdwpPacket {
-            return EphemeralJdwpPacket(
-                id = id,
-                length = length,
-                flags = JdwpPacketConstants.REPLY_PACKET_FLAG,
-                cmdSet = 0,
-                cmd = 0,
-                errorCode = errorCode,
-                payloadProvider = payloadProvider
-            )
-        }
+  /** An implementation of [JdwpPacketView] that is immutable and offer thread-safe access to [withPayload]. */
+  private class OfflineJdwpPacket(id: Int, length: Int, flagsAndWord: FlagsAndWord, payloadProvider: PayloadProvider) :
+    AbstractJdwpPacketView(id, length, flagsAndWord, payloadProvider) {
 
-        fun fromPacket(source: JdwpPacketView, payload: AdbInputChannel): EphemeralJdwpPacket {
-            return fromPacket(
-                source = source,
-                payload = AdbRewindableInputChannel.forInputChannel(payload)
-            )
-        }
+    private val payloadMutex = Mutex()
 
-        fun fromPacket(source: JdwpPacketView, payload: AdbRewindableInputChannel): EphemeralJdwpPacket {
-            return fromPacket(
-                source = source,
-                payloadProvider = PayloadProvider.forInputChannel(payload)
-            )
-        }
+    override val isThreadSafeAndImmutable: Boolean
+      get() = true
 
-        fun fromPacket(source: JdwpPacketView, payloadProvider: PayloadProvider): EphemeralJdwpPacket {
-            return if (source.isCommand) {
-                Command(
-                    id = source.id,
-                    length = source.length,
-                    cmdSet = source.cmdSet,
-                    cmd = source.cmd,
-                    payloadProvider = payloadProvider
-                )
-            } else {
-
-                Reply(
-                    id = source.id,
-                    length = source.length,
-                    errorCode = source.errorCode,
-                    payloadProvider = payloadProvider
-                )
-            }
-        }
+    override suspend fun acquirePayload(): AdbInputChannel {
+      payloadMutex.lock()
+      return super.acquirePayload()
     }
 
-    /**
-     * An implementation of [JdwpPacketView] that is immutable and offer thread-safe access to
-     * [withPayload].
-     */
-    private class OfflineJdwpPacket(
-        id: Int,
-        length: Int,
-        flagsAndWord: FlagsAndWord,
-        payloadProvider: PayloadProvider
-    ) : AbstractJdwpPacketView(id, length, flagsAndWord, payloadProvider) {
-
-        private val payloadMutex = Mutex()
-
-        override val isThreadSafeAndImmutable: Boolean
-            get() = true
-
-        override suspend fun acquirePayload(): AdbInputChannel {
-            payloadMutex.lock()
-            return super.acquirePayload()
-        }
-
-        override fun releasePayload() {
-            super.releasePayload()
-            payloadMutex.unlock()
-        }
-
-        override suspend fun toOffline(workBuffer: ResizableBuffer): OfflineJdwpPacket {
-            return this
-        }
+    override fun releasePayload() {
+      super.releasePayload()
+      payloadMutex.unlock()
     }
+
+    override suspend fun toOffline(workBuffer: ResizableBuffer): OfflineJdwpPacket {
+      return this
+    }
+  }
 }

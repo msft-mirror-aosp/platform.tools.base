@@ -27,74 +27,64 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 /**
- * Utility class used to forward all updates from a source [StateFlow] to the [stateFlow] property.
- * This class is useful when the source [StateFlow] is not immediately available, i.e. when it is
- * only available __asynchronously__ through a suspending call to [sourceStateFlowProvider].
+ * Utility class used to forward all updates from a source [StateFlow] to the [stateFlow] property. This class is useful when the source
+ * [StateFlow] is not immediately available, i.e. when it is only available __asynchronously__ through a suspending call to
+ * [sourceStateFlowProvider].
  *
- * Note: Forwarding is started lazily, when the [stateFlow] property is accessed for the first
- * time, and active as long as [parentScope] is active.
+ * Note: Forwarding is started lazily, when the [stateFlow] property is accessed for the first time, and active as long as [parentScope] is
+ * active.
  */
 internal class StateFlowForwarder<T>(
-    /**
-     * The [com.android.adblib.AdbSession] context
-     */
-    session: AdbSession,
-    /**
-     * The [CoroutineScope] used to run the coroutine responsible for forwarding the [StateFlow],
-     * for example the [scope][com.android.adblib.scope] of a [com.android.adblib.ConnectedDevice].
-     */
-    private val parentScope: CoroutineScope,
-    /**
-     * Provides asynchronous access to the source [kotlinx.coroutines.flow.StateFlow]
-     */
-    private val sourceStateFlowProvider: suspend () -> StateFlow<T>,
-    /**
-     * The initial value of [stateFlow]. This is needed because forwarding the first
-     * value of the source [StateFlow] is done lazily.
-     */
-    defaultValue: T
+  /** The [com.android.adblib.AdbSession] context */
+  session: AdbSession,
+  /**
+   * The [CoroutineScope] used to run the coroutine responsible for forwarding the [StateFlow], for example the
+   * [scope][com.android.adblib.scope] of a [com.android.adblib.ConnectedDevice].
+   */
+  private val parentScope: CoroutineScope,
+  /** Provides asynchronous access to the source [kotlinx.coroutines.flow.StateFlow] */
+  private val sourceStateFlowProvider: suspend () -> StateFlow<T>,
+  /** The initial value of [stateFlow]. This is needed because forwarding the first value of the source [StateFlow] is done lazily. */
+  defaultValue: T,
 ) {
 
-    private val logger = adbLogger(session)
+  private val logger = adbLogger(session)
 
-    private val destinationMutableStateFlow = MutableStateFlow(defaultValue)
+  private val destinationMutableStateFlow = MutableStateFlow(defaultValue)
 
-    private val lazyStartMonitoring by lazy(LazyThreadSafetyMode.SYNCHRONIZED) {
-        forwardStateFlowFromSourceFlow()
+  private val lazyStartMonitoring by lazy(LazyThreadSafetyMode.SYNCHRONIZED) { forwardStateFlowFromSourceFlow() }
+
+  /**
+   * The [StateFlow] that contains values forwarded from the source [StateFlow].
+   *
+   * Note: [stateFlow] stops being updated after [parentScope] is cancelled.
+   */
+  val stateFlow = destinationMutableStateFlow.asStateFlow()
+    get() {
+      lazyStartMonitoring
+      return field
     }
 
-    /**
-     * The [StateFlow] that contains values forwarded from the source [StateFlow].
-     *
-     * Note: [stateFlow] stops being updated after [parentScope] is cancelled.
-     */
-    val stateFlow = destinationMutableStateFlow.asStateFlow()
-        get() {
-            lazyStartMonitoring
-            return field
-        }
-
-    private fun forwardStateFlowFromSourceFlow(): Job {
-        logger.debug { "Forwarding source state flow" }
-        var sourceFlow: StateFlow<T>? = null
-        return parentScope.launch {
-            runCatching {
-                sourceFlow = sourceStateFlowProvider()
-                logger.debug { "Acquired source flow, start forwarding values to destination flow" }
-                sourceFlow.collect { newValue ->
-                    logger.verbose { "Forwarding new source flow value: $newValue" }
-                    destinationMutableStateFlow.update { newValue }
-                }
-            }.onFailure { throwable ->
-                logger.logIOCompletionErrors(throwable)
+  private fun forwardStateFlowFromSourceFlow(): Job {
+    logger.debug { "Forwarding source state flow" }
+    var sourceFlow: StateFlow<T>? = null
+    return parentScope
+      .launch {
+        runCatching {
+            sourceFlow = sourceStateFlowProvider()
+            logger.debug { "Acquired source flow, start forwarding values to destination flow" }
+            sourceFlow.collect { newValue ->
+              logger.verbose { "Forwarding new source flow value: $newValue" }
+              destinationMutableStateFlow.update { newValue }
             }
-        }.also {
-            it.invokeOnCompletion {
-                // Update destination flow one last time
-                sourceFlow?.also {
-                    destinationMutableStateFlow.update { sourceFlow.value }
-                }
-            }
+          }
+          .onFailure { throwable -> logger.logIOCompletionErrors(throwable) }
+      }
+      .also {
+        it.invokeOnCompletion {
+          // Update destination flow one last time
+          sourceFlow?.also { destinationMutableStateFlow.update { sourceFlow.value } }
         }
-    }
+      }
+  }
 }

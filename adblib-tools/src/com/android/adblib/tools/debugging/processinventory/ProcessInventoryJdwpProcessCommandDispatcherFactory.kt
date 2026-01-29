@@ -24,38 +24,33 @@ import com.android.adblib.tools.debugging.processinventory.impl.ProcessInventory
 import com.android.adblib.tools.debugging.processinventory.server.ProcessInventoryServer
 
 /**
- * The main entry point for enabling an [ExternalJdwpProcessCommandDispatcher] with
- * a [ProcessInventoryServer].
+ * The main entry point for enabling an [ExternalJdwpProcessCommandDispatcher] with a [ProcessInventoryServer].
  *
- * Use [AdbSession.installProcessInventoryJdwpProcessCommandDispatcherFactory] to activate
- * this service for a given [AdbSession].
+ * Use [AdbSession.installProcessInventoryJdwpProcessCommandDispatcherFactory] to activate this service for a given [AdbSession].
  */
 internal class ProcessInventoryJdwpProcessCommandDispatcherFactory(
-    private val serverConnection: ProcessInventoryServerConnection,
-    private val enabled: () -> Boolean
+  private val serverConnection: ProcessInventoryServerConnection,
+  private val enabled: () -> Boolean,
 ) : ExternalJdwpProcessCommandDispatcherFactory {
 
-    override suspend fun create(process: JdwpProcess): ExternalJdwpProcessCommandDispatcher? {
-        return if (enabled())
-            ProcessInventoryJdwpProcessCommandDispatcher(serverConnection, process)
-        else {
-            null
-        }
+  override suspend fun create(process: JdwpProcess): ExternalJdwpProcessCommandDispatcher? {
+    return if (enabled()) ProcessInventoryJdwpProcessCommandDispatcher(serverConnection, process)
+    else {
+      null
     }
+  }
 
-    override fun close() {
-        serverConnection.close()
-    }
+  override fun close() {
+    serverConnection.close()
+  }
 }
 
-/**
- * Activates a [ProcessInventoryJdwpProcessCommandDispatcherFactory] for this [AdbSession]
- */
+/** Activates a [ProcessInventoryJdwpProcessCommandDispatcherFactory] for this [AdbSession] */
 fun AdbSession.installProcessInventoryJdwpProcessCommandDispatcherFactory(
-    serverConnection: ProcessInventoryServerConnection,
-    enabled: () -> Boolean
-)  {
-    val factory = ProcessInventoryJdwpProcessCommandDispatcherFactory(serverConnection, enabled)
-    // Note: We don't need to remove, as lifetime is tied to the AdbSession lifetime.
-    this.addExternalJdwpProcessCommandDispatcherFactory(factory)
+  serverConnection: ProcessInventoryServerConnection,
+  enabled: () -> Boolean,
+) {
+  val factory = ProcessInventoryJdwpProcessCommandDispatcherFactory(serverConnection, enabled)
+  // Note: We don't need to remove, as lifetime is tied to the AdbSession lifetime.
+  this.addExternalJdwpProcessCommandDispatcherFactory(factory)
 }

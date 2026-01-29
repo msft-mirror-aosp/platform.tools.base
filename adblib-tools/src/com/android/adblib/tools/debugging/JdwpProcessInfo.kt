@@ -17,10 +17,5 @@ package com.android.adblib.tools.debugging
 
 import com.android.adblib.ConnectedDevice
 
-/**
- * Class containing immutable properties of the debuggable [JdwpProcess]
- */
-data class JdwpProcessInfo(
-    val device: ConnectedDevice,
-    val properties: JdwpProcessProperties,
-    val proxyStatus: JdwpProxySocketServerStatus)
+/** Class containing immutable properties of the debuggable [JdwpProcess] */
+data class JdwpProcessInfo(val device: ConnectedDevice, val properties: JdwpProcessProperties, val proxyStatus: JdwpProxySocketServerStatus)

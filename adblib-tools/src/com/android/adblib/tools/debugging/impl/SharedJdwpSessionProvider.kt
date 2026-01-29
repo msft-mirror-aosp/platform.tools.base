@@ -23,45 +23,35 @@ import com.android.adblib.tools.debugging.SharedJdwpSession
 import com.android.adblib.tools.debugging.utils.ReferenceCountedFactory
 import kotlinx.coroutines.flow.StateFlow
 
-/**
- * Provides thread-safe and concurrent access to [SharedJdwpSession]
- */
+/** Provides thread-safe and concurrent access to [SharedJdwpSession] */
 internal interface SharedJdwpSessionProvider : AutoCloseable {
-    /**
-     * Tracks the number of active calls to [withSharedJdwpSession], or, more precisely,
-     * the number of [withSharedJdwpSession] callers that have received a [SharedJdwpSession]
-     * that had a successful JDWP handshake.
-     */
-    val activationCount: StateFlow<Int>
+  /**
+   * Tracks the number of active calls to [withSharedJdwpSession], or, more precisely, the number of [withSharedJdwpSession] callers that
+   * have received a [SharedJdwpSession] that had a successful JDWP handshake.
+   */
+  val activationCount: StateFlow<Int>
 
-    /**
-     * The process ID
-     */
-    val pid: Int
+  /** The process ID */
+  val pid: Int
 
-    /**
-     * Invokes [block] with a [SharedJdwpSession] instance that is guaranteed to be open
-     * and active.
-     *
-     * This method is thread-safe and the same [SharedJdwpSession] instance may be shared across
-     * multiple concurrent threads, but should never be used outside the scope of [block].
-     */
-    suspend fun <R> withSharedJdwpSession(block: suspend (SharedJdwpSession) -> R): R
+  /**
+   * Invokes [block] with a [SharedJdwpSession] instance that is guaranteed to be open and active.
+   *
+   * This method is thread-safe and the same [SharedJdwpSession] instance may be shared across multiple concurrent threads, but should never
+   * be used outside the scope of [block].
+   */
+  suspend fun <R> withSharedJdwpSession(block: suspend (SharedJdwpSession) -> R): R
 
-    companion object {
+  companion object {
 
-        fun create(device: ConnectedDevice, pid: Int): SharedJdwpSessionProvider {
-            val refCounted = ReferenceCountedFactory {
-                val jdwpSessionFactory: suspend (ConnectedDevice) -> JdwpSession = { device ->
-                    JdwpSession.openJdwpSession(
-                        device,
-                        pid,
-                        device.session.property(AdbLibToolsProperties.JDWP_SESSION_FIRST_PACKET_ID)
-                    )
-                }
-                SharedJdwpSession.create(device, pid, jdwpSessionFactory)
-            }
-            return SharedJdwpSessionProviderImpl(device, pid, refCounted)
+    fun create(device: ConnectedDevice, pid: Int): SharedJdwpSessionProvider {
+      val refCounted = ReferenceCountedFactory {
+        val jdwpSessionFactory: suspend (ConnectedDevice) -> JdwpSession = { device ->
+          JdwpSession.openJdwpSession(device, pid, device.session.property(AdbLibToolsProperties.JDWP_SESSION_FIRST_PACKET_ID))
         }
+        SharedJdwpSession.create(device, pid, jdwpSessionFactory)
+      }
+      return SharedJdwpSessionProviderImpl(device, pid, refCounted)
     }
+  }
 }

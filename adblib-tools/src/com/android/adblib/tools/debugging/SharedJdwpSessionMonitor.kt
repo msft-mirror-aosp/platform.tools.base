@@ -21,57 +21,44 @@ import com.android.adblib.tools.debugging.packets.JdwpPacketView
 import com.android.adblib.tools.debugging.utils.ConcurrentAutoCloseableCollection
 
 /**
- * A component that gets notified of [JdwpPacketView] packets activity from a given
- * [SharedJdwpSession].
+ * A component that gets notified of [JdwpPacketView] packets activity from a given [SharedJdwpSession].
  *
  * @see SharedJdwpSessionMonitorFactory
  */
 interface SharedJdwpSessionMonitor : AutoCloseable {
 
-    /**
-     * Invoked before a [JdwpPacketView] is sent to the underlying JDWP session
-     */
-    suspend fun onSendPacket(packet: JdwpPacketView)
+  /** Invoked before a [JdwpPacketView] is sent to the underlying JDWP session */
+  suspend fun onSendPacket(packet: JdwpPacketView)
 
-    /**
-     * Invoked when a [JdwpPacketView] is received from the underlying JDWP session
-     */
-    suspend fun onReceivePacket(packet: JdwpPacketView)
+  /** Invoked when a [JdwpPacketView] is received from the underlying JDWP session */
+  suspend fun onReceivePacket(packet: JdwpPacketView)
 }
 
 /**
- * A component that creates instances of [SharedJdwpSessionMonitor] each time a new JDWP session
- * is established. [SharedJdwpSessionMonitorFactory] instances are registered with
- * [AdbSession.addSharedJdwpSessionMonitorFactory].
+ * A component that creates instances of [SharedJdwpSessionMonitor] each time a new JDWP session is established.
+ * [SharedJdwpSessionMonitorFactory] instances are registered with [AdbSession.addSharedJdwpSessionMonitorFactory].
  *
  * @see AdbSession.addSharedJdwpSessionMonitorFactory
  */
 interface SharedJdwpSessionMonitorFactory {
 
-    /**
-     * Creates a [SharedJdwpSessionMonitor] for the given [SharedJdwpSession].
-     * Returns `null` if the factory decides the JDWP session is not interesting,
-     */
-    fun create(session: SharedJdwpSession): SharedJdwpSessionMonitor?
+  /**
+   * Creates a [SharedJdwpSessionMonitor] for the given [SharedJdwpSession]. Returns `null` if the factory decides the JDWP session is not
+   * interesting,
+   */
+  fun create(session: SharedJdwpSession): SharedJdwpSessionMonitor?
 }
 
-/**
- * The [CoroutineScopeCache.Key] for the list of [SharedJdwpSessionMonitorFactory]
- */
+/** The [CoroutineScopeCache.Key] for the list of [SharedJdwpSessionMonitorFactory] */
 private val SharedJdwpSessionMonitorFactoryListKey =
-    CoroutineScopeCache.Key<ConcurrentAutoCloseableCollection<SharedJdwpSessionMonitorFactory>>("SharedJdwpSessionMonitorFactoryListKey")
+  CoroutineScopeCache.Key<ConcurrentAutoCloseableCollection<SharedJdwpSessionMonitorFactory>>("SharedJdwpSessionMonitorFactoryListKey")
 
-/**
- * The list of [SharedJdwpSessionMonitorFactory] associated to this [AdbSession]
- */
+/** The list of [SharedJdwpSessionMonitorFactory] associated to this [AdbSession] */
 internal val AdbSession.sharedJdwpSessionMonitorFactoryList: ConcurrentAutoCloseableCollection<SharedJdwpSessionMonitorFactory>
-    get() = this.cache.getOrPut(SharedJdwpSessionMonitorFactoryListKey) {
-        ConcurrentAutoCloseableCollection<SharedJdwpSessionMonitorFactory>()
-    }
+  get() =
+    this.cache.getOrPut(SharedJdwpSessionMonitorFactoryListKey) { ConcurrentAutoCloseableCollection<SharedJdwpSessionMonitorFactory>() }
 
-/**
- * Adds a [SharedJdwpSessionMonitorFactory] for [SharedJdwpSession] of this [AdbSession]
- */
+/** Adds a [SharedJdwpSessionMonitorFactory] for [SharedJdwpSession] of this [AdbSession] */
 fun AdbSession.addSharedJdwpSessionMonitorFactory(factory: SharedJdwpSessionMonitorFactory) {
-    sharedJdwpSessionMonitorFactoryList.add(factory)
+  sharedJdwpSessionMonitorFactoryList.add(factory)
 }

@@ -16,36 +16,30 @@
 package com.android.adblib.tools.debugging.packets.ddms.chunks
 
 import com.android.adblib.testingutils.CoroutineTestUtils.runBlockingWithTimeout
-import com.android.adblib.tools.debugging.packets.impl.PayloadProvider
 import com.android.adblib.tools.debugging.packets.ddms.DdmsChunkType
 import com.android.adblib.tools.debugging.packets.ddms.EphemeralDdmsChunk
+import com.android.adblib.tools.debugging.packets.impl.PayloadProvider
 import com.android.adblib.utils.ResizableBuffer
 import org.junit.Assert
 import org.junit.Test
 
 class DdmsReaqChunkTest {
 
-    @Test
-    fun testParsingWithAllFieldsWorks() = runBlockingWithTimeout {
-        // Prepare
-        val payload = run {
-            val buffer = ResizableBuffer()
-            DdmsReaqChunk.writePayload(
-                buffer,
-                enabled = true
-            )
-            buffer.forChannelWrite()
-        }
-        val chunk = EphemeralDdmsChunk(
-            type = DdmsChunkType.REAQ,
-            length = payload.remaining(),
-            payloadProvider = PayloadProvider.forByteBuffer(payload)
-        )
-
-        // Act
-        val reaqChunk = DdmsReaqChunk.parse(chunk)
-
-        // Assert
-        Assert.assertEquals(true, reaqChunk.enabled)
+  @Test
+  fun testParsingWithAllFieldsWorks() = runBlockingWithTimeout {
+    // Prepare
+    val payload = run {
+      val buffer = ResizableBuffer()
+      DdmsReaqChunk.writePayload(buffer, enabled = true)
+      buffer.forChannelWrite()
     }
+    val chunk =
+      EphemeralDdmsChunk(type = DdmsChunkType.REAQ, length = payload.remaining(), payloadProvider = PayloadProvider.forByteBuffer(payload))
+
+    // Act
+    val reaqChunk = DdmsReaqChunk.parse(chunk)
+
+    // Assert
+    Assert.assertEquals(true, reaqChunk.enabled)
+  }
 }

@@ -19,15 +19,13 @@ package com.android.adblib.tools
 import com.android.adblib.AdbLoggerFactory
 import com.android.adblib.AdbSessionHost
 
-internal class StandaloneHost(val factory : AdbLoggerFactory) : AdbSessionHost() {
+internal class StandaloneHost(val factory: AdbLoggerFactory) : AdbSessionHost() {
 
-    override val loggerFactory: AdbLoggerFactory
-        get() = factory
+  override val loggerFactory: AdbLoggerFactory
+    get() = factory
 
-    override val isEventDispatchThread: Boolean
-        get() = false
+  override val isEventDispatchThread: Boolean
+    get() = false
 
-    override fun close() {
-    }
-
+  override fun close() {}
 }

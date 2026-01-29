@@ -16,7 +16,6 @@
 package com.android.adblib.tools.debugging.packets.ddms.chunks
 
 import com.android.adblib.readNBytes
-import com.android.adblib.readRemaining
 import com.android.adblib.tools.debugging.packets.ddms.ChunkDataParsing.readInt
 import com.android.adblib.tools.debugging.packets.ddms.ChunkDataParsing.readOptionalInt
 import com.android.adblib.tools.debugging.packets.ddms.ChunkDataParsing.readOptionalLengthPrefixedString
@@ -30,60 +29,46 @@ import com.android.adblib.tools.debugging.packets.ddms.withPayload
 import com.android.adblib.utils.ResizableBuffer
 
 internal data class DdmsApnmChunk(
-    /**
-     * Process name, often equal to [packageName], unless the package name
-     * is changed in the application manifest.
-     */
-    val processName: String,
-    /**
-     * Returns the user ID, or `null` if not available
-     */
-    val userId: Int?,
-    /**
-     * Application package name, or `null` if not available
-     */
-    val packageName: String?
+  /** Process name, often equal to [packageName], unless the package name is changed in the application manifest. */
+  val processName: String,
+  /** Returns the user ID, or `null` if not available */
+  val userId: Int?,
+  /** Application package name, or `null` if not available */
+  val packageName: String?,
 ) {
 
-    companion object {
+  companion object {
 
-        internal suspend fun parse(
-            chunk: DdmsChunkView,
-            workBuffer: ResizableBuffer = ResizableBuffer()
-        ): DdmsApnmChunk {
-            // Read payload into "buffer"
-            workBuffer.clear()
-            val buffer = chunk.withPayload { payload ->
-                payload.readNBytes(workBuffer, chunk.length)
-                workBuffer.afterChannelRead()
-            }
-
-            buffer.order(DDMS_CHUNK_BYTE_ORDER)
-            val processNameLength = readInt(buffer)
-            val processName = readString(buffer, processNameLength)
-
-            // UserID was added in 2012
-            // https://cs.android.com/android/_/android/platform/frameworks/base/+/d693dfa75b7a156898890014e7192a792314b757
-            val userId = readOptionalInt(buffer)
-
-            // Newer devices (newer than user id support) send the package names associated with the app.
-            // Package name was added in 2019:
-            // https://cs.android.com/android/_/android/platform/frameworks/base/+/ab720ee1611da9fd4579d1adeb0acd6358b4f424
-            val packageName = readOptionalLengthPrefixedString(buffer)
-
-            // All done, return chunk
-            return DdmsApnmChunk(processName, userId, packageName)
+    internal suspend fun parse(chunk: DdmsChunkView, workBuffer: ResizableBuffer = ResizableBuffer()): DdmsApnmChunk {
+      // Read payload into "buffer"
+      workBuffer.clear()
+      val buffer =
+        chunk.withPayload { payload ->
+          payload.readNBytes(workBuffer, chunk.length)
+          workBuffer.afterChannelRead()
         }
 
-        internal fun writePayload(
-            buffer: ResizableBuffer,
-            processName: String,
-            userId: Int?,
-            packageName: String?
-        ) {
-            writeLengthPrefixedString(buffer, processName)
-            writeOptionalInt(buffer, userId)
-            writeOptionalLengthPrefixedString(buffer, packageName)
-        }
+      buffer.order(DDMS_CHUNK_BYTE_ORDER)
+      val processNameLength = readInt(buffer)
+      val processName = readString(buffer, processNameLength)
+
+      // UserID was added in 2012
+      // https://cs.android.com/android/_/android/platform/frameworks/base/+/d693dfa75b7a156898890014e7192a792314b757
+      val userId = readOptionalInt(buffer)
+
+      // Newer devices (newer than user id support) send the package names associated with the app.
+      // Package name was added in 2019:
+      // https://cs.android.com/android/_/android/platform/frameworks/base/+/ab720ee1611da9fd4579d1adeb0acd6358b4f424
+      val packageName = readOptionalLengthPrefixedString(buffer)
+
+      // All done, return chunk
+      return DdmsApnmChunk(processName, userId, packageName)
     }
+
+    internal fun writePayload(buffer: ResizableBuffer, processName: String, userId: Int?, packageName: String?) {
+      writeLengthPrefixedString(buffer, processName)
+      writeOptionalInt(buffer, userId)
+      writeOptionalLengthPrefixedString(buffer, packageName)
+    }
+  }
 }

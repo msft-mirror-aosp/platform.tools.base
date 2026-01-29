@@ -23,46 +23,44 @@ import com.android.adblib.withProcessPrefix
 import kotlinx.coroutines.flow.StateFlow
 
 internal class SharedJdwpSessionProviderImpl(
-    private val device: ConnectedDevice,
-    override val pid: Int,
-    private val sharedJdwpSessionRef: ReferenceCountedFactory<SharedJdwpSessionImpl>
+  private val device: ConnectedDevice,
+  override val pid: Int,
+  private val sharedJdwpSessionRef: ReferenceCountedFactory<SharedJdwpSessionImpl>,
 ) : SharedJdwpSessionProvider {
 
-    private val logger = adbLogger(device.session).withProcessPrefix(device, pid)
+  private val logger = adbLogger(device.session).withProcessPrefix(device, pid)
 
-    private val withSharedJdwpSessionTracker = BlockActivationTracker()
+  private val withSharedJdwpSessionTracker = BlockActivationTracker()
 
-    override val activationCount: StateFlow<Int>
-        get() = withSharedJdwpSessionTracker.activationCount
+  override val activationCount: StateFlow<Int>
+    get() = withSharedJdwpSessionTracker.activationCount
 
-    override suspend fun <R> withSharedJdwpSession(block: suspend (SharedJdwpSession) -> R): R {
-        logger.verbose { "withSharedJdwpSession(): enter" }
-        return try {
-            sharedJdwpSessionRef.withResource { session ->
-                // We first open the JDWP connection and ensure the JDWP handshake is successful
-                // before increment the `activationCount`. The reason we wait for the handshake
-                // before considering the session "active" is that some version of Art/Android
-                // don't allow opening a JDWP connection when there is already one active, while
-                // some other version allow opening multiple JDWP connection but only process
-                // the JDWP handshake on a single one.
-                // By waiting for the JDWP handshake to be successful, we ensure our
-                // `activationCount` value is consistent across different versions of Art/Android.
-                session.openAndHandshakeIfNeeded()
-                withSharedJdwpSessionTracker.track {
-                    block(session)
-                }
-            }
-        } finally {
-            logger.verbose { "withSharedJdwpSession(): exit" }
-        }
+  override suspend fun <R> withSharedJdwpSession(block: suspend (SharedJdwpSession) -> R): R {
+    logger.verbose { "withSharedJdwpSession(): enter" }
+    return try {
+      sharedJdwpSessionRef.withResource { session ->
+        // We first open the JDWP connection and ensure the JDWP handshake is successful
+        // before increment the `activationCount`. The reason we wait for the handshake
+        // before considering the session "active" is that some version of Art/Android
+        // don't allow opening a JDWP connection when there is already one active, while
+        // some other version allow opening multiple JDWP connection but only process
+        // the JDWP handshake on a single one.
+        // By waiting for the JDWP handshake to be successful, we ensure our
+        // `activationCount` value is consistent across different versions of Art/Android.
+        session.openAndHandshakeIfNeeded()
+        withSharedJdwpSessionTracker.track { block(session) }
+      }
+    } finally {
+      logger.verbose { "withSharedJdwpSession(): exit" }
     }
+  }
 
-    override fun close() {
-        logger.debug { "close()" }
-        sharedJdwpSessionRef.close()
-    }
+  override fun close() {
+    logger.debug { "close()" }
+    sharedJdwpSessionRef.close()
+  }
 
-    override fun toString(): String {
-        return "${this::class.simpleName}(${device.session}, $device, pid:$pid)"
-    }
+  override fun toString(): String {
+    return "${this::class.simpleName}(${device.session}, $device, pid:$pid)"
+  }
 }

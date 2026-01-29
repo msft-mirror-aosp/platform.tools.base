@@ -18,31 +18,31 @@ package com.android.adblib.tools.tcpserver
 import java.time.Duration
 
 internal interface RetryPolicy {
-    fun newDelaySequence(): Sequence<Duration>
+  fun newDelaySequence(): Sequence<Duration>
 
-    companion object {
-        fun none(): RetryPolicy {
-            return None
-        }
-
-        fun fixedDelay(delay: Duration): RetryPolicy {
-            return FixedDelay(delay)
-        }
-
-        private object None : RetryPolicy {
-            override fun newDelaySequence(): Sequence<Duration> {
-                return emptySequence()
-            }
-        }
-
-        private class FixedDelay(private val delay: Duration) : RetryPolicy {
-            override fun newDelaySequence(): Sequence<Duration> {
-                return sequence {
-                    while (true) {
-                        yield(delay)
-                    }
-                }
-            }
-        }
+  companion object {
+    fun none(): RetryPolicy {
+      return None
     }
+
+    fun fixedDelay(delay: Duration): RetryPolicy {
+      return FixedDelay(delay)
+    }
+
+    private object None : RetryPolicy {
+      override fun newDelaySequence(): Sequence<Duration> {
+        return emptySequence()
+      }
+    }
+
+    private class FixedDelay(private val delay: Duration) : RetryPolicy {
+      override fun newDelaySequence(): Sequence<Duration> {
+        return sequence {
+          while (true) {
+            yield(delay)
+          }
+        }
+      }
+    }
+  }
 }

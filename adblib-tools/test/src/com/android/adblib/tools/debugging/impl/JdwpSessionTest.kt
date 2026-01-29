@@ -38,6 +38,8 @@ import com.android.adblib.tools.debugging.utils.AdbRewindableInputChannel
 import com.android.adblib.tools.testutils.AdbLibToolsTestBase
 import com.android.adblib.tools.testutils.waitForOnlineConnectedDevice
 import com.android.adblib.utils.ResizableBuffer
+import java.io.EOFException
+import java.io.IOException
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.firstOrNull
@@ -46,327 +48,287 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
 import org.junit.Test
-import java.io.EOFException
-import java.io.IOException
 
 class JdwpSessionTest : AdbLibToolsTestBase() {
 
-    @Test
-    fun nextPacketIdIsThreadSafe() = runBlockingWithTimeout {
-        val fakeDevice = addFakeDevice(fakeAdb, 30)
-        fakeDevice.startClient(10, 0, "a.b.c", false)
-      val connectedDevice = session.waitForOnlineConnectedDevice(fakeDevice.deviceId)
+  @Test
+  fun nextPacketIdIsThreadSafe() = runBlockingWithTimeout {
+    val fakeDevice = addFakeDevice(fakeAdb, 30)
+    fakeDevice.startClient(10, 0, "a.b.c", false)
+    val connectedDevice = session.waitForOnlineConnectedDevice(fakeDevice.deviceId)
 
-        // Act
-        val jdwpSession = registerCloseable(JdwpSession.openJdwpSession(connectedDevice, 10, 100))
-        val threadCount = 100
-        val packetCount = 1000
-        val ids =(1..threadCount)
-            .map {
-                async {
-                    (1..packetCount).map {
-                        jdwpSession.nextPacketId()
-                    }.toSet()
-                }
-            }
-            .awaitAll()
-            .flatten()
-            .toSet()
+    // Act
+    val jdwpSession = registerCloseable(JdwpSession.openJdwpSession(connectedDevice, 10, 100))
+    val threadCount = 100
+    val packetCount = 1000
+    val ids = (1..threadCount).map { async { (1..packetCount).map { jdwpSession.nextPacketId() }.toSet() } }.awaitAll().flatten().toSet()
 
-        // Assert
-        assertEquals(threadCount * packetCount, ids.size)
+    // Assert
+    assertEquals(threadCount * packetCount, ids.size)
+  }
+
+  @Test
+  fun nextPacketIdThrowsIfNotSupported() = runBlockingWithTimeout {
+    val fakeDevice = addFakeDevice(fakeAdb, 30)
+    fakeDevice.startClient(10, 0, "a.b.c", false)
+    val connectedDevice = session.waitForOnlineConnectedDevice(fakeDevice.deviceId)
+    val jdwpSession = registerCloseable(JdwpSession.openJdwpSession(connectedDevice, 10, null))
+
+    // Act
+    exceptionRule.expect(UnsupportedOperationException::class.java)
+    jdwpSession.nextPacketId()
+
+    // Assert
+    fail("Should not reach")
+  }
+
+  @Test
+  fun sendAndReceivePacketWorks() = runBlockingWithTimeout {
+    val fakeDevice = addFakeDevice(fakeAdb, 30)
+    fakeDevice.startClient(10, 0, "a.b.c", false)
+    val connectedDevice = session.waitForOnlineConnectedDevice(fakeDevice.deviceId)
+
+    // Act
+    val jdwpSession = registerCloseable(JdwpSession.openJdwpSession(connectedDevice, 10, 100))
+
+    val sendPacket = createHeloDdmsPacket(jdwpSession)
+    jdwpSession.sendPacket(sendPacket)
+
+    val reply = waitForReplyPacket(jdwpSession, sendPacket)
+
+    // Assert
+    assertEquals(0, reply.errorCode)
+    assertEquals(140, reply.length)
+    assertEquals(129, reply.withPayload { it.countBytes() })
+  }
+
+  @Test
+  fun receiveSmallPacketDoesNotMakePreviousPacketPayloadInvalid() = runBlockingWithTimeout {
+    val fakeDevice = addFakeDevice(fakeAdb, 30)
+    fakeDevice.startClient(10, 0, "a.b.c", false)
+    val connectedDevice = session.waitForOnlineConnectedDevice(fakeDevice.deviceId)
+    // Override the "large" packet threshold to be large, so that all packets
+    // are considered "small"
+    setHostPropertyValue(session.host, AdbLibToolsProperties.SHARED_JDWP_PACKET_IN_MEMORY_MAX_PAYLOAD_LENGTH, 8_192)
+
+    // Act
+    val jdwpSession = registerCloseable(JdwpSession.openJdwpSession(connectedDevice, 10, 100))
+
+    val sendPacket = createHeloDdmsPacket(jdwpSession)
+    jdwpSession.sendPacket(sendPacket)
+
+    val reply = waitForReplyPacket(jdwpSession, sendPacket)
+
+    sendPacket.id = jdwpSession.nextPacketId()
+    jdwpSession.sendPacket(sendPacket)
+
+    // Read another packet to invalidate the previous one
+    waitForReplyPacket(jdwpSession, sendPacket)
+
+    // Assert: with payload should succeed
+    reply.withPayload {}
+  }
+
+  @Test
+  fun receiveLargePacketMakesPreviousPacketPayloadInvalid() = runBlockingWithTimeout {
+    val fakeDevice = addFakeDevice(fakeAdb, 30)
+    fakeDevice.startClient(10, 0, "a.b.c", false)
+    val connectedDevice = session.waitForOnlineConnectedDevice(fakeDevice.deviceId)
+    // Override the "large" packet threshold to be very small, so that all packets
+    // are considered "large"
+    setHostPropertyValue(session.host, AdbLibToolsProperties.SHARED_JDWP_PACKET_IN_MEMORY_MAX_PAYLOAD_LENGTH, 2)
+
+    // Act
+    val jdwpSession = registerCloseable(JdwpSession.openJdwpSession(connectedDevice, 10, 100))
+
+    val sendPacket = createHeloDdmsPacket(jdwpSession)
+    jdwpSession.sendPacket(sendPacket)
+
+    val reply = waitForReplyPacket(jdwpSession, sendPacket)
+
+    sendPacket.id = jdwpSession.nextPacketId()
+    jdwpSession.sendPacket(sendPacket)
+
+    // Read another packet to invalidate the previous one
+    waitForReplyPacket(jdwpSession, sendPacket)
+
+    // Assert
+    exceptionRule.expect(IllegalStateException::class.java)
+    reply.withPayload {}
+  }
+
+  @Test
+  fun receiveSmallPacketIsThreadSafeAndImmutable() = runBlockingWithTimeout {
+    val fakeDevice = addFakeDevice(fakeAdb, 30)
+    fakeDevice.startClient(10, 0, "a.b.c", false)
+    val connectedDevice = session.waitForOnlineConnectedDevice(fakeDevice.deviceId)
+    // Override the "large" packet threshold to be large, so that all packets
+    // are considered "small"
+    setHostPropertyValue(session.host, AdbLibToolsProperties.SHARED_JDWP_PACKET_IN_MEMORY_MAX_PAYLOAD_LENGTH, 8_192)
+
+    // Act
+    val jdwpSession = registerCloseable(JdwpSession.openJdwpSession(connectedDevice, 10, 100))
+
+    val sendPacket = createHeloDdmsPacket(jdwpSession)
+    jdwpSession.sendPacket(sendPacket)
+
+    val reply = waitForReplyPacket(jdwpSession, sendPacket)
+
+    // Assert
+    assertTrue(reply.isThreadSafeAndImmutable)
+  }
+
+  @Test
+  fun receiveLargePacketIsNotThreadSafeAndImmutable() = runBlockingWithTimeout {
+    val fakeDevice = addFakeDevice(fakeAdb, 30)
+    fakeDevice.startClient(10, 0, "a.b.c", false)
+    val connectedDevice = session.waitForOnlineConnectedDevice(fakeDevice.deviceId)
+    // Override the "large" packet threshold to be very small, so that all packets
+    // are considered "large"
+    setHostPropertyValue(session.host, AdbLibToolsProperties.SHARED_JDWP_PACKET_IN_MEMORY_MAX_PAYLOAD_LENGTH, 2)
+
+    // Act
+    val jdwpSession = registerCloseable(JdwpSession.openJdwpSession(connectedDevice, 10, 100))
+
+    val sendPacket = createHeloDdmsPacket(jdwpSession)
+    jdwpSession.sendPacket(sendPacket)
+
+    val reply = waitForReplyPacket(jdwpSession, sendPacket)
+
+    // Assert
+    assertFalse(reply.isThreadSafeAndImmutable)
+  }
+
+  @Test
+  fun receivePacketThrowsEofOnClientTerminate() = runBlockingWithTimeout {
+    val fakeDevice = addFakeDevice(fakeAdb, 30)
+    fakeDevice.startClient(10, 0, "a.b.c", false)
+    val connectedDevice = session.waitForOnlineConnectedDevice(fakeDevice.deviceId)
+
+    // Act
+    val jdwpSession = registerCloseable(JdwpSession.openJdwpSession(connectedDevice, 10, 100))
+
+    val sendPacket = createHeloDdmsPacket(jdwpSession)
+    jdwpSession.sendPacket(sendPacket)
+    fakeDevice.stopClient(10)
+
+    // runCatching is needed since ADB server maybe still have time to send
+    // packets before its socket is closed (via `stopClient` above)
+    kotlin.runCatching {
+      waitForReplyPacket(jdwpSession, sendPacket)
+      waitForApnmPacket(jdwpSession)
     }
 
-    @Test
-    fun nextPacketIdThrowsIfNotSupported() = runBlockingWithTimeout {
-        val fakeDevice = addFakeDevice(fakeAdb, 30)
-        fakeDevice.startClient(10, 0, "a.b.c", false)
-        val connectedDevice = session.waitForOnlineConnectedDevice(fakeDevice.deviceId)
-        val jdwpSession = registerCloseable(JdwpSession.openJdwpSession(connectedDevice, 10, null))
+    // Assert
+    assertThrows<EOFException> { jdwpSession.receivePacket() }
+  }
 
-        // Act
-        exceptionRule.expect(UnsupportedOperationException::class.java)
-        jdwpSession.nextPacketId()
+  @Test
+  fun receivePacketThrowsEofConsistentlyOnClientTerminate() = runBlockingWithTimeout {
+    val fakeDevice = addFakeDevice(fakeAdb, 30)
+    fakeDevice.startClient(10, 0, "a.b.c", false)
+    val connectedDevice = session.waitForOnlineConnectedDevice(fakeDevice.deviceId)
 
-        // Assert
-        fail("Should not reach")
+    // Act
+    val jdwpSession = registerCloseable(JdwpSession.openJdwpSession(connectedDevice, 10, 100))
+
+    val sendPacket = createHeloDdmsPacket(jdwpSession)
+    jdwpSession.sendPacket(sendPacket)
+    waitForReplyPacket(jdwpSession, sendPacket)
+    waitForApnmPacket(jdwpSession)
+    fakeDevice.stopClient(10)
+
+    // Assert
+    assertThrows<EOFException> { jdwpSession.receivePacket() }
+    assertThrows<EOFException> { jdwpSession.receivePacket() }
+    assertThrows<EOFException> { jdwpSession.receivePacket() }
+  }
+
+  @Test
+  fun sendPacketThrowExceptionAfterShutdown() = runBlockingWithTimeout {
+    val fakeDevice = addFakeDevice(fakeAdb, 30)
+    fakeDevice.startClient(10, 0, "a.b.c", false)
+    val connectedDevice = session.waitForOnlineConnectedDevice(fakeDevice.deviceId)
+    val jdwpSession = registerCloseable(JdwpSession.openJdwpSession(connectedDevice, 10, 100))
+    val packet = createHeloDdmsPacket(jdwpSession)
+    jdwpSession.sendPacket(packet)
+
+    // Act
+    jdwpSession.shutdown()
+    exceptionRule.expect(IOException::class.java)
+    jdwpSession.sendPacket(packet)
+
+    // Assert
+    fail("Should not reach")
+  }
+
+  @Test
+  fun receivePacketThrowExceptionAfterShutdown() = runBlockingWithTimeout {
+    val fakeDevice = addFakeDevice(fakeAdb, 30)
+    fakeDevice.startClient(10, 0, "a.b.c", false)
+    val connectedDevice = session.waitForOnlineConnectedDevice(fakeDevice.deviceId)
+    val jdwpSession = registerCloseable(JdwpSession.openJdwpSession(connectedDevice, 10, 100))
+    val packet = createHeloDdmsPacket(jdwpSession)
+    jdwpSession.sendPacket(packet)
+
+    // Act
+    jdwpSession.shutdown()
+
+    exceptionRule.expect(IOException::class.java)
+    waitForReplyPacket(jdwpSession, packet)
+
+    // Assert
+    fail("Should not reach")
+  }
+
+  private suspend fun waitForReplyPacket(jdwpSession: JdwpSession, sendPacket: MutableJdwpPacket): JdwpPacketView {
+    return waitNonNull {
+      val r = jdwpSession.receivePacket()
+      if (r.isReply && r.id == sendPacket.id) {
+        r
+      } else {
+        null
+      }
     }
+  }
 
-    @Test
-    fun sendAndReceivePacketWorks() = runBlockingWithTimeout {
-        val fakeDevice = addFakeDevice(fakeAdb, 30)
-        fakeDevice.startClient(10, 0, "a.b.c", false)
-        val connectedDevice = session.waitForOnlineConnectedDevice(fakeDevice.deviceId)
-
-        // Act
-        val jdwpSession = registerCloseable(JdwpSession.openJdwpSession(connectedDevice, 10, 100))
-
-        val sendPacket = createHeloDdmsPacket(jdwpSession)
-        jdwpSession.sendPacket(sendPacket)
-
-        val reply = waitForReplyPacket(jdwpSession, sendPacket)
-
-        // Assert
-        assertEquals(0, reply.errorCode)
-        assertEquals(140, reply.length)
-        assertEquals(129, reply.withPayload { it.countBytes() })
+  private suspend fun waitForApnmPacket(jdwpSession: JdwpSession): JdwpPacketView {
+    return waitNonNull {
+      val r = jdwpSession.receivePacket()
+      if (r.isApnmCommand()) {
+        r
+      } else {
+        null
+      }
     }
+  }
 
-    @Test
-    fun receiveSmallPacketDoesNotMakePreviousPacketPayloadInvalid() = runBlockingWithTimeout {
-        val fakeDevice = addFakeDevice(fakeAdb, 30)
-        fakeDevice.startClient(10, 0, "a.b.c", false)
-        val connectedDevice = session.waitForOnlineConnectedDevice(fakeDevice.deviceId)
-        // Override the "large" packet threshold to be large, so that all packets
-        // are considered "small"
-        setHostPropertyValue(
-            session.host,
-            AdbLibToolsProperties.SHARED_JDWP_PACKET_IN_MEMORY_MAX_PAYLOAD_LENGTH,
-            8_192
-        )
+  private suspend fun JdwpPacketView.isApnmCommand(): Boolean {
+    return isDdmsCommand && toOffline().ddmsChunks().firstOrNull { it.type == DdmsChunkType.APNM } != null
+  }
 
-        // Act
-        val jdwpSession = registerCloseable(JdwpSession.openJdwpSession(connectedDevice, 10, 100))
+  private suspend fun DdmsChunkView.toRewindableInputChannel(): AdbRewindableInputChannel {
+    val workBuffer = ResizableBuffer()
+    val outputChannel = ByteBufferAdbOutputChannel(workBuffer)
+    this.writeToChannel(outputChannel)
+    val serializedChunk = workBuffer.forChannelWrite()
+    return AdbRewindableInputChannel.forByteBuffer(serializedChunk)
+  }
 
-        val sendPacket = createHeloDdmsPacket(jdwpSession)
-        jdwpSession.sendPacket(sendPacket)
+  private suspend fun createHeloDdmsPacket(jdwpSession: JdwpSession): MutableJdwpPacket {
+    val heloChunk = EphemeralDdmsChunk(type = DdmsChunkType.HELO, length = 0, payloadProvider = PayloadProvider.emptyPayload())
 
-        val reply = waitForReplyPacket(jdwpSession, sendPacket)
+    val packet = MutableJdwpPacket()
+    packet.id = jdwpSession.nextPacketId()
+    packet.length = 11 + 8
+    packet.isCommand = true
+    packet.cmdSet = DdmsPacketConstants.DDMS_CMD_SET
+    packet.cmd = DdmsPacketConstants.DDMS_CMD
+    packet.payloadProvider = PayloadProvider.forInputChannel(heloChunk.toRewindableInputChannel())
+    return packet
+  }
 
-        sendPacket.id = jdwpSession.nextPacketId()
-        jdwpSession.sendPacket(sendPacket)
-
-        // Read another packet to invalidate the previous one
-        waitForReplyPacket(jdwpSession, sendPacket)
-
-        // Assert: with payload should succeed
-        reply.withPayload {  }
-    }
-
-    @Test
-    fun receiveLargePacketMakesPreviousPacketPayloadInvalid() = runBlockingWithTimeout {
-        val fakeDevice = addFakeDevice(fakeAdb, 30)
-        fakeDevice.startClient(10, 0, "a.b.c", false)
-        val connectedDevice = session.waitForOnlineConnectedDevice(fakeDevice.deviceId)
-        // Override the "large" packet threshold to be very small, so that all packets
-        // are considered "large"
-        setHostPropertyValue(
-            session.host,
-            AdbLibToolsProperties.SHARED_JDWP_PACKET_IN_MEMORY_MAX_PAYLOAD_LENGTH,
-            2
-        )
-
-        // Act
-        val jdwpSession = registerCloseable(JdwpSession.openJdwpSession(connectedDevice, 10, 100))
-
-        val sendPacket = createHeloDdmsPacket(jdwpSession)
-        jdwpSession.sendPacket(sendPacket)
-
-        val reply = waitForReplyPacket(jdwpSession, sendPacket)
-
-        sendPacket.id = jdwpSession.nextPacketId()
-        jdwpSession.sendPacket(sendPacket)
-
-        // Read another packet to invalidate the previous one
-        waitForReplyPacket(jdwpSession, sendPacket)
-
-        // Assert
-        exceptionRule.expect(IllegalStateException::class.java)
-        reply.withPayload {  }
-    }
-
-    @Test
-    fun receiveSmallPacketIsThreadSafeAndImmutable() = runBlockingWithTimeout {
-        val fakeDevice = addFakeDevice(fakeAdb, 30)
-        fakeDevice.startClient(10, 0, "a.b.c", false)
-        val connectedDevice = session.waitForOnlineConnectedDevice(fakeDevice.deviceId)
-        // Override the "large" packet threshold to be large, so that all packets
-        // are considered "small"
-        setHostPropertyValue(
-            session.host,
-            AdbLibToolsProperties.SHARED_JDWP_PACKET_IN_MEMORY_MAX_PAYLOAD_LENGTH,
-            8_192
-        )
-
-        // Act
-        val jdwpSession = registerCloseable(JdwpSession.openJdwpSession(connectedDevice, 10, 100))
-
-        val sendPacket = createHeloDdmsPacket(jdwpSession)
-        jdwpSession.sendPacket(sendPacket)
-
-        val reply = waitForReplyPacket(jdwpSession, sendPacket)
-
-        // Assert
-        assertTrue(reply.isThreadSafeAndImmutable)
-    }
-
-    @Test
-    fun receiveLargePacketIsNotThreadSafeAndImmutable() = runBlockingWithTimeout {
-        val fakeDevice = addFakeDevice(fakeAdb, 30)
-        fakeDevice.startClient(10, 0, "a.b.c", false)
-        val connectedDevice = session.waitForOnlineConnectedDevice(fakeDevice.deviceId)
-        // Override the "large" packet threshold to be very small, so that all packets
-        // are considered "large"
-        setHostPropertyValue(
-            session.host,
-            AdbLibToolsProperties.SHARED_JDWP_PACKET_IN_MEMORY_MAX_PAYLOAD_LENGTH,
-            2
-        )
-
-        // Act
-        val jdwpSession = registerCloseable(JdwpSession.openJdwpSession(connectedDevice, 10, 100))
-
-        val sendPacket = createHeloDdmsPacket(jdwpSession)
-        jdwpSession.sendPacket(sendPacket)
-
-        val reply = waitForReplyPacket(jdwpSession, sendPacket)
-
-        // Assert
-        assertFalse(reply.isThreadSafeAndImmutable)
-    }
-
-    @Test
-    fun receivePacketThrowsEofOnClientTerminate() = runBlockingWithTimeout {
-        val fakeDevice = addFakeDevice(fakeAdb, 30)
-        fakeDevice.startClient(10, 0, "a.b.c", false)
-        val connectedDevice = session.waitForOnlineConnectedDevice(fakeDevice.deviceId)
-
-        // Act
-        val jdwpSession = registerCloseable(JdwpSession.openJdwpSession(connectedDevice, 10, 100))
-
-        val sendPacket = createHeloDdmsPacket(jdwpSession)
-        jdwpSession.sendPacket(sendPacket)
-        fakeDevice.stopClient(10)
-
-        // runCatching is needed since ADB server maybe still have time to send
-        // packets before its socket is closed (via `stopClient` above)
-        kotlin.runCatching {
-            waitForReplyPacket(jdwpSession, sendPacket)
-            waitForApnmPacket(jdwpSession)
-        }
-
-        // Assert
-        assertThrows<EOFException> { jdwpSession.receivePacket() }
-    }
-
-    @Test
-    fun receivePacketThrowsEofConsistentlyOnClientTerminate() = runBlockingWithTimeout {
-        val fakeDevice = addFakeDevice(fakeAdb, 30)
-        fakeDevice.startClient(10, 0, "a.b.c", false)
-        val connectedDevice = session.waitForOnlineConnectedDevice(fakeDevice.deviceId)
-
-        // Act
-        val jdwpSession = registerCloseable(JdwpSession.openJdwpSession(connectedDevice, 10, 100))
-
-        val sendPacket = createHeloDdmsPacket(jdwpSession)
-        jdwpSession.sendPacket(sendPacket)
-        waitForReplyPacket(jdwpSession, sendPacket)
-        waitForApnmPacket(jdwpSession)
-        fakeDevice.stopClient(10)
-
-        // Assert
-        assertThrows<EOFException> { jdwpSession.receivePacket() }
-        assertThrows<EOFException> { jdwpSession.receivePacket() }
-        assertThrows<EOFException> { jdwpSession.receivePacket() }
-    }
-
-    @Test
-    fun sendPacketThrowExceptionAfterShutdown() = runBlockingWithTimeout {
-        val fakeDevice = addFakeDevice(fakeAdb, 30)
-        fakeDevice.startClient(10, 0, "a.b.c", false)
-        val connectedDevice = session.waitForOnlineConnectedDevice(fakeDevice.deviceId)
-        val jdwpSession = registerCloseable(JdwpSession.openJdwpSession(connectedDevice, 10, 100))
-        val packet = createHeloDdmsPacket(jdwpSession)
-        jdwpSession.sendPacket(packet)
-
-        // Act
-        jdwpSession.shutdown()
-        exceptionRule.expect(IOException::class.java)
-        jdwpSession.sendPacket(packet)
-
-        // Assert
-        fail("Should not reach")
-    }
-
-    @Test
-    fun receivePacketThrowExceptionAfterShutdown() = runBlockingWithTimeout {
-        val fakeDevice = addFakeDevice(fakeAdb, 30)
-        fakeDevice.startClient(10, 0, "a.b.c", false)
-        val connectedDevice = session.waitForOnlineConnectedDevice(fakeDevice.deviceId)
-        val jdwpSession = registerCloseable(JdwpSession.openJdwpSession(connectedDevice, 10, 100))
-        val packet = createHeloDdmsPacket(jdwpSession)
-        jdwpSession.sendPacket(packet)
-
-        // Act
-        jdwpSession.shutdown()
-
-        exceptionRule.expect(IOException::class.java)
-        waitForReplyPacket(jdwpSession, packet)
-
-        // Assert
-        fail("Should not reach")
-    }
-
-    private suspend fun waitForReplyPacket(
-        jdwpSession: JdwpSession,
-        sendPacket: MutableJdwpPacket
-    ): JdwpPacketView {
-        return waitNonNull {
-            val r = jdwpSession.receivePacket()
-            if (r.isReply && r.id == sendPacket.id) {
-                r
-            } else {
-                null
-            }
-        }
-    }
-
-    private suspend fun waitForApnmPacket(
-        jdwpSession: JdwpSession,
-    ): JdwpPacketView {
-        return waitNonNull {
-            val r = jdwpSession.receivePacket()
-            if (r.isApnmCommand()) {
-                r
-            } else {
-                null
-            }
-        }
-    }
-
-    private suspend fun JdwpPacketView.isApnmCommand(): Boolean {
-        return isDdmsCommand &&
-                toOffline().ddmsChunks().firstOrNull { it.type == DdmsChunkType.APNM } != null
-    }
-
-    private suspend fun DdmsChunkView.toRewindableInputChannel(): AdbRewindableInputChannel {
-        val workBuffer = ResizableBuffer()
-        val outputChannel = ByteBufferAdbOutputChannel(workBuffer)
-        this.writeToChannel(outputChannel)
-        val serializedChunk = workBuffer.forChannelWrite()
-        return AdbRewindableInputChannel.forByteBuffer(serializedChunk)
-    }
-
-    private suspend fun createHeloDdmsPacket(jdwpSession: JdwpSession): MutableJdwpPacket {
-        val heloChunk = EphemeralDdmsChunk(
-            type = DdmsChunkType.HELO,
-            length = 0,
-            payloadProvider = PayloadProvider.emptyPayload()
-        )
-
-        val packet = MutableJdwpPacket()
-        packet.id = jdwpSession.nextPacketId()
-        packet.length = 11 + 8
-        packet.isCommand = true
-        packet.cmdSet = DdmsPacketConstants.DDMS_CMD_SET
-        packet.cmd = DdmsPacketConstants.DDMS_CMD
-        packet.payloadProvider = PayloadProvider.forInputChannel(heloChunk.toRewindableInputChannel())
-        return packet
-    }
-
-    private suspend fun AdbInputChannel.countBytes(): Int {
-        return skipRemaining().also {
-            (this as? AdbRewindableInputChannel)?.rewind()
-        }
-    }
+  private suspend fun AdbInputChannel.countBytes(): Int {
+    return skipRemaining().also { (this as? AdbRewindableInputChannel)?.rewind() }
+  }
 }

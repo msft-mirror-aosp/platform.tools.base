@@ -15,59 +15,42 @@
  */
 package com.android.adblib.tools.debugging.impl
 
-import com.android.adblib.tools.debugging.SharedJdwpSessionFilter
 import com.android.adblib.tools.debugging.SharedJdwpSession
-import com.android.adblib.tools.debugging.sharedJdwpSessionFilterFactoryList
+import com.android.adblib.tools.debugging.SharedJdwpSessionFilter
 import com.android.adblib.tools.debugging.packets.JdwpPacketView
+import com.android.adblib.tools.debugging.sharedJdwpSessionFilterFactoryList
 
-internal class SharedJdwpSessionFilterEngine(
-    private val jdwpSession: SharedJdwpSession
-) : AutoCloseable {
+internal class SharedJdwpSessionFilterEngine(private val jdwpSession: SharedJdwpSession) : AutoCloseable {
 
-    private val filters = jdwpSession.device.session.sharedJdwpSessionFilterFactoryList
-        .mapNotNull { factory ->
-            factory.create(jdwpSession)
-        }
+  private val filters = jdwpSession.device.session.sharedJdwpSessionFilterFactoryList.mapNotNull { factory -> factory.create(jdwpSession) }
 
-    /**
-     * Forwards [packet] to all registered [SharedJdwpSessionFilter] when a packet is sent to
-     * the Android Device.
-     */
-    suspend fun beforeSendPacket(packet: JdwpPacketView) {
-        filters.forEach { it.beforeSendPacket(packet) }
-    }
+  /** Forwards [packet] to all registered [SharedJdwpSessionFilter] when a packet is sent to the Android Device. */
+  suspend fun beforeSendPacket(packet: JdwpPacketView) {
+    filters.forEach { it.beforeSendPacket(packet) }
+  }
 
-    /**
-     * Forwards [packet] to all registered [SharedJdwpSessionFilter] when a packet is sent to
-     * the Android Device.
-     */
-    suspend fun afterReceivePacket(packet: JdwpPacketView) {
-        filters.forEach { it.afterReceivePacket(packet) }
-    }
+  /** Forwards [packet] to all registered [SharedJdwpSessionFilter] when a packet is sent to the Android Device. */
+  suspend fun afterReceivePacket(packet: JdwpPacketView) {
+    filters.forEach { it.afterReceivePacket(packet) }
+  }
 
-    /**
-     * Returns `true` if [packet] should be included in the flow of received packets
-     * for the given [filterId].
-     */
-    suspend fun filterReceivedPacket(
-        filterId: SharedJdwpSessionFilter.FilterId?,
-        packet: JdwpPacketView
-    ): Boolean {
-        return if (filterId == null) {
-            true // keep packet
+  /** Returns `true` if [packet] should be included in the flow of received packets for the given [filterId]. */
+  suspend fun filterReceivedPacket(filterId: SharedJdwpSessionFilter.FilterId?, packet: JdwpPacketView): Boolean {
+    return if (filterId == null) {
+      true // keep packet
+    } else {
+      // Keep packet only if all filters decide to keep it
+      filters.all {
+        if (it.id == filterId) {
+          it.filter(packet) // keep or exclude packet
         } else {
-            // Keep packet only if all filters decide to keep it
-            filters.all {
-                if (it.id == filterId) {
-                    it.filter(packet) // keep or exclude packet
-                } else {
-                    true // keep packet
-                }
-            }
+          true // keep packet
         }
+      }
     }
+  }
 
-    override fun close() {
-        filters.forEach { it.close() }
-    }
+  override fun close() {
+    filters.forEach { it.close() }
+  }
 }

@@ -17,111 +17,92 @@ package com.android.adblib.tools.debugging
 
 import com.android.adblib.AdbSession
 import com.android.adblib.CoroutineScopeCache
-import com.android.adblib.tools.debugging.impl.AbstractJdwpProcessDelegateProvider
 import com.android.adblib.tools.debugging.ExternalJdwpProcessCommandDispatcher.ProcessCommand
+import com.android.adblib.tools.debugging.impl.AbstractJdwpProcessDelegateProvider
 import com.android.adblib.tools.debugging.processinventory.server.ProcessInventoryServer
 import com.android.adblib.tools.debugging.utils.ConcurrentAutoCloseableCollection
 
 /**
- * A component that allows sending [ProcessCommand] to an external source for execution
- * (e.g. [ProcessInventoryServer]) for a given [JdwpProcess]
+ * A component that allows sending [ProcessCommand] to an external source for execution (e.g. [ProcessInventoryServer]) for a given
+ * [JdwpProcess]
  */
 interface ExternalJdwpProcessCommandDispatcher {
 
-    /**
-     * The [JdwpProcess] this dispatcher is attached to
-     */
-    val process: JdwpProcess
+  /** The [JdwpProcess] this dispatcher is attached to */
+  val process: JdwpProcess
 
-    /**
-     * Starts executing [ProcessCommand] dispatched from the external source this
-     * [ExternalJdwpProcessCommandDispatcher] is connected to, e.g. a "process inventory server"
-     */
-    suspend fun start()
+  /**
+   * Starts executing [ProcessCommand] dispatched from the external source this [ExternalJdwpProcessCommandDispatcher] is connected to, e.g.
+   * a "process inventory server"
+   */
+  suspend fun start()
 
-    /**
-     * Sends a [ProcessCommand] for execution to the external source this
-     * [ExternalJdwpProcessCommandDispatcher] is connected to, e.g. a "process inventory server"
-     */
-    suspend fun executeCommand(command: ProcessCommand)
+  /**
+   * Sends a [ProcessCommand] for execution to the external source this [ExternalJdwpProcessCommandDispatcher] is connected to, e.g. a
+   * "process inventory server"
+   */
+  suspend fun executeCommand(command: ProcessCommand)
 
-    /**
-     * Base class of all supported commands
-     */
-    sealed class ProcessCommand(val pid: Int) {
+  /** Base class of all supported commands */
+  sealed class ProcessCommand(val pid: Int) {
 
-        override fun toString(): String {
-            return "${this::class.simpleName}(pid=$pid)"
-        }
-
-        /**
-         * Resume a JDWP process in a "waiting for debugger" state
-         */
-        class ResumeJdwpProcess(pid: Int): ProcessCommand(pid)
+    override fun toString(): String {
+      return "${this::class.simpleName}(pid=$pid)"
     }
+
+    /** Resume a JDWP process in a "waiting for debugger" state */
+    class ResumeJdwpProcess(pid: Int) : ProcessCommand(pid)
+  }
 }
 
 /**
- * A factory of [ExternalJdwpProcessCommandDispatcher], typically injected into an
- * [AdbSession] with the [AdbSession.addExternalJdwpProcessCommandDispatcherFactory]
+ * A factory of [ExternalJdwpProcessCommandDispatcher], typically injected into an [AdbSession] with the
+ * [AdbSession.addExternalJdwpProcessCommandDispatcherFactory]
  */
-interface ExternalJdwpProcessCommandDispatcherFactory: AutoCloseable {
+interface ExternalJdwpProcessCommandDispatcherFactory : AutoCloseable {
 
-    /**
-     * Creates an [ExternalJdwpProcessCommandDispatcher] for the given [process] if appropriate,
-     * or returns `null` if this factory does not want to provide one.
-     */
-    suspend fun create(process: JdwpProcess): ExternalJdwpProcessCommandDispatcher?
+  /**
+   * Creates an [ExternalJdwpProcessCommandDispatcher] for the given [process] if appropriate, or returns `null` if this factory does not
+   * want to provide one.
+   */
+  suspend fun create(process: JdwpProcess): ExternalJdwpProcessCommandDispatcher?
 }
 
-/**
- * The [CoroutineScopeCache.Key] for the list of [ExternalJdwpProcessCommandDispatcherFactory]
- */
+/** The [CoroutineScopeCache.Key] for the list of [ExternalJdwpProcessCommandDispatcherFactory] */
 private val externalJdwpProcessCommandDispatcherFactoryListKey =
-    CoroutineScopeCache.Key<ConcurrentAutoCloseableCollection<ExternalJdwpProcessCommandDispatcherFactory>>("externalJdwpProcessCommandDispatcherFactoryListKey")
+  CoroutineScopeCache.Key<ConcurrentAutoCloseableCollection<ExternalJdwpProcessCommandDispatcherFactory>>(
+    "externalJdwpProcessCommandDispatcherFactoryListKey"
+  )
 
-/**
- * The list of [ExternalJdwpProcessCommandDispatcherFactory] associated to this [AdbSession]
- */
-internal val AdbSession.externalJdwpProcessCommandDispatcherFactoryList: ConcurrentAutoCloseableCollection<ExternalJdwpProcessCommandDispatcherFactory>
-    get() = this.cache.getOrPut(externalJdwpProcessCommandDispatcherFactoryListKey) {
-        ConcurrentAutoCloseableCollection()
-    }
+/** The list of [ExternalJdwpProcessCommandDispatcherFactory] associated to this [AdbSession] */
+internal val AdbSession.externalJdwpProcessCommandDispatcherFactoryList:
+  ConcurrentAutoCloseableCollection<ExternalJdwpProcessCommandDispatcherFactory>
+  get() = this.cache.getOrPut(externalJdwpProcessCommandDispatcherFactoryListKey) { ConcurrentAutoCloseableCollection() }
 
-/**
- * Adds a [ExternalJdwpProcessCommandDispatcherFactory] to this [AdbSession]
- */
+/** Adds a [ExternalJdwpProcessCommandDispatcherFactory] to this [AdbSession] */
 fun AdbSession.addExternalJdwpProcessCommandDispatcherFactory(factory: ExternalJdwpProcessCommandDispatcherFactory) {
-    externalJdwpProcessCommandDispatcherFactoryList.add(factory)
+  externalJdwpProcessCommandDispatcherFactoryList.add(factory)
 }
 
-/**
- * The [CoroutineScopeCache.Key] for the list of [ExternalJdwpProcessCommandDispatcher]
- */
+/** The [CoroutineScopeCache.Key] for the list of [ExternalJdwpProcessCommandDispatcher] */
 private val externalJdwpProcessCommandDispatcherListKey =
-    CoroutineScopeCache.Key<List<ExternalJdwpProcessCommandDispatcher>>("externalJdwpProcessCommandDispatcherListKey")
+  CoroutineScopeCache.Key<List<ExternalJdwpProcessCommandDispatcher>>("externalJdwpProcessCommandDispatcherListKey")
 
-/**
- * The list of [ExternalJdwpProcessCommandDispatcher] associated to this [JdwpProcess]
- */
+/** The list of [ExternalJdwpProcessCommandDispatcher] associated to this [JdwpProcess] */
 internal suspend fun JdwpProcess.externalJdwpProcessCommandDispatcherList(): List<ExternalJdwpProcessCommandDispatcher> {
-    val process = this
-    return process.cache.getOrPutSuspending(externalJdwpProcessCommandDispatcherListKey) {
-        if (process is AbstractJdwpProcessDelegateProvider) {
-            process.abstractJdwpProcess()
-                .externalJdwpProcessCommandDispatcherList()
-                .map { dispatcher ->
-                    ExternalJdwpProcessCommandDispatcherDelegate(process, dispatcher)
-                }
-        } else {
-            device.session.externalJdwpProcessCommandDispatcherFactoryList.mapNotNull { factory ->
-                factory.create(process)
-            }
-        }
+  val process = this
+  return process.cache.getOrPutSuspending(externalJdwpProcessCommandDispatcherListKey) {
+    if (process is AbstractJdwpProcessDelegateProvider) {
+      process.abstractJdwpProcess().externalJdwpProcessCommandDispatcherList().map { dispatcher ->
+        ExternalJdwpProcessCommandDispatcherDelegate(process, dispatcher)
+      }
+    } else {
+      device.session.externalJdwpProcessCommandDispatcherFactoryList.mapNotNull { factory -> factory.create(process) }
     }
+  }
 }
 
 private class ExternalJdwpProcessCommandDispatcherDelegate(
-    override val process: JdwpProcess,
-    private val delegate: ExternalJdwpProcessCommandDispatcher
+  override val process: JdwpProcess,
+  private val delegate: ExternalJdwpProcessCommandDispatcher,
 ) : ExternalJdwpProcessCommandDispatcher by delegate

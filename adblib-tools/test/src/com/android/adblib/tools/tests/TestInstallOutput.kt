@@ -25,72 +25,66 @@ import org.junit.Test
 
 class TestInstallOutput {
 
-    /**
-     * Test that [InstallResult] properly reports unknown failure based on install output.
-     */
-    @Test
-    fun testInstallResult() {
-        // Check empty string == SUCCESS
-        try {
-            parseInstallResult("")
-        } catch (e : Exception) {
-            Assert.fail("Empty is a valid successful output")
-        }
-
-        // Check SUCCESS is SUCCESS
-        try {
-            parseInstallResult(SUCCESS_OUTPUT)
-        } catch (e : Exception) {
-            Assert.fail("Empty is a valid successful output")
-        }
+  /** Test that [InstallResult] properly reports unknown failure based on install output. */
+  @Test
+  fun testInstallResult() {
+    // Check empty string == SUCCESS
+    try {
+      parseInstallResult("")
+    } catch (e: Exception) {
+      Assert.fail("Empty is a valid successful output")
     }
 
-    @Test
-    fun testInstallResultErrorCode() {
-        val errorCode = "INSTALL_ERROR_DESC"
-        val errorMessage = "$errorCode: oups i failed"
-        try {
-            parseInstallResult("Failure [$errorMessage]")
-        } catch (e : InstallException) {
-            Assert.assertEquals(errorCode, e.errorCode)
-            Assert.assertEquals(errorMessage, e.errorMessage)
-        }
+    // Check SUCCESS is SUCCESS
+    try {
+      parseInstallResult(SUCCESS_OUTPUT)
+    } catch (e: Exception) {
+      Assert.fail("Empty is a valid successful output")
+    }
+  }
 
-        try {
-            parseInstallResult("Failure [$errorCode]")
-        } catch (e : InstallException) {
-            Assert.assertEquals(errorCode, e.errorCode)
-            Assert.assertEquals(errorCode, e.errorMessage)
-        }
+  @Test
+  fun testInstallResultErrorCode() {
+    val errorCode = "INSTALL_ERROR_DESC"
+    val errorMessage = "$errorCode: oups i failed"
+    try {
+      parseInstallResult("Failure [$errorMessage]")
+    } catch (e: InstallException) {
+      Assert.assertEquals(errorCode, e.errorCode)
+      Assert.assertEquals(errorMessage, e.errorMessage)
     }
 
-    /**
-     * Test that [CommitResult] properly reports unknown failure based on install output.
-     */
-    @Test
-    fun testCommitResult() {
-        // Get the Success message
-        val sessionID = "1741914381"
-        val id = parseSessionID("Success: created install session [$sessionID]\n")
-        Assert.assertEquals(sessionID, id)
-
-        // In case of recognized failure, the error message captures it.
-        val errorCode = "INSTALL_ERROR"
-        try {
-            parseSessionID("Failure [$errorCode: Oops]")
-        } catch (e : InstallException) {
-            Assert.assertEquals(e.errorCode, errorCode)
-        }
+    try {
+      parseInstallResult("Failure [$errorCode]")
+    } catch (e: InstallException) {
+      Assert.assertEquals(errorCode, e.errorCode)
+      Assert.assertEquals(errorCode, e.errorMessage)
     }
+  }
 
-    /**
-     * Test that [CommitResult] properly parse lines with Line Feed ('\n').
-     */
-    @Test
-    fun testCommitResultWithLF() {
-        // Get the Success message
-        val sessionID = "1741914381"
-        val id = parseSessionID("Success: created install session [$sessionID]\n")
-        Assert.assertEquals(sessionID, id)
+  /** Test that [CommitResult] properly reports unknown failure based on install output. */
+  @Test
+  fun testCommitResult() {
+    // Get the Success message
+    val sessionID = "1741914381"
+    val id = parseSessionID("Success: created install session [$sessionID]\n")
+    Assert.assertEquals(sessionID, id)
+
+    // In case of recognized failure, the error message captures it.
+    val errorCode = "INSTALL_ERROR"
+    try {
+      parseSessionID("Failure [$errorCode: Oops]")
+    } catch (e: InstallException) {
+      Assert.assertEquals(e.errorCode, errorCode)
     }
+  }
+
+  /** Test that [CommitResult] properly parse lines with Line Feed ('\n'). */
+  @Test
+  fun testCommitResultWithLF() {
+    // Get the Success message
+    val sessionID = "1741914381"
+    val id = parseSessionID("Success: created install session [$sessionID]\n")
+    Assert.assertEquals(sessionID, id)
+  }
 }

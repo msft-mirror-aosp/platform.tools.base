@@ -19,24 +19,24 @@ import com.android.adblib.tools.debugging.JdwpCommandProgress
 import com.android.adblib.tools.debugging.packets.JdwpPacketView
 
 class FakeJdwpCommandProgress : JdwpCommandProgress {
-    var afterSendIsCalled = false
-    var beforeSendIsCalled = false
-    var onReplyIsCalled = false
-    var onReplyTimeoutIsCalled = false
+  var afterSendIsCalled = false
+  var beforeSendIsCalled = false
+  var onReplyIsCalled = false
+  var onReplyTimeoutIsCalled = false
 
-    override suspend fun afterSend(packet: JdwpPacketView) {
-        afterSendIsCalled = true
-    }
+  override suspend fun afterSend(packet: JdwpPacketView) {
+    afterSendIsCalled = true
+  }
 
-    override suspend fun beforeSend(packet: JdwpPacketView) {
-        beforeSendIsCalled = true
-    }
+  override suspend fun beforeSend(packet: JdwpPacketView) {
+    beforeSendIsCalled = true
+  }
 
-    override suspend fun onReply(packet: JdwpPacketView) {
-        onReplyIsCalled = true
-    }
+  override suspend fun onReply(packet: JdwpPacketView) {
+    onReplyIsCalled = true
+  }
 
-    override suspend fun onReplyTimeout() {
-        onReplyTimeoutIsCalled = true
-    }
+  override suspend fun onReplyTimeout() {
+    onReplyTimeoutIsCalled = true
+  }
 }

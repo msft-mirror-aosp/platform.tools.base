@@ -22,11 +22,11 @@ import com.android.adblib.tools.debugging.packets.ddms.DdmsChunkView
 import java.io.IOException
 
 /**
- * Exception thrown when an invalid/unexpected [JdwpPacketView] or [DdmsChunkView] is
- * received from a [JdwpSession] or [SharedJdwpSession].
+ * Exception thrown when an invalid/unexpected [JdwpPacketView] or [DdmsChunkView] is received from a [JdwpSession] or [SharedJdwpSession].
  */
 class JdwpProtocolErrorException : IOException {
 
-    constructor(message: String) : super(message) {}
-    constructor(message: String, cause: Throwable) : super(message, cause) {}
+  constructor(message: String) : super(message) {}
+
+  constructor(message: String, cause: Throwable) : super(message, cause) {}
 }

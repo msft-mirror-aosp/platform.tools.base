@@ -23,6 +23,10 @@ import com.android.adblib.testingutils.CloseablesRule
 import com.android.adblib.testingutils.CoroutineTestUtils
 import com.android.adblib.utils.ResizableBuffer
 import com.android.adblib.utils.createChildScope
+import java.net.InetSocketAddress
+import java.time.Duration
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicInteger
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineExceptionHandler
@@ -39,417 +43,432 @@ import org.junit.Assert.assertNotNull
 import org.junit.Assert.fail
 import org.junit.Rule
 import org.junit.Test
-import java.net.InetSocketAddress
-import java.time.Duration
-import java.util.concurrent.atomic.AtomicBoolean
-import java.util.concurrent.atomic.AtomicInteger
 
 class TcpServerTest {
-    @JvmField
-    @Rule
-    val closeables = CloseablesRule()
+  @JvmField @Rule val closeables = CloseablesRule()
 
-    @Test
-    fun serverIsNotStartedRightAway(): Unit = CoroutineTestUtils.runBlockingWithTimeout {
-        // Prepare
-        val session = registerCloseable(FakeAdbSession())
-        val tcpServer = MyTestTcpServer(session)
+  @Test
+  fun serverIsNotStartedRightAway(): Unit =
+    CoroutineTestUtils.runBlockingWithTimeout {
+      // Prepare
+      val session = registerCloseable(FakeAdbSession())
+      val tcpServer = MyTestTcpServer(session)
 
-        // Act
-        registerCloseable(TcpServerConnection.createWithFailoverConnection(
-            session,
-            tcpServer,
-            0 /* "0" to automatically bind to a new port */,
-            Duration.ofSeconds(1),
-            RetryPolicy.none(),
-        ))
+      // Act
+      registerCloseable(
+        TcpServerConnection.createWithFailoverConnection(
+          session,
+          tcpServer,
+          0 /* "0" to automatically bind to a new port */,
+          Duration.ofSeconds(1),
+          RetryPolicy.none(),
+        )
+      )
 
-        // Assert
-        assertEquals(0, tcpServer.launchedCallCount.get())
-        assertEquals(false, tcpServer.closed.get())
+      // Assert
+      assertEquals(0, tcpServer.launchedCallCount.get())
+      assertEquals(false, tcpServer.closed.get())
     }
 
-    @Test
-    fun serverIsClosedOnClose(): Unit = CoroutineTestUtils.runBlockingWithTimeout {
-        // Prepare
-        val session = registerCloseable(FakeAdbSession())
-        val tcpServer = MyTestTcpServer(session)
-        val server = registerCloseable(TcpServerConnection.createWithFailoverConnection(
+  @Test
+  fun serverIsClosedOnClose(): Unit =
+    CoroutineTestUtils.runBlockingWithTimeout {
+      // Prepare
+      val session = registerCloseable(FakeAdbSession())
+      val tcpServer = MyTestTcpServer(session)
+      val server =
+        registerCloseable(
+          TcpServerConnection.createWithFailoverConnection(
             session,
             tcpServer,
             0 /* "0" to automatically bind to a new port */,
             Duration.ofSeconds(1),
             RetryPolicy.none(),
-        ))
+          )
+        )
 
-        // Act
-        server.close()
+      // Act
+      server.close()
 
-        // Assert
-        assertEquals(0, tcpServer.launchedCallCount.get())
-        assertEquals(true, tcpServer.closed.get())
+      // Assert
+      assertEquals(0, tcpServer.launchedCallCount.get())
+      assertEquals(true, tcpServer.closed.get())
     }
 
-    @Test
-    fun serverIsLaunchedOnlyOnceOnConnection(): Unit = CoroutineTestUtils.runBlockingWithTimeout {
-        // Prepare
-        val session = registerCloseable(FakeAdbSession())
-        val tcpServer = MyTestTcpServer(session)
-        val server = registerCloseable(TcpServerConnection.createWithFailoverConnection(
+  @Test
+  fun serverIsLaunchedOnlyOnceOnConnection(): Unit =
+    CoroutineTestUtils.runBlockingWithTimeout {
+      // Prepare
+      val session = registerCloseable(FakeAdbSession())
+      val tcpServer = MyTestTcpServer(session)
+      val server =
+        registerCloseable(
+          TcpServerConnection.createWithFailoverConnection(
             session,
             tcpServer,
             0 /* "0" to automatically bind to a new port */,
             Duration.ofSeconds(1),
             RetryPolicy.none(),
-        ))
+          )
+        )
 
-        // Act
-        val response = server.withClientSocket { _, socketChannel ->
+      // Act
+      val response =
+        server.withClientSocket { _, socketChannel ->
+          val socket = MyTestTcpServer.wrapClientSocket(socketChannel)
+          socket.writeHello()
+          socket.readString()
+        }
+
+      // Assert
+      assertEquals("Hello", response)
+      assertEquals(1, tcpServer.launchedCallCount.get())
+      assertEquals(false, tcpServer.closed.get())
+    }
+
+  @Test
+  fun serverIsReusedIfAvailable(): Unit =
+    CoroutineTestUtils.runBlockingWithTimeout {
+      // Prepare
+      val requestCount = 5
+      val session = registerCloseable(FakeAdbSession())
+      val tcpServer = MyTestTcpServer(session)
+      val server =
+        registerCloseable(
+          TcpServerConnection.createWithFailoverConnection(
+            session,
+            tcpServer,
+            0 /* "0" to automatically bind to a new port */,
+            Duration.ofSeconds(1),
+            RetryPolicy.none(),
+          )
+        )
+
+      // Act
+      val responses =
+        (1..requestCount).map {
+          server.withClientSocket { _, socketChannel ->
             val socket = MyTestTcpServer.wrapClientSocket(socketChannel)
             socket.writeHello()
             socket.readString()
+          }
         }
 
-        // Assert
-        assertEquals("Hello", response)
-        assertEquals(1, tcpServer.launchedCallCount.get())
-        assertEquals(false, tcpServer.closed.get())
+      // Assert
+      assertEquals(generateSequence { "Hello" }.take(requestCount).toList(), responses)
+      assertEquals(1, tcpServer.launchedCallCount.get())
+      assertEquals(requestCount, tcpServer.processedRequestsCount.get())
+      assertEquals(false, tcpServer.closed.get())
     }
 
-    @Test
-    fun serverIsReusedIfAvailable(): Unit = CoroutineTestUtils.runBlockingWithTimeout {
-        // Prepare
-        val requestCount = 5
-        val session = registerCloseable(FakeAdbSession())
-        val tcpServer = MyTestTcpServer(session)
-        val server = registerCloseable(TcpServerConnection.createWithFailoverConnection(
+  @Test
+  fun serverIsTransparentToException(): Unit =
+    CoroutineTestUtils.runBlockingWithTimeout {
+      // Prepare
+      val session = registerCloseable(FakeAdbSession())
+      val tcpServer = MyTestTcpServer(session)
+      val server =
+        registerCloseable(
+          TcpServerConnection.createWithFailoverConnection(
             session,
             tcpServer,
             0 /* "0" to automatically bind to a new port */,
             Duration.ofSeconds(1),
             RetryPolicy.none(),
-        ))
+          )
+        )
 
-        // Act
-        val responses = (1..requestCount).map {
-            server.withClientSocket { _, socketChannel ->
-                val socket = MyTestTcpServer.wrapClientSocket(socketChannel)
-                socket.writeHello()
-                socket.readString()
-            }
-        }
+      // Act
+      val result = runCatching { server.withClientSocket<Nothing> { _, _ -> throw Exception("Foo") } }
 
-        // Assert
-        assertEquals(generateSequence { "Hello" }.take(requestCount).toList(), responses)
-        assertEquals(1, tcpServer.launchedCallCount.get())
-        assertEquals(requestCount, tcpServer.processedRequestsCount.get())
-        assertEquals(false, tcpServer.closed.get())
+      // Assert
+      assertEquals(1, tcpServer.launchedCallCount.get())
+      assertEquals(false, tcpServer.closed.get())
+      assertTcpServerException(result.exceptionOrNull(), Exception::class.java, "Foo")
     }
 
-    @Test
-    fun serverIsTransparentToException(): Unit = CoroutineTestUtils.runBlockingWithTimeout {
-        // Prepare
-        val session = registerCloseable(FakeAdbSession())
-        val tcpServer = MyTestTcpServer(session)
-        val server = registerCloseable(TcpServerConnection.createWithFailoverConnection(
+  @Test
+  fun serverAllowsCancellationFromCustomBlock(): Unit =
+    CoroutineTestUtils.runBlockingWithTimeout {
+      // Prepare
+      val session = registerCloseable(FakeAdbSession())
+      val tcpServer = MyTestTcpServer(session)
+      val server =
+        registerCloseable(
+          TcpServerConnection.createWithFailoverConnection(
             session,
             tcpServer,
             0 /* "0" to automatically bind to a new port */,
             Duration.ofSeconds(1),
             RetryPolicy.none(),
-        ))
+          )
+        )
 
-        // Act
-        val result = runCatching {
-            server.withClientSocket<Nothing> { _, _ ->
-                throw Exception("Foo")
-            }
+      // Act
+      val deferredStart = CompletableDeferred<Unit>()
+      val deferred = async {
+        server.withClientSocket { _, _ ->
+          deferredStart.complete(Unit)
+          delay(5_000)
         }
+      }
+      deferredStart.await()
+      deferred.cancel("Cancellation from test")
+      val result = runCatching { deferred.await() }
 
-        // Assert
-        assertEquals(1, tcpServer.launchedCallCount.get())
-        assertEquals(false, tcpServer.closed.get())
-        assertTcpServerException(result.exceptionOrNull(), Exception::class.java, "Foo")
+      // Assert
+      assertEquals(1, tcpServer.launchedCallCount.get())
+      assertEquals(false, tcpServer.closed.get())
+      assertEquals(CancellationException::class.java, result.exceptionOrNull()?.javaClass)
+      assertEquals("Cancellation from test", result.exceptionOrNull()?.message)
     }
 
-    @Test
-    fun serverAllowsCancellationFromCustomBlock(): Unit = CoroutineTestUtils.runBlockingWithTimeout {
-        // Prepare
-        val session = registerCloseable(FakeAdbSession())
-        val tcpServer = MyTestTcpServer(session)
-        val server = registerCloseable(TcpServerConnection.createWithFailoverConnection(
-            session,
-            tcpServer,
-            0 /* "0" to automatically bind to a new port */,
-            Duration.ofSeconds(1),
-            RetryPolicy.none(),
-        ))
+  @Test
+  fun serverRetryPolicyIsUsedIfServerFails(): Unit =
+    CoroutineTestUtils.runBlockingWithTimeout {
+      // Prepare
+      val retryCount = 3
+      val session = registerCloseable(FakeAdbSession())
+      val tcpServer =
+        object : MyTestTcpServer(session) {
+          var runCount = 0
 
-        // Act
-        val deferredStart = CompletableDeferred<Unit>()
-        val deferred = async {
-            server.withClientSocket { _, _ ->
-                deferredStart.complete(Unit)
-                delay(5_000)
+          override suspend fun runServer(serverSocket: AdbServerSocket) {
+            runCount++
+            if (runCount == retryCount) {
+              super.runServer(serverSocket)
+            } else {
+              // Simulate a "crashing" server
+              serverSocket.close()
             }
+          }
         }
-        deferredStart.await()
-        deferred.cancel("Cancellation from test")
-        val result = runCatching { deferred.await() }
-
-        // Assert
-        assertEquals(1, tcpServer.launchedCallCount.get())
-        assertEquals(false, tcpServer.closed.get())
-        assertEquals(CancellationException::class.java, result.exceptionOrNull()?.javaClass)
-        assertEquals("Cancellation from test", result.exceptionOrNull()?.message)
-    }
-
-    @Test
-    fun serverRetryPolicyIsUsedIfServerFails(): Unit = CoroutineTestUtils.runBlockingWithTimeout {
-        // Prepare
-        val retryCount = 3
-        val session = registerCloseable(FakeAdbSession())
-        val tcpServer = object: MyTestTcpServer(session) {
-            var runCount = 0
-            override suspend fun runServer(serverSocket: AdbServerSocket) {
-                runCount++
-                if (runCount == retryCount) {
-                    super.runServer(serverSocket)
-                } else {
-                    // Simulate a "crashing" server
-                    serverSocket.close()
-                }
-            }
+      val retryPolicy =
+        object : RetryPolicy {
+          override fun newDelaySequence(): Sequence<Duration> {
+            return generateSequence { Duration.ofMillis(10) }.take(retryCount)
+          }
         }
-        val retryPolicy = object : RetryPolicy {
-            override fun newDelaySequence(): Sequence<Duration> {
-                return generateSequence { Duration.ofMillis(10) }.take(retryCount)
-            }
-
-        }
-        val server = registerCloseable(TcpServerConnection.createWithFailoverConnection(
+      val server =
+        registerCloseable(
+          TcpServerConnection.createWithFailoverConnection(
             session,
             tcpServer,
             0 /* "0" to automatically bind to a new port */,
             Duration.ofSeconds(1),
             retryPolicy,
-        ))
+          )
+        )
 
-        // Act
-        val response = server.withClientSocket { _, socketChannel ->
+      // Act
+      val response =
+        server.withClientSocket { _, socketChannel ->
+          val socket = MyTestTcpServer.wrapClientSocket(socketChannel)
+          socket.writeHello()
+          socket.readString()
+        }
+
+      // Assert
+      assertEquals("Hello", response)
+      assertEquals(3, tcpServer.launchedCallCount.get())
+      assertEquals(false, tcpServer.closed.get())
+    }
+
+  @Test
+  fun serverConnectsToOnlyOneOfManyServers(): Unit =
+    CoroutineTestUtils.runBlockingWithTimeout {
+      // Prepare
+      val freePort = findFreeTcpPort()
+      val serverCount = 5
+      val queryPerServerCount = 2
+      val servers = createMultipleServers(freePort).take(serverCount).toList()
+
+      // Act
+      val responses =
+        (1..queryPerServerCount)
+          .flatMap {
+            servers.map { serverInfo ->
+              async {
+                val server = serverInfo.server
+                server.withClientSocket { _, socketChannel ->
+                  val socket = MyTestTcpServer.wrapClientSocket(socketChannel)
+                  socket.writeHello()
+                  socket.readString()
+                }
+              }
+            }
+          }
+          .awaitAll()
+
+      // Assert
+      val queryCount = serverCount * queryPerServerCount
+      assertEquals(generateSequence { "Hello" }.take(queryCount).toList(), responses)
+      val activatedServers = servers.filter { it.tcpServer.launchedCallCount.get() > 0 }
+      assertEquals(1, activatedServers.size)
+      assertEquals(queryCount, activatedServers[0].tcpServer.processedRequestsCount.get())
+    }
+
+  @Test
+  fun serverSupportFailOverIfTcpServerFails(): Unit =
+    CoroutineTestUtils.runBlockingWithTimeout {
+      // Prepare
+      val freePort = findFreeTcpPort()
+      val serverCount = 5
+      val servers =
+        (1..serverCount).map {
+          createFailoverServer(
+            freePort,
+            serverFactory = { session ->
+              object : MyTestTcpServer(session) {
+                override suspend fun runServer(serverSocket: AdbServerSocket) {
+                  // Accept one connection then fail forever
+                  serverSocket.accept().use { runOneServerRequest(it) }
+                  serverSocket.close()
+                }
+              }
+            },
+          )
+        }
+
+      // Act: Start with "failingServer" to ensure it is stated first, but fails on the 2nd
+      // request it receives. Then use "server" to test the failover behavior, i.e. a failover
+      // "MyTestTcpServer" is started and takes over the TCP port.
+      val responses =
+        servers.map {
+          it.server.withClientSocket { _, socketChannel ->
             val socket = MyTestTcpServer.wrapClientSocket(socketChannel)
             socket.writeHello()
             socket.readString()
+          }
         }
 
-        // Assert
-        assertEquals("Hello", response)
-        assertEquals(3, tcpServer.launchedCallCount.get())
-        assertEquals(false, tcpServer.closed.get())
+      // Assert
+      assertEquals(generateSequence { "Hello" }.take(serverCount).toList(), responses)
+      servers.forEach { assertEquals(1, it.tcpServer.processedRequestsCount.get()) }
     }
 
-    @Test
-    fun serverConnectsToOnlyOneOfManyServers(): Unit = CoroutineTestUtils.runBlockingWithTimeout {
-        // Prepare
-        val freePort = findFreeTcpPort()
-        val serverCount = 5
-        val queryPerServerCount = 2
-        val servers = createMultipleServers(freePort).take(serverCount).toList()
+  private suspend fun findFreeTcpPort(): Int {
+    val session = registerCloseable(FakeAdbSession())
+    val freePort = session.channelFactory.createServerSocket().use { it.bind(InetSocketAddress(0)).port }
+    return freePort
+  }
 
-        // Act
-        val responses = (1..queryPerServerCount).flatMap {
-            servers.map { serverInfo ->
-                async {
-                    val server = serverInfo.server
-                    server.withClientSocket { _, socketChannel ->
-                        val socket = MyTestTcpServer.wrapClientSocket(socketChannel)
-                        socket.writeHello()
-                        socket.readString()
-                    }
-                }
-            }
-        }.awaitAll()
+  private fun <T : AutoCloseable> registerCloseable(item: T): T {
+    return closeables.register(item)
+  }
 
-        // Assert
-        val queryCount = serverCount * queryPerServerCount
-        assertEquals(generateSequence{"Hello"}.take(queryCount).toList(), responses)
-        val activatedServers = servers.filter { it.tcpServer.launchedCallCount.get() > 0 }
-        assertEquals(1, activatedServers.size)
-        assertEquals(queryCount, activatedServers[0].tcpServer.processedRequestsCount.get())
+  private fun <T> assertTcpServerException(throwable: Throwable?, cls: Class<T>, @Suppress("SameParameterValue") message: String)
+    where T : Throwable {
+    assertNotNull(throwable)
+    // assertEquals(message, throwable?.message)
+    // assertEquals(cls, throwable?.javaClass)
+    throwable?.also {
+      it.suppressed.firstOrNull { suppressed -> suppressed.javaClass == cls && suppressed.message == message }
+        ?: run { fail("Exception of type '$cls' with message '$message' not found in list of suppressed of $throwable") }
+    }
+  }
+
+  private fun createMultipleServers(serverPort: Int): Sequence<ServerInfo> {
+    return generateSequence { createFailoverServer(serverPort, serverFactory = { session -> MyTestTcpServer(session) }) }
+  }
+
+  private fun createFailoverServer(
+    serverPort: Int,
+    serverFactory: (AdbSession) -> MyTestTcpServer = { session -> MyTestTcpServer(session) },
+  ): ServerInfo {
+    val session = registerCloseable(FakeAdbSession())
+    val tcpServer = serverFactory(session)
+    val server =
+      registerCloseable(
+        TcpServerConnection.createWithFailoverConnection(
+          session,
+          tcpServer,
+          serverPort,
+          Duration.ofSeconds(1),
+          RetryPolicy.fixedDelay(Duration.ofMillis(100)),
+        )
+      )
+
+    return ServerInfo(session, tcpServer, server)
+  }
+
+  private data class ServerInfo(val session: AdbSession, val tcpServer: MyTestTcpServer, val server: TcpServerConnection)
+
+  private open class MyTestTcpServer(session: AdbSession) : TcpServer {
+    val scope = session.scope.createChildScope(isSupervisor = true)
+    var launchedCallCount = AtomicInteger()
+    var closed = AtomicBoolean(false)
+    var processedRequestsCount = AtomicInteger()
+
+    override fun launch(serverSocket: AdbServerSocket): Job {
+      launchedCallCount.incrementAndGet()
+      val exceptionHandler = CoroutineExceptionHandler { _, throwable ->
+        println("Exception in '${this::class.java.simpleName}' server coroutine: $throwable")
+      }
+      return scope.launch(exceptionHandler) { runServer(serverSocket) }
     }
 
-    @Test
-    fun serverSupportFailOverIfTcpServerFails(): Unit = CoroutineTestUtils.runBlockingWithTimeout {
-        // Prepare
-        val freePort = findFreeTcpPort()
-        val serverCount = 5
-        val servers = (1..serverCount).map {
-            createFailoverServer(freePort, serverFactory = { session ->
-                object : MyTestTcpServer(session) {
-                    override suspend fun runServer(serverSocket: AdbServerSocket) {
-                        // Accept one connection then fail forever
-                        serverSocket.accept().use { runOneServerRequest(it) }
-                        serverSocket.close()
-                    }
-                }
-            })
-        }
-
-        // Act: Start with "failingServer" to ensure it is stated first, but fails on the 2nd
-        // request it receives. Then use "server" to test the failover behavior, i.e. a failover
-        // "MyTestTcpServer" is started and takes over the TCP port.
-        val responses = servers.map {
-            it.server.withClientSocket { _, socketChannel ->
-                val socket = MyTestTcpServer.wrapClientSocket(socketChannel)
-                socket.writeHello()
-                socket.readString()
-            }
-        }
-
-        // Assert
-        assertEquals(generateSequence { "Hello" }.take(serverCount).toList(), responses)
-        servers.forEach {
-            assertEquals(1, it.tcpServer.processedRequestsCount.get())
-        }
+    open suspend fun runServer(serverSocket: AdbServerSocket) {
+      while (true) {
+        currentCoroutineContext().ensureActive()
+        serverSocket.accept().use { socketChannel -> runOneServerRequest(socketChannel) }
+      }
     }
 
-    private suspend fun findFreeTcpPort(): Int {
-        val session = registerCloseable(FakeAdbSession())
-        val freePort = session.channelFactory.createServerSocket().use {
-            it.bind(InetSocketAddress(0)).port
+    open suspend fun runOneServerRequest(socketChannel: AdbChannel) {
+      val socket = wrapClientSocket(socketChannel)
+
+      val request =
+        try {
+          socket.readString()
+        } catch (e: java.io.EOFException) {
+          // Sometimes the client establishes a connection but doesn't send any data to the
+          // server, because `tryConnect` times out at the same time. In this case this socket
+          // is immediately closed, and we end up getting EOF when trying to read from it here.
+          println("EOFException in `MyTestTcpServer` server request handling (${e.message})")
+          null
         }
-        return freePort
+      if (request != null) {
+        socket.writeString(request)
+        processedRequestsCount.incrementAndGet()
+      }
     }
 
-    private fun <T : AutoCloseable> registerCloseable(item: T): T {
-        return closeables.register(item)
+    override fun close() {
+      closed.set(true)
+      scope.cancel("${this::class.java.simpleName} has been closed")
     }
 
-    private fun <T> assertTcpServerException(
-        throwable: Throwable?,
-        cls: Class<T>,
-        @Suppress("SameParameterValue") message: String
-    ) where T : Throwable {
-        assertNotNull(throwable)
-        //assertEquals(message, throwable?.message)
-        //assertEquals(cls, throwable?.javaClass)
-        throwable?.also {
-            it.suppressed.firstOrNull { suppressed ->
-                suppressed.javaClass == cls && suppressed.message == message
-            } ?: run {
-                fail("Exception of type '$cls' with message '$message' not found in list of suppressed of $throwable")
-            }
-        }
+    class ClientSocket(socketChannel: AdbChannel) : AdbChannel by socketChannel {
+      suspend fun writeHello() {
+        writeString("Hello")
+      }
+
+      suspend fun writeString(value: String) {
+        val buffer = ResizableBuffer()
+        val bytes = value.toByteArray(Charsets.UTF_8)
+        buffer.appendInt(bytes.size)
+        buffer.appendBytes(bytes)
+        writeExactly(buffer.forChannelWrite())
+      }
+
+      suspend fun readString(): String {
+        val buffer = ResizableBuffer()
+
+        buffer.clear()
+        readExactly(buffer.forChannelRead(4))
+        val size = buffer.afterChannelRead().getInt()
+        buffer.clear()
+
+        readExactly(buffer.forChannelRead(size))
+        return Charsets.UTF_8.decode(buffer.afterChannelRead()).toString()
+      }
     }
 
-    private fun createMultipleServers(serverPort: Int): Sequence<ServerInfo> {
-        return generateSequence {
-            createFailoverServer(serverPort, serverFactory = {session -> MyTestTcpServer(session) } )
-        }
+    companion object {
+      fun wrapClientSocket(socketChannel: AdbChannel): ClientSocket {
+        return ClientSocket(socketChannel)
+      }
     }
-
-    private fun createFailoverServer(
-        serverPort: Int,
-        serverFactory: (AdbSession) -> MyTestTcpServer = { session -> MyTestTcpServer(session) }
-    ): ServerInfo {
-        val session = registerCloseable(FakeAdbSession())
-        val tcpServer = serverFactory(session)
-        val server = registerCloseable(TcpServerConnection.createWithFailoverConnection(
-            session,
-            tcpServer,
-            serverPort,
-            Duration.ofSeconds(1),
-            RetryPolicy.fixedDelay(Duration.ofMillis(100)),
-        ))
-
-        return ServerInfo(session, tcpServer, server)
-    }
-
-
-    private data class ServerInfo(
-        val session: AdbSession,
-        val tcpServer: MyTestTcpServer,
-        val server: TcpServerConnection
-    )
-
-    private open class MyTestTcpServer(session: AdbSession) : TcpServer {
-        val scope = session.scope.createChildScope(isSupervisor = true)
-        var launchedCallCount = AtomicInteger()
-        var closed = AtomicBoolean(false)
-        var processedRequestsCount = AtomicInteger()
-
-        override fun launch(serverSocket: AdbServerSocket): Job {
-            launchedCallCount.incrementAndGet()
-            val exceptionHandler = CoroutineExceptionHandler { _, throwable ->
-                println("Exception in '${this::class.java.simpleName}' server coroutine: $throwable")
-            }
-            return scope.launch(exceptionHandler) {
-                runServer(serverSocket)
-            }
-        }
-
-        open suspend fun runServer(serverSocket: AdbServerSocket) {
-            while (true) {
-                currentCoroutineContext().ensureActive()
-                serverSocket.accept().use { socketChannel ->
-                    runOneServerRequest(socketChannel)
-                }
-            }
-        }
-
-        open suspend fun runOneServerRequest(socketChannel: AdbChannel) {
-            val socket = wrapClientSocket(socketChannel)
-
-            val request = try {
-                socket.readString()
-            } catch (e: java.io.EOFException) {
-                // Sometimes the client establishes a connection but doesn't send any data to the
-                // server, because `tryConnect` times out at the same time. In this case this socket
-                // is immediately closed, and we end up getting EOF when trying to read from it here.
-                println("EOFException in `MyTestTcpServer` server request handling (${e.message})")
-                null
-            }
-            if (request != null) {
-                socket.writeString(request)
-                processedRequestsCount.incrementAndGet()
-            }
-        }
-
-        override fun close() {
-            closed.set(true)
-            scope.cancel("${this::class.java.simpleName} has been closed")
-        }
-
-        class ClientSocket(socketChannel: AdbChannel) : AdbChannel by socketChannel {
-            suspend fun writeHello() {
-                writeString("Hello")
-            }
-
-            suspend fun writeString(value: String) {
-                val buffer = ResizableBuffer()
-                val bytes = value.toByteArray(Charsets.UTF_8)
-                buffer.appendInt(bytes.size)
-                buffer.appendBytes(bytes)
-                writeExactly(buffer.forChannelWrite())
-            }
-
-            suspend fun readString(): String {
-                val buffer = ResizableBuffer()
-
-                buffer.clear()
-                readExactly(buffer.forChannelRead(4))
-                val size = buffer.afterChannelRead().getInt()
-                buffer.clear()
-
-                readExactly(buffer.forChannelRead(size))
-                return Charsets.UTF_8.decode(buffer.afterChannelRead()).toString()
-            }
-        }
-
-        companion object {
-            fun wrapClientSocket(socketChannel: AdbChannel): ClientSocket {
-                return ClientSocket(socketChannel)
-            }
-        }
-    }
+  }
 }

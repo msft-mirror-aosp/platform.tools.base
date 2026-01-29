@@ -28,276 +28,273 @@ import org.junit.rules.ExpectedException
 
 class MutableJdwpPacketTest {
 
-    @JvmField
-    @Rule
-    var exceptionRule: ExpectedException = ExpectedException.none()
+  @JvmField @Rule var exceptionRule: ExpectedException = ExpectedException.none()
 
-    @Test
-    fun testMutableJdwpPacketCommandProperties() {
-        // Prepare
-        val packet = MutableJdwpPacket()
+  @Test
+  fun testMutableJdwpPacketCommandProperties() {
+    // Prepare
+    val packet = MutableJdwpPacket()
 
-        // Act
-        packet.length = 1_000_000
-        packet.id = -10
-        packet.cmdSet = 160
-        packet.cmd = 240
+    // Act
+    packet.length = 1_000_000
+    packet.id = -10
+    packet.cmdSet = 160
+    packet.cmd = 240
 
-        // Assert
-        assertEquals(1_000_000, packet.length)
-        assertEquals(-10, packet.id)
-        assertTrue(packet.isCommand)
-        assertFalse(packet.isReply)
-        assertEquals(160, packet.cmdSet)
-        assertEquals(240, packet.cmd)
-    }
+    // Assert
+    assertEquals(1_000_000, packet.length)
+    assertEquals(-10, packet.id)
+    assertTrue(packet.isCommand)
+    assertFalse(packet.isReply)
+    assertEquals(160, packet.cmdSet)
+    assertEquals(240, packet.cmd)
+  }
 
-    @Test
-    fun testMutableJdwpPacketCommandCanBeModified() {
-        // Prepare
-        val packet = MutableJdwpPacket()
-        packet.length = 1_000_000
-        packet.id = -10
-        packet.isCommand = true
-        packet.cmdSet = 160
-        packet.cmd = 240
+  @Test
+  fun testMutableJdwpPacketCommandCanBeModified() {
+    // Prepare
+    val packet = MutableJdwpPacket()
+    packet.length = 1_000_000
+    packet.id = -10
+    packet.isCommand = true
+    packet.cmdSet = 160
+    packet.cmd = 240
 
-        // Act
-        packet.cmdSet = 1
-        packet.cmd = 1
+    // Act
+    packet.cmdSet = 1
+    packet.cmd = 1
 
-        // Assert
-        assertEquals(1_000_000, packet.length)
-        assertEquals(-10, packet.id)
-        assertTrue(packet.isCommand)
-        assertFalse(packet.isReply)
-        assertEquals(1, packet.cmdSet)
-        assertEquals(1, packet.cmd)
-    }
+    // Assert
+    assertEquals(1_000_000, packet.length)
+    assertEquals(-10, packet.id)
+    assertTrue(packet.isCommand)
+    assertFalse(packet.isReply)
+    assertEquals(1, packet.cmdSet)
+    assertEquals(1, packet.cmd)
+  }
 
-    @Test
-    fun testMutableJdwpPacketReplyProperties() {
-        // Prepare
-        val packet = MutableJdwpPacket()
+  @Test
+  fun testMutableJdwpPacketReplyProperties() {
+    // Prepare
+    val packet = MutableJdwpPacket()
 
-        // Act
-        packet.length = 1_000_000
-        packet.id = -10
-        packet.isReply = true
-        packet.errorCode = 1_000
+    // Act
+    packet.length = 1_000_000
+    packet.id = -10
+    packet.isReply = true
+    packet.errorCode = 1_000
 
-        // Assert
-        assertEquals(1_000_000, packet.length)
-        assertEquals(-10, packet.id)
-        assertFalse(packet.isCommand)
-        assertTrue(packet.isReply)
-        assertEquals(1_000, packet.errorCode)
-    }
+    // Assert
+    assertEquals(1_000_000, packet.length)
+    assertEquals(-10, packet.id)
+    assertFalse(packet.isCommand)
+    assertTrue(packet.isReply)
+    assertEquals(1_000, packet.errorCode)
+  }
 
-    @Test
-    fun testMutableJdwpPacketReplyCanBeModified() {
-        // Prepare
-        val packet = MutableJdwpPacket()
-        packet.length = 1_000_000
-        packet.id = -10
-        packet.isReply = true
-        packet.errorCode = 0x6fff
+  @Test
+  fun testMutableJdwpPacketReplyCanBeModified() {
+    // Prepare
+    val packet = MutableJdwpPacket()
+    packet.length = 1_000_000
+    packet.id = -10
+    packet.isReply = true
+    packet.errorCode = 0x6fff
 
-        // Act
-        packet.errorCode = 1
+    // Act
+    packet.errorCode = 1
 
-        // Assert
-        assertEquals(1_000_000, packet.length)
-        assertEquals(-10, packet.id)
-        assertFalse(packet.isCommand)
-        assertTrue(packet.isReply)
-        assertEquals(1, packet.errorCode)
-    }
+    // Assert
+    assertEquals(1_000_000, packet.length)
+    assertEquals(-10, packet.id)
+    assertFalse(packet.isCommand)
+    assertTrue(packet.isReply)
+    assertEquals(1, packet.errorCode)
+  }
 
-    @Test
-    fun testMutableJdwpPacketThrowsIfInvalidLength() {
-        // Prepare
-        val packet = MutableJdwpPacket()
+  @Test
+  fun testMutableJdwpPacketThrowsIfInvalidLength() {
+    // Prepare
+    val packet = MutableJdwpPacket()
 
-        // Act
-        exceptionRule.expect(IllegalArgumentException::class.java)
-        packet.length = 5
+    // Act
+    exceptionRule.expect(IllegalArgumentException::class.java)
+    packet.length = 5
 
-        // Assert
-        Assert.fail("Should not reach")
-    }
+    // Assert
+    Assert.fail("Should not reach")
+  }
 
-    @Test
-    fun testMutableJdwpPacketThrowsIfInvalidCmdSet() {
-        // Prepare
-        val packet = MutableJdwpPacket()
+  @Test
+  fun testMutableJdwpPacketThrowsIfInvalidCmdSet() {
+    // Prepare
+    val packet = MutableJdwpPacket()
 
-        // Act
-        packet.length = 1_000_000
-        packet.id = -10
+    // Act
+    packet.length = 1_000_000
+    packet.id = -10
 
-        exceptionRule.expect(IllegalArgumentException::class.java)
-        packet.cmdSet = -10
+    exceptionRule.expect(IllegalArgumentException::class.java)
+    packet.cmdSet = -10
 
-        // Assert
-        Assert.fail("Should not reach")
-    }
+    // Assert
+    Assert.fail("Should not reach")
+  }
 
-    @Test
-    fun testMutableJdwpPacketThrowsIfInvalidCmd() {
-        // Prepare
-        val packet = MutableJdwpPacket()
+  @Test
+  fun testMutableJdwpPacketThrowsIfInvalidCmd() {
+    // Prepare
+    val packet = MutableJdwpPacket()
 
-        // Act
-        packet.length = 1_000_000
-        packet.id = -10
+    // Act
+    packet.length = 1_000_000
+    packet.id = -10
 
-        exceptionRule.expect(IllegalArgumentException::class.java)
-        packet.cmd = -10
+    exceptionRule.expect(IllegalArgumentException::class.java)
+    packet.cmd = -10
 
-        // Assert
-        Assert.fail("Should not reach")
-    }
+    // Assert
+    Assert.fail("Should not reach")
+  }
 
-    @Test
-    fun testMutableJdwpPacketThrowsIfInvalidErrorCode() {
-        // Prepare
-        val packet = MutableJdwpPacket()
+  @Test
+  fun testMutableJdwpPacketThrowsIfInvalidErrorCode() {
+    // Prepare
+    val packet = MutableJdwpPacket()
 
-        // Act
-        packet.length = 1_000_000
-        packet.id = -10
-        packet.isReply = true
+    // Act
+    packet.length = 1_000_000
+    packet.id = -10
+    packet.isReply = true
 
-        exceptionRule.expect(IllegalArgumentException::class.java)
-        packet.errorCode = -10
+    exceptionRule.expect(IllegalArgumentException::class.java)
+    packet.errorCode = -10
 
-        // Assert
-        Assert.fail("Should not reach")
-    }
+    // Assert
+    Assert.fail("Should not reach")
+  }
 
-    @Test
-    fun testMutableJdwpPacketThrowsIfInvalidFlags() {
-        // Prepare
-        val packet = MutableJdwpPacket()
+  @Test
+  fun testMutableJdwpPacketThrowsIfInvalidFlags() {
+    // Prepare
+    val packet = MutableJdwpPacket()
 
-        // Act
-        packet.length = 1_000_000
-        packet.id = -10
+    // Act
+    packet.length = 1_000_000
+    packet.id = -10
 
-        exceptionRule.expect(IllegalArgumentException::class.java)
-        packet.flags = -127
+    exceptionRule.expect(IllegalArgumentException::class.java)
+    packet.flags = -127
 
-        // Assert
-        Assert.fail("Should not reach")
-    }
+    // Assert
+    Assert.fail("Should not reach")
+  }
 
-    @Test
-    fun testMutableJdwpPacketCanSetIsReply() {
-        // Prepare
-        val packet = MutableJdwpPacket()
+  @Test
+  fun testMutableJdwpPacketCanSetIsReply() {
+    // Prepare
+    val packet = MutableJdwpPacket()
 
-        // Act
-        packet.isReply = true
+    // Act
+    packet.isReply = true
 
-        // Assert
-        assertEquals(true, packet.isReply)
-        assertEquals(false, packet.isCommand)
-        assertEquals(JdwpPacketConstants.REPLY_PACKET_FLAG, packet.flags)
-    }
+    // Assert
+    assertEquals(true, packet.isReply)
+    assertEquals(false, packet.isCommand)
+    assertEquals(JdwpPacketConstants.REPLY_PACKET_FLAG, packet.flags)
+  }
 
-    @Test
-    fun testMutableJdwpPacketCanSetIsCommand() {
-        // Prepare
-        val packet = MutableJdwpPacket()
+  @Test
+  fun testMutableJdwpPacketCanSetIsCommand() {
+    // Prepare
+    val packet = MutableJdwpPacket()
 
-        // Act
-        packet.isCommand = true
+    // Act
+    packet.isCommand = true
 
-        // Assert
-        assertEquals(false, packet.isReply)
-        assertEquals(true, packet.isCommand)
-        assertEquals(0, packet.flags)
-    }
+    // Assert
+    assertEquals(false, packet.isReply)
+    assertEquals(true, packet.isCommand)
+    assertEquals(0, packet.flags)
+  }
 
-    @Test
-    fun testMutableJdwpPacketThrowsOnErrorCodeIfCommand() {
-        // Prepare
-        val packet = MutableJdwpPacket()
+  @Test
+  fun testMutableJdwpPacketThrowsOnErrorCodeIfCommand() {
+    // Prepare
+    val packet = MutableJdwpPacket()
 
-        // Act
-        packet.isCommand = true
+    // Act
+    packet.isCommand = true
 
-        exceptionRule.expect(IllegalStateException::class.java)
-        @Suppress("UNUSED_VARIABLE")
-        val errorCode = packet.errorCode
+    exceptionRule.expect(IllegalStateException::class.java)
+    @Suppress("UNUSED_VARIABLE") val errorCode = packet.errorCode
 
-        // Assert
-        Assert.fail("Should not reach")
-    }
+    // Assert
+    Assert.fail("Should not reach")
+  }
 
-    @Test
-    fun testMutableJdwpPacketThrowsOnCmdSetIfReply() {
-        // Prepare
-        val packet = MutableJdwpPacket()
+  @Test
+  fun testMutableJdwpPacketThrowsOnCmdSetIfReply() {
+    // Prepare
+    val packet = MutableJdwpPacket()
 
-        // Act
-        packet.isReply = true
+    // Act
+    packet.isReply = true
 
-        exceptionRule.expect(IllegalStateException::class.java)
-        @Suppress("UNUSED_VARIABLE")
-        val cmdSet = packet.cmdSet
+    exceptionRule.expect(IllegalStateException::class.java)
+    @Suppress("UNUSED_VARIABLE") val cmdSet = packet.cmdSet
 
-        // Assert
-        Assert.fail("Should not reach")
-    }
+    // Assert
+    Assert.fail("Should not reach")
+  }
 
-    @Test
-    fun testMutableJdwpPacketThrowsOnCmdIfReply() {
-        // Prepare
-        val packet = MutableJdwpPacket()
+  @Test
+  fun testMutableJdwpPacketThrowsOnCmdIfReply() {
+    // Prepare
+    val packet = MutableJdwpPacket()
 
-        // Act
-        packet.isReply = true
+    // Act
+    packet.isReply = true
 
-        exceptionRule.expect(IllegalStateException::class.java)
-        @Suppress("UNUSED_VARIABLE")
-        val cmd = packet.cmd
+    exceptionRule.expect(IllegalStateException::class.java)
+    @Suppress("UNUSED_VARIABLE") val cmd = packet.cmd
 
-        // Assert
-        Assert.fail("Should not reach")
-    }
+    // Assert
+    Assert.fail("Should not reach")
+  }
 
-    @Test
-    fun testMutableJdwpPacketToStringForCommandPacket() {
-        // Prepare
-        val packet = MutableJdwpPacket()
+  @Test
+  fun testMutableJdwpPacketToStringForCommandPacket() {
+    // Prepare
+    val packet = MutableJdwpPacket()
 
-        // Act
-        packet.length = 11
-        packet.id = 10
-        packet.cmdSet = SET_THREADREF.value
-        packet.cmd = CMD_THREADREF_NAME.value
-        val text = packet.toString()
+    // Act
+    packet.length = 11
+    packet.id = 10
+    packet.cmdSet = SET_THREADREF.value
+    packet.cmd = CMD_THREADREF_NAME.value
+    val text = packet.toString()
 
-        // Assert
-        assertEquals("MutableJdwpPacket(id=0xA, length=11, flags=0x00, isCommand=true, cmdSet=SET_THREADREF[11], cmd=CMD_THREADREF_NAME[1])", text)
-    }
+    // Assert
+    assertEquals(
+      "MutableJdwpPacket(id=0xA, length=11, flags=0x00, isCommand=true, cmdSet=SET_THREADREF[11], cmd=CMD_THREADREF_NAME[1])",
+      text,
+    )
+  }
 
-    @Test
-    fun testMutableJdwpPacketToStringForReplyPacket() {
-        // Prepare
-        val packet = MutableJdwpPacket()
+  @Test
+  fun testMutableJdwpPacketToStringForReplyPacket() {
+    // Prepare
+    val packet = MutableJdwpPacket()
 
-        // Act
-        packet.length = 11
-        packet.id = 10
-        packet.isReply = true
-        packet.errorCode = 67
-        val text = packet.toString()
+    // Act
+    packet.length = 11
+    packet.id = 10
+    packet.isReply = true
+    packet.errorCode = 67
+    val text = packet.toString()
 
-        // Assert
-        assertEquals("MutableJdwpPacket(id=0xA, length=11, flags=0x80, isReply=true, errorCode=DELETE_METHOD_NOT_IMPLEMENTED[67])", text)
-    }
-
+    // Assert
+    assertEquals("MutableJdwpPacket(id=0xA, length=11, flags=0x80, isReply=true, errorCode=DELETE_METHOD_NOT_IMPLEMENTED[67])", text)
+  }
 }

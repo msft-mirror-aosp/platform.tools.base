@@ -20,26 +20,19 @@ import org.junit.Test
 
 class JdwpErrorCodeTest {
 
-    @Test
-    fun testErrorNameWorks() {
-        assertEquals("INVALID_THREAD", JdwpErrorCode.errorName(10))
-        assertEquals("2000", JdwpErrorCode.errorName(2000))
-        // We check each entry to make sure the internal binary search works and that entries
-        // are sorted by error code.
-        JdwpErrorCode.values().forEach {
-            assertEquals(it.name, JdwpErrorCode.errorName(it.errorCode))
-        }
-    }
+  @Test
+  fun testErrorNameWorks() {
+    assertEquals("INVALID_THREAD", JdwpErrorCode.errorName(10))
+    assertEquals("2000", JdwpErrorCode.errorName(2000))
+    // We check each entry to make sure the internal binary search works and that entries
+    // are sorted by error code.
+    JdwpErrorCode.values().forEach { assertEquals(it.name, JdwpErrorCode.errorName(it.errorCode)) }
+  }
 
-    @Test
-    fun testErrorMessageWorks() {
-        assertEquals(
-            "Passed thread is null, is not a valid thread or has exited.",
-            JdwpErrorCode.errorMessage(10)
-        )
-        assertEquals("[n/a]", JdwpErrorCode.errorMessage(2_000))
-        JdwpErrorCode.values().forEach {
-            assertEquals(it.errorMessage, JdwpErrorCode.errorMessage(it.errorCode))
-        }
-    }
+  @Test
+  fun testErrorMessageWorks() {
+    assertEquals("Passed thread is null, is not a valid thread or has exited.", JdwpErrorCode.errorMessage(10))
+    assertEquals("[n/a]", JdwpErrorCode.errorMessage(2_000))
+    JdwpErrorCode.values().forEach { assertEquals(it.errorMessage, JdwpErrorCode.errorMessage(it.errorCode)) }
+  }
 }

@@ -26,111 +26,94 @@ import kotlinx.coroutines.flow.StateFlow
 /**
  * Maintains a JDWP socket proxy for the given [process] on a given device.
  *
- * The proxy creates a [server socket][AdbChannelFactory.createServerSocket] on
- * `localhost` (see [JdwpProxySocketServerStatus.socketAddress]), then it accepts JDWP
- * connections from external Java debuggers (e.g. IntelliJ or Android Studio) on that server
- * socket.
+ * The proxy creates a [server socket][AdbChannelFactory.createServerSocket] on `localhost` (see
+ * [JdwpProxySocketServerStatus.socketAddress]), then it accepts JDWP connections from external Java debuggers (e.g. IntelliJ or Android
+ * Studio) on that server socket.
  *
- * Each time a new socket connection is opened by an external debugger, the proxy opens
- * a JDWP session to the process on the device (see [JdwpProcess.withJdwpSession]) and forwards
- * (both ways) JDWP protocol packets between the external debugger and the process on
- * the device.
+ * Each time a new socket connection is opened by an external debugger, the proxy opens a JDWP session to the process on the device (see
+ * [JdwpProcess.withJdwpSession]) and forwards (both ways) JDWP protocol packets between the external debugger and the process on the
+ * device.
  *
- * The proxy is active as soon as [proxyStatusFlow] is collected, and until [JdwpProcess.scope]
- * is cancelled.
+ * The proxy is active as soon as [proxyStatusFlow] is collected, and until [JdwpProcess.scope] is cancelled.
  */
 interface JdwpProxySocketServer {
 
-    /**
-     * The JDWP process this proxy applies to
-     */
-    val process: JdwpProcess
+  /** The JDWP process this proxy applies to */
+  val process: JdwpProcess
 
-    /**
-     * The [StateFlow] of [JdwpProxySocketServerStatus], corresponding to the state of the JDWP proxy
-     * and socket between an external debugger and the Android Process.
-     *
-     * @see JdwpProxySocketServerStatus
-     */
-    val proxyStatusFlow: StateFlow<JdwpProxySocketServerStatus>
+  /**
+   * The [StateFlow] of [JdwpProxySocketServerStatus], corresponding to the state of the JDWP proxy and socket between an external debugger
+   * and the Android Process.
+   *
+   * @see JdwpProxySocketServerStatus
+   */
+  val proxyStatusFlow: StateFlow<JdwpProxySocketServerStatus>
 }
 
-/**
- * The current value of [JdwpProxySocketServer.proxyStatusFlow]
- */
+/** The current value of [JdwpProxySocketServer.proxyStatusFlow] */
 val JdwpProxySocketServer.proxyStatus: JdwpProxySocketServerStatus
-    get() = proxyStatusFlow.value
+  get() = proxyStatusFlow.value
 
 /**
- * Status of JDWP Session proxy external Java debuggers can use to connect to a
- * [JdwpProcess].
+ * Status of JDWP Session proxy external Java debuggers can use to connect to a [JdwpProcess].
  *
  * @see JdwpProcess.jdwpProxySocketServer
  */
 data class JdwpProxySocketServerStatus(
-    /**
-     * The process ID
-     */
-    val pid: Int,
+  /** The process ID */
+  val pid: Int,
 
-    /**
-     * The [InetSocketAddress] (typically on `localhost`) a Java debugger can use to open a
-     * JDWP debugging session with the Android process.
-     *
-     * A value of [OptionalValue.empty] indicates the debugger proxy connection is not ready yet
-     *
-     * A value of [OptionalValue.isError] indicates an error related to the socket connection or
-     * the proxy server itself.
-     *
-     * @see JdwpProxySocketServer
-     */
-    val socketAddress: OptionalValue<InetSocketAddress> = OptionalValue.empty(),
+  /**
+   * The [InetSocketAddress] (typically on `localhost`) a Java debugger can use to open a JDWP debugging session with the Android process.
+   *
+   * A value of [OptionalValue.empty] indicates the debugger proxy connection is not ready yet
+   *
+   * A value of [OptionalValue.isError] indicates an error related to the socket connection or the proxy server itself.
+   *
+   * @see JdwpProxySocketServer
+   */
+  val socketAddress: OptionalValue<InetSocketAddress> = OptionalValue.empty(),
 
-    /**
-     * `true` if there is an active JDWP debugging session on [socketAddress].
-     *
-     * @see JdwpProxySocketServer
-     */
-    val isExternalDebuggerAttached: Boolean = false,
+  /**
+   * `true` if there is an active JDWP debugging session on [socketAddress].
+   *
+   * @see JdwpProxySocketServer
+   */
+  val isExternalDebuggerAttached: Boolean = false,
 )
 
-private val jdwpProxySocketServerKey =
-    CoroutineScopeCache.Key<JdwpProxySocketServer>("${JdwpProxySocketServer::class.simpleName}")
+private val jdwpProxySocketServerKey = CoroutineScopeCache.Key<JdwpProxySocketServer>("${JdwpProxySocketServer::class.simpleName}")
 
-/**
- * Returns the [JdwpProxySocketServer] for this [JdwpProcess]
- */
+/** Returns the [JdwpProxySocketServer] for this [JdwpProcess] */
 val JdwpProcess.jdwpProxySocketServer: JdwpProxySocketServer
-    get() {
-        return this.cache.getOrPut(jdwpProxySocketServerKey) {
-            // Return the default implementation unless the process provides
-            // a custom one. In the case of JdwpProcessDelegate, for example,
-            // we want to re-use the same proxy as the delegate process, to avoid
-            // creating additional (and redundant) socket servers.
-            if (this is AbstractJdwpProcessDelegateProvider) {
-                JdwpProxySocketServerDelegate(this, this)
-            } else {
-                JdwpProxySocketServerImpl(this)
-            }
-        }
+  get() {
+    return this.cache.getOrPut(jdwpProxySocketServerKey) {
+      // Return the default implementation unless the process provides
+      // a custom one. In the case of JdwpProcessDelegate, for example,
+      // we want to re-use the same proxy as the delegate process, to avoid
+      // creating additional (and redundant) socket servers.
+      if (this is AbstractJdwpProcessDelegateProvider) {
+        JdwpProxySocketServerDelegate(this, this)
+      } else {
+        JdwpProxySocketServerImpl(this)
+      }
     }
+  }
 
-/**
- * Delegates [JdwpProxySocketServer] methods while exposing a custom [process] property passed
- * as constructor parameter.
- */
+/** Delegates [JdwpProxySocketServer] methods while exposing a custom [process] property passed as constructor parameter. */
 private class JdwpProxySocketServerDelegate(
-    override val process: JdwpProcess,
-    private val processProvider: AbstractJdwpProcessDelegateProvider
+  override val process: JdwpProcess,
+  private val processProvider: AbstractJdwpProcessDelegateProvider,
 ) : JdwpProxySocketServer {
 
-    private val proxyStatusMutableStateFlowForwarder = StateFlowForwarder(
-        session = process.device.session,
-        parentScope = process.scope,
-        sourceStateFlowProvider = { processProvider.abstractJdwpProcess().jdwpProxySocketServer.proxyStatusFlow },
-        defaultValue = JdwpProxySocketServerStatus(process.pid)
+  private val proxyStatusMutableStateFlowForwarder =
+    StateFlowForwarder(
+      session = process.device.session,
+      parentScope = process.scope,
+      sourceStateFlowProvider = { processProvider.abstractJdwpProcess().jdwpProxySocketServer.proxyStatusFlow },
+      defaultValue = JdwpProxySocketServerStatus(process.pid),
     )
 
-    override val proxyStatusFlow: StateFlow<JdwpProxySocketServerStatus>
-        get() = proxyStatusMutableStateFlowForwarder.stateFlow
+  override val proxyStatusFlow: StateFlow<JdwpProxySocketServerStatus>
+    get() = proxyStatusMutableStateFlowForwarder.stateFlow
 }

@@ -32,87 +32,86 @@ import org.junit.Test
 
 class JdwpProcessAllocationTrackerTest : AdbLibToolsTestBase() {
 
-    @Test
-    fun getEnabledStatus_returnsResult() =
-        CoroutineTestUtils.runBlockingWithTimeout {
-            val processAllocationTracker = createJdwpProcessAllocationTracker(fakeAdb)
-            fakeAdb.device("1234").getClient(10)?.isAllocationTrackerEnabled = true
+  @Test
+  fun getEnabledStatus_returnsResult() =
+    CoroutineTestUtils.runBlockingWithTimeout {
+      val processAllocationTracker = createJdwpProcessAllocationTracker(fakeAdb)
+      fakeAdb.device("1234").getClient(10)?.isAllocationTrackerEnabled = true
 
-            // Act
-            val jdwpCommandProgress = FakeJdwpCommandProgress()
-            val result = processAllocationTracker.isEnabled(jdwpCommandProgress)
+      // Act
+      val jdwpCommandProgress = FakeJdwpCommandProgress()
+      val result = processAllocationTracker.isEnabled(jdwpCommandProgress)
 
-            // Assert
-            assertEquals(true, result)
-            assertTrue(jdwpCommandProgress.beforeSendIsCalled)
-            assertTrue(jdwpCommandProgress.afterSendIsCalled)
-            assertTrue(jdwpCommandProgress.onReplyIsCalled)
-        }
-
-    @Test
-    fun setEnabledWorks() =
-        CoroutineTestUtils.runBlockingWithTimeout {
-            val processAllocationTracker = createJdwpProcessAllocationTracker(fakeAdb)
-
-            // Act
-            val jdwpCommandProgress = FakeJdwpCommandProgress()
-            processAllocationTracker.enable(true, jdwpCommandProgress)
-
-            // Assert
-            assertEquals(true, fakeAdb.device("1234").getClient(10)?.isAllocationTrackerEnabled)
-            assertTrue(jdwpCommandProgress.beforeSendIsCalled)
-            assertTrue(jdwpCommandProgress.afterSendIsCalled)
-            assertTrue(jdwpCommandProgress.onReplyTimeoutIsCalled) // Empty reply and API > 27
-        }
-
-    @Test
-    fun fetchAllocationDetailsReturnsResult() =
-        CoroutineTestUtils.runBlockingWithTimeout {
-            val processAllocationTracker = createJdwpProcessAllocationTracker(fakeAdb)
-            val allocationDetails = "some data"
-            fakeAdb.device("1234").getClient(10)?.allocationTrackerDetails = allocationDetails
-
-            // Act
-            val jdwpCommandProgress = FakeJdwpCommandProgress()
-            val allocationDetailsResponse =
-                processAllocationTracker.fetchAllocationDetails(jdwpCommandProgress) { data, length ->
-                    val dataBuffer =
-                        data.toByteBuffer(length).order(DdmsPacketConstants.DDMS_CHUNK_BYTE_ORDER)
-                    val resultLength = dataBuffer.int
-                    val result = CharArray(resultLength)
-                    for (i in 0 until resultLength) {
-                        result[i] = dataBuffer.char
-                    }
-                    String(result)
-                }
-
-            // Assert
-            assertEquals(allocationDetails, allocationDetailsResponse)
-            assertTrue(jdwpCommandProgress.beforeSendIsCalled)
-            assertTrue(jdwpCommandProgress.afterSendIsCalled)
-            assertTrue(jdwpCommandProgress.onReplyIsCalled)
-        }
-
-    private suspend fun createJdwpProcessAllocationTracker(fakeAdb: FakeAdbServerProvider): JdwpProcessAllocationTracker {
-        val deviceID = "1234"
-        val fakeDevice =
-            fakeAdb.connectDevice(
-                deviceID,
-                "test1",
-                "test2",
-                "model",
-                AndroidApiLevel(30), // SDK >= 30 is required for abb_exec feature.
-                DeviceState.HostConnectionType.USB
-            )
-        fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
-        val connectedDevice = session.waitForOnlineConnectedDevice(fakeDevice.deviceId)
-        fakeDevice.startClient(10, 0, "a.b.c", false)
-        val process = connectedDevice.jdwpProcessManager.getProcess(10)
-        // Note: We don't currently need to collect process properties for the profiler API to work
-        return JdwpProcessAllocationTrackerImpl(process)
+      // Assert
+      assertEquals(true, result)
+      assertTrue(jdwpCommandProgress.beforeSendIsCalled)
+      assertTrue(jdwpCommandProgress.afterSendIsCalled)
+      assertTrue(jdwpCommandProgress.onReplyIsCalled)
     }
 
-    private fun JdwpProcessManager.getProcess(pid: Int): JdwpProcess {
-        return this.addProcesses(setOf(pid))[pid]!!
+  @Test
+  fun setEnabledWorks() =
+    CoroutineTestUtils.runBlockingWithTimeout {
+      val processAllocationTracker = createJdwpProcessAllocationTracker(fakeAdb)
+
+      // Act
+      val jdwpCommandProgress = FakeJdwpCommandProgress()
+      processAllocationTracker.enable(true, jdwpCommandProgress)
+
+      // Assert
+      assertEquals(true, fakeAdb.device("1234").getClient(10)?.isAllocationTrackerEnabled)
+      assertTrue(jdwpCommandProgress.beforeSendIsCalled)
+      assertTrue(jdwpCommandProgress.afterSendIsCalled)
+      assertTrue(jdwpCommandProgress.onReplyTimeoutIsCalled) // Empty reply and API > 27
     }
+
+  @Test
+  fun fetchAllocationDetailsReturnsResult() =
+    CoroutineTestUtils.runBlockingWithTimeout {
+      val processAllocationTracker = createJdwpProcessAllocationTracker(fakeAdb)
+      val allocationDetails = "some data"
+      fakeAdb.device("1234").getClient(10)?.allocationTrackerDetails = allocationDetails
+
+      // Act
+      val jdwpCommandProgress = FakeJdwpCommandProgress()
+      val allocationDetailsResponse =
+        processAllocationTracker.fetchAllocationDetails(jdwpCommandProgress) { data, length ->
+          val dataBuffer = data.toByteBuffer(length).order(DdmsPacketConstants.DDMS_CHUNK_BYTE_ORDER)
+          val resultLength = dataBuffer.int
+          val result = CharArray(resultLength)
+          for (i in 0 until resultLength) {
+            result[i] = dataBuffer.char
+          }
+          String(result)
+        }
+
+      // Assert
+      assertEquals(allocationDetails, allocationDetailsResponse)
+      assertTrue(jdwpCommandProgress.beforeSendIsCalled)
+      assertTrue(jdwpCommandProgress.afterSendIsCalled)
+      assertTrue(jdwpCommandProgress.onReplyIsCalled)
+    }
+
+  private suspend fun createJdwpProcessAllocationTracker(fakeAdb: FakeAdbServerProvider): JdwpProcessAllocationTracker {
+    val deviceID = "1234"
+    val fakeDevice =
+      fakeAdb.connectDevice(
+        deviceID,
+        "test1",
+        "test2",
+        "model",
+        AndroidApiLevel(30), // SDK >= 30 is required for abb_exec feature.
+        DeviceState.HostConnectionType.USB,
+      )
+    fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
+    val connectedDevice = session.waitForOnlineConnectedDevice(fakeDevice.deviceId)
+    fakeDevice.startClient(10, 0, "a.b.c", false)
+    val process = connectedDevice.jdwpProcessManager.getProcess(10)
+    // Note: We don't currently need to collect process properties for the profiler API to work
+    return JdwpProcessAllocationTrackerImpl(process)
+  }
+
+  private fun JdwpProcessManager.getProcess(pid: Int): JdwpProcess {
+    return this.addProcesses(setOf(pid))[pid]!!
+  }
 }

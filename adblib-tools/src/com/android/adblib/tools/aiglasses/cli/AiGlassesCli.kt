@@ -23,10 +23,7 @@ import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeoutOrNull
 
-/**
- * A simple tool for pairing AI glasses to a phone; also a lightweight way of testing the
- * functionality of [AiGlassesPairing].
- */
+/** A simple tool for pairing AI glasses to a phone; also a lightweight way of testing the functionality of [AiGlassesPairing]. */
 object AiGlassesCli {
   @Throws(Exception::class)
   @JvmStatic
@@ -76,8 +73,6 @@ object AiGlassesCli {
           return
         }
 
-    phone.pairToGlasses(glassesBluetoothAddress, true).collect { pairingState ->
-      println("Pairing state: $pairingState")
-    }
+    phone.pairToGlasses(glassesBluetoothAddress, true).collect { pairingState -> println("Pairing state: $pairingState") }
   }
 }

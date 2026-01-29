@@ -22,38 +22,35 @@ import com.android.adblib.tools.UninstallResult
 import com.android.adblib.tools.uninstall
 import kotlinx.coroutines.runBlocking
 
-internal class Uninstall : DeviceCommand("uninstall")  {
+internal class Uninstall : DeviceCommand("uninstall") {
 
-    private fun printUsage() {
-        println("Usage: uninstall ['FLAGS'] APPLICATION_ID")
+  private fun printUsage() {
+    println("Usage: uninstall ['FLAGS'] APPLICATION_ID")
+  }
+
+  override fun run(session: AdbSession, device: DeviceSelector, args: Arguments): Boolean {
+    val logger = adbLogger(session.host)
+    val options: Array<String>
+    val applicationID: String
+    when (args.size()) {
+      0 -> {
+        printUsage()
+        return false
+      }
+      else -> {
+        options = args.consumeAll()
+        applicationID = options.last()
+        options.dropLast(1)
+      }
     }
 
-    override fun run(session : AdbSession, device : DeviceSelector, args : Arguments) : Boolean {
-        val logger = adbLogger(session.host)
-        val options : Array<String>
-        val applicationID : String
-        when (args.size()) {
-            0 -> {
-                printUsage()
-                return false
-            }
-            else -> {
-                options = args.consumeAll()
-                applicationID = options.last()
-                options.dropLast(1)
-            }
-        }
-
-        // TODO: Refactor the way DeviceServices.uninstall works. It should throw an exception to be
-        //       consistent with DeviceServices.install.
-        var result : UninstallResult
-        runBlocking {
-            result = session.deviceServices.uninstall(device = device, applicationID, options.asList())
-        }
-        if (result.status != UninstallResult.Status.SUCCESS) {
-            logger.warn(result.output)
-        }
-        return result.status == UninstallResult.Status.SUCCESS
+    // TODO: Refactor the way DeviceServices.uninstall works. It should throw an exception to be
+    //       consistent with DeviceServices.install.
+    var result: UninstallResult
+    runBlocking { result = session.deviceServices.uninstall(device = device, applicationID, options.asList()) }
+    if (result.status != UninstallResult.Status.SUCCESS) {
+      logger.warn(result.output)
     }
-
+    return result.status == UninstallResult.Status.SUCCESS
+  }
 }

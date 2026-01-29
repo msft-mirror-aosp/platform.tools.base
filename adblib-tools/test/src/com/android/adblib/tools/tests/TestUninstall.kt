@@ -26,49 +26,42 @@ import org.junit.Test
 
 class TestUninstall : TestInstallBase() {
 
-    @Test
-    fun testUninstallSuccess() {
-        val fakeDevice = addFakeDevice(fakeAdb, 30)
-        val deviceSelector = DeviceSelector.fromSerialNumber(fakeDevice.deviceId)
+  @Test
+  fun testUninstallSuccess() {
+    val fakeDevice = addFakeDevice(fakeAdb, 30)
+    val deviceSelector = DeviceSelector.fromSerialNumber(fakeDevice.deviceId)
 
-        var r : UninstallResult
-        runBlocking {
-           r = deviceServices.uninstall(deviceSelector, applicationID = "com.foo.bar" )
-        }
+    var r: UninstallResult
+    runBlocking { r = deviceServices.uninstall(deviceSelector, applicationID = "com.foo.bar") }
 
-        Assert.assertEquals("Success", r.output)
-    }
+    Assert.assertEquals("Success", r.output)
+  }
 
-    @Test
-    fun testUninstallFailure() {
-        val fakeDevice = addFakeDevice(fakeAdb, 30)
-        val deviceSelector = DeviceSelector.fromSerialNumber(fakeDevice.deviceId)
+  @Test
+  fun testUninstallFailure() {
+    val fakeDevice = addFakeDevice(fakeAdb, 30)
+    val deviceSelector = DeviceSelector.fromSerialNumber(fakeDevice.deviceId)
 
-        var r : UninstallResult
-        runBlocking {
-            r = deviceServices.uninstall(deviceSelector, applicationID = ShellConstants.NON_INSTALLED_APP_ID)
-        }
+    var r: UninstallResult
+    runBlocking { r = deviceServices.uninstall(deviceSelector, applicationID = ShellConstants.NON_INSTALLED_APP_ID) }
 
-        Assert.assertEquals(UninstallResult.Status.FAILURE, r.status)
-    }
+    Assert.assertEquals(UninstallResult.Status.FAILURE, r.status)
+  }
 
-    @Test
-    fun testUninstallOptions() {
-        val fakeDevice = addFakeDevice(fakeAdb, 30)
-        val deviceSelector = DeviceSelector.fromSerialNumber(fakeDevice.deviceId)
-        val options = listOf("-myOptions", "-r", "-t")
-        val applicationID = "foo.bar"
+  @Test
+  fun testUninstallOptions() {
+    val fakeDevice = addFakeDevice(fakeAdb, 30)
+    val deviceSelector = DeviceSelector.fromSerialNumber(fakeDevice.deviceId)
+    val options = listOf("-myOptions", "-r", "-t")
+    val applicationID = "foo.bar"
 
-        runBlocking {
-            deviceServices.uninstall(deviceSelector, applicationID, options)
-        }
+    runBlocking { deviceServices.uninstall(deviceSelector, applicationID, options) }
 
-        // This should be the uninstall command
-        val cmd = fakeDevice.serviceManager.getLogs().first()
-        var expected = mutableListOf<String>("package", "uninstall")
-        expected.addAll(options)
-        expected.add(applicationID)
-        Assert.assertArrayEquals("Unexpected command '$cmd'", cmd.toTypedArray(), expected.toTypedArray())
-    }
-
+    // This should be the uninstall command
+    val cmd = fakeDevice.serviceManager.getLogs().first()
+    var expected = mutableListOf<String>("package", "uninstall")
+    expected.addAll(options)
+    expected.add(applicationID)
+    Assert.assertArrayEquals("Unexpected command '$cmd'", cmd.toTypedArray(), expected.toTypedArray())
+  }
 }

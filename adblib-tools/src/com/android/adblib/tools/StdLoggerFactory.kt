@@ -20,16 +20,16 @@ import com.android.adblib.AdbLoggerFactory
 
 internal class StdLoggerFactory : AdbLoggerFactory {
 
-    private val log = StdLogger()
+  private val log = StdLogger()
 
-    override val logger: AdbLogger
-        get() = log
+  override val logger: AdbLogger
+    get() = log
 
-    override fun createLogger(cls: Class<*>): AdbLogger {
-        return log
-    }
+  override fun createLogger(cls: Class<*>): AdbLogger {
+    return log
+  }
 
-    override fun createLogger(category: String): AdbLogger {
-        return log
-    }
+  override fun createLogger(category: String): AdbLogger {
+    return log
+  }
 }

@@ -18,18 +18,15 @@ package com.android.adblib.tools.debugging.impl
 import com.android.adblib.tools.debugging.AtomicStateFlow
 import com.android.adblib.tools.debugging.JdwpProcessProperties
 
-/**
- * A component that asynchronously updates an [AtomicStateFlow] of [JdwpProcessProperties]
- */
+/** A component that asynchronously updates an [AtomicStateFlow] of [JdwpProcessProperties] */
 internal interface JdwpProcessPropertiesFlowUpdater {
 
-    /**
-     * Updates [stateFlow] with incremental changes to [JdwpProcessProperties]
-     * of a given JDWP [process][JdwpProcessProperties.pid] for as long as the process
-     * is active.
-     *
-     * The caller is responsible for cancelling this coroutine function when no
-     * more updates are needed, typically when the JDWP process is terminated.
-     */
-    suspend fun collectUpdates(stateFlow: AtomicStateFlow<JdwpProcessProperties>)
+  /**
+   * Updates [stateFlow] with incremental changes to [JdwpProcessProperties] of a given JDWP [process][JdwpProcessProperties.pid] for as
+   * long as the process is active.
+   *
+   * The caller is responsible for cancelling this coroutine function when no more updates are needed, typically when the JDWP process is
+   * terminated.
+   */
+  suspend fun collectUpdates(stateFlow: AtomicStateFlow<JdwpProcessProperties>)
 }

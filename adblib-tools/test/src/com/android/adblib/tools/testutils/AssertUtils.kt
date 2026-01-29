@@ -18,37 +18,33 @@ package com.android.adblib.tools.testutils
 import org.junit.Assert
 
 /**
- * Similar to [Assert.assertThrows] but allows for asserting over a `suspend` function call
- * (i.e. coroutine) as well as asserting the exception type ([expectedException]) and optionally
- * calling [additionalAssertions] with the actual exception thrown.
+ * Similar to [Assert.assertThrows] but allows for asserting over a `suspend` function call (i.e. coroutine) as well as asserting the
+ * exception type ([expectedException]) and optionally calling [additionalAssertions] with the actual exception thrown.
  */
 internal suspend fun <T : Throwable> assertSuspendingThrows(
-    expectedException: Class<T>,
-    additionalAssertions: (T) -> Unit = {},
-    block: suspend () -> Unit
+  expectedException: Class<T>,
+  additionalAssertions: (T) -> Unit = {},
+  block: suspend () -> Unit,
 ) {
-    fun <T: Throwable> Class<T>.reportedName(): String {
-        return canonicalName ?: name
+  fun <T : Throwable> Class<T>.reportedName(): String {
+    return canonicalName ?: name
+  }
+
+  runCatching { block() }
+    .onSuccess {
+      // Success is an error in this case
+      Assert.fail("expected ${expectedException.reportedName()} to be thrown, but nothing was thrown")
     }
+    .onFailure { actualThrown ->
+      // Check exception class
+      if (!expectedException.isInstance(actualThrown)) {
+        val mismatchMessage =
+          "expected ${expectedException.reportedName()} to be thrown, but ${actualThrown::class.java.reportedName()} was thrown instead"
+        val error = AssertionError(mismatchMessage).also { it.initCause(actualThrown) }
+        throw error
+      }
 
-    runCatching {
-        block()
-    }.onSuccess {
-        // Success is an error in this case
-        Assert.fail("expected ${expectedException.reportedName()} to be thrown, but nothing was thrown")
-    }.onFailure { actualThrown ->
-        // Check exception class
-        if (!expectedException.isInstance(actualThrown)) {
-            val mismatchMessage =
-                "expected ${expectedException.reportedName()} to be thrown, but ${actualThrown::class.java.reportedName()} was thrown instead"
-            val error = AssertionError(mismatchMessage).also {
-                it.initCause(actualThrown)
-            }
-            throw error
-        }
-
-        // Evaluate additional assertions
-        @Suppress("UNCHECKED_CAST")
-        additionalAssertions(actualThrown as T)
+      // Evaluate additional assertions
+      @Suppress("UNCHECKED_CAST") additionalAssertions(actualThrown as T)
     }
 }

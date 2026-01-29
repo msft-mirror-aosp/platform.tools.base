@@ -30,86 +30,73 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 
-/**
- * Implementation of [AppProcess]
- */
+/** Implementation of [AppProcess] */
 internal class AppProcessImpl(
-    override val device: ConnectedDevice,
-    appProcessEntry: AppProcessEntry,
-    override val jdwpProcess: JdwpProcess?,
+  override val device: ConnectedDevice,
+  appProcessEntry: AppProcessEntry,
+  override val jdwpProcess: JdwpProcess?,
 ) : AppProcess, AutoCloseable {
 
-    private val processDescription = "${device.session} - $device - pid=${appProcessEntry.pid}"
+  private val processDescription = "${device.session} - $device - pid=${appProcessEntry.pid}"
 
-    private val logger = adbLogger(device.session).withPrefix("$processDescription -")
+  private val logger = adbLogger(device.session).withPrefix("$processDescription -")
 
-    override val cache = CoroutineScopeCache.create(device.scope, processDescription)
+  override val cache = CoroutineScopeCache.create(device.scope, processDescription)
 
-    private val optionalValueFactory: OptionalValueFactory
-        get() = device.optionalValueFactory
+  private val optionalValueFactory: OptionalValueFactory
+    get() = device.optionalValueFactory
 
-    private val stateFlow = MutableStateFlow(appProcessEntry.toAppProcessProperties())
+  private val stateFlow = MutableStateFlow(appProcessEntry.toAppProcessProperties())
 
-    override val propertiesFlow: StateFlow<AppProcessProperties> = stateFlow.asStateFlow()
+  override val propertiesFlow: StateFlow<AppProcessProperties> = stateFlow.asStateFlow()
 
-    override val pid: Int = stateFlow.value.pid
+  override val pid: Int = stateFlow.value.pid
 
-    /**
-     * Called when a newer version of the [AppProcessEntry] for this process has been
-     * collected. This method updates the internal [propertiesFlow] with the new value.
-     */
-    internal fun onAppProcessEntryUpdated(newEntry: AppProcessEntry) {
-        assert(newEntry.pid == pid)
+  /**
+   * Called when a newer version of the [AppProcessEntry] for this process has been collected. This method updates the internal
+   * [propertiesFlow] with the new value.
+   */
+  internal fun onAppProcessEntryUpdated(newEntry: AppProcessEntry) {
+    assert(newEntry.pid == pid)
 
-        stateFlow.update {
-            it.mergeWith(newEntry)
-        }
-    }
+    stateFlow.update { it.mergeWith(newEntry) }
+  }
 
-    override fun close() {
-        logger.debug { "close()" }
-        cache.close()
-    }
+  override fun close() {
+    logger.debug { "close()" }
+    cache.close()
+  }
 
-    override fun toString(): String {
-        return "AppProcess(device=$device, pid=$pid, jdwpProcess=$jdwpProcess, " +
-                "properties=${stateFlow.value})"
-    }
+  override fun toString(): String {
+    return "AppProcess(device=$device, pid=$pid, jdwpProcess=$jdwpProcess, " + "properties=${stateFlow.value})"
+  }
 
-    private fun AppProcessEntry.toAppProcessProperties(): AppProcessProperties {
-        return AppProcessProperties(this.pid).mergeWith(this)
-    }
+  private fun AppProcessEntry.toAppProcessProperties(): AppProcessProperties {
+    return AppProcessProperties(this.pid).mergeWith(this)
+  }
 
-    private fun AppProcessProperties.mergeWith(newEntry: AppProcessEntry): AppProcessProperties {
-        val current = this
-        assert(current.pid == newEntry.pid)
-        return current.copy(
-            debuggable = optionalValueFactory.of(newEntry.debuggable).orElse(current.debuggable),
-            profileable = optionalValueFactory.of(newEntry.profileable).orElse(current.profileable),
-            processName = optionalValueFactory.optionalOrErrorIfNull(newEntry.processName) { processName ->
-                optionalValueFactory.ofFilteredFakeName(
-                    processName
-                )
-            }.orElse(current.processName),
-            packageNames = optionalValueFactory.optionalOrErrorIfNull(newEntry.packageNames) { packageNames ->
-                optionalValueFactory.ofFilteredFakeNames(
-                    packageNames
-                )
-            }.orElse(current.packageNames),
-            instructionSet = optionalValueFactory.ofInstructionSet(newEntry.instructionSet)
-                .orElse(current.instructionSet),
-            userId = optionalValueFactory.optionalOrErrorIfNull(newEntry.userId) { userId ->
-                optionalValueFactory.of(
-                    userId
-                )
-            }.orElse(current.userId),
-            waitingForDebugger = optionalValueFactory.optionalOrErrorIfNull(newEntry.waitingForDebugger) { waitingForDebugger ->
-                optionalValueFactory.of(
-                    waitingForDebugger
-                )
-            }.orElse(current.waitingForDebugger),
-            uid = optionalValueFactory.optionalOrErrorIfNull(newEntry.uid) { uid -> optionalValueFactory.of(uid) }
-                .orElse(current.uid),
-        )
-    }
+  private fun AppProcessProperties.mergeWith(newEntry: AppProcessEntry): AppProcessProperties {
+    val current = this
+    assert(current.pid == newEntry.pid)
+    return current.copy(
+      debuggable = optionalValueFactory.of(newEntry.debuggable).orElse(current.debuggable),
+      profileable = optionalValueFactory.of(newEntry.profileable).orElse(current.profileable),
+      processName =
+        optionalValueFactory
+          .optionalOrErrorIfNull(newEntry.processName) { processName -> optionalValueFactory.ofFilteredFakeName(processName) }
+          .orElse(current.processName),
+      packageNames =
+        optionalValueFactory
+          .optionalOrErrorIfNull(newEntry.packageNames) { packageNames -> optionalValueFactory.ofFilteredFakeNames(packageNames) }
+          .orElse(current.packageNames),
+      instructionSet = optionalValueFactory.ofInstructionSet(newEntry.instructionSet).orElse(current.instructionSet),
+      userId =
+        optionalValueFactory.optionalOrErrorIfNull(newEntry.userId) { userId -> optionalValueFactory.of(userId) }.orElse(current.userId),
+      waitingForDebugger =
+        optionalValueFactory
+          .optionalOrErrorIfNull(newEntry.waitingForDebugger) { waitingForDebugger -> optionalValueFactory.of(waitingForDebugger) }
+          .orElse(current.waitingForDebugger),
+      uid = optionalValueFactory.optionalOrErrorIfNull(newEntry.uid) { uid -> optionalValueFactory.of(uid) }.orElse(current.uid),
+    )
+  }
 }

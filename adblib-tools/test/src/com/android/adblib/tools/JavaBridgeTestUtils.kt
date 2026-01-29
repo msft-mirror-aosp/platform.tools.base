@@ -15,17 +15,15 @@
  */
 package com.android.adblib.tools
 
-/**
- * Various Kotlin functions to help writing tests in "JavaBridgeTest" (which is a Java file)
- */
+/** Various Kotlin functions to help writing tests in "JavaBridgeTest" (which is a Java file) */
 object JavaBridgeTestUtils {
-    @Suppress("RedundantSuspendModifier")  // For testing purposes
-    @JvmStatic
-    suspend fun immediateResultCoroutine(value: Int): Int = value * 2
+  @Suppress("RedundantSuspendModifier") // For testing purposes
+  @JvmStatic
+  suspend fun immediateResultCoroutine(value: Int): Int = value * 2
 
-    @Suppress("RedundantSuspendModifier")  // For testing purposes
-    @JvmStatic
-    suspend fun immediateExceptionCoroutine(message: String) {
-        throw Exception(message)
-    }
+  @Suppress("RedundantSuspendModifier") // For testing purposes
+  @JvmStatic
+  suspend fun immediateExceptionCoroutine(message: String) {
+    throw Exception(message)
+  }
 }

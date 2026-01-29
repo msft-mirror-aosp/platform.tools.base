@@ -19,54 +19,48 @@ import com.android.adblib.AdbInputChannel
 import com.android.adblib.tools.debugging.packets.impl.PayloadProvider
 
 /**
- * Provides access to various elements of a DDMS "chunk". A DDMS "chunk" always starts with
- * an 8-byte header, followed by variable size buffer of [length] bytes.
+ * Provides access to various elements of a DDMS "chunk". A DDMS "chunk" always starts with an 8-byte header, followed by variable size
+ * buffer of [length] bytes.
  */
 interface DdmsChunkView {
-    /**
-     * The chunk type, a 4-byte integer, see [DdmsChunkType]
-     */
-    val type: DdmsChunkType
+  /** The chunk type, a 4-byte integer, see [DdmsChunkType] */
+  val type: DdmsChunkType
 
-    /**
-     * The length (in bytes) of the `payload`, a 4-byte integer.
-     */
-    val length: Int
+  /** The length (in bytes) of the `payload`, a 4-byte integer. */
+  val length: Int
 
-    /**
-     * **Note: Do NOT use directly, use [withPayload] instead**
-     *
-     * Returns the payload of this [DdmsChunkView] as an [AdbInputChannel] instance.
-     * [releasePayload] must be called when the returned [AdbInputChannel] is not used anymore.
-     *
-     * @throws IllegalStateException if the `payload` of this [DdmsChunkView] instance is not
-     *  available anymore.
-     * @see [PayloadProvider.acquirePayload]
-     */
-    suspend fun acquirePayload(): AdbInputChannel
+  /**
+   * **Note: Do NOT use directly, use [withPayload] instead**
+   *
+   * Returns the payload of this [DdmsChunkView] as an [AdbInputChannel] instance. [releasePayload] must be called when the returned
+   * [AdbInputChannel] is not used anymore.
+   *
+   * @throws IllegalStateException if the `payload` of this [DdmsChunkView] instance is not available anymore.
+   * @see [PayloadProvider.acquirePayload]
+   */
+  suspend fun acquirePayload(): AdbInputChannel
 
-    /**
-     * **Note: Do NOT use directly, use [withPayload] instead**
-     *
-     * Releases the [AdbInputChannel] previously returned by [acquirePayload].
-     *
-     * @see [PayloadProvider.releasePayload]
-     */
-    fun releasePayload()
+  /**
+   * **Note: Do NOT use directly, use [withPayload] instead**
+   *
+   * Releases the [AdbInputChannel] previously returned by [acquirePayload].
+   *
+   * @see [PayloadProvider.releasePayload]
+   */
+  fun releasePayload()
 }
 
 /**
- * Invokes [block] with payload of this [DdmsChunkView]. The payload is passed to [block]
- * as an [AdbInputChannel] instance that is valid only during the [block] invocation.
+ * Invokes [block] with payload of this [DdmsChunkView]. The payload is passed to [block] as an [AdbInputChannel] instance that is valid
+ * only during the [block] invocation.
  *
- * @throws IllegalStateException if the `payload` of this [DdmsChunkView] instance is not
- *  available anymore.
+ * @throws IllegalStateException if the `payload` of this [DdmsChunkView] instance is not available anymore.
  */
 suspend inline fun <R> DdmsChunkView.withPayload(block: (AdbInputChannel) -> R): R {
-    val payload = acquirePayload()
-    return try {
-        block(payload)
-    } finally {
-        releasePayload()
-    }
+  val payload = acquirePayload()
+  return try {
+    block(payload)
+  } finally {
+    releasePayload()
+  }
 }

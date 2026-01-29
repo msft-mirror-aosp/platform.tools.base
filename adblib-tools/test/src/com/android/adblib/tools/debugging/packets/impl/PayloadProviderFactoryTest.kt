@@ -20,80 +20,72 @@ import com.android.adblib.testingutils.CoroutineTestUtils.runBlockingWithTimeout
 import com.android.adblib.tools.debugging.packets.JdwpPacketConstants.PACKET_HEADER_LENGTH
 import com.android.adblib.tools.debugging.packets.withPayload
 import com.android.adblib.tools.debugging.utils.AdbRewindableInputChannel
+import java.nio.ByteBuffer
 import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import java.nio.ByteBuffer
 
 class PayloadProviderFactoryTest {
 
-    @Test
-    fun testEmptyPacket(): Unit = runBlockingWithTimeout {
-        // Prepare
-        val session = FakeAdbSession()
-        val factory = PayloadProviderFactory(session, maxInMemoryPayloadLength = 10)
-        val sourcePacket = MutableJdwpPacket()
-        sourcePacket.length = PACKET_HEADER_LENGTH
-        sourcePacket.id = -10
-        sourcePacket.cmdSet = 160
-        sourcePacket.cmd = 240
+  @Test
+  fun testEmptyPacket(): Unit = runBlockingWithTimeout {
+    // Prepare
+    val session = FakeAdbSession()
+    val factory = PayloadProviderFactory(session, maxInMemoryPayloadLength = 10)
+    val sourcePacket = MutableJdwpPacket()
+    sourcePacket.length = PACKET_HEADER_LENGTH
+    sourcePacket.id = -10
+    sourcePacket.cmdSet = 160
+    sourcePacket.cmd = 240
 
-        // Act
-        val payloadProvider = sourcePacket.withPayload {
-            factory.create(sourcePacket, it)
-        }
+    // Act
+    val payloadProvider = sourcePacket.withPayload { factory.create(sourcePacket, it) }
 
-        // Assert
-        assertSame(PayloadProvider.emptyPayload(), payloadProvider)
-    }
+    // Assert
+    assertSame(PayloadProvider.emptyPayload(), payloadProvider)
+  }
 
-    @Test
-    fun testSmallPacket(): Unit = runBlockingWithTimeout {
-        // Prepare
-        val session = FakeAdbSession()
-        val factory = PayloadProviderFactory(session, maxInMemoryPayloadLength = 10)
-        val sourcePacket = MutableJdwpPacket()
-        val payloadLength = 5
-        sourcePacket.length = PACKET_HEADER_LENGTH + payloadLength
-        sourcePacket.id = -10
-        sourcePacket.cmdSet = 160
-        sourcePacket.cmd = 240
-        sourcePacket.payloadProvider =
-            PayloadProvider.forByteBuffer(ByteBuffer.allocate(payloadLength))
+  @Test
+  fun testSmallPacket(): Unit = runBlockingWithTimeout {
+    // Prepare
+    val session = FakeAdbSession()
+    val factory = PayloadProviderFactory(session, maxInMemoryPayloadLength = 10)
+    val sourcePacket = MutableJdwpPacket()
+    val payloadLength = 5
+    sourcePacket.length = PACKET_HEADER_LENGTH + payloadLength
+    sourcePacket.id = -10
+    sourcePacket.cmdSet = 160
+    sourcePacket.cmd = 240
+    sourcePacket.payloadProvider = PayloadProvider.forByteBuffer(ByteBuffer.allocate(payloadLength))
 
-        // Act
-        val payloadProvider = sourcePacket.withPayload {
-            factory.create(sourcePacket, it)
-        }
+    // Act
+    val payloadProvider = sourcePacket.withPayload { factory.create(sourcePacket, it) }
 
-        // Assert:
-        // Implementation detail: the payload provider for small packet does not need
-        // a "rewindable" input channel, so we assert that condition.
-        assertTrue(payloadProvider.acquirePayload() !is AdbRewindableInputChannel)
-    }
+    // Assert:
+    // Implementation detail: the payload provider for small packet does not need
+    // a "rewindable" input channel, so we assert that condition.
+    assertTrue(payloadProvider.acquirePayload() !is AdbRewindableInputChannel)
+  }
 
-    @Test
-    fun testLargePacket(): Unit = runBlockingWithTimeout {
-        // Prepare
-        val session = FakeAdbSession()
-        val factory = PayloadProviderFactory(session, maxInMemoryPayloadLength = 10)
-        val sourcePacket = MutableJdwpPacket()
-        val payloadLength = 400
-        sourcePacket.length = PACKET_HEADER_LENGTH + payloadLength
-        sourcePacket.id = -10
-        sourcePacket.cmdSet = 160
-        sourcePacket.cmd = 240
-        sourcePacket.payloadProvider =
-            PayloadProvider.forByteBuffer(ByteBuffer.allocate(payloadLength))
+  @Test
+  fun testLargePacket(): Unit = runBlockingWithTimeout {
+    // Prepare
+    val session = FakeAdbSession()
+    val factory = PayloadProviderFactory(session, maxInMemoryPayloadLength = 10)
+    val sourcePacket = MutableJdwpPacket()
+    val payloadLength = 400
+    sourcePacket.length = PACKET_HEADER_LENGTH + payloadLength
+    sourcePacket.id = -10
+    sourcePacket.cmdSet = 160
+    sourcePacket.cmd = 240
+    sourcePacket.payloadProvider = PayloadProvider.forByteBuffer(ByteBuffer.allocate(payloadLength))
 
-        // Act
-        val payloadProvider = sourcePacket.withPayload {
-            factory.create(sourcePacket, it)
-        }
+    // Act
+    val payloadProvider = sourcePacket.withPayload { factory.create(sourcePacket, it) }
 
-        // Assert:
-        // Implementation detail: the payload provider for large packets needs to use
-        // a "rewindable" input channel (to support "rewinding"), so we assert that condition.
-        assertTrue(payloadProvider.acquirePayload() is AdbRewindableInputChannel)
-    }
+    // Assert:
+    // Implementation detail: the payload provider for large packets needs to use
+    // a "rewindable" input channel (to support "rewinding"), so we assert that condition.
+    assertTrue(payloadProvider.acquirePayload() is AdbRewindableInputChannel)
+  }
 }

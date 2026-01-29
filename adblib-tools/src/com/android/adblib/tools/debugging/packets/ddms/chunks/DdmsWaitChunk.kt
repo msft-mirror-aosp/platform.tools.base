@@ -16,7 +16,6 @@
 package com.android.adblib.tools.debugging.packets.ddms.chunks
 
 import com.android.adblib.readNBytes
-import com.android.adblib.readRemaining
 import com.android.adblib.tools.debugging.packets.ddms.ChunkDataParsing.readByte
 import com.android.adblib.tools.debugging.packets.ddms.ChunkDataWriting
 import com.android.adblib.tools.debugging.packets.ddms.DdmsChunkView
@@ -25,37 +24,30 @@ import com.android.adblib.tools.debugging.packets.ddms.withPayload
 import com.android.adblib.utils.ResizableBuffer
 
 internal data class DdmsWaitChunk(
-    /**
-     * The only currently supported value is `0`, with no particular meaning.
-     */
-    val reason: Byte
+  /** The only currently supported value is `0`, with no particular meaning. */
+  val reason: Byte
 ) {
 
-    companion object {
+  companion object {
 
-        internal suspend fun parse(
-            chunk: DdmsChunkView,
-            workBuffer: ResizableBuffer = ResizableBuffer()
-        ): DdmsWaitChunk {
-            // Read payload into "buffer"
-            workBuffer.clear()
-            val buffer = chunk.withPayload { payload ->
-                payload.readNBytes(workBuffer, chunk.length)
-                workBuffer.afterChannelRead()
-            }
-
-            buffer.order(DDMS_CHUNK_BYTE_ORDER)
-            val reason = readByte(buffer)
-
-            // All done, return chunk
-            return DdmsWaitChunk(reason)
+    internal suspend fun parse(chunk: DdmsChunkView, workBuffer: ResizableBuffer = ResizableBuffer()): DdmsWaitChunk {
+      // Read payload into "buffer"
+      workBuffer.clear()
+      val buffer =
+        chunk.withPayload { payload ->
+          payload.readNBytes(workBuffer, chunk.length)
+          workBuffer.afterChannelRead()
         }
 
-        internal fun writePayload(
-            buffer: ResizableBuffer,
-            reason: Byte
-        ) {
-            ChunkDataWriting.writeByte(buffer, reason)
-        }
+      buffer.order(DDMS_CHUNK_BYTE_ORDER)
+      val reason = readByte(buffer)
+
+      // All done, return chunk
+      return DdmsWaitChunk(reason)
     }
+
+    internal fun writePayload(buffer: ResizableBuffer, reason: Byte) {
+      ChunkDataWriting.writeByte(buffer, reason)
+    }
+  }
 }
