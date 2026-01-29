@@ -25,8 +25,6 @@ def studio_mac(build_env: bazel.BuildEnv) -> None:
   )
   targets = test_targets + [
       '//tools/vendor/google/android:android-cli.zip',
-      '//tools/vendor/google/skia:skiaparser',
-      '//tools/vendor/google/skia:skia_test_support',
       '//tools/base/profiler/native/trace_processor_daemon',
       '//tools/base/profiler/native/sherlock:sherlock_trace_processor',
       '//tools/vendor/google/lume/dist:lightbuild',
@@ -49,8 +47,6 @@ def studio_mac(build_env: bazel.BuildEnv) -> None:
                   'tools/base/profiler/native/sherlock/sherlock_trace_processor',
                   '',
               ),
-              ('tools/vendor/google/skia/skiaparser.zip', ''),
-              ('tools/vendor/google/skia/skia_test_support.zip', ''),
               ('tools/vendor/google/android/android-cli.zip', ''),
               ('tools/vendor/google/lume/dist/lightbuild.zip', ''),
           ],
@@ -72,8 +68,6 @@ def studio_mac_arm(build_env: bazel.BuildEnv) -> None:
   )
   targets = test_targets + [
       '//tools/vendor/google/android:android-cli.zip',
-      '//tools/vendor/google/skia:skiaparser',
-      '//tools/vendor/google/skia:skia_test_support',
       '//tools/base/profiler/native/trace_processor_daemon',
       '//tools/base/profiler/native/sherlock:sherlock_trace_processor',
       '//tools/adt/idea/android/native/diagnostics/heap:libjni_object_tagger',
@@ -101,8 +95,6 @@ def studio_mac_arm(build_env: bazel.BuildEnv) -> None:
                   'tools/adt/idea/android/native/diagnostics/heap/libjni_object_tagger.dylib',
                   '',
               ),
-              ('tools/vendor/google/skia/skiaparser.zip', ''),
-              ('tools/vendor/google/skia/skia_test_support.zip', ''),
               ('tools/vendor/google/android/android-cli.zip', ''),
               ('tools/vendor/google/lume/dist/lightbuild.zip', ''),
           ],
