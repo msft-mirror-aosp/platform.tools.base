@@ -385,7 +385,7 @@ internal class AdbServerControllerImpl(private val host: AdbSessionHost, configu
 
       val config = waitForServerConfigurationAvailable()
       val path = config.adbPath
-      val port = config.serverPort
+      val port = requireNotNull(config.serverPort) { "Guaranteed to be non-null by `waitForServerConfigurationAvailable`" }
       val isUserManaged = config.isUserManaged
       val isUnitTest = config.isUnitTest
 
@@ -393,9 +393,7 @@ internal class AdbServerControllerImpl(private val host: AdbSessionHost, configu
         if (path == null) {
           throw IllegalStateException("adb path must be provided")
         }
-        if (port != null) {
-          runStartServerProcess(path, port, config.envVars)
-        }
+        runStartServerProcess(path, port, config.envVars)
       }
       params.lastUsedConfig.update { config }
       params.isStartedFlow.update { true }
@@ -433,13 +431,12 @@ internal class AdbServerControllerImpl(private val host: AdbSessionHost, configu
 
       val config = waitForServerConfigurationAvailable()
       val adbFilePath = config.adbPath
+      val port = requireNotNull(config.serverPort) { "Guaranteed to be non-null by `waitForServerConfigurationAvailable`" }
       if (!config.isUserManaged && !config.isUnitTest) {
         if (adbFilePath == null) {
           throw IllegalStateException("adb path must be provided")
         }
-        if (config.serverPort != null) {
-          runKillServerProcess(adbFilePath, config.serverPort, config.envVars)
-        }
+        runKillServerProcess(adbFilePath, port, config.envVars)
       }
       params.isStartedFlow.update { false }
     }
@@ -476,7 +473,7 @@ internal class AdbServerControllerImpl(private val host: AdbSessionHost, configu
       // Start ADB server after waiting for valid configuration
       val config = waitForServerConfigurationAvailable()
       val adbFilePath = config.adbPath
-      val port = config.serverPort!!
+      val port = requireNotNull(config.serverPort) { "Guaranteed to be non-null by `waitForServerConfigurationAvailable`" }
       if (config.isUserManaged || config.isUnitTest) {
         // This is a non-restartable channel, but still try using `port` from the config the next
         // time we try to create a channel
