@@ -16,7 +16,7 @@
 package com.android.tools.idea.wizard.template.impl.activities.cppGameActivity.src
 
 fun androidOutCpp(): String {
-    return """
+  return """
 #include "AndroidOut.h"
 
 AndroidOut androidOut("AO");
@@ -24,7 +24,7 @@ std::ostream aout(&androidOut);"""
 }
 
 fun androidOutH(): String {
-    return """
+  return """
 #ifndef ANDROIDGLINVESTIGATIONS_ANDROIDOUT_H
 #define ANDROIDGLINVESTIGATIONS_ANDROIDOUT_H
 

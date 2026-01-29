@@ -31,11 +31,7 @@ import com.android.tools.idea.wizard.template.impl.activities.firebaseAiLogicAct
 import com.android.tools.idea.wizard.template.impl.activities.firebaseAiLogicActivity.src.app_package.uiState
 import java.io.File
 
-fun RecipeExecutor.firebaseAiLogicActivityRecipe(
-  moduleData: ModuleTemplateData,
-  activityClass: String,
-  packageName: String,
-) {
+fun RecipeExecutor.firebaseAiLogicActivityRecipe(moduleData: ModuleTemplateData, activityClass: String, packageName: String) {
   val (_, srcOut, resOut, _, _, _, _, rootOut) = moduleData
   addAllKotlinDependencies(moduleData)
 
@@ -63,10 +59,7 @@ fun RecipeExecutor.firebaseAiLogicActivityRecipe(
 
   copy(File("genai-activity").resolve("drawable"), resOut.resolve("drawable"))
 
-  mergeXml(
-    themesXml(themeName = moduleData.themesData.main.name),
-    resOut.resolve("values/themes.xml"),
-  )
+  mergeXml(themesXml(themeName = moduleData.themesData.main.name), resOut.resolve("values/themes.xml"))
   mergeXml(stringsXml(), resOut.resolve("values/strings.xml"))
 
   val themeName = "${moduleData.themesData.appName}Theme"

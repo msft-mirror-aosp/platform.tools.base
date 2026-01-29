@@ -18,15 +18,10 @@ package com.android.tools.idea.wizard.template.impl.other.appWidget.src.app_pack
 
 import com.android.tools.idea.wizard.template.renderIf
 
-fun appWidgetJava(
-  applicationPackage: String?,
-  className: String,
-  configurable: Boolean,
-  layoutName: String,
-  packageName: String
-): String {
-  val widgetTextBlock = if (configurable) "CharSequence widgetText = ${className}ConfigureActivity.loadTitlePref(context, appWidgetId);"
-  else "CharSequence widgetText = context.getString(R.string.appwidget_text);"
+fun appWidgetJava(applicationPackage: String?, className: String, configurable: Boolean, layoutName: String, packageName: String): String {
+  val widgetTextBlock =
+    if (configurable) "CharSequence widgetText = ${className}ConfigureActivity.loadTitlePref(context, appWidgetId);"
+    else "CharSequence widgetText = context.getString(R.string.appwidget_text);"
 
   return """
 package ${packageName};

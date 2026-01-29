@@ -32,20 +32,20 @@ fun basicActivityKt(
   layoutName: String,
   menuName: String,
   navHostFragmentId: String,
-  isViewBindingSupported: Boolean
+  isViewBindingSupported: Boolean,
 ): String {
-  val applicationPackageBlock = renderIf(applicationPackage != null) {
-      "import ${escapeKotlinIdentifier(applicationPackage!!)}.R"
-  }
-  val newProjectImportBlock = renderIf(isNewProject) {
-    """
+  val applicationPackageBlock = renderIf(applicationPackage != null) { "import ${escapeKotlinIdentifier(applicationPackage!!)}.R" }
+  val newProjectImportBlock =
+    renderIf(isNewProject) {
+      """
 import android.view.Menu
 import android.view.MenuItem
 """
-  }
+    }
 
-  val newProjectBlock2 = renderIf(isNewProject) {
-    """
+  val newProjectBlock2 =
+    renderIf(isNewProject) {
+      """
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         // Inflate the menu; this adds items to the action bar if it is present.
         menuInflater.inflate(R.menu.$menuName, menu)
@@ -62,12 +62,15 @@ import android.view.MenuItem
         }
     }
     """
-  }
+    }
 
-  val contentViewBlock = if (isViewBindingSupported) """
+  val contentViewBlock =
+    if (isViewBindingSupported)
+      """
      binding = ${layoutToViewBindingClass(layoutName)}.inflate(layoutInflater)
      setContentView(binding.root)
-  """ else "setContentView(R.layout.$layoutName)"
+  """
+    else "setContentView(R.layout.$layoutName)"
 
   return """
 package ${escapeKotlinIdentifier(packageName)}
@@ -106,7 +109,7 @@ ${renderIf(isViewBindingSupported) {"""
           Language.Kotlin,
           isViewBindingSupported = isViewBindingSupported,
           id = "fab",
-          className = "FloatingActionButton")}.setOnClickListener { view ->
+          className = "FloatingActionButton",)}.setOnClickListener { view ->
             Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
                     .setAction("Action", null)
                     .setAnchorView(R.id.fab).show()

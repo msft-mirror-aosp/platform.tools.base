@@ -18,10 +18,7 @@ package com.android.tools.idea.wizard.template.impl.activities.googlePayActivity
 
 import com.android.tools.idea.wizard.template.escapeKotlinIdentifier
 
-fun checkoutViewModelKt(
-  viewModelClass: String,
-  packageName: String
-): String {
+fun checkoutViewModelKt(viewModelClass: String, packageName: String): String {
 
   return """
 package ${escapeKotlinIdentifier("$packageName.viewmodel")}

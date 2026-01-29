@@ -41,18 +41,11 @@ val composeNavigationUiActivityMaterial3Template
     name = "Navigation UI Activity"
     description = "Create a Jetpack Compose activity with navigation UI"
     minApi = 21
-    constraints = listOf(
-        TemplateConstraint.AndroidX, TemplateConstraint.Kotlin, TemplateConstraint.Material3,
-        TemplateConstraint.Compose)
+    constraints = listOf(TemplateConstraint.AndroidX, TemplateConstraint.Kotlin, TemplateConstraint.Material3, TemplateConstraint.Compose)
 
     category = Category.Compose
     formFactor = FormFactor.Mobile
-    screens = listOf(
-      WizardUiContext.ActivityGallery,
-      WizardUiContext.MenuEntry,
-      WizardUiContext.NewProject,
-      WizardUiContext.NewModule
-    )
+    screens = listOf(WizardUiContext.ActivityGallery, WizardUiContext.MenuEntry, WizardUiContext.NewProject, WizardUiContext.NewModule)
 
     val activityClass = stringParameter {
       name = "Activity Name"
@@ -95,16 +88,19 @@ val composeNavigationUiActivityMaterial3Template
       // Invisible widgets to pass data
       TextFieldWidget(greeting),
       TextFieldWidget(defaultPreview),
-      LanguageWidget()
+      LanguageWidget(),
     )
 
-    thumb {
-        File("compose-navigation-ui-activity-material3")
-            .resolve("template_compose_navigation_ui_activity_material3.png")
-    }
+    thumb { File("compose-navigation-ui-activity-material3").resolve("template_compose_navigation_ui_activity_material3.png") }
 
     recipe = { data: TemplateData ->
-        composeNavigationUiActivityRecipe(data as ModuleTemplateData, activityClass.value, packageName.value, isLauncher.value,
-                            greeting.value, defaultPreview.value)
+      composeNavigationUiActivityRecipe(
+        data as ModuleTemplateData,
+        activityClass.value,
+        packageName.value,
+        isLauncher.value,
+        greeting.value,
+        defaultPreview.value,
+      )
     }
   }

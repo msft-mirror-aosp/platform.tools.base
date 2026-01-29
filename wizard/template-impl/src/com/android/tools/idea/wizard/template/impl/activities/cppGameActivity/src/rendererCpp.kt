@@ -16,7 +16,7 @@
 package com.android.tools.idea.wizard.template.impl.activities.cppGameActivity.src
 
 fun rendererCpp(): String {
-    return """
+  return """
 #include "Renderer.h"
 
 #include <game-activity/native_app_glue/android_native_app_glue.h>
@@ -400,7 +400,7 @@ void Renderer::handleInput() {
 }
 
 fun rendererH(): String {
-    return """
+  return """
 #ifndef ANDROIDGLINVESTIGATIONS_RENDERER_H
 #define ANDROIDGLINVESTIGATIONS_RENDERER_H
 

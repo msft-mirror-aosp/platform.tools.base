@@ -16,15 +16,11 @@
 
 package com.android.tools.idea.wizard.template.impl.fragments.scrollFragment.src.app_package
 
-import com.android.tools.idea.wizard.template.getMaterialComponentName
 import com.android.tools.idea.wizard.template.escapeKotlinIdentifier
+import com.android.tools.idea.wizard.template.getMaterialComponentName
 
-fun scrollFragmentKt(
-  fragmentClass: String,
-  layoutName: String,
-  packageName: String,
-  useAndroidX: Boolean
-) = """
+fun scrollFragmentKt(fragmentClass: String, layoutName: String, packageName: String, useAndroidX: Boolean) =
+  """
 package ${escapeKotlinIdentifier(packageName)}
 
 import android.os.Bundle

@@ -18,7 +18,8 @@ package com.android.tools.idea.wizard.template.impl.fragments.fullscreenFragment
 
 import com.android.tools.idea.wizard.template.MaterialColor.*
 
-fun fullScreenColorsXml() = """
+fun fullScreenColorsXml() =
+  """
 <resources>
     ${LIGHT_BLUE_600.xmlElement()}
     ${LIGHT_BLUE_900.xmlElement()}

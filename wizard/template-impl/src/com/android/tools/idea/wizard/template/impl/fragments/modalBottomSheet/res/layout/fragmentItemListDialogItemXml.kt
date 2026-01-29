@@ -16,7 +16,8 @@
 
 package com.android.tools.idea.wizard.template.impl.fragments.modalBottomSheet.res.layout
 
-fun fragmentItemListDialogItemXml() = """
+fun fragmentItemListDialogItemXml() =
+  """
 <?xml version="1.0" encoding="utf-8"?>
 <TextView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"

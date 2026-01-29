@@ -26,19 +26,24 @@ import org.gradle.util.GradleVersion
  * Data which is required for template rendering.
  *
  * One of implementations of it will be passed to the renderer (template's recipe).
- **/
+ */
 sealed class TemplateData
 
 /** apiLevelString usually has the value of apiLevel (as a String), but may be a "name" for unreleased APIs. */
-data class  ApiVersion(val api: Int, val apiString: String)
+data class ApiVersion(val api: Int, val apiString: String)
 
 // TODO: use wrappers/similar to check validity?
 typealias PackageName = String
+
 @Deprecated("Replaced by use of AgpVersion")
 typealias GradlePluginVersion = String
+
 typealias JavaVersion = String
+
 typealias Revision = String
+
 typealias FormFactorNames = Map<FormFactor, List<String>>
+
 enum class Language(val string: String, val extension: String) {
   Java("Java", "java"),
   Kotlin("Kotlin", "kt");
@@ -46,14 +51,11 @@ enum class Language(val string: String, val extension: String) {
   override fun toString(): String = string
 
   companion object {
-    /**
-     * Finds a language matching the requested name. Returns specified 'defaultValue' if not found.
-     */
-    @JvmStatic
-    fun fromName(name: String?, defaultValue: Language): Language =
-      values().firstOrNull { it.string == name } ?: defaultValue
+    /** Finds a language matching the requested name. Returns specified 'defaultValue' if not found. */
+    @JvmStatic fun fromName(name: String?, defaultValue: Language): Language = values().firstOrNull { it.string == name } ?: defaultValue
   }
 }
+
 // We define a new enum here instead of reusing existing ones because it should be available
 // both from intellij.android.core and wizardTemplate modules.
 enum class BytecodeLevel(val description: String, val versionString: String) {
@@ -62,35 +64,32 @@ enum class BytecodeLevel(val description: String, val versionString: String) {
   override fun toString() = description
 
   companion object {
-    val default: BytecodeLevel get() = L11
+    val default: BytecodeLevel
+      get() = L11
   }
 }
 
 const val KOTLIN_DSL_LINK = "https://d.android.com/build/migrate-to-kotlin-dsl"
-enum class BuildConfigurationLanguageForNewProject(
-    val description: String,
-    val useKts: Boolean,
-) {
-    KTS("Kotlin DSL (build.gradle.kts) [Recommended]", true),
-    Groovy("Groovy DSL (build.gradle)", false);
 
-    override fun toString() = description
+enum class BuildConfigurationLanguageForNewProject(val description: String, val useKts: Boolean) {
+  KTS("Kotlin DSL (build.gradle.kts) [Recommended]", true),
+  Groovy("Groovy DSL (build.gradle)", false);
+
+  override fun toString() = description
 }
 
-enum class BuildConfigurationLanguageForNewModule(
-    val description: String
-) {
-    KTS("Kotlin DSL (build.gradle.kts) [Recommended]"),
-    Groovy("Groovy DSL (build.gradle)");
+enum class BuildConfigurationLanguageForNewModule(val description: String) {
+  KTS("Kotlin DSL (build.gradle.kts) [Recommended]"),
+  Groovy("Groovy DSL (build.gradle)");
 
-    override fun toString() = description
+  override fun toString() = description
 }
 
 data class ApiTemplateData(
   val buildApi: AndroidVersion,
   val targetApi: AndroidMajorVersion,
   val minApi: AndroidMajorVersion,
-  val appCompatVersion: Int
+  val appCompatVersion: Int,
 )
 
 // TODO: pack version data in separate class, possibly similar to AndroidVersionsInfo.VersionItem
@@ -107,10 +106,11 @@ data class ProjectTemplateData(
   val includedFormFactorNames: FormFactorNames,
   val debugKeystoreSha1: String?,
   val overridePathCheck: Boolean? = false, // To disable android plugin checking for ascii in paths (windows tests)
-  val isNewProject: Boolean
-): TemplateData() {
-    @Deprecated("Replaced with agpVersion", replaceWith = ReplaceWith("agpVersion"))
-    val gradlePluginVersion: GradlePluginVersion get() = agpVersion.toString()
+  val isNewProject: Boolean,
+) : TemplateData() {
+  @Deprecated("Replaced with agpVersion", replaceWith = ReplaceWith("agpVersion"))
+  val gradlePluginVersion: GradlePluginVersion
+    get() = agpVersion.toString()
 }
 
 fun FormFactorNames.has(ff: FormFactor) = !this[ff].isNullOrEmpty()
@@ -119,15 +119,10 @@ fun FormFactorNames.has(ff: FormFactor) = !this[ff].isNullOrEmpty()
 /**
  * Info about base feature.
  *
- * When we have dynamic feature project, Studio may need to add something to base feature module even when
- * Studio does not create something directly inside of the module. For example, Studio may do it when creating a new dynamic module or
- * an activity inside dynamic module.
+ * When we have dynamic feature project, Studio may need to add something to base feature module even when Studio does not create something
+ * directly inside of the module. For example, Studio may do it when creating a new dynamic module or an activity inside dynamic module.
  */
-data class BaseFeature(
-  val name: String,
-  val dir: File,
-  val resDir: File
-)
+data class BaseFeature(val name: String, val dir: File, val resDir: File)
 
 data class ModuleTemplateData(
   val projectTemplateData: ProjectTemplateData,
@@ -144,9 +139,7 @@ data class ModuleTemplateData(
   val packageName: PackageName,
   val formFactor: FormFactor,
   val themesData: ThemesData,
-  /**
-   * Info about base feature. Only present in dynamic feature project.
-   */
+  /** Info about base feature. Only present in dynamic feature project. */
   val baseFeature: BaseFeature?,
   val apis: ApiTemplateData,
   val viewBindingSupport: ViewBindingSupport,
@@ -159,21 +152,21 @@ data class ModuleTemplateData(
   val iosSrcDir: File? = null,
   val currentVariant: String?,
   val isWatchFace: Boolean = false,
-): TemplateData() {
+) : TemplateData() {
   val isDynamic: Boolean
     get() = baseFeature != null
 
   /**
-   * Returns the [namespace](https://developer.android.com/studio/build/configure-app-module#set-namespace)
-   * of the module, i.e. the package where the R and BuildConfig classes are generated.
+   * Returns the [namespace](https://developer.android.com/studio/build/configure-app-module#set-namespace) of the module, i.e. the package
+   * where the R and BuildConfig classes are generated.
    */
   val namespace: String
     get() = projectTemplateData.applicationPackage ?: packageName
 }
 
 /**
- * enum class representing if a module supports view binding.
- * Need to have different values for AGP3.6 and AGP4.0+ because they have different syntax.
+ * enum class representing if a module supports view binding. Need to have different values for AGP3.6 and AGP4.0+ because they have
+ * different syntax.
  */
 enum class ViewBindingSupport {
   NOT_SUPPORTED,

@@ -31,27 +31,28 @@ fun appwidgetInfoXml(
   packageName: String,
   placement: Placement,
   resizeable: Resizeable,
-  withSFeatures: Boolean = false
+  withSFeatures: Boolean = false,
 ): String {
-  val resizeableBlock = when (resizeable) {
-    Resizeable.Both -> "android:resizeMode=\"horizontal|vertical\""
-    Resizeable.Horizontal -> "android:resizeMode=\"horizontal\""
-    Resizeable.Vertical -> "android:resizeMode=\"vertical\""
-    Resizeable.None -> ""
-  }
-  val placementBlock = when (placement) {
-    Placement.Both -> "android:widgetCategory=\"home_screen|keyguard\""
-    Placement.Homescreen -> "android:widgetCategory=\"home_screen\""
-    Placement.Keyguard -> "android:widgetCategory=\"keyguard\""
-  }
+  val resizeableBlock =
+    when (resizeable) {
+      Resizeable.Both -> "android:resizeMode=\"horizontal|vertical\""
+      Resizeable.Horizontal -> "android:resizeMode=\"horizontal\""
+      Resizeable.Vertical -> "android:resizeMode=\"vertical\""
+      Resizeable.None -> ""
+    }
+  val placementBlock =
+    when (placement) {
+      Placement.Both -> "android:widgetCategory=\"home_screen|keyguard\""
+      Placement.Homescreen -> "android:widgetCategory=\"home_screen\""
+      Placement.Keyguard -> "android:widgetCategory=\"keyguard\""
+    }
 
-  val previewLayoutBlock = renderIf(withSFeatures){
-    """android:previewLayout="@layout/${layoutName}""""
-  }
-  val targetCellBlock = renderIf(withSFeatures){
-    """android:targetCellHeight="$minHeightCells"
+  val previewLayoutBlock = renderIf(withSFeatures) { """android:previewLayout="@layout/${layoutName}"""" }
+  val targetCellBlock =
+    renderIf(withSFeatures) {
+      """android:targetCellHeight="$minHeightCells"
        android:targetCellWidth="$minWidthCells""""
-  }
+    }
 
   return """
 <?xml version="1.0" encoding="utf-8"?>

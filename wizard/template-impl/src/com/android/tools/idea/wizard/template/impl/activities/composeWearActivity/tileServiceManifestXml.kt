@@ -16,10 +16,8 @@
 
 package com.android.tools.idea.wizard.template.impl.activities.composeWearActivity
 
-fun tileServiceManifestXml(
-    tileServiceClass: String,
-    packageName: String
-) = """
+fun tileServiceManifestXml(tileServiceClass: String, packageName: String) =
+  """
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-feature android:name="android.hardware.type.watch" />
 

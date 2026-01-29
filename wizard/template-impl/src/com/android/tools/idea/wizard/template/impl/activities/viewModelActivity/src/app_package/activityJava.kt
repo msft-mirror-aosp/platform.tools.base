@@ -16,15 +16,14 @@
 
 package com.android.tools.idea.wizard.template.impl.activities.viewModelActivity.src.app_package
 
-
 fun activityJava(
   activityClass: String,
   activityLayout: String,
   fragmentClass: String,
   fragmentPackage: String,
   packageName: String,
-  superClassFqcn: String) =
-
+  superClassFqcn: String,
+) =
   """package ${packageName};
 
 import ${superClassFqcn};

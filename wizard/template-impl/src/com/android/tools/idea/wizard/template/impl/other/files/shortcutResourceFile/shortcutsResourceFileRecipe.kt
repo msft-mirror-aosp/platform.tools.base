@@ -20,10 +20,7 @@ import com.android.tools.idea.wizard.template.ModuleTemplateData
 import com.android.tools.idea.wizard.template.RecipeExecutor
 import com.android.tools.idea.wizard.template.impl.other.files.shortcutResourceFile.res.xml.shortcutXml
 
-fun RecipeExecutor.shortcutsResourceFileRecipe(
-  moduleData: ModuleTemplateData,
-  fileName: String
-) {
+fun RecipeExecutor.shortcutsResourceFileRecipe(moduleData: ModuleTemplateData, fileName: String) {
   val (_, _, resOut) = moduleData
 
   save(shortcutXml(), resOut.resolve("xml/${fileName}.xml"))

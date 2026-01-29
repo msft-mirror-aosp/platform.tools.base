@@ -16,8 +16,8 @@
 
 package com.android.tools.idea.wizard.template.impl.fragments.scrollFragment.res.values
 
-
-fun stringsXml() = """
+fun stringsXml() =
+  """
 <resources>
 <string name="large_text">
 "Material is the metaphor.\n\n"

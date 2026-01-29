@@ -32,14 +32,17 @@ fun simpleActivityKt(
   menuName: String,
   packageName: String,
   superClassFqcn: String,
-  isViewBindingSupported: Boolean
+  isViewBindingSupported: Boolean,
 ): String {
-  val importBlock = when (adFormat) {
-    AdFormat.Banner -> """
+  val importBlock =
+    when (adFormat) {
+      AdFormat.Banner ->
+        """
 import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.AdView
     """
-    AdFormat.Interstitial -> """
+      AdFormat.Interstitial ->
+        """
 import com.google.android.gms.ads.AdError
 import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.FullScreenContentCallback
@@ -50,27 +53,31 @@ import com.google.android.gms.ads.interstitial.InterstitialAdLoadCallback
 import android.widget.Button
 import android.widget.TextView
     """
-  }
+    }
 
-  val interstitialVariablesBlock = renderIf(adFormat == AdFormat.Interstitial) {
-    """
+  val interstitialVariablesBlock =
+    renderIf(adFormat == AdFormat.Interstitial) {
+      """
     private var currentLevel: Int = 0
     private var interstitialAd: InterstitialAd? = null
     private lateinit var nextLevelButton: Button
     private lateinit var levelTextView: TextView
     private val TAG = "${activityClass.take(23)}"
   """
-  }
+    }
 
-  val onCreateBlock = when (adFormat) {
-    AdFormat.Banner -> """
+  val onCreateBlock =
+    when (adFormat) {
+      AdFormat.Banner ->
+        """
         // Load an ad into the AdMob banner view.
         val adRequest = AdRequest.Builder()
                 .setRequestAgent("android_studio:ad_template")
                 .build()
         adView.loadAd(adRequest)
     """
-    AdFormat.Interstitial -> """
+      AdFormat.Interstitial ->
+        """
         MobileAds.initialize(
           this
         ) { }
@@ -81,21 +88,22 @@ import android.widget.TextView
         nextLevelButton = ${findViewById(
           Language.Kotlin,
           isViewBindingSupported = isViewBindingSupported,
-          id = "next_level_button")}
+          id = "next_level_button",)}
         nextLevelButton.isEnabled = false
         nextLevelButton.setOnClickListener { showInterstitial() }
 
         levelTextView = ${findViewById(
           Language.Kotlin,
           isViewBindingSupported = isViewBindingSupported,
-          id = "level")}
+          id = "level",)}
         // Create the text view to show the level number.
         currentLevel = START_LEVEL
     """
-  }
+    }
 
-  val interstitialSpecificBlock = renderIf(adFormat == AdFormat.Interstitial) {
-    """
+  val interstitialSpecificBlock =
+    renderIf(adFormat == AdFormat.Interstitial) {
+      """
     private fun loadInterstitialAd() {
       val adRequest = AdRequest.Builder().build()
       InterstitialAd.load(this, getString(R.string.interstitial_ad_unit_id), adRequest,
@@ -171,12 +179,15 @@ import android.widget.TextView
         }
     }
   """
-  }
+    }
 
-  val contentViewBlock = if (isViewBindingSupported) """
+  val contentViewBlock =
+    if (isViewBindingSupported)
+      """
      binding = ${layoutToViewBindingClass(layoutName)}.inflate(layoutInflater)
      setContentView(binding.root)
-  """ else "setContentView(R.layout.$layoutName)"
+  """
+    else "setContentView(R.layout.$layoutName)"
 
   return """
 package ${escapeKotlinIdentifier(packageName)}

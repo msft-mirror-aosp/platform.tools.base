@@ -19,15 +19,10 @@ package com.android.tools.idea.wizard.template.impl.other.appWidget.src.app_pack
 import com.android.tools.idea.wizard.template.escapeKotlinIdentifier
 import com.android.tools.idea.wizard.template.renderIf
 
-fun appWidgetKt(
-  applicationPackage: String?,
-  className: String,
-  configurable: Boolean,
-  layoutName: String,
-  packageName: String
-): String {
-  val widgetTextBlock = if (configurable) "val widgetText = loadTitlePref(context, appWidgetId)"
-  else "val widgetText = context.getString(R.string.appwidget_text)"
+fun appWidgetKt(applicationPackage: String?, className: String, configurable: Boolean, layoutName: String, packageName: String): String {
+  val widgetTextBlock =
+    if (configurable) "val widgetText = loadTitlePref(context, appWidgetId)"
+    else "val widgetText = context.getString(R.string.appwidget_text)"
 
   return """
 package ${escapeKotlinIdentifier(packageName)}

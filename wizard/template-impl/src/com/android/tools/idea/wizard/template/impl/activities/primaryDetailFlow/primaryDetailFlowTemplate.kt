@@ -40,7 +40,8 @@ val primaryDetailFlowTemplate
   get() = template {
     name = "Primary/Detail Views Flow"
     minApi = MIN_API
-    description = "Creates a new primary/detail flow, allowing users to view a collection of objects as well as details for each object. This flow is presented using two columns on larger screen devices and one column on handsets and smaller screens. It also includes support for right click on the list items as well as two keyboard shortcuts. This template creates one activity, an item list fragment, and a detail fragment"
+    description =
+      "Creates a new primary/detail flow, allowing users to view a collection of objects as well as details for each object. This flow is presented using two columns on larger screen devices and one column on handsets and smaller screens. It also includes support for right click on the list items as well as two keyboard shortcuts. This template creates one activity, an item list fragment, and a detail fragment"
 
     category = Category.Activity
     formFactor = FormFactor.Mobile
@@ -107,19 +108,21 @@ val primaryDetailFlowTemplate
       LanguageWidget(),
       TextFieldWidget(mainNavGraphFile),
       TextFieldWidget(childNavGraphFile),
-      TextFieldWidget(detailNameFragmentLayout)
+      TextFieldWidget(detailNameFragmentLayout),
     )
 
     thumb { File("primary-detail-flow").resolve("template_primary_detail.png") }
 
     recipe = { data: TemplateData ->
-      primaryDetailFlowRecipe(data as ModuleTemplateData,
-                              objectKind.value,
-                              objectKindPlural.value,
-                              isLauncher.value,
-                              mainNavGraphFile.value,
-                              childNavGraphFile.value,
-                              detailNameFragmentLayout.value,
-                              packageName.value)
+      primaryDetailFlowRecipe(
+        data as ModuleTemplateData,
+        objectKind.value,
+        objectKindPlural.value,
+        isLauncher.value,
+        mainNavGraphFile.value,
+        childNavGraphFile.value,
+        detailNameFragmentLayout.value,
+        packageName.value,
+      )
     }
   }

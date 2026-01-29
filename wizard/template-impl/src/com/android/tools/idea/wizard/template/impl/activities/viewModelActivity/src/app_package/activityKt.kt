@@ -24,8 +24,8 @@ fun activityKt(
   fragmentClass: String,
   fragmentPackage: String,
   packageName: String,
-  superClassFqcn: String) =
-
+  superClassFqcn: String,
+) =
   """package ${escapeKotlinIdentifier(packageName)}
 
 import ${superClassFqcn}

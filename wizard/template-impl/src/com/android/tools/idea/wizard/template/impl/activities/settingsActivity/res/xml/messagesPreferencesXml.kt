@@ -16,7 +16,8 @@
 
 package com.android.tools.idea.wizard.template.impl.activities.settingsActivity.res.xml
 
-fun messagesPreferencesXml() = """<PreferenceScreen
+fun messagesPreferencesXml() =
+  """<PreferenceScreen
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <EditTextPreference

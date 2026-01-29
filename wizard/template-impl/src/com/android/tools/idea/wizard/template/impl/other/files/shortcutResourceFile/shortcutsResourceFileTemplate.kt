@@ -45,18 +45,9 @@ val shortcutsResourceFileTemplate
       loggable = true
     }
 
-    thumb {
-      File("no_activity.png")
-    }
+    thumb { File("no_activity.png") }
 
-    widgets(
-      TextFieldWidget(fileName),
-    )
+    widgets(TextFieldWidget(fileName))
 
-    recipe = { data: TemplateData ->
-      shortcutsResourceFileRecipe(
-        data as ModuleTemplateData,
-        fileName.value,
-      )
-    }
+    recipe = { data: TemplateData -> shortcutsResourceFileRecipe(data as ModuleTemplateData, fileName.value) }
   }

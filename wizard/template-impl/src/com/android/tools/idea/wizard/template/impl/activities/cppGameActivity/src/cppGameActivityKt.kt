@@ -17,12 +17,8 @@ package com.android.tools.idea.wizard.template.impl.activities.cppGameActivity.s
 
 import com.android.tools.idea.wizard.template.escapeKotlinIdentifier
 
-fun cppGameActivityKt(
-    packageName: String,
-    activityClass: String,
-    libraryName: String,
-): String {
-    return """
+fun cppGameActivityKt(packageName: String, activityClass: String, libraryName: String): String {
+  return """
 package ${escapeKotlinIdentifier(packageName)}
 
 import android.view.View
@@ -54,4 +50,3 @@ class $activityClass : GameActivity() {
 }
 """
 }
-

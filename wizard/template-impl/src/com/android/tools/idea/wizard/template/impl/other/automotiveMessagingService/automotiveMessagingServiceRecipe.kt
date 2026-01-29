@@ -33,7 +33,7 @@ fun RecipeExecutor.automotiveMessagingServiceRecipe(
   serviceName: String,
   readReceiverName: String,
   replyReceiverName: String,
-  packageName: String
+  packageName: String,
 ) {
   val (projectData, srcOut, resOut, manifestOut) = moduleData
   val useAndroidX = moduleData.projectTemplateData.androidXSupport
@@ -45,22 +45,25 @@ fun RecipeExecutor.automotiveMessagingServiceRecipe(
   mergeXml(androidManifestXml(packageName, readReceiverName, replyReceiverName, serviceName), manifestOut.resolve("AndroidManifest.xml"))
   mergeXml(automotiveAppDescXml(), resOut.resolve("xml/automotive_app_desc.xml"))
 
-  val messagingService = when (projectData.language) {
-    Language.Java -> messagingServiceJava(packageName, serviceName, useAndroidX)
-    Language.Kotlin -> messagingServiceKt(packageName, serviceName, useAndroidX)
-  }
+  val messagingService =
+    when (projectData.language) {
+      Language.Java -> messagingServiceJava(packageName, serviceName, useAndroidX)
+      Language.Kotlin -> messagingServiceKt(packageName, serviceName, useAndroidX)
+    }
   save(messagingService, srcOut.resolve("${serviceName}.${ktOrJavaExt}"))
 
-  val messageReadReceiver = when (projectData.language) {
-    Language.Java -> messageReadReceiverJava(packageName, readReceiverName, serviceName, useAndroidX)
-    Language.Kotlin -> messageReadReceiverKt(packageName, readReceiverName, useAndroidX)
-  }
+  val messageReadReceiver =
+    when (projectData.language) {
+      Language.Java -> messageReadReceiverJava(packageName, readReceiverName, serviceName, useAndroidX)
+      Language.Kotlin -> messageReadReceiverKt(packageName, readReceiverName, useAndroidX)
+    }
   save(messageReadReceiver, srcOut.resolve("${readReceiverName}.${ktOrJavaExt}"))
 
-  val messageReplyReceiver = when (projectData.language) {
-    Language.Java -> messageReplyReceiverJava(packageName, replyReceiverName, serviceName, useAndroidX)
-    Language.Kotlin -> messageReplyReceiverKt(packageName, replyReceiverName, useAndroidX)
-  }
+  val messageReplyReceiver =
+    when (projectData.language) {
+      Language.Java -> messageReplyReceiverJava(packageName, replyReceiverName, serviceName, useAndroidX)
+      Language.Kotlin -> messageReplyReceiverKt(packageName, replyReceiverName, useAndroidX)
+    }
   save(messageReplyReceiver, srcOut.resolve("${replyReceiverName}.${ktOrJavaExt}"))
 
   open(srcOut.resolve("${serviceName}.${ktOrJavaExt}"))

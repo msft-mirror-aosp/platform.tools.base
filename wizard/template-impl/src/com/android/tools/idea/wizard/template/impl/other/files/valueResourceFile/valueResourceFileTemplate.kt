@@ -52,11 +52,7 @@ val valueResourceFileTemplate
       File("no_activity.png")
     }
 
-    widgets(
-      TextFieldWidget(fileName)
-    )
+    widgets(TextFieldWidget(fileName))
 
-    recipe = { data: TemplateData ->
-      valueResourceFileRecipe(data as ModuleTemplateData, fileName.value)
-    }
+    recipe = { data: TemplateData -> valueResourceFileRecipe(data as ModuleTemplateData, fileName.value) }
   }

@@ -19,10 +19,7 @@ package com.android.tools.idea.wizard.template.impl.activities.tabbedActivity.sr
 import com.android.tools.idea.wizard.template.escapeKotlinIdentifier
 import com.android.tools.idea.wizard.template.getMaterialComponentName
 
-fun pageViewModelKt(
-  packageName: String,
-  useAndroidX: Boolean) =
-
+fun pageViewModelKt(packageName: String, useAndroidX: Boolean) =
   """package ${escapeKotlinIdentifier(packageName)}.ui.main
 
 import ${getMaterialComponentName("android.arch.lifecycle.LiveData", useAndroidX)}

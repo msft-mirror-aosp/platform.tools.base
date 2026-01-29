@@ -16,10 +16,7 @@
 
 package com.android.tools.idea.wizard.template.impl.activities.androidTVActivity.src.app_package
 
-fun errorFragmentJava(
-  minApiLevel: Int,
-  packageName: String
-): String {
+fun errorFragmentJava(minApiLevel: Int, packageName: String): String {
   val getDrawableArgBlock = if (minApiLevel >= 23) "getContext()" else "getActivity()"
   return """
 package ${packageName};

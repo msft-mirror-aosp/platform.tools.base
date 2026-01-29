@@ -40,7 +40,7 @@ fun RecipeExecutor.googlePayActivityRecipe(
   viewModelClass: String,
   layoutName: String,
   isLauncher: Boolean,
-  packageName: String
+  packageName: String,
 ) {
   val (projectData, srcOut, resOut, manifestOut) = moduleData
 
@@ -59,8 +59,16 @@ fun RecipeExecutor.googlePayActivityRecipe(
   val simpleName = activityToLayout(activityClass)
   mergeXml(
     androidManifestXml(
-        activityClass, isLauncher, moduleData.isLibrary, packageName, simpleName, moduleData.isNewModule, moduleData.themesData),
-    manifestOut.resolve("AndroidManifest.xml"))
+      activityClass,
+      isLauncher,
+      moduleData.isLibrary,
+      packageName,
+      simpleName,
+      moduleData.isNewModule,
+      moduleData.themesData,
+    ),
+    manifestOut.resolve("AndroidManifest.xml"),
+  )
 
   // Copy static resources
   val resLocation: File = if (moduleData.isDynamic) moduleData.baseFeature!!.resDir else resOut
@@ -72,52 +80,56 @@ fun RecipeExecutor.googlePayActivityRecipe(
 
   // Generate Constants class
   val ktOrJavaExt = projectData.language.extension
-  val constants = when (projectData.language) {
-    Language.Java -> constantsJava(packageName)
-    Language.Kotlin -> constantsKotlin(packageName)
-  }
+  val constants =
+    when (projectData.language) {
+      Language.Java -> constantsJava(packageName)
+      Language.Kotlin -> constantsKotlin(packageName)
+    }
   val constantsOut = srcOut.resolve("Constants.$ktOrJavaExt")
   save(constants, constantsOut)
 
   // Generate payments utility class
-  val paymentsUtil = when (projectData.language) {
-    Language.Java -> paymentsUtilJava(packageName)
-    Language.Kotlin -> paymentsUtilKotlin(packageName)
-  }
+  val paymentsUtil =
+    when (projectData.language) {
+      Language.Java -> paymentsUtilJava(packageName)
+      Language.Kotlin -> paymentsUtilKotlin(packageName)
+    }
   val paymentsUtilOut = srcOut.resolve("util/PaymentsUtil.$ktOrJavaExt")
   save(paymentsUtil, paymentsUtilOut)
 
   // Add view model class
-  val checkoutViewModel = when (projectData.language) {
-    Language.Java -> checkoutViewModelJava(
-      viewModelClass = viewModelClass,
-      packageName = packageName)
-    Language.Kotlin -> checkoutViewModelKt(
-      viewModelClass = viewModelClass,
-      packageName = packageName)
-  }
+  val checkoutViewModel =
+    when (projectData.language) {
+      Language.Java -> checkoutViewModelJava(viewModelClass = viewModelClass, packageName = packageName)
+      Language.Kotlin -> checkoutViewModelKt(viewModelClass = viewModelClass, packageName = packageName)
+    }
 
   val viewModelOut = srcOut.resolve("viewmodel")
   save(checkoutViewModel, viewModelOut.resolve("$viewModelClass.$ktOrJavaExt"))
 
   // Add activity class
   val isViewBindingSupported = moduleData.viewBindingSupport.isViewBindingSupported()
-  val checkoutActivity = when (projectData.language) {
-    Language.Java -> checkoutActivityJava(
-      activityClass = activityClass,
-      viewModelClass = viewModelClass,
-      layoutName = layoutName,
-      packageName = packageName,
-      applicationPackage = projectData.applicationPackage,
-      isViewBindingSupported = isViewBindingSupported)
-    Language.Kotlin -> checkoutActivityKt(
-      activityClass = activityClass,
-      viewModelClass = viewModelClass,
-      layoutName = layoutName,
-      packageName = packageName,
-      applicationPackage = projectData.applicationPackage,
-      isViewBindingSupported = isViewBindingSupported)
-  }
+  val checkoutActivity =
+    when (projectData.language) {
+      Language.Java ->
+        checkoutActivityJava(
+          activityClass = activityClass,
+          viewModelClass = viewModelClass,
+          layoutName = layoutName,
+          packageName = packageName,
+          applicationPackage = projectData.applicationPackage,
+          isViewBindingSupported = isViewBindingSupported,
+        )
+      Language.Kotlin ->
+        checkoutActivityKt(
+          activityClass = activityClass,
+          viewModelClass = viewModelClass,
+          layoutName = layoutName,
+          packageName = packageName,
+          applicationPackage = projectData.applicationPackage,
+          isViewBindingSupported = isViewBindingSupported,
+        )
+    }
 
   save(checkoutActivity, srcOut.resolve("$activityClass.$ktOrJavaExt"))
   open(srcOut.resolve("$activityClass.$ktOrJavaExt"))

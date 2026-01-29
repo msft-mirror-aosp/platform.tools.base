@@ -16,7 +16,8 @@
 
 package com.android.tools.idea.wizard.template.impl.other.files.shortcutResourceFile.res.xml
 
-fun shortcutXml() = """
+fun shortcutXml() =
+  """
 <?xml version ="1.0" encoding="utf-8"?>
 <shortcuts>
     <!-- Add shortcuts that launch your app to a specific screen or task. -->

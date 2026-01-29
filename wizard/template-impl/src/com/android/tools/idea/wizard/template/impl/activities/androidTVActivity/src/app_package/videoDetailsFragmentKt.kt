@@ -23,7 +23,7 @@ fun videoDetailsFragmentKt(
   detailsActivity: String,
   detailsFragment: String,
   minApiLevel: Int,
-  packageName: String
+  packageName: String,
 ): String {
   val contextArgBlock = if (minApiLevel >= 23) "context!!" else "activity!!"
   return """

@@ -16,10 +16,7 @@
 
 package com.android.tools.idea.wizard.template.impl.activities.settingsActivity.res.xml
 
-fun headerPreferencesXml(
-  activityClass: String,
-  packageName: String
-) =
+fun headerPreferencesXml(activityClass: String, packageName: String) =
   """<PreferenceScreen
     xmlns:app="http://schemas.android.com/apk/res-auto">
 

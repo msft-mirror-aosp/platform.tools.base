@@ -28,12 +28,13 @@ import com.android.tools.idea.wizard.template.impl.fragments.viewModelFragment.s
 import com.android.tools.idea.wizard.template.impl.fragments.viewModelFragment.src.app_package.blankViewModelKt
 
 fun RecipeExecutor.viewModelFragmentRecipe(
-  moduleData: ModuleTemplateData, fragmentClass: String,
+  moduleData: ModuleTemplateData,
+  fragmentClass: String,
   layoutName: String,
   viewModelName: String,
-  packageName: String
+  packageName: String,
 ) {
-  val (projectData, srcOut, resOut ) = moduleData
+  val (projectData, srcOut, resOut) = moduleData
   val appCompatVersion = moduleData.apis.appCompatVersion
   val useAndroidX = moduleData.projectTemplateData.androidXSupport
   val ktOrJavaExt = projectData.language.extension
@@ -51,17 +52,19 @@ fun RecipeExecutor.viewModelFragmentRecipe(
 
   open(resOut.resolve("layout/${layoutName}.xml"))
 
-  val blankFragment = when (projectData.language) {
-    Language.Java -> blankFragmentJava(applicationPackage, fragmentClass, layoutName, packageName, useAndroidX, viewModelName)
-    Language.Kotlin -> blankFragmentKt(applicationPackage, fragmentClass, layoutName, packageName, useAndroidX, viewModelName)
-  }
+  val blankFragment =
+    when (projectData.language) {
+      Language.Java -> blankFragmentJava(applicationPackage, fragmentClass, layoutName, packageName, useAndroidX, viewModelName)
+      Language.Kotlin -> blankFragmentKt(applicationPackage, fragmentClass, layoutName, packageName, useAndroidX, viewModelName)
+    }
   save(blankFragment, srcOut.resolve("${fragmentClass}.${ktOrJavaExt}"))
 
   open(srcOut.resolve("${fragmentClass}.${ktOrJavaExt}"))
 
-  val blankViewModel = when (projectData.language) {
-    Language.Java -> blankViewModelJava(packageName, useAndroidX, viewModelName)
-    Language.Kotlin -> blankViewModelKt(packageName, useAndroidX, viewModelName)
-  }
+  val blankViewModel =
+    when (projectData.language) {
+      Language.Java -> blankViewModelJava(packageName, useAndroidX, viewModelName)
+      Language.Kotlin -> blankViewModelKt(packageName, useAndroidX, viewModelName)
+    }
   save(blankViewModel, srcOut.resolve("${viewModelName}.${ktOrJavaExt}"))
 }

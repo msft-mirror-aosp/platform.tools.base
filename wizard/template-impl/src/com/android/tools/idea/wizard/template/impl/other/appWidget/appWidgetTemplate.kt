@@ -38,7 +38,7 @@ import java.io.File
 enum class Placement {
   Both,
   Homescreen,
-  Keyguard
+  Keyguard,
 }
 
 // suffix is used to generate file name for thumb loading
@@ -46,7 +46,7 @@ enum class Resizeable(val suffix: String) {
   Both("vh"),
   Horizontal("h"),
   Vertical("v"),
-  None("")
+  None(""),
 }
 
 @Suppress("EnumEntryName")
@@ -54,7 +54,7 @@ enum class MinimumCells {
   `1`,
   `2`,
   `3`,
-  `4`
+  `4`,
 }
 
 val appWidgetTemplate
@@ -74,27 +74,32 @@ val appWidgetTemplate
       loggable = true
     }
 
-    val placement = enumParameter<Placement> {
-      name = "Placement"
-      default = Placement.Homescreen
-      help = "Make the widget available on the Home-screen and/or on the Keyguard. Keyguard placement is only supported in Android 4.2 and above; this setting is ignored on earlier versions and defaults to Home-screen.>"
-    }
+    val placement =
+      enumParameter<Placement> {
+        name = "Placement"
+        default = Placement.Homescreen
+        help =
+          "Make the widget available on the Home-screen and/or on the Keyguard. Keyguard placement is only supported in Android 4.2 and above; this setting is ignored on earlier versions and defaults to Home-screen.>"
+      }
 
-    val resizable = enumParameter<Resizeable> {
-      name = "Resizable"
-      default = Resizeable.Both
-      help = "Allow the user to resize the widget. Feature only available on Android 3.1 and above.>"
-    }
+    val resizable =
+      enumParameter<Resizeable> {
+        name = "Resizable"
+        default = Resizeable.Both
+        help = "Allow the user to resize the widget. Feature only available on Android 3.1 and above.>"
+      }
 
-    val minWidth = enumParameter<MinimumCells> {
-      name = "Minimum Width (cells)"
-      default = MinimumCells.`1`
-    }
+    val minWidth =
+      enumParameter<MinimumCells> {
+        name = "Minimum Width (cells)"
+        default = MinimumCells.`1`
+      }
 
-    val minHeight = enumParameter<MinimumCells> {
-      name = "Minimum Height (cells)"
-      default = MinimumCells.`1`
-    }
+    val minHeight =
+      enumParameter<MinimumCells> {
+        name = "Minimum Height (cells)"
+        default = MinimumCells.`1`
+      }
 
     val configurable = booleanParameter {
       name = "Configuration Screen"
@@ -103,7 +108,8 @@ val appWidgetTemplate
     }
 
     thumb {
-      File("app-widget").resolve("template_widget_" + minWidth.value.name + "x" + minHeight.value.name + "_" + resizable.value.suffix + ".png")
+      File("app-widget")
+        .resolve("template_widget_" + minWidth.value.name + "x" + minHeight.value.name + "_" + resizable.value.suffix + ".png")
     }
 
     widgets(
@@ -113,11 +119,18 @@ val appWidgetTemplate
       EnumWidget(minWidth),
       EnumWidget(minHeight),
       CheckBoxWidget(configurable),
-      LanguageWidget()
+      LanguageWidget(),
     )
 
     recipe = { data: TemplateData ->
       appWidgetRecipe(
-        data as ModuleTemplateData, className.value, placement.value, resizable.value, minWidth.value, minHeight.value, configurable.value)
+        data as ModuleTemplateData,
+        className.value,
+        placement.value,
+        resizable.value,
+        minWidth.value,
+        minHeight.value,
+        configurable.value,
+      )
     }
   }

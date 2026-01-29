@@ -18,11 +18,7 @@ package com.android.tools.idea.wizard.template.impl.activities.settingsActivity.
 
 import com.android.tools.idea.wizard.template.escapeKotlinIdentifier
 
-fun multipleScreenSettingsActivityKt(
-  activityClass: String,
-  packageName: String,
-  simpleName: String) =
-
+fun multipleScreenSettingsActivityKt(activityClass: String, packageName: String, simpleName: String) =
   """package ${escapeKotlinIdentifier(packageName)}
 
 import android.os.Bundle

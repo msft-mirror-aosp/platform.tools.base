@@ -26,24 +26,23 @@ private const val FRAGMENT_NAME_SUFFIX = "Fragment"
 private const val DEFAULT_LAYOUT_NAME_PREFIX = "activity"
 
 /**
- * When stripping the Activity suffix, we match against "Activity" plus zero or more digits.
- * The base of the name will be captured in the first group and the digits will be captured in the second group.
+ * When stripping the Activity suffix, we match against "Activity" plus zero or more digits. The base of the name will be captured in the
+ * first group and the digits will be captured in the second group.
  */
 private val ACTIVITY_NAME_PATTERN = Regex("^(.*)$ACTIVITY_NAME_SUFFIX(\\d*)$").toPattern()
 /**
- * When stripping the Fragment suffix, we match against "Fragment" plus zero or more digits.
- * The base of the name will be captured in the first group and the digits will be captured in the second group.
+ * When stripping the Fragment suffix, we match against "Fragment" plus zero or more digits. The base of the name will be captured in the
+ * first group and the digits will be captured in the second group.
  */
 private val FRAGMENT_NAME_PATTERN = Regex("^(.*)$FRAGMENT_NAME_SUFFIX(\\d*)$").toPattern()
 
 /** Common Android system endings which we strip from class names */
-@VisibleForTesting
-val STRIP_CLASS_SUFFIXES = arrayOf(ACTIVITY_NAME_SUFFIX, FRAGMENT_NAME_SUFFIX, "Service", "Provider")
+@VisibleForTesting val STRIP_CLASS_SUFFIXES = arrayOf(ACTIVITY_NAME_SUFFIX, FRAGMENT_NAME_SUFFIX, "Service", "Provider")
 
 /**
- * Strip off the end portion of the name.
- * The user might be typing the activity name such that only a portion has been entered so far (e.g. "MainActivi") and we want to
- * chop off that portion too such that we don't offer a layout name partially containing the activity suffix (e.g. "main_activi").
+ * Strip off the end portion of the name. The user might be typing the activity name such that only a portion has been entered so far (e.g.
+ * "MainActivi") and we want to chop off that portion too such that we don't offer a layout name partially containing the activity suffix
+ * (e.g. "main_activi").
  */
 tailrec fun String.stripSuffix(suffix: String, recursively: Boolean = false): String {
   if (length < 2) {
@@ -52,23 +51,18 @@ tailrec fun String.stripSuffix(suffix: String, recursively: Boolean = false): St
 
   val suffixStart = lastIndexOf(suffix[0])
 
-  val name = if (suffixStart != -1 && regionMatches(suffixStart, suffix, 0, length - suffixStart))
-    substring(0, suffixStart)
-  else
-    this
+  val name = if (suffixStart != -1 && regionMatches(suffixStart, suffix, 0, length - suffixStart)) substring(0, suffixStart) else this
 
   // Recursively continue to strip the suffix (catch the FooActivityActivity case)
   return if (recursively && name.endsWith(suffix)) name.stripSuffix(suffix, recursively) else name
 }
 
 /**
- * Strip the "Activity" or "Fragment" suffix from a class name, e.g. "EditorActivity" -> "Editor",
- * "EditorFragment" -> "Editor".
- * This does not strip recursively, so "EditorActivityActivity" -> "EditorActivity"
+ * Strip the "Activity" or "Fragment" suffix from a class name, e.g. "EditorActivity" -> "Editor", "EditorFragment" -> "Editor". This does
+ * not strip recursively, so "EditorActivityActivity" -> "EditorActivity"
  *
- * Because Studio suggests appending numbers onto new classes if they have a duplicate name,
- * e.g. "MainActivity", "MainActivity2", "MainActivity3", we take that into account, for example
- * we would convert "MainActivity3" into "Main3"
+ * Because Studio suggests appending numbers onto new classes if they have a duplicate name, e.g. "MainActivity", "MainActivity2",
+ * "MainActivity3", we take that into account, for example we would convert "MainActivity3" into "Main3"
  */
 private fun stripSuffix(name: String, suffix: String, pattern: Pattern): String {
   val finalName = name.stripSuffix(suffix)
@@ -92,8 +86,8 @@ private fun stripActivitySuffix(activityName: String): String = stripSuffix(acti
 private fun stripFragmentSuffix(fragmentName: String): String = stripSuffix(fragmentName, FRAGMENT_NAME_SUFFIX, FRAGMENT_NAME_PATTERN)
 
 /**
- * Allows a one to one mapping suggestion between different types of Android asset names, like for example mapping the name of an
- * Activity to its layout. e.g. an Activity with name "ActivityMain" may have a suggested layout name of "activity_main_layout"
+ * Allows a one to one mapping suggestion between different types of Android asset names, like for example mapping the name of an Activity
+ * to its layout. e.g. an Activity with name "ActivityMain" may have a suggested layout name of "activity_main_layout"
  */
 class AssetNameConverter(private val type: Type, private val name: String) {
   private var layoutPrefixOverride: String? = null
@@ -102,44 +96,47 @@ class AssetNameConverter(private val type: Type, private val name: String) {
     get() = (if (layoutPrefixOverride == null) DEFAULT_LAYOUT_NAME_PREFIX else layoutPrefixOverride) + "_"
 
   enum class Type {
-    ACTIVITY, LAYOUT, CLASS_NAME, RESOURCE, FRAGMENT
+    ACTIVITY,
+    LAYOUT,
+    CLASS_NAME,
+    RESOURCE,
+    FRAGMENT,
   }
 
   /**
-   * Convert whatever current text type we're representing into the [Type.CLASS_NAME] type,
-   * since that can act as a common base type we can use to reliably covert into all other types.
+   * Convert whatever current text type we're representing into the [Type.CLASS_NAME] type, since that can act as a common base type we can
+   * use to reliably covert into all other types.
    */
-  private fun toClassName(): String = when (type) {
-    Type.ACTIVITY -> stripActivitySuffix(toUpperCamelCase(name))
-    Type.LAYOUT -> {
-      val layoutPrefix = layoutPrefixWithTrailingUnderscore
-      var layoutName = name
-      if (layoutName.startsWith(layoutPrefix)) {
-        layoutName = layoutName.substring(layoutPrefix.length)
+  private fun toClassName(): String =
+    when (type) {
+      Type.ACTIVITY -> stripActivitySuffix(toUpperCamelCase(name))
+      Type.LAYOUT -> {
+        val layoutPrefix = layoutPrefixWithTrailingUnderscore
+        var layoutName = name
+        if (layoutName.startsWith(layoutPrefix)) {
+          layoutName = layoutName.substring(layoutPrefix.length)
+        }
+        underscoreToCamelCase(layoutName)
       }
-      underscoreToCamelCase(layoutName)
-    }
-    Type.RESOURCE -> underscoreToCamelCase(name)
-    Type.CLASS_NAME -> {
-      var className = name
-      // TODO(qumeric): it should not depend on the order
-      STRIP_CLASS_SUFFIXES.forEach {
-        className = className.stripSuffix(it, recursively = true)
+      Type.RESOURCE -> underscoreToCamelCase(name)
+      Type.CLASS_NAME -> {
+        var className = name
+        // TODO(qumeric): it should not depend on the order
+        STRIP_CLASS_SUFFIXES.forEach { className = className.stripSuffix(it, recursively = true) }
+        if (layoutPrefixOverride != null) {
+          val prefixAsSuffix = underscoreToCamelCase(layoutPrefixOverride!!)
+          className = className.stripSuffix(prefixAsSuffix)
+        }
+        className
       }
-      if (layoutPrefixOverride != null) {
-        val prefixAsSuffix = underscoreToCamelCase(layoutPrefixOverride!!)
-        className = className.stripSuffix(prefixAsSuffix)
+      Type.FRAGMENT -> {
+        stripFragmentSuffix(name)
       }
-      className
     }
-    Type.FRAGMENT -> {
-      stripFragmentSuffix(name)
-    }
-  }
 
   /**
-   * Override the default layout prefix. This should *not* include its trailing underscore.
-   * This will only be used when converting from or to the [Type.LAYOUT] type.
+   * Override the default layout prefix. This should *not* include its trailing underscore. This will only be used when converting from or
+   * to the [Type.LAYOUT] type.
    *
    * Passing in `null` will clear the override, if set.
    */
@@ -148,9 +145,7 @@ class AssetNameConverter(private val type: Type, private val name: String) {
     return this
   }
 
-  /**
-   * Takes the existing value, and converts it to the requested type.
-   */
+  /** Takes the existing value, and converts it to the requested type. */
   fun getValue(type: Type): String {
     if (type == Type.FRAGMENT) {
       overrideLayoutPrefix("fragment")

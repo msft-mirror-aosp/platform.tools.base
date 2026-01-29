@@ -24,19 +24,22 @@ import com.android.tools.idea.wizard.template.impl.activities.common.layoutToVie
 import com.android.tools.idea.wizard.template.renderIf
 
 fun cppEmptyActivityKt(
-    packageName: String,
-    applicationPackage: String?,
-    activityClass: String,
-    layoutName: String,
-    useAndroidX: Boolean,
-    isViewBindingSupported: Boolean,
-    libraryName: String
+  packageName: String,
+  applicationPackage: String?,
+  activityClass: String,
+  layoutName: String,
+  useAndroidX: Boolean,
+  isViewBindingSupported: Boolean,
+  libraryName: String,
 ): String {
 
-  val contentViewBlock = if (isViewBindingSupported) """
+  val contentViewBlock =
+    if (isViewBindingSupported)
+      """
      binding = ${layoutToViewBindingClass(layoutName)}.inflate(layoutInflater)
      setContentView(binding.root)
-  """ else "setContentView(R.layout.$layoutName)"
+  """
+    else "setContentView(R.layout.$layoutName)"
 
   return """
 package ${escapeKotlinIdentifier(packageName)}
@@ -61,7 +64,7 @@ ${renderIf(isViewBindingSupported) {"""
           Language.Kotlin,
           isViewBindingSupported = isViewBindingSupported,
           id = "sample_text",
-          className = "TextView")}.text = stringFromJNI()
+          className = "TextView",)}.text = stringFromJNI()
     }
     /**
       * A native method that is implemented by the '$libraryName' native library,

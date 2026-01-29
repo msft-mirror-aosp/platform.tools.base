@@ -29,17 +29,20 @@ fun firstFragmentJava(
   navFragmentPrefix: String,
   navViewModelClass: String,
   useAndroidX: Boolean,
-  isViewBindingSupported: Boolean
+  isViewBindingSupported: Boolean,
 ): String {
-  val viewModelInitializationBlock = if (useAndroidX) "new ViewModelProvider(this).get(${navViewModelClass}.class);"
-  else "new ViewModelProvider(this, new ViewModelProvider.NewInstanceFactory()).get(${navViewModelClass}.class);"
+  val viewModelInitializationBlock =
+    if (useAndroidX) "new ViewModelProvider(this).get(${navViewModelClass}.class);"
+    else "new ViewModelProvider(this, new ViewModelProvider.NewInstanceFactory()).get(${navViewModelClass}.class);"
 
   val layoutName = "fragment_${navFragmentPrefix}"
-  val onCreateViewBlock = if (isViewBindingSupported) """
+  val onCreateViewBlock =
+    if (isViewBindingSupported)
+      """
     binding = ${layoutToViewBindingClass(layoutName)}.inflate(inflater, container, false);
     View root = binding.getRoot();
   """
-  else "View root = inflater.inflate(R.layout.$layoutName, container, false);"
+    else "View root = inflater.inflate(R.layout.$layoutName, container, false);"
 
   return """
 package ${packageName}.ui.${navFragmentPrefix};
@@ -69,7 +72,7 @@ ${renderIf(isViewBindingSupported) {"""
           Language.Java,
           isViewBindingSupported = isViewBindingSupported,
           id = "text_${navFragmentPrefix}",
-          parentView = "root")};
+          parentView = "root",)};
         ${navFragmentPrefix}ViewModel.getText().observe(getViewLifecycleOwner(), textView::setText);
         return root;
     }

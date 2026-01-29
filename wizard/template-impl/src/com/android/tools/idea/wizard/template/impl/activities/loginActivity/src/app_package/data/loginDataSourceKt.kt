@@ -18,9 +18,7 @@ package com.android.tools.idea.wizard.template.impl.activities.loginActivity.src
 
 import com.android.tools.idea.wizard.template.escapeKotlinIdentifier
 
-fun loginDataSourceKt(
-  packageName: String) =
-
+fun loginDataSourceKt(packageName: String) =
   """package ${escapeKotlinIdentifier(packageName)}.data
 
 import ${escapeKotlinIdentifier(packageName)}.data.model.LoggedInUser

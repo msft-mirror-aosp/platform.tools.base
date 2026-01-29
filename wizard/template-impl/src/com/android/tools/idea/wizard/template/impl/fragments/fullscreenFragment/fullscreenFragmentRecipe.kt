@@ -35,7 +35,7 @@ fun RecipeExecutor.fullscreenFragmentRecipe(
   moduleData: ModuleTemplateData,
   fragmentClass: String,
   layoutName: String,
-  packageName: String
+  packageName: String,
 ) {
   val (projectData, srcOut, resOut) = moduleData
   val useAndroidX = moduleData.projectTemplateData.androidXSupport
@@ -52,24 +52,27 @@ fun RecipeExecutor.fullscreenFragmentRecipe(
   save(fragmentFullscreenXml(fragmentClass, packageName, moduleData.themesData), resOut.resolve("layout/${layoutName}.xml"))
 
   val isViewBindingSupported = moduleData.viewBindingSupport.isViewBindingSupported()
-  val fullscreenFragment = when (projectData.language) {
-    Language.Java -> fullscreenFragmentJava(
-      fragmentClass = fragmentClass,
-      layoutName = layoutName,
-      packageName = packageName,
-      applicationPackage = projectData.applicationPackage,
-      useAndroidX = useAndroidX,
-      isViewBindingSupported = isViewBindingSupported
-    )
-    Language.Kotlin -> fullscreenFragmentKt(
-      fragmentClass = fragmentClass,
-      layoutName = layoutName,
-      packageName = packageName,
-      applicationPackage = projectData.applicationPackage,
-      useAndroidX = useAndroidX,
-      isViewBindingSupported = isViewBindingSupported
-    )
-  }
+  val fullscreenFragment =
+    when (projectData.language) {
+      Language.Java ->
+        fullscreenFragmentJava(
+          fragmentClass = fragmentClass,
+          layoutName = layoutName,
+          packageName = packageName,
+          applicationPackage = projectData.applicationPackage,
+          useAndroidX = useAndroidX,
+          isViewBindingSupported = isViewBindingSupported,
+        )
+      Language.Kotlin ->
+        fullscreenFragmentKt(
+          fragmentClass = fragmentClass,
+          layoutName = layoutName,
+          packageName = packageName,
+          applicationPackage = projectData.applicationPackage,
+          useAndroidX = useAndroidX,
+          isViewBindingSupported = isViewBindingSupported,
+        )
+    }
   save(fullscreenFragment, srcOut.resolve("${fragmentClass}.${ktOrJavaExt}"))
 
   open(resOut.resolve("layout/${layoutName}.xml"))

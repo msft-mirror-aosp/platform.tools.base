@@ -15,7 +15,8 @@
  */
 package com.android.tools.idea.wizard.template.impl.activities.navigationDrawerActivity.res.values
 
-fun strings() = """
+fun strings() =
+  """
 <resources>
     <string name="navigation_drawer_open">Open navigation drawer</string>
     <string name="navigation_drawer_close">Close navigation drawer</string>

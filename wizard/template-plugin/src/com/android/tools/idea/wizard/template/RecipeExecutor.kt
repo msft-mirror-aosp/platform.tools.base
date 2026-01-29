@@ -22,8 +22,8 @@ import java.io.File
 /** Execution engine for the instructions in a recipe. */
 interface RecipeExecutor {
   /**
-   * Copies the given source file into the given destination file (where the source is allowed to be
-   * a directory, in which case the whole directory is copied recursively).
+   * Copies the given source file into the given destination file (where the source is allowed to be a directory, in which case the whole
+   * directory is copied recursively).
    */
   fun copy(from: File, to: File)
 
@@ -35,21 +35,15 @@ interface RecipeExecutor {
    */
   fun save(source: String, to: File)
 
-  /**
-   * Appends text to the given output file. If the existing text does not end with a newline, one is
-   * added before the appended text.
-   */
+  /** Appends text to the given output file. If the existing text does not end with a newline, one is added before the appended text. */
   fun append(source: String, to: File)
 
-  /**
-   * Merges the given XML source into the given destination file (or just writes it if the
-   * destination file does not exist).
-   */
+  /** Merges the given XML source into the given destination file (or just writes it if the destination file does not exist). */
   fun mergeXml(source: String, to: File)
 
   /**
-   * Creates a directory at the specified location (if not already present). This will also create
-   * any parent directories that don't exist, as well.
+   * Creates a directory at the specified location (if not already present). This will also create any parent directories that don't exist,
+   * as well.
    */
   fun createDirectory(at: File)
 
@@ -57,18 +51,15 @@ interface RecipeExecutor {
   fun open(file: File)
 
   /**
-   * Adds "plugins { id '`plugin`' }" statement to the module build.gradle[.kts] file and if
-   * settings.gradle[.kts] has a `pluginManagement` block, it also adds "plugins { id '`plugin`'
-   * version '`revision`'}" statement to the project top level build.gradle[.kts] file.
+   * Adds "plugins { id '`plugin`' }" statement to the module build.gradle[.kts] file and if settings.gradle[.kts] has a `pluginManagement`
+   * block, it also adds "plugins { id '`plugin`' version '`revision`'}" statement to the project top level build.gradle[.kts] file.
    */
   fun applyPlugin(plugin: String, revision: String?, minRev: String? = null)
 
   /**
-   * Add plugins according to the existing project setup. First it adds plugin to catalog if project
-   * has it. Then it add plugin project level declaration to first component that exists: settings
-   * plugins management block, root project plugins block (if exists), dependencies classpath if
-   * it's an old syntax. In case nothing was found - we force adding plugin alias to root project
-   * plugins block.
+   * Add plugins according to the existing project setup. First it adds plugin to catalog if project has it. Then it add plugin project
+   * level declaration to first component that exists: settings plugins management block, root project plugins block (if exists),
+   * dependencies classpath if it's an old syntax. In case nothing was found - we force adding plugin alias to root project plugins block.
    *
    * Plugin version must be located in classpath parameter.
    */
@@ -77,43 +68,30 @@ interface RecipeExecutor {
   fun addPlugin(pluginId: String, classpathModule: String, version: String)
 
   /**
-   * Adds "plugins { id '`plugin`' }" statement to the [module] build.gradle[.kts] file and if
-   * settings.gradle[.kts] has a `pluginManagement` block, it also adds "plugins { id '`plugin`'
-   * version '`revision`'}" statement to the project top level build.gradle[.kts] file.
+   * Adds "plugins { id '`plugin`' }" statement to the [module] build.gradle[.kts] file and if settings.gradle[.kts] has a
+   * `pluginManagement` block, it also adds "plugins { id '`plugin`' version '`revision`'}" statement to the project top level
+   * build.gradle[.kts] file.
    */
   fun applyPluginInModule(plugin: String, module: Module, revision: String?, minRev: String? = null)
 
-  fun applyPluginWithClasspathInModule(
-    pluginId: String,
-    module: Module,
-    classpathModule: String,
-    version: String,
-  )
+  fun applyPluginWithClasspathInModule(pluginId: String, module: Module, classpathModule: String, version: String)
 
   /**
-   * Records a classpath dependency. If settings.gradle[.kts] has a `pluginManagement` block this
-   * call is ignored, unless `forceAdding` is `true`
+   * Records a classpath dependency. If settings.gradle[.kts] has a `pluginManagement` block this call is ignored, unless `forceAdding` is
+   * `true`
    */
-  fun addClasspathDependency(
-    mavenCoordinate: String,
-    minRev: String? = null,
-    forceAdding: Boolean = false,
-  )
+  fun addClasspathDependency(mavenCoordinate: String, minRev: String? = null, forceAdding: Boolean = false)
 
   /**
-   * Records a library dependency Old [configuration]s such as "compile" will be converted to new
-   * ones ("implementation") in later stages if Gradle supports it.
+   * Records a library dependency Old [configuration]s such as "compile" will be converted to new ones ("implementation") in later stages if
+   * Gradle supports it.
    *
-   * @param mavenCoordinate coordinate of dependency to be added in Maven format (e.g
-   *   androidx.appcompat:appcompat:1.1.0).
+   * @param mavenCoordinate coordinate of dependency to be added in Maven format (e.g androidx.appcompat:appcompat:1.1.0).
    * @param configuration Gradle configuration to use.
-   * @param minRev If [minRev] is present, [minRev] or a higher number is used as the version of the
-   *   dependency.
-   * @param moduleDir determines a module to add the dependency. The current module will be used if
-   *   it is null.
-   * @param toBase If true the dependency will be added to a base module if it exists. Example:
-   *   Libraries with manifest resources added to a Dynamic Feature Module need to be added to the
-   *   base module.
+   * @param minRev If [minRev] is present, [minRev] or a higher number is used as the version of the dependency.
+   * @param moduleDir determines a module to add the dependency. The current module will be used if it is null.
+   * @param toBase If true the dependency will be added to a base module if it exists. Example: Libraries with manifest resources added to a
+   *   Dynamic Feature Module need to be added to the base module.
    */
   fun addDependency(
     mavenCoordinate: String,
@@ -125,8 +103,8 @@ interface RecipeExecutor {
   )
 
   /**
-   * Records a module dependency. Old [configuration]s such as "compile" will be converted to new
-   * ones ("implementation") in later stages if Gradle supports it.
+   * Records a module dependency. Old [configuration]s such as "compile" will be converted to new ones ("implementation") in later stages if
+   * Gradle supports it.
    *
    * @param configuration Gradle configuration to use.
    * @param moduleName name of a module on which something depends. Should not start with ':'.
@@ -134,15 +112,8 @@ interface RecipeExecutor {
    */
   fun addModuleDependency(configuration: String, moduleName: String, toModule: File)
 
-  /**
-   * Adds a platform artifact dependency, for using Maven BOMs to set the versions of other
-   * dependencies.
-   */
-  fun addPlatformDependency(
-    mavenCoordinate: String,
-    configuration: String = "implementation",
-    enforced: Boolean = false,
-  )
+  /** Adds a platform artifact dependency, for using Maven BOMs to set the versions of other dependencies. */
+  fun addPlatformDependency(mavenCoordinate: String, configuration: String = "implementation", enforced: Boolean = false)
 
   /**
    * Records a file dependency, e.g. implementation(files("./libs/my_lib.aar"))
@@ -153,8 +124,8 @@ interface RecipeExecutor {
   fun addFileDependency(file: String, configuration: String = "implementation")
 
   /**
-   * Appends text to the project-level gradle.properties file, if the specified property doesn't
-   * exist in the file. This is sort of a hack, because GradlePropertiesModel is read-only
+   * Appends text to the project-level gradle.properties file, if the specified property doesn't exist in the file. This is sort of a hack,
+   * because GradlePropertiesModel is read-only
    *
    * @param propertyName the property to check if already exists
    * @param textToAdd the raw text to append to the file
@@ -170,43 +141,33 @@ interface RecipeExecutor {
    */
   fun addSourceSet(type: SourceSetType, name: String, dir: File)
 
-  /**
-   * Initializes the variable with [name] to [value] in the ext block of global Gradle build file.
-   */
+  /** Initializes the variable with [name] to [value] in the ext block of global Gradle build file. */
   fun setExtVar(name: String, value: String)
 
   /**
    * Returns the variable with [name] in the ext block of global Gradle build file.
    *
-   * @return the value of the variable. Returns [valueIfNotFound] if the variable with [name] isn't
-   *   found in the ext block.
+   * @return the value of the variable. Returns [valueIfNotFound] if the variable with [name] isn't found in the ext block.
    */
   fun getExtVar(name: String, valueIfNotFound: String): String
 
   /**
-   * Looks for the given classpath dependency coordinate, in the project base, and returns the
-   * version variable name on it. For example if the base project has a classpath dependency of
-   * 'org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version' this function returns
-   * 'kotlin_version'. If the dependency has no variable, or the variable can't be determined, it
-   * returns the specified default value.
+   * Looks for the given classpath dependency coordinate, in the project base, and returns the version variable name on it. For example if
+   * the base project has a classpath dependency of 'org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version' this function returns
+   * 'kotlin_version'. If the dependency has no variable, or the variable can't be determined, it returns the specified default value.
    *
-   * @param mavenCoordinate coordinate of class path dependency to be added in Maven format (e.g
-   *   androidx.appcompat:appcompat).
-   * @param valueIfNotFound value to return if the dependency has no variable, or the variable can't
-   *   be determined.
+   * @param mavenCoordinate coordinate of class path dependency to be added in Maven format (e.g androidx.appcompat:appcompat).
+   * @param valueIfNotFound value to return if the dependency has no variable, or the variable can't be determined.
    */
   fun getClasspathDependencyVarName(mavenCoordinate: String, valueIfNotFound: String): String
 
   /**
-   * Looks for the given dependency coordinate and returns the version variable name on it. For
-   * example if the module has a dependency of 'androidx.appcompat:appcompat:$appcompat_version'
-   * this function returns 'appcompat_version'. If the dependency has no variable, or the variable
-   * can't be determined, it returns the specified default value.
+   * Looks for the given dependency coordinate and returns the version variable name on it. For example if the module has a dependency of
+   * 'androidx.appcompat:appcompat:$appcompat_version' this function returns 'appcompat_version'. If the dependency has no variable, or the
+   * variable can't be determined, it returns the specified default value.
    *
-   * @param mavenCoordinate coordinate of the dependency to be added in Maven format (e.g
-   *   androidx.appcompat:appcompat).
-   * @param valueIfNotFound value to return if the dependency has no variable, or the variable can't
-   *   be determined.
+   * @param mavenCoordinate coordinate of the dependency to be added in Maven format (e.g androidx.appcompat:appcompat).
+   * @param valueIfNotFound value to return if the dependency has no variable, or the variable can't be determined.
    */
   fun getDependencyVarName(mavenCoordinate: String, valueIfNotFound: String): String
 
@@ -214,16 +175,14 @@ interface RecipeExecutor {
   fun addIncludeToSettings(moduleName: String)
 
   /**
-   * Adds and configures a new test suite in the module's `build.gradle` file for running Journey
-   * tests.
+   * Adds and configures a new test suite in the module's `build.gradle` file for running Journey tests.
    *
-   * This creates a `testSuites` block and sets the `targetVariant` for the new suite. If a test
-   * suite with the given name already exists, then the configuration is updated to support running
-   * Journey tests.
+   * This creates a `testSuites` block and sets the `targetVariant` for the new suite. If a test suite with the given name already exists,
+   * then the configuration is updated to support running Journey tests.
    *
    * @param testSuiteName The name for the new test suite (e.g., "journeys").
-   * @param targetVariant The build variant that the test suite will target. If `null`, a
-   *   placeholder comment is added, prompting the user to specify the target variant.
+   * @param targetVariant The build variant that the test suite will target. If `null`, a placeholder comment is added, prompting the user
+   *   to specify the target variant.
    */
   fun addJourneysTestSuite(testSuiteName: String, targetVariant: String?)
 
@@ -231,24 +190,20 @@ interface RecipeExecutor {
   fun setBuildFeature(name: String, value: Boolean)
 
   /**
-   * Sets the view binding support. This exists only for AGP 3.6 because syntax is different from
-   * AGP 3.6 and AGP 4.0+. View binding can be configured using [setBuildFeature] with AGP 4.0+.
+   * Sets the view binding support. This exists only for AGP 3.6 because syntax is different from AGP 3.6 and AGP 4.0+. View binding can be
+   * configured using [setBuildFeature] with AGP 4.0+.
    */
   fun setViewBinding(value: Boolean)
 
   /** Sets Cpp Options field values */
   fun setCppOptions(cppFlags: String, cppPath: String, cppVersion: String)
 
-  /**
-   * Sets sourceCompatibility and targetCompatibility in compileOptions and (if needed) jvmTarget in
-   * kotlinOptions.
-   */
-  @Deprecated("Use setJavaKotlinCompileOptions instead")
-  fun requireJavaVersion(version: String, kotlinSupport: Boolean = false)
+  /** Sets sourceCompatibility and targetCompatibility in compileOptions and (if needed) jvmTarget in kotlinOptions. */
+  @Deprecated("Use setJavaKotlinCompileOptions instead") fun requireJavaVersion(version: String, kotlinSupport: Boolean = false)
 
   /**
-   * Sets sourceCompatibility and targetCompatibility in compileOptions and (if needed) jvmTarget in
-   * kotlinOptions, choosing the version from a centralized place
+   * Sets sourceCompatibility and targetCompatibility in compileOptions and (if needed) jvmTarget in kotlinOptions, choosing the version
+   * from a centralized place
    */
   fun setJavaKotlinCompileOptions(isKotlin: Boolean = false, moduleDir: File? = null)
 
@@ -261,8 +216,7 @@ interface RecipeExecutor {
   fun addDynamicFeature(name: String, toModule: File)
 
   /**
-   * Gets the Java version used by the Gradle JVM as a String for build.gradle files, for example
-   * JavaVersion.VERSION_17
+   * Gets the Java version used by the Gradle JVM as a String for build.gradle files, for example JavaVersion.VERSION_17
    *
    * @param defaultVersion the default version to return if the JVM can't be found
    * @return the Java version
@@ -276,10 +230,7 @@ interface RecipeExecutor {
    */
   fun useLibrary(name: String)
 
-  /**
-   * Adds `compileSdk` element in form of block or property to the build file. It adds block for new
-   * AGP versions.
-   */
+  /** Adds `compileSdk` element in form of block or property to the build file. It adds block for new AGP versions. */
   fun addCompileSdk(androidVersion: AndroidVersion, isKotlinMultiplatform: Boolean = false)
 }
 

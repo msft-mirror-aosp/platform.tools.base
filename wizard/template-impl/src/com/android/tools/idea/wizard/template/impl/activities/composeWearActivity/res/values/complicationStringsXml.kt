@@ -17,7 +17,7 @@
 package com.android.tools.idea.wizard.template.impl.activities.composeWearActivity.res.values
 
 fun complicationStringsXml(): String {
-    return """
+  return """
 <resources>
     <string name="complication_label">Example complication</string>
 </resources>

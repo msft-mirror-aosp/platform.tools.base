@@ -18,10 +18,8 @@ package com.android.tools.idea.wizard.template.impl.fragments.loginFragment.src.
 
 import com.android.tools.idea.wizard.template.getMaterialComponentName
 
-fun loginViewModelFactoryJava(
-  packageName: String,
-  useAndroidX: Boolean
-) = """
+fun loginViewModelFactoryJava(packageName: String, useAndroidX: Boolean) =
+  """
 package ${packageName}.ui.login;
 
 import ${getMaterialComponentName("android.arch.lifecycle.ViewModel", useAndroidX)};

@@ -132,7 +132,7 @@ val navigationDrawerActivityTemplate = template {
     TextFieldWidget(navHeaderLayoutName),
     TextFieldWidget(contentLayoutName),
     TextFieldWidget(navGraphName),
-    LanguageWidget()
+    LanguageWidget(),
   )
 
   thumb { File("navigation-drawer-activity").resolve("template_blank_activity_drawer.png") }
@@ -148,7 +148,7 @@ val navigationDrawerActivityTemplate = template {
       navHeaderLayoutName = navHeaderLayoutName.value,
       drawerMenu = drawerMenu.value,
       contentLayoutName = contentLayoutName.value,
-      navGraphName = navGraphName.value
+      navGraphName = navGraphName.value,
     )
   }
 }

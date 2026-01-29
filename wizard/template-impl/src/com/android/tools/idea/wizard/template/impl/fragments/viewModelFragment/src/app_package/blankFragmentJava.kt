@@ -25,11 +25,12 @@ fun blankFragmentJava(
   layoutName: String,
   packageName: String,
   useAndroidX: Boolean,
-  viewModelName: String
+  viewModelName: String,
 ): String {
 
-  val viewModelInitializationBlock = if (useAndroidX) "new ViewModelProvider(this).get(${viewModelName}.class);"
-  else "new ViewModelProvider(this, new ViewModelProvider.NewInstanceFactory()).get(${viewModelName}.class);"
+  val viewModelInitializationBlock =
+    if (useAndroidX) "new ViewModelProvider(this).get(${viewModelName}.class);"
+    else "new ViewModelProvider(this, new ViewModelProvider.NewInstanceFactory()).get(${viewModelName}.class);"
 
   return """
 package ${packageName};

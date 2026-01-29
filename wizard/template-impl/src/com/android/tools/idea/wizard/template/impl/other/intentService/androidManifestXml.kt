@@ -16,10 +16,8 @@
 
 package com.android.tools.idea.wizard.template.impl.other.intentService
 
-fun androidManifestXml(
-  className: String,
-  packageName: String
-) = """
+fun androidManifestXml(className: String, packageName: String) =
+  """
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <application>

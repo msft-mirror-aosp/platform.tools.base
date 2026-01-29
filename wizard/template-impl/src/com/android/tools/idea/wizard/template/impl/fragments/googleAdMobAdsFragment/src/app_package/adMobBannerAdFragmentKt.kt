@@ -17,8 +17,8 @@
 package com.android.tools.idea.wizard.template.impl.fragments.googleAdMobAdsFragment.src.app_package
 
 import com.android.tools.idea.wizard.template.Language
-import com.android.tools.idea.wizard.template.getMaterialComponentName
 import com.android.tools.idea.wizard.template.escapeKotlinIdentifier
+import com.android.tools.idea.wizard.template.getMaterialComponentName
 import com.android.tools.idea.wizard.template.impl.activities.common.findViewById
 import com.android.tools.idea.wizard.template.impl.activities.common.importViewBindingClass
 import com.android.tools.idea.wizard.template.impl.activities.common.layoutToViewBindingClass
@@ -30,13 +30,16 @@ fun adMobBannerAdFragmentKt(
   layoutName: String,
   packageName: String,
   useAndroidX: Boolean,
-  isViewBindingSupported: Boolean
+  isViewBindingSupported: Boolean,
 ): String {
 
-  val onCreateViewBlock = if (isViewBindingSupported) """
+  val onCreateViewBlock =
+    if (isViewBindingSupported)
+      """
       _binding = ${layoutToViewBindingClass(layoutName)}.inflate(inflater, container, false)
       return binding.root
-  """ else "return inflater.inflate(R.layout.$layoutName, container, false)"
+  """
+    else "return inflater.inflate(R.layout.$layoutName, container, false)"
 
   return """
 package ${escapeKotlinIdentifier(packageName)}
@@ -79,7 +82,7 @@ ${renderIf(isViewBindingSupported) {"""
           Language.Kotlin,
           isViewBindingSupported = isViewBindingSupported,
           id = "ad_view",
-          parentView = "view")}
+          parentView = "view",)}
         val adRequest = AdRequest.Builder()
             .setRequestAgent("android_studio:ad_template").build()
         adView.loadAd(adRequest)

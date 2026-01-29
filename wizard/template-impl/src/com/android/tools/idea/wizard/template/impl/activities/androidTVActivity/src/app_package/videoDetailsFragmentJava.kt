@@ -21,7 +21,7 @@ fun videoDetailsFragmentJava(
   detailsActivity: String,
   detailsFragment: String,
   minApiLevel: Int,
-  packageName: String
+  packageName: String,
 ): String {
   val contextArgBlock = if (minApiLevel >= 23) "getContext()" else "getActivity()"
 

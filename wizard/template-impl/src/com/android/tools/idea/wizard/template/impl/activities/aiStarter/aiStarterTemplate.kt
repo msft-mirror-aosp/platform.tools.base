@@ -39,13 +39,7 @@ val aiStarterTemplate
     name = "AI Starter"
     description = "Create a new app using AI"
     minApi = 21
-    constraints =
-      listOf(
-        TemplateConstraint.AndroidX,
-        TemplateConstraint.Kotlin,
-        TemplateConstraint.Material3,
-        TemplateConstraint.Compose,
-      )
+    constraints = listOf(TemplateConstraint.AndroidX, TemplateConstraint.Kotlin, TemplateConstraint.Material3, TemplateConstraint.Compose)
     category = Category.Compose
     formFactor = FormFactor.Mobile
     screens =
@@ -67,27 +61,12 @@ val aiStarterTemplate
     val isLauncher = booleanParameter {
       name = "Launcher Activity"
       default = false
-      help =
-        "If true, this activity will have a CATEGORY_LAUNCHER intent filter, making it visible in the launcher"
+      help = "If true, this activity will have a CATEGORY_LAUNCHER intent filter, making it visible in the launcher"
     }
 
-    widgets(
-      TextFieldWidget(activityClass),
-      PackageNameWidget(packageName),
-      CheckBoxWidget(isLauncher),
-      LanguageWidget(),
-    )
+    widgets(TextFieldWidget(activityClass), PackageNameWidget(packageName), CheckBoxWidget(isLauncher), LanguageWidget())
 
-    thumb {
-      File("compose-activity-material3").resolve("template_compose_empty_activity_material3.png")
-    }
+    thumb { File("compose-activity-material3").resolve("template_compose_empty_activity_material3.png") }
 
-    recipe = { data: TemplateData ->
-      aiStarterRecipe(
-        data as ModuleTemplateData,
-        activityClass.value,
-        packageName.value,
-        isLauncher.value,
-      )
-    }
+    recipe = { data: TemplateData -> aiStarterRecipe(data as ModuleTemplateData, activityClass.value, packageName.value, isLauncher.value) }
   }

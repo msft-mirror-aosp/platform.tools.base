@@ -17,8 +17,8 @@
 package com.android.tools.idea.wizard.template.impl.activities.loginActivity.src.app_package.ui.login
 
 import com.android.tools.idea.wizard.template.Language
-import com.android.tools.idea.wizard.template.getMaterialComponentName
 import com.android.tools.idea.wizard.template.escapeKotlinIdentifier
+import com.android.tools.idea.wizard.template.getMaterialComponentName
 import com.android.tools.idea.wizard.template.impl.activities.common.findViewById
 import com.android.tools.idea.wizard.template.impl.activities.common.importViewBindingClass
 import com.android.tools.idea.wizard.template.impl.activities.common.layoutToViewBindingClass
@@ -30,13 +30,16 @@ fun loginActivityKt(
   packageName: String,
   applicationPackage: String?,
   useAndroidX: Boolean,
-  isViewBindingSupported: Boolean
+  isViewBindingSupported: Boolean,
 ): String {
 
-  val contentViewBlock = if (isViewBindingSupported) """
+  val contentViewBlock =
+    if (isViewBindingSupported)
+      """
      binding = ${layoutToViewBindingClass(layoutName)}.inflate(layoutInflater)
      setContentView(binding.root)
-  """ else "setContentView(R.layout.$layoutName)"
+  """
+    else "setContentView(R.layout.$layoutName)"
 
   return """
 package ${escapeKotlinIdentifier(packageName)}.ui.login
@@ -75,22 +78,22 @@ ${renderIf(isViewBindingSupported) {"""
           Language.Kotlin,
           isViewBindingSupported = isViewBindingSupported,
           id = "username",
-          className = "EditText")}
+          className = "EditText",)}
         val password = ${findViewById(
           Language.Kotlin,
           isViewBindingSupported = isViewBindingSupported,
           id = "password",
-          className = "EditText")}
+          className = "EditText",)}
         val login = ${findViewById(
           Language.Kotlin,
           isViewBindingSupported = isViewBindingSupported,
           id = "login",
-          className = "Button")}
+          className = "Button",)}
         val loading = ${findViewById(
           Language.Kotlin,
           isViewBindingSupported = isViewBindingSupported,
           id = "loading",
-          className = "ProgressBar")}
+          className = "ProgressBar",)}
 
         loginViewModel = ViewModelProvider(this, LoginViewModelFactory())
             .get(LoginViewModel::class.java)

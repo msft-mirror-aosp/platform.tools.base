@@ -55,17 +55,12 @@ val layoutResourceFileTemplate
       loggable = true
     }
 
-    widgets(
-      TextFieldWidget(layoutName),
-      TextFieldWidget(rootTag)
-    )
+    widgets(TextFieldWidget(layoutName), TextFieldWidget(rootTag))
 
     thumb {
       // TODO(b/147126989)
       File("no_activity.png")
     }
 
-    recipe = { data: TemplateData ->
-      layoutResourceFileRecipe(data as ModuleTemplateData, layoutName.value, rootTag.value)
-    }
+    recipe = { data: TemplateData -> layoutResourceFileRecipe(data as ModuleTemplateData, layoutName.value, rootTag.value) }
   }

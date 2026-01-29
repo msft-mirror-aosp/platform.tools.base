@@ -21,18 +21,23 @@ import com.android.tools.idea.wizard.template.RecipeExecutor
 import com.android.tools.idea.wizard.template.common.AGP_VERSION_WITH_BUILT_IN_KOTLIN
 
 fun RecipeExecutor.addAllKotlinDependencies(data: ModuleTemplateData, revision: String = data.projectTemplateData.kotlinVersion) {
-    val projectData = data.projectTemplateData
-    if (!data.isNewModule && projectData.language == Language.Kotlin
-            && data.projectTemplateData.agpVersion < AGP_VERSION_WITH_BUILT_IN_KOTLIN) {
-        addPlugin("org.jetbrains.kotlin.android", "org.jetbrains.kotlin:kotlin-gradle-plugin", revision)
-    }
+  val projectData = data.projectTemplateData
+  if (
+    !data.isNewModule && projectData.language == Language.Kotlin && data.projectTemplateData.agpVersion < AGP_VERSION_WITH_BUILT_IN_KOTLIN
+  ) {
+    addPlugin("org.jetbrains.kotlin.android", "org.jetbrains.kotlin:kotlin-gradle-plugin", revision)
+  }
 }
 
-fun RecipeExecutor.addComposeDependencies(data: ModuleTemplateData, composeBomVersion: String = COMPOSE_BOM_VERSION, composeUiVersion: String? = null) {
+fun RecipeExecutor.addComposeDependencies(
+  data: ModuleTemplateData,
+  composeBomVersion: String = COMPOSE_BOM_VERSION,
+  composeUiVersion: String? = null,
+) {
   addPlugin(
-      "org.jetbrains.kotlin.plugin.compose",
-      "org.jetbrains.kotlin:compose-compiler-gradle-plugin",
-      data.projectTemplateData.kotlinVersion
+    "org.jetbrains.kotlin.plugin.compose",
+    "org.jetbrains.kotlin:compose-compiler-gradle-plugin",
+    data.projectTemplateData.kotlinVersion,
   )
   addPlatformDependency(mavenCoordinate = "androidx.compose:compose-bom:$composeBomVersion")
   addPlatformDependency(mavenCoordinate = "androidx.compose:compose-bom:$composeBomVersion", "androidTestImplementation")
@@ -42,8 +47,8 @@ fun RecipeExecutor.addComposeDependencies(data: ModuleTemplateData, composeBomVe
   addDependency(mavenCoordinate = "androidx.compose.ui:ui-graphics")
   addDependency(mavenCoordinate = "androidx.compose.ui:ui-tooling", configuration = "debugImplementation")
   addDependency(mavenCoordinate = "androidx.compose.ui:ui-tooling-preview")
-  addDependency(mavenCoordinate = "androidx.compose.ui:ui-test-manifest", configuration="debugImplementation")
-  addDependency(mavenCoordinate = "androidx.compose.ui:ui-test-junit4", configuration="androidTestImplementation")
+  addDependency(mavenCoordinate = "androidx.compose.ui:ui-test-manifest", configuration = "debugImplementation")
+  addDependency(mavenCoordinate = "androidx.compose.ui:ui-test-junit4", configuration = "androidTestImplementation")
 }
 
 fun RecipeExecutor.addMaterialDependency(useAndroidX: Boolean) {
@@ -54,7 +59,7 @@ fun RecipeExecutor.addMaterialDependency(useAndroidX: Boolean) {
 }
 
 fun RecipeExecutor.addMaterial3Dependency() {
-    addDependency("com.google.android.material:material:+", minRev = "1.5.0")
+  addDependency("com.google.android.material:material:+", minRev = "1.5.0")
 }
 
 fun RecipeExecutor.addSupportWearableDependency() {

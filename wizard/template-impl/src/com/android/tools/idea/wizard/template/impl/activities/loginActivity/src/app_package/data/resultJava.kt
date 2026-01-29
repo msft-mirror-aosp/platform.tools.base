@@ -16,10 +16,7 @@
 
 package com.android.tools.idea.wizard.template.impl.activities.loginActivity.src.app_package.data
 
-
-fun resultJava(
-  packageName: String) =
-
+fun resultJava(packageName: String) =
   """package ${packageName}.data;
 
 /**

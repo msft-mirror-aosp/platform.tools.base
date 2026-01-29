@@ -18,9 +18,7 @@ package com.android.tools.idea.wizard.template.impl.activities.loginActivity.src
 
 import com.android.tools.idea.wizard.template.escapeKotlinIdentifier
 
-fun loginFormStateKt(
-  packageName: String) =
-
+fun loginFormStateKt(packageName: String) =
   """package ${escapeKotlinIdentifier(packageName)}.ui.login
 
 /**

@@ -25,12 +25,13 @@ fun androidManifestXml(
   isLauncher: Boolean,
   activityThemeName: String,
 ): String {
-  val activityDescription = activity(
-    packageName = packageName,
-    activityClass = activityClass,
-    themeName = activityThemeName,
-    isLauncherActivity = isLauncher || isNewModule,
-  )
+  val activityDescription =
+    activity(
+      packageName = packageName,
+      activityClass = activityClass,
+      themeName = activityThemeName,
+      isLauncherActivity = isLauncher || isNewModule,
+    )
   return """
 <manifest
     xmlns:android ="http://schemas.android.com/apk/res/android"
@@ -44,15 +45,11 @@ fun androidManifestXml(
         $activityDescription
     </application>
 </manifest>
-    """.collapseEmptyActivityTags()
+    """
+    .collapseEmptyActivityTags()
 }
 
-private fun activity(
-  packageName: String,
-  activityClass: String,
-  isLauncherActivity: Boolean,
-  themeName: String,
-) =
+private fun activity(packageName: String, activityClass: String, isLauncherActivity: Boolean, themeName: String) =
   """
 <activity
     android:name ="${packageName}.${activityClass}"
@@ -62,10 +59,7 @@ private fun activity(
 </activity>
 """
 
-private fun theme(themeName: String) =
-  renderIf(themeName.startsWith("@android:style/")) {
-    """android:theme = "$themeName""""
-  }
+private fun theme(themeName: String) = renderIf(themeName.startsWith("@android:style/")) { """android:theme = "$themeName"""" }
 
 private fun intentFilter(isLauncher: Boolean) =
   renderIf(isLauncher) {

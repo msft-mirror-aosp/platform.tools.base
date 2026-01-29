@@ -38,4 +38,5 @@ fun themesXml(themesData: ThemesData) =
 """
 
 fun getAppWidgetTheme(themeName: String) = "${themeName}.AppWidgetContainer"
+
 fun getParentAppWidgetTheme(themeName: String) = "${themeName}.AppWidgetContainerParent"

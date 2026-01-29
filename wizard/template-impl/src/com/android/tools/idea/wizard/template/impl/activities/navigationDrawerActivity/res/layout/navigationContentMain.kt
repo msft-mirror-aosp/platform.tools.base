@@ -17,12 +17,8 @@ package com.android.tools.idea.wizard.template.impl.activities.navigationDrawerA
 
 import com.android.tools.idea.wizard.template.getMaterialComponentName
 
-fun navigationContentMain(
-  appBarMainName: String,
-  navGraphName: String,
-  navHostFragmentId: String,
-  useAndroidX: Boolean
-) = """
+fun navigationContentMain(appBarMainName: String, navGraphName: String, navHostFragmentId: String, useAndroidX: Boolean) =
+  """
 <?xml version="1.0" encoding="utf-8"?>
 <${getMaterialComponentName("android.support.constraint.ConstraintLayout", useAndroidX)}
     xmlns:android="http://schemas.android.com/apk/res/android"

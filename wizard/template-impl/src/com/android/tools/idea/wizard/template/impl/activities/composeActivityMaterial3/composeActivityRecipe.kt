@@ -33,7 +33,7 @@ fun RecipeExecutor.composeActivityRecipe(
   packageName: String,
   isLauncher: Boolean,
   greeting: String,
-  defaultPreview: String
+  defaultPreview: String,
 ) {
   val (_, srcOut, resOut, _) = moduleData
   addAllKotlinDependencies(moduleData)
@@ -53,7 +53,7 @@ fun RecipeExecutor.composeActivityRecipe(
     packageName = packageName,
     isLauncher = isLauncher,
     hasNoActionBar = true,
-    generateActivityTitle = true
+    generateActivityTitle = true,
   )
   // It doesn't have to create separate themes.xml for light and night because the default
   // status bar color is same between them at this moment

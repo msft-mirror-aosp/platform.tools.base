@@ -60,12 +60,7 @@ val broadcastReceiverTemplate
       help = "Whether or not the broadcast receiver can be instantiated by the system"
     }
 
-    widgets(
-      TextFieldWidget(className),
-      CheckBoxWidget(isExported),
-      CheckBoxWidget(isEnabled),
-      LanguageWidget()
-    )
+    widgets(TextFieldWidget(className), CheckBoxWidget(isExported), CheckBoxWidget(isEnabled), LanguageWidget())
 
     thumb {
       // TODO(b/147126989)

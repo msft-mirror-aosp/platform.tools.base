@@ -18,12 +18,8 @@ package com.android.tools.idea.wizard.template.impl.other.customView.src.app_pac
 
 import com.android.tools.idea.wizard.template.renderIf
 
-
-fun customViewJava(
-  applicationPackage: String?,
-  packageName: String,
-  viewClass: String
-) = """
+fun customViewJava(applicationPackage: String?, packageName: String, viewClass: String) =
+  """
 package ${packageName};
 
 import android.content.Context;

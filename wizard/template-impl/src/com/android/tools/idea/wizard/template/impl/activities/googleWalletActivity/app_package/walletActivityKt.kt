@@ -27,17 +27,20 @@ fun walletActivityKt(
   layoutName: String,
   packageName: String,
   applicationPackage: String?,
-  isViewBindingSupported: Boolean
+  isViewBindingSupported: Boolean,
 ): String {
-  val contentViewBlock = if (isViewBindingSupported) """
+  val contentViewBlock =
+    if (isViewBindingSupported)
+      """
       // Use view binding to access the UI elements
       layout = ${layoutToViewBindingClass(layoutName)}.inflate(layoutInflater)
       setContentView(layout.root)
-  """ else "setContentView(R.layout.$layoutName)"
+  """
+    else "setContentView(R.layout.$layoutName)"
 
-  val googleWalletButtonBlock = if (isViewBindingSupported)
-    "addToGoogleWalletButton = layout.addToGoogleWalletButton.root"
-  else "addToGoogleWalletButton = findViewById<View>(R.id.addToGoogleWalletButton)"
+  val googleWalletButtonBlock =
+    if (isViewBindingSupported) "addToGoogleWalletButton = layout.addToGoogleWalletButton.root"
+    else "addToGoogleWalletButton = findViewById<View>(R.id.addToGoogleWalletButton)"
 
   return """
 package ${escapeKotlinIdentifier(packageName)}

@@ -17,8 +17,8 @@
 package com.android.tools.idea.wizard.template.impl.fragments.loginFragment.src.app_package.ui.login
 
 import com.android.tools.idea.wizard.template.Language
-import com.android.tools.idea.wizard.template.getMaterialComponentName
 import com.android.tools.idea.wizard.template.escapeKotlinIdentifier
+import com.android.tools.idea.wizard.template.getMaterialComponentName
 import com.android.tools.idea.wizard.template.impl.activities.common.findViewById
 import com.android.tools.idea.wizard.template.impl.activities.common.importViewBindingClass
 import com.android.tools.idea.wizard.template.impl.activities.common.layoutToViewBindingClass
@@ -30,13 +30,16 @@ fun loginFragmentKt(
   packageName: String,
   applicationPackage: String?,
   useAndroidX: Boolean,
-  isViewBindingSupported: Boolean
+  isViewBindingSupported: Boolean,
 ): String {
 
-  val onCreateViewBlock = if (isViewBindingSupported) """
+  val onCreateViewBlock =
+    if (isViewBindingSupported)
+      """
       _binding = ${layoutToViewBindingClass(layoutName)}.inflate(inflater, container, false)
       return binding.root
-  """ else "return inflater.inflate(R.layout.$layoutName, container, false)"
+  """
+    else "return inflater.inflate(R.layout.$layoutName, container, false)"
 
   return """
 package ${escapeKotlinIdentifier(packageName)}.ui.login
@@ -88,25 +91,25 @@ ${renderIf(isViewBindingSupported) {"""
           isViewBindingSupported = isViewBindingSupported,
           id = "username",
           parentView = "view",
-          className = "EditText")}
+          className = "EditText",)}
         val passwordEditText = ${findViewById(
           Language.Kotlin,
           isViewBindingSupported = isViewBindingSupported,
           id = "password",
           parentView = "view",
-          className = "EditText")}
+          className = "EditText",)}
         val loginButton = ${findViewById(
           Language.Kotlin,
           isViewBindingSupported = isViewBindingSupported,
           id = "login",
           parentView = "view",
-          className = "Button")}
+          className = "Button",)}
         val loadingProgressBar = ${findViewById(
           Language.Kotlin,
           isViewBindingSupported = isViewBindingSupported,
           id = "loading",
           parentView = "view",
-          className = "ProgressBar")}
+          className = "ProgressBar",)}
 
         loginViewModel.loginFormState.observe(viewLifecycleOwner,
             Observer { loginFormState ->

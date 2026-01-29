@@ -19,13 +19,11 @@ package com.android.tools.idea.wizard.template.impl.activities.googleAdMobAdsAct
 import com.android.tools.idea.wizard.template.impl.fragments.googleAdMobAdsFragment.AdFormat
 import com.android.tools.idea.wizard.template.renderIf
 
-fun activitySimpleXml(
-  activityClass: String,
-  adFormat: AdFormat,
-  packageName: String
-): String {
-  val formatSpecificLayout = when (adFormat) {
-    AdFormat.Banner -> """
+fun activitySimpleXml(activityClass: String, adFormat: AdFormat, packageName: String): String {
+  val formatSpecificLayout =
+    when (adFormat) {
+      AdFormat.Banner ->
+        """
     <TextView
         android:text="@string/hello_world"
         android:layout_width="wrap_content"
@@ -41,7 +39,8 @@ fun activitySimpleXml(
         ads:adSize="BANNER"
         ads:adUnitId="@string/banner_ad_unit_id" />
     """
-  AdFormat.Interstitial -> """
+      AdFormat.Interstitial ->
+        """
     <!-- view for AdMob Interstitial Ad -->
     <TextView
         android:id="@+id/app_title"
@@ -68,7 +67,8 @@ fun activitySimpleXml(
         android:layout_centerHorizontal="true"
         android:layout_centerVertical="true"
         android:text="@string/next_level" />
-  """}
+  """
+    }
 
   return """
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"

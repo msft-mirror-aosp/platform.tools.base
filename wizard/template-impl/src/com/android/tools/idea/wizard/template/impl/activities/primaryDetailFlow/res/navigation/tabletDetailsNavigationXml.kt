@@ -15,12 +15,8 @@
  */
 package com.android.tools.idea.wizard.template.impl.activities.primaryDetailFlow.res.navigation
 
-
-fun tabletDetailsNavigationXml(
-  packageName: String,
-  detailName: String,
-  detailNameLayout: String
-) = """
+fun tabletDetailsNavigationXml(packageName: String, detailName: String, detailNameLayout: String) =
+  """
 <?xml version="1.0" encoding="utf-8"?>
 <navigation xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"

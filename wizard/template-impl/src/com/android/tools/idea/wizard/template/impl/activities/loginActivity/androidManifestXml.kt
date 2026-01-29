@@ -16,16 +16,10 @@
 
 package com.android.tools.idea.wizard.template.impl.activities.loginActivity
 
-import com.android.tools.idea.wizard.template.impl.activities.common.commonActivityBody
 import com.android.tools.idea.wizard.template.impl.activities.common.collapseEmptyActivityTags
+import com.android.tools.idea.wizard.template.impl.activities.common.commonActivityBody
 
-fun androidManifestXml(
-  activityClass: String,
-  simpleName: String,
-  isLauncher: Boolean,
-  isLibrary: Boolean,
-  isNewModule: Boolean
-  ): String {
+fun androidManifestXml(activityClass: String, simpleName: String, isLauncher: Boolean, isLibrary: Boolean, isNewModule: Boolean): String {
   val activityLabel = if (isNewModule) """android:label="@string/app_name">""" else """android:label="@string/title_${simpleName}">"""
 
   val launcher = isLauncher || isNewModule
@@ -40,5 +34,6 @@ fun androidManifestXml(
         </activity>
     </application>
 </manifest>
-""".collapseEmptyActivityTags()
+"""
+    .collapseEmptyActivityTags()
 }

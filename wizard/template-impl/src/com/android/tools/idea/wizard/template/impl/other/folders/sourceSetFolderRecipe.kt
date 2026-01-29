@@ -25,7 +25,7 @@ fun RecipeExecutor.generateResourcesFolder(
   location: String, // TODO(qumeric): make it File
   sourceProviderNameSupplier: () -> String,
   sourceSetType: SourceSetType = SourceSetType.RESOURCES,
-  defaultDirName: String = "resources"
+  defaultDirName: String = "resources",
 ) {
   val sourceProviderName = sourceProviderNameSupplier()
   if (remapFolder) {

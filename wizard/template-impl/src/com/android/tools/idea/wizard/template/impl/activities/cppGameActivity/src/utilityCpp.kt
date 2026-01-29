@@ -16,7 +16,7 @@
 package com.android.tools.idea.wizard.template.impl.activities.cppGameActivity.src
 
 fun utilityCpp(): String {
-    return """
+  return """
 #include "Utility.h"
 #include "AndroidOut.h"
 
@@ -108,7 +108,7 @@ float *Utility::buildIdentityMatrix(float *outMatrix) {
 }
 
 fun utilityH(): String {
-    return """
+  return """
 #ifndef ANDROIDGLINVESTIGATIONS_UTILITY_H
 #define ANDROIDGLINVESTIGATIONS_UTILITY_H
 

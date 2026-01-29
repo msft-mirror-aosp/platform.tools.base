@@ -23,22 +23,18 @@ import com.android.tools.idea.wizard.template.impl.activities.common.addAllKotli
 import com.android.tools.idea.wizard.template.impl.other.service.src.app_package.serviceJava
 import com.android.tools.idea.wizard.template.impl.other.service.src.app_package.serviceKt
 
-fun RecipeExecutor.serviceRecipe(
-  moduleData: ModuleTemplateData,
-  className: String,
-  isExported: Boolean,
-  isEnabled: Boolean
-) {
+fun RecipeExecutor.serviceRecipe(moduleData: ModuleTemplateData, className: String, isExported: Boolean, isEnabled: Boolean) {
   val (projectData, srcOut, resOut, manifestOut) = moduleData
   val ktOrJavaExt = projectData.language.extension
   val packageName = moduleData.packageName
   addAllKotlinDependencies(moduleData)
 
   mergeXml(androidManifestXml(className, isEnabled, isExported, packageName), manifestOut.resolve("AndroidManifest.xml"))
-  val service = when (projectData.language) {
-    Language.Java -> serviceJava(className, packageName)
-    Language.Kotlin -> serviceKt(className, packageName)
-  }
+  val service =
+    when (projectData.language) {
+      Language.Java -> serviceJava(className, packageName)
+      Language.Kotlin -> serviceKt(className, packageName)
+    }
   save(service, srcOut.resolve("${className}.${ktOrJavaExt}"))
 
   open(srcOut.resolve("${className}.${ktOrJavaExt}"))

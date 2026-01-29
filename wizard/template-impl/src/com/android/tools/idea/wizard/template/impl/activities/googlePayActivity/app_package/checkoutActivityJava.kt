@@ -27,17 +27,19 @@ fun checkoutActivityJava(
   layoutName: String,
   packageName: String,
   applicationPackage: String?,
-  isViewBindingSupported: Boolean
+  isViewBindingSupported: Boolean,
 ): String {
 
-  val contentViewBlock = if (isViewBindingSupported)
-     """layoutBinding = ${layoutToViewBindingClass(layoutName)}.inflate(getLayoutInflater());
+  val contentViewBlock =
+    if (isViewBindingSupported)
+      """layoutBinding = ${layoutToViewBindingClass(layoutName)}.inflate(getLayoutInflater());
      setContentView(layoutBinding.getRoot());
-  """ else "setContentView(R.layout.$layoutName);"
+  """
+    else "setContentView(R.layout.$layoutName);"
 
-  val googlePayButtonBlock = if (isViewBindingSupported)
-    "googlePayButton = layoutBinding.googlePayButton.getRoot();"
-  else "googlePayButton = findViewById(R.id.googlePayButton);"
+  val googlePayButtonBlock =
+    if (isViewBindingSupported) "googlePayButton = layoutBinding.googlePayButton.getRoot();"
+    else "googlePayButton = findViewById(R.id.googlePayButton);"
 
   return """
 package $packageName;

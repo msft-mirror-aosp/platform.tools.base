@@ -58,11 +58,7 @@ fun RecipeExecutor.archStarterActivityRecipe(
   addComposeDependencies(moduleData)
 
   val hiltVersion = "2.57.2"
-  addPlugin(
-    "com.google.dagger.hilt.android",
-    "com.google.dagger:hilt-android-gradle-plugin",
-    hiltVersion,
-  )
+  addPlugin("com.google.dagger.hilt.android", "com.google.dagger:hilt-android-gradle-plugin", hiltVersion)
 
   // KSP is needed for Hilt and Room
   addPlugin(
@@ -87,15 +83,9 @@ fun RecipeExecutor.archStarterActivityRecipe(
   addDependency("com.google.dagger:hilt-android:$hiltVersion")
   addDependency("com.google.dagger:hilt-android-compiler:$hiltVersion", configuration = "ksp")
   addDependency("com.google.dagger:hilt-compiler:$hiltVersion", configuration = "ksp")
-  addDependency(
-    "com.google.dagger:hilt-android-testing:$hiltVersion",
-    configuration = "androidTestImplementation",
-  )
+  addDependency("com.google.dagger:hilt-android-testing:$hiltVersion", configuration = "androidTestImplementation")
   addDependency("junit:junit:4.13.2", configuration = "testImplementation")
-  addDependency(
-    "org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2",
-    configuration = "testImplementation",
-  )
+  addDependency("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2", configuration = "testImplementation")
   addDependency("androidx.test:core:1.6.1", configuration = "testImplementation")
   addDependency("androidx.test.ext:junit:1.3.0", configuration = "testImplementation")
   addDependency("androidx.test:runner:1.6.2", configuration = "androidTestImplementation")
@@ -224,8 +214,7 @@ class ArchStarterActivityTemplateVariables(
   val modelName: String,
   val themeName: String,
 ) {
-  fun packageName(vararg subpackages: String) =
-    escapeKotlinIdentifier(listOf(basePackage, *subpackages).joinToString("."))
+  fun packageName(vararg subpackages: String) = escapeKotlinIdentifier(listOf(basePackage, *subpackages).joinToString("."))
 
   fun packageDeclaration(vararg subpackages: String) = "package ${packageName(*subpackages)}"
 

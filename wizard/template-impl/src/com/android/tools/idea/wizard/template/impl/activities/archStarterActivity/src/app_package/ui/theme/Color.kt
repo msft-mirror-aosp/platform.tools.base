@@ -18,7 +18,8 @@ package com.android.tools.idea.wizard.template.impl.activities.archStarterActivi
 import com.android.tools.idea.wizard.template.MaterialColor
 import com.android.tools.idea.wizard.template.impl.activities.archStarterActivity.ArchStarterActivityTemplateVariables
 
-fun ArchStarterActivityTemplateVariables.colorKt() = """
+fun ArchStarterActivityTemplateVariables.colorKt() =
+  """
 package $themePackage
 
 import androidx.compose.ui.graphics.Color

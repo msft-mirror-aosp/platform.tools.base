@@ -18,19 +18,18 @@ package com.android.tools.idea.wizard.template.impl.other.intentService.src.app_
 
 import com.android.tools.idea.wizard.template.renderIf
 
-
-fun intentServiceJava(
-  className: String,
-  includeHelper: Boolean,
-  packageName: String
-): String {
-  val classDocBlock = if (includeHelper) """
+fun intentServiceJava(className: String, includeHelper: Boolean, packageName: String): String {
+  val classDocBlock =
+    if (includeHelper)
+      """
  * TODO: Customize class - update intent actions, extra parameters and static
  * helper methods.
   """
-  else "* TODO: Customize class - update intent actions and extra parameters."
+    else "* TODO: Customize class - update intent actions and extra parameters."
 
-  val classBodyBlock = if (includeHelper) """
+  val classBodyBlock =
+    if (includeHelper)
+      """
     // TODO: Rename actions, choose action names that describe tasks that this
     // IntentService can perform, e.g. ACTION_FETCH_NEW_ITEMS
     private static final String ACTION_FOO = "${packageName}.action.FOO";
@@ -70,7 +69,8 @@ fun intentServiceJava(
         context.startService(intent);
     }
   """
-  else """
+    else
+      """
     // TODO: Rename actions, choose action names that describe tasks that this
     // IntentService can perform, e.g. ACTION_FETCH_NEW_ITEMS
     public static final String ACTION_FOO = "${packageName}.action.FOO";

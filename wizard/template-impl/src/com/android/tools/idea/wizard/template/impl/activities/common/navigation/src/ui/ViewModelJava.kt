@@ -17,9 +17,8 @@ package com.android.tools.idea.wizard.template.impl.activities.common.navigation
 
 import com.android.tools.idea.wizard.template.getMaterialComponentName
 
-fun viewModelJava(
-  packageName: String, navFragmentPrefix: String, navViewModelClass: String, useAndroidX: Boolean = true
-) = """
+fun viewModelJava(packageName: String, navFragmentPrefix: String, navViewModelClass: String, useAndroidX: Boolean = true) =
+  """
 package ${packageName}.ui.${navFragmentPrefix};
 
 import ${getMaterialComponentName("android.arch.lifecycle.LiveData", useAndroidX)};

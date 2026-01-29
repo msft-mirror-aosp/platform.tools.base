@@ -19,11 +19,8 @@ package com.android.tools.idea.wizard.template.impl.other.automotiveMessagingSer
 import com.android.tools.idea.wizard.template.escapeKotlinIdentifier
 import com.android.tools.idea.wizard.template.getMaterialComponentName
 
-fun messageReplyReceiverKt(
-  packageName: String,
-  replyReceiverName: String,
-  useAndroidX: Boolean
-) = """
+fun messageReplyReceiverKt(packageName: String, replyReceiverName: String, useAndroidX: Boolean) =
+  """
 package ${escapeKotlinIdentifier(packageName)}
 
 import android.content.BroadcastReceiver

@@ -31,13 +31,11 @@ internal data class TemplateImpl(
   override val constraints: Collection<TemplateConstraint>,
   override val useGenericInstrumentedTests: Boolean,
   override val useGenericLocalTests: Boolean,
-
-    ) : Template {
+) : Template {
   override fun thumb(): Thumb = _thumb()
 }
 
-@DslMarker
-annotation class TemplateDSL
+@DslMarker annotation class TemplateDSL
 
 inline fun template(block: TemplateBuilder.() -> Unit): Template = TemplateBuilder().apply(block).build()
 
@@ -49,8 +47,7 @@ class TemplateBuilder {
   var minApi: Int = 1
   var category: Category? = null
   var formFactor: FormFactor? = null
-  @Suppress("RedundantCompanionReference")
-  var thumb: () -> Thumb = { Thumb.NoThumb }
+  @Suppress("RedundantCompanionReference") var thumb: () -> Thumb = { Thumb.NoThumb }
   // TODO(qumeric): make it a high order function for consistency and @TemplateDSL scope protection
   var recipe: Recipe? = null
   var screens: Collection<WizardUiContext> = listOf()
@@ -63,8 +60,7 @@ class TemplateBuilder {
     this.widgets = widgets.toList()
   }
 
-  @TemplateDSL
-  class ThumbBuilder
+  @TemplateDSL class ThumbBuilder
 
   /** A wrapper for collection of [Thumb]s with an optional [get]ter. Implementations usually use [Parameter.value] to choose [Thumb]. */
   fun thumb(block: ThumbBuilder.() -> File) {
@@ -92,7 +88,7 @@ class TemplateBuilder {
       screens,
       constraints,
       useGenericAndroidTests,
-      useGenericLocalTests
+      useGenericLocalTests,
     )
   }
 }

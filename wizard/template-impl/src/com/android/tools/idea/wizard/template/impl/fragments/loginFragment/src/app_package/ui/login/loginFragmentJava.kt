@@ -29,13 +29,16 @@ fun loginFragmentJava(
   packageName: String,
   applicationPackage: String?,
   useAndroidX: Boolean,
-  isViewBindingSupported: Boolean
+  isViewBindingSupported: Boolean,
 ): String {
 
-  val onCreateViewBlock = if (isViewBindingSupported) """
+  val onCreateViewBlock =
+    if (isViewBindingSupported)
+      """
       binding = ${layoutToViewBindingClass(layoutName)}.inflate(inflater, container, false);
       return binding.getRoot();
-  """ else "return inflater.inflate(R.layout.$layoutName, container, false);"
+  """
+    else "return inflater.inflate(R.layout.$layoutName, container, false);"
 
   return """
 package  ${packageName}.ui.login;
@@ -89,22 +92,22 @@ ${renderIf(isViewBindingSupported) {"""
           Language.Java,
           isViewBindingSupported = isViewBindingSupported,
           id = "username",
-          parentView = "view")};
+          parentView = "view",)};
         final EditText passwordEditText = ${findViewById(
           Language.Java,
           isViewBindingSupported = isViewBindingSupported,
           id = "password",
-          parentView = "view")};
+          parentView = "view",)};
         final Button loginButton = ${findViewById(
           Language.Java,
           isViewBindingSupported = isViewBindingSupported,
           id = "login",
-          parentView = "view")};
+          parentView = "view",)};
         final ProgressBar loadingProgressBar = ${findViewById(
           Language.Java,
           isViewBindingSupported = isViewBindingSupported,
           id = "loading",
-          parentView = "view")};
+          parentView = "view",)};
 
         loginViewModel.getLoginFormState().observe(getViewLifecycleOwner(), new Observer<LoginFormState>() {
             @Override

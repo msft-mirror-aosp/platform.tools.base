@@ -16,7 +16,8 @@
 
 package com.android.tools.idea.wizard.template.impl.other.appWidget.res.drawable_v21
 
-fun appWidgetBackgroundXml() = """
+fun appWidgetBackgroundXml() =
+  """
 <?xml version="1.0" encoding="utf-8"?>
 <!--
 Background for widgets to make the rounded corners based on the

@@ -38,7 +38,7 @@ fun RecipeExecutor.listFragmentRecipe(
   columnCount: ColumnCount,
   fragmentLayout: String,
   fragmentLayoutList: String,
-  adapterClassName: String
+  adapterClassName: String,
 ) {
   val (projectData, srcOut, resOut, _) = moduleData
   val appCompatVersion = moduleData.apis.appCompatVersion
@@ -55,39 +55,52 @@ fun RecipeExecutor.listFragmentRecipe(
   save(itemListContentXml(), resOut.resolve("layout/${fragmentLayout}.xml"))
 
   val columnCountNumber = columnCount.ordinal + 1
-  val listFragment = when (projectData.language) {
-    Language.Java -> listFragmentJava(adapterClassName, applicationPackage, columnCountNumber, fragmentClass, fragmentLayoutList, packageName,
-                                      useAndroidX)
-    Language.Kotlin -> listFragmentKt(adapterClassName, applicationPackage, columnCountNumber, fragmentClass, fragmentLayoutList, packageName,
-                                      useAndroidX)
-  }
+  val listFragment =
+    when (projectData.language) {
+      Language.Java ->
+        listFragmentJava(
+          adapterClassName,
+          applicationPackage,
+          columnCountNumber,
+          fragmentClass,
+          fragmentLayoutList,
+          packageName,
+          useAndroidX,
+        )
+      Language.Kotlin ->
+        listFragmentKt(adapterClassName, applicationPackage, columnCountNumber, fragmentClass, fragmentLayoutList, packageName, useAndroidX)
+    }
   save(listFragment, srcOut.resolve("${fragmentClass}.${ktOrJavaExt}"))
 
   val isViewBindingSupported = moduleData.viewBindingSupport.isViewBindingSupported()
-  val recyclerViewAdapter = when (projectData.language) {
-    Language.Java -> recyclerViewAdapterJava(
-      adapterClassName = adapterClassName,
-      fragmentLayout = fragmentLayout,
-      packageName = packageName,
-      applicationPackage = projectData.applicationPackage,
-      useAndroidX = useAndroidX,
-      isViewBindingSupported = isViewBindingSupported
-    )
-    Language.Kotlin -> recyclerViewAdapterKt(
-        adapterClassName = adapterClassName,
-        applicationPackage = applicationPackage,
-        fragmentLayout = fragmentLayout,
-        packageName = packageName,
-        useAndroidX = useAndroidX,
-        isViewBindingSupported = isViewBindingSupported
-    )
-  }
+  val recyclerViewAdapter =
+    when (projectData.language) {
+      Language.Java ->
+        recyclerViewAdapterJava(
+          adapterClassName = adapterClassName,
+          fragmentLayout = fragmentLayout,
+          packageName = packageName,
+          applicationPackage = projectData.applicationPackage,
+          useAndroidX = useAndroidX,
+          isViewBindingSupported = isViewBindingSupported,
+        )
+      Language.Kotlin ->
+        recyclerViewAdapterKt(
+          adapterClassName = adapterClassName,
+          applicationPackage = applicationPackage,
+          fragmentLayout = fragmentLayout,
+          packageName = packageName,
+          useAndroidX = useAndroidX,
+          isViewBindingSupported = isViewBindingSupported,
+        )
+    }
   save(recyclerViewAdapter, srcOut.resolve("${adapterClassName}.${ktOrJavaExt}"))
 
-  val placeholderContent = when (projectData.language) {
-    Language.Java -> placeholderContentJava(packageName)
-    Language.Kotlin -> placeholderContentKt(packageName)
-  }
+  val placeholderContent =
+    when (projectData.language) {
+      Language.Java -> placeholderContentJava(packageName)
+      Language.Kotlin -> placeholderContentKt(packageName)
+    }
   save(placeholderContent, srcOut.resolve("placeholder/PlaceholderContent.${ktOrJavaExt}"))
 
   open(srcOut.resolve("${fragmentClass}.${ktOrJavaExt}"))

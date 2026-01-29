@@ -24,38 +24,32 @@ import com.android.sdklib.AndroidVersion
 // both should be replaced by Gradle project model.
 
 fun compileSdk(androidVersion: AndroidVersion, agpVersion: AgpVersion): String {
-    val isNewAGP = agpVersion.compareIgnoringQualifiers("7.0.0") >= 0
-    // TODO(b/409390818): Include minor version when AGP supports it
-    val apiLevelMajor = androidVersion.androidApiLevel.majorVersion
+  val isNewAGP = agpVersion.compareIgnoringQualifiers("7.0.0") >= 0
+  // TODO(b/409390818): Include minor version when AGP supports it
+  val apiLevelMajor = androidVersion.androidApiLevel.majorVersion
 
-    return when {
-        isNewAGP && androidVersion.isPreview ->
-            "compileSdkPreview \"${androidVersion.apiStringWithExtension}\""
-        isNewAGP -> "compileSdk $apiLevelMajor"
-        androidVersion.isPreview -> "compileSdkVersion \"${androidVersion.apiStringWithExtension}\""
-        else -> "compileSdkVersion $apiLevelMajor"
-    }
+  return when {
+    isNewAGP && androidVersion.isPreview -> "compileSdkPreview \"${androidVersion.apiStringWithExtension}\""
+    isNewAGP -> "compileSdk $apiLevelMajor"
+    androidVersion.isPreview -> "compileSdkVersion \"${androidVersion.apiStringWithExtension}\""
+    else -> "compileSdkVersion $apiLevelMajor"
+  }
 }
 
 fun minSdk(androidVersion: AndroidMajorVersion, agpVersion: AgpVersion): String =
-    toAndroidFieldVersion("minSdk", androidVersion, agpVersion)
+  toAndroidFieldVersion("minSdk", androidVersion, agpVersion)
 
 fun targetSdk(androidVersion: AndroidMajorVersion, agpVersion: AgpVersion): String =
-    toAndroidFieldVersion("targetSdk", androidVersion, agpVersion)
+  toAndroidFieldVersion("targetSdk", androidVersion, agpVersion)
 
-fun toAndroidFieldVersion(
-    fieldNameBase: String,
-    androidVersion: AndroidMajorVersion,
-    agpVersion: AgpVersion,
-): String {
-    val isNewAGP = agpVersion.compareIgnoringQualifiers("7.0.0") >= 0
-    val fieldName =
-        when {
-            isNewAGP && androidVersion.isPreview -> "${fieldNameBase}Preview"
-            isNewAGP -> fieldNameBase
-            else -> "${fieldNameBase}Version"
-        }
-    val fieldValue =
-        if (androidVersion.isPreview) "\"${androidVersion.apiString}\"" else androidVersion.apiString
-    return "$fieldName $fieldValue"
+fun toAndroidFieldVersion(fieldNameBase: String, androidVersion: AndroidMajorVersion, agpVersion: AgpVersion): String {
+  val isNewAGP = agpVersion.compareIgnoringQualifiers("7.0.0") >= 0
+  val fieldName =
+    when {
+      isNewAGP && androidVersion.isPreview -> "${fieldNameBase}Preview"
+      isNewAGP -> fieldNameBase
+      else -> "${fieldNameBase}Version"
+    }
+  val fieldValue = if (androidVersion.isPreview) "\"${androidVersion.apiString}\"" else androidVersion.apiString
+  return "$fieldName $fieldValue"
 }

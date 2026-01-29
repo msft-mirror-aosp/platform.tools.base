@@ -20,16 +20,16 @@ import com.android.tools.idea.wizard.template.Category
 import com.android.tools.idea.wizard.template.Constraint.*
 import com.android.tools.idea.wizard.template.FormFactor
 import com.android.tools.idea.wizard.template.LanguageWidget
-import com.android.tools.idea.wizard.template.PackageNameWidget
-import com.android.tools.idea.wizard.template.TextFieldWidget
 import com.android.tools.idea.wizard.template.ModuleTemplateData
+import com.android.tools.idea.wizard.template.PackageNameWidget
 import com.android.tools.idea.wizard.template.TemplateConstraint
 import com.android.tools.idea.wizard.template.TemplateData
+import com.android.tools.idea.wizard.template.TextFieldWidget
 import com.android.tools.idea.wizard.template.WizardUiContext
 import com.android.tools.idea.wizard.template.impl.activities.common.MIN_API
 import com.android.tools.idea.wizard.template.impl.defaultPackageNameParameter
-import com.android.tools.idea.wizard.template.template
 import com.android.tools.idea.wizard.template.stringParameter
+import com.android.tools.idea.wizard.template.template
 import java.io.File
 
 val settingsFragmentTemplate
@@ -53,15 +53,9 @@ val settingsFragmentTemplate
 
     val packageName = defaultPackageNameParameter
 
-    widgets(
-      TextFieldWidget(fragmentClass),
-      PackageNameWidget(packageName),
-      LanguageWidget()
-    )
+    widgets(TextFieldWidget(fragmentClass), PackageNameWidget(packageName), LanguageWidget())
 
     thumb { File("settings-fragment").resolve("template_settings_fragment.png") }
 
-    recipe = { data: TemplateData ->
-      settingsFragmentRecipe(data as ModuleTemplateData, fragmentClass.value, packageName.value)
-    }
+    recipe = { data: TemplateData -> settingsFragmentRecipe(data as ModuleTemplateData, fragmentClass.value, packageName.value) }
   }

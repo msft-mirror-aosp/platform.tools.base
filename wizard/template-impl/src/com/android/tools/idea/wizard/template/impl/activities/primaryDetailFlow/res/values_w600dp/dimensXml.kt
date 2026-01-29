@@ -16,8 +16,8 @@
 
 package com.android.tools.idea.wizard.template.impl.activities.primaryDetailFlow.res.values_w600dp
 
-
-fun dimensXml() = """
+fun dimensXml() =
+  """
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <dimen name="fab_margin">48dp</dimen>

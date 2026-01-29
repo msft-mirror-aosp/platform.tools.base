@@ -18,9 +18,8 @@ package com.android.tools.idea.wizard.template.impl.other.appWidget.res.values
 
 import com.android.tools.idea.wizard.template.renderIf
 
-fun stringsXml(
-  configurable: Boolean
-) = """
+fun stringsXml(configurable: Boolean) =
+  """
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="appwidget_text">EXAMPLE</string>

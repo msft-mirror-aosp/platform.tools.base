@@ -40,7 +40,7 @@ fun RecipeExecutor.fullscreenActivityRecipe(
   activityClass: String,
   isLauncher: Boolean,
   layoutName: String,
-  packageName: String
+  packageName: String,
 ) {
   val (projectData, srcOut, resOut, manifestOut) = moduleData
   val apis = moduleData.apis
@@ -56,8 +56,10 @@ fun RecipeExecutor.fullscreenActivityRecipe(
   val simpleName = activityToLayout(activityClass)
   val superClassFqcn = getMaterialComponentName("android.support.v7.app.AppCompatActivity", useAndroidX)
   val themeName = moduleData.themesData.main.name
-  mergeXml(androidManifestXml(activityClass, packageName, simpleName, isLauncher, moduleData.isLibrary, moduleData.isNewModule, themeName),
-           manifestOut.resolve("AndroidManifest.xml"))
+  mergeXml(
+    androidManifestXml(activityClass, packageName, simpleName, isLauncher, moduleData.isLibrary, moduleData.isNewModule, themeName),
+    manifestOut.resolve("AndroidManifest.xml"),
+  )
 
   val finalResOut = moduleData.baseFeature?.resDir ?: resOut
   generateThemeStyles(moduleData.themesData.main, useAndroidX, finalResOut)
@@ -73,25 +75,28 @@ fun RecipeExecutor.fullscreenActivityRecipe(
 
   val actionBarClassFqcn = getMaterialComponentName("android.support.v7.app.ActionBar", useAndroidX)
   val isViewBindingSupported = moduleData.viewBindingSupport.isViewBindingSupported()
-  val fullscreenActivity = when (projectData.language) {
-    Language.Java -> fullscreenActivityJava(
-      actionBarClassFqcn = actionBarClassFqcn,
-      activityClass = activityClass,
-      applicationPackage = projectData.applicationPackage,
-      layoutName = layoutName,
-      packageName = packageName,
-      superClassFqcn = superClassFqcn,
-      isViewBindingSupported = isViewBindingSupported
-    )
-    Language.Kotlin -> fullscreenActivityKt(
-      activityClass = activityClass,
-      applicationPackage = projectData.applicationPackage,
-      layoutName = layoutName,
-      packageName = packageName,
-      superClassFqcn = superClassFqcn,
-      isViewBindingSupported = isViewBindingSupported
-    )
-  }
+  val fullscreenActivity =
+    when (projectData.language) {
+      Language.Java ->
+        fullscreenActivityJava(
+          actionBarClassFqcn = actionBarClassFqcn,
+          activityClass = activityClass,
+          applicationPackage = projectData.applicationPackage,
+          layoutName = layoutName,
+          packageName = packageName,
+          superClassFqcn = superClassFqcn,
+          isViewBindingSupported = isViewBindingSupported,
+        )
+      Language.Kotlin ->
+        fullscreenActivityKt(
+          activityClass = activityClass,
+          applicationPackage = projectData.applicationPackage,
+          layoutName = layoutName,
+          packageName = packageName,
+          superClassFqcn = superClassFqcn,
+          isViewBindingSupported = isViewBindingSupported,
+        )
+    }
   save(fullscreenActivity, srcOut.resolve("${activityClass}.${ktOrJavaExt}"))
 
   open(srcOut.resolve("${activityClass}.${ktOrJavaExt}"))

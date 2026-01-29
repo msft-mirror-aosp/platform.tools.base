@@ -15,7 +15,8 @@
  */
 package com.android.tools.idea.wizard.template.impl.activities.navigationDrawerActivity.res.values
 
-fun navigationDrawerDrawables() = """
+fun navigationDrawerDrawables() =
+  """
 <resources xmlns:android="http://schemas.android.com/apk/res/android">
     <item name="ic_menu_camera" type="drawable">@android:drawable/ic_menu_camera</item>
     <item name="ic_menu_gallery" type="drawable">@android:drawable/ic_menu_gallery</item>

@@ -15,9 +15,7 @@
  */
 package com.android.tools.idea.wizard.template.impl.activities.googleWalletActivity.app_package
 
-fun samplePassJava(
-    packageName: String
-): String {
+fun samplePassJava(packageName: String): String {
   return """
 package $packageName;
 

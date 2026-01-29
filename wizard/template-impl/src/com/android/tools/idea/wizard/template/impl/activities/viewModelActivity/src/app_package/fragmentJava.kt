@@ -24,10 +24,12 @@ fun fragmentJava(
   fragmentPackage: String,
   packageName: String,
   useAndroidX: Boolean,
-  viewModelClass: String): String {
+  viewModelClass: String,
+): String {
 
-  val viewModelInitializationBlock = if (useAndroidX) "new ViewModelProvider(this).get(${viewModelClass}.class);"
-  else "new ViewModelProvider(this, new ViewModelProvider.NewInstanceFactory()).get(${viewModelClass}.class);"
+  val viewModelInitializationBlock =
+    if (useAndroidX) "new ViewModelProvider(this).get(${viewModelClass}.class);"
+    else "new ViewModelProvider(this, new ViewModelProvider.NewInstanceFactory()).get(${viewModelClass}.class);"
 
   return """package ${packageName}.${fragmentPackage};
 

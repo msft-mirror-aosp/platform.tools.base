@@ -36,13 +36,7 @@ val firebaseAiLogicActivityTemplate
     name = "Gemini API Starter with Firebase"
     description = "Creates a starter app for using the Gemini API via Firebase"
     minApi = 23
-    constraints =
-      listOf(
-        TemplateConstraint.AndroidX,
-        TemplateConstraint.Kotlin,
-        TemplateConstraint.Material3,
-        TemplateConstraint.Compose,
-      )
+    constraints = listOf(TemplateConstraint.AndroidX, TemplateConstraint.Kotlin, TemplateConstraint.Material3, TemplateConstraint.Compose)
 
     category = Category.Google
     formFactor = FormFactor.Mobile
@@ -63,11 +57,5 @@ val firebaseAiLogicActivityTemplate
 
     thumb { File("genai-activity").resolve("template_genai_activity.png") }
 
-    recipe = { data: TemplateData ->
-      firebaseAiLogicActivityRecipe(
-        data as ModuleTemplateData,
-        activityClass.value,
-        packageName.value,
-      )
-    }
+    recipe = { data: TemplateData -> firebaseAiLogicActivityRecipe(data as ModuleTemplateData, activityClass.value, packageName.value) }
   }

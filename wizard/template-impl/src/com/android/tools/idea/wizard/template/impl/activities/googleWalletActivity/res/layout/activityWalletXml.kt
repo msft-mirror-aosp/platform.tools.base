@@ -16,10 +16,7 @@
 
 package com.android.tools.idea.wizard.template.impl.activities.googleWalletActivity.res.layout
 
-fun activityWalletXml(
-  activityClass: String,
-  activityPackage: String
-): String {
+fun activityWalletXml(activityClass: String, activityPackage: String): String {
 
   return """
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"

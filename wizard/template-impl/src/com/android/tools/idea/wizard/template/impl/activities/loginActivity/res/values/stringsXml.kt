@@ -18,15 +18,15 @@ package com.android.tools.idea.wizard.template.impl.activities.loginActivity.res
 
 import com.android.tools.idea.wizard.template.renderIf
 
+fun stringsXml(simpleName: String, activityTitle: String, isNewModule: Boolean): String {
 
-fun stringsXml(
-  simpleName: String,
-  activityTitle: String,
-  isNewModule: Boolean): String {
-
-  val title = renderIf(!isNewModule) {"""
+  val title =
+    renderIf(!isNewModule) {
+      """
     <string name="title_${simpleName}">${activityTitle}</string>
-    """.trimIndent()}
+    """
+        .trimIndent()
+    }
 
   return """<resources>
     <!-- Strings related to login -->

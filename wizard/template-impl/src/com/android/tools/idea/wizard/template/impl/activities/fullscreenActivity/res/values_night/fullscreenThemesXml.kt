@@ -15,8 +15,8 @@
  */
 package com.android.tools.idea.wizard.template.impl.activities.fullscreenActivity.res.values_night
 
-import com.android.tools.idea.wizard.template.ThemesData
 import com.android.tools.idea.wizard.template.MaterialColor
+import com.android.tools.idea.wizard.template.ThemesData
 import com.android.tools.idea.wizard.template.impl.activities.fullscreenActivity.res.values.getFullscreenContainerThemeOverlay
 
 fun fullscreenThemes(themesData: ThemesData) =
@@ -27,4 +27,3 @@ fun fullscreenThemes(themesData: ThemesData) =
     </style>
 </resources>
 """
-

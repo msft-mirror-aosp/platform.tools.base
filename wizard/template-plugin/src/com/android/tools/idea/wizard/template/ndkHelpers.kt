@@ -19,7 +19,8 @@ val DEFAULT_CMAKE_VERSION = "3.22.1"
 
 fun PackageName.deriveNativeLibraryName(): String = split('.').last()
 
-fun cMakeListsTxt(nativeSourceName: String, libraryName: String) = """
+fun cMakeListsTxt(nativeSourceName: String, libraryName: String) =
+  """
 # For more information about using CMake with Android Studio, read the
 # documentation: https://d.android.com/studio/projects/add-native-code.html.
 # For more examples on how to use CMake, see https://github.com/android/ndk-samples.

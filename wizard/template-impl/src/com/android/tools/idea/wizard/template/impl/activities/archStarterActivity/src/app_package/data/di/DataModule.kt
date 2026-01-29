@@ -17,7 +17,8 @@ package com.android.tools.idea.wizard.template.impl.activities.archStarterActivi
 
 import com.android.tools.idea.wizard.template.impl.activities.archStarterActivity.ArchStarterActivityTemplateVariables
 
-fun ArchStarterActivityTemplateVariables.dataModule() = """
+fun ArchStarterActivityTemplateVariables.dataModule() =
+  """
 package $dataDiPackage
 
 import dagger.Binds

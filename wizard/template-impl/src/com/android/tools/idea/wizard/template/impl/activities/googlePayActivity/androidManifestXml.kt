@@ -17,8 +17,8 @@
 package com.android.tools.idea.wizard.template.impl.activities.googlePayActivity
 
 import com.android.tools.idea.wizard.template.ThemesData
-import com.android.tools.idea.wizard.template.impl.activities.common.commonActivityBody
 import com.android.tools.idea.wizard.template.impl.activities.common.collapseEmptyActivityTags
+import com.android.tools.idea.wizard.template.impl.activities.common.commonActivityBody
 
 fun androidManifestXml(
   activityClass: String,
@@ -27,7 +27,7 @@ fun androidManifestXml(
   activityPackage: String,
   simpleName: String,
   isNewModule: Boolean,
-  themesData: ThemesData
+  themesData: ThemesData,
 ): String {
   val launcher = isLauncher || isNewModule
   val activityBody = commonActivityBody(launcher, isLibrary)
@@ -48,5 +48,6 @@ fun androidManifestXml(
 
     </application>
 </manifest>
-""".collapseEmptyActivityTags()
+"""
+    .collapseEmptyActivityTags()
 }

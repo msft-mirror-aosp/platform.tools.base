@@ -15,7 +15,8 @@
  */
 package com.android.tools.idea.wizard.template.impl.activities.responsiveActivity.res.values
 
-fun dimens() = """
+fun dimens() =
+  """
 <resources>
     <dimen name="fab_margin">16dp</dimen>
     <dimen name="fragment_horizontal_margin">16dp</dimen>

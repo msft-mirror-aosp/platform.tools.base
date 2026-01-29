@@ -26,11 +26,7 @@ import com.android.tools.idea.wizard.template.impl.fragments.settingsFragment.re
 import com.android.tools.idea.wizard.template.impl.fragments.settingsFragment.src.app_package.singleScreenSettingsFragmentJava
 import com.android.tools.idea.wizard.template.impl.fragments.settingsFragment.src.app_package.singleScreenSettingsFragmentKt
 
-fun RecipeExecutor.settingsFragmentRecipe(
-  moduleData: ModuleTemplateData,
-  fragmentClass: String,
-  packageName: String
-) {
+fun RecipeExecutor.settingsFragmentRecipe(moduleData: ModuleTemplateData, fragmentClass: String, packageName: String) {
 
   val (projectData, srcOut, resOut, _) = moduleData
   val ktOrJavaExt = projectData.language.extension
@@ -41,10 +37,11 @@ fun RecipeExecutor.settingsFragmentRecipe(
   mergeXml(arraysXml(), resOut.resolve("values/arrays.xml"))
   mergeXml(rootPreferencesXml(), resOut.resolve("xml/root_preferences.xml"))
 
-  val singleScreenSettingsFragment = when (projectData.language) {
-    Language.Java -> singleScreenSettingsFragmentJava(fragmentClass, packageName)
-    Language.Kotlin -> singleScreenSettingsFragmentKt(fragmentClass, packageName)
-  }
+  val singleScreenSettingsFragment =
+    when (projectData.language) {
+      Language.Java -> singleScreenSettingsFragmentJava(fragmentClass, packageName)
+      Language.Kotlin -> singleScreenSettingsFragmentKt(fragmentClass, packageName)
+    }
   save(singleScreenSettingsFragment, srcOut.resolve("${fragmentClass}.${ktOrJavaExt}"))
 
   open(srcOut.resolve("${fragmentClass}.${ktOrJavaExt}"))

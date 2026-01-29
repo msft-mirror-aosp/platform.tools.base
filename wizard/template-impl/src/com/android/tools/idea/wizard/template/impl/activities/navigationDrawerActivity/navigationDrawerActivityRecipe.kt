@@ -51,7 +51,7 @@ fun RecipeExecutor.generateNavigationDrawer(
   navHeaderLayoutName: String,
   drawerMenu: String,
   contentLayoutName: String,
-  navGraphName: String
+  navGraphName: String,
 ) {
   val excludeMenu = false
   val menuName = classToResource(activityClass)
@@ -68,14 +68,7 @@ fun RecipeExecutor.generateNavigationDrawer(
   addMaterialDependency(useAndroidX)
   addViewBindingSupport(data.viewBindingSupport, true)
 
-  generateManifest(
-    data,
-    activityClass,
-    packageName,
-    isLauncher,
-    hasNoActionBar = true,
-    generateActivityTitle = true
-  )
+  generateManifest(data, activityClass, packageName, isLauncher, hasNoActionBar = true, generateActivityTitle = true)
 
   mergeXml(strings(), resOut.resolve("values/strings.xml"))
   mergeXml(dimens(), resOut.resolve("values/dimens.xml"))
@@ -99,7 +92,7 @@ fun RecipeExecutor.generateNavigationDrawer(
 
   save(
     navigationContentMain(appBarLayoutName, navGraphName, navHostFragmentId, useAndroidX),
-    resOut.resolve("layout/${contentLayoutName}.xml")
+    resOut.resolve("layout/${contentLayoutName}.xml"),
   )
 
   if (isNewModule && !excludeMenu) {
@@ -115,7 +108,8 @@ fun RecipeExecutor.generateNavigationDrawer(
     applicationPackage = data.projectTemplateData.applicationPackage,
     fragmentPrefix = "home",
     useAndroidX = useAndroidX,
-    isViewBindingSupported = isViewBindingSupported)
+    isViewBindingSupported = isViewBindingSupported,
+  )
   saveFragmentAndViewModel(
     resOut = resOut,
     srcOut = srcOut,
@@ -124,7 +118,8 @@ fun RecipeExecutor.generateNavigationDrawer(
     applicationPackage = data.projectTemplateData.applicationPackage,
     fragmentPrefix = "gallery",
     useAndroidX = useAndroidX,
-    isViewBindingSupported = isViewBindingSupported)
+    isViewBindingSupported = isViewBindingSupported,
+  )
   saveFragmentAndViewModel(
     resOut = resOut,
     srcOut = srcOut,
@@ -133,39 +128,23 @@ fun RecipeExecutor.generateNavigationDrawer(
     applicationPackage = data.projectTemplateData.applicationPackage,
     fragmentPrefix = "slideshow",
     useAndroidX = useAndroidX,
-    isViewBindingSupported = isViewBindingSupported)
+    isViewBindingSupported = isViewBindingSupported,
+  )
   if (language == Language.Kotlin) {
     setJavaKotlinCompileOptions(true)
   }
   val generateKotlin = language == Language.Kotlin
   navigationDependencies(generateKotlin, useAndroidX, appCompatVersion)
 
-  save(
-    mobileNavigation(navGraphName, packageName),
-    resOut.resolve("navigation/${navGraphName}.xml")
-  )
+  save(mobileNavigation(navGraphName, packageName), resOut.resolve("navigation/${navGraphName}.xml"))
   open(resOut.resolve("navigation/${navGraphName}.xml"))
 
-  generateAppBar(
-    data,
-    activityClass,
-    packageName,
-    contentLayoutName,
-    appBarLayoutName,
-    useAndroidX = useAndroidX,
-    isMaterial3 = false
-  )
+  generateAppBar(data, activityClass, packageName, contentLayoutName, appBarLayoutName, useAndroidX = useAndroidX, isMaterial3 = false)
 
   save(drawer(), resOut.resolve("menu/${drawerMenu}.xml"))
 
-  save(
-    navigationViewXml(appBarLayoutName, navHeaderLayoutName, drawerMenu, useAndroidX),
-    resOut.resolve("layout/${layoutName}.xml")
-  )
-  save(
-    navigationHeaderXml(appCompatVersion, targetApi.apiLevel, data.isLibrary),
-    resOut.resolve("layout/${navHeaderLayoutName}.xml")
-  )
+  save(navigationViewXml(appBarLayoutName, navHeaderLayoutName, drawerMenu, useAndroidX), resOut.resolve("layout/${layoutName}.xml"))
+  save(navigationHeaderXml(appCompatVersion, targetApi.apiLevel, data.isLibrary), resOut.resolve("layout/${navHeaderLayoutName}.xml"))
   save(
     if (generateKotlin)
       drawerActivityKt(
@@ -177,7 +156,7 @@ fun RecipeExecutor.generateNavigationDrawer(
         menuName = menuName,
         navHostFragmentId = navHostFragmentId,
         useAndroidX = useAndroidX,
-        isViewBindingSupported = isViewBindingSupported
+        isViewBindingSupported = isViewBindingSupported,
       )
     else
       drawerActivityJava(
@@ -189,9 +168,9 @@ fun RecipeExecutor.generateNavigationDrawer(
         menuName = menuName,
         navHostFragmentId = navHostFragmentId,
         useAndroidX = useAndroidX,
-        isViewBindingSupported = isViewBindingSupported
+        isViewBindingSupported = isViewBindingSupported,
       ),
-    srcOut.resolve("${activityClass}.${language.extension}")
+    srcOut.resolve("${activityClass}.${language.extension}"),
   )
 
   open(srcOut.resolve("${activityClass}.${language.extension}"))

@@ -18,10 +18,8 @@ package com.android.tools.idea.wizard.template.impl.other.broadcastReceiver.src.
 
 import com.android.tools.idea.wizard.template.escapeKotlinIdentifier
 
-fun broadcastReceiverKt(
-  className: String,
-  packageName: String
-) = """
+fun broadcastReceiverKt(className: String, packageName: String) =
+  """
 package ${escapeKotlinIdentifier(packageName)}
 
 import android.content.BroadcastReceiver

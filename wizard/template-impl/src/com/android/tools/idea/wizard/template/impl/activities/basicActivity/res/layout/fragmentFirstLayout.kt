@@ -19,7 +19,7 @@ import com.android.tools.idea.wizard.template.getMaterialComponentName
 
 fun fragmentFirstLayout(useAndroidX: Boolean, firstFragmentClass: String): String {
   val layout = getMaterialComponentName("androidx.core.widget.NestedScrollView", false)
-  return  """<?xml version="1.0" encoding="utf-8"?>
+  return """<?xml version="1.0" encoding="utf-8"?>
 <$layout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"

@@ -15,21 +15,15 @@
  */
 package com.android.tools.idea.wizard.template
 
-/**
- * Information about an Android theme.
- */
-data class ThemeData(
-  val name: String,
-  val exists: Boolean
-)
+/** Information about an Android theme. */
+data class ThemeData(val name: String, val exists: Boolean)
 
-/**
- * Information about project themes.
- */
-data class ThemesData(val appName: String,
+/** Information about project themes. */
+data class ThemesData(
+  val appName: String,
   val main: ThemeData = ThemeData("Theme.$appName", false),
   val overlay: ThemeData = ThemeData("ThemeOverlay.$appName", false),
   val noActionBar: ThemeData = ThemeData("Theme.$appName.NoActionBar", false),
   val appBarOverlay: ThemeData = ThemeData("Theme.$appName.AppBarOverlay", false),
-  val popupOverlay: ThemeData = ThemeData("Theme.$appName.PopupOverlay", false)
+  val popupOverlay: ThemeData = ThemeData("Theme.$appName.PopupOverlay", false),
 )

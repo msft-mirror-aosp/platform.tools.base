@@ -16,10 +16,8 @@
 
 package com.android.tools.idea.wizard.template.impl.activities.androidTVActivity.res.layout
 
-fun activityDetailsXml(
-  detailsActivity: String,
-  packageName: String
-) = """
+fun activityDetailsXml(detailsActivity: String, packageName: String) =
+  """
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout
     xmlns:android="http://schemas.android.com/apk/res/android"

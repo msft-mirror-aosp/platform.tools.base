@@ -28,11 +28,7 @@ import com.android.tools.idea.wizard.template.impl.activities.xrActivity.res.val
 import com.android.tools.idea.wizard.template.impl.activities.xrActivity.src.app_package.mainActivityKt
 import java.io.File
 
-fun RecipeExecutor.xrActivityRecipe(
-  moduleData: ModuleTemplateData,
-  activityClass: String,
-  packageName: String,
-) {
+fun RecipeExecutor.xrActivityRecipe(moduleData: ModuleTemplateData, activityClass: String, packageName: String) {
   val (_, srcOut, resOut, _, _, _, _, rootDir) = moduleData
   addAllKotlinDependencies(moduleData)
 
@@ -64,10 +60,7 @@ fun RecipeExecutor.xrActivityRecipe(
 
   copy(File("xr-activity").resolve("drawable"), resOut.resolve("drawable"))
 
-  mergeXml(
-    themesXml(themeName = moduleData.themesData.main.name),
-    resOut.resolve("values/themes.xml"),
-  )
+  mergeXml(themesXml(themeName = moduleData.themesData.main.name), resOut.resolve("values/themes.xml"))
   mergeXml(stringsXml(), resOut.resolve("values/strings.xml"))
 
   val themeName = "${moduleData.themesData.appName}Theme"

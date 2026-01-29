@@ -32,4 +32,5 @@ fun stylesXml(themesData: ThemesData) =
 """
 
 fun getAppWidgetContainerStyleName(appName: String) = "Widget.${appName}.AppWidget.Container"
+
 fun getAppWidgetInnerViewStyleName(appName: String) = "Widget.${appName}.AppWidget.InnerView"

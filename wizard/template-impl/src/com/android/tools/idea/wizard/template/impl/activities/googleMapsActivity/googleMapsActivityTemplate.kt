@@ -81,13 +81,12 @@ val googleMapsActivityTemplate
       TextFieldWidget(layoutName),
       CheckBoxWidget(isLauncher),
       PackageNameWidget(packageName),
-      LanguageWidget()
+      LanguageWidget(),
     )
 
     thumb { File("google-maps-activity").resolve("template_map_activity.png") }
 
     recipe = { data: TemplateData ->
-      googleMapsActivityRecipe(data as ModuleTemplateData, activityClass.value, isLauncher.value,
-                               layoutName.value, packageName.value)
+      googleMapsActivityRecipe(data as ModuleTemplateData, activityClass.value, isLauncher.value, layoutName.value, packageName.value)
     }
   }

@@ -16,7 +16,8 @@
 
 package com.android.tools.idea.wizard.template.impl.other.files.valueResourceFile.res
 
-fun valuesXml() = """
+fun valuesXml() =
+  """
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 </resources>

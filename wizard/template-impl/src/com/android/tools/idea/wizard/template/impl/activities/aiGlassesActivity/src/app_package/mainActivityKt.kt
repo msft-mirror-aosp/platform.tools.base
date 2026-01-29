@@ -17,12 +17,7 @@ package com.android.tools.idea.wizard.template.impl.activities.aiGlassesActivity
 
 import com.android.tools.idea.wizard.template.escapeKotlinIdentifier
 
-fun mainActivityKt(
-  activityClass: String,
-  glassesActivityClass: String,
-  packageName: String,
-  themeName: String,
-) =
+fun mainActivityKt(activityClass: String, glassesActivityClass: String, packageName: String, themeName: String) =
   // language=kotlin
   """
 @file:OptIn(ExperimentalProjectedApi::class)

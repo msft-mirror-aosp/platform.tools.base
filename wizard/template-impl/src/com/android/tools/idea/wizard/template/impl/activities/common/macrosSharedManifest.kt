@@ -28,8 +28,7 @@ fun commonActivityBody(isLauncher: Boolean, isLibraryProject: Boolean = false) =
     """
   }
 
-fun String.collapseEmptyActivityTags():String {
-    // Tags with empty body show a lint warning. We only handle <activity>
-    return withoutSkipLines()
-        .replace("(<activity[^>]*)>\\s*</activity>".toRegex()) { "${it.groupValues[1]} />" }
+fun String.collapseEmptyActivityTags(): String {
+  // Tags with empty body show a lint warning. We only handle <activity>
+  return withoutSkipLines().replace("(<activity[^>]*)>\\s*</activity>".toRegex()) { "${it.groupValues[1]} />" }
 }

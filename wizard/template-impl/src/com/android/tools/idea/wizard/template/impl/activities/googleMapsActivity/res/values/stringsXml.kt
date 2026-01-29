@@ -16,10 +16,8 @@
 
 package com.android.tools.idea.wizard.template.impl.activities.googleMapsActivity.res.values
 
-fun stringsXml(
-  activityTitle: String,
-  simpleName: String
-) = """
+fun stringsXml(activityTitle: String, simpleName: String) =
+  """
 <resources>
     <string name="title_${simpleName}">${activityTitle}</string>
 </resources>

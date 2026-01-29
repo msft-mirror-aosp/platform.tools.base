@@ -39,7 +39,8 @@ import java.io.File
 val loginActivityTemplate
   get() = template {
     name = "Login Views Activity"
-    description = "Creates a new login activity, allowing users to enter an email address and password to log in or to register with your application"
+    description =
+      "Creates a new login activity, allowing users to enter an email address and password to log in or to register with your application"
     minApi = MIN_API
     category = Category.Activity
     formFactor = FormFactor.Mobile
@@ -65,12 +66,7 @@ val loginActivityTemplate
 
     val packageName = defaultPackageNameParameter
 
-    widgets(
-      TextFieldWidget(activityClass),
-      TextFieldWidget(layoutName),
-      PackageNameWidget(packageName),
-      LanguageWidget()
-    )
+    widgets(TextFieldWidget(activityClass), TextFieldWidget(layoutName), PackageNameWidget(packageName), LanguageWidget())
 
     thumb { File("login-activity").resolve("template_login_activity.png") }
 

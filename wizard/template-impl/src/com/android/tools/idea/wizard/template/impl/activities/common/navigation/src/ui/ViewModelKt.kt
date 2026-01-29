@@ -18,9 +18,8 @@ package com.android.tools.idea.wizard.template.impl.activities.common.navigation
 import com.android.tools.idea.wizard.template.escapeKotlinIdentifier
 import com.android.tools.idea.wizard.template.getMaterialComponentName
 
-fun viewModelKt(
-  packageName: String, navFragmentPrefix: String, navViewModelClass: String, useAndroidX: Boolean = true
-) = """
+fun viewModelKt(packageName: String, navFragmentPrefix: String, navViewModelClass: String, useAndroidX: Boolean = true) =
+  """
 package ${escapeKotlinIdentifier(packageName)}.ui.${navFragmentPrefix}
 
 import ${getMaterialComponentName("android.arch.lifecycle.LiveData", useAndroidX)}

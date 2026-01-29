@@ -41,9 +41,7 @@ val composeActivityMaterial3Template
     name = "Empty Activity"
     description = "Create a new empty activity with Jetpack Compose"
     minApi = 21
-    constraints = listOf(
-        TemplateConstraint.AndroidX, TemplateConstraint.Kotlin, TemplateConstraint.Material3,
-        TemplateConstraint.Compose)
+    constraints = listOf(TemplateConstraint.AndroidX, TemplateConstraint.Kotlin, TemplateConstraint.Material3, TemplateConstraint.Compose)
 
     category = Category.Compose
     formFactor = FormFactor.Mobile
@@ -90,13 +88,19 @@ val composeActivityMaterial3Template
       // Invisible widgets to pass data
       TextFieldWidget(greeting),
       TextFieldWidget(defaultPreview),
-      LanguageWidget()
+      LanguageWidget(),
     )
 
     thumb { File("compose-activity-material3").resolve("template_compose_empty_activity_material3.png") }
 
     recipe = { data: TemplateData ->
-      composeActivityRecipe(data as ModuleTemplateData, activityClass.value, packageName.value, isLauncher.value,
-                            greeting.value, defaultPreview.value)
+      composeActivityRecipe(
+        data as ModuleTemplateData,
+        activityClass.value,
+        packageName.value,
+        isLauncher.value,
+        greeting.value,
+        defaultPreview.value,
+      )
     }
   }

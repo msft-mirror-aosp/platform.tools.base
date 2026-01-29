@@ -28,12 +28,7 @@ import com.android.tools.idea.wizard.template.impl.activities.composeActivityMat
 import com.android.tools.idea.wizard.template.impl.activities.composeActivityMaterial3.src.app_package.ui.typeKt
 import java.io.File
 
-fun RecipeExecutor.aiStarterRecipe(
-  moduleData: ModuleTemplateData,
-  activityClass: String,
-  packageName: String,
-  isLauncher: Boolean,
-) {
+fun RecipeExecutor.aiStarterRecipe(moduleData: ModuleTemplateData, activityClass: String, packageName: String, isLauncher: Boolean) {
   val (_, srcOut, resOut, _) = moduleData
   addAllKotlinDependencies(moduleData)
 
@@ -49,11 +44,7 @@ fun RecipeExecutor.aiStarterRecipe(
   addComposeDependencies(moduleData)
 
   val hiltVersion = "2.57.2"
-  addPlugin(
-    "com.google.dagger.hilt.android",
-    "com.google.dagger:hilt-android-gradle-plugin",
-    hiltVersion,
-  )
+  addPlugin("com.google.dagger.hilt.android", "com.google.dagger:hilt-android-gradle-plugin", hiltVersion)
 
   // KSP is needed for Hilt and Room
   addPlugin(
@@ -78,15 +69,9 @@ fun RecipeExecutor.aiStarterRecipe(
   addDependency("com.google.dagger:hilt-android:$hiltVersion")
   addDependency("com.google.dagger:hilt-android-compiler:$hiltVersion", configuration = "ksp")
   addDependency("com.google.dagger:hilt-compiler:$hiltVersion", configuration = "ksp")
-  addDependency(
-    "com.google.dagger:hilt-android-testing:$hiltVersion",
-    configuration = "androidTestImplementation",
-  )
+  addDependency("com.google.dagger:hilt-android-testing:$hiltVersion", configuration = "androidTestImplementation")
   addDependency("junit:junit:4.13.2", configuration = "testImplementation")
-  addDependency(
-    "org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2",
-    configuration = "testImplementation",
-  )
+  addDependency("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2", configuration = "testImplementation")
   addDependency("androidx.test:core:1.6.1", configuration = "testImplementation")
   addDependency("androidx.test.ext:junit:1.3.0", configuration = "testImplementation")
   addDependency("androidx.test:runner:1.6.2", configuration = "androidTestImplementation")
@@ -155,18 +140,15 @@ fun RecipeExecutor.aiStarterRecipe(
   )
   mergeXml(
     """
-        <manifest xmlns:android ="http://schemas.android.com/apk/res/android">
-          <uses-permission android:name="android.permission.INTERNET" />
-        </manifest>
+    <manifest xmlns:android ="http://schemas.android.com/apk/res/android">
+      <uses-permission android:name="android.permission.INTERNET" />
+    </manifest>
     """
       .trimIndent(),
     moduleData.manifestDir.resolve("AndroidManifest.xml"),
   )
 
-  save(
-    mainActivityKt(activityClass, "GreetingPreview", "Greeting", packageName, themeName),
-    srcOut.resolve("${activityClass}.kt"),
-  )
+  save(mainActivityKt(activityClass, "GreetingPreview", "Greeting", packageName, themeName), srcOut.resolve("${activityClass}.kt"))
   val uiThemeFolder = "ui/theme"
   save(colorKt(packageName), srcOut.resolve("$uiThemeFolder/Color.kt"))
   save(themeKt(packageName, themeName), srcOut.resolve("$uiThemeFolder/Theme.kt"))

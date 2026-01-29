@@ -16,39 +16,39 @@
 
 package com.android.tools.idea.wizard.template.impl.activities.viewModelActivity.src.app_package
 
-import com.android.tools.idea.wizard.template.getMaterialComponentName
 import com.android.tools.idea.wizard.template.escapeKotlinIdentifier
+import com.android.tools.idea.wizard.template.getMaterialComponentName
 
 fun fragmentKt(
-    fragmentClass: String,
-    fragmentLayout: String,
-    fragmentPackage: String,
-    packageName: String,
-    useAndroidX: Boolean,
-    viewModelClass: String
+  fragmentClass: String,
+  fragmentLayout: String,
+  fragmentPackage: String,
+  packageName: String,
+  useAndroidX: Boolean,
+  viewModelClass: String,
 ): String {
-    val viewModelImport =
-        if (useAndroidX) {
-            "import androidx.fragment.app.viewModels"
-        } else {
-            "import android.arch.lifecycle.ViewModelProvider"
-        }
+  val viewModelImport =
+    if (useAndroidX) {
+      "import androidx.fragment.app.viewModels"
+    } else {
+      "import android.arch.lifecycle.ViewModelProvider"
+    }
 
-    val viewModelDeclaration =
-        if (useAndroidX) {
-            "private val viewModel: $viewModelClass by viewModels()"
-        } else {
-            "private lateinit var viewModel: $viewModelClass"
-        }
+  val viewModelDeclaration =
+    if (useAndroidX) {
+      "private val viewModel: $viewModelClass by viewModels()"
+    } else {
+      "private lateinit var viewModel: $viewModelClass"
+    }
 
-    val viewModelInitializationBlock =
-        if (useAndroidX) {
-            "" // The viewModel is initialized above
-        } else {
-            "viewModel = ViewModelProvider(this, ViewModelProvider.NewInstanceFactory())[${viewModelClass}::class.java]"
-        }
+  val viewModelInitializationBlock =
+    if (useAndroidX) {
+      "" // The viewModel is initialized above
+    } else {
+      "viewModel = ViewModelProvider(this, ViewModelProvider.NewInstanceFactory())[${viewModelClass}::class.java]"
+    }
 
-    return """package ${escapeKotlinIdentifier(packageName)}.${
+  return """package ${escapeKotlinIdentifier(packageName)}.${
         escapeKotlinIdentifier(
             fragmentPackage
         )

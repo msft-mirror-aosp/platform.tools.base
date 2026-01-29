@@ -20,10 +20,7 @@ import com.android.tools.idea.wizard.template.ModuleTemplateData
 import com.android.tools.idea.wizard.template.RecipeExecutor
 import com.android.tools.idea.wizard.template.impl.other.files.valueResourceFile.res.valuesXml
 
-fun RecipeExecutor.valueResourceFileRecipe(
-  moduleData: ModuleTemplateData,
-  fileName: String
-) {
+fun RecipeExecutor.valueResourceFileRecipe(moduleData: ModuleTemplateData, fileName: String) {
   val resOut = moduleData.resDir
   save(valuesXml(), resOut.resolve("values/${fileName}.xml"))
   open(resOut.resolve("values/${fileName}.xml"))

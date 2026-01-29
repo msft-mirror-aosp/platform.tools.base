@@ -16,9 +16,8 @@
 
 package com.android.tools.idea.wizard.template.impl.activities.androidTVActivity.src.app_package
 
-fun cardPresenterJava(
-  packageName: String
-) = """
+fun cardPresenterJava(packageName: String) =
+  """
 package ${packageName};
 
 import android.graphics.drawable.Drawable;

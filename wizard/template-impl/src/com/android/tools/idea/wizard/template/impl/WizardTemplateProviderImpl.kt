@@ -130,11 +130,5 @@ class WizardTemplateProviderImpl : WizardTemplateProvider() {
       wearDeclarativeWatchFaceTemplate,
     ) + folderTemplates + fileTemplates
 
-  private val fileTemplates =
-    listOf(
-      aidlFileTemplate,
-      layoutResourceFileTemplate,
-      shortcutsResourceFileTemplate,
-      valueResourceFileTemplate,
-    )
+  private val fileTemplates = listOf(aidlFileTemplate, layoutResourceFileTemplate, shortcutsResourceFileTemplate, valueResourceFileTemplate)
 }
