@@ -532,7 +532,8 @@ public class SdkVersionInfo {
             return null;
         }
 
-        if (Character.isDigit(apiOrPreviewName.charAt(0))) {
+        if (Character.isDigit(apiOrPreviewName.charAt(0))
+                || apiOrPreviewName.startsWith("canary-")) {
             try {
                 return AndroidVersion.fromString(apiOrPreviewName);
             } catch (IllegalArgumentException e) {

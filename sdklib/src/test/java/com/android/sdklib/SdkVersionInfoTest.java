@@ -157,6 +157,11 @@ public class SdkVersionInfoTest extends TestCase {
         assertEquals("IceCreamSandwich", getVersion("IceCreamSandwich", null).getCodename());
         assertEquals(HIGHEST_KNOWN_API, getVersion("BackToTheFuture", null).getApiLevel());
         assertEquals("BackToTheFuture", getVersion("BackToTheFuture", null).getCodename());
+
+        assertEquals(37, getVersion("37.0-beta1", null).getApiLevel());
+        assertEquals(1, (int) getVersion("37.0-beta1", null).getBetaNumber());
+        assertEquals(36, getVersion("canary-20251201", null).getApiLevel());
+        assertEquals(20251201, (int) getVersion("canary-20251201", null).getCanaryNumber());
     }
 
     public void testGetVersionString() {

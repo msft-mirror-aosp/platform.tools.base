@@ -344,5 +344,63 @@ public class AndroidVersionTest {
 
         assertEquals(5, new AndroidVersion(5, "codename").getApiLevel());
         assertEquals(6, new AndroidVersion(5, "codename").getFeatureLevel());
+
+        assertEquals(37, new AndroidVersion(37).withBetaNumber(1).getFeatureLevel());
+        assertEquals(38, new AndroidVersion(37).withCanaryNumber(20251201).getFeatureLevel());
+    }
+
+    @Test
+    public void betaOrdering() {
+        AndroidVersion api36 = new AndroidVersion(36);
+        AndroidVersion api37beta1 = new AndroidVersion(37).withBetaNumber(1);
+        AndroidVersion api37beta2 = new AndroidVersion(37).withBetaNumber(2);
+        AndroidVersion api37 = new AndroidVersion(37);
+
+        assertThat(api36).isLessThan(api37beta1);
+        assertThat(api37beta1).isLessThan(api37beta2);
+        assertThat(api37beta2).isLessThan(api37);
+    }
+
+    @Test
+    public void canaryOrdering() {
+        AndroidVersion api37beta2 = new AndroidVersion(37).withBetaNumber(2);
+        AndroidVersion api37 = new AndroidVersion(37);
+        AndroidVersion canary1 = new AndroidVersion(37).withCanaryNumber(20251201);
+        AndroidVersion canary2 = new AndroidVersion(37).withCanaryNumber(20251202);
+        AndroidVersion api37codename = new AndroidVersion(37, "Codename");
+        AndroidVersion api38 = new AndroidVersion(38);
+
+        assertThat(api37beta2).isLessThan(api37);
+        assertThat(api37).isLessThan(canary1);
+        assertThat(canary1).isLessThan(canary2);
+        assertThat(canary2).isLessThan(api37codename);
+        assertThat(api37codename).isLessThan(api38);
+    }
+
+    @Test
+    public void fromString_beta() {
+        AndroidVersion v = AndroidVersion.fromString("37.0-beta1");
+        assertEquals(37, v.getApiLevel());
+        assertEquals(1, (int) v.getBetaNumber());
+        assertEquals("37.0-beta1", v.getApiStringWithExtension());
+        assertTrue(v.isPreview());
+    }
+
+    @Test
+    public void fromString_canary() {
+        AndroidVersion v = AndroidVersion.fromString("canary-20251201");
+        assertEquals(36, v.getApiLevel()); // Baseline for canaries
+        assertEquals(20251201, (int) v.getCanaryNumber());
+        assertEquals("canary-20251201", v.getApiStringWithExtension());
+        assertTrue(v.isPreview());
+    }
+
+    @Test
+    public void testToString() {
+        assertEquals("API 37.0, beta 1", new AndroidVersion(37).withBetaNumber(1).toString());
+        assertEquals(
+                "API 37.0, canary 20251201", new AndroidVersion(37).withCanaryNumber(20251201).toString());
+        assertEquals(
+                "API 30, extension level 4", new AndroidVersion(30, null, 4, false).toString());
     }
 }
