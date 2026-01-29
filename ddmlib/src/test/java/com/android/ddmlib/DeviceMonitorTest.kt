@@ -20,139 +20,121 @@ import com.android.ddmlib.internal.DeviceMonitor.DeviceListComparisonResult
 import com.android.ddmlib.testing.FakeAdbRule
 import com.android.sdklib.AndroidApiLevel
 import com.google.common.truth.Truth.assertThat
-import org.junit.Rule
-import org.junit.Test
-import org.mockito.Mockito.mock
-import org.mockito.Mockito.`when` as whenever
 import java.nio.file.Paths
 import java.util.Arrays
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
+import org.junit.Rule
+import org.junit.Test
+import org.mockito.Mockito.mock
+import org.mockito.Mockito.`when` as whenever
 
 class DeviceMonitorTest {
 
-    @get:Rule
-    var adbRule =
-        FakeAdbRule().withEmulatorConsoleFactory { name, path ->
-            FakeEmulatorConsoleWithLatency(name, path)
-        }
+  @get:Rule var adbRule = FakeAdbRule().withEmulatorConsoleFactory { name, path -> FakeEmulatorConsoleWithLatency(name, path) }
 
-    @Test
-    fun testDeviceListMonitor() {
-        val map = DeviceListMonitorTask.parseDeviceListResponse(
-            """
-          R32C801BL5K	device
-          0079864fd1d150fd	unauthorized
-          002ee7a50f6642d3	sideload
-      """.trimIndent()
-        )
-        assertThat(map["R32C801BL5K"]).isEqualTo(IDevice.DeviceState.ONLINE)
-        assertThat(map["0079864fd1d150fd"]).isEqualTo(IDevice.DeviceState.UNAUTHORIZED)
-        assertThat(map["002ee7a50f6642d3"]).isEqualTo(IDevice.DeviceState.SIDELOAD)
+  @Test
+  fun testDeviceListMonitor() {
+    val map =
+      DeviceListMonitorTask.parseDeviceListResponse(
+        """
+        R32C801BL5K	device
+        0079864fd1d150fd	unauthorized
+        002ee7a50f6642d3	sideload
+        """
+          .trimIndent()
+      )
+    assertThat(map["R32C801BL5K"]).isEqualTo(IDevice.DeviceState.ONLINE)
+    assertThat(map["0079864fd1d150fd"]).isEqualTo(IDevice.DeviceState.UNAUTHORIZED)
+    assertThat(map["002ee7a50f6642d3"]).isEqualTo(IDevice.DeviceState.SIDELOAD)
+  }
+
+  @Test
+  fun testDeviceListComparator() {
+    val previous = Arrays.asList(mockDevice("1", IDevice.DeviceState.ONLINE), mockDevice("2", IDevice.DeviceState.BOOTLOADER))
+    val current = Arrays.asList(mockDevice("2", IDevice.DeviceState.ONLINE), mockDevice("3", IDevice.DeviceState.OFFLINE))
+    val result = DeviceListComparisonResult.compare(previous, current)
+    assertThat(result.updated.size).isEqualTo(1)
+    assertThat(result.updated[previous[1]]).isEqualTo(IDevice.DeviceState.ONLINE)
+    assertThat(result.removed.size).isEqualTo(1)
+    assertThat(result.removed[0].serialNumber).isEqualTo("1")
+    assertThat(result.added.size).isEqualTo(1)
+    assertThat(result.added[0].serialNumber).isEqualTo("3")
+  }
+
+  @Test
+  fun testDeviceUpdate() {
+    adbRule.attachDevice("42", "Google", "Pix3l", "versionX", AndroidApiLevel(29))
+    val device: IDevice = adbRule.bridge.devices.single()
+    assertThat(device.avdName).isNull()
+    assertThat(device.avdPath).isNull()
+    assertThat(device.avdData.get()).isNull()
+  }
+
+  @Test
+  fun testEmulatorUpdate() {
+    val path = Paths.get(System.getProperty("user.home"), ".android", "avd", "MyAvd.avd")
+    val pathAsString = path.toString()
+
+    adbRule.attachDevice("emulator-123", "Google", "Pixel", "29", AndroidApiLevel(29), avdName = "MyAvd", avdPath = pathAsString)
+
+    val device: IDevice = adbRule.bridge.devices.single()
+
+    assertThat(device.avdName).isNull()
+    assertThat(device.avdPath).isNull()
+    try {
+      device.avdData.get(1, TimeUnit.MILLISECONDS)
+      error("Timeout Expected")
+    } catch (exception: TimeoutException) {
+      assertThat(exception.message).startsWith("Waited 1 milliseconds ")
     }
 
-    @Test
-    fun testDeviceListComparator() {
-        val previous = Arrays.asList(
-            mockDevice("1", IDevice.DeviceState.ONLINE),
-            mockDevice("2", IDevice.DeviceState.BOOTLOADER)
-        )
-        val current = Arrays.asList(
-            mockDevice("2", IDevice.DeviceState.ONLINE),
-            mockDevice("3", IDevice.DeviceState.OFFLINE)
-        )
-        val result = DeviceListComparisonResult.compare(previous, current)
-        assertThat(result.updated.size).isEqualTo(1)
-        assertThat(result.updated[previous[1]]).isEqualTo(IDevice.DeviceState.ONLINE)
-        assertThat(result.removed.size).isEqualTo(1)
-        assertThat(result.removed[0].serialNumber).isEqualTo("1")
-        assertThat(result.added.size).isEqualTo(1)
-        assertThat(result.added[0].serialNumber).isEqualTo("3")
+    val console = EmulatorConsole.getConsole(device) as FakeEmulatorConsoleWithLatency
+    console.latch.countDown()
+
+    assertThat(device.avdData.get()).isEqualTo(AvdData("MyAvd", path))
+    assertThat(device.avdName).isEqualTo("MyAvd")
+    assertThat(device.avdPath).isEqualTo(pathAsString)
+  }
+
+  private fun mockDevice(serial: String, state: IDevice.DeviceState): IDevice {
+    val mockDevice = mock<IDevice>()
+    whenever(mockDevice.serialNumber).thenReturn(serial)
+    whenever(mockDevice.state).thenReturn(state)
+    return mockDevice
+  }
+
+  class FakeEmulatorConsoleWithLatency(private val actualAvdName: String? = null, private val actualAvdPath: String? = null) :
+    EmulatorConsole() {
+
+    val latch = CountDownLatch(1)
+
+    override fun getAvdName(): String? {
+      latch.await()
+      return actualAvdName
     }
 
-    @Test
-    fun testDeviceUpdate() {
-        adbRule.attachDevice("42", "Google", "Pix3l", "versionX", AndroidApiLevel(29))
-        val device: IDevice = adbRule.bridge.devices.single()
-        assertThat(device.avdName).isNull()
-        assertThat(device.avdPath).isNull()
-        assertThat(device.avdData.get()).isNull()
+    @Deprecated("Use getAvdNioPath")
+    override fun getAvdPath(): String {
+      latch.await()
+      if (actualAvdPath != null) {
+        return actualAvdPath
+      } else {
+        throw CommandFailedException()
+      }
     }
 
-    @Test
-    fun testEmulatorUpdate() {
-        val path = Paths.get(System.getProperty("user.home"), ".android", "avd", "MyAvd.avd")
-        val pathAsString = path.toString()
+    override fun close() {}
 
-        adbRule.attachDevice(
-            "emulator-123",
-            "Google",
-            "Pixel",
-            "29",
-            AndroidApiLevel(29),
-            avdName = "MyAvd",
-            avdPath = pathAsString
-        )
+    override fun kill() {}
 
-        val device: IDevice = adbRule.bridge.devices.single()
-
-        assertThat(device.avdName).isNull()
-        assertThat(device.avdPath).isNull()
-        try {
-            device.avdData.get(1, TimeUnit.MILLISECONDS)
-            error("Timeout Expected")
-        } catch (exception: TimeoutException) {
-            assertThat(exception.message).startsWith("Waited 1 milliseconds ")
-        }
-
-        val console = EmulatorConsole.getConsole(device) as FakeEmulatorConsoleWithLatency
-        console.latch.countDown()
-
-        assertThat(device.avdData.get()).isEqualTo(AvdData("MyAvd", path))
-        assertThat(device.avdName).isEqualTo("MyAvd")
-        assertThat(device.avdPath).isEqualTo(pathAsString)
+    override fun startEmulatorScreenRecording(args: String?): String {
+      TODO("Not yet implemented")
     }
 
-    private fun mockDevice(serial: String, state: IDevice.DeviceState): IDevice {
-        val mockDevice = mock<IDevice>()
-        whenever(mockDevice.serialNumber).thenReturn(serial)
-        whenever(mockDevice.state).thenReturn(state)
-        return mockDevice
+    override fun stopScreenRecording(): String {
+      TODO("Not yet implemented")
     }
-
-    class FakeEmulatorConsoleWithLatency(
-        private val actualAvdName: String? = null,
-        private val actualAvdPath: String? = null
-    ) : EmulatorConsole() {
-
-        val latch = CountDownLatch(1)
-
-        override fun getAvdName(): String? {
-            latch.await()
-            return actualAvdName
-        }
-
-        @Deprecated("Use getAvdNioPath")
-        override fun getAvdPath(): String {
-            latch.await()
-            if (actualAvdPath != null) {
-                return actualAvdPath
-            } else {
-                throw CommandFailedException()
-            }
-        }
-
-        override fun close() {}
-
-        override fun kill() {}
-
-        override fun startEmulatorScreenRecording(args: String?): String {
-            TODO("Not yet implemented")
-        }
-
-        override fun stopScreenRecording(): String {
-            TODO("Not yet implemented")
-        }
-    }
+  }
 }

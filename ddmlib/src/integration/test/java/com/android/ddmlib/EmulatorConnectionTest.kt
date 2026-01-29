@@ -20,49 +20,44 @@ import com.android.SdkConstants.FN_ADB
 import com.android.testutils.TestUtils.getSdk
 import com.android.tools.bazel.avd.Emulator
 import com.google.common.truth.Truth.assertThat
+import java.util.concurrent.TimeUnit
 import org.junit.Assert.fail
 import org.junit.ClassRule
 import org.junit.Test
-import java.util.concurrent.TimeUnit
 
-/**
- * Test connection to an emulator via ddmlib
- */
+/** Test connection to an emulator via ddmlib */
 class EmulatorConnectionTest {
 
-    @Test
-    fun testGetDevice() {
-        // suppress deprecation warning because it's deprecated for non-test usages only.
-        @Suppress("DEPRECATION")
-        AndroidDebugBridge.initIfNeeded(false)
-        val timeoutInMs = 30000L
-        val bridge =
-            AndroidDebugBridge.createBridge(
-                    getSdk().resolve("platform-tools").resolve(FN_ADB).toString(),
-                    false,
-                    timeoutInMs,
-                    TimeUnit.MILLISECONDS
-            )
-        if (bridge == null ) {
-            fail("unable to create bridge")
-            return
-        }
-        var timeoutRemaining = timeoutInMs
-        val sleepTimeInMs = 1000L
-        while (!bridge.hasInitialDeviceList() && timeoutRemaining >= 0) {
-            Thread.sleep(sleepTimeInMs)
-            timeoutRemaining -= sleepTimeInMs
-        }
-        assertThat(bridge.hasInitialDeviceList()).isTrue()
-        assertThat(bridge.devices).isNotEmpty()
-        for (device in bridge.devices) {
-            assertThat(device.getProperty(IDevice.PROP_BUILD_API_LEVEL)).isNotNull()
-        }
+  @Test
+  fun testGetDevice() {
+    // suppress deprecation warning because it's deprecated for non-test usages only.
+    @Suppress("DEPRECATION") AndroidDebugBridge.initIfNeeded(false)
+    val timeoutInMs = 30000L
+    val bridge =
+      AndroidDebugBridge.createBridge(
+        getSdk().resolve("platform-tools").resolve(FN_ADB).toString(),
+        false,
+        timeoutInMs,
+        TimeUnit.MILLISECONDS,
+      )
+    if (bridge == null) {
+      fail("unable to create bridge")
+      return
     }
+    var timeoutRemaining = timeoutInMs
+    val sleepTimeInMs = 1000L
+    while (!bridge.hasInitialDeviceList() && timeoutRemaining >= 0) {
+      Thread.sleep(sleepTimeInMs)
+      timeoutRemaining -= sleepTimeInMs
+    }
+    assertThat(bridge.hasInitialDeviceList()).isTrue()
+    assertThat(bridge.devices).isNotEmpty()
+    for (device in bridge.devices) {
+      assertThat(device.getProperty(IDevice.PROP_BUILD_API_LEVEL)).isNotNull()
+    }
+  }
 
-    companion object {
-        @ClassRule
-        @JvmField
-        val emulator = Emulator("tools/base/bazel/avd/default_avd", 5554)
-    }
+  companion object {
+    @ClassRule @JvmField val emulator = Emulator("tools/base/bazel/avd/default_avd", 5554)
+  }
 }

@@ -18,16 +18,16 @@ package com.android.ddmlib.logcat
 import com.android.ddmlib.IDevice
 import com.android.ddmlib.Log.LogLevel.INFO
 import com.google.common.truth.Truth.assertThat
+import java.time.Instant
+import java.time.ZoneId
+import java.time.ZonedDateTime
+import java.util.concurrent.TimeUnit.MILLISECONDS
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.`when` as whenever
-import java.time.Instant
-import java.time.ZoneId
-import java.time.ZonedDateTime
-import java.util.concurrent.TimeUnit.MILLISECONDS
 
 private const val YEAR = 2014
 private val ZONE_ID = ZoneId.of("Asia/Yerevan")
@@ -51,175 +51,98 @@ private const val APP_NAME = "com.android.app"
 
 @RunWith(JUnit4::class)
 class LogCatHeaderParserTest {
-    private val mockDevice: IDevice = mock()
+  private val mockDevice: IDevice = mock()
 
-    private val logCatHeaderParser = LogCatHeaderParser(YEAR, ZONE_ID)
+  private val logCatHeaderParser = LogCatHeaderParser(YEAR, ZONE_ID)
 
-    @Before
-    fun setUp() {
-        whenever(mockDevice.getClientName(PID_APP)).thenReturn(APP_NAME)
-        whenever(mockDevice.getClientName(PID_EMPTY_APP)).thenReturn("")
-    }
+  @Before
+  fun setUp() {
+    whenever(mockDevice.getClientName(PID_APP)).thenReturn(APP_NAME)
+    whenever(mockDevice.getClientName(PID_EMPTY_APP)).thenReturn("")
+  }
 
-    @Test
-    fun parseHeader_withEpoch() {
-        assertThat(
-            logCatHeaderParser.parseHeader(
-                "[ $EPOCH_SEC.$EPOCH_MILLI $PID_UNKNOWN:$TID ${INFO.priorityLetter}/$TAG ]",
-                mockDevice
+  @Test
+  fun parseHeader_withEpoch() {
+    assertThat(logCatHeaderParser.parseHeader("[ $EPOCH_SEC.$EPOCH_MILLI $PID_UNKNOWN:$TID ${INFO.priorityLetter}/$TAG ]", mockDevice))
+      .isEqualTo(
+        LogCatHeader(INFO, PID_UNKNOWN, TID, APP_UNKNOWN, TAG, Instant.ofEpochSecond(EPOCH_SEC, MILLISECONDS.toNanos(EPOCH_MILLI)))
+      )
+  }
+
+  @Test
+  fun parseHeader_withDateTime() {
+    assertThat(
+        logCatHeaderParser.parseHeader("[ $MONTH-$DAY $HOUR:$MIN:$SEC.$MILLI $PID_UNKNOWN:$TID ${INFO.priorityLetter}/$TAG ]", mockDevice)
+      )
+      .isEqualTo(
+        LogCatHeader(
+          INFO,
+          PID_UNKNOWN,
+          TID,
+          APP_UNKNOWN,
+          TAG,
+          Instant.from(
+            ZonedDateTime.of(
+              YEAR,
+              MONTH.toInt(),
+              DAY.toInt(),
+              HOUR.toInt(),
+              MIN.toInt(),
+              SEC.toInt(),
+              MILLISECONDS.toNanos(MILLI.toLong()).toInt(),
+              ZONE_ID,
             )
-        ).isEqualTo(
-            LogCatHeader(
-                INFO,
-                PID_UNKNOWN,
-                TID,
-                APP_UNKNOWN,
-                TAG,
-                Instant.ofEpochSecond(EPOCH_SEC, MILLISECONDS.toNanos(EPOCH_MILLI))
-            )
+          ),
         )
-    }
+      )
+  }
 
-    @Test
-    fun parseHeader_withDateTime() {
-        assertThat(
-            logCatHeaderParser.parseHeader(
-                "[ $MONTH-$DAY $HOUR:$MIN:$SEC.$MILLI $PID_UNKNOWN:$TID ${INFO.priorityLetter}/$TAG ]",
-                mockDevice
-            )
-        ).isEqualTo(
-            LogCatHeader(
-                INFO,
-                PID_UNKNOWN,
-                TID,
-                APP_UNKNOWN,
-                TAG,
-                Instant.from(
-                    ZonedDateTime.of(
-                        YEAR,
-                        MONTH.toInt(),
-                        DAY.toInt(),
-                        HOUR.toInt(),
-                        MIN.toInt(),
-                        SEC.toInt(),
-                        MILLISECONDS.toNanos(MILLI.toLong()).toInt(),
-                        ZONE_ID
-                    )
-                )
-            )
-        )
-    }
+  @Test
+  fun parseHeader_withSpaces() {
+    assertThat(
+        logCatHeaderParser.parseHeader("[   $EPOCH_SEC.$EPOCH_MILLI   $PID_UNKNOWN:$TID   ${INFO.priorityLetter}/$TAG   ]", mockDevice)
+      )
+      .isEqualTo(
+        LogCatHeader(INFO, PID_UNKNOWN, TID, APP_UNKNOWN, TAG, Instant.ofEpochSecond(EPOCH_SEC, MILLISECONDS.toNanos(EPOCH_MILLI)))
+      )
+  }
 
-    @Test
-    fun parseHeader_withSpaces() {
-        assertThat(
-            logCatHeaderParser.parseHeader(
-                "[   $EPOCH_SEC.$EPOCH_MILLI   $PID_UNKNOWN:$TID   ${INFO.priorityLetter}/$TAG   ]",
-                mockDevice
-            )
-        ).isEqualTo(
-            LogCatHeader(
-                INFO,
-                PID_UNKNOWN,
-                TID,
-                APP_UNKNOWN,
-                TAG,
-                Instant.ofEpochSecond(EPOCH_SEC, MILLISECONDS.toNanos(EPOCH_MILLI))
-            )
+  @Test
+  fun parseHeader_withHexTid() {
+    assertThat(logCatHeaderParser.parseHeader("[ $EPOCH_SEC.$EPOCH_MILLI $PID_UNKNOWN:$TID_HEX ${INFO.priorityLetter}/$TAG ]", mockDevice))
+      .isEqualTo(
+        LogCatHeader(
+          INFO,
+          PID_UNKNOWN,
+          Integer.decode(TID_HEX),
+          APP_UNKNOWN,
+          TAG,
+          Instant.ofEpochSecond(EPOCH_SEC, MILLISECONDS.toNanos(EPOCH_MILLI)),
         )
-    }
+      )
+  }
 
-    @Test
-    fun parseHeader_withHexTid() {
-        assertThat(
-            logCatHeaderParser.parseHeader(
-                "[ $EPOCH_SEC.$EPOCH_MILLI $PID_UNKNOWN:$TID_HEX ${INFO.priorityLetter}/$TAG ]",
-                mockDevice
-            )
-        ).isEqualTo(
-            LogCatHeader(
-                INFO,
-                PID_UNKNOWN,
-                Integer.decode(TID_HEX),
-                APP_UNKNOWN,
-                TAG,
-                Instant.ofEpochSecond(EPOCH_SEC, MILLISECONDS.toNanos(EPOCH_MILLI))
-            )
-        )
-    }
+  @Test
+  fun parseHeader_withAppName() {
+    assertThat(logCatHeaderParser.parseHeader("[ $EPOCH_SEC.$EPOCH_MILLI $PID_APP:$TID ${INFO.priorityLetter}/$TAG ]", mockDevice))
+      .isEqualTo(LogCatHeader(INFO, PID_APP, TID, APP_NAME, TAG, Instant.ofEpochSecond(EPOCH_SEC, MILLISECONDS.toNanos(EPOCH_MILLI))))
+  }
 
-    @Test
-    fun parseHeader_withAppName() {
-        assertThat(
-            logCatHeaderParser.parseHeader(
-                "[ $EPOCH_SEC.$EPOCH_MILLI $PID_APP:$TID ${INFO.priorityLetter}/$TAG ]",
-                mockDevice
-            )
-        ).isEqualTo(
-            LogCatHeader(
-                INFO,
-                PID_APP,
-                TID,
-                APP_NAME,
-                TAG,
-                Instant.ofEpochSecond(EPOCH_SEC, MILLISECONDS.toNanos(EPOCH_MILLI))
-            )
-        )
-    }
+  @Test
+  fun parseHeader_withCustomPackageNameResolver() {
+    assertThat(logCatHeaderParser.parseHeader("[ $EPOCH_SEC.$EPOCH_MILLI $PID_APP:$TID ${INFO.priorityLetter}/$TAG ]") { APP_NAME })
+      .isEqualTo(LogCatHeader(INFO, PID_APP, TID, APP_NAME, TAG, Instant.ofEpochSecond(EPOCH_SEC, MILLISECONDS.toNanos(EPOCH_MILLI))))
+  }
 
-    @Test
-    fun parseHeader_withCustomPackageNameResolver() {
-        assertThat(
-            logCatHeaderParser.parseHeader(
-                "[ $EPOCH_SEC.$EPOCH_MILLI $PID_APP:$TID ${INFO.priorityLetter}/$TAG ]"
-            ) { APP_NAME }
-        ).isEqualTo(
-            LogCatHeader(
-                INFO,
-                PID_APP,
-                TID,
-                APP_NAME,
-                TAG,
-                Instant.ofEpochSecond(EPOCH_SEC, MILLISECONDS.toNanos(EPOCH_MILLI))
-            )
-        )
-    }
+  @Test
+  fun parseHeader_withInvalidPid() {
+    assertThat(logCatHeaderParser.parseHeader("[ $EPOCH_SEC.$EPOCH_MILLI $INVALID_NUMBER:$TID ${INFO.priorityLetter}/$TAG ]", mockDevice))
+      .isEqualTo(LogCatHeader(INFO, -1, TID, APP_UNKNOWN, TAG, Instant.ofEpochSecond(EPOCH_SEC, MILLISECONDS.toNanos(EPOCH_MILLI))))
+  }
 
-    @Test
-    fun parseHeader_withInvalidPid() {
-        assertThat(
-            logCatHeaderParser.parseHeader(
-                "[ $EPOCH_SEC.$EPOCH_MILLI $INVALID_NUMBER:$TID ${INFO.priorityLetter}/$TAG ]",
-                mockDevice
-            )
-        ).isEqualTo(
-            LogCatHeader(
-                INFO,
-                -1,
-                TID,
-                APP_UNKNOWN,
-                TAG,
-                Instant.ofEpochSecond(EPOCH_SEC, MILLISECONDS.toNanos(EPOCH_MILLI))
-            )
-        )
-    }
-
-    @Test
-    fun parseHeader_withInvalidEpochSeconds() {
-        assertThat(
-            logCatHeaderParser.parseHeader(
-                "[ $INVALID_NUMBER.$EPOCH_MILLI $PID_APP:$TID ${INFO.priorityLetter}/$TAG ]",
-                mockDevice
-            )
-        ).isEqualTo(
-            LogCatHeader(
-                INFO,
-                PID_APP,
-                TID,
-                APP_NAME,
-                TAG,
-                Instant.ofEpochSecond(0, MILLISECONDS.toNanos(EPOCH_MILLI))
-            )
-        )
-    }
+  @Test
+  fun parseHeader_withInvalidEpochSeconds() {
+    assertThat(logCatHeaderParser.parseHeader("[ $INVALID_NUMBER.$EPOCH_MILLI $PID_APP:$TID ${INFO.priorityLetter}/$TAG ]", mockDevice))
+      .isEqualTo(LogCatHeader(INFO, PID_APP, TID, APP_NAME, TAG, Instant.ofEpochSecond(0, MILLISECONDS.toNanos(EPOCH_MILLI))))
+  }
 }
