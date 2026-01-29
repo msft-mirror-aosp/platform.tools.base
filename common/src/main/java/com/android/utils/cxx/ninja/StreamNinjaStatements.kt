@@ -117,7 +117,6 @@ fun Reader.streamNinjaStatements(action:(NinjaStatement) -> Unit) {
                             }
                         }
                         PipeType, DoublePipeType -> syntax(value)
-                        else -> error(value)
                     }
                 }
                 EXPECT_EQUALS_THEN_VALUE -> state = when (value) {
@@ -281,7 +280,6 @@ fun Reader.streamNinjaStatements(action:(NinjaStatement) -> Unit) {
                 SYNTAX_ERROR ->
                     return@streamNinjaBuildTokens
                 DONE -> { }
-                else -> error("$state")
             }
         } while(!done)
     }

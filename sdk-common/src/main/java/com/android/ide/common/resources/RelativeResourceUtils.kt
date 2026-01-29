@@ -156,7 +156,7 @@ fun getIdentifiedSourceSetMap(
         .distinctBy(File::invariantSeparatorsPath)
         .sortedBy(File::invariantSeparatorsPath)
         .associate { sourceSet ->
-            val sourceSetFolderName = sourceSet.parentFile.name
+            val sourceSetFolderName = sourceSet.parentFile.name.replace(" ", "_")
             val appendProjectName =
                 if (namespace.endsWith(projectName)) "" else ".$projectName"
             val appId = "$namespace$appendProjectName-$sourceSetFolderName-${i++}"

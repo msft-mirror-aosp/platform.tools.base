@@ -10,9 +10,11 @@ import com.android.adblib.connectedDevicesTracker
 import com.android.adblib.ddmlibcompatibility.testutils.InitAndroidDebugBridgeRule
 import com.android.adblib.ddmlibcompatibility.testutils.UseAdbLibAndroidDebugBridgeRule
 import com.android.adblib.deviceInfo
+import com.android.adblib.scope
 import com.android.adblib.testingutils.CoroutineTestUtils.runBlockingWithTimeout
 import com.android.adblib.testingutils.CoroutineTestUtils.yieldUntil
 import com.android.adblib.testingutils.FakeAdbServerProviderRule
+import com.android.adblib.testingutils.TestingAdbSessionHost
 import com.android.adblib.waitForDevice
 import com.android.adblib.waitUntilState
 import com.android.ddmlib.AdbCommandRejectedException
@@ -52,6 +54,7 @@ import kotlin.io.path.readBytes
 import kotlin.time.Duration
 import kotlin.time.DurationUnit
 import kotlin.time.toDuration
+import kotlinx.coroutines.Job
 import org.junit.Before
 import org.junit.rules.RuleChain
 
@@ -196,6 +199,25 @@ class AdblibIDeviceWrapperTest {
         val avdDataFuture2 = adblibIDeviceWrapper.avdData
         assertNotEquals(avdDataFuture2::class.java.simpleName, "ImmediateFuture")
         assertNull(avdDataFuture2.get())
+    }
+
+    @Test
+    fun getConstructorCreateOrGetCachedAvdDataCall_doesNotCrash_whenDeviceDisconnects() = runBlockingWithTimeout { // Prepare
+      // Prepare
+      val (connectedDevice, _) = createConnectedDevice(
+        "device1", DeviceState.DeviceStatus.OFFLINE
+      )
+      createAdblibIDeviceWrapper(connectedDevice, bridge)
+
+      // Act
+      fakeAdb.disconnectDevice("device1")
+      connectedDevice.scope.coroutineContext[Job]?.join()
+
+      // Assert
+      val host = (connectedDevice.session.host as TestingAdbSessionHost)
+      // Note: Test failures may include multiple uncaught exceptions from the additional
+      // AdblibIDeviceWrapper instance launched by device tracking through AdbLibIDeviceManager.
+      assertEquals(emptyList<Throwable>(), host.uncaughtExceptions)
     }
 
     @Test

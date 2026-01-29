@@ -41,11 +41,6 @@ class DynamicFeatureApkOutput(variant: DynamicFeatureCreationConfig, val deviceS
     private val projectPath = variant.services.projectInfo.path
     private val variantName = variant.baseName
     private val bundleFile: Provider<RegularFile>
-    private val privacySandboxSdkApks: FileCollection = variant.variantDependencies
-        .getArtifactFileCollection(
-            ConsumedConfigType.PROVIDED_CLASSPATH,
-            ArtifactScope.ALL,
-            AndroidArtifacts.ArtifactType.ANDROID_PRIVACY_SANDBOX_EXTRACTED_SDK_APKS)
     private val viaBundleDeviceApkOutput: DeviceApkOutput
     private val supportedAbis = variant.nativeBuildCreationConfig?.supportedAbis
     private val logger: Logger = Logging.getLogger(DynamicFeatureVariantImpl::class.java)
@@ -58,11 +53,11 @@ class DynamicFeatureApkOutput(variant: DynamicFeatureCreationConfig, val deviceS
             ArtifactScope.PROJECT,
             AndroidArtifacts.ArtifactType.APKS_FROM_BUNDLE).artifactFiles
         bundleFile = apkBundles.elements.map { RegularFile { it.single().asFile }}
-        viaBundleDeviceApkOutput = ViaBundleDeviceApkOutput(bundleFile, minSdkVersion, privacySandboxSdkApks, variantName, projectPath)
+        viaBundleDeviceApkOutput = ViaBundleDeviceApkOutput(bundleFile, minSdkVersion, variantName, projectPath)
     }
 
     fun setInputs(inputs: TaskInputs) {
-        inputs.files(mainApkArtifact, bundleFile, privacySandboxSdkApks)
+        inputs.files(mainApkArtifact, bundleFile)
             .withNormalizer(ClasspathNormalizer::class.java)
     }
 

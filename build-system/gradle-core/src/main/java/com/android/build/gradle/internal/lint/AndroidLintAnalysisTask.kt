@@ -198,6 +198,8 @@ abstract class AndroidLintAnalysisTask : NonIncrementalTask() {
         arguments += lintTool.initializeLintCacheDir()
         if (uastInputs.useK2Uast) {
             arguments += "--XuseK2Uast"
+        } else {
+            arguments += "--XuseK1Uast"
         }
 
         // Pass information to lint using the --client-id, --client-name, and --client-version flags

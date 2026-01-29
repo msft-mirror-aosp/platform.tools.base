@@ -113,7 +113,7 @@ message Event {
     // LeakCanary Prefix = 800
     LEAKCANARY_ANALYSIS = 801;
     LEAKCANARY_ANALYSIS_STATUS = 802;
-    LEAKCANARY_HOST_ANALYSIS_TRIGGER = 803;
+    LEAKCANARY_OBJECT_COUNT = 803;
     LEAKCANARY_PRESENCE_CHECK = 804;
 
     // group_id: session id
@@ -232,6 +232,7 @@ message Event {
     // LeakCanary Prefix = 800
     LeakCanaryAnalysisData leakcanary_analysis = 801;
     LeakCanaryAnalysisStatus leakCanary_analysis_status = 802;
+    LeakCanaryObjectCountData leakcanary_object_count = 803;
     LeakCanaryPresenceCheck leakcanary_presence_check = 804;
 
     // Echo Event Prefix = 1000
@@ -505,4 +506,8 @@ message CommonConfig {
 
 message LeakCanaryPresenceCheck {
     bool is_present = 1;
+}
+
+message LeakCanaryObjectCountData {
+  int32 count = 1;
 }

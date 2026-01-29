@@ -177,13 +177,8 @@ class MergeResourcesTest {
             .resolve(InternalArtifactType.COMPILED_LOCAL_RESOURCES)
             .resolve("debug/compileDebugLibraryResources/out/raw_me.raw.flat")
 
-        if (BooleanOption.PRECOMPILE_DEPENDENCIES_RESOURCES.defaultValue) {
-            assertThat(inIntermediate).doesNotExist()
-            assertThat(inCompiledLocalResources).exists()
-        } else {
-            assertThat(inIntermediate).exists()
-            assertThat(inCompiledLocalResources).doesNotExist()
-        }
+        assertThat(inIntermediate).doesNotExist()
+        assertThat(inCompiledLocalResources).exists()
 
         /*
          * Create raw/me.raw in application and see that it comes out in the apk, overriding the

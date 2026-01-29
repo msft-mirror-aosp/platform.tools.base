@@ -118,8 +118,10 @@ class CallGraphVisitor(
         is UField -> {
           // Implicit constructor callers due to class initializer.
           val decl = parent as UDeclaration
-          if (decl.isStatic) // Ignore static initializers for now.
-           return super.visitCallExpression(node)
+          if (decl.isStatic) {
+            // Ignore static initializers for now.
+            return super.visitCallExpression(node)
+          }
           val containingClass =
             decl.getContainingUClass()
               ?: return super.visitCallExpression(node) // No containing class.

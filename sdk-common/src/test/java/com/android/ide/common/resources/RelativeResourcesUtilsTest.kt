@@ -37,10 +37,9 @@ class RelativeResourcesUtilsTest {
 
     @Test
     fun `test should convert absolute path to relative path format`() {
-        val testAbsolutePath = FileUtils.join(
+        val testAbsoluteFile = File(FileUtils.join(
                 "usr", "a", "b", "myproject", "app", "src", "main",
-                "res", "layout", "activity_map_tv.xml")
-        val testAbsoluteFile = File(testAbsolutePath)
+                "res", "layout", "activity_map_tv.xml"))
         val packageName = "com.foobar.myproject.app"
         val sourceSets = listOf(
                 File(FileUtils.join("usr", "a", "b", "myproject", "app", "src", "main", "res")),
@@ -51,6 +50,23 @@ class RelativeResourcesUtilsTest {
         // Ordinal value is 1 due to invariantPath sorting in getIdentifiedSourceSetMap
         assertThat(expected)
                 .isEqualTo("com.foobar.myproject.app-main-1:/layout/activity_map_tv.xml")
+    }
+
+    @Test
+    fun `test should convert absolute path with spaces in path to relative path format`() {
+        val testAbsoluteFile = File(FileUtils.join(
+                "usr", "a", "b", "myproject", "app", "src", "foo debug",
+                "res", "layout", "my_layout.xml"))
+        val packageName = "com.foobar.myproject.app"
+        val sourceSets = listOf(
+                File(FileUtils.join("usr", "a", "b", "myproject", "app", "src", "main", "res")),
+                File(FileUtils.join("usr", "a", "b", "myproject", "app", "src", "foo debug", "res"))
+        )
+        val identifiedSourceSetMap = getIdentifiedSourceSetMap(sourceSets, packageName, ":app")
+        val expected = getRelativeSourceSetPath(testAbsoluteFile, identifiedSourceSetMap)
+        // Ordinal value is 0 due to invariantPath sorting in getIdentifiedSourceSetMap
+        assertThat(expected)
+                .isEqualTo("com.foobar.myproject.app-foo_debug-0:/layout/my_layout.xml")
     }
 
     @Test(expected = IllegalArgumentException::class)
@@ -188,6 +204,21 @@ class RelativeResourcesUtilsTest {
                                 "com.foobar.myproject.app-0" to "/usr/a/b/c/d/myproject/src/main"
                         )
                 )
+    }
+
+    @Test
+    fun `test should load source set with space in directory`() {
+        val sourceSetPathsMapDir = File(temporaryFolder.newFolder(), "test").also { it.mkdir() }
+        val sourceSetPathsMapFile = File(sourceSetPathsMapDir, "file-path.txt").also {
+            it.writeText("com.foobar.myproject.f1Fa_Debug-0 /usr/a/b/c/d/my project/src/f1Fa Debug/res\n")
+        }
+        val sourceSetPathsMap = readFromSourceSetPathsFile(sourceSetPathsMapFile)
+        assertThat(sourceSetPathsMap)
+            .isEqualTo(
+                mapOf(
+                    "com.foobar.myproject.f1Fa_Debug-0" to "/usr/a/b/c/d/my project/src/f1Fa Debug/res"
+                )
+            )
     }
 
     @Test(expected = IOException::class)

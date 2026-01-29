@@ -499,6 +499,9 @@ internal open class Analysis<FX : Any>(
       fun call(call: UCallExpression): Result<Type<FX>, R> {
         val method = call.resolveToUElement()
         return when {
+          // constructor call, with constructor definition missing or explicitly "default"
+          call.isConstructorCall() &&
+            (method?.javaPsi as? PsiMethod)?.isDefaultConstructor != false -> pure(getType(call))
           method is UMethod ->
             callMethod(
               call.callReceiver(),
@@ -511,7 +514,6 @@ internal open class Analysis<FX : Any>(
               method,
               completeArguments(typeParams, call, method, ULambdaExpression::valueParameters),
             )
-          call.isConstructorCall() -> pure(getType(call))
           else -> {
             fun fail() =
               giveUp(

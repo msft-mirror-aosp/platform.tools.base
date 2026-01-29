@@ -237,7 +237,7 @@ abstract class R8Task @Inject constructor(
     @get:ServiceReference
     abstract val r8D8ThreadPoolBuildService: Property<R8D8ThreadPoolBuildService>
 
-    @get:Input
+    @get:Internal
     abstract val r8ThreadPoolSize: Property<Int>
 
     @get:Input

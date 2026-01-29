@@ -49,20 +49,16 @@ open class KotlinMultiplatformAndroidComponentsExtensionImpl@Inject constructor(
         selector: VariantSelector,
         callback: (KotlinMultiplatformAndroidVariantBuilder) -> Unit
     ) {
-        dslServices.issueReporter.reportWarning(
-            IssueReporter.Type.GENERIC,
-            "beforeVariants() API is not supported yet for KMP modules and will be ignored"
-        )
+        variantApiOperations.variantBuilderOperations
+            .addPublicOperation({ callback.invoke(it) }, "beforeVariants", selector)
     }
 
     override fun beforeVariants(
         selector: VariantSelector,
         callback: Action<KotlinMultiplatformAndroidVariantBuilder>
     ) {
-        dslServices.issueReporter.reportWarning(
-            IssueReporter.Type.GENERIC,
-            "beforeVariants() API is not supported yet for KMP modules and will be ignored"
-        )
+        variantApiOperations.variantBuilderOperations
+            .addPublicOperation(callback, "beforeVariants", selector)
     }
 
     override fun registerConfigurations(lowercaseAffix: String, useLegacyPrefix: Boolean) {
@@ -74,7 +70,6 @@ open class KotlinMultiplatformAndroidComponentsExtensionImpl@Inject constructor(
              .apply {
                  isCanBeResolved = false
                  isCanBeConsumed = false
-                 isVisible = false
              }
         }
      }
@@ -92,7 +87,6 @@ open class KotlinMultiplatformAndroidComponentsExtensionImpl@Inject constructor(
                     .apply {
                         isCanBeResolved = true
                         isCanBeConsumed = false
-                        isVisible = false
                     }
 
             if (globalConfiguration?.allDependencies?.isNotEmpty() == true) {
@@ -111,7 +105,6 @@ open class KotlinMultiplatformAndroidComponentsExtensionImpl@Inject constructor(
                         .apply {
                             isCanBeResolved = true
                             isCanBeConsumed = false
-                            isVisible = false
                         }
                 if (globalConfiguration?.allDependencies?.isNotEmpty() == true) {
                     componentResolvableConfiguration.extendsFrom(globalConfiguration)

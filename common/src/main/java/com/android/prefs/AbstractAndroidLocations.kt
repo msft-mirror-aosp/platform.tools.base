@@ -486,6 +486,7 @@ private enum class Global(
         isSysProp = true,
         isEnvVar = true
     ),
+    @Suppress("DEPRECATION") // Support for deprecated ANDROID_PREFS_ROOT
     ANDROID_PREFS_ROOT(
         propName = AbstractAndroidLocations.ANDROID_PREFS_ROOT,
         isSysProp = true,

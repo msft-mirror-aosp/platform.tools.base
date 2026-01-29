@@ -28,7 +28,9 @@ import com.android.build.gradle.internal.scope.InternalArtifactType.MERGED_RES
 import com.android.build.gradle.internal.scope.getOutputDir
 import com.android.build.gradle.options.BooleanOption
 import com.android.builder.internal.aapt.v2.Aapt2RenamingConventions
+import com.android.testutils.MavenRepoGenerator
 import com.android.testutils.apk.Apk
+import com.android.testutils.generateAarWithContent
 import com.android.tools.build.apkzlib.zip.ZFile
 import com.android.utils.FileUtils
 import com.google.common.truth.Truth.assertThat
@@ -38,6 +40,34 @@ import org.junit.Test
 import java.io.File
 
 class PrecompileRemoteResourcesTest {
+
+    private val mavenRepo = MavenRepoGenerator(
+        listOf(
+            MavenRepoGenerator.Library(
+                "com.precompileRemoteResourcesTest.dependencyOfBrokenPublishedLib:lib:1.0",
+                "aar",
+                generateAarWithContent(
+                    packageName = "com.precompileRemoteResourcesTest.dependencyOfBrokenPublishedLib",
+                    resources = mapOf(
+                        "layout/layout.xml" to """
+                    <?xml version="1.0" encoding="utf-8"?>
+                    <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                        android:orientation="vertical"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent">
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:text="@string/doesnt_exist"
+                            />
+
+                    </LinearLayout>
+                """.trimIndent().toByteArray() )
+                )
+            ),
+        )
+    )
 
     private val publishedLib =
         MinimalSubProject.lib("com.precompileRemoteResourcesTest.publishedLib")
@@ -170,7 +200,8 @@ class PrecompileRemoteResourcesTest {
             .build()
 
     @get:Rule
-    val project = GradleTestProject.builder().fromTestApp(testApp).create()
+    val project =
+        GradleTestProject.builder().fromTestApp(testApp).withAdditionalMavenRepo(mavenRepo).create()
 
     // ensure that the cache output of any previous run of this test has been cleared
     private fun clearPreviousTransformOutput() {
@@ -181,11 +212,7 @@ class PrecompileRemoteResourcesTest {
         }
         for (subdirectory in transformCacheDir.listFiles()!!) {
             if (subdirectory.isDirectory) {
-                val outputDirCandidate =
-                    File(subdirectory, "com.precompileRemoteResourcesTest.publishedLib")
-                if (outputDirCandidate.exists() && outputDirCandidate.isDirectory) {
-                    FileUtils.deleteRecursivelyIfExists(outputDirCandidate)
-                }
+                FileUtils.deleteRecursivelyIfExists(subdirectory.resolve("com.precompileRemoteResourcesTest.publishedLib"))
             }
         }
     }
@@ -207,10 +234,8 @@ class PrecompileRemoteResourcesTest {
 
     @Test
     fun checkAppBuild() {
-        project.executor().with(BooleanOption.PRECOMPILE_DEPENDENCIES_RESOURCES, true)
-            .run(":publishedLib:assembleRelease")
-        project.executor().with(BooleanOption.PRECOMPILE_DEPENDENCIES_RESOURCES, true)
-            .run(":app:assembleDebug")
+        project.executor().run(":publishedLib:assembleRelease")
+        project.executor().run(":app:assembleDebug")
 
         checkAarResourcesCompilerTransformOutput()
         checkValuesResourcedAreMerged()
@@ -220,24 +245,16 @@ class PrecompileRemoteResourcesTest {
 
     @Test
     fun checkLocalLibBuild() {
-        project.executor().with(BooleanOption.PRECOMPILE_DEPENDENCIES_RESOURCES, true)
-            .run(":publishedLib:assembleRelease")
-
-        val result = project.executor().with(BooleanOption.PRECOMPILE_DEPENDENCIES_RESOURCES, true)
-            .run(":localLib:assembleRelease")
+        project.executor().run(":publishedLib:assembleRelease")
+        val result = project.executor().run(":localLib:assembleRelease")
 
         assertThat(result.getTask(":localLib:verifyReleaseResources").didWork()).isTrue()
     }
 
     @Test
     fun testIntegrationWithResourceShrinker() {
-        project.executor()
-            .with(BooleanOption.PRECOMPILE_DEPENDENCIES_RESOURCES, true)
-            .run(":publishedLib:assembleRelease")
-
-        project.executor()
-            .with(BooleanOption.PRECOMPILE_DEPENDENCIES_RESOURCES, true)
-            .run(":app:assembleRelease")
+        project.executor().run(":publishedLib:assembleRelease")
+        project.executor().run(":app:assembleRelease")
 
         val compressed = InternalArtifactType.SHRUNK_RESOURCES_PROTO_FORMAT
             .getOutputDir(project.getSubproject(":app").buildDir)
@@ -254,6 +271,28 @@ class PrecompileRemoteResourcesTest {
                 DummyContent.TINY_BINARY_XML
             )
         }
+    }
+
+    @Test
+    fun testLinkingErrorFromPrecompiledResource() {
+        val lib = project.getSubproject(":localLib")
+        project.executor()
+            .with(BooleanOption.PRECOMPILE_DEPENDENCIES_RESOURCES, true)
+            .run(":publishedLib:assembleRelease")
+
+        val newContents = lib.buildFile
+            .readText()
+            .replace(
+                "dependencies {",
+                "dependencies {\nimplementation(\"com.precompileRemoteResourcesTest.dependencyOfBrokenPublishedLib:lib:1.0\") \n"
+            )
+        lib.buildFile.writeText(newContents)
+
+        val result = project.executor().expectFailure()
+            .run(":localLib:assembleRelease")
+        result.assertErrorContains(
+            listOf("transformed", "lib-1.0", "res", "layout", "layout.xml").joinToString(separator = File.separator)
+        )
     }
 
     // TODO: find a better way to check the output of the transform
@@ -297,7 +336,7 @@ class PrecompileRemoteResourcesTest {
 
     private fun checkValuesResourcedAreMerged() {
         val mergedResDir =
-                File(MERGED_RES.getOutputDir(project.getSubproject(":app").buildDir), "debug" + File.separator + "mergeDebugResources")
+            File(MERGED_RES.getOutputDir(project.getSubproject(":app").buildDir), "debug" + File.separator + "mergeDebugResources")
         assertThat(mergedResDir.listFiles()).hasLength(3)
         assertThat(mergedResDir.listFiles()!!.map { file -> file.name }.toSortedSet()).containsExactlyElementsIn(
             listOf(

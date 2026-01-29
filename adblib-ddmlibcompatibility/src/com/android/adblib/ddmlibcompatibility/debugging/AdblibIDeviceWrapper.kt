@@ -35,6 +35,7 @@ import com.android.adblib.syncStat
 import com.android.adblib.tools.EmulatorCommandException
 import com.android.adblib.tools.localConsoleAddress
 import com.android.adblib.tools.openEmulatorConsole
+import com.android.adblib.utils.logIOCompletionErrors
 import com.android.adblib.waitUntilOnline
 import com.android.adblib.withErrorTimeout
 import com.android.ddmlib.AdbCommandRejectedException
@@ -89,6 +90,7 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
 import java.util.function.Function
 import kotlin.coroutines.cancellation.CancellationException
+import kotlin.onFailure
 
 /**
  * Implementation of [IDevice] that entirely relies on adblib services, i.e. does not depend on
@@ -132,7 +134,13 @@ internal class AdblibIDeviceWrapper(
 
     init {
         connectedDevice.scope.launch {
-            createOrGetCachedAvdData()
+            runCatching {
+                createOrGetCachedAvdData()
+            }.onFailure { throwable ->
+              logger.logIOCompletionErrors(
+                throwable, "Failed to retrieve AVD data during initialization"
+              )
+            }
         }
     }
 
@@ -264,10 +272,10 @@ internal class AdblibIDeviceWrapper(
             // just don't set the future value, so it never completes.
             val future = SettableFuture.create<AvdData?>()
             connectedDevice.scope.launch {
-                try {
+                runCatching {
                     future.set(createOrGetCachedAvdData())
-                } catch (_: IOException) {
-                    logger.debug { "IOException due to device disconnect" }
+                }.onFailure { throwable ->
+                  logger.logIOCompletionErrors(throwable, "Failed to retrieve AVD data")
                 }
             }
             future

@@ -861,7 +861,7 @@ class FlaggedApiDetectorTest : LintDetectorTest() {
       .run()
       .expect(
         """
-        src/test/pkg/JavaTest.java:29: Error: Method null() is a flagged API and should be inside an if (Flags.myFlag()) check (or annotate the surrounding method testEarlyReturn with @FlaggedApi(Flags.FLAG_MY_FLAG) to transfer requirement to caller) [FlaggedApi]
+        src/test/pkg/JavaTest.java:29: Error: Method Foo() is a flagged API and should be inside an if (Flags.myFlag()) check (or annotate the surrounding method testEarlyReturn with @FlaggedApi(Flags.FLAG_MY_FLAG) to transfer requirement to caller) [FlaggedApi]
                 Foo f = new Foo(); // ERROR 1
                         ~~~~~~~~~
         src/test/pkg/JavaTest.java:30: Error: Method someMethod() is a flagged API and should be inside an if (Flags.myFlag()) check (or annotate the surrounding method testEarlyReturn with @FlaggedApi(Flags.FLAG_MY_FLAG) to transfer requirement to caller) [FlaggedApi]

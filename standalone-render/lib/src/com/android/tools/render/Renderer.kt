@@ -131,13 +131,18 @@ class Renderer(
                 override suspend fun <X> executeReadAndWriteAction(
                     constraints: Array<out ReadConstraint>,
                     runWriteActionOnEdt: Boolean,
-                    action: ReadAndWriteScope.() -> ReadResult<X>
+                    undispatched: Boolean,
+                    action: ReadAndWriteScope.() -> ReadResult<X>,
                 ): X {
                     throw UnsupportedOperationException()
                 }
 
                 override fun smartModeConstraint(project: Project): ReadConstraint =
                     ReadConstraint.inSmartMode(project)
+
+                override suspend fun <T> runWriteAction(action: () -> T): T {
+                    throw UnsupportedOperationException()
+                }
 
             }, project
         )

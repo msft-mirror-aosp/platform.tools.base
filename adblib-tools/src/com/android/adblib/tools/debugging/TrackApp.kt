@@ -20,6 +20,8 @@ import com.android.adblib.AdbFeatures
 import com.android.adblib.AppProcessEntry
 import com.android.adblib.ConnectedDevice
 import com.android.adblib.CoroutineScopeCache
+import com.android.adblib.ListWithStateFlowStatus
+import com.android.adblib.StateFlowStatus
 import com.android.adblib.activityManager
 import com.android.adblib.getOrPutSynchronized
 import com.android.adblib.hasAvailableFeature

@@ -223,11 +223,12 @@ class ArtifactsImpl(
         with(getArtifactContainer(type)) {
             val fileName = calculateFileName(fileName, type)
             val output = namingContext?.getOutputLocation()
-            return if (output != null)
-            //final transformer with
+            return if (output != null) {
+                //final transformer with
                 FileUtils.join(output, fileName)
-            else
+            } else {
                 getOutputPath(type, forceFilename = fileName)
+            }
         }
     }
 

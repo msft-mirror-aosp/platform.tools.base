@@ -55,7 +55,7 @@ class AnalysisApiFirDiagnosticsTest : AbstractCheckTest(), AnalysisApiDiagnostic
   fun testDiagnostics_NullableFromJava_jspecify() {
     checkDiagnostics_NullableFromJava_jspecify(
       """
-      src/main.kt:3: Warning: $NULLNESS_MESSAGE '@Nullable() String?'. [KotlinCompilerDiagnostic]
+      src/main.kt:3: Warning: $NULLNESS_MESSAGE 'String?'. [KotlinCompilerDiagnostic]
       fun go(j: J) = j.s().length
                      ~~~~~~~~~~~~
       0 errors, 1 warnings

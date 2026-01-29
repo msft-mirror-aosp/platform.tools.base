@@ -118,7 +118,6 @@ abstract class InstallVariantViaBundleTask : NonIncrementalTask() {
             val apkOutput = ViaBundleDeviceApkOutput(
                 parameters.apkBundle,
                 androidVersion,
-                parameters.privacySandboxSdkApksFiles,
                 parameters.variantName.get(),
                 parameters.projectPath.get(),
                 this
@@ -234,17 +233,6 @@ abstract class InstallVariantViaBundleTask : NonIncrementalTask() {
 
             task.timeOutInMs = creationConfig.global.installationOptions.timeOutInMs
             task.buildTools.initialize(task, creationConfig)
-            if (creationConfig.privacySandboxCreationConfig != null) {
-                task.privacySandboxSdkApksFiles.setFrom(
-                    creationConfig.variantDependencies
-                        .getArtifactFileCollection(
-                            AndroidArtifacts.ConsumedConfigType.RUNTIME_CLASSPATH,
-                            AndroidArtifacts.ArtifactScope.ALL,
-                            AndroidArtifacts.ArtifactType.ANDROID_PRIVACY_SANDBOX_EXTRACTED_SDK_APKS
-                        )
-                )
-            }
-            task.privacySandboxSdkApksFiles.disallowChanges()
             creationConfig.lifecycleTasks.invokeApkInstallationActions(task)
         }
 

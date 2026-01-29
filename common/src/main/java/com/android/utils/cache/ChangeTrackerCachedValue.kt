@@ -15,7 +15,6 @@
  */
 package com.android.utils.cache
 
-import com.android.annotations.TestOnly
 import com.android.annotations.concurrency.GuardedBy
 import java.lang.ref.Reference
 import java.lang.ref.SoftReference
@@ -24,6 +23,7 @@ import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.locks.ReentrantReadWriteLock
 import kotlin.concurrent.read
 import kotlin.concurrent.write
+import org.jetbrains.annotations.TestOnly
 
 private class StrongReference<T>(val value: T) : WeakReference<T>(value)
 

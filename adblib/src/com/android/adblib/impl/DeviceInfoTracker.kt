@@ -82,7 +82,7 @@ internal class DeviceInfoTracker(
                         false
                     } else {
                         // Emit device and keep the flow going as long as the device is in the list
-                        trackedDeviceList.devices.find {
+                        trackedDeviceList.find {
                             it.serialNumber == deviceSerialNumber.value()
                         }?.let {
                             emit(it)

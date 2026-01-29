@@ -247,7 +247,7 @@ public class CommentDetector extends ResourceXmlDetector
         // flag it)
         if (!context.getDriver().isIsolated()) {
             Boolean releaseMode = getReleaseMode(context);
-            return releaseMode != Boolean.FALSE;
+            return releaseMode == null || releaseMode;
         } else {
             return true;
         }

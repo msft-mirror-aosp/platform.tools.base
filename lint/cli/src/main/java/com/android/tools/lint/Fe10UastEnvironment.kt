@@ -54,7 +54,6 @@ import org.jetbrains.kotlin.analysis.api.platform.packages.KotlinPackageProvider
 import org.jetbrains.kotlin.analysis.api.platform.packages.KotlinPackageProviderMerger
 import org.jetbrains.kotlin.analysis.api.platform.permissions.KotlinAnalysisPermissionOptions
 import org.jetbrains.kotlin.analysis.api.platform.projectStructure.KotlinProjectStructureProvider
-import org.jetbrains.kotlin.analysis.api.standalone.base.declarations.KotlinFakeClsStubsCache
 import org.jetbrains.kotlin.analysis.api.standalone.base.declarations.KotlinStandaloneAnnotationsResolverFactory
 import org.jetbrains.kotlin.analysis.api.standalone.base.declarations.KotlinStandaloneDeclarationProviderFactory
 import org.jetbrains.kotlin.analysis.api.standalone.base.declarations.KotlinStandaloneDeclarationProviderMerger
@@ -72,7 +71,6 @@ import org.jetbrains.kotlin.analysis.decompiler.stub.file.ClsKotlinBinaryClassCa
 import org.jetbrains.kotlin.analysis.decompiler.stub.file.DummyFileAttributeService
 import org.jetbrains.kotlin.analysis.decompiler.stub.file.FileAttributeService
 import org.jetbrains.kotlin.analysis.project.structure.builder.KtModuleProviderBuilder
-import org.jetbrains.kotlin.cli.common.CLIConfigurationKeys
 import org.jetbrains.kotlin.cli.jvm.compiler.CliBindingTrace
 import org.jetbrains.kotlin.cli.jvm.compiler.EnvironmentConfigFiles.JVM_CONFIG_FILES
 import org.jetbrains.kotlin.cli.jvm.compiler.KotlinCliJavaFileManagerImpl
@@ -82,10 +80,10 @@ import org.jetbrains.kotlin.cli.jvm.compiler.TopDownAnalyzerFacadeForJVM
 import org.jetbrains.kotlin.cli.jvm.modules.CliJavaModuleFinder
 import org.jetbrains.kotlin.cli.jvm.modules.CliJavaModuleResolver
 import org.jetbrains.kotlin.cli.jvm.modules.JavaModuleGraph
-import org.jetbrains.kotlin.compiler.plugin.ComponentRegistrar
 import org.jetbrains.kotlin.compiler.plugin.ExperimentalCompilerApi
 import org.jetbrains.kotlin.config.CompilerConfiguration
 import org.jetbrains.kotlin.config.LanguageVersionSettingsImpl
+import org.jetbrains.kotlin.config.perfManager
 import org.jetbrains.kotlin.diagnostics.Diagnostic
 import org.jetbrains.kotlin.library.KotlinLibrary
 import org.jetbrains.kotlin.psi.KtFile
@@ -206,7 +204,7 @@ private constructor(
     //  should be removed when we move to a model where UastEnvironment is used only once.
     resetPackagePartProviders()
 
-    val perfManager = kotlinCompilerConfig.get(CLIConfigurationKeys.PERF_MANAGER)
+    val perfManager = kotlinCompilerConfig.perfManager
     perfManager?.notifyPhaseStarted(PhaseType.Analysis)
 
     // Run the Kotlin compiler front end.
@@ -254,8 +252,9 @@ private fun createKotlinCompilerConfig(enableKotlinScripting: Boolean): Compiler
 
   // Registers the scripting compiler plugin to support build.gradle.kts files.
   if (enableKotlinScripting) {
+    @Suppress("DEPRECATION_ERROR") // Keep using until K1 is deleted entirely.
     config.add(
-      ComponentRegistrar.PLUGIN_COMPONENT_REGISTRARS,
+      org.jetbrains.kotlin.compiler.plugin.ComponentRegistrar.PLUGIN_COMPONENT_REGISTRARS,
       ScriptingCompilerConfigurationComponentRegistrar(),
     )
   }
@@ -367,7 +366,7 @@ private fun configureAnalysisApiServices(
 
   project.registerService(
     KotlinDeclarationProviderFactory::class.java,
-    KotlinStandaloneDeclarationProviderFactory(project, ktFiles),
+    KotlinStandaloneDeclarationProviderFactory(project, env.environment, ktFiles),
   )
   project.registerService(
     KotlinDeclarationProviderMerger::class.java,
@@ -394,8 +393,7 @@ private fun configureFe10ApplicationEnvironment(appEnv: CoreApplicationEnvironme
     )
 
     KotlinCoreEnvironment.underApplicationLock {
-      if (it.application.getServiceIfCreated(KotlinFakeClsStubsCache::class.java) == null) {
-        it.application.registerService(KotlinFakeClsStubsCache::class.java)
+      if (it.application.getServiceIfCreated(BuiltinsVirtualFileProvider::class.java) == null) {
         it.application.registerService(
           BuiltinsVirtualFileProvider::class.java,
           BuiltinsVirtualFileProviderCliImpl::class.java,

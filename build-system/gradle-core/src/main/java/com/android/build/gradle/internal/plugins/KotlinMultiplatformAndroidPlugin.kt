@@ -37,8 +37,10 @@ import com.android.build.api.variant.HostTestBuilder
 import com.android.build.api.variant.KotlinMultiplatformAndroidComponentsExtension
 import com.android.build.api.variant.KotlinMultiplatformAndroidVariant
 import com.android.build.api.variant.KotlinMultiplatformAndroidVariantBuilder
+import com.android.build.api.variant.VariantBuilder
 import com.android.build.api.variant.impl.FileBasedDirectoryEntryImpl
 import com.android.build.api.variant.impl.FlatSourceDirectoriesImpl
+import com.android.build.api.variant.impl.InternalVariantBuilder
 import com.android.build.api.variant.impl.KmpAndroidCompilationType
 import com.android.build.api.variant.impl.KmpGlobalVariantBuilderConfigImpl
 import com.android.build.api.variant.impl.KmpVariantImpl
@@ -79,6 +81,7 @@ import com.android.build.gradle.internal.lint.maybeCreateLintChecksClasspath
 import com.android.build.gradle.internal.manifest.LazyManifestParser
 import com.android.build.gradle.internal.multiplatform.KotlinMultiplatformAndroidHandler
 import com.android.build.gradle.internal.multiplatform.KotlinMultiplatformAndroidHandlerImpl
+import com.android.build.gradle.internal.profile.AnalyticsConfiguratorService
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.scope.KotlinMultiplatformBuildFeaturesValuesImpl
 import com.android.build.gradle.internal.scope.KotlinMultiplatformHostTestBuildFeaturesValuesImpl
@@ -355,7 +358,6 @@ class KotlinMultiplatformAndroidPlugin @Inject constructor(
         kmpVariantApiOperationsRegistrar.executeDslFinalizationBlocks()
         androidExtension.lock()
 
-
         val dependencyConfigurator = DependencyConfigurator(
             project = project,
             projectServices = projectServices
@@ -571,6 +573,31 @@ class KotlinMultiplatformAndroidPlugin @Inject constructor(
                 dslInfo.componentIdentity,
                 VariantBuilderServicesImpl(projectServices)
             )
+
+        val configuratorService = getBuildService(
+            project.gradle.sharedServices,
+            AnalyticsConfiguratorService::class.java)
+            .get()
+        val profileEnabledVariantBuilder = configuratorService.getVariantBuilder(
+            project.path, variantBuilder.name
+        )
+
+        val userVisibleVariantBuilder = (variantBuilder as InternalVariantBuilder)
+            .createUserVisibleVariantObject<KotlinMultiplatformAndroidVariantBuilder>(
+                projectServices,
+                profileEnabledVariantBuilder,
+            )
+
+        kmpVariantApiOperationsRegistrar.variantBuilderOperations.executeOperations(
+            userVisibleVariantBuilder
+        )
+
+        if (!variantBuilder.enable) {
+            throw RuntimeException(
+                "Android Kotlin multiplatform plugin has a single variant (${variantBuilder.name}). " +
+                        "Disabling that variant is not permitted."
+            )
+        }
 
         return KmpVariantImpl(
             variantBuilder = variantBuilder,

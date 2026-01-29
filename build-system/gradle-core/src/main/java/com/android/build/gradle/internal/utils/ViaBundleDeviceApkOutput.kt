@@ -36,7 +36,6 @@ import java.nio.file.Path
 class ViaBundleDeviceApkOutput(
     private val apkBundle: Provider<RegularFile>,
     private val minSdkVersion: AndroidVersion,
-    private val privacySandboxSdkApks: FileCollection,
     private val variantName: String,
     private val projectPath: String,
     private val apkFetcher: BundleApkFetcher = object: BundleApkFetcher {}
@@ -48,15 +47,6 @@ class ViaBundleDeviceApkOutput(
         if (InstallUtils.checkDeviceApiLevel(deviceSpec.name, deviceSpec.apiLevel, deviceSpec.codeName,
                 minSdkVersion, iLogger, projectPath, variantName)
         ) {
-            val privacySandboxSdksPresent =
-                !privacySandboxSdkApks.isEmpty
-            if (privacySandboxSdksPresent && deviceSpec.supportsPrivacySandbox) {
-                privacySandboxSdkApks.files
-                    .mapNotNull { BuiltArtifactsLoaderImpl().load { it } }
-                    .map { artifacts -> artifacts.applicationId to artifacts.elements.map { RegularFile { File(it.outputFile) }  } }
-                    .forEach { (applicationId, sdkApkFiles) -> apkInstallGroups.add(DefaultSdkApkInstallGroup(applicationId, sdkApkFiles)) }
-
-            }
             val apkBuiltArtifacts: List<Path> = buildList {
                 add(apkBundle.get().asFile.toPath())
             }
@@ -78,7 +68,6 @@ class ViaBundleDeviceApkOutput(
     override fun setInputs(inputs: TaskInputs, deviceSpec: DeviceSpec) {
         inputs.files(
             apkBundle,
-            privacySandboxSdkApks,
         ).withNormalizer(ClasspathNormalizer::class.java)
     }
 }

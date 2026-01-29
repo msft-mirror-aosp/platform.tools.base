@@ -58,11 +58,13 @@ message Command {
     // Event Profiler Prefix = 600
 
     // LeakCanary Prefix = 800
-    START_LOGCAT_TRACKING = 801;
-    STOP_LOGCAT_TRACKING = 802;
+    START_LEAKCANARY_TASK = 801;
+    STOP_LEAKCANARY_TASK = 802;
     CHECK_LEAKCANARY_PRESENT = 803;
     SIGNAL_HEAP_DUMP_COMPLETE = 804;
     SEND_LEAKCANARY_ANALYSIS = 805;
+    START_LEAKCANARY_OBJECT_COUNT_TRACKING = 806;
+    STOP_LEAKCANARY_OBJECT_COUNT_TRACKING = 807;
 
     // Sample echo Command
     ECHO = 1000;
@@ -118,6 +120,7 @@ message Command {
     StopAllocTracking stop_alloc_tracking = 405;
 
     // LeakCanary Prefix = 800
+    StartLeakCanaryTaskData start_leakcanary_task = 801;
     SignalHeapDumpCompleteData signal_heap_dump_complete = 804;
     SendLeakCanaryAnalysisData send_leakcanary_analysis = 805;
 
@@ -181,4 +184,12 @@ message SignalHeapDumpCompleteData {
 message SendLeakCanaryAnalysisData {
     // The string representation of the LeakCanary analysis result.
     string data = 1;
+}
+
+message StartLeakCanaryTaskData {
+  enum LeakCanaryMode {
+    ON_DEVICE = 0;
+    ON_HOST = 1;
+  }
+  LeakCanaryMode mode = 1;
 }

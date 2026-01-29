@@ -18,43 +18,48 @@ package com.android.tools.profgen
 
 import java.io.File
 import java.io.InputStream
-import java.util.zip.ZipEntry
-import java.util.zip.ZipInputStream
+import java.util.zip.ZipFile
 import kotlin.math.min
 
 class Apk(val dexes: List<DexFile>, val name: String = "")
 
 fun Apk(file: File, name: String = ""): Apk {
-    return Apk(file.readBytes(), name)
-}
-
-fun Apk(bytes: ByteArray, name: String = ""): Apk {
-    return ZipInputStream(bytes.inputStream()).use { zis ->
+    return ZipFile(file).use { zipFile ->
         val dexes = mutableListOf<DexFile>()
-        var zipEntry: ZipEntry? = zis.nextEntry
-        while (zipEntry != null) {
+        val entries = zipFile.entries()
+        while (entries.hasMoreElements()) {
+            val zipEntry = entries.nextElement()
             // Check if the file name is one of the DEX files, but for AAB it can be within a subdirectory
             val fileName = zipEntry.name
 
             // Fast path to skip any non-dex files
             if (!fileName.endsWith(".dex")) {
-                zipEntry = zis.nextEntry
                 continue
             }
 
             // Match the whole pattern and remember the file name part
             val fileNameMatches = dexClassesPattern.matchEntire(fileName)
             if (fileNameMatches == null) {
-                zipEntry = zis.nextEntry
                 continue
             }
             // Take just the filename without the path, which is later compared with the one from the profile itself
             val (dexFileName) = fileNameMatches.destructured
-            val dex = parseDexFile(zis.readBytes(), dexFileName)
-            dexes.add(dex)
-            zipEntry = zis.nextEntry
+            zipFile.getInputStream(zipEntry)!!.use { inputStream ->
+                val dex = parseDexFile(inputStream.readBytes(), dexFileName)
+                dexes.add(dex)
+            }
         }
         Apk(dexes, name)
+    }
+}
+
+fun Apk(bytes: ByteArray, name: String = ""): Apk {
+    val file = File.createTempFile("profgen", ".apk")
+    try {
+        file.writeBytes(bytes)
+        return Apk(file, name)
+    } finally {
+        file.delete()
     }
 }
 

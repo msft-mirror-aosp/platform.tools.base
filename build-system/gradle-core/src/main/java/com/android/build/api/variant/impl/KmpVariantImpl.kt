@@ -99,6 +99,10 @@ open class KmpVariantImpl @Inject constructor(
     manifestFile,
 ), KotlinMultiplatformAndroidVariant, KmpCreationConfig, HasDeviceTestsCreationConfig, HasHostTestsCreationConfig {
 
+    override val minSdk: AndroidVersion by lazy {
+        variantBuilder.minSdkVersion
+    }
+
     override val minSdkVersion: AndroidVersion
         get() = minSdk
 
@@ -129,14 +133,8 @@ open class KmpVariantImpl @Inject constructor(
         OptimizationCreationConfigImpl(
             this,
             dslInfo.optimizationDslInfo,
-            object : CanMinifyCodeBuilder {
-                override var isMinifyEnabled =
-                    dslInfo.optimizationDslInfo.postProcessingOptions.codeShrinkerEnabled()
-            },
-            object : CanMinifyAndroidResourcesBuilder {
-                override var shrinkResources =
-                    dslInfo.optimizationDslInfo.postProcessingOptions.codeShrinkerEnabled()
-            },
+            variantBuilder as? CanMinifyCodeBuilder,
+            variantBuilder as? CanMinifyAndroidResourcesBuilder,
             internalServices
         )
     }
@@ -154,7 +152,7 @@ open class KmpVariantImpl @Inject constructor(
             get() = Collections.unmodifiableMap(internalHostTests)
 
     override val isMinifyEnabled: Boolean
-        get() = optimizationCreationConfig.minifiedEnabled
+        get() = variantBuilder.isMinifyEnabled
 
     override var unitTest: KmpHostTestImpl? = null
 
@@ -204,13 +202,13 @@ open class KmpVariantImpl @Inject constructor(
         )
 
     override val maxSdk: Int?
-        get() = dslInfo.maxSdkVersion
+        get() = variantBuilder.maxSdk
 
     override val maxSdkVersion: Int?
         get() = maxSdk
 
     override val targetSdkVersion: AndroidVersion
-        get() = minSdk
+        get() = variantBuilder.targetSdkVersion
 
     override val buildConfigFields: MapProperty<String, BuildConfigField<out Serializable>>?
         get() = buildConfigCreationConfig?.buildConfigFields
@@ -225,9 +223,6 @@ open class KmpVariantImpl @Inject constructor(
     override val packaging: TestedComponentPackaging by lazy(LazyThreadSafetyMode.NONE) {
         TestedComponentPackagingImpl(dslInfo.packaging, internalServices)
     }
-
-    override val externalNativeBuild: ExternalNativeBuild?
-        get() = null
 
     override val isCoreLibraryDesugaringEnabledLintCheck: Boolean
         get() = global.compileOptions.isCoreLibraryDesugaringEnabled
@@ -298,6 +293,7 @@ open class KmpVariantImpl @Inject constructor(
     }
 
     // Not supported
+    override val externalNativeBuild: ExternalNativeBuild? = null
     override val renderscriptCreationConfig: RenderscriptCreationConfig? = null
     override val renderscript: Renderscript? = null
     override val shadersCreationConfig: ShadersCreationConfig? = null

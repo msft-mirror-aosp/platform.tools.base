@@ -17,11 +17,11 @@ package com.android.adblib.tools.debugging.impl
 
 import com.android.adblib.AppProcessEntry
 import com.android.adblib.ConnectedDevice
+import com.android.adblib.StateFlowStatus
 import com.android.adblib.adbLogger
 import com.android.adblib.scope
 import com.android.adblib.tools.debugging.AppProcessList
 import com.android.adblib.tools.debugging.AppProcessTracker
-import com.android.adblib.tools.debugging.StateFlowStatus
 import com.android.adblib.tools.debugging.trackApp
 import com.android.adblib.utils.createChildScope
 import com.android.adblib.utils.logIOCompletionErrors

@@ -28,7 +28,7 @@ import java.util.concurrent.ExecutionException
  * This is useful if the loader can throw "special" exceptions like ProcessCanceledException
  * in the IDE.
  */
-fun <K, V> Cache<K, V>.getAndUnwrap(key: K, loader: () -> V): V {
+fun <K: Any, V: Any> Cache<K, V>.getAndUnwrap(key: K, loader: () -> V): V {
   try {
     return get(key, loader)
   }

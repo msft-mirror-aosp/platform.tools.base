@@ -15,6 +15,8 @@
  */
 package com.android.sdklib.internal.avd
 
+import com.android.sdklib.devices.CameraLocation
+
 /**
  * Keys to config entries in an AVD's config.ini file (which resides within the AVD's data folder).
  */
@@ -175,6 +177,10 @@ object ConfigKey {
 
   /** How to emulate the rear facing camera, represented by [AvdCamera] */
   const val CAMERA_BACK = "hw.camera.back" // $NON-NLS-1$
+
+  /** The sensor orientation for the given camera */
+  @JvmStatic
+  fun cameraSensorOrientation(location: CameraLocation) = "hw.camera.$location.orientation"
 
   /** The amount of RAM the emulated device should have */
   const val RAM_SIZE = "hw.ramSize"

@@ -117,7 +117,7 @@ constructor(client: LintCliClient, output: File) : Reporter(client, output) {
     writer
       .indent(indent)
       .write(
-        "\"\$schema\" : \"https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json\",\n"
+        "\"\$schema\" : \"https://docs.oasis-open.org/sarif/sarif/v2.1.0/errata01/os/schemas/sarif-schema-2.1.0.json\",\n"
       )
 
     writer.indent(indent).write("\"version\" : \"2.1.0\",\n")

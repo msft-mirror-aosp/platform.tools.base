@@ -28,47 +28,47 @@ fun ConfigurableFileCollection.fromDisallowChanges(vararg arg: Any) {
     disallowChanges()
 }
 
-fun <T> Property<T>.setDisallowChanges(value: T?) {
+fun <T : Any> Property<T>.setDisallowChanges(value: T?) {
     set(value)
     disallowChanges()
 }
 
-fun <T> Property<T>.setDisallowChanges(value: Provider<out T>) {
+fun <T : Any> Property<T>.setDisallowChanges(value: Provider<out T>) {
     set(value)
     disallowChanges()
 }
 
-fun <T> ListProperty<T>.setDisallowChanges(value: Provider<out Iterable<T>>) {
+fun <T : Any> ListProperty<T>.setDisallowChanges(value: Provider<out Iterable<T>>) {
     set(value)
     disallowChanges()
 }
 
-fun <T> ListProperty<T>.setDisallowChanges(value: Iterable<T>?) {
+fun <T : Any> ListProperty<T>.setDisallowChanges(value: Iterable<T>?) {
     set(value)
     disallowChanges()
 }
 
-fun <K, V> MapProperty<K, V>.setDisallowChanges(map: Provider<Map<K,V>>) {
+fun <K : Any, V : Any> MapProperty<K, V>.setDisallowChanges(map: Provider<Map<K,V>>) {
     set(map)
     disallowChanges()
 }
 
-fun <K, V> MapProperty<K, V>.setDisallowChanges(map: Map<K,V>?) {
+fun <K : Any, V : Any> MapProperty<K, V>.setDisallowChanges(map: Map<K,V>?) {
     set(map)
     disallowChanges()
 }
 
-fun <T> SetProperty<T>.setDisallowChanges(value: Provider<out Iterable<T>>) {
+fun <T : Any> SetProperty<T>.setDisallowChanges(value: Provider<out Iterable<T>>) {
     set(value)
     disallowChanges()
 }
 
-fun <T> SetProperty<T>.setDisallowChanges(value: Iterable<T>?) {
+fun <T : Any> SetProperty<T>.setDisallowChanges(value: Iterable<T>?) {
     set(value)
     disallowChanges()
 }
 
-fun <T> ListProperty<T>.setDisallowChanges(
+fun <T : Any> ListProperty<T>.setDisallowChanges(
     value: Provider<out Iterable<T>>?,
     handleNullable: ListProperty<T>.() -> Unit
 ) {
@@ -78,7 +78,7 @@ fun <T> ListProperty<T>.setDisallowChanges(
     disallowChanges()
 }
 
-fun <K, V> MapProperty<K, V>.setDisallowChanges(
+fun <K : Any, V : Any> MapProperty<K, V>.setDisallowChanges(
     map: Provider<Map<K,V>>?,
     handleNullable: MapProperty<K, V>.() -> Unit
 ) {

@@ -17,10 +17,10 @@ package com.android.adblib.ddmlibcompatibility.debugging
 
 import com.android.adblib.AdbSession
 import com.android.adblib.ConnectedDevice
+import com.android.adblib.StateFlowStatus
 import com.android.adblib.adbLogger
 import com.android.adblib.scope
 import com.android.adblib.tools.debugging.JdwpProcess
-import com.android.adblib.tools.debugging.StateFlowStatus
 import com.android.adblib.tools.debugging.jdwpProcessTracker
 import com.android.ddmlib.IDevice
 import kotlinx.coroutines.flow.takeWhile

@@ -230,6 +230,43 @@ void InitializePerfa(jvmtiEnv* jvmti_env, JNIEnv* jni_env,
                             JVMTI_THREAD_NORM_PRIORITY);
 }
 
+jboolean JNICALL SendObjectCountNative(JNIEnv* env, jclass j_class,
+                                       jint count) {
+  if (!Agent::Instance().IsConnectedToDaemon()) {
+    Log::V(Log::Tag::PROFILER,
+           "Agent not connected to daemon. Abandoning retained object count "
+           "event.");
+    return JNI_FALSE;
+  }
+  if (count < 0) {
+    Log::V(Log::Tag::PROFILER,
+           "Invalid retained object count received. Abandoning event.");
+    return JNI_TRUE;
+  }
+
+  Event event;
+  event.set_pid(getpid());
+  event.set_timestamp(SteadyClock().GetCurrentTime());
+  event.set_kind(Event::LEAKCANARY_OBJECT_COUNT);
+  event.mutable_leakcanary_object_count()->set_count(count);
+
+  SendEventRequest request;
+  *request.mutable_event() = event;
+  Agent::Instance().SubmitAgentTasks(
+      {[request](AgentService::Stub& stub, ClientContext& context) mutable {
+        profiler::proto::EmptyResponse response;
+        grpc::Status status = stub.SendEvent(&context, request, &response);
+
+        if (!status.ok()) {
+          Log::E(Log::Tag::PROFILER,
+                 "Failed to send retained object count event. Error: %s",
+                 status.error_message().c_str());
+        }
+        return status;
+      }});
+  return JNI_TRUE;
+}
+
 void InitializeProfiler(JavaVM* vm, jvmtiEnv* jvmti_env,
                         const AgentConfig& agent_config) {
   JNIEnv* jni_env = GetThreadLocalJNI(vm);
@@ -312,6 +349,12 @@ void InitializeProfiler(JavaVM* vm, jvmtiEnv* jvmti_env,
               profiler::proto::EmptyResponse response;
               grpc::Status status =
                   stub.SendEvent(&context, request, &response);
+              if (!status.ok()) {
+                Log::E(Log::Tag::PROFILER,
+                       "Failed to send LeakCanary presence check event. Error: "
+                       "%s",
+                       status.error_message().c_str());
+              }
               return status;
             }});
       });
@@ -329,6 +372,7 @@ void InitializeProfiler(JavaVM* vm, jvmtiEnv* jvmti_env,
             "com/android/tools/profiler/support/profilers/LeakCanaryManager");
         if (manager_class == nullptr) {
           Log::E(Log::Tag::PROFILER, "LeakCanaryManager class not found.");
+          jni_env->ExceptionClear();
           return;
         }
         ScopedLocalRef<jclass> manager_class_ref(jni_env, manager_class);
@@ -338,6 +382,7 @@ void InitializeProfiler(JavaVM* vm, jvmtiEnv* jvmti_env,
         if (signal_method == nullptr) {
           Log::E(Log::Tag::PROFILER,
                  "LeakCanaryManager.signalHeapDumpComplete method not found.");
+          jni_env->ExceptionClear();
           return;
         }
 
@@ -345,6 +390,80 @@ void InitializeProfiler(JavaVM* vm, jvmtiEnv* jvmti_env,
             command->signal_heap_dump_complete().heap_dump_timestamp();
         jni_env->CallStaticVoidMethod(manager_class, signal_method,
                                       heap_dump_timestamp);
+      });
+
+  Agent::Instance().RegisterCommandHandler(
+      Command::START_LEAKCANARY_OBJECT_COUNT_TRACKING,
+      [vm](const Command* command) -> void {
+        JNIEnv* jni_env = GetThreadLocalJNI(vm);
+        if (jni_env == nullptr) {
+          Log::E(Log::Tag::PROFILER,
+                 "Could not get JNIEnv to start LeakCanary object count "
+                 "tracking.");
+          return;
+        }
+
+        jclass manager_class = jni_env->FindClass(
+            "com/android/tools/profiler/support/profilers/LeakCanaryManager");
+        if (manager_class == nullptr) {
+          Log::E(Log::Tag::PROFILER, "LeakCanaryManager class not found.");
+          jni_env->ExceptionClear();
+          return;
+        }
+        ScopedLocalRef<jclass> manager_class_ref(jni_env, manager_class);
+
+        static const JNINativeMethod methods[] = {
+            {"sendObjectCountNative", "(I)Z", (void*)SendObjectCountNative}};
+
+        jint result = jni_env->RegisterNatives(manager_class, methods, 1);
+        if (result != JNI_OK) {
+          Log::E(Log::Tag::PROFILER,
+                 "Failed to register LeakCanary native methods.");
+          jni_env->ExceptionClear();
+        }
+
+        jmethodID method = jni_env->GetStaticMethodID(
+            manager_class, "startListeningForRetainedObjects", "()V");
+        if (method != nullptr) {
+          jni_env->CallStaticVoidMethod(manager_class, method);
+        } else {
+          Log::E(Log::Tag::PROFILER,
+                 "LeakCanaryManager.startListeningForRetainedObjects method "
+                 "not found.");
+          jni_env->ExceptionClear();
+        }
+      });
+
+  Agent::Instance().RegisterCommandHandler(
+      Command::STOP_LEAKCANARY_OBJECT_COUNT_TRACKING,
+      [vm](const Command* command) -> void {
+        JNIEnv* jni_env = GetThreadLocalJNI(vm);
+        if (jni_env == nullptr) {
+          Log::E(Log::Tag::PROFILER,
+                 "Could not get JNIEnv to stop LeakCanary object count "
+                 "tracking.");
+          return;
+        }
+
+        jclass manager_class = jni_env->FindClass(
+            "com/android/tools/profiler/support/profilers/LeakCanaryManager");
+        if (manager_class == nullptr) {
+          Log::E(Log::Tag::PROFILER, "LeakCanaryManager class not found.");
+          jni_env->ExceptionClear();
+          return;
+        }
+        ScopedLocalRef<jclass> manager_class_ref(jni_env, manager_class);
+
+        jmethodID method = jni_env->GetStaticMethodID(
+            manager_class, "stopListeningForRetainedObjects", "()V");
+        if (method != nullptr) {
+          jni_env->CallStaticVoidMethod(manager_class, method);
+        } else {
+          Log::E(Log::Tag::PROFILER,
+                 "LeakCanaryManager.stopListeningForRetainedObjects method not "
+                 "found.");
+          jni_env->ExceptionClear();
+        }
       });
 
   // Perf-test currently waits on this message to determine that agent

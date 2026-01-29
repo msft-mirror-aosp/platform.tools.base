@@ -42,15 +42,6 @@ private const val TEST_RESULT_EXIT_CODE_FILE_NAME = "test-result-exit-code.txt"
 private const val TEST_RESULT_PB_FILE_NAME = "test-result.pb"
 
 /**
- * @property sdkApkSet the privacy sandbox SDK APK
- * @property extractedApkMap extracted APks from the privacy sandbox SDK APK to install during test
- */
-data class PrivacySandboxSdkInstallBundle(
-    val sdkApkSet: Set<File>,
-    val extractedApkMap: Map<DeviceConnector, List<List<Path>>>
-)
-
-/**
  * Runs the given runner configs using Unified Test Platform.
  */
 fun runUtpTestSuiteAndWait(

@@ -215,9 +215,9 @@ class NativeBuildOutputClassifier(val send: (Message) -> Unit) : LineOutputStrea
      * Processes the given line, and calls send() for any current/past line(s) that are terminated
      * (e.g., finished diagnostic statement or block).
      */
-    override fun consume(rawLine : String) {
+    override fun consume(line : String) {
         // Remove "C/C++: " that may have been prepended by AGP.
-        val line = rawLine.substringAfter("C/C++: ")
+        val line = line.substringAfter("C/C++: ")
 
         // Classify the type of this line.
         val (classification, match) = classifyLine(line)

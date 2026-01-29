@@ -782,6 +782,18 @@ public class DeviceManagerTest {
     }
 
     @Test
+    public final void testGetGlassesHardwareProperties() {
+        final Device glassesDevice = dm.getDevice("ai_glasses_device", "Google");
+
+        Map<String, String> properties = DeviceManager.getHardwareProperties(glassesDevice);
+        assertThat(properties.get("hw.camera.back.orientation")).isEqualTo("0");
+        assertThat(properties.get("hw.touchpad0")).isEqualTo("yes");
+        assertThat(properties.get("hw.touchpad0.width")).isEqualTo("1542");
+        assertThat(properties.get("hw.touchpad0.height")).isEqualTo("297");
+        assertThat(properties.get("hw.screen")).isEqualTo("no-touch");
+    }
+
+    @Test
     public void testGetFreeformHardwareProperties() {
         Device device = dm.getDevice("13.5in Freeform", "Generic");
         String settingsFile =

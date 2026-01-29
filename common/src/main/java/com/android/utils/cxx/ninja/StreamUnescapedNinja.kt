@@ -213,7 +213,6 @@ fun Reader.streamUnescapedNinja(
                         AFTER_COMMENT_HASH
                     }
                 }
-                else -> error("$ch")
             }
         }
     }

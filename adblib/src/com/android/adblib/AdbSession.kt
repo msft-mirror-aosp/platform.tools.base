@@ -25,8 +25,6 @@ import com.android.adblib.impl.ConnectedDevicesTrackerImpl
 import com.android.adblib.impl.ConnectionStatusTrackerImpl
 import com.android.adblib.impl.DeviceInfoTracker
 import com.android.adblib.impl.SessionDeviceTracker
-import com.android.adblib.impl.TrackerConnecting
-import com.android.adblib.impl.TrackerDisconnected
 import com.android.adblib.utils.WarningsTracker
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
@@ -41,6 +39,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
 import java.time.Duration
+import java.util.Objects
 import java.util.concurrent.TimeUnit
 import kotlin.coroutines.CoroutineContext
 
@@ -297,17 +296,42 @@ class TrackedDeviceList(
      * The [list][DeviceList] of [DeviceInfo], the list is always empty if the underlying
      * connection to ADB failed.
      */
-    val devices: DeviceList,
+    devices: DeviceList,
+    /**
+     * The status of the [StateFlow] that produced this list.
+     */
+    flowStatus: StateFlowStatus
+) : ListWithStateFlowStatus<DeviceInfo>(devices, flowStatus) {
+
+    /**
+     * The [list][DeviceList] of [ErrorLine] corresponding to entries that were not recognized.
+     */
+    val errors: List<ErrorLine> = devices.errors
+
     /**
      * The last [Throwable] collected when the underlying ADB connection failed, or `null`
      * if the underlying ADB connection is active.
      */
     val throwable: Throwable?
-) {
+        get() = flowStatus.currentError
+
+    override fun hashCode(): Int {
+        return Objects.hash(super.hashCode(), connectionId)
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+
+        if (other !is TrackedDeviceList) return false
+
+        if (connectionId != other.connectionId) return false
+
+        return super.equals(other)
+    }
 
     override fun toString(): String {
         return "${this::class.simpleName}: connectionId=$connectionId, " +
-                "device count=${devices.size}, throwable=$throwable"
+                "device count=${size}, flowStatus=$flowStatus"
     }
 }
 
@@ -317,7 +341,7 @@ class TrackedDeviceList(
  */
 val TrackedDeviceList.isTrackerDisconnected: Boolean
     get() {
-        return this.devices === TrackerDisconnected.instance
+        return flowStatus.isRetrying
     }
 
 /**
@@ -326,7 +350,7 @@ val TrackedDeviceList.isTrackerDisconnected: Boolean
  */
 val TrackedDeviceList.isTrackerConnecting: Boolean
     get() {
-        return this.devices === TrackerConnecting.instance
+        return flowStatus.isStartOfFlow
     }
 
 /**

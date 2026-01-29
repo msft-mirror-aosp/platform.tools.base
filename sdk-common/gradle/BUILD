@@ -29,6 +29,7 @@ kotlin_library(
     ]),
     module_name = "sdk-common.gradle",
     visibility = ["//visibility:public"],
+    warn = "error",
     deps = [
         "@maven//:com.google.guava.guava",
     ],

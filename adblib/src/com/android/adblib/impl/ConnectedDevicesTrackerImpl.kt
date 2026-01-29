@@ -62,7 +62,7 @@ internal class ConnectedDevicesTrackerImpl(override val session: AdbSession) :
                         updateCache(emptyMap())
                     }
 
-                    updateCache(trackedDeviceList.devices.associateBy { it.serialNumber })
+                    updateCache(trackedDeviceList.associateBy { it.serialNumber })
                 }
             } finally {
                 logger.debug { "Shutting down connected devices tracker coroutine" }

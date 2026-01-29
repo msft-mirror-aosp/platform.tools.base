@@ -74,7 +74,6 @@ fun Reader.streamNinjaBuildTokens(action: (NinjaBuildTokenType, CharSequence) ->
                     sb.append(value)
                     IN_ASSIGNMENT_EXPRESSION
                 }
-                else -> error("$state")
             }
             EscapedDollarType,
             EscapedSpaceType,
@@ -104,7 +103,6 @@ fun Reader.streamNinjaBuildTokens(action: (NinjaBuildTokenType, CharSequence) ->
                                 sb.append(ch)
                                 IN_ASSIGNMENT_EXPRESSION
                             }
-                            else -> error("$state")
                         }
                         '|' -> when(state) {
                             IN_PIPE -> {
@@ -124,7 +122,6 @@ fun Reader.streamNinjaBuildTokens(action: (NinjaBuildTokenType, CharSequence) ->
                                 sb.append('|')
                                 IN_ASSIGNMENT_EXPRESSION
                             }
-                            else -> error("$state")
                         }
                         '\r', '\n' -> when(state) {
                             IN_PIPE -> {
@@ -144,7 +141,6 @@ fun Reader.streamNinjaBuildTokens(action: (NinjaBuildTokenType, CharSequence) ->
                                 action(EOLType, END_OF_LINE_TOKEN)
                                 AFTER_EOL
                             }
-                            else -> error("$state")
                         }
                         '=' -> when(state) {
                             AFTER_EOL,
@@ -165,7 +161,6 @@ fun Reader.streamNinjaBuildTokens(action: (NinjaBuildTokenType, CharSequence) ->
                                 action(PipeType, "|")
                                 IN_EXPRESSION
                             }
-                            else -> error("$state")
                         }
                         ':' -> when(state) {
                             AFTER_EOL,
@@ -191,7 +186,6 @@ fun Reader.streamNinjaBuildTokens(action: (NinjaBuildTokenType, CharSequence) ->
                                 sb.append(":")
                                 IN_ASSIGNMENT_EXPRESSION
                             }
-                            else -> error("$state")
                         }
                         else -> when(state) {
                             AFTER_EOL,
@@ -213,7 +207,6 @@ fun Reader.streamNinjaBuildTokens(action: (NinjaBuildTokenType, CharSequence) ->
                                 sb.append(ch)
                                 IN_EXPRESSION
                             }
-                            else -> error("$state")
                         }
                     }
                 }
