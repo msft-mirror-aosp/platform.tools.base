@@ -17,8 +17,11 @@
 package com.android.tools.utp.plugins.deviceprovider.ddmlib
 
 import com.google.testing.platform.lib.process.inject.SubprocessComponent
+import kotlin.OptIn
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 
 /** Resolves package names from APK file. */
+@OptIn(ExperimentalCoroutinesApi::class)
 class ApkPackageNameResolver(private val aaptPath: String, private val subprocessComponent: SubprocessComponent) {
 
   companion object {

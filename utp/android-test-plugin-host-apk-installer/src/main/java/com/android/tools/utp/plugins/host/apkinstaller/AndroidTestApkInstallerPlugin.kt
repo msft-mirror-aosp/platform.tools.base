@@ -44,8 +44,11 @@ import com.google.testing.platform.runtime.android.controller.ext.uninstall
 import com.google.testing.platform.runtime.android.device.AndroidDeviceProperties
 import java.time.Duration
 import java.util.logging.Logger
+import kotlin.OptIn
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 
 /** This plugin handles test APKs installation for all instrumented tests. It uninstalls them after test finishes. */
+@OptIn(ExperimentalCoroutinesApi::class)
 class AndroidTestApkInstallerPlugin(
   private val logger: Logger = getLogger(),
   private val subprocessComponentFactory: (Context) -> SubprocessComponent = {

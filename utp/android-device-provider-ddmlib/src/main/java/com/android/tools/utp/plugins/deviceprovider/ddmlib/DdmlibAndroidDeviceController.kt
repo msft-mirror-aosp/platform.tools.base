@@ -36,7 +36,9 @@ import java.io.File
 import java.time.Duration
 import java.util.concurrent.TimeUnit
 import java.util.logging.Logger
+import kotlin.OptIn
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.Flow
@@ -45,6 +47,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 
 /** Android specific implementation of [DeviceController] using DDMLIB. */
+@OptIn(ExperimentalCoroutinesApi::class)
 class DdmlibAndroidDeviceController(
   private val apkPackageNameResolver: ApkPackageNameResolver,
   private val uninstallIncompatibleApks: Boolean,

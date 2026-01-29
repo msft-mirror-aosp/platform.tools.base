@@ -15,6 +15,7 @@ kotlin_library(
         "//tools/base/utp/android-test-plugin-host-apk-installer-proto",
         "@maven//:com.google.protobuf.protobuf-java",
         "@maven//:org.jetbrains.kotlin.kotlin-stdlib-jdk8",
+        "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-core",
     ],
 )
 

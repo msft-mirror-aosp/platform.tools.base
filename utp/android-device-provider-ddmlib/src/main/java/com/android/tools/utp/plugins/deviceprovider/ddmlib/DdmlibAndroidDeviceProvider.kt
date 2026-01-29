@@ -38,9 +38,12 @@ import com.google.testing.platform.proto.api.config.LocalAndroidDeviceProviderPr
 import com.google.testing.platform.runtime.android.AndroidDeviceProvider
 import com.google.testing.platform.runtime.android.device.AndroidDevice
 import java.util.concurrent.TimeUnit
+import kotlin.OptIn
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 
 /** Provisions an [AndroidDevice] and returns a [DeviceController] using the DDMLIB. */
+@OptIn(ExperimentalCoroutinesApi::class)
 class DdmlibAndroidDeviceProvider() : AndroidDeviceProvider {
   companion object {
     private const val DEFAULT_ADB_COMMAND_TIMEOUT_SECONDS = 120L
