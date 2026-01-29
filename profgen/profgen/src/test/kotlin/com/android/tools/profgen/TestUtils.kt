@@ -22,21 +22,18 @@ import java.io.File
 import java.nio.file.Path
 
 fun testData(relativePath: String): File {
-    return testDataPath(relativePath).toFile()
+  return testDataPath(relativePath).toFile()
 }
 
 fun testDataPath(relativePath: String): Path {
-    return workspacePath("tools/base/profgen/profgen/testData").resolve(relativePath)
+  return workspacePath("tools/base/profgen/profgen/testData").resolve(relativePath)
 }
 
 fun workspacePath(relativePath: String): Path {
-    return TestUtils.resolveWorkspacePath(relativePath)
+  return TestUtils.resolveWorkspacePath(relativePath)
 }
 
-fun HumanReadableProfile(
-    vararg strings: String,
-    onError: (Int, Int, String) -> Unit
-) : HumanReadableProfile? {
-    val text = strings.joinToString("\n")
-    return HumanReadableProfile(ByteArrayInputStream(text.toByteArray()).reader(), onError)
+fun HumanReadableProfile(vararg strings: String, onError: (Int, Int, String) -> Unit): HumanReadableProfile? {
+  val text = strings.joinToString("\n")
+  return HumanReadableProfile(ByteArrayInputStream(text.toByteArray()).reader(), onError)
 }

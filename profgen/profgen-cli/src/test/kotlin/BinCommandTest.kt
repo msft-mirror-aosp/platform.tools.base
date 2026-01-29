@@ -16,23 +16,23 @@
 package com.android.tools.profgen.cli
 
 import com.google.common.truth.Truth
-import kotlinx.cli.ExperimentalCli
-import org.junit.Test
 import java.lang.IllegalArgumentException
 import kotlin.test.fail
+import kotlinx.cli.ExperimentalCli
+import org.junit.Test
 
 @ExperimentalCli
 class BinCommandTest {
 
-    @Test
-    fun test() {
-        val command = BinCommand()
-        command.parse(arrayOf("--apk", "fake", "--output", "out", "bla"))
-        try {
-            command.execute()
-            fail("should fail")
-        } catch (e: IllegalArgumentException) {
-            Truth.assertThat(e).hasMessageThat().contains("File not found")
-        }
+  @Test
+  fun test() {
+    val command = BinCommand()
+    command.parse(arrayOf("--apk", "fake", "--output", "out", "bla"))
+    try {
+      command.execute()
+      fail("should fail")
+    } catch (e: IllegalArgumentException) {
+      Truth.assertThat(e).hasMessageThat().contains("File not found")
     }
+  }
 }

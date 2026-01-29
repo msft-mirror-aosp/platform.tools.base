@@ -20,67 +20,53 @@ import java.io.File
 import kotlin.io.path.Path
 import kotlin.system.exitProcess
 
-fun expandWildcards(
-    hrpPath: String,
-    outPath: String,
-    programPaths: Collection<String>,
-    stdErrorDiagnostics: Diagnostics) {
+fun expandWildcards(hrpPath: String, outPath: String, programPaths: Collection<String>, stdErrorDiagnostics: Diagnostics) {
 
-    val hrpFile = Path(hrpPath).toFile()
-    require(hrpFile.exists()) { "File not found: $hrpPath" }
+  val hrpFile = Path(hrpPath).toFile()
+  require(hrpFile.exists()) { "File not found: $hrpPath" }
 
-    val outFile = Path(outPath).toFile()
-    require(outFile.parentFile!!.exists()) { "Directory does not exist: ${outFile.parent}" }
+  val outFile = Path(outPath).toFile()
+  require(outFile.parentFile!!.exists()) { "Directory does not exist: ${outFile.parent}" }
 
-    require(programPaths.isNotEmpty()) { "Must pass at least one program source" }
+  require(programPaths.isNotEmpty()) { "Must pass at least one program source" }
 
-    val hrp = readHumanReadableProfileOrExit(hrpFile, stdErrorDiagnostics)
-    val archiveClassFileResourceProviders = mutableListOf<ArchiveClassFileResourceProvider>()
-    val classFileResources = mutableListOf<ClassFileResource>()
-    for (programPath in programPaths) {
-        if (programPath.endsWith(CLASS_EXTENSION)) {
-            val separatorIndex = programPath.lastIndexOf(':')
-            require(separatorIndex >= 0) {
-                "Missing ':' separator for class file: $programPath"
-            }
-            val classBinaryName =
-                programPath.substring(separatorIndex + 1).dropLast(CLASS_EXTENSION.length)
-            val classDescriptor = getClassDescriptorFromBinaryName(classBinaryName)
-            val programFile =
-                Path(programPath.substring(0, separatorIndex), "$classBinaryName.class")
-                    .toFile()
-            require(programFile.exists()) { "File not found: $programFile" }
-            classFileResources += ClassFileResource(classDescriptor, programFile.toPath())
-        } else if (programPath.endsWith(JAR_EXTENSION)) {
-            val programFile = Path(programPath).toFile()
-            require(programFile.exists()) { "File not found: $programPath" }
-            val archiveClassFileResourceProvider =
-                ArchiveClassFileResourceProvider(programFile.toPath())
-            archiveClassFileResourceProviders += archiveClassFileResourceProvider
-            classFileResources += archiveClassFileResourceProvider.getClassFileResources()
-        } else {
-            throw IllegalArgumentException("Unexpected program file: $programPath")
-        }
+  val hrp = readHumanReadableProfileOrExit(hrpFile, stdErrorDiagnostics)
+  val archiveClassFileResourceProviders = mutableListOf<ArchiveClassFileResourceProvider>()
+  val classFileResources = mutableListOf<ClassFileResource>()
+  for (programPath in programPaths) {
+    if (programPath.endsWith(CLASS_EXTENSION)) {
+      val separatorIndex = programPath.lastIndexOf(':')
+      require(separatorIndex >= 0) { "Missing ':' separator for class file: $programPath" }
+      val classBinaryName = programPath.substring(separatorIndex + 1).dropLast(CLASS_EXTENSION.length)
+      val classDescriptor = getClassDescriptorFromBinaryName(classBinaryName)
+      val programFile = Path(programPath.substring(0, separatorIndex), "$classBinaryName.class").toFile()
+      require(programFile.exists()) { "File not found: $programFile" }
+      classFileResources += ClassFileResource(classDescriptor, programFile.toPath())
+    } else if (programPath.endsWith(JAR_EXTENSION)) {
+      val programFile = Path(programPath).toFile()
+      require(programFile.exists()) { "File not found: $programPath" }
+      val archiveClassFileResourceProvider = ArchiveClassFileResourceProvider(programFile.toPath())
+      archiveClassFileResourceProviders += archiveClassFileResourceProvider
+      classFileResources += archiveClassFileResourceProvider.getClassFileResources()
+    } else {
+      throw IllegalArgumentException("Unexpected program file: $programPath")
     }
-    val result = hrp.expandWildcards(classFileResources)
-    outFile.printWriter().use {
-        result.printExact(it)
-    }
-    for (archiveClassFileResourceProvider in archiveClassFileResourceProviders) {
-        try {
-            archiveClassFileResourceProvider.close()
-        } catch (_: Throwable) {
-        }
-    }
+  }
+  val result = hrp.expandWildcards(classFileResources)
+  outFile.printWriter().use { result.printExact(it) }
+  for (archiveClassFileResourceProvider in archiveClassFileResourceProviders) {
+    try {
+      archiveClassFileResourceProvider.close()
+    } catch (_: Throwable) {}
+  }
 }
 
-fun readHumanReadableProfileOrExit(
-    hrpFile: File, stdErrorDiagnostics: Diagnostics): HumanReadableProfile {
+fun readHumanReadableProfileOrExit(hrpFile: File, stdErrorDiagnostics: Diagnostics): HumanReadableProfile {
 
-    val hrp = HumanReadableProfile(hrpFile, stdErrorDiagnostics)
-    if (hrp == null) {
-        System.err.println("Failed to parse $hrpFile.")
-        exitProcess(-1)
-    }
-    return hrp
+  val hrp = HumanReadableProfile(hrpFile, stdErrorDiagnostics)
+  if (hrp == null) {
+    System.err.println("Failed to parse $hrpFile.")
+    exitProcess(-1)
+  }
+  return hrp
 }
