@@ -20,9 +20,9 @@ import com.android.tools.environment.Logger
 
 /** [Logger.LoggerProvider] implementation that always returns [NoopLogger]. */
 class StubLoggerProvider : Logger.LoggerProvider {
-    private val noopLogger = NoopLogger()
+  private val noopLogger = NoopLogger()
 
-    override fun createLogger(name: String): Logger = noopLogger
+  override fun createLogger(name: String): Logger = noopLogger
 
-    override val priority: Int = Int.MIN_VALUE
+  override val priority: Int = Int.MIN_VALUE
 }
