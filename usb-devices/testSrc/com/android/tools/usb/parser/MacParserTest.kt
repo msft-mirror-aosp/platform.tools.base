@@ -17,39 +17,39 @@
 package com.android.tools.usb.parser
 
 import com.android.testutils.TestUtils.resolveWorkspacePath
+import java.nio.file.Files
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Before
 import org.junit.Test
-import java.nio.file.Files
 
 class MacParserTest {
-    private lateinit var parser: OutputParser
+  private lateinit var parser: OutputParser
 
-    @Before
-    fun setup() {
-        parser = MacParser()
-    }
+  @Before
+  fun setup() {
+    parser = MacParser()
+  }
 
-    @Test
-    fun parseOutput() {
-        val file = resolveWorkspacePath("tools/base/usb-devices/testData/mac.txt")
-        val devices = parser.parse(Files.newInputStream(file))
-        assertEquals(4, devices.size)
-        assertEquals("Card Reader", devices[0].name)
-        assertEquals("0x05ac", devices[0].vendorId)
-        assertEquals("0x8406", devices[0].productId)
-        assertEquals("000000000820", devices[0].serialNumber)
-    }
+  @Test
+  fun parseOutput() {
+    val file = resolveWorkspacePath("tools/base/usb-devices/testData/mac.txt")
+    val devices = parser.parse(Files.newInputStream(file))
+    assertEquals(4, devices.size)
+    assertEquals("Card Reader", devices[0].name)
+    assertEquals("0x05ac", devices[0].vendorId)
+    assertEquals("0x8406", devices[0].productId)
+    assertEquals("000000000820", devices[0].serialNumber)
+  }
 
-    @Test
-    fun parseOutputWithLeadingErrors() {
-        val file = resolveWorkspacePath("tools/base/usb-devices/testData/mac2.txt")
-        val devices = parser.parse(Files.newInputStream(file))
-        assertEquals(7, devices.size)
-        assertEquals("iBridge DFR brightness", devices[0].name)
-        assertEquals("0x05ac", devices[0].vendorId)
-        assertEquals("0x8102", devices[0].productId)
-        assertNull(devices[0].serialNumber)
-    }
+  @Test
+  fun parseOutputWithLeadingErrors() {
+    val file = resolveWorkspacePath("tools/base/usb-devices/testData/mac2.txt")
+    val devices = parser.parse(Files.newInputStream(file))
+    assertEquals(7, devices.size)
+    assertEquals("iBridge DFR brightness", devices[0].name)
+    assertEquals("0x05ac", devices[0].vendorId)
+    assertEquals("0x8102", devices[0].productId)
+    assertNull(devices[0].serialNumber)
+  }
 }

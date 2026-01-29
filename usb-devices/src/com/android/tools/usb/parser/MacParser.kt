@@ -66,49 +66,47 @@ private fun createUsbDevice(map: Map<String, String>): UsbDevice {
     map[VENDOR_ID_KEY]!!.split(" ")[0], // output could include vendorId aa text. i.e. 0x18d1 (Google Inc.)
     map[PRODUCT_ID_KEY]!!,
     null,
-    serial
+    serial,
   )
 }
 
-private fun hasRequiredValues(values: Map<String, String>): Boolean = REQUIRED_KEYS.all(
-  values::containsKey
-)
+private fun hasRequiredValues(values: Map<String, String>): Boolean = REQUIRED_KEYS.all(values::containsKey)
 
 class MacParser : OutputParser {
 
   object USBDeclarationCollector : Collector<String, MutableList<MutableList<String>>, MutableList<MutableList<String>>> {
-    override fun accumulator() = BiConsumer<MutableList<MutableList<String>>, String> { stringGroups, line ->
-      // looks for a specific line, creates a new MutableList<String> and append it to the List of Lists, otherwise add non-empty lines to the last List of strings
-      if (line.isEmpty()) return@BiConsumer
-      if (line.matches(NAME_REGEX)) {
-        stringGroups.add(ArrayList())
+    override fun accumulator() =
+      BiConsumer<MutableList<MutableList<String>>, String> { stringGroups, line ->
+        // looks for a specific line, creates a new MutableList<String> and append it to the List of Lists, otherwise add non-empty lines to
+        // the last List of strings
+        if (line.isEmpty()) return@BiConsumer
+        if (line.matches(NAME_REGEX)) {
+          stringGroups.add(ArrayList())
+        }
+
+        // system_profiler may include error messages at the start of its output. stringGroups will be empty in this case since we haven't
+        // yet encountered a line that matches NAME_REGEX. We can safely ignore such lines since they won't contain any information about a
+        // USB device, and trying to call stringGroups.last() will generate an exception since the list is empty.
+        if (!stringGroups.isEmpty()) {
+          stringGroups.last().add(line)
+        }
       }
 
-      // system_profiler may include error messages at the start of its output. stringGroups will be empty in this case since we haven't
-      // yet encountered a line that matches NAME_REGEX. We can safely ignore such lines since they won't contain any information about a
-      // USB device, and trying to call stringGroups.last() will generate an exception since the list is empty.
-      if (!stringGroups.isEmpty()) {
-        stringGroups.last().add(line)
-      }
-    }
+    override fun combiner() = BinaryOperator<MutableList<MutableList<String>>> { t, u -> t.apply { addAll(u) } }
 
-    override fun combiner() = BinaryOperator<MutableList<MutableList<String>>> { t, u ->
-      t.apply {
-        addAll(u)
-      }
-    }
-
-    //the accumulator object is the same as the result object
+    // the accumulator object is the same as the result object
     override fun characteristics() = setOf(Collector.Characteristics.IDENTITY_FINISH)
 
     override fun supplier() = Supplier<MutableList<MutableList<String>>> { ArrayList() }
+
     override fun finisher(): Function<MutableList<MutableList<String>>, MutableList<MutableList<String>>> =
       Function.identity<MutableList<MutableList<String>>>()
   }
 
   override fun parse(output: InputStream): List<UsbDevice> {
     return BufferedReader(InputStreamReader(output, Charset.defaultCharset()))
-      .lines().skip(1) // skip the first line USB: output
+      .lines()
+      .skip(1) // skip the first line USB: output
       .collect(USBDeclarationCollector)
       .map { usbLines -> extractValues(usbLines) }
       .filter { values -> hasRequiredValues(values) }

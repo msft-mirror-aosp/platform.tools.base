@@ -30,72 +30,70 @@ private const val NAME_KEY = "Name"
 private const val DEVICEID_KEY = "DeviceID"
 
 private fun extractValues(lines: List<String>): UsbDevice? {
-    var name: String? = null
-    var vendorId = ""
-    var productId = ""
-    var deviceId = ""
-    var serialNumber: String? = null
-    lines.forEach { line ->
-        if (line.startsWith(NAME_KEY)) {
-            name = line.substring(line.indexOf("=")+1)
-        } else if (line.startsWith(DEVICEID_KEY)) {
-            val vidIndex = line.indexOf("VID_")
-            if (vidIndex != -1) {
-                vendorId = "0x" + line.substring(vidIndex + 4, vidIndex + 8)
-            }
-            val pidIndex = line.indexOf("PID_")
-            if (pidIndex != -1) {
-                productId = "0x" + line.substring(pidIndex + 4, pidIndex + 8)
+  var name: String? = null
+  var vendorId = ""
+  var productId = ""
+  var deviceId = ""
+  var serialNumber: String? = null
+  lines.forEach { line ->
+    if (line.startsWith(NAME_KEY)) {
+      name = line.substring(line.indexOf("=") + 1)
+    } else if (line.startsWith(DEVICEID_KEY)) {
+      val vidIndex = line.indexOf("VID_")
+      if (vidIndex != -1) {
+        vendorId = "0x" + line.substring(vidIndex + 4, vidIndex + 8)
+      }
+      val pidIndex = line.indexOf("PID_")
+      if (pidIndex != -1) {
+        productId = "0x" + line.substring(pidIndex + 4, pidIndex + 8)
 
-                // Relevant serial numbers for devices seem to be of the format DeviceID=USB\VID_18D1&amp;PID_4EE4\HT85G1A03400
-                // where the serial number comes after product ID and a \, with no &'s
-                val afterPid = line.substring(pidIndex + 8)
-                if (afterPid.startsWith("\\") && !afterPid.contains('&')) {
-                    serialNumber = afterPid.substring(1)
-                }
-            }
-            deviceId = line.substring(line.indexOf("=") + 1)
-              .replace("&amp;", "&")
-              .replace("USB\\", "")
+        // Relevant serial numbers for devices seem to be of the format DeviceID=USB\VID_18D1&amp;PID_4EE4\HT85G1A03400
+        // where the serial number comes after product ID and a \, with no &'s
+        val afterPid = line.substring(pidIndex + 8)
+        if (afterPid.startsWith("\\") && !afterPid.contains('&')) {
+          serialNumber = afterPid.substring(1)
         }
+      }
+      deviceId = line.substring(line.indexOf("=") + 1).replace("&amp;", "&").replace("USB\\", "")
     }
-    if (name != null) {
-        return UsbDevice(name!!, productId, vendorId, null, serialNumber, deviceId)
-    }
-    return null
+  }
+  if (name != null) {
+    return UsbDevice(name!!, productId, vendorId, null, serialNumber, deviceId)
+  }
+  return null
 }
 
 class WindowsParser : OutputParser {
-    object WindowsUSBCollector :
-        Collector<String, MutableList<MutableList<String>>, MutableList<MutableList<String>>> {
-        override fun accumulator() = BiConsumer<MutableList<MutableList<String>>, String> { stringGroups, line ->
-            // looks for a specific line, creates a new MutableList<String> and append it to the List of Lists, otherwise add non-empty lines to the last List of strings
-            if (line.isEmpty()) return@BiConsumer
-            if (line.startsWith(NEW_DEVICE_KEY)) {
-                stringGroups.add(ArrayList())
-            }
-
-            if (stringGroups.isNotEmpty()) {
-                stringGroups.last().add(line)
-            }
+  object WindowsUSBCollector : Collector<String, MutableList<MutableList<String>>, MutableList<MutableList<String>>> {
+    override fun accumulator() =
+      BiConsumer<MutableList<MutableList<String>>, String> { stringGroups, line ->
+        // looks for a specific line, creates a new MutableList<String> and append it to the List of Lists, otherwise add non-empty lines to
+        // the last List of strings
+        if (line.isEmpty()) return@BiConsumer
+        if (line.startsWith(NEW_DEVICE_KEY)) {
+          stringGroups.add(ArrayList())
         }
 
-        override fun combiner() = BinaryOperator<MutableList<MutableList<String>>> { t, u ->
-            t.apply {
-                addAll(u)
-            }
+        if (stringGroups.isNotEmpty()) {
+          stringGroups.last().add(line)
         }
+      }
 
-        //the accumulator object is the same as the result object
-        override fun characteristics() = setOf(Collector.Characteristics.IDENTITY_FINISH)
+    override fun combiner() = BinaryOperator<MutableList<MutableList<String>>> { t, u -> t.apply { addAll(u) } }
 
-        override fun supplier() = Supplier<MutableList<MutableList<String>>> { ArrayList() }
-        override fun finisher(): Function<MutableList<MutableList<String>>, MutableList<MutableList<String>>> = Function.identity()
-    }
+    // the accumulator object is the same as the result object
+    override fun characteristics() = setOf(Collector.Characteristics.IDENTITY_FINISH)
 
-    override fun parse(output: InputStream): List<UsbDevice> {
-        return BufferedReader(InputStreamReader(output, Charsets.UTF_8))
-            .lines()
-            .collect(WindowsUSBCollector).mapNotNull { usbLines -> extractValues(usbLines) }.distinct()
-    }
+    override fun supplier() = Supplier<MutableList<MutableList<String>>> { ArrayList() }
+
+    override fun finisher(): Function<MutableList<MutableList<String>>, MutableList<MutableList<String>>> = Function.identity()
+  }
+
+  override fun parse(output: InputStream): List<UsbDevice> {
+    return BufferedReader(InputStreamReader(output, Charsets.UTF_8))
+      .lines()
+      .collect(WindowsUSBCollector)
+      .mapNotNull { usbLines -> extractValues(usbLines) }
+      .distinct()
+  }
 }

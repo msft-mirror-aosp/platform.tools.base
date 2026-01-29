@@ -16,12 +16,12 @@
 
 package com.android.tools.usb
 
-/**
- * Data class representing a USB device. Contains a subset of fields.
- */
-data class UsbDevice(val name: String,
-                     val vendorId: String,
-                     val productId: String,
-                     val productName: String? = null,
-                     val serialNumber: String? = null,
-                     var deviceId: String? = null)
+/** Data class representing a USB device. Contains a subset of fields. */
+data class UsbDevice(
+  val name: String,
+  val vendorId: String,
+  val productId: String,
+  val productName: String? = null,
+  val serialNumber: String? = null,
+  var deviceId: String? = null,
+)
