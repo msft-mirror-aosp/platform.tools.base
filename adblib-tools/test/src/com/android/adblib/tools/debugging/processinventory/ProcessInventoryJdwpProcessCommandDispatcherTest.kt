@@ -74,6 +74,8 @@ class ProcessInventoryJdwpProcessCommandDispatcherTest {
     // Assert
     assertEquals(1, externalCollectorList1.size)
     assertEquals(0, externalCollectorList2.size)
+    val dispatcher = externalCollectorList1[0]
+    assertEquals("ProcessInventoryJdwpProcessCommandDispatcher(process=$jdwpProcess)", dispatcher.toString())
   }
 
   @Test
