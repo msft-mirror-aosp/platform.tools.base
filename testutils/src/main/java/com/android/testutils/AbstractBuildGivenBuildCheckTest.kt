@@ -16,39 +16,30 @@
 
 package com.android.testutils
 
-open abstract class AbstractBuildGivenBuildCheckTest<GivenT, ResultT> :
-    AbstractGivenExpectTest<GivenT, ResultT>() {
+open abstract class AbstractBuildGivenBuildCheckTest<GivenT, ResultT> : AbstractGivenExpectTest<GivenT, ResultT>() {
 
-    private var givenAction: (GivenT.() -> Unit)? = null
+  private var givenAction: (GivenT.() -> Unit)? = null
 
-    /**
-     * Registers an action block returning the given state as a single object
-     */
-    protected open fun given(action: GivenT.() -> Unit) {
-        checkState(TestState.START)
-        givenAction = action
-        state = TestState.GIVEN
-    }
+  /** Registers an action block returning the given state as a single object */
+  protected open fun given(action: GivenT.() -> Unit) {
+    checkState(TestState.START)
+    givenAction = action
+    state = TestState.GIVEN
+  }
 
-    /**
-     * runs the tests and compares the results.
-     */
-    private fun runTest(given: GivenT): ResultT? {
-        // run the states by running all the necessary actions.
-        val actual = whenAction?.invoke(given) ?: defaultWhen(given)
-        state = TestState.DONE
-        return actual
-    }
+  /** runs the tests and compares the results. */
+  private fun runTest(given: GivenT): ResultT? {
+    // run the states by running all the necessary actions.
+    val actual = whenAction?.invoke(given) ?: defaultWhen(given)
+    state = TestState.DONE
+    return actual
+  }
 
-    /**
-     * Registers an action block on the test result. This also runs the test.
-     */
-    protected open fun check(action: ResultT?.() -> Unit) {
-        val given = instantiateGiven().also {
-            givenAction?.invoke(it) ?: throw RuntimeException("No given data")
-        }
-        action.invoke(runTest(given))
-    }
+  /** Registers an action block on the test result. This also runs the test. */
+  protected open fun check(action: ResultT?.() -> Unit) {
+    val given = instantiateGiven().also { givenAction?.invoke(it) ?: throw RuntimeException("No given data") }
+    action.invoke(runTest(given))
+  }
 
-    abstract fun instantiateGiven(): GivenT
+  abstract fun instantiateGiven(): GivenT
 }

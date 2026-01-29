@@ -18,45 +18,47 @@ package com.android.testutils
 
 import com.google.common.collect.ImmutableMap
 import com.google.common.truth.Truth.assertThat
-import org.junit.Test
 import java.io.ByteArrayInputStream
 import java.util.zip.ZipInputStream
+import org.junit.Test
 
 class TestAarGeneratorTest {
 
-    @Test
-    fun smokeTestAarGenerator() {
-        val aar = generateAarWithContent(
-            packageName = "com.example.lib",
-            mainJar = "classes jar content".toByteArray(Charsets.UTF_8),
-            secondaryJars = mapOf("other" to "otherJarContent".toByteArray(Charsets.UTF_8)),
-            resources = mapOf("values/strings.xml" to "stringsXml".toByteArray(Charsets.UTF_8))
+  @Test
+  fun smokeTestAarGenerator() {
+    val aar =
+      generateAarWithContent(
+        packageName = "com.example.lib",
+        mainJar = "classes jar content".toByteArray(Charsets.UTF_8),
+        secondaryJars = mapOf("other" to "otherJarContent".toByteArray(Charsets.UTF_8)),
+        resources = mapOf("values/strings.xml" to "stringsXml".toByteArray(Charsets.UTF_8)),
+      )
+
+    assertThat(readZipEntries(aar))
+      .containsExactlyEntriesIn(
+        mapOf(
+          "AndroidManifest.xml" to """<manifest package="com.example.lib"></manifest>""",
+          "classes.jar" to "classes jar content",
+          "libs/other.jar" to "otherJarContent",
+          "res/values/strings.xml" to "stringsXml",
         )
+      )
+  }
 
-        assertThat(readZipEntries(aar))
-            .containsExactlyEntriesIn(
-                mapOf(
-                    "AndroidManifest.xml" to """<manifest package="com.example.lib"></manifest>""",
-                    "classes.jar" to "classes jar content",
-                    "libs/other.jar" to "otherJarContent",
-                    "res/values/strings.xml" to "stringsXml"
-                )
-            )
-    }
-
-    /**
-     * Reads all of the entries of a zip as utf-8 strings to allow easy assertions about the content.
-     * Returns a map of entry name to content, both as strings.
-     */
-    private fun readZipEntries(zipBytes: ByteArray): ImmutableMap<String, String> {
-        return ImmutableMap.builder<String, String>().also { entries ->
-            ZipInputStream(ByteArrayInputStream(zipBytes)).use { aar ->
-                while (true) {
-                    val entry = aar.nextEntry ?: break
-                    entries.put(entry.name, String(aar.readBytes(), Charsets.UTF_8))
-                }
-            }
-        }.build()
-    }
-
+  /**
+   * Reads all of the entries of a zip as utf-8 strings to allow easy assertions about the content. Returns a map of entry name to content,
+   * both as strings.
+   */
+  private fun readZipEntries(zipBytes: ByteArray): ImmutableMap<String, String> {
+    return ImmutableMap.builder<String, String>()
+      .also { entries ->
+        ZipInputStream(ByteArrayInputStream(zipBytes)).use { aar ->
+          while (true) {
+            val entry = aar.nextEntry ?: break
+            entries.put(entry.name, String(aar.readBytes(), Charsets.UTF_8))
+          }
+        }
+      }
+      .build()
+  }
 }

@@ -15,27 +15,26 @@
  */
 package com.android.testutils
 
-
 import com.android.SdkConstants
 import com.google.common.truth.Truth.assertThat
+import java.io.File
 import org.junit.Assume.assumeTrue
 import org.junit.Test
-import java.io.File
 
 class WindowsPathUtilsKtTest {
-    @Test
-    fun testGetWindowsShortNameFileOnWindows() {
-        assumeTrue(SdkConstants.currentPlatform() == SdkConstants.PLATFORM_WINDOWS)
-        val current = File(".").absoluteFile
-        val short = getWindowsShortNameFile(current)
-        assertThat(short.path.length).isLessThan(current.path.length)
-    }
+  @Test
+  fun testGetWindowsShortNameFileOnWindows() {
+    assumeTrue(SdkConstants.currentPlatform() == SdkConstants.PLATFORM_WINDOWS)
+    val current = File(".").absoluteFile
+    val short = getWindowsShortNameFile(current)
+    assertThat(short.path.length).isLessThan(current.path.length)
+  }
 
-    @Test
-    fun testGetWindowsShortNameFileOnNonWindows() {
-        assumeTrue(SdkConstants.currentPlatform() != SdkConstants.PLATFORM_WINDOWS)
-        val current = File(".").absoluteFile
-        val short = getWindowsShortNameFile(current)
-        assertThat(short.path.length).isEqualTo(current.path.length)
-    }
+  @Test
+  fun testGetWindowsShortNameFileOnNonWindows() {
+    assumeTrue(SdkConstants.currentPlatform() != SdkConstants.PLATFORM_WINDOWS)
+    val current = File(".").absoluteFile
+    val short = getWindowsShortNameFile(current)
+    assertThat(short.path.length).isEqualTo(current.path.length)
+  }
 }
