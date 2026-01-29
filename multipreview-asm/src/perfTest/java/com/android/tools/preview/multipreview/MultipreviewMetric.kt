@@ -22,32 +22,32 @@ import java.time.Instant
 
 class MultipreviewMetric {
 
-    private var mTimestamp: Long = 0
-    private var mPrevUsedMem: Long = 0
-    private var mMemoryUsage: Long = 0
-    private var mStartTime: Long = 0
-    private var mElapsedTime: Long = 0
+  private var mTimestamp: Long = 0
+  private var mPrevUsedMem: Long = 0
+  private var mMemoryUsage: Long = 0
+  private var mStartTime: Long = 0
+  private var mElapsedTime: Long = 0
 
-    val timeMetricSample: Metric.MetricSample
-        get() = Metric.MetricSample(mTimestamp, mElapsedTime)
+  val timeMetricSample: Metric.MetricSample
+    get() = Metric.MetricSample(mTimestamp, mElapsedTime)
 
-    val memoryMetricSample: Metric.MetricSample
-        get() = Metric.MetricSample(mTimestamp, mMemoryUsage)
+  val memoryMetricSample: Metric.MetricSample
+    get() = Metric.MetricSample(mTimestamp, mMemoryUsage)
 
-    fun beforeTest() {
-        mPrevUsedMem = getCurrentMemoryUsage()
-        mStartTime = System.currentTimeMillis()
-    }
+  fun beforeTest() {
+    mPrevUsedMem = getCurrentMemoryUsage()
+    mStartTime = System.currentTimeMillis()
+  }
 
-    fun afterTest() {
-        mElapsedTime = System.currentTimeMillis() - mStartTime
-        mMemoryUsage = getCurrentMemoryUsage() - mPrevUsedMem
+  fun afterTest() {
+    mElapsedTime = System.currentTimeMillis() - mStartTime
+    mMemoryUsage = getCurrentMemoryUsage() - mPrevUsedMem
 
-        mTimestamp = Instant.now().toEpochMilli()
-    }
+    mTimestamp = Instant.now().toEpochMilli()
+  }
 
-    private fun getCurrentMemoryUsage(): Long {
-        System.gc()
-        return ManagementFactory.getMemoryMXBean().heapMemoryUsage.used
-    }
+  private fun getCurrentMemoryUsage(): Long {
+    System.gc()
+    return ManagementFactory.getMemoryMXBean().heapMemoryUsage.used
+  }
 }

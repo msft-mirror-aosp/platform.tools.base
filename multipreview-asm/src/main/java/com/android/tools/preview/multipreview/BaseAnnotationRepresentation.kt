@@ -16,8 +16,5 @@
 
 package com.android.tools.preview.multipreview
 
-/**
- * A base annotation represented by its parameters as a map where key is parameter name and value is
- * it value.
- */
+/** A base annotation represented by its parameters as a map where key is parameter name and value is it value. */
 data class BaseAnnotationRepresentation(val parameters: Map<String, Any?>)

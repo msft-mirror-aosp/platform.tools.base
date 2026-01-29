@@ -19,17 +19,12 @@ package com.android.tools.preview.multipreview
 /**
  * A method parameter represented by the parameter-value pairs of the parameters of its annotation.
  *
- * We assume that each parameter that has to be supplied (there might be parameters that do not
- * need to be supplied, e.g. Composable synthetic parameters) is annotated by an annotation that
- * with its parameters is specifying how to instantiate the annotated parameter.
+ * We assume that each parameter that has to be supplied (there might be parameters that do not need to be supplied, e.g. Composable
+ * synthetic parameters) is annotated by an annotation that with its parameters is specifying how to instantiate the annotated parameter.
  */
 data class ParameterRepresentation(val annotationParameters: Map<String, Any?>)
 
 /**
- * Represent a method where [methodFqn] is a fully qualified name of the method and [parameters] is
- * a list of [ParameterRepresentation]s.
+ * Represent a method where [methodFqn] is a fully qualified name of the method and [parameters] is a list of [ParameterRepresentation]s.
  */
-data class MethodRepresentation(
-  val methodFqn: String,
-  val parameters: List<ParameterRepresentation>
-)
+data class MethodRepresentation(val methodFqn: String, val parameters: List<ParameterRepresentation>)
