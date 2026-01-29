@@ -25,154 +25,155 @@ import java.util.concurrent.atomic.AtomicInteger
  *
  * @param waitingForDebugger whether this client is waiting for a debugger connection or not.
  */
-class ClientState internal constructor(
-    device: DeviceState,
-    pid: Int,
-    override val userId: Int,
-    override val uid: Int,
-    override val processName: String,
-    val packageName: String,
-    override var waitingForDebugger: Boolean,
-    override val architecture: String
+class ClientState
+internal constructor(
+  device: DeviceState,
+  pid: Int,
+  override val userId: Int,
+  override val uid: Int,
+  override val processName: String,
+  val packageName: String,
+  override var waitingForDebugger: Boolean,
+  override val architecture: String,
 ) : ProcessState(device, pid) {
 
-    val viewsState = ClientViewsState()
-    val profilerState = ProfilerState()
+  val viewsState = ClientViewsState()
+  val profilerState = ProfilerState()
 
-    // If non-null then the WAIT command indicating that the client is waiting for debugger will be
-    // sent out before or after the HELO reply.
-    // Note that if the specified duration is negative then the WAIT command will be sent out right
-    // before the HELO reply and the actual duration value is ignored.
-    var sendWaitCommandAfterHelo: Duration? = null
+  // If non-null then the WAIT command indicating that the client is waiting for debugger will be
+  // sent out before or after the HELO reply.
+  // Note that if the specified duration is negative then the WAIT command will be sent out right
+  // before the HELO reply and the actual duration value is ignored.
+  var sendWaitCommandAfterHelo: Duration? = null
+
+  /**
+   * Amount of time to wait before resetting [waitingForDebugger] once a JDWP connection is open.
+   *
+   * See b/437438918: The debugger thread on the Art VM has a 200 millis spin loop delay before resuming a process.
+   */
+  var delayBeforeResettingWaitForDebugger: Duration = Duration.ofMillis(0)
+
+  /**
+   * Set of DDMS features for this process.
+   *
+   * See
+   * [HandleFEAT source code](https://cs.android.com/android/platform/superproject/+/android13-release:frameworks/base/core/java/android/ddm/DdmHandleHello.java;l=107)
+   */
+  private val mFeatures: MutableSet<String> = HashSet()
+  private var jdwpSocket: Socket? = null
+  var isAllocationTrackerEnabled = false
+  var allocationTrackerDetails = ""
+
+  private val hgpcRequestsCount = AtomicInteger()
+  private val nextDdmsCommandId = AtomicInteger(0x70000000)
+
+  init {
+    if (waitingForDebugger) {
+      sendWaitCommandAfterHelo = Duration.ZERO
+    }
+    val capabilities = device.deviceCapabilities
+    if (capabilities != null && capabilities.vmCapabilities.isNotEmpty()) {
+      mFeatures.addAll(capabilities.vmCapabilities)
+      mFeatures.addAll(capabilities.frameworkCapabilities)
+    } else {
+      mFeatures.addAll(Arrays.asList(*mBuiltinVMFeatures))
+      mFeatures.addAll(Arrays.asList(*mBuiltinFrameworkFeatures))
+    }
+  }
+
+  override val debuggable: Boolean
+    get() = true
+
+  override val profileable: Boolean
+    get() = false
+
+  override val packageNames: List<String>
+    get() = listOf(packageName)
+
+  @Synchronized
+  fun startJdwpSession(socket: Socket): Boolean {
+    if (jdwpSocket != null) {
+      return false
+    }
+    jdwpSocket = socket
+    return true
+  }
+
+  @Synchronized
+  fun stopJdwpSession() {
+    if (jdwpSocket != null) {
+      try {
+        jdwpSocket!!.shutdownOutput()
+        Thread.sleep(10) // So that FIN is received by peer
+        jdwpSocket!!.close()
+      } catch (e: Exception) {
+        throw RuntimeException(e)
+      }
+    }
+    jdwpSocket = null
+  }
+
+  @Synchronized
+  fun getWaitingForDebuggerAndReset(): Boolean {
+    return waitingForDebugger.also {
+      // See b/437438918: The Art VM Debugger thread has a 200 millis spin loop delay
+      // before resetting the "waiting for debugger" flag to "false". We simulate
+      // the behavior here.
+      Thread.sleep(delayBeforeResettingWaitForDebugger.toMillis())
+      waitingForDebugger = false
+    }
+  }
+
+  fun nextDdmsCommandId(): Int {
+    return nextDdmsCommandId.incrementAndGet()
+  }
+
+  @Synchronized
+  fun clearFeatures() {
+    mFeatures.clear()
+  }
+
+  @Synchronized
+  fun addFeature(value: String) {
+    mFeatures.add(value)
+  }
+
+  @Synchronized
+  fun removeFeature(value: String) {
+    mFeatures.remove(value)
+  }
+
+  @get:Synchronized
+  val features: Set<String>
+    get() = HashSet(mFeatures)
+
+  fun requestHgpc() {
+    hgpcRequestsCount.incrementAndGet()
+  }
+
+  fun getHgpcRequestsCount(): Int {
+    return hgpcRequestsCount.get()
+  }
+
+  companion object {
 
     /**
-     * Amount of time to wait before resetting [waitingForDebugger] once a JDWP connection
-     * is open.
-     *
-     * See b/437438918: The debugger thread on the Art VM has a 200 millis spin loop delay
-     * before resuming a process.
+     * See
+     * [List of VM features](https://cs.android.com/android/platform/superproject/+/android13-release:art/runtime/native/dalvik_system_VMDebug.cc;l=56)
      */
-    var delayBeforeResettingWaitForDebugger: Duration = Duration.ofMillis(0)
+    private val mBuiltinVMFeatures =
+      arrayOf(
+        "method-trace-profiling",
+        "method-trace-profiling-streaming",
+        "method-sample-profiling",
+        "hprof-heap-dump",
+        "hprof-heap-dump-streaming",
+      )
 
     /**
-     * Set of DDMS features for this process.
-     *
-     * See [HandleFEAT source code](https://cs.android.com/android/platform/superproject/+/android13-release:frameworks/base/core/java/android/ddm/DdmHandleHello.java;l=107)
+     * See
+     * [Framework features](https://cs.android.com/android/platform/superproject/+/android13-release:frameworks/base/core/java/android/ddm/DdmHandleHello.java;drc=4794e479f4b485be2680e83993e3cf93f0f42d03;l=44)
      */
-    private val mFeatures: MutableSet<String> = HashSet()
-    private var jdwpSocket: Socket? = null
-    var isAllocationTrackerEnabled = false
-    var allocationTrackerDetails = ""
-
-    private val hgpcRequestsCount = AtomicInteger()
-    private val nextDdmsCommandId = AtomicInteger(0x70000000)
-
-    init {
-        if (waitingForDebugger) {
-            sendWaitCommandAfterHelo = Duration.ZERO
-        }
-        val capabilities = device.deviceCapabilities
-        if (capabilities != null && capabilities.vmCapabilities.isNotEmpty()) {
-            mFeatures.addAll(capabilities.vmCapabilities)
-            mFeatures.addAll(capabilities.frameworkCapabilities)
-        } else {
-            mFeatures.addAll(Arrays.asList(*mBuiltinVMFeatures))
-            mFeatures.addAll(Arrays.asList(*mBuiltinFrameworkFeatures))
-        }
-    }
-
-    override val debuggable: Boolean
-        get() = true
-
-    override val profileable: Boolean
-        get() = false
-
-    override val packageNames: List<String>
-        get() = listOf(packageName)
-
-    @Synchronized
-    fun startJdwpSession(socket: Socket): Boolean {
-        if (jdwpSocket != null) {
-            return false
-        }
-        jdwpSocket = socket
-        return true
-    }
-
-    @Synchronized
-    fun stopJdwpSession() {
-        if (jdwpSocket != null) {
-            try {
-                jdwpSocket!!.shutdownOutput()
-                Thread.sleep(10) // So that FIN is received by peer
-                jdwpSocket!!.close()
-            } catch (e: Exception) {
-                throw RuntimeException(e)
-            }
-        }
-        jdwpSocket = null
-    }
-
-    @Synchronized
-    fun getWaitingForDebuggerAndReset(): Boolean {
-        return waitingForDebugger.also {
-            // See b/437438918: The Art VM Debugger thread has a 200 millis spin loop delay
-            // before resetting the "waiting for debugger" flag to "false". We simulate
-            // the behavior here.
-            Thread.sleep(delayBeforeResettingWaitForDebugger.toMillis())
-            waitingForDebugger = false
-        }
-    }
-
-    fun nextDdmsCommandId(): Int {
-        return nextDdmsCommandId.incrementAndGet()
-    }
-
-    @Synchronized
-    fun clearFeatures() {
-        mFeatures.clear()
-    }
-
-    @Synchronized
-    fun addFeature(value: String) {
-        mFeatures.add(value)
-    }
-
-    @Synchronized
-    fun removeFeature(value: String) {
-        mFeatures.remove(value)
-    }
-
-    @get:Synchronized
-    val features: Set<String>
-        get() = HashSet(mFeatures)
-
-    fun requestHgpc() {
-        hgpcRequestsCount.incrementAndGet()
-    }
-
-    fun getHgpcRequestsCount(): Int {
-        return hgpcRequestsCount.get()
-    }
-
-    companion object {
-
-        /**
-         * See [List of VM features](https://cs.android.com/android/platform/superproject/+/android13-release:art/runtime/native/dalvik_system_VMDebug.cc;l=56)
-         */
-        private val mBuiltinVMFeatures = arrayOf(
-            "method-trace-profiling",
-            "method-trace-profiling-streaming",
-            "method-sample-profiling",
-            "hprof-heap-dump",
-            "hprof-heap-dump-streaming"
-        )
-
-        /**
-         * See [Framework features](https://cs.android.com/android/platform/superproject/+/android13-release:frameworks/base/core/java/android/ddm/DdmHandleHello.java;drc=4794e479f4b485be2680e83993e3cf93f0f42d03;l=44)
-         */
-        private val mBuiltinFrameworkFeatures = arrayOf(
-            "opengl-tracing", "view-hierarchy"
-        )
-    }
+    private val mBuiltinFrameworkFeatures = arrayOf("opengl-tracing", "view-hierarchy")
+  }
 }

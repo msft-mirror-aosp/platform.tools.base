@@ -25,105 +25,91 @@ import kotlin.time.Duration
 import kotlin.time.DurationUnit
 
 /**
- * host-prefix:forward ADB command adds a port forward to the connected device. This implementation
- * only handles tcp sockets, and not Unix domain sockets.
+ * host-prefix:forward ADB command adds a port forward to the connected device. This implementation only handles tcp sockets, and not Unix
+ * domain sockets.
  */
 class ForwardCommandHandler : SimpleHostCommandHandler("forward") {
 
-    override fun invoke(
-        fakeAdbServer: FakeAdbServer,
-        responseSocket: Socket,
-        device: DeviceState?,
-        args: String
-    ): Boolean {
-        assert(device != null)
-        val stream = try {
-            responseSocket.getOutputStream()
-        } catch (ignored: IOException) {
-            return false
-        }
-        val (norebind, hostTransport, fromTransportArg, deviceTransport, toTransportArg) = parse(
-            args
-        )
-        device?.delayStdout?.let {
-            if (it != Duration.ZERO) {
-                Thread.sleep(it.toLong(DurationUnit.MILLISECONDS))
-            }
-        }
-        when (hostTransport) {
-            "tcp" -> {}
-            "local" -> {
-                writeFailResponse(
-                    stream, "Host Unix domain sockets not supported in fake ADB Server."
-                )
-                return false
-            }
-
-            else -> {
-                writeFailResponse(stream, "Invalid host transport specified: $hostTransport")
-                return false
-            }
-        }
-        var hostPort: Int
-        var hostPortToSendBack: Int?
-        try {
-            hostPort = fromTransportArg.toInt()
-            if (hostPort == 0) {
-                // This is to emulate ADB Server behavior of picking an available port
-                // This is currently hard-coded as we don't actually create sockets
-                hostPort = 40000 + (Math.random() * 100).toInt()
-            }
-            hostPortToSendBack = hostPort
-        } catch (ignored: NumberFormatException) {
-            writeFailResponse(
-                stream, "Invalid host port specified: $fromTransportArg"
-            )
-            return false
-        }
-        val forwarder: PortForwarder
-        forwarder = when (deviceTransport) {
-            "tcp" -> try {
-                val devicePort = toTransportArg.toInt()
-                PortForwarder.createPortForwarder(hostPort, devicePort)
-            } catch (ignored: NumberFormatException) {
-                writeFailResponse(
-                    stream, "Invalid device port or pid specified: "
-                            + toTransportArg
-                )
-                return false
-            }
-
-            "local" -> PortForwarder.createUnixForwarder(
-                hostPort, toTransportArg
-            )
-
-            "jdwp" -> {
-                writeFailResponse(stream, "JDWP connections not yet supported in fake ADB Server.")
-                return false
-            }
-
-            else -> {
-                writeFailResponse(stream, "Invalid device transport specified: $deviceTransport")
-                return false
-            }
-        }
-        val bindOk = device!!.addPortForwarder(forwarder, norebind)
-        // We send 2 OKAY answers: 1st OKAY is connect, 2nd OKAY is status.
-        // See
-        // https://cs.android.com/android/platform/superproject/+/3a52886262ae22477a7d8ffb12adba64daf6aafa:packages/modules/adb/adb.cpp;l=1058
-        writeOkay(stream)
-        if (bindOk) {
-            if (hostPortToSendBack != null) {
-                writeOkayResponse(stream, hostPortToSendBack.toString())
-            } else {
-                writeOkay(stream)
-            }
-        } else {
-            writeFailResponse(stream, "Could not bind to the specified forwarding ports.")
-        }
-
-        // We always close the connection, as per ADB protocol spec.
+  override fun invoke(fakeAdbServer: FakeAdbServer, responseSocket: Socket, device: DeviceState?, args: String): Boolean {
+    assert(device != null)
+    val stream =
+      try {
+        responseSocket.getOutputStream()
+      } catch (ignored: IOException) {
         return false
+      }
+    val (norebind, hostTransport, fromTransportArg, deviceTransport, toTransportArg) = parse(args)
+    device?.delayStdout?.let {
+      if (it != Duration.ZERO) {
+        Thread.sleep(it.toLong(DurationUnit.MILLISECONDS))
+      }
+    }
+    when (hostTransport) {
+      "tcp" -> {}
+      "local" -> {
+        writeFailResponse(stream, "Host Unix domain sockets not supported in fake ADB Server.")
+        return false
+      }
+
+      else -> {
+        writeFailResponse(stream, "Invalid host transport specified: $hostTransport")
+        return false
+      }
+    }
+    var hostPort: Int
+    var hostPortToSendBack: Int?
+    try {
+      hostPort = fromTransportArg.toInt()
+      if (hostPort == 0) {
+        // This is to emulate ADB Server behavior of picking an available port
+        // This is currently hard-coded as we don't actually create sockets
+        hostPort = 40000 + (Math.random() * 100).toInt()
+      }
+      hostPortToSendBack = hostPort
+    } catch (ignored: NumberFormatException) {
+      writeFailResponse(stream, "Invalid host port specified: $fromTransportArg")
+      return false
+    }
+    val forwarder: PortForwarder
+    forwarder =
+      when (deviceTransport) {
+        "tcp" ->
+          try {
+            val devicePort = toTransportArg.toInt()
+            PortForwarder.createPortForwarder(hostPort, devicePort)
+          } catch (ignored: NumberFormatException) {
+            writeFailResponse(stream, "Invalid device port or pid specified: " + toTransportArg)
+            return false
+          }
+
+        "local" -> PortForwarder.createUnixForwarder(hostPort, toTransportArg)
+
+        "jdwp" -> {
+          writeFailResponse(stream, "JDWP connections not yet supported in fake ADB Server.")
+          return false
+        }
+
+        else -> {
+          writeFailResponse(stream, "Invalid device transport specified: $deviceTransport")
+          return false
+        }
+      }
+    val bindOk = device!!.addPortForwarder(forwarder, norebind)
+    // We send 2 OKAY answers: 1st OKAY is connect, 2nd OKAY is status.
+    // See
+    // https://cs.android.com/android/platform/superproject/+/3a52886262ae22477a7d8ffb12adba64daf6aafa:packages/modules/adb/adb.cpp;l=1058
+    writeOkay(stream)
+    if (bindOk) {
+      if (hostPortToSendBack != null) {
+        writeOkayResponse(stream, hostPortToSendBack.toString())
+      } else {
+        writeOkay(stream)
+      }
+    } else {
+      writeFailResponse(stream, "Could not bind to the specified forwarding ports.")
     }
 
+    // We always close the connection, as per ADB protocol spec.
+    return false
+  }
 }

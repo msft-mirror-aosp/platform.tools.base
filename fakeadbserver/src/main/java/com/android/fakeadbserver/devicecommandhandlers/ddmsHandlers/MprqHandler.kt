@@ -22,25 +22,24 @@ import kotlinx.coroutines.CoroutineScope
 
 class MprqHandler : DdmPacketHandler {
 
-    override fun handlePacket(
-        device: DeviceState,
-        client: ClientState,
-        packet: DdmPacket,
-        jdwpHandlerOutput: JdwpHandlerOutput,
-        socketScope: CoroutineScope
-    ): Boolean {
+  override fun handlePacket(
+    device: DeviceState,
+    client: ClientState,
+    packet: DdmPacket,
+    jdwpHandlerOutput: JdwpHandlerOutput,
+    socketScope: CoroutineScope,
+  ): Boolean {
 
-        val responsePacket = DdmPacket.createResponse(packet.id, CHUNK_TYPE, DdmPayload {
-            writeByte(client.profilerState.status.ddmsChunkValue)
-        })
-        responsePacket.write(jdwpHandlerOutput)
+    val responsePacket =
+      DdmPacket.createResponse(packet.id, CHUNK_TYPE, DdmPayload { writeByte(client.profilerState.status.ddmsChunkValue) })
+    responsePacket.write(jdwpHandlerOutput)
 
-        // Keep JDWP connection open
-        return true
-    }
+    // Keep JDWP connection open
+    return true
+  }
 
-    companion object {
+  companion object {
 
-        val CHUNK_TYPE = encodeChunkType("MPRQ")
-    }
+    val CHUNK_TYPE = encodeChunkType("MPRQ")
+  }
 }

@@ -19,17 +19,15 @@ import com.android.fakeadbserver.DeviceState
 import java.util.concurrent.Callable
 
 /**
- * A factory interface to create device event receivers. The [Callable]'s return value
- * indicates if a possible error may have occurred (or a shut down signal was sent), and the calling
- * thread should terminate the processing task and release all open resources.
+ * A factory interface to create device event receivers. The [Callable]'s return value indicates if a possible error may have occurred (or a
+ * shut down signal was sent), and the calling thread should terminate the processing task and release all open resources.
  */
 interface DeviceStateChangeHandlerFactory : StateChangeHandlerFactory {
 
-    fun createDeviceListChangedHandler(
-        deviceList: Collection<DeviceState?>
-    ): Callable<StateChangeHandlerFactory.HandlerResult>
+  fun createDeviceListChangedHandler(deviceList: Collection<DeviceState?>): Callable<StateChangeHandlerFactory.HandlerResult>
 
-    fun createDeviceStateChangedHandler(
-        device: DeviceState, status: DeviceState.DeviceStatus
-    ): Callable<StateChangeHandlerFactory.HandlerResult>
+  fun createDeviceStateChangedHandler(
+    device: DeviceState,
+    status: DeviceState.DeviceStatus,
+  ): Callable<StateChangeHandlerFactory.HandlerResult>
 }

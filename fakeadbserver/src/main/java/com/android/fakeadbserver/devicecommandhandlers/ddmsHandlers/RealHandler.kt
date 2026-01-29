@@ -21,26 +21,22 @@ import kotlinx.coroutines.CoroutineScope
 
 class RealHandler : DdmPacketHandler {
 
-    override fun handlePacket(
-        device: DeviceState,
-        client: ClientState,
-        packet: DdmPacket,
-        jdwpHandlerOutput: JdwpHandlerOutput,
-        socketScope: CoroutineScope
-    ): Boolean {
-        val responsePacket =
-            DdmPacket.createResponse(
-                packet.id,
-                CHUNK_TYPE,
-                DdmPayload { writeString(client.allocationTrackerDetails) })
-        responsePacket.write(jdwpHandlerOutput)
+  override fun handlePacket(
+    device: DeviceState,
+    client: ClientState,
+    packet: DdmPacket,
+    jdwpHandlerOutput: JdwpHandlerOutput,
+    socketScope: CoroutineScope,
+  ): Boolean {
+    val responsePacket = DdmPacket.createResponse(packet.id, CHUNK_TYPE, DdmPayload { writeString(client.allocationTrackerDetails) })
+    responsePacket.write(jdwpHandlerOutput)
 
-        // Keep JDWP connection open
-        return true
-    }
+    // Keep JDWP connection open
+    return true
+  }
 
-    companion object {
+  companion object {
 
-        val CHUNK_TYPE = DdmPacket.encodeChunkType("REAL")
-    }
+    val CHUNK_TYPE = DdmPacket.encodeChunkType("REAL")
+  }
 }

@@ -18,32 +18,31 @@ package com.android.fakeadbserver.devicecommandhandlers.ddmsHandlers
 import java.nio.ByteBuffer
 
 internal fun ByteBuffer.readInt(): Int {
-    return int
+  return int
 }
 
 fun ByteBuffer.readLengthPrefixedString(): String {
-    val length = int
-    val chars = CharArray(length)
-    for(index in 0 until length) {
-        chars[index] = this.char
-    }
-    return String(chars)
+  val length = int
+  val chars = CharArray(length)
+  for (index in 0 until length) {
+    chars[index] = this.char
+  }
+  return String(chars)
 }
 
 internal fun ByteBuffer.readBooleanInt(): Boolean {
-    return int != 0
+  return int != 0
 }
 
 internal fun ByteBuffer.putDdmString(value: String) {
-    putInt(value.length)
-    value.forEach { ch -> putChar(ch) }
+  putInt(value.length)
+  value.forEach { ch -> putChar(ch) }
 }
 
 internal fun String.ddmByteCount(): Int {
-    return 4 + length * 2
+  return 4 + length * 2
 }
 
 internal fun List<String>.ddmByteCount(): Int {
-    return this.fold(0) { acc, value -> acc + value.ddmByteCount() }
+  return this.fold(0) { acc, value -> acc + value.ddmByteCount() }
 }
-

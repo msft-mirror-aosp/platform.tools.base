@@ -29,9 +29,8 @@ import java.util.concurrent.ExecutionException
 import kotlinx.coroutines.CoroutineScope
 
 /**
- * host:track-mdns-services is a persistent connection that tracks mDNS service registrations and
- * de-registrations. Every time an event occurs, the list of current mDNS services is sent in
- * protobuf format.
+ * host:track-mdns-services is a persistent connection that tracks mDNS service registrations and de-registrations. Every time an event
+ * occurs, the list of current mDNS services is sent in protobuf format.
  */
 class TrackMdnsServicesCommandHandler : HostCommandHandler() {
 
@@ -82,10 +81,7 @@ class TrackMdnsServicesCommandHandler : HostCommandHandler() {
     return false // The only way we can get here is if the connection/server was terminated.
   }
 
-  private fun sendMdnsServiceList(
-    server: FakeAdbServer,
-    responseSocket: Socket,
-  ): Callable<StateChangeHandlerFactory.HandlerResult> {
+  private fun sendMdnsServiceList(server: FakeAdbServer, responseSocket: Socket): Callable<StateChangeHandlerFactory.HandlerResult> {
     return Callable {
       try {
         val stream = responseSocket.getOutputStream()
@@ -101,25 +97,16 @@ class TrackMdnsServicesCommandHandler : HostCommandHandler() {
 
           when (fakeService.serviceType) {
             ServiceType.TLS -> {
-              val tlsService =
-                MdnsProto.ServiceAdbTls.newBuilder()
-                  .setService(protoMdnsServiceBuilder.build())
-                  .build()
+              val tlsService = MdnsProto.ServiceAdbTls.newBuilder().setService(protoMdnsServiceBuilder.build()).build()
               protoServicesBuilder.addTls(tlsService)
             }
             ServiceType.TCP -> {
-              val tcpService =
-                MdnsProto.ServiceAdbTcp.newBuilder()
-                  .setService(protoMdnsServiceBuilder.build())
-                  .build()
+              val tcpService = MdnsProto.ServiceAdbTcp.newBuilder().setService(protoMdnsServiceBuilder.build()).build()
               protoServicesBuilder.addTcp(tcpService)
             }
 
             ServiceType.PAIRING -> {
-              val pairingService =
-                MdnsProto.ServiceAdbPairing.newBuilder()
-                  .setService(protoMdnsServiceBuilder.build())
-                  .build()
+              val pairingService = MdnsProto.ServiceAdbPairing.newBuilder().setService(protoMdnsServiceBuilder.build()).build()
               protoServicesBuilder.addPair(pairingService)
             }
           }

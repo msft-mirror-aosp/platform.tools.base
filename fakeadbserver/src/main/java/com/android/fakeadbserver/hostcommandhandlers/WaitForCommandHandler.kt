@@ -19,6 +19,7 @@ import com.android.fakeadbserver.DeviceState
 import com.android.fakeadbserver.DeviceStateSelector
 import com.android.fakeadbserver.FakeAdbServer
 import com.android.fakeadbserver.Guava.await
+import java.net.Socket
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.currentCoroutineContext
@@ -27,152 +28,150 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.runBlocking
-import java.net.Socket
 
-/**
- * `<device-prefix>:wait-for-<transport>-<state>` forces the host to wait for device <transport>
- * to show up in state <state>.
- */
-class WaitForCommandHandler: HostCommandHandler() {
+/** `<device-prefix>:wait-for-<transport>-<state>` forces the host to wait for device <transport> to show up in state <state>. */
+class WaitForCommandHandler : HostCommandHandler() {
 
-    override fun handles(command: String): Boolean {
-        return command.startsWith("wait-for")
+  override fun handles(command: String): Boolean {
+    return command.startsWith("wait-for")
+  }
+
+  override fun invoke(
+    fakeAdbServer: FakeAdbServer,
+    socketScope: CoroutineScope,
+    responseSocket: Socket,
+    deviceSelector: DeviceStateSelector,
+    command: String,
+    args: String,
+  ): Boolean {
+    // Write "OKAY" as the "connect" status
+    writeOkay(responseSocket.getOutputStream())
+
+    // Supported formats: "wait-for-TRANSPORT-STATE" or "wait-for-STATE"
+    val splits = command.split("-")
+    val state: String
+    val transport: String
+    when (splits.size) {
+      4 -> {
+        // wait-for-TRANSPORT-STATE
+        // where TRANSPORT: "local" | "usb" | "any"
+        //           STATE: "device" | "recovery" | "rescue" | "sideload" | "bootloader" | "any" | "disconnect"
+        transport = splits[2]
+        state = splits[3]
+      }
+
+      3 -> {
+        // wait-for-STATE
+        // where STATE: "device" | "recovery" | "rescue" | "sideload" | "bootloader" | "any" | "disconnect"
+        // Default transport value is "any"
+        transport = "any"
+        state = splits[2]
+      }
+
+      else -> {
+        writeFailResponse(responseSocket.getOutputStream(), "error: bad wait-for format")
+        return false /* don't keep running */
+      }
     }
+    waitForImpl(fakeAdbServer, socketScope, responseSocket, deviceSelector, state, transport)
+    return false /* don't keep running */
+  }
 
-    override fun invoke(
-        fakeAdbServer: FakeAdbServer,
-        socketScope: CoroutineScope,
-        responseSocket: Socket,
-        deviceSelector: DeviceStateSelector,
-        command: String,
-        args: String
-    ): Boolean {
-        // Write "OKAY" as the "connect" status
-        writeOkay(responseSocket.getOutputStream())
+  private fun waitForImpl(
+    fakeAdbServer: FakeAdbServer,
+    socketScope: CoroutineScope,
+    responseSocket: Socket,
+    device: DeviceStateSelector,
+    state: String,
+    transport: String,
+  ) {
+    runBlocking {
+      socketScope
+        .async {
+          when (state) {
+            "disconnect" -> {
+              // "disconnect" is special in the sense we never report errors wrt to
+              // the device selector, because we have to assume the device may already
+              // have disconnected (or was never connected).
+              when (val currentDevice = device.invoke(reportError = false)) {
+                DeviceStateSelector.DeviceResult.Ambiguous -> {
+                  // We found more than one matching device: the (somewhat odd)
+                  // behavior of the `wait-for` service is to assume "the" device
+                  // is disconnected.
+                  writeOkay(responseSocket.getOutputStream())
+                }
 
-        // Supported formats: "wait-for-TRANSPORT-STATE" or "wait-for-STATE"
-        val splits = command.split("-")
-        val state: String
-        val transport: String
-        when (splits.size) {
-            4 -> {
-                // wait-for-TRANSPORT-STATE
-                // where TRANSPORT: "local" | "usb" | "any"
-                //           STATE: "device" | "recovery" | "rescue" | "sideload" | "bootloader" | "any" | "disconnect"
-                transport = splits[2]
-                state = splits[3]
-            }
+                DeviceStateSelector.DeviceResult.None -> {
+                  // We found no matching device: assume it is disconnected
+                  writeOkay(responseSocket.getOutputStream())
+                }
 
-            3 -> {
-                // wait-for-STATE
-                // where STATE: "device" | "recovery" | "rescue" | "sideload" | "bootloader" | "any" | "disconnect"
-                // Default transport value is "any"
-                transport = "any"
-                state = splits[2]
+                is DeviceStateSelector.DeviceResult.One -> {
+                  // We found a single matching device: wait until it is disconnected
+                  fakeAdbServer.deviceStateFlow().first { devices ->
+                    devices.all { deviceState -> currentDevice.deviceState.deviceId != deviceState.deviceId }
+                  }
+                  writeOkay(responseSocket.getOutputStream())
+                }
+              }
             }
 
             else -> {
-                writeFailResponse(responseSocket.getOutputStream(), "error: bad wait-for format")
-                return false /* don't keep running */
-            }
-        }
-        waitForImpl(fakeAdbServer, socketScope, responseSocket, deviceSelector, state, transport)
-        return false /* don't keep running */
-    }
+              // For any other state than "disconnect", we wait until there is a
+              // device matching the device selector.
+              fakeAdbServer.deviceStateFlow().first { devices ->
+                when (val currentDevice = device.invoke(reportError = false)) {
+                  DeviceStateSelector.DeviceResult.Ambiguous -> {
+                    // Device is ambiguous, bail out with error
+                    device.invoke(reportError = true)
+                    true
+                  }
 
-    private fun waitForImpl(
-        fakeAdbServer: FakeAdbServer,
-        socketScope: CoroutineScope,
-        responseSocket: Socket,
-        device: DeviceStateSelector,
-        state: String,
-        transport: String
-    ) {
-        runBlocking {
-            socketScope.async {
-                when(state) {
-                    "disconnect" -> {
-                        // "disconnect" is special in the sense we never report errors wrt to
-                        // the device selector, because we have to assume the device may already
-                        // have disconnected (or was never connected).
-                        when (val currentDevice = device.invoke(reportError = false)) {
-                            DeviceStateSelector.DeviceResult.Ambiguous -> {
-                                // We found more than one matching device: the (somewhat odd)
-                                // behavior of the `wait-for` service is to assume "the" device
-                                // is disconnected.
-                                writeOkay(responseSocket.getOutputStream())
-                            }
+                  DeviceStateSelector.DeviceResult.None -> {
+                    // Device is not present yet, wait
+                    false
+                  }
 
-                            DeviceStateSelector.DeviceResult.None -> {
-                                // We found no matching device: assume it is disconnected
-                                writeOkay(responseSocket.getOutputStream())
-                            }
-
-                            is DeviceStateSelector.DeviceResult.One -> {
-                                // We found a single matching device: wait until it is disconnected
-                                fakeAdbServer.deviceStateFlow().first { devices ->
-                                    devices.all { deviceState ->
-                                        currentDevice.deviceState.deviceId != deviceState.deviceId
-                                    }
-                                }
-                                writeOkay(responseSocket.getOutputStream())
-                            }
+                  is DeviceStateSelector.DeviceResult.One -> {
+                    devices
+                      .any { deviceState ->
+                        currentDevice.deviceState.deviceId == deviceState.deviceId &&
+                          matchesState(deviceState, state) &&
+                          matchesTransport(deviceState, transport)
+                      }
+                      .also { found ->
+                        if (found) {
+                          writeOkay(responseSocket.getOutputStream())
                         }
-                    }
-
-                    else -> {
-                        // For any other state than "disconnect", we wait until there is a
-                        // device matching the device selector.
-                        fakeAdbServer.deviceStateFlow().first { devices ->
-                            when (val currentDevice = device.invoke(reportError = false)) {
-                                DeviceStateSelector.DeviceResult.Ambiguous -> {
-                                    // Device is ambiguous, bail out with error
-                                    device.invoke(reportError = true)
-                                    true
-                                }
-
-                                DeviceStateSelector.DeviceResult.None -> {
-                                    // Device is not present yet, wait
-                                    false
-                                }
-
-                                is DeviceStateSelector.DeviceResult.One -> {
-                                    devices.any { deviceState ->
-                                        currentDevice.deviceState.deviceId == deviceState.deviceId &&
-                                                matchesState(deviceState, state) &&
-                                                matchesTransport(deviceState, transport)
-                                    }.also { found ->
-                                        if (found) {
-                                            writeOkay(responseSocket.getOutputStream())
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
+                      }
+                  }
                 }
-            }.await()
+              }
+            }
+          }
         }
+        .await()
     }
+  }
 
-    private fun matchesTransport(deviceState: DeviceState, transport: String): Boolean {
-        return when (transport) {
-            "usb" -> deviceState.hostConnectionType == DeviceState.HostConnectionType.USB
-            "local" -> deviceState.hostConnectionType == DeviceState.HostConnectionType.LOCAL
-            "any" -> true
-            else -> false
-        }
+  private fun matchesTransport(deviceState: DeviceState, transport: String): Boolean {
+    return when (transport) {
+      "usb" -> deviceState.hostConnectionType == DeviceState.HostConnectionType.USB
+      "local" -> deviceState.hostConnectionType == DeviceState.HostConnectionType.LOCAL
+      "any" -> true
+      else -> false
     }
+  }
 
-    private fun matchesState(deviceState: DeviceState, state: String): Boolean {
-        return deviceState.deviceStatus.state == state
-    }
+  private fun matchesState(deviceState: DeviceState, state: String): Boolean {
+    return deviceState.deviceStatus.state == state
+  }
 
-    private fun FakeAdbServer.deviceStateFlow() = flow {
-        while (currentCoroutineContext().isActive) {
-            val devices = deviceListCopy.await()
-            emit(devices)
-            delay(20)
-        }
+  private fun FakeAdbServer.deviceStateFlow() = flow {
+    while (currentCoroutineContext().isActive) {
+      val devices = deviceListCopy.await()
+      emit(devices)
+      delay(20)
     }
+  }
 }

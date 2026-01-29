@@ -20,61 +20,60 @@ import java.util.Collections
 
 class ServiceManager(private val deviceState: DeviceState) {
 
-    private val packageManager = PackageManager()
-    private var activityManager: Service = ActivityManager(deviceState)
-    private val log = Collections.synchronizedList(mutableListOf<List<String>>())
+  private val packageManager = PackageManager()
+  private var activityManager: Service = ActivityManager(deviceState)
+  private val log = Collections.synchronizedList(mutableListOf<List<String>>())
 
-    private val services: MutableMap<String, Service?> = mutableMapOf(
-        ActivityManager.SERVICE_NAME to activityManager,
-        PackageManager.SERVICE_NAME to packageManager
-    )
+  private val services: MutableMap<String, Service?> =
+    mutableMapOf(ActivityManager.SERVICE_NAME to activityManager, PackageManager.SERVICE_NAME to packageManager)
 
-    // Returns a list of all service request received.
-    // Each entry is a list of all parameters for that request.
-    fun getLogs(): List<ServiceRequest> {
-        return Collections.unmodifiableList(log)
+  // Returns a list of all service request received.
+  // Each entry is a list of all parameters for that request.
+  fun getLogs(): List<ServiceRequest> {
+    return Collections.unmodifiableList(log)
+  }
+
+  fun processCommand(args: List<String>, output: ShellCommandOutput) {
+    // First argument should be the service name
+    assert(args.isNotEmpty()) { "Service name not specified" }
+
+    // We log received commands to allow tests to inspect call history
+    log.add(Collections.unmodifiableList(args))
+
+    val serviceName = args[0]
+    val service = findService(serviceName)
+
+    if (service == null) {
+      output.writeStderr("Error: Service '$serviceName' is not supported")
+      output.writeExitCode(5)
+      return
     }
 
-    fun processCommand(args: List<String>, output: ShellCommandOutput) {
-        // First argument should be the service name
-        assert(args.isNotEmpty()) { "Service name not specified" }
-
-        // We log received commands to allow tests to inspect call history
-        log.add(Collections.unmodifiableList(args))
-
-        val serviceName = args[0]
-        val service = findService(serviceName)
-
-        if (service == null) {
-            output.writeStderr("Error: Service '$serviceName' is not supported")
-            output.writeExitCode(5)
-            return
-        }
-
-        // TODO: This should be done at a higher level, the same way adb server performs this check
-        if (deviceState.deviceStatus.state != DeviceState.DeviceStatus.ONLINE.state) {
-            output.writeStderr("adb: device is ${deviceState.deviceStatus.state}")
-            output.writeExitCode(1)
-            return
-        }
-
-        service.process(args.slice(1 until args.size), output)
+    // TODO: This should be done at a higher level, the same way adb server performs this check
+    if (deviceState.deviceStatus.state != DeviceState.DeviceStatus.ONLINE.state) {
+      output.writeStderr("adb: device is ${deviceState.deviceStatus.state}")
+      output.writeExitCode(1)
+      return
     }
 
-    /** Override the default [com.android.fakeadbserver.services.ActivityManager] */
-    fun setActivityManager(newActivityManager: Service) {
-        activityManager = newActivityManager
-        setService(ActivityManager.SERVICE_NAME, newActivityManager)
-    }
+    service.process(args.slice(1 until args.size), output)
+  }
 
-    fun setService(name: String, service: Service) {
-        services[name] = service
-    }
+  /** Override the default [com.android.fakeadbserver.services.ActivityManager] */
+  fun setActivityManager(newActivityManager: Service) {
+    activityManager = newActivityManager
+    setService(ActivityManager.SERVICE_NAME, newActivityManager)
+  }
 
-    fun services(): Map<String, Service?> {
-        return services.toMap()
-    }
-    private fun findService(name: String): Service? = services[name]
+  fun setService(name: String, service: Service) {
+    services[name] = service
+  }
+
+  fun services(): Map<String, Service?> {
+    return services.toMap()
+  }
+
+  private fun findService(name: String): Service? = services[name]
 }
 
 typealias ServiceRequest = List<String>

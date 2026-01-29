@@ -18,15 +18,12 @@ package com.android.fakeadbserver.shellcommandhandlers
 import com.android.fakeadbserver.ShellProtocolType
 
 /**
- * A specialized version of shell handlers that assumes the command are of the form "exe arg1 arg2".
- * For more complex handlers extend [ShellHandler] directly.
+ * A specialized version of shell handlers that assumes the command are of the form "exe arg1 arg2". For more complex handlers extend
+ * [ShellHandler] directly.
  */
-abstract class SimpleShellHandler(
-    shellProtocolType: ShellProtocolType,
-    private val executable: String
-) : ShellHandler(shellProtocolType) {
+abstract class SimpleShellHandler(shellProtocolType: ShellProtocolType, private val executable: String) : ShellHandler(shellProtocolType) {
 
-    override fun shouldExecute(shellCommand: String, shellCommandArgs: String?): Boolean {
-        return executable == shellCommand
-    }
+  override fun shouldExecute(shellCommand: String, shellCommandArgs: String?): Boolean {
+    return executable == shellCommand
+  }
 }

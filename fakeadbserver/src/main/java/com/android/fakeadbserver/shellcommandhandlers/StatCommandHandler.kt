@@ -21,38 +21,35 @@ import com.android.fakeadbserver.ShellProtocolType
 import com.android.fakeadbserver.services.ShellCommandOutput
 import com.android.fakeadbserver.services.StatusWriter
 
-class StatCommandHandler(shellProtocolType: ShellProtocolType) : SimpleShellHandler(
-    shellProtocolType,
-    "stat"
-) {
+class StatCommandHandler(shellProtocolType: ShellProtocolType) : SimpleShellHandler(shellProtocolType, "stat") {
 
-    val PROC_ID_REG = Regex("/proc/(\\d+)")
+  val PROC_ID_REG = Regex("/proc/(\\d+)")
 
-    override fun execute(
-      fakeAdbServer: FakeAdbServer,
-      statusWriter: StatusWriter,
-      shellCommandOutput: ShellCommandOutput,
-      device: DeviceState,
-      shellCommand: String,
-      shellCommandArgs: String?
-    ) {
-        val appId = getAppId(device, shellCommandArgs)
-        if (appId == null) {
-            statusWriter.writeFail()
-            return
-        }
-
-        statusWriter.writeOk()
-        shellCommandOutput.writeStdout("package:$appId ")
+  override fun execute(
+    fakeAdbServer: FakeAdbServer,
+    statusWriter: StatusWriter,
+    shellCommandOutput: ShellCommandOutput,
+    device: DeviceState,
+    shellCommand: String,
+    shellCommandArgs: String?,
+  ) {
+    val appId = getAppId(device, shellCommandArgs)
+    if (appId == null) {
+      statusWriter.writeFail()
+      return
     }
 
-    private fun getAppId(device: DeviceState, args: String?): String? {
-        if (args == null) {
-            return null
-        }
+    statusWriter.writeOk()
+    shellCommandOutput.writeStdout("package:$appId ")
+  }
 
-        val matchResult = PROC_ID_REG.find(args) ?: return null
-        val pid = matchResult.groups[1]!!.value.toInt()
-        return device.getClient(pid)?.processName
+  private fun getAppId(device: DeviceState, args: String?): String? {
+    if (args == null) {
+      return null
     }
+
+    val matchResult = PROC_ID_REG.find(args) ?: return null
+    val pid = matchResult.groups[1]!!.value.toInt()
+    return device.getClient(pid)?.processName
+  }
 }

@@ -16,15 +16,10 @@
 package com.android.fakeadbserver
 
 class DeviceFileSystemProvider {
-    @PublishedApi
-    internal val fileSystem: DeviceFileSystem = DeviceFileSystem()
+  @PublishedApi internal val fileSystem: DeviceFileSystem = DeviceFileSystem()
 
-    /**
-     * Provides thread-safe access to the [DeviceFileSystem]
-     */
-    inline fun <R> withFileSystem(block : (DeviceFileSystem) -> R): R {
-        return synchronized(fileSystem) {
-            block(fileSystem)
-        }
-    }
+  /** Provides thread-safe access to the [DeviceFileSystem] */
+  inline fun <R> withFileSystem(block: (DeviceFileSystem) -> R): R {
+    return synchronized(fileSystem) { block(fileSystem) }
+  }
 }

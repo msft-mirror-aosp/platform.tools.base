@@ -18,13 +18,14 @@ package com.android.fakeadbserver.statechangehubs
 import java.util.concurrent.Callable
 
 /**
- * A factory interface to create client event receivers. The [Callable]'s return value
- * indicates if a possible error may have occurred (or a shut down signal was sent), and the calling
- * thread should terminate the processing task and release all open resources.
+ * A factory interface to create client event receivers. The [Callable]'s return value indicates if a possible error may have occurred (or a
+ * shut down signal was sent), and the calling thread should terminate the processing task and release all open resources.
  */
 interface ClientStateChangeHandlerFactory : StateChangeHandlerFactory {
 
-    fun createClientListChangedHandler(): Callable<StateChangeHandlerFactory.HandlerResult>
-    fun createAppProcessListChangedHandler(): Callable<StateChangeHandlerFactory.HandlerResult>
-    fun createLogcatMessageAdditionHandler(message: String): Callable<StateChangeHandlerFactory.HandlerResult>
+  fun createClientListChangedHandler(): Callable<StateChangeHandlerFactory.HandlerResult>
+
+  fun createAppProcessListChangedHandler(): Callable<StateChangeHandlerFactory.HandlerResult>
+
+  fun createLogcatMessageAdditionHandler(message: String): Callable<StateChangeHandlerFactory.HandlerResult>
 }

@@ -15,14 +15,12 @@
  */
 package com.android.fakeadbserver
 
-/**
- * Represents a port forward pair from [.mSource] to [.mDestination].
- */
+/** Represents a port forward pair from [.mSource] to [.mDestination]. */
 class PortForwarder private constructor(hostPort: Int) {
   val source = ForwarderSource()
   val destination = ForwarderDestination()
 
-  /** Use one of the static factory methods to create an instance of this class.  */
+  /** Use one of the static factory methods to create an instance of this class. */
   init {
     source.port = hostPort
   }
@@ -38,10 +36,9 @@ class PortForwarder private constructor(hostPort: Int) {
   }
 
   companion object {
-    /**
-     * An invalid/uninitialized port number.
-     */
+    /** An invalid/uninitialized port number. */
     const val INVALID_PORT = -1
+
     fun createPortForwarder(hostPort: Int, port: Int): PortForwarder {
       val forwarder = PortForwarder(hostPort)
       forwarder.destination.port = port

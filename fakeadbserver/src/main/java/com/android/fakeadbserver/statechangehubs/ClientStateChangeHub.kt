@@ -16,43 +16,32 @@
 package com.android.fakeadbserver.statechangehubs
 
 /**
- * This class is the primary class that effects the changes to client states and propagates the
- * changes to existing, registered monitoring connections. It acts mainly as a multiplexer for
- * for events to existing client/server connections.
+ * This class is the primary class that effects the changes to client states and propagates the changes to existing, registered monitoring
+ * connections. It acts mainly as a multiplexer for for events to existing client/server connections.
  */
 class ClientStateChangeHub : StateChangeHub<ClientStateChangeHandlerFactory>() {
 
-    fun clientListChanged() {
-        synchronized(mHandlers) {
-            mHandlers.forEach { (stateChangeQueue: StateChangeQueue, clientStateChangeHandlerFactory: ClientStateChangeHandlerFactory) ->
-                stateChangeQueue.add(
-                    clientStateChangeHandlerFactory
-                        .createClientListChangedHandler()
-                )
-            }
-        }
+  fun clientListChanged() {
+    synchronized(mHandlers) {
+      mHandlers.forEach { (stateChangeQueue: StateChangeQueue, clientStateChangeHandlerFactory: ClientStateChangeHandlerFactory) ->
+        stateChangeQueue.add(clientStateChangeHandlerFactory.createClientListChangedHandler())
+      }
     }
+  }
 
-    fun appProcessListChanged() {
-        synchronized(mHandlers) {
-            mHandlers.forEach { (stateChangeQueue: StateChangeQueue, clientStateChangeHandlerFactory: ClientStateChangeHandlerFactory) ->
-                stateChangeQueue.add(
-                    clientStateChangeHandlerFactory
-                        .createAppProcessListChangedHandler()
-                )
-            }
-        }
+  fun appProcessListChanged() {
+    synchronized(mHandlers) {
+      mHandlers.forEach { (stateChangeQueue: StateChangeQueue, clientStateChangeHandlerFactory: ClientStateChangeHandlerFactory) ->
+        stateChangeQueue.add(clientStateChangeHandlerFactory.createAppProcessListChangedHandler())
+      }
     }
+  }
 
-    fun logcatMessageAdded(message: String) {
-        synchronized(mHandlers) {
-            mHandlers.forEach { (stateChangeQueue: StateChangeQueue, clientStateChangeHandlerFactory: ClientStateChangeHandlerFactory) ->
-                stateChangeQueue
-                    .add(
-                        clientStateChangeHandlerFactory
-                            .createLogcatMessageAdditionHandler(message)
-                    )
-            }
-        }
+  fun logcatMessageAdded(message: String) {
+    synchronized(mHandlers) {
+      mHandlers.forEach { (stateChangeQueue: StateChangeQueue, clientStateChangeHandlerFactory: ClientStateChangeHandlerFactory) ->
+        stateChangeQueue.add(clientStateChangeHandlerFactory.createLogcatMessageAdditionHandler(message))
+      }
     }
+  }
 }

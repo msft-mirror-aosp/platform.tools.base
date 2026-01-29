@@ -19,33 +19,31 @@ import com.android.fakeadbserver.ClientState
 import com.android.fakeadbserver.DeviceState
 import com.android.fakeadbserver.devicecommandhandlers.ddmsHandlers.DdmPacket.Companion.createResponse
 import com.android.fakeadbserver.devicecommandhandlers.ddmsHandlers.DdmPacket.Companion.encodeChunkType
-import kotlinx.coroutines.CoroutineScope
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
+import kotlinx.coroutines.CoroutineScope
 
 class VulwHandler : DdmPacketHandler {
 
-    override fun handlePacket(
-        device: DeviceState,
-        client: ClientState,
-        packet: DdmPacket,
-        jdwpHandlerOutput: JdwpHandlerOutput,
-        socketScope: CoroutineScope
-    ): Boolean {
-        val viewRoots = client.viewsState.viewRoots()
-        val payload = ByteBuffer.allocate(4 + viewRoots.ddmByteCount()).order(ByteOrder.BIG_ENDIAN)
-        payload.putInt(viewRoots.size)
-        viewRoots.forEach {
-            payload.putDdmString(it)
-        }
-        val responsePacket = createResponse(packet.id, CHUNK_TYPE, payload.array())
-        responsePacket.write(jdwpHandlerOutput)
+  override fun handlePacket(
+    device: DeviceState,
+    client: ClientState,
+    packet: DdmPacket,
+    jdwpHandlerOutput: JdwpHandlerOutput,
+    socketScope: CoroutineScope,
+  ): Boolean {
+    val viewRoots = client.viewsState.viewRoots()
+    val payload = ByteBuffer.allocate(4 + viewRoots.ddmByteCount()).order(ByteOrder.BIG_ENDIAN)
+    payload.putInt(viewRoots.size)
+    viewRoots.forEach { payload.putDdmString(it) }
+    val responsePacket = createResponse(packet.id, CHUNK_TYPE, payload.array())
+    responsePacket.write(jdwpHandlerOutput)
 
-        // Keep JDWP connection open
-        return true
-    }
+    // Keep JDWP connection open
+    return true
+  }
 
-    companion object {
-        val CHUNK_TYPE = encodeChunkType("VULW")
-    }
+  companion object {
+    val CHUNK_TYPE = encodeChunkType("VULW")
+  }
 }

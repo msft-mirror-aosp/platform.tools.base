@@ -15,12 +15,12 @@
  */
 package com.android.fakeadbserver.hostcommandhandlers
 
-/** An implementation of "host:version" that returns an invalid string  */
+/** An implementation of "host:version" that returns an invalid string */
 class FaultyVersionCommandHandler : VersionCommandHandler() {
 
-    override val priority: Int
-        get() = super.priority + 10 // higher priority than default
+  override val priority: Int
+    get() = super.priority + 10 // higher priority than default
 
-    override val versionString: String
-        get() = "QWER"
+  override val versionString: String
+    get() = "QWER"
 }

@@ -21,7 +21,5 @@ import java.util.concurrent.Callable
 /** Factory for creating handlers related to mDNS service state changes. */
 interface MdnsStateChangeHandlerFactory : StateChangeHandlerFactory {
 
-  fun createMdnsServiceListChangedHandler(
-    serviceList: Collection<MdnsService>
-  ): Callable<StateChangeHandlerFactory.HandlerResult>
+  fun createMdnsServiceListChangedHandler(serviceList: Collection<MdnsService>): Callable<StateChangeHandlerFactory.HandlerResult>
 }

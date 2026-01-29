@@ -16,59 +16,51 @@
 package com.android.fakeadbserver.devicecommandhandlers
 
 data class ForwardArgs(
-    val norebind: Boolean,
-    val fromTransport: String,
-    val fromTransportArg: String,
-    val toTransport: String,
-    val toTransportArg: String
+  val norebind: Boolean,
+  val fromTransport: String,
+  val fromTransportArg: String,
+  val toTransport: String,
+  val toTransportArg: String,
 ) {
 
-    companion object {
+  companion object {
 
-        /**
-         * Parses a `forward` or `reverse` command into a [ForwardArgs], throwing
-         * [IllegalArgumentException] if the format is incorrect.
-         */
-        @JvmStatic
-        fun parse(input: String): ForwardArgs {
-            var argsString = input
+    /** Parses a `forward` or `reverse` command into a [ForwardArgs], throwing [IllegalArgumentException] if the format is incorrect. */
+    @JvmStatic
+    fun parse(input: String): ForwardArgs {
+      var argsString = input
 
-            // Scan `norebind` option
-            val noRebind = if (argsString.startsWith("norebind:")) {
-                argsString = argsString.split(":".toRegex(), 2).toTypedArray()[1]
-                true
-            } else {
-                false
-            }
-
-            // Scan server socket spec string
-            val addressStrings = argsString.split(";".toRegex()).toTypedArray()
-            if (addressStrings.size != 2) {
-                throw IllegalArgumentException("Forward query should contain 2 addresses: $argsString")
-            }
-
-            // Scan destination socket spec string
-            val fromAddress = addressStrings[0].split(":".toRegex()).toTypedArray()
-            if (fromAddress.size != 2) {
-                throw IllegalArgumentException("Source address format is not supported: " + addressStrings[0])
-            }
-            val fromTransport = fromAddress[0]
-            val fromTransportArg = fromAddress[1]
-
-            val toAddress = addressStrings[1].split(":".toRegex()).toTypedArray()
-            if (toAddress.size != 2) {
-                throw IllegalArgumentException("Destination address format is not supported: " + addressStrings[1])
-            }
-            val toTransport = toAddress[0]
-            val toTransportArg = toAddress[1]
-
-            return ForwardArgs(
-                noRebind,
-                fromTransport,
-                fromTransportArg,
-                toTransport,
-                toTransportArg
-            )
+      // Scan `norebind` option
+      val noRebind =
+        if (argsString.startsWith("norebind:")) {
+          argsString = argsString.split(":".toRegex(), 2).toTypedArray()[1]
+          true
+        } else {
+          false
         }
+
+      // Scan server socket spec string
+      val addressStrings = argsString.split(";".toRegex()).toTypedArray()
+      if (addressStrings.size != 2) {
+        throw IllegalArgumentException("Forward query should contain 2 addresses: $argsString")
+      }
+
+      // Scan destination socket spec string
+      val fromAddress = addressStrings[0].split(":".toRegex()).toTypedArray()
+      if (fromAddress.size != 2) {
+        throw IllegalArgumentException("Source address format is not supported: " + addressStrings[0])
+      }
+      val fromTransport = fromAddress[0]
+      val fromTransportArg = fromAddress[1]
+
+      val toAddress = addressStrings[1].split(":".toRegex()).toTypedArray()
+      if (toAddress.size != 2) {
+        throw IllegalArgumentException("Destination address format is not supported: " + addressStrings[1])
+      }
+      val toTransport = toAddress[0]
+      val toTransportArg = toAddress[1]
+
+      return ForwardArgs(noRebind, fromTransport, fromTransportArg, toTransport, toTransportArg)
     }
+  }
 }

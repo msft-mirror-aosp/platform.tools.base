@@ -21,29 +21,26 @@ import com.android.fakeadbserver.ShellProtocolType
 import com.android.fakeadbserver.services.ShellCommandOutput
 import com.android.fakeadbserver.services.StatusWriter
 
-/**
- * A [SimpleShellHandler] that outputs a hard-coded list of lines that follows the format
- * of device properties.
- */
+/** A [SimpleShellHandler] that outputs a hard-coded list of lines that follows the format of device properties. */
 class GetPropCommandHandler(shellProtocolType: ShellProtocolType) : SimpleShellHandler(shellProtocolType, "getprop") {
 
-    override fun execute(
-      fakeAdbServer: FakeAdbServer,
-      statusWriter: StatusWriter,
-      shellCommandOutput: ShellCommandOutput,
-      device: DeviceState,
-      shellCommand: String,
-      shellCommandArgs: String?
-    ) {
-        statusWriter.writeOk()
-        val buf = StringBuilder()
-        buf.append("# This is some build info\n")
-        buf.append("# This is more build info\n")
-        buf.append("\n")
-        for (entry in device.properties) {
-            buf.append("[${entry.key}]: [${entry.value}]\n")
-        }
-        shellCommandOutput.writeStdout(buf.toString())
-        shellCommandOutput.writeExitCode(0)
+  override fun execute(
+    fakeAdbServer: FakeAdbServer,
+    statusWriter: StatusWriter,
+    shellCommandOutput: ShellCommandOutput,
+    device: DeviceState,
+    shellCommand: String,
+    shellCommandArgs: String?,
+  ) {
+    statusWriter.writeOk()
+    val buf = StringBuilder()
+    buf.append("# This is some build info\n")
+    buf.append("# This is more build info\n")
+    buf.append("\n")
+    for (entry in device.properties) {
+      buf.append("[${entry.key}]: [${entry.value}]\n")
     }
+    shellCommandOutput.writeStdout(buf.toString())
+    shellCommandOutput.writeExitCode(0)
+  }
 }

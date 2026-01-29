@@ -18,29 +18,24 @@ package com.android.fakeadbserver.statechangehubs
 import com.android.fakeadbserver.DeviceState
 
 /**
- * This class is the primary class that effects the changes to device states and propagates the
- * changes to existing, registered monitoring connections.
+ * This class is the primary class that effects the changes to device states and propagates the changes to existing, registered monitoring
+ * connections.
  */
 class DeviceStateChangeHub : StateChangeHub<DeviceStateChangeHandlerFactory>() {
 
-    fun deviceListChanged(deviceList: Collection<DeviceState?>) {
-        synchronized(mHandlers) {
-            mHandlers.forEach { (stateChangeQueue: StateChangeQueue, deviceChangeHandlerFactory: DeviceStateChangeHandlerFactory) ->
-                stateChangeQueue
-                    .add(deviceChangeHandlerFactory.createDeviceListChangedHandler(deviceList))
-            }
-        }
+  fun deviceListChanged(deviceList: Collection<DeviceState?>) {
+    synchronized(mHandlers) {
+      mHandlers.forEach { (stateChangeQueue: StateChangeQueue, deviceChangeHandlerFactory: DeviceStateChangeHandlerFactory) ->
+        stateChangeQueue.add(deviceChangeHandlerFactory.createDeviceListChangedHandler(deviceList))
+      }
     }
+  }
 
-    fun deviceStatusChanged(device: DeviceState, status: DeviceState.DeviceStatus) {
-        synchronized(mHandlers) {
-            mHandlers.forEach { (stateChangeQueue: StateChangeQueue, deviceChangeHandlerFactory: DeviceStateChangeHandlerFactory) ->
-                stateChangeQueue.add(
-                    deviceChangeHandlerFactory.createDeviceStateChangedHandler(
-                        device, status
-                    )
-                )
-            }
-        }
+  fun deviceStatusChanged(device: DeviceState, status: DeviceState.DeviceStatus) {
+    synchronized(mHandlers) {
+      mHandlers.forEach { (stateChangeQueue: StateChangeQueue, deviceChangeHandlerFactory: DeviceStateChangeHandlerFactory) ->
+        stateChangeQueue.add(deviceChangeHandlerFactory.createDeviceStateChangedHandler(device, status))
+      }
     }
+  }
 }

@@ -17,36 +17,36 @@ package com.android.fakeadbserver.devicecommandhandlers.ddmsHandlers
 
 import com.android.fakeadbserver.ClientState
 import com.android.fakeadbserver.DeviceState
-import kotlinx.coroutines.CoroutineScope
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
+import kotlinx.coroutines.CoroutineScope
 
 class ReaeHandler : DdmPacketHandler {
 
-    override fun handlePacket(
-        device: DeviceState,
-        client: ClientState,
-        packet: DdmPacket,
-        jdwpHandlerOutput: JdwpHandlerOutput,
-        socketScope: CoroutineScope
-    ): Boolean {
+  override fun handlePacket(
+    device: DeviceState,
+    client: ClientState,
+    packet: DdmPacket,
+    jdwpHandlerOutput: JdwpHandlerOutput,
+    socketScope: CoroutineScope,
+  ): Boolean {
 
-        val payload = ByteBuffer.wrap(packet.payload).order(ByteOrder.BIG_ENDIAN)
-        val enabled = payload.get() == 1.toByte()
-        client.isAllocationTrackerEnabled = enabled
+    val payload = ByteBuffer.wrap(packet.payload).order(ByteOrder.BIG_ENDIAN)
+    val enabled = payload.get() == 1.toByte()
+    client.isAllocationTrackerEnabled = enabled
 
-        // Empty response used to be sent out before the release of Android 28
-        if (device.apiLevel < 28) {
-            val responsePacket = JdwpPacket.createEmptyDdmsResponse(packet.id)
-            responsePacket.write(jdwpHandlerOutput)
-        }
-
-        // Keep JDWP connection open
-        return true
+    // Empty response used to be sent out before the release of Android 28
+    if (device.apiLevel < 28) {
+      val responsePacket = JdwpPacket.createEmptyDdmsResponse(packet.id)
+      responsePacket.write(jdwpHandlerOutput)
     }
 
-    companion object {
+    // Keep JDWP connection open
+    return true
+  }
 
-        val CHUNK_TYPE = DdmPacket.encodeChunkType("REAE")
-    }
+  companion object {
+
+    val CHUNK_TYPE = DdmPacket.encodeChunkType("REAE")
+  }
 }

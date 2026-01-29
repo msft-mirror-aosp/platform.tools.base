@@ -15,47 +15,44 @@
  */
 package com.android.fakeadbserver
 
-/**
- * Parser for ADB service requests where each part is separated with a ":", e.g.
- * "host-serial:emulator-5554:get-serialno"
- */
+/** Parser for ADB service requests where each part is separated with a ":", e.g. "host-serial:emulator-5554:get-serialno" */
 internal class ServiceRequest(private val original: String) {
 
-    private var request: String = original
+  private var request: String = original
 
-    private var token: String = ""
+  private var token: String = ""
 
-    fun peekToken(): String {
-        val separatorIndex = request.indexOf(SEPARATOR)
-        return if (separatorIndex == -1) request else request.substring(0, separatorIndex)
+  fun peekToken(): String {
+    val separatorIndex = request.indexOf(SEPARATOR)
+    return if (separatorIndex == -1) request else request.substring(0, separatorIndex)
+  }
+
+  fun nextToken(): String {
+    val separatorIndex = request.indexOf(SEPARATOR)
+    if (separatorIndex == -1) {
+      token = request
+      request = ""
+      return token
     }
+    token = request.substring(0, separatorIndex)
+    request = request.substring(separatorIndex + 1)
+    return token
+  }
 
-    fun nextToken(): String {
-        val separatorIndex = request.indexOf(SEPARATOR)
-        if (separatorIndex == -1) {
-            token = request
-            request = ""
-            return token
-        }
-        token = request.substring(0, separatorIndex)
-        request = request.substring(separatorIndex + 1)
-        return token
-    }
+  fun currToken(): String {
+    return token
+  }
 
-    fun currToken(): String {
-        return token
-    }
+  fun remaining(): String {
+    return request
+  }
 
-    fun remaining(): String {
-        return request
-    }
+  fun original(): String {
+    return original
+  }
 
-    fun original(): String {
-        return original
-    }
+  companion object {
 
-    companion object {
-
-        private const val SEPARATOR = ':'
-    }
+    private const val SEPARATOR = ':'
+  }
 }

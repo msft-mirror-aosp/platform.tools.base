@@ -19,23 +19,15 @@ import com.android.fakeadbserver.DeviceState
 import com.android.fakeadbserver.FakeAdbServer
 import java.net.Socket
 
-/**
- * host-prefix:get-serialno return the last known state of the device
- */
+/** host-prefix:get-serialno return the last known state of the device */
 class GetSerialNoCommandHandler : SimpleHostCommandHandler("get-serialno") {
 
-    override fun invoke(
-        fakeAdbServer: FakeAdbServer,
-        responseSocket: Socket,
-        device: DeviceState?,
-        args: String
-    ): Boolean {
-        // Device may be null if an invalid serial number was sent. A FAIL response
-        // should already have been sent.
-        if (device != null) {
-            writeOkayResponse(responseSocket.getOutputStream(), device.deviceId)
-        }
-        return false
+  override fun invoke(fakeAdbServer: FakeAdbServer, responseSocket: Socket, device: DeviceState?, args: String): Boolean {
+    // Device may be null if an invalid serial number was sent. A FAIL response
+    // should already have been sent.
+    if (device != null) {
+      writeOkayResponse(responseSocket.getOutputStream(), device.deviceId)
     }
-
+    return false
+  }
 }

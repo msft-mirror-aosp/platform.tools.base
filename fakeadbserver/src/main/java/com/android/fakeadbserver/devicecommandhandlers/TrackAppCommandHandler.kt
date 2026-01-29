@@ -23,111 +23,102 @@ import com.android.fakeadbserver.statechangehubs.ClientStateChangeHandlerFactory
 import com.android.fakeadbserver.statechangehubs.StateChangeHandlerFactory
 import com.android.server.adb.protos.AppProcessesProto
 import com.android.server.adb.protos.AppProcessesProto.ProcessEntry
-import kotlinx.coroutines.CoroutineScope
 import java.io.ByteArrayOutputStream
 import java.io.OutputStream
 import java.net.Socket
 import java.util.concurrent.Callable
+import kotlinx.coroutines.CoroutineScope
 
 /**
- * Implementation of the `track-app` command, tracking the device's process list
- * (both [ClientState] and [ProfileableProcessState]), sending change messages
- * whenever a process is added/removed.
+ * Implementation of the `track-app` command, tracking the device's process list (both [ClientState] and [ProfileableProcessState]), sending
+ * change messages whenever a process is added/removed.
  */
 class TrackAppCommandHandler : DeviceCommandHandler("track-app") {
 
-    override fun invoke(
-        server: FakeAdbServer,
-        socketScope: CoroutineScope,
-        socket: Socket,
-        device: DeviceState,
-        args: String
-    ) {
-        device.addTrackAppInvocation()
-        val stream = socket.getOutputStream()
-        if (!device.features.contains("track_app")) {
-            writeFailResponse(stream, "track-app is not supported by this device")
-            return
+  override fun invoke(server: FakeAdbServer, socketScope: CoroutineScope, socket: Socket, device: DeviceState, args: String) {
+    device.addTrackAppInvocation()
+    val stream = socket.getOutputStream()
+    if (!device.features.contains("track_app")) {
+      writeFailResponse(stream, "track-app is not supported by this device")
+      return
+    }
+
+    val queue =
+      device.clientChangeHub.subscribe(
+        object : ClientStateChangeHandlerFactory {
+          override fun createClientListChangedHandler(): Callable<StateChangeHandlerFactory.HandlerResult> {
+            return Callable {
+              // No need to call "sendAppProcessList", as a "createClientListChanged"
+              // event always implies an associated "createAppProcessListChanged"
+              // event
+              StateChangeHandlerFactory.HandlerResult(true)
+            }
+          }
+
+          override fun createAppProcessListChangedHandler(): Callable<StateChangeHandlerFactory.HandlerResult> {
+            return Callable {
+              sendAppProcessList(device, stream)
+              StateChangeHandlerFactory.HandlerResult(true)
+            }
+          }
+
+          override fun createLogcatMessageAdditionHandler(message: String): Callable<StateChangeHandlerFactory.HandlerResult> {
+            return Callable { StateChangeHandlerFactory.HandlerResult(true) }
+          }
+        }
+      )
+        ?: run {
+          // Server has shutdown before we are able to start listening to the queue.
+          return
         }
 
-        val queue = device.clientChangeHub
-            .subscribe(
-                object : ClientStateChangeHandlerFactory {
-                    override fun createClientListChangedHandler(): Callable<StateChangeHandlerFactory.HandlerResult> {
-                        return Callable {
-                            // No need to call "sendAppProcessList", as a "createClientListChanged"
-                            // event always implies an associated "createAppProcessListChanged"
-                            // event
-                            StateChangeHandlerFactory.HandlerResult(true)
-                        }
-                    }
-
-                    override fun createAppProcessListChangedHandler(): Callable<StateChangeHandlerFactory.HandlerResult> {
-                        return Callable {
-                            sendAppProcessList(device, stream)
-                            StateChangeHandlerFactory.HandlerResult(true)
-                        }
-                    }
-
-                    override fun createLogcatMessageAdditionHandler(
-                        message: String
-                    ): Callable<StateChangeHandlerFactory.HandlerResult> {
-                        return Callable { StateChangeHandlerFactory.HandlerResult(true) }
-                    }
-                })
-            ?: run {
-                // Server has shutdown before we are able to start listening to the queue.
-                return
-            }
-
-        try {
-            writeOkay(stream) // Send ok first.
-            sendAppProcessList(device, stream) // Then send the initial client list.
-            while (true) {
-                if (!queue.take().call().mShouldContinue) {
-                    break
-                }
-            }
-        } finally {
-            device.clientChangeHub.unsubscribe(queue)
+    try {
+      writeOkay(stream) // Send ok first.
+      sendAppProcessList(device, stream) // Then send the initial client list.
+      while (true) {
+        if (!queue.take().call().mShouldContinue) {
+          break
         }
+      }
+    } finally {
+      device.clientChangeHub.unsubscribe(queue)
     }
+  }
 
-    private fun sendAppProcessList(device: DeviceState, stream: OutputStream) {
-        val appProcesses = buildProtoBuf(device)
-        val bytes = serializeToByteArray(appProcesses)
-        write4ByteHexIntString(stream, bytes.size)
-        stream.write(bytes)
+  private fun sendAppProcessList(device: DeviceState, stream: OutputStream) {
+    val appProcesses = buildProtoBuf(device)
+    val bytes = serializeToByteArray(appProcesses)
+    write4ByteHexIntString(stream, bytes.size)
+    stream.write(bytes)
+  }
+
+  private fun buildProtoBuf(device: DeviceState): AppProcessesProto.AppProcesses {
+    val builder = AppProcessesProto.AppProcesses.newBuilder()
+    val processStates = device.copyOfProcessStates()
+    processStates.forEach { processState ->
+      val entry = ProcessEntry.newBuilder()
+      entry.pid = processState.pid.toLong()
+      entry.debuggable = processState.debuggable
+      entry.profileable = processState.profileable
+      entry.architecture = processState.architecture
+
+      // "app_info" feature adds 5 new fields
+      if (device.features.contains("app_info")) {
+        entry.userId = processState.userId.toLong()
+        entry.uid = processState.uid.toLong()
+        entry.waitingForDebugger = processState.waitingForDebugger
+        entry.processName = processState.processName
+        entry.addAllPackageNames(processState.packageNames)
+      }
+      builder.addProcess(entry.build())
     }
+    return builder.build()
+  }
 
-    private fun buildProtoBuf(device: DeviceState): AppProcessesProto.AppProcesses {
-        val builder = AppProcessesProto.AppProcesses.newBuilder()
-        val processStates = device.copyOfProcessStates()
-        processStates.forEach { processState ->
-            val entry = ProcessEntry.newBuilder()
-            entry.pid = processState.pid.toLong()
-            entry.debuggable = processState.debuggable
-            entry.profileable = processState.profileable
-            entry.architecture = processState.architecture
-
-            // "app_info" feature adds 5 new fields
-            if (device.features.contains("app_info")) {
-                entry.userId = processState.userId.toLong()
-                entry.uid = processState.uid.toLong()
-                entry.waitingForDebugger = processState.waitingForDebugger
-                entry.processName = processState.processName
-                entry.addAllPackageNames(processState.packageNames)
-            }
-            builder.addProcess(entry.build())
-
-        }
-        return builder.build()
-    }
-
-    private fun serializeToByteArray(appProcesses: AppProcessesProto.AppProcesses): ByteArray {
-        val output = ByteArrayOutputStream()
-        appProcesses.writeTo(output)
-        output.close()
-        return output.toByteArray()
-    }
+  private fun serializeToByteArray(appProcesses: AppProcessesProto.AppProcesses): ByteArray {
+    val output = ByteArrayOutputStream()
+    appProcesses.writeTo(output)
+    output.close()
+    return output.toByteArray()
+  }
 }

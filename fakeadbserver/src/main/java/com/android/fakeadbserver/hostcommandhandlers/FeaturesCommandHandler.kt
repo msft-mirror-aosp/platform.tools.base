@@ -21,33 +21,27 @@ import java.net.Socket
 import kotlin.time.Duration
 import kotlin.time.DurationUnit
 
-/** host:features returns list of features supported by both the device and the HOST.  */
+/** host:features returns list of features supported by both the device and the HOST. */
 class FeaturesCommandHandler : SimpleHostCommandHandler("features") {
 
-    override fun invoke(
-        fakeAdbServer: FakeAdbServer,
-        responseSocket: Socket,
-        device: DeviceState?,
-        args: String
-    ): Boolean {
-        device?.delayStdout?.let {
-            if (it != Duration.ZERO) {
-                Thread.sleep(it.toLong(DurationUnit.MILLISECONDS))
-            }
-        }
-        if (device == null) {
-            writeFailMissingDevice(responseSocket.getOutputStream(), command)
-            return false
-        }
-        val out = responseSocket.getOutputStream()
-        // This is a features request. It should contain only the features supported by
-        // both the server and the device.
-        val deviceFeatures = device.features
-        val hostFeatures = fakeAdbServer.features
-        val commonFeatures = HashSet(deviceFeatures)
-        commonFeatures.retainAll(hostFeatures)
-        writeOkayResponse(out, java.lang.String.join(",", commonFeatures))
-        return false
+  override fun invoke(fakeAdbServer: FakeAdbServer, responseSocket: Socket, device: DeviceState?, args: String): Boolean {
+    device?.delayStdout?.let {
+      if (it != Duration.ZERO) {
+        Thread.sleep(it.toLong(DurationUnit.MILLISECONDS))
+      }
     }
-
+    if (device == null) {
+      writeFailMissingDevice(responseSocket.getOutputStream(), command)
+      return false
+    }
+    val out = responseSocket.getOutputStream()
+    // This is a features request. It should contain only the features supported by
+    // both the server and the device.
+    val deviceFeatures = device.features
+    val hostFeatures = fakeAdbServer.features
+    val commonFeatures = HashSet(deviceFeatures)
+    commonFeatures.retainAll(hostFeatures)
+    writeOkayResponse(out, java.lang.String.join(",", commonFeatures))
+    return false
+  }
 }

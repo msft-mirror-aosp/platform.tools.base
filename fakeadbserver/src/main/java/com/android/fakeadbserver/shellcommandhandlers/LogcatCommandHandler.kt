@@ -26,70 +26,63 @@ import java.nio.charset.Charset
 import java.util.concurrent.Callable
 
 /**
- * shell:logcat command is a persistent command issued to grab the output of logcat. In this
- * implementation, the command handler can be driven to send messages to the client of the fake ADB
- * Server.
+ * shell:logcat command is a persistent command issued to grab the output of logcat. In this implementation, the command handler can be
+ * driven to send messages to the client of the fake ADB Server.
  */
-open class LogcatCommandHandler(shellProtocolType: ShellProtocolType?) : SimpleShellHandler(
-    shellProtocolType!!,
-    "logcat"
-) {
+open class LogcatCommandHandler(shellProtocolType: ShellProtocolType?) : SimpleShellHandler(shellProtocolType!!, "logcat") {
 
-    override fun execute(
-        fakeAdbServer: FakeAdbServer,
-        statusWriter: StatusWriter,
-        shellCommandOutput: ShellCommandOutput,
-        device: DeviceState,
-        shellCommand: String,
-        shellCommandArgs: String?
-    ) {
-        val parsedArgs = shellCommandArgs?.split(" +".toRegex()) ?: listOf()
-        val formatIndex = parsedArgs.indexOf("-v")
-        if (formatIndex + 1 > parsedArgs.size) {
-            return
-        }
-        val format = parsedArgs[formatIndex + 1]
-        val shouldWait = !parsedArgs.contains("-d") && !parsedArgs.contains("-t")
-        // TODO format the output according {@code format} argument.
-        statusWriter.writeOk()
-        val subscriptionResult = device.subscribeLogcatChangeHandler(
-            object : ClientStateChangeHandlerFactory {
-                override fun createClientListChangedHandler(): Callable<StateChangeHandlerFactory.HandlerResult> {
-                    return Callable { StateChangeHandlerFactory.HandlerResult(true) }
-                }
-
-                override fun createAppProcessListChangedHandler(): Callable<StateChangeHandlerFactory.HandlerResult> {
-                    return Callable { StateChangeHandlerFactory.HandlerResult(true) }
-                }
-
-                override fun createLogcatMessageAdditionHandler(
-                    message: String
-                ): Callable<StateChangeHandlerFactory.HandlerResult> {
-                    return Callable {
-                        shellCommandOutput.writeStdout(
-                            message.toByteArray(Charset.defaultCharset())
-                        )
-                        StateChangeHandlerFactory.HandlerResult(true)
-                    }
-                }
-            }) ?: return
-        try {
-            for (message in subscriptionResult.mLogcatContents) {
-                shellCommandOutput.writeStdout(message)
-            }
-            while (shouldWait) {
-                try {
-                    if (!subscriptionResult.mQueue.take().call().mShouldContinue) {
-                        break
-                    }
-                } catch (ignored: InterruptedException) {
-                    Thread.currentThread().interrupt()
-                    break
-                }
-            }
-        } catch (ignored: Exception) {
-        } finally {
-            device.clientChangeHub.unsubscribe(subscriptionResult.mQueue)
-        }
+  override fun execute(
+    fakeAdbServer: FakeAdbServer,
+    statusWriter: StatusWriter,
+    shellCommandOutput: ShellCommandOutput,
+    device: DeviceState,
+    shellCommand: String,
+    shellCommandArgs: String?,
+  ) {
+    val parsedArgs = shellCommandArgs?.split(" +".toRegex()) ?: listOf()
+    val formatIndex = parsedArgs.indexOf("-v")
+    if (formatIndex + 1 > parsedArgs.size) {
+      return
     }
+    val format = parsedArgs[formatIndex + 1]
+    val shouldWait = !parsedArgs.contains("-d") && !parsedArgs.contains("-t")
+    // TODO format the output according {@code format} argument.
+    statusWriter.writeOk()
+    val subscriptionResult =
+      device.subscribeLogcatChangeHandler(
+        object : ClientStateChangeHandlerFactory {
+          override fun createClientListChangedHandler(): Callable<StateChangeHandlerFactory.HandlerResult> {
+            return Callable { StateChangeHandlerFactory.HandlerResult(true) }
+          }
+
+          override fun createAppProcessListChangedHandler(): Callable<StateChangeHandlerFactory.HandlerResult> {
+            return Callable { StateChangeHandlerFactory.HandlerResult(true) }
+          }
+
+          override fun createLogcatMessageAdditionHandler(message: String): Callable<StateChangeHandlerFactory.HandlerResult> {
+            return Callable {
+              shellCommandOutput.writeStdout(message.toByteArray(Charset.defaultCharset()))
+              StateChangeHandlerFactory.HandlerResult(true)
+            }
+          }
+        }
+      ) ?: return
+    try {
+      for (message in subscriptionResult.mLogcatContents) {
+        shellCommandOutput.writeStdout(message)
+      }
+      while (shouldWait) {
+        try {
+          if (!subscriptionResult.mQueue.take().call().mShouldContinue) {
+            break
+          }
+        } catch (ignored: InterruptedException) {
+          Thread.currentThread().interrupt()
+          break
+        }
+      }
+    } catch (ignored: Exception) {} finally {
+      device.clientChangeHub.unsubscribe(subscriptionResult.mQueue)
+    }
+  }
 }

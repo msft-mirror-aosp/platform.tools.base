@@ -19,47 +19,45 @@ import com.google.common.base.Charsets
 import java.io.OutputStream
 
 abstract class CommandHandler {
-    companion object {
+  companion object {
 
-        @JvmStatic
-        protected fun writeOkay(stream: OutputStream) {
-            stream.write("OKAY".toByteArray(Charsets.UTF_8))
-        }
-
-        @JvmStatic
-        protected fun writeOkayResponse(stream: OutputStream, response: String) {
-            writeOkay(stream)
-            write4ByteHexIntString(stream, response.length)
-            writeString(stream, response)
-        }
-
-        @JvmStatic
-        protected fun writeFail(stream: OutputStream) {
-            stream.write("FAIL".toByteArray(Charsets.UTF_8))
-        }
-
-        @JvmStatic
-        protected fun writeFailResponse(stream: OutputStream, reason: String) {
-            writeFail(stream)
-            write4ByteHexIntString(stream, reason.length)
-            writeString(stream, reason)
-        }
-
-        @JvmStatic
-        protected fun write4ByteHexIntString(stream: OutputStream, value: Int) {
-            stream.write(String.format("%04x", value).toByteArray(Charsets.UTF_8))
-        }
-
-        @JvmStatic
-        protected fun writeString(stream: OutputStream, string: String) {
-            stream.write(string.toByteArray(Charsets.UTF_8))
-        }
-
-        @JvmStatic
-        protected fun writeFailMissingDevice(
-            stream: OutputStream, service: String
-        ) {
-            writeFailResponse(stream, "No device found to satisfy $service")
-        }
+    @JvmStatic
+    protected fun writeOkay(stream: OutputStream) {
+      stream.write("OKAY".toByteArray(Charsets.UTF_8))
     }
+
+    @JvmStatic
+    protected fun writeOkayResponse(stream: OutputStream, response: String) {
+      writeOkay(stream)
+      write4ByteHexIntString(stream, response.length)
+      writeString(stream, response)
+    }
+
+    @JvmStatic
+    protected fun writeFail(stream: OutputStream) {
+      stream.write("FAIL".toByteArray(Charsets.UTF_8))
+    }
+
+    @JvmStatic
+    protected fun writeFailResponse(stream: OutputStream, reason: String) {
+      writeFail(stream)
+      write4ByteHexIntString(stream, reason.length)
+      writeString(stream, reason)
+    }
+
+    @JvmStatic
+    protected fun write4ByteHexIntString(stream: OutputStream, value: Int) {
+      stream.write(String.format("%04x", value).toByteArray(Charsets.UTF_8))
+    }
+
+    @JvmStatic
+    protected fun writeString(stream: OutputStream, string: String) {
+      stream.write(string.toByteArray(Charsets.UTF_8))
+    }
+
+    @JvmStatic
+    protected fun writeFailMissingDevice(stream: OutputStream, service: String) {
+      writeFailResponse(stream, "No device found to satisfy $service")
+    }
+  }
 }

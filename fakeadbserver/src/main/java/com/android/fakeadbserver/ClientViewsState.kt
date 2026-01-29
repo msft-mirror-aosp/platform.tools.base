@@ -19,66 +19,42 @@ import java.nio.ByteBuffer
 
 class ClientViewsState {
 
-    private val lock = Any()
-    private val viewRoots = mutableListOf<String>()
-    private val viewCaptures = mutableMapOf<ViewCaptureId, ByteBuffer>()
-    private val viewHierarchies = mutableMapOf<ViewHierarchyId, ByteBuffer>()
+  private val lock = Any()
+  private val viewRoots = mutableListOf<String>()
+  private val viewCaptures = mutableMapOf<ViewCaptureId, ByteBuffer>()
+  private val viewHierarchies = mutableMapOf<ViewHierarchyId, ByteBuffer>()
 
-    fun addViewRoot(viewRoot: String) {
-        synchronized(lock) {
-            viewRoots.add(viewRoot)
-        }
+  fun addViewRoot(viewRoot: String) {
+    synchronized(lock) { viewRoots.add(viewRoot) }
+  }
+
+  fun viewRoots(): List<String> {
+    return synchronized(lock) { viewRoots.toList() }
+  }
+
+  fun addViewCapture(viewRoot: String, view: String, viewData: ByteBuffer) {
+    synchronized(lock) { viewCaptures[ViewCaptureId(viewRoot, view)] = viewData }
+  }
+
+  fun captureViewData(viewRoot: String, view: String): ByteBuffer? {
+    return synchronized(lock) { viewCaptures[ViewCaptureId(viewRoot, view)] }
+  }
+
+  fun addViewHierarchy(viewRoot: String, skipChildren: Boolean, includeProperties: Boolean, useV2: Boolean, data: ByteBuffer) {
+    synchronized(lock) {
+      val id = ViewHierarchyId(viewRoot, skipChildren, includeProperties, useV2)
+      viewHierarchies[id] = data
     }
+  }
 
-    fun viewRoots(): List<String> {
-        return synchronized(lock) {
-            viewRoots.toList()
-        }
+  fun viewHierarchyData(viewRoot: String, skipChildren: Boolean, includeProperties: Boolean, useV2: Boolean): ByteBuffer? {
+    return synchronized(lock) {
+      val id = ViewHierarchyId(viewRoot, skipChildren, includeProperties, useV2)
+      viewHierarchies[id]
     }
+  }
 
-    fun addViewCapture(viewRoot: String, view: String, viewData: ByteBuffer) {
-        synchronized(lock) {
-            viewCaptures[ViewCaptureId(viewRoot, view)] = viewData
-        }
-    }
+  data class ViewCaptureId(val viewRoot: String, val view: String)
 
-    fun captureViewData(viewRoot: String, view: String): ByteBuffer? {
-        return synchronized(lock) {
-            viewCaptures[ViewCaptureId(viewRoot, view)]
-        }
-    }
-
-    fun addViewHierarchy(
-        viewRoot: String,
-        skipChildren: Boolean,
-        includeProperties: Boolean,
-        useV2: Boolean,
-        data: ByteBuffer
-    ) {
-        synchronized(lock) {
-            val id = ViewHierarchyId(viewRoot, skipChildren, includeProperties, useV2)
-            viewHierarchies[id] = data
-        }
-    }
-
-    fun viewHierarchyData(
-        viewRoot: String,
-        skipChildren: Boolean,
-        includeProperties: Boolean,
-        useV2: Boolean
-    ): ByteBuffer? {
-        return synchronized(lock) {
-            val id = ViewHierarchyId(viewRoot, skipChildren, includeProperties, useV2)
-            viewHierarchies[id]
-        }
-    }
-
-    data class ViewCaptureId(val viewRoot: String, val view: String)
-
-    data class ViewHierarchyId(
-        val viewRoot: String,
-        val skipChildren: Boolean,
-        val includeProperties: Boolean,
-        val useV2: Boolean
-    )
+  data class ViewHierarchyId(val viewRoot: String, val skipChildren: Boolean, val includeProperties: Boolean, val useV2: Boolean)
 }

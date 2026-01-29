@@ -19,45 +19,40 @@ import com.google.common.base.Charsets
 import java.net.Socket
 
 interface StatusWriter {
-    fun writeOk()
-    fun writeFail()
-    fun verifyStatusWritten()
-}
+  fun writeOk()
 
+  fun writeFail()
+
+  fun verifyStatusWritten()
+}
 
 class DefaultStatusWriter(val socket: Socket) : StatusWriter {
 
-    private var writeOkCalled = false
-    private var writeFailCalled = false
+  private var writeOkCalled = false
+  private var writeFailCalled = false
 
-    override fun writeOk() {
-        assert(!writeOkCalled)
-        writeOkCalled = true
-        socket.getOutputStream().write("OKAY".toByteArray(Charsets.UTF_8))
-    }
+  override fun writeOk() {
+    assert(!writeOkCalled)
+    writeOkCalled = true
+    socket.getOutputStream().write("OKAY".toByteArray(Charsets.UTF_8))
+  }
 
-    override fun writeFail() {
-        assert(!writeFailCalled)
-        writeFailCalled = true
-        socket.getOutputStream().write("FAIL".toByteArray(Charsets.UTF_8))
-    }
+  override fun writeFail() {
+    assert(!writeFailCalled)
+    writeFailCalled = true
+    socket.getOutputStream().write("FAIL".toByteArray(Charsets.UTF_8))
+  }
 
-    override fun verifyStatusWritten() {
-        assert(writeOkCalled != writeFailCalled) {
-            "OKAY or FAIL message, but not both should be written to output stream"
-        }
-    }
+  override fun verifyStatusWritten() {
+    assert(writeOkCalled != writeFailCalled) { "OKAY or FAIL message, but not both should be written to output stream" }
+  }
 }
-
 
 class NoOperationStatusWriter() : StatusWriter {
 
-    override fun writeOk() {
-    }
+  override fun writeOk() {}
 
-    override fun writeFail() {
-    }
+  override fun writeFail() {}
 
-    override fun verifyStatusWritten() {
-    }
+  override fun verifyStatusWritten() {}
 }

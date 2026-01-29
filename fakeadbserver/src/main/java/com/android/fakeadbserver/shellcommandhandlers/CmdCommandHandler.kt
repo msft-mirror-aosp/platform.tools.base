@@ -18,38 +18,30 @@ package com.android.fakeadbserver.shellcommandhandlers
 import com.android.fakeadbserver.DeviceState
 import com.android.fakeadbserver.FakeAdbServer
 import com.android.fakeadbserver.ShellProtocolType
-import com.android.fakeadbserver.services.PackageManager
 import com.android.fakeadbserver.services.ShellCommandOutput
-import com.android.fakeadbserver.services.ShellV2Output
 import com.android.fakeadbserver.services.StatusWriter
-import java.io.IOException
-import java.util.regex.Pattern
 
-class CmdCommandHandler(shellProtocolType: ShellProtocolType) : SimpleShellHandler(
-    shellProtocolType, "cmd"
-) {
+class CmdCommandHandler(shellProtocolType: ShellProtocolType) : SimpleShellHandler(shellProtocolType, "cmd") {
 
-    override fun execute(
-      fakeAdbServer: FakeAdbServer,
-      statusWriter: StatusWriter,
-      shellCommandOutput: ShellCommandOutput,
-      device: DeviceState,
-      shellCommand: String,
-      shellCommandArgs: String?
-    ) {
-        statusWriter.writeOk()
+  override fun execute(
+    fakeAdbServer: FakeAdbServer,
+    statusWriter: StatusWriter,
+    shellCommandOutput: ShellCommandOutput,
+    device: DeviceState,
+    shellCommand: String,
+    shellCommandArgs: String?,
+  ) {
+    statusWriter.writeOk()
 
-        if (shellCommandArgs == null) {
-           statusWriter.writeFail()
-           return
-        }
-
-        // Save command to logs so tests can consult them.
-        shellCommandArgs.let {
-           device.addCmdLog(shellCommandArgs)
-        }
-
-        // Wrap stdin/stdout and execute abb command
-        device.serviceManager.processCommand(shellCommandArgs.split(" "), shellCommandOutput)
+    if (shellCommandArgs == null) {
+      statusWriter.writeFail()
+      return
     }
+
+    // Save command to logs so tests can consult them.
+    shellCommandArgs.let { device.addCmdLog(shellCommandArgs) }
+
+    // Wrap stdin/stdout and execute abb command
+    device.serviceManager.processCommand(shellCommandArgs.split(" "), shellCommandOutput)
+  }
 }

@@ -21,17 +21,11 @@ import java.net.Socket
 import java.util.concurrent.ExecutionException
 
 /**
- * "host:disconnect:<addr>" implementation: Simulates disconnecting from a network device.
- * If the device was registered with FakeAdbServerProvider.registerNetworkDevice(...) it will
- * become disconnected.
+ * "host:disconnect:<addr>" implementation: Simulates disconnecting from a network device. If the device was registered with
+ * FakeAdbServerProvider.registerNetworkDevice(...) it will become disconnected.
  */
 class NetworkDisconnectCommandHandler : SimpleHostCommandHandler("disconnect") {
-  override fun invoke(
-    fakeAdbServer: FakeAdbServer,
-    responseSocket: Socket,
-    device: DeviceState?,
-    args: String
-  ): Boolean {
+  override fun invoke(fakeAdbServer: FakeAdbServer, responseSocket: Socket, device: DeviceState?, args: String): Boolean {
     val stream = responseSocket.getOutputStream()
     try {
       fakeAdbServer.disconnectNetworkDevice(args).get()
@@ -43,5 +37,4 @@ class NetworkDisconnectCommandHandler : SimpleHostCommandHandler("disconnect") {
     writeOkay(stream)
     return false
   }
-
 }
