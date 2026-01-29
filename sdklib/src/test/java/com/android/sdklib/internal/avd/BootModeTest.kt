@@ -21,26 +21,17 @@ import org.junit.Test
 class BootModeTest {
   @Test
   fun fromProperties_coldBoot() {
-    assertThat(BootMode.fromProperties(mapOf(ConfigKey.FORCE_COLD_BOOT_MODE to "yes")))
-      .isEqualTo(ColdBoot)
+    assertThat(BootMode.fromProperties(mapOf(ConfigKey.FORCE_COLD_BOOT_MODE to "yes"))).isEqualTo(ColdBoot)
   }
 
   @Test
   fun fromProperties_quickBoot() {
-    assertThat(BootMode.fromProperties(mapOf(ConfigKey.FORCE_FAST_BOOT_MODE to "yes")))
-      .isEqualTo(QuickBoot)
+    assertThat(BootMode.fromProperties(mapOf(ConfigKey.FORCE_FAST_BOOT_MODE to "yes"))).isEqualTo(QuickBoot)
   }
 
   @Test
   fun fromProperties_snapshotBoot() {
-    assertThat(
-        BootMode.fromProperties(
-          mapOf(
-            ConfigKey.FORCE_CHOSEN_SNAPSHOT_BOOT_MODE to "yes",
-            ConfigKey.CHOSEN_SNAPSHOT_FILE to "snap",
-          )
-        )
-      )
+    assertThat(BootMode.fromProperties(mapOf(ConfigKey.FORCE_CHOSEN_SNAPSHOT_BOOT_MODE to "yes", ConfigKey.CHOSEN_SNAPSHOT_FILE to "snap")))
       .isEqualTo(BootSnapshot("snap"))
   }
 
@@ -62,8 +53,7 @@ class BootModeTest {
   fun arguments() {
     assertThat(QuickBoot.arguments()).isEmpty()
     assertThat(ColdBoot.arguments()).containsExactly("-no-snapstorage")
-    assertThat(BootSnapshot("snap2").arguments())
-      .containsExactly("-snapshot", "snap2", "-no-snapshot-save")
+    assertThat(BootSnapshot("snap2").arguments()).containsExactly("-snapshot", "snap2", "-no-snapshot-save")
   }
 
   @Test

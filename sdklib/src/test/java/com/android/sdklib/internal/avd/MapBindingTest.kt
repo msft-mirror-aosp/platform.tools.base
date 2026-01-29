@@ -26,14 +26,7 @@ class MapBindingTest {
     val data = TestData()
     TestData.binder.read(
       data,
-      mapOf(
-        "string" to "a",
-        "integer" to "2",
-        "boolean" to "yes",
-        "storage" to "30K",
-        "camera" to "webcam0",
-        "orientation" to "square",
-      ),
+      mapOf("string" to "a", "integer" to "2", "boolean" to "yes", "storage" to "30K", "camera" to "webcam0", "orientation" to "square"),
     )
 
     assertThat(data.string).isEqualTo("a")
@@ -46,13 +39,7 @@ class MapBindingTest {
   @Test
   fun readPartial() {
     val data = TestData()
-    TestData.binder.read(
-      data,
-      mapOf(
-        "string" to "a",
-        "camera" to "webcam0",
-      ),
-    )
+    TestData.binder.read(data, mapOf("string" to "a", "camera" to "webcam0"))
 
     assertThat(data.string).isEqualTo("a")
     assertThat(data.integer).isEqualTo(0)
@@ -78,14 +65,7 @@ class MapBindingTest {
 
     assertThat(output)
       .containsExactlyEntriesIn(
-        mapOf(
-          "string" to "a",
-          "integer" to "2",
-          "boolean" to "yes",
-          "storage" to "30K",
-          "camera" to "webcam0",
-          "orientation" to "square",
-        )
+        mapOf("string" to "a", "integer" to "2", "boolean" to "yes", "storage" to "30K", "camera" to "webcam0", "orientation" to "square")
       )
   }
 

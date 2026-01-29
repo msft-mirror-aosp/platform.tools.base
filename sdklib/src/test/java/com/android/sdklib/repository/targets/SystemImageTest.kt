@@ -30,16 +30,14 @@ class SystemImageTest {
       .resolve("build.prop")
       .recordExistingFile(
         """
-                ro.product.cpu.abilist=arm64-v8a,armeabi-v7a,armeabi
-                ro.product.cpu.abi=mips64
-                ro.product.cpu.abi2=mips
+        ro.product.cpu.abilist=arm64-v8a,armeabi-v7a,armeabi
+        ro.product.cpu.abi=mips64
+        ro.product.cpu.abi2=mips
         """
           .trimIndent()
       )
 
-    assertThat(SystemImage.readAbisFromBuildProps(systemImageLocation))
-      .containsExactly("arm64-v8a", "armeabi-v7a", "armeabi")
-      .inOrder()
+    assertThat(SystemImage.readAbisFromBuildProps(systemImageLocation)).containsExactly("arm64-v8a", "armeabi-v7a", "armeabi").inOrder()
   }
 
   @Test
@@ -50,14 +48,12 @@ class SystemImageTest {
       .resolve("build.prop")
       .recordExistingFile(
         """
-                ro.product.cpu.abi=mips64
-                ro.product.cpu.abi2=mips
+        ro.product.cpu.abi=mips64
+        ro.product.cpu.abi2=mips
         """
           .trimIndent()
       )
 
-    assertThat(SystemImage.readAbisFromBuildProps(systemImageLocation))
-      .containsExactly("mips64", "mips")
-      .inOrder()
+    assertThat(SystemImage.readAbisFromBuildProps(systemImageLocation)).containsExactly("mips64", "mips").inOrder()
   }
 }

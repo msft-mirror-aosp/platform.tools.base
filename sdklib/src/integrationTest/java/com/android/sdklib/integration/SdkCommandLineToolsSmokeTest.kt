@@ -17,140 +17,131 @@
 package com.android.sdklib.integration
 
 import com.android.testutils.AssumeUtil
-import com.android.testutils.TestUtils
 import com.google.common.truth.Truth.assertThat
+import java.nio.file.Files
+import java.nio.file.Path
+import java.util.zip.ZipInputStream
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
-import java.nio.file.Files
-import java.nio.file.Path
-import java.nio.file.attribute.PosixFilePermission
-import java.util.zip.ZipInputStream
 
 class SdkCommandLineToolsSmokeTest {
 
-    @get:Rule
-    val temporaryFolder = TemporaryFolder()
+  @get:Rule val temporaryFolder = TemporaryFolder()
 
-    val usage = """
-                Usage:
-                  sdkmanager [--uninstall] [<common args>] [--package_file=<file>] [<packages>...]
-                  sdkmanager --update [<common args>]
-                  sdkmanager --list [<common args>]
-                  sdkmanager --list_installed [<common args>]
-                  sdkmanager --licenses [<common args>]
-                  sdkmanager --version
+  val usage =
+    """
+    Usage:
+      sdkmanager [--uninstall] [<common args>] [--package_file=<file>] [<packages>...]
+      sdkmanager --update [<common args>]
+      sdkmanager --list [<common args>]
+      sdkmanager --list_installed [<common args>]
+      sdkmanager --licenses [<common args>]
+      sdkmanager --version
 
-                With --install (optional), installs or updates packages.
-                    By default, the listed packages are installed or (if already installed)
-                    updated to the latest version.
-                With --uninstall, uninstall the listed packages.
+    With --install (optional), installs or updates packages.
+        By default, the listed packages are installed or (if already installed)
+        updated to the latest version.
+    With --uninstall, uninstall the listed packages.
 
-                    <package> is a sdk-style path (e.g. "build-tools;23.0.0" or
-                             "platforms;android-23").
-                    <package-file> is a text file where each line is a sdk-style path
-                                   of a package to install or uninstall.
-                    Multiple --package_file arguments may be specified in combination
-                    with explicit paths.
+        <package> is a sdk-style path (e.g. "build-tools;23.0.0" or
+                 "platforms;android-23").
+        <package-file> is a text file where each line is a sdk-style path
+                       of a package to install or uninstall.
+        Multiple --package_file arguments may be specified in combination
+        with explicit paths.
 
-                With --update, all installed packages are updated to the latest version.
+    With --update, all installed packages are updated to the latest version.
 
-                With --list, all installed and available packages are printed out.
+    With --list, all installed and available packages are printed out.
 
-                With --list_installed, all installed packages are printed out.
+    With --list_installed, all installed packages are printed out.
 
-                With --licenses, show and offer the option to accept licenses for all
-                     available packages that have not already been accepted.
+    With --licenses, show and offer the option to accept licenses for all
+         available packages that have not already been accepted.
 
-                With --version, prints the current version of sdkmanager.
+    With --version, prints the current version of sdkmanager.
 
-                Common Arguments:
-                    --sdk_root=<sdkRootPath>: Use the specified SDK root instead of the SDK
-                                              containing this tool
+    Common Arguments:
+        --sdk_root=<sdkRootPath>: Use the specified SDK root instead of the SDK
+                                  containing this tool
 
-                    --channel=<channelId>: Include packages in channels up to <channelId>.
-                                           Common channels are:
-                                           0 (Stable), 1 (Beta), 2 (Dev), and 3 (Canary).
+        --channel=<channelId>: Include packages in channels up to <channelId>.
+                               Common channels are:
+                               0 (Stable), 1 (Beta), 2 (Dev), and 3 (Canary).
 
-                    --include_obsolete: With --list, show obsolete packages in the
-                                        package listing. With --update, update obsolete
-                                        packages as well as non-obsolete.
+        --include_obsolete: With --list, show obsolete packages in the
+                            package listing. With --update, update obsolete
+                            packages as well as non-obsolete.
 
-                    --newer: With --list, show only new and/or updatable packages.
+        --newer: With --list, show only new and/or updatable packages.
 
-                    --no_https: Force all connections to use http rather than https.
+        --no_https: Force all connections to use http rather than https.
 
-                    --proxy=<http | socks>: Connect via a proxy of the given type.
+        --proxy=<http | socks>: Connect via a proxy of the given type.
 
-                    --proxy_host=<IP or DNS address>: IP or DNS address of the proxy to use.
+        --proxy_host=<IP or DNS address>: IP or DNS address of the proxy to use.
 
-                    --proxy_port=<port #>: Proxy port to connect to.
+        --proxy_port=<port #>: Proxy port to connect to.
 
-                    --verbose: Enable verbose output.
+        --verbose: Enable verbose output.
 
-                * If the env var REPO_OS_OVERRIDE is set to "windows",
-                  "macosx", or "linux", packages will be downloaded for that OS.
-    """.trimIndent()
+    * If the env var REPO_OS_OVERRIDE is set to "windows",
+      "macosx", or "linux", packages will be downloaded for that OS.
+    """
+      .trimIndent()
 
-    @Before
-    fun assumeLinux() {
-        AssumeUtil.assumeIsLinux()
-    }
+  @Before
+  fun assumeLinux() {
+    AssumeUtil.assumeIsLinux()
+  }
 
-    @Test
-    fun sdkManagerSmokeTestOnLinux() {
-        val extractedDir = extract()
+  @Test
+  fun sdkManagerSmokeTestOnLinux() {
+    val extractedDir = extract()
 
-        val sdkManagerBinary = extractedDir.resolve("cmdline-tools/bin/sdkmanager")
-        // Make sure process is started with the JDK used to run tests
-        val envVars = mapOf("JAVA_HOME" to System.getProperty("java.home"))
+    val sdkManagerBinary = extractedDir.resolve("cmdline-tools/bin/sdkmanager")
+    // Make sure process is started with the JDK used to run tests
+    val envVars = mapOf("JAVA_HOME" to System.getProperty("java.home"))
 
-        var outFile = temporaryFolder.newFile("out")
-        var errFile = temporaryFolder.newFile("err")
-        var processBuilder = ProcessBuilder()
-            .redirectError(errFile)
-            .redirectOutput(outFile)
-            .command("sh", sdkManagerBinary.toString())
-        processBuilder.environment().putAll(envVars)
+    var outFile = temporaryFolder.newFile("out")
+    var errFile = temporaryFolder.newFile("err")
+    var processBuilder = ProcessBuilder().redirectError(errFile).redirectOutput(outFile).command("sh", sdkManagerBinary.toString())
+    processBuilder.environment().putAll(envVars)
 
-        var returnCode = processBuilder.start().waitFor()
-        assertThat(returnCode).named("returnCode").isEqualTo(1)
-        assertThat(Files.readAllLines(outFile.toPath())).isEmpty()
-        assertThat(Files.readAllLines(errFile.toPath()).joinToString("\n")).isEqualTo(usage)
+    var returnCode = processBuilder.start().waitFor()
+    assertThat(returnCode).named("returnCode").isEqualTo(1)
+    assertThat(Files.readAllLines(outFile.toPath())).isEmpty()
+    assertThat(Files.readAllLines(errFile.toPath()).joinToString("\n")).isEqualTo(usage)
 
-        outFile = temporaryFolder.newFile("outHelp")
-        errFile = temporaryFolder.newFile("errHelp")
-        processBuilder = ProcessBuilder()
-            .redirectError(errFile)
-            .redirectOutput(outFile)
-            .command("sh", sdkManagerBinary.toString(), "--help")
-        processBuilder.environment().putAll(envVars)
+    outFile = temporaryFolder.newFile("outHelp")
+    errFile = temporaryFolder.newFile("errHelp")
+    processBuilder = ProcessBuilder().redirectError(errFile).redirectOutput(outFile).command("sh", sdkManagerBinary.toString(), "--help")
+    processBuilder.environment().putAll(envVars)
 
-        returnCode = processBuilder.start().waitFor()
-        assertThat(returnCode).named("returnCode").isEqualTo(1)
-        assertThat(Files.readAllLines(outFile.toPath())).isEmpty()
-        assertThat(Files.readAllLines(errFile.toPath()).joinToString("\n")).isEqualTo(usage)
-    }
+    returnCode = processBuilder.start().waitFor()
+    assertThat(returnCode).named("returnCode").isEqualTo(1)
+    assertThat(Files.readAllLines(outFile.toPath())).isEmpty()
+    assertThat(Files.readAllLines(errFile.toPath()).joinToString("\n")).isEqualTo(usage)
+  }
 
-    fun extract(): Path {
-        val extractedDir = temporaryFolder.newFolder("extracted").toPath()
+  fun extract(): Path {
+    val extractedDir = temporaryFolder.newFolder("extracted").toPath()
 
-        val zipFile = AndroidSdkCommandLineToolsPlatform.LINUX.zipFile
+    val zipFile = AndroidSdkCommandLineToolsPlatform.LINUX.zipFile
 
-        ZipInputStream(Files.newInputStream(zipFile).buffered()).use { zip ->
-            while (true) {
-                val entry = zip.nextEntry ?: break
-                if (entry.isDirectory) {
-                    continue
-                }
-                val file = extractedDir.resolve(entry.name)
-                Files.createDirectories(file.parent)
-                Files.copy(zip, file)
-            }
+    ZipInputStream(Files.newInputStream(zipFile).buffered()).use { zip ->
+      while (true) {
+        val entry = zip.nextEntry ?: break
+        if (entry.isDirectory) {
+          continue
         }
-        return extractedDir;
+        val file = extractedDir.resolve(entry.name)
+        Files.createDirectories(file.parent)
+        Files.copy(zip, file)
+      }
     }
-
-
+    return extractedDir
+  }
 }

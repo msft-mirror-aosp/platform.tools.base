@@ -18,8 +18,8 @@ package com.android.sdklib.util
 import com.google.common.jimfs.Configuration
 import com.google.common.jimfs.Jimfs
 import com.google.common.truth.Truth.assertThat
-import org.junit.Test
 import java.nio.file.Files
+import org.junit.Test
 
 class CacheByCanonicalPathTest {
   @Test
@@ -35,8 +35,7 @@ class CacheByCanonicalPathTest {
     val cache = CacheByCanonicalPath<String?>()
 
     assertThat(cache.computeIfAbsent(foo) { it.toString() }).isEqualTo("/tmp/foo")
-    assertThat(cache.computeIfAbsent(tmp.resolve("FOO")) { it.toString() })
-      .isEqualTo("/tmp/foo")
+    assertThat(cache.computeIfAbsent(tmp.resolve("FOO")) { it.toString() }).isEqualTo("/tmp/foo")
 
     assertThat(cache.remove(tmp.resolve("FOO"))).isTrue()
     assertThat(cache.remove(foo)).isFalse()

@@ -18,20 +18,14 @@ package com.android.sdklib.integration
 import com.android.testutils.TestUtils
 import java.nio.file.Path
 
-enum class AndroidSdkCommandLineToolsPlatform(
-    val zipSuffix: String,
-    val binarySuffix: String = ""
-) {
-    MAC(zipSuffix = "mac"),
-    LINUX(zipSuffix = "linux"),
-    WINDOWS(zipSuffix = "win", binarySuffix = ".bat"),
-    ;
+enum class AndroidSdkCommandLineToolsPlatform(val zipSuffix: String, val binarySuffix: String = "") {
+  MAC(zipSuffix = "mac"),
+  LINUX(zipSuffix = "linux"),
+  WINDOWS(zipSuffix = "win", binarySuffix = ".bat");
 
-    val zipFile: Path by lazy {
-        @Suppress("SpellCheckingInspection")
-        TestUtils.resolveWorkspacePath("tools/base/sdklib/commandlinetools_$zipSuffix.zip")
-    }
+  val zipFile: Path by lazy {
+    @Suppress("SpellCheckingInspection") TestUtils.resolveWorkspacePath("tools/base/sdklib/commandlinetools_$zipSuffix.zip")
+  }
 
-    fun getBinaryName(fileNamePrefix: String): String  = "cmdline-tools/bin/$fileNamePrefix$binarySuffix"
-
+  fun getBinaryName(fileNamePrefix: String): String = "cmdline-tools/bin/$fileNamePrefix$binarySuffix"
 }

@@ -19,66 +19,65 @@ package com.android.sdklib.integration
 import com.android.testutils.AssumeUtil
 import com.google.common.collect.ImmutableSet
 import com.google.common.truth.Truth.assertThat
-import org.junit.Test
-import org.junit.runner.RunWith
-import org.junit.runners.Parameterized
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.zip.ZipInputStream
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.junit.runners.Parameterized
 
 @RunWith(Parameterized::class)
 class SdkCommandLineToolsPackagingTest(private val platform: AndroidSdkCommandLineToolsPlatform) {
 
-    @Test
-    fun checkPackaging() {
-        val entries = collectEntries(platform.zipFile)
+  @Test
+  fun checkPackaging() {
+    val entries = collectEntries(platform.zipFile)
 
-        val suffix = platform.binarySuffix
+    val suffix = platform.binarySuffix
 
-        val expectedNonLibEntries = listOfNotNull(
-            "cmdline-tools/bin/apkanalyzer$suffix",
-            "cmdline-tools/bin/avdmanager$suffix",
-            // b/135688047
-            // "tools/bin/jobb$suffix",
-            "cmdline-tools/bin/lint$suffix",
-            "cmdline-tools/bin/profgen$suffix",
-            "cmdline-tools/bin/d8$suffix",
-            "cmdline-tools/bin/r8$suffix",
-            "cmdline-tools/bin/retrace$suffix",
-            "cmdline-tools/bin/resourceshrinker$suffix",
-            "cmdline-tools/bin/screenshot2$suffix",
-            "cmdline-tools/bin/sdkmanager$suffix",
-            "cmdline-tools/NOTICE.txt",
-            "cmdline-tools/source.properties",
-            "cmdline-tools/lib/README",
-            "_codesign/filelist".takeIf { platform == AndroidSdkCommandLineToolsPlatform.MAC }
-        )
+    val expectedNonLibEntries =
+      listOfNotNull(
+        "cmdline-tools/bin/apkanalyzer$suffix",
+        "cmdline-tools/bin/avdmanager$suffix",
+        // b/135688047
+        // "tools/bin/jobb$suffix",
+        "cmdline-tools/bin/lint$suffix",
+        "cmdline-tools/bin/profgen$suffix",
+        "cmdline-tools/bin/d8$suffix",
+        "cmdline-tools/bin/r8$suffix",
+        "cmdline-tools/bin/retrace$suffix",
+        "cmdline-tools/bin/resourceshrinker$suffix",
+        "cmdline-tools/bin/screenshot2$suffix",
+        "cmdline-tools/bin/sdkmanager$suffix",
+        "cmdline-tools/NOTICE.txt",
+        "cmdline-tools/source.properties",
+        "cmdline-tools/lib/README",
+        "_codesign/filelist".takeIf { platform == AndroidSdkCommandLineToolsPlatform.MAC },
+      )
 
-        assertThat(entries.filter { !(it.startsWith("cmdline-tools/lib/") && it.endsWith(".jar")) })
-            .containsExactlyElementsIn(expectedNonLibEntries)
-    }
+    assertThat(entries.filter { !(it.startsWith("cmdline-tools/lib/") && it.endsWith(".jar")) })
+      .containsExactlyElementsIn(expectedNonLibEntries)
+  }
 
-    @Test
-    fun sdkManagerSmokeTestOnLinux() {
-        AssumeUtil.assumeIsLinux()
-    }
+  @Test
+  fun sdkManagerSmokeTestOnLinux() {
+    AssumeUtil.assumeIsLinux()
+  }
 
-    private fun collectEntries(zipFile: Path): Set<String> {
-        return ImmutableSet.builder<String>().apply {
-            ZipInputStream(Files.newInputStream(zipFile).buffered()).use { zip ->
-                while (true) {
-                    val entry = zip.nextEntry ?: break
-                    add(entry.name)
-                }
-            }
-        }.build()
-    }
+  private fun collectEntries(zipFile: Path): Set<String> {
+    return ImmutableSet.builder<String>()
+      .apply {
+        ZipInputStream(Files.newInputStream(zipFile).buffered()).use { zip ->
+          while (true) {
+            val entry = zip.nextEntry ?: break
+            add(entry.name)
+          }
+        }
+      }
+      .build()
+  }
 
-    companion object {
-        @Suppress("unused")
-        @get:JvmStatic
-        @get:Parameterized.Parameters
-        val parameters = AndroidSdkCommandLineToolsPlatform.values()
-    }
-
+  companion object {
+    @Suppress("unused") @get:JvmStatic @get:Parameterized.Parameters val parameters = AndroidSdkCommandLineToolsPlatform.values()
+  }
 }

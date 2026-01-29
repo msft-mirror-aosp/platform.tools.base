@@ -23,6 +23,6 @@ package com.android.sdklib
   AnnotationTarget.VALUE_PARAMETER,
   AnnotationTarget.LOCAL_VARIABLE,
   AnnotationTarget.FIELD,
-  AnnotationTarget.PROPERTY
+  AnnotationTarget.PROPERTY,
 )
 annotation class AndroidCoordinate

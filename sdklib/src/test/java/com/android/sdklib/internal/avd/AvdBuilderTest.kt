@@ -41,8 +41,7 @@ class AvdBuilderTest {
   val avdFolder = prefsRoot.resolve(AbstractAndroidLocations.FOLDER_AVD)
   val sdkHandler = AndroidSdkHandler(root.resolve("sdk"), prefsRoot)
   val deviceManager = DeviceManager.createInstance(sdkHandler, NullLogger.getLogger())
-  val avdManager =
-    AvdManager.createInstance(sdkHandler, avdFolder, deviceManager, NullLogger.getLogger())
+  val avdManager = AvdManager.createInstance(sdkHandler, avdFolder, deviceManager, NullLogger.getLogger())
 
   private fun createPixel8Builder(): AvdBuilder {
     val pixel8 = deviceManager.getDevice("pixel_8", "Google")!!
@@ -128,9 +127,7 @@ class AvdBuilderTest {
     assertThat(avdBuilder.androidVersion).isEqualTo(builderFromDisk.androidVersion)
 
     for (property in AvdBuilder::class.memberProperties) {
-      assertWithMessage(property.name)
-        .that(property.get(builderFromDisk))
-        .isEqualTo(property.get(avdBuilder))
+      assertWithMessage(property.name).that(property.get(builderFromDisk)).isEqualTo(property.get(avdBuilder))
     }
   }
 
@@ -157,14 +154,10 @@ class AvdBuilderTest {
     assertThat(avdConfig[ConfigKey.HINGE_DEFAULTS]).isEqualTo("180")
     assertThat(avdConfig[ConfigKey.HINGE_AREAS]).isEqualTo("1080-0-0-1840")
     assertThat(avdConfig[ConfigKey.POSTURE_LISTS]).isEqualTo("1, 2, 3")
-    assertThat(avdConfig[ConfigKey.HINGE_ANGLES_POSTURE_DEFINITIONS])
-      .isEqualTo("0-30, 30-150, 150-180")
-    assertThat(avdConfig[ConfigKey.HINGE_ANGLES_POSTURE_DEFINITIONS])
-      .isEqualTo("0-30, 30-150, 150-180")
+    assertThat(avdConfig[ConfigKey.HINGE_ANGLES_POSTURE_DEFINITIONS]).isEqualTo("0-30, 30-150, 150-180")
+    assertThat(avdConfig[ConfigKey.HINGE_ANGLES_POSTURE_DEFINITIONS]).isEqualTo("0-30, 30-150, 150-180")
     assertThat(avdConfig[ConfigKey.RESIZABLE_CONFIG])
-      .isEqualTo(
-        "phone-0-1080-2400-420, foldable-1-2208-1840-420, tablet-2-1920-1200-240, desktop-3-1920-1080-160"
-      )
+      .isEqualTo("phone-0-1080-2400-420, foldable-1-2208-1840-420, tablet-2-1920-1200-240, desktop-3-1920-1080-160")
     assertThat(avdConfig[ConfigKey.SKIN_NAME]).isEqualTo("1080x2400")
     assertThat(avdConfig[ConfigKey.SKIN_PATH]).isEqualTo("1080x2400")
   }
@@ -192,10 +185,8 @@ class AvdBuilderTest {
     assertThat(avdConfig[ConfigKey.HINGE_DEFAULTS]).isEqualTo("180")
     assertThat(avdConfig[ConfigKey.HINGE_AREAS]).isEqualTo("1080-0-0-1840")
     assertThat(avdConfig[ConfigKey.POSTURE_LISTS]).isEqualTo("1, 2, 3")
-    assertThat(avdConfig[ConfigKey.HINGE_ANGLES_POSTURE_DEFINITIONS])
-      .isEqualTo("0-30, 30-150, 150-180")
-    assertThat(avdConfig[ConfigKey.HINGE_ANGLES_POSTURE_DEFINITIONS])
-      .isEqualTo("0-30, 30-150, 150-180")
+    assertThat(avdConfig[ConfigKey.HINGE_ANGLES_POSTURE_DEFINITIONS]).isEqualTo("0-30, 30-150, 150-180")
+    assertThat(avdConfig[ConfigKey.HINGE_ANGLES_POSTURE_DEFINITIONS]).isEqualTo("0-30, 30-150, 150-180")
     assertThat(avdConfig[ConfigKey.SKIN_NAME]).isEqualTo("1840x2208")
     assertThat(avdConfig[ConfigKey.SKIN_PATH]).isEqualTo("1840x2208")
   }
@@ -211,15 +202,13 @@ class AvdBuilderTest {
 
     val avdInfo = avdManager.createAvd(avdBuilder)
 
-    assertThat(avdInfo.userSettings[UserSettingsKey.PREFERRED_ABI])
-      .isEqualTo(Abi.RISCV64.toString())
+    assertThat(avdInfo.userSettings[UserSettingsKey.PREFERRED_ABI]).isEqualTo(Abi.RISCV64.toString())
 
     val avdBuilder2 = AvdBuilder.createForExistingDevice(device, avdInfo)
     avdBuilder2.userSettings[UserSettingsKey.PREFERRED_ABI] = Abi.X86_64.toString()
     val avdInfo2 = avdManager.editAvd(avdInfo, avdBuilder2)
 
-    assertThat(avdInfo2.userSettings[UserSettingsKey.PREFERRED_ABI])
-      .isEqualTo(Abi.X86_64.toString())
+    assertThat(avdInfo2.userSettings[UserSettingsKey.PREFERRED_ABI]).isEqualTo(Abi.X86_64.toString())
   }
 
   @Test
@@ -237,8 +226,7 @@ class AvdBuilderTest {
     val avdInfo = avdManager.createAvd(avdBuilder)
 
     assertThat(avdBuilder.avdFolder.resolve(AvdManager.ENVIRONMENT_INI).exists()).isTrue()
-    assertThat(avdInfo.environment)
-      .containsExactly(EnvironmentKey.IMAGE, "environment" + File.separator + "img1.png")
+    assertThat(avdInfo.environment).containsExactly(EnvironmentKey.IMAGE, "environment" + File.separator + "img1.png")
     val environmentDir = avdInfo.dataFolderPath.resolve(AvdManager.ENVIRONMENT_DIR)
     assertThat(environmentDir.resolve("img1.png").exists()).isTrue()
     assertThat(avdInfo.properties[ConfigKey.LCD_TRANSPARENT]).isEqualTo("yes")
@@ -246,8 +234,7 @@ class AvdBuilderTest {
     // Verify that we can read the background back from disk
     avdManager.reloadAvds()
     val newAvdInfo = avdManager.getAvd(avdInfo.name, true)!!
-    assertThat(newAvdInfo.environment)
-      .containsExactly(EnvironmentKey.IMAGE, "environment${File.separator}img1.png")
+    assertThat(newAvdInfo.environment).containsExactly(EnvironmentKey.IMAGE, "environment${File.separator}img1.png")
     AvdBuilder.createForExistingDevice(device, newAvdInfo).let {
       assertThat(it.environment?.nameCount).isEqualTo(2)
       assertThat(it.environment?.fileName.toString()).isEqualTo("img1.png")

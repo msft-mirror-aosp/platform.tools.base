@@ -16,19 +16,18 @@
 package com.android.sdklib.internal.avd
 
 /**
- * Keys to config entries in an AVD's metadata .ini file (i.e. the file which resides in the
- * .android/avd directory and normally shares a basename with the AVD's data folder).
+ * Keys to config entries in an AVD's metadata .ini file (i.e. the file which resides in the .android/avd directory and normally shares a
+ * basename with the AVD's data folder).
  */
 object MetadataKey {
   /** The *absolute* path to the AVD folder (which contains the #CONFIG_INI file). */
   const val ABS_PATH = "path" // $NON-NLS-1$
 
   /**
-   * The path to the AVD folder (which contains the config.ini file) relative to
-   * AbstractAndroidLocations.FOLDER_DOT_ANDROID.
+   * The path to the AVD folder (which contains the config.ini file) relative to AbstractAndroidLocations.FOLDER_DOT_ANDROID.
    *
-   * This information is written in the avd ini *only* if the AVD folder is located under the
-   * .android path (i.e. the relative path has no backward `..` references).
+   * This information is written in the avd ini *only* if the AVD folder is located under the .android path (i.e. the relative path has no
+   * backward `..` references).
    */
   const val REL_PATH = "path.rel" // $NON-NLS-1$
 
