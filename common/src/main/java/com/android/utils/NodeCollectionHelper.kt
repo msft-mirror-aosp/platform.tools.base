@@ -21,17 +21,17 @@ import org.w3c.dom.Node
 import org.w3c.dom.NodeList
 
 inline fun NodeList.forEach(f: (Node) -> Unit) {
-    // It's sad, but since we're modifying the Nodes in the list, we need to keep a copy to make
-    // sure we actually visit all of them.
-    val copy = ArrayList<Node>(length)
-    for (i in 0 until length) copy.add(item(i))
-    copy.forEach { f(it) }
+  // It's sad, but since we're modifying the Nodes in the list, we need to keep a copy to make
+  // sure we actually visit all of them.
+  val copy = ArrayList<Node>(length)
+  for (i in 0 until length) copy.add(item(i))
+  copy.forEach { f(it) }
 }
 
 inline fun NamedNodeMap.forEach(f: (Node) -> Unit) {
-    // It's sad, but since we're modifying the Nodes in the map, we need to keep a copy to make
-    // sure we actually visit all of them.
-    val copy = ArrayList<Node>(length)
-    for (i in 0 until length) copy.add(item(i))
-    copy.forEach { f(it) }
+  // It's sad, but since we're modifying the Nodes in the map, we need to keep a copy to make
+  // sure we actually visit all of them.
+  val copy = ArrayList<Node>(length)
+  for (i in 0 until length) copy.add(item(i))
+  copy.forEach { f(it) }
 }

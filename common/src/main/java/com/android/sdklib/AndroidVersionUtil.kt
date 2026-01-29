@@ -27,8 +27,7 @@ object AndroidVersionUtil {
 
   @JvmStatic
   fun androidVersionFromDeviceProperties(properties: Map<String, String>): AndroidVersion? {
-    val buildVersionSdk =
-      properties[RO_BUILD_VERSION_SDK_FULL] ?: properties[RO_BUILD_VERSION_SDK] ?: return null
+    val buildVersionSdk = properties[RO_BUILD_VERSION_SDK_FULL] ?: properties[RO_BUILD_VERSION_SDK] ?: return null
     val apiLevel = AndroidApiLevel.fromString(buildVersionSdk) ?: return null
     val extensions = properties.filter { it.key.startsWith(BUILD_EXTENSION_PREFIX) }
     // We want to use the extension level of the release that is running on the device.

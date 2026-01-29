@@ -26,76 +26,52 @@ import java.lang.Long.min
 const val DEFAULT_MINIMUM_PROGRESS_INTERVAL_MILLIS = 1000L
 
 /**
- * A callback for progress to be reported.
- * [filename] is the name of the file or other context that is being read.
- * [totalBytes] is the size of the file or other context that is being read.
- * [bytesRead] is the total number of bytes that have been read so far.
+ * A callback for progress to be reported. [filename] is the name of the file or other context that is being read. [totalBytes] is the size
+ * of the file or other context that is being read. [bytesRead] is the total number of bytes that have been read so far.
  */
-typealias ProgressCallback =
-            (filename: String,
-             totalBytes: Long,
-             bytesRead: Long)->Unit
+typealias ProgressCallback = (filename: String, totalBytes: Long, bytesRead: Long) -> Unit
 
-/**
- * Create a [ProgressReader] from a [File].
- */
-fun File.progressReader(
-    progressIntervalMillis : Long = DEFAULT_MINIMUM_PROGRESS_INTERVAL_MILLIS
-) = ProgressReader(
-    BufferedReader(FileReader(this), min(length(), 1024L * 1024L).toInt()),
-    path,
-    length(),
-    progressIntervalMillis
-)
+/** Create a [ProgressReader] from a [File]. */
+fun File.progressReader(progressIntervalMillis: Long = DEFAULT_MINIMUM_PROGRESS_INTERVAL_MILLIS) =
+  ProgressReader(BufferedReader(FileReader(this), min(length(), 1024L * 1024L).toInt()), path, length(), progressIntervalMillis)
 
 /**
  * Wraps a [Reader] with functionality that tracks the progress of reading.
  *
- * The user of this [ProgressReader] is responsible for calling [postProgress] at intervals that
- * make sense for the situation (for example, once per Ninja statement).
+ * The user of this [ProgressReader] is responsible for calling [postProgress] at intervals that make sense for the situation (for example,
+ * once per Ninja statement).
  *
- * The [progressIntervalMillis] field is the minimum number of milliseconds between progress posts.
- * If [progressIntervalMillis] is zero then progress is posted each time [postProgress] is called.
- * If [progressIntervalMillis] is MAX_VALUE then [postProgress] is not called.
+ * The [progressIntervalMillis] field is the minimum number of milliseconds between progress posts. If [progressIntervalMillis] is zero then
+ * progress is posted each time [postProgress] is called. If [progressIntervalMillis] is MAX_VALUE then [postProgress] is not called.
  */
 class ProgressReader(
-    private val reader : Reader,
-    private val filename : String,
-    private val totalBytes : Long,
-    private val progressIntervalMillis : Long
+  private val reader: Reader,
+  private val filename: String,
+  private val totalBytes: Long,
+  private val progressIntervalMillis: Long,
 ) : Reader() {
-    private var lastProgressPostedMillis = System.currentTimeMillis()
-    private var bytesRead : Long = 0L
+  private var lastProgressPostedMillis = System.currentTimeMillis()
+  private var bytesRead: Long = 0L
 
-    /**
-     * Override of [read] that counts bytes read and lines read.
-     */
-    override fun read(cbuf: CharArray, off: Int, len: Int): Int {
-        val bytes = reader.read(cbuf, off, len)
-        bytesRead += bytes
-        return bytes
+  /** Override of [read] that counts bytes read and lines read. */
+  override fun read(cbuf: CharArray, off: Int, len: Int): Int {
+    val bytes = reader.read(cbuf, off, len)
+    bytesRead += bytes
+    return bytes
+  }
+
+  /** Close the underlying [Reader] */
+  override fun close() = reader.close()
+
+  /** Called with [ProgressCallback] to report progress if sufficient time has elapsed. */
+  fun postProgress(progress: ProgressCallback) {
+    if (progressIntervalMillis == Long.MAX_VALUE) return
+    if (progressIntervalMillis > 0) {
+      val current = System.currentTimeMillis()
+      val elapsed = current - lastProgressPostedMillis
+      if (elapsed < progressIntervalMillis) return
+      lastProgressPostedMillis = current
     }
-
-    /**
-     * Close the underlying [Reader]
-     */
-    override fun close() = reader.close()
-
-    /**
-     * Called with [ProgressCallback] to report progress if sufficient time has elapsed.
-     */
-    fun postProgress(progress: ProgressCallback) {
-        if (progressIntervalMillis == Long.MAX_VALUE) return
-        if (progressIntervalMillis > 0) {
-            val current = System.currentTimeMillis()
-            val elapsed = current - lastProgressPostedMillis
-            if (elapsed < progressIntervalMillis) return
-            lastProgressPostedMillis = current
-        }
-        progress(
-            filename,
-            totalBytes,
-            bytesRead
-        )
-    }
+    progress(filename, totalBytes, bytesRead)
+  }
 }

@@ -20,13 +20,13 @@ import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 
 class DoubleBufferTest {
-    @Test
-    fun `test flip`() {
-        val double = DoubleBuffer("first", "second")
-        assertThat(double.front).isEqualTo("first")
-        assertThat(double.back).isEqualTo("second")
-        double.flip()
-        assertThat(double.front).isEqualTo("second")
-        assertThat(double.back).isEqualTo("first")
-    }
+  @Test
+  fun `test flip`() {
+    val double = DoubleBuffer("first", "second")
+    assertThat(double.front).isEqualTo("first")
+    assertThat(double.back).isEqualTo("second")
+    double.flip()
+    assertThat(double.front).isEqualTo("second")
+    assertThat(double.back).isEqualTo("first")
+  }
 }

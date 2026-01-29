@@ -19,16 +19,13 @@ package com.android.testing.utils
 /**
  * Checks if the given device ID belongs to a Gradle-managed device.
  *
- * Gradle-managed devices are automatically provisioned by the Android Gradle Plugin
- * and their device IDs are standardized to end with [ManagedDeviceDeviceIDSuffix].
+ * Gradle-managed devices are automatically provisioned by the Android Gradle Plugin and their device IDs are standardized to end with
+ * [ManagedDeviceDeviceIDSuffix].
  *
  * @param deviceId The unique identifier of the device to check.
- * @return `true` if the device ID has the characteristic suffix of a
- * Gradle-managed device, `false` otherwise.
+ * @return `true` if the device ID has the characteristic suffix of a Gradle-managed device, `false` otherwise.
  */
 fun isGradleManagedDevice(deviceId: String): Boolean = deviceId.endsWith(ManagedDeviceDeviceIDSuffix)
 
-/**
- * The suffix for device IDs of all Gradle-managed devices.
- */
+/** The suffix for device IDs of all Gradle-managed devices. */
 const val ManagedDeviceDeviceIDSuffix = "_GradleManagedDevice"

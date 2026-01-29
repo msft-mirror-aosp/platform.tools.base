@@ -41,58 +41,55 @@ private const val ATTR_ARTIFACT_NAME = "artifact-name"
 class InvalidDataException(message: String? = null) : RuntimeException(message)
 
 interface MigrationParserVisitor {
-    fun visitClass(old: String, new: String)
-    fun visitPackage(old: String, new: String)
-    fun visitGradleCoordinate(
-      oldGroupName: String, oldArtifactName: String,
-      newGroupName: String, newArtifactName: String, newBaseVersion: String
-    )
+  fun visitClass(old: String, new: String)
 
-    /** Called for coordinate upgrades where the artifact name and group do not need to be refactored */
-    fun visitGradleCoordinateUpgrade(groupName: String, artifactName: String, newBaseVersion: String)
+  fun visitPackage(old: String, new: String)
+
+  fun visitGradleCoordinate(
+    oldGroupName: String,
+    oldArtifactName: String,
+    newGroupName: String,
+    newArtifactName: String,
+    newBaseVersion: String,
+  )
+
+  /** Called for coordinate upgrades where the artifact name and group do not need to be refactored */
+  fun visitGradleCoordinateUpgrade(groupName: String, artifactName: String, newBaseVersion: String)
 }
 
-/**
- * Parses the Androidx migration data and calls the given visitor
- */
+/** Parses the Androidx migration data and calls the given visitor */
 fun parseMigrationFile(visitor: MigrationParserVisitor) {
-    val stream = MigrationParserVisitor::class.java.getResourceAsStream("migrateToAndroidx/migration.xml")!!
-    stream.use {
-        val document = XmlUtils.parseDocument(InputStreamReader(stream), false)
-        val root = document.documentElement
-        if (ROOT_ELEMENT != root.nodeName) {
-            throw InvalidDataException("Migration file does not start with <$ROOT_ELEMENT>")
-        }
-
-        XmlUtils.getSubTags(root).forEach { node ->
-            if (node.nodeName == MIGRATE_ENTRY_NAME) {
-                val oldName = node.getAttribute(ATTR_OLD_NAME)
-                val newName = node.getAttribute(ATTR_NEW_NAME)
-                val type = node.getAttribute(ATTR_TYPE)
-                when (type) {
-                    TYPE_PACKAGE -> visitor.visitPackage(oldName, newName)
-                    TYPE_CLASS -> visitor.visitClass(oldName, newName)
-                    else -> throw InvalidDataException("Invalid type $type")
-                }
-            } else if (node.nodeName == MIGRATE_DEPENDENCY_NAME) {
-                val oldGroupName = node.getAttribute(ATTR_OLD_GROUP_NAME)
-                val oldArtifactName = node.getAttribute(ATTR_OLD_ARTIFACT_NAME)
-                val newGroupName = node.getAttribute(ATTR_NEW_GROUP_NAME)
-                val newArtifactName = node.getAttribute(ATTR_NEW_ARTIFACT_NAME)
-                val newBaseVersion = node.getAttribute(ATTR_NEW_BASE_VERSION_NAME)
-                visitor.visitGradleCoordinate(
-                    oldGroupName,
-                    oldArtifactName,
-                    newGroupName,
-                    newArtifactName,
-                    newBaseVersion
-                )
-            } else if (node.nodeName == UPGRADE_DEPENDENCY_NAME) {
-                val groupName = node.getAttribute(ATTR_GROUP_NAME)
-                val artifactName = node.getAttribute(ATTR_ARTIFACT_NAME)
-                val baseVersion = node.getAttribute(ATTR_NEW_BASE_VERSION_NAME)
-                visitor.visitGradleCoordinateUpgrade(groupName, artifactName, baseVersion)
-            }
-        }
+  val stream = MigrationParserVisitor::class.java.getResourceAsStream("migrateToAndroidx/migration.xml")!!
+  stream.use {
+    val document = XmlUtils.parseDocument(InputStreamReader(stream), false)
+    val root = document.documentElement
+    if (ROOT_ELEMENT != root.nodeName) {
+      throw InvalidDataException("Migration file does not start with <$ROOT_ELEMENT>")
     }
+
+    XmlUtils.getSubTags(root).forEach { node ->
+      if (node.nodeName == MIGRATE_ENTRY_NAME) {
+        val oldName = node.getAttribute(ATTR_OLD_NAME)
+        val newName = node.getAttribute(ATTR_NEW_NAME)
+        val type = node.getAttribute(ATTR_TYPE)
+        when (type) {
+          TYPE_PACKAGE -> visitor.visitPackage(oldName, newName)
+          TYPE_CLASS -> visitor.visitClass(oldName, newName)
+          else -> throw InvalidDataException("Invalid type $type")
+        }
+      } else if (node.nodeName == MIGRATE_DEPENDENCY_NAME) {
+        val oldGroupName = node.getAttribute(ATTR_OLD_GROUP_NAME)
+        val oldArtifactName = node.getAttribute(ATTR_OLD_ARTIFACT_NAME)
+        val newGroupName = node.getAttribute(ATTR_NEW_GROUP_NAME)
+        val newArtifactName = node.getAttribute(ATTR_NEW_ARTIFACT_NAME)
+        val newBaseVersion = node.getAttribute(ATTR_NEW_BASE_VERSION_NAME)
+        visitor.visitGradleCoordinate(oldGroupName, oldArtifactName, newGroupName, newArtifactName, newBaseVersion)
+      } else if (node.nodeName == UPGRADE_DEPENDENCY_NAME) {
+        val groupName = node.getAttribute(ATTR_GROUP_NAME)
+        val artifactName = node.getAttribute(ATTR_ARTIFACT_NAME)
+        val baseVersion = node.getAttribute(ATTR_NEW_BASE_VERSION_NAME)
+        visitor.visitGradleCoordinateUpgrade(groupName, artifactName, baseVersion)
+      }
+    }
+  }
 }

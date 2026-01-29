@@ -25,4 +25,4 @@ import kotlin.reflect.KProperty
  *
  * `val MY_KEY: Key<Boolean> = Key.create(::MY_KEY.qualifiedName<T>())`.
  */
-inline fun <reified T>  KProperty<*>.qualifiedName(): String = T::class.java.name + "." + this.name
+inline fun <reified T> KProperty<*>.qualifiedName(): String = T::class.java.name + "." + this.name

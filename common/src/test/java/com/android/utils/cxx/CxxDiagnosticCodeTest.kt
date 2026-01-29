@@ -20,8 +20,8 @@ import com.google.common.truth.Truth
 import org.junit.Test
 
 class CxxDiagnosticCodeTest {
-    @Test
-    fun `CxxDiagnosticCode should not contain duplicates`() {
-        Truth.assertThat(CxxDiagnosticCode.values().map { it.errorCode }).containsNoDuplicates()
-    }
+  @Test
+  fun `CxxDiagnosticCode should not contain duplicates`() {
+    Truth.assertThat(CxxDiagnosticCode.values().map { it.errorCode }).containsNoDuplicates()
+  }
 }

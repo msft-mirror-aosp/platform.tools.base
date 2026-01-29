@@ -22,9 +22,9 @@ import java.nio.file.Files
 import java.nio.file.Path
 
 /**
- * An output stream that uses the unsigned little endian base 128
- * (<a xref="https://en.wikipedia.org/wiki/LEB128">LEB128</a>) variable-length encoding for integer
- * values.
+ * An output stream that uses the unsigned little endian base 128 (<a xref="https://en.wikipedia.org/wiki/LEB128">LEB128</a>)
+ * variable-length encoding for integer values.
+ *
  * @see Base128InputStream
  */
 class Base128OutputStream(stream: OutputStream) : BufferedOutputStream(stream) {
@@ -35,19 +35,19 @@ class Base128OutputStream(stream: OutputStream) : BufferedOutputStream(stream) {
    * @param file the file to write to
    * @throws IOException if an I/O error occurs.
    */
-  @Throws(IOException::class)
-  constructor(file: Path) : this(Files.newOutputStream(file))
+  @Throws(IOException::class) constructor(file: Path) : this(Files.newOutputStream(file))
 
   /**
    * Writes a 32-bit integer to the stream. Small positive integers take less space than larger ones:
-   *```
+   * ```
    *  [0, 2^7) - 1 byte
    *  [2^7, 2^14) - 2 bytes
    *  [2^14, 2^21) - 3 bytes
    *  [2^21, 2^28) - 4 bytes
    *  [2^28, 2^31) - 5 bytes
    *  negative - 5 bytes
-   *```
+   * ```
+   *
    * Avoid using this method for writing negative numbers since they take 5 bytes.
    *
    * @param value the value to write
@@ -68,7 +68,7 @@ class Base128OutputStream(stream: OutputStream) : BufferedOutputStream(stream) {
 
   /**
    * Writes a 64-bit integer to the stream. Small positive integers take less space than larger ones:
-   *```
+   * ```
    *  [0, 2^7) - 1 byte
    *  [2^7, 2^14) - 2 bytes
    *  [2^14, 2^21) - 3 bytes
@@ -79,7 +79,8 @@ class Base128OutputStream(stream: OutputStream) : BufferedOutputStream(stream) {
    *  [2^49, 2^56) - 8 bytes
    *  [2^56, 2^63) - 9 bytes
    *  negative - 10 bytes
-   *```
+   * ```
+   *
    * Avoid using this method for writing negative numbers since they take 10 bytes.
    *
    * @param value the value to write
@@ -125,8 +126,7 @@ class Base128OutputStream(stream: OutputStream) : BufferedOutputStream(stream) {
   }
 
   /**
-   * Writes a String to the stream. The string is prefixed by its length + 1.
-   * Each character is then written using the [.writeChar] method.
+   * Writes a String to the stream. The string is prefixed by its length + 1. Each character is then written using the [.writeChar] method.
    *
    * @param str the string to write or null
    * @throws IOException if an I/O error occurs.
@@ -146,11 +146,12 @@ class Base128OutputStream(stream: OutputStream) : BufferedOutputStream(stream) {
 
   /**
    * Writes a 16-bit integer to the stream. Small positive integers take less space than larger ones:
-   *```
+   * ```
    *  [0, 2^7) - 1 byte
    *  [2^7, 2^14) - 2 bytes
    *  [2^14, 2^16) - 3 bytes
-   *```
+   * ```
+   *
    * @param value the value to write
    * @throws IOException if an I/O error occurs.
    */
@@ -171,8 +172,8 @@ class Base128OutputStream(stream: OutputStream) : BufferedOutputStream(stream) {
   }
 
   /**
-   * Writes an array of bytes to the stream. The bytes are prefixed by their number.
-   * Each byte is then written using the [.writeByte] method.
+   * Writes an array of bytes to the stream. The bytes are prefixed by their number. Each byte is then written using the [.writeByte]
+   * method.
    *
    * @param bytes the array of bytes to write
    * @throws IOException if an I/O error occurs.
@@ -210,7 +211,7 @@ class Base128OutputStream(stream: OutputStream) : BufferedOutputStream(stream) {
   @Deprecated("Use writeByte or writeInt instead.")
   override fun write(b: Int) {
     throw UnsupportedOperationException(
-        "This method is disabled to prevent unintended accidental use. Please use writeByte or writeInt instead."
+      "This method is disabled to prevent unintended accidental use. Please use writeByte or writeInt instead."
     )
   }
 }

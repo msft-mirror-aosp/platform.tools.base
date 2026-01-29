@@ -14,10 +14,11 @@
  * limitations under the License.
  */
 @file:JvmName("DataBindingUtils")
+
 package com.android.utils
 
 import com.android.SdkConstants
 
 fun isBindingExpression(string: String): Boolean {
-    return string.startsWith(SdkConstants.PREFIX_BINDING_EXPR) || string.startsWith(SdkConstants.PREFIX_TWOWAY_BINDING_EXPR)
+  return string.startsWith(SdkConstants.PREFIX_BINDING_EXPR) || string.startsWith(SdkConstants.PREFIX_TWOWAY_BINDING_EXPR)
 }

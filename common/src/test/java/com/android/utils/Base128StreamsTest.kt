@@ -16,12 +16,12 @@
 package com.android.utils
 
 import com.google.common.truth.Truth.assertThat
-import org.junit.Test
-import org.junit.runner.RunWith
-import org.junit.runners.JUnit4
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import kotlin.test.assertFailsWith
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.junit.runners.JUnit4
 
 /** Tests the [Base128OutputStream] class. */
 @RunWith(JUnit4::class)
@@ -51,7 +51,7 @@ class Base128StreamsTest {
     str.toList().forEach { output.writeChar(it) }
     output.flush()
 
-    assertThat(byteStream.size()).isEqualTo(str.length + 3)  // 3 nonstd chars: ¯, ツ, ¯
+    assertThat(byteStream.size()).isEqualTo(str.length + 3) // 3 nonstd chars: ¯, ツ, ¯
 
     val input = getInputStream()
     str.forEach { assertThat(input.readChar()).isEqualTo(it) }
@@ -78,7 +78,7 @@ class Base128StreamsTest {
     floats.forEach { output.writeFloat(it) }
     output.flush()
 
-    assertThat(byteStream.size()).isEqualTo(floats.size * 4)  // These are 4 bytes each
+    assertThat(byteStream.size()).isEqualTo(floats.size * 4) // These are 4 bytes each
 
     val input = getInputStream()
     floats.forEach { assertThat(input.readFloat()).isEqualTo(it) }
@@ -86,15 +86,11 @@ class Base128StreamsTest {
 
   @Test
   fun readWriteFixed32() {
-    val values = listOf(
-      0b10101010101010101010101010101010u,
-      0b01010101010101010101010101010101u,
-      0b11111111111111111111111111111111u,
-      )
+    val values = listOf(0b10101010101010101010101010101010u, 0b01010101010101010101010101010101u, 0b11111111111111111111111111111111u)
     values.forEach { output.writeFixed32(it.toInt()) }
     output.flush()
 
-    assertThat(byteStream.size()).isEqualTo(values.size * 4)  // These are 4 bytes each
+    assertThat(byteStream.size()).isEqualTo(values.size * 4) // These are 4 bytes each
 
     val input = getInputStream()
     values.forEach { assertThat(input.readFixed32().toUInt()).isEqualTo(it) }
@@ -123,9 +119,7 @@ class Base128StreamsTest {
     val input = getInputStream()
     input.setStringCache(cache)
 
-    val readStrings = buildList(strings.size) {
-      repeat(strings.size) { add(input.readString()) }
-    }
+    val readStrings = buildList(strings.size) { repeat(strings.size) { add(input.readString()) } }
 
     assertThat(cache).hasSize(4)
     readStrings.forEach { assertThat(it).isSameAs(cache[it]) }
@@ -139,9 +133,7 @@ class Base128StreamsTest {
 
     val input = getInputStream()
 
-    val readStrings = buildList(strings.size) {
-      repeat(strings.size) { add(input.readString()) }
-    }
+    val readStrings = buildList(strings.size) { repeat(strings.size) { add(input.readString()) } }
 
     // Pairwise compare all strings. The only ones that should be equal are the self-comparisons.
     assertThat(readStrings.zip(readStrings).count { it.first == it.second }).isEqualTo(strings.size)
@@ -186,9 +178,7 @@ class Base128StreamsTest {
 
   @Test
   fun writeThrowsUnsupportedOperationException() {
-    assertFailsWith<UnsupportedOperationException> {
-      output.write(3)
-    }
+    assertFailsWith<UnsupportedOperationException> { output.write(3) }
   }
 
   private fun getInputStream() = Base128InputStream(ByteArrayInputStream(byteStream.toByteArray()))

@@ -23,9 +23,9 @@ import java.nio.file.NoSuchFileException
 import java.nio.file.Path
 
 /**
- * An output stream that uses the unsigned little endian base 128
- * (<a xref="https://en.wikipedia.org/wiki/LEB128">LEB128</a>) variable-length encoding for integer
- * values.
+ * An output stream that uses the unsigned little endian base 128 (<a xref="https://en.wikipedia.org/wiki/LEB128">LEB128</a>)
+ * variable-length encoding for integer values.
+ *
  * @see Base128OutputStream
  */
 class Base128InputStream(stream: InputStream) : BufferedInputStream(stream) {
@@ -39,12 +39,11 @@ class Base128InputStream(stream: InputStream) : BufferedInputStream(stream) {
    * @throws NoSuchFileException if the file does not exist
    * @throws IOException if an I/O error occurs
    */
-  @Throws(NoSuchFileException::class, IOException::class)
-  constructor(file: Path) : this(CancellableFileIo.newInputStream(file))
+  @Throws(NoSuchFileException::class, IOException::class) constructor(file: Path) : this(CancellableFileIo.newInputStream(file))
 
   /**
-   * If the `stringCache` parameter is not null, the [.readString] method will use that cache
-   * to avoid returning distinct String instances that are equal to each other.
+   * If the `stringCache` parameter is not null, the [.readString] method will use that cache to avoid returning distinct String instances
+   * that are equal to each other.
    *
    * @param stringCache the map used for storing previously encountered strings; keys and values are identical.
    */
@@ -141,15 +140,13 @@ class Base128InputStream(stream: InputStream) : BufferedInputStream(stream) {
    */
   @Throws(IOException::class)
   fun readFixed32(): Int {
-    return readByteAsInt() or (readByteAsInt() shl 8) or (readByteAsInt() shl 16) or
-        (readByteAsInt() shl 24)
+    return readByteAsInt() or (readByteAsInt() shl 8) or (readByteAsInt() shl 16) or (readByteAsInt() shl 24)
   }
 
   /**
    * Reads a String from the stream. The String had to be written by [Base128OutputStream.writeString].
    *
-   * @return the String read from the stream, or null if [Base128OutputStream.writeString] was called
-   * with a null argument
+   * @return the String read from the stream, or null if [Base128OutputStream.writeString] was called with a null argument
    * @throws IOException if an I/O error occurs
    * @throws StreamFormatException if an invalid data format is detected
    */
@@ -244,14 +241,13 @@ class Base128InputStream(stream: InputStream) : BufferedInputStream(stream) {
   @Deprecated("Use readByte() or readInt() instead.")
   override fun read(): Int {
     throw UnsupportedOperationException(
-        "This method is disabled to prevent unintended accidental use. Please use readByte or readInt instead."
+      "This method is disabled to prevent unintended accidental use. Please use readByte or readInt instead."
     )
   }
 
   /**
-   * Checks if the stream contains the given bytes starting from the current position.
-   * Unless the remaining part of the stream is shorter than the `expected` array,
-   * exactly `expected.length` bytes are read from the stream.
+   * Checks if the stream contains the given bytes starting from the current position. Unless the remaining part of the stream is shorter
+   * than the `expected` array, exactly `expected.length` bytes are read from the stream.
    *
    * @param expected expected stream content
    * @return true if the stream content matches, false otherwise.
@@ -277,9 +273,7 @@ class Base128InputStream(stream: InputStream) : BufferedInputStream(stream) {
     return b
   }
 
-  /**
-   * Exception thrown when invalid data is encountered while reading from a stream.
-   */
+  /** Exception thrown when invalid data is encountered while reading from a stream. */
   class StreamFormatException(message: String) : IOException(message) {
     companion object {
       @JvmStatic

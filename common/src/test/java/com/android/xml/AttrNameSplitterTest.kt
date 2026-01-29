@@ -15,19 +15,19 @@
  */
 package com.android.xml
 
-import org.junit.Test
 import org.junit.Assert.assertEquals
+import org.junit.Test
 
 class AttrNameSplitterTest {
-    @Test
-    fun testFindPrefix() {
-        assertEquals("", findPrefix("attrName"))
-        assertEquals("android", findPrefix("android:wrap_content"))
-    }
+  @Test
+  fun testFindPrefix() {
+    assertEquals("", findPrefix("attrName"))
+    assertEquals("android", findPrefix("android:wrap_content"))
+  }
 
-    @Test
-    fun testFindLocalName() {
-        assertEquals("attrName", findLocalName("attrName"))
-        assertEquals("wrap_content", findLocalName("android:wrap_content"))
-    }
+  @Test
+  fun testFindLocalName() {
+    assertEquals("attrName", findLocalName("attrName"))
+    assertEquals("wrap_content", findLocalName("android:wrap_content"))
+  }
 }

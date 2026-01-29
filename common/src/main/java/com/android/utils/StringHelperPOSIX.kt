@@ -18,76 +18,69 @@ package com.android.utils
 import com.android.SdkConstants
 import com.google.common.collect.Lists
 
-/**
- * POSIX specific StringHelper that applies the following tokenization rules:
- */
+/** POSIX specific StringHelper that applies the following tokenization rules: */
 object StringHelperPOSIX {
-    /**
-     * Split a single command line into individual commands with POSIX rules.
-     *
-     * @param commandLine the command line to be split
-     * @return the list of individual commands
-     */
-    @JvmStatic
-    fun splitCommandLine(commandLine: String): List<String> {
-        val commands: MutableList<String> =
-            Lists.newArrayList()
-        var quoting = false
-        var quote = '\u0000'
-        var escaping = false
-        var commandStart = 0
-        var i = 0
-        while (i < commandLine.length) {
-            val c = commandLine[i]
-            if (escaping) {
-                escaping = false
-                ++i
-                continue
-            } else if (c == '\\' && (!quoting || quote == '\"')) {
-                escaping = true
-                ++i
-                continue
-            } else if (!quoting && (c == '"' || c == '\'')) {
-                quoting = true
-                quote = c
-                ++i
-                continue
-            } else if (quoting && c == quote) {
-                quoting = false
-                quote = '\u0000'
-                ++i
-                continue
-            }
-            if (!quoting) {
-                // Match either && or ; separator
-                var matched = 0
-                if (commandLine.length > i + 1 && commandLine[i] == '&' && commandLine[i + 1] == '&'
-                ) {
-                    matched = 2
-                } else if (commandLine[i] == ';') {
-                    matched = 1
-                }
-                if (matched > 0) {
-                    commands.add(commandLine.substring(commandStart, i))
-                    i += matched
-                    commandStart = i
-                }
-            }
-            ++i
+  /**
+   * Split a single command line into individual commands with POSIX rules.
+   *
+   * @param commandLine the command line to be split
+   * @return the list of individual commands
+   */
+  @JvmStatic
+  fun splitCommandLine(commandLine: String): List<String> {
+    val commands: MutableList<String> = Lists.newArrayList()
+    var quoting = false
+    var quote = '\u0000'
+    var escaping = false
+    var commandStart = 0
+    var i = 0
+    while (i < commandLine.length) {
+      val c = commandLine[i]
+      if (escaping) {
+        escaping = false
+        ++i
+        continue
+      } else if (c == '\\' && (!quoting || quote == '\"')) {
+        escaping = true
+        ++i
+        continue
+      } else if (!quoting && (c == '"' || c == '\'')) {
+        quoting = true
+        quote = c
+        ++i
+        continue
+      } else if (quoting && c == quote) {
+        quoting = false
+        quote = '\u0000'
+        ++i
+        continue
+      }
+      if (!quoting) {
+        // Match either && or ; separator
+        var matched = 0
+        if (commandLine.length > i + 1 && commandLine[i] == '&' && commandLine[i + 1] == '&') {
+          matched = 2
+        } else if (commandLine[i] == ';') {
+          matched = 1
         }
-        if (commandStart < commandLine.length) {
-            commands.add(commandLine.substring(commandStart))
+        if (matched > 0) {
+          commands.add(commandLine.substring(commandStart, i))
+          i += matched
+          commandStart = i
         }
-        return commands
+      }
+      ++i
     }
+    if (commandStart < commandLine.length) {
+      commands.add(commandLine.substring(commandStart))
+    }
+    return commands
+  }
 
-    @JvmStatic
-    fun tokenizeCommandLineToEscaped(commandLine: String) =
-        TokenizedCommandLine(commandLine, false, SdkConstants.PLATFORM_LINUX)
-            .toTokenList()
+  @JvmStatic
+  fun tokenizeCommandLineToEscaped(commandLine: String) =
+    TokenizedCommandLine(commandLine, false, SdkConstants.PLATFORM_LINUX).toTokenList()
 
-    @JvmStatic
-    fun tokenizeCommandLineToRaw(commandLine: String) =
-        TokenizedCommandLine(commandLine, true, SdkConstants.PLATFORM_LINUX)
-            .toTokenList()
+  @JvmStatic
+  fun tokenizeCommandLineToRaw(commandLine: String) = TokenizedCommandLine(commandLine, true, SdkConstants.PLATFORM_LINUX).toTokenList()
 }

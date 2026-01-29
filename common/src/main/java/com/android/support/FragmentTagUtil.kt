@@ -20,10 +20,8 @@ import com.android.SdkConstants.VIEW_FRAGMENT
 
 object FragmentTagUtil {
   /**
-   * AndroidX adds `FragmentContainerView` to be the fragment host. This method checks if the given [name] is valid
-   * fragment tag name (either `fragment` or `FragmentContainerView`).
+   * AndroidX adds `FragmentContainerView` to be the fragment host. This method checks if the given [name] is valid fragment tag name
+   * (either `fragment` or `FragmentContainerView`).
    */
-  @JvmStatic
-  fun isFragmentTag(name: String?) =
-    name != null && (VIEW_FRAGMENT == name || FRAGMENT_CONTAINER_VIEW == name)
+  @JvmStatic fun isFragmentTag(name: String?) = name != null && (VIEW_FRAGMENT == name || FRAGMENT_CONTAINER_VIEW == name)
 }

@@ -16,10 +16,10 @@
 package com.android.utils
 
 object JavaVersionUtil {
-    /** Converts a class file version number JDK string like 1.6.0_65 to the corresponding class file version number, e.g. 50  */
-    fun classVersionToJdk(version: Int): String {
-        return if (version >= 53) {
-            (version - 53 + 9).toString() // 53 => 9, 55 => 11, 61 => 17, ...
-        } else "1.${version - 44}" // 47 => 1.3, 50 => 1.6, ...
-    }
+  /** Converts a class file version number JDK string like 1.6.0_65 to the corresponding class file version number, e.g. 50 */
+  fun classVersionToJdk(version: Int): String {
+    return if (version >= 53) {
+      (version - 53 + 9).toString() // 53 => 9, 55 => 11, 61 => 17, ...
+    } else "1.${version - 44}" // 47 => 1.3, 50 => 1.6, ...
+  }
 }

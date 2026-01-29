@@ -47,8 +47,7 @@ class CollectionsUtilsTest {
   @Test
   fun associateNotNull() {
     val list = listOf(1, 2, 3, 4, 5)
-    val result =
-      list.associateNotNull { it.takeIf { n -> n % 2 == 0 }?.let { n -> 2 * n to 3 * n } }
+    val result = list.associateNotNull { it.takeIf { n -> n % 2 == 0 }?.let { n -> 2 * n to 3 * n } }
     assertThat(result).containsExactly(4, 6, 8, 12)
   }
 }

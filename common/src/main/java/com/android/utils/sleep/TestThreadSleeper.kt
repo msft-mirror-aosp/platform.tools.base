@@ -21,30 +21,31 @@ import kotlin.time.Duration.Companion.nanoseconds
 import kotlin.time.ExperimentalTime
 
 /** Implementation of [ThreadSleeper] for use in tests. */
-class TestThreadSleeper: ThreadSleeper() {
-    private val sleeps: MutableList<Pair<Long, Int>> = mutableListOf()
-    override fun doSleep(millis: Long, nanos: Int) {
-        sleeps.add(millis to nanos)
-    }
+class TestThreadSleeper : ThreadSleeper() {
+  private val sleeps: MutableList<Pair<Long, Int>> = mutableListOf()
 
-    val sleepArguments: List<Pair<Long, Int>>
-        get() = sleeps
+  override fun doSleep(millis: Long, nanos: Int) {
+    sleeps.add(millis to nanos)
+  }
 
-    @OptIn(ExperimentalTime::class) // For Duration which is no longer experimental
-    @get:JvmSynthetic
-    val sleepDurations: List<Duration>
-        get() = sleeps.map { (m, n) -> m.milliseconds + n.nanoseconds }
+  val sleepArguments: List<Pair<Long, Int>>
+    get() = sleeps
 
-    @OptIn(ExperimentalTime::class) // For Duration which is no longer experimental
-    @get:JvmSynthetic
-    val totalTimeSlept: Duration
-        get() = if (sleeps.isEmpty()) Duration.ZERO else sleepDurations.reduce(Duration::plus)
+  @OptIn(ExperimentalTime::class) // For Duration which is no longer experimental
+  @get:JvmSynthetic
+  val sleepDurations: List<Duration>
+    get() = sleeps.map { (m, n) -> m.milliseconds + n.nanoseconds }
 
-    @OptIn(ExperimentalTime::class) // For Duration which is no longer experimental
-    val totalMillisecondsSlept: Long
-        get() = totalTimeSlept.inWholeMilliseconds
+  @OptIn(ExperimentalTime::class) // For Duration which is no longer experimental
+  @get:JvmSynthetic
+  val totalTimeSlept: Duration
+    get() = if (sleeps.isEmpty()) Duration.ZERO else sleepDurations.reduce(Duration::plus)
 
-    fun reset() {
-        sleeps.clear()
-    }
+  @OptIn(ExperimentalTime::class) // For Duration which is no longer experimental
+  val totalMillisecondsSlept: Long
+    get() = totalTimeSlept.inWholeMilliseconds
+
+  fun reset() {
+    sleeps.clear()
+  }
 }

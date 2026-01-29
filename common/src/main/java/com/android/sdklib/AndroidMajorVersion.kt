@@ -16,16 +16,13 @@
 package com.android.sdklib
 
 /**
- * A representation of an Android major version that explicitly doesn't include minor versions. This
- * should be used instead of AndroidVersion to avoid false precision when we don't know or don't
- * care about the minor version.
+ * A representation of an Android major version that explicitly doesn't include minor versions. This should be used instead of
+ * AndroidVersion to avoid false precision when we don't know or don't care about the minor version.
  */
-data class AndroidMajorVersion
-@JvmOverloads
-constructor(val apiLevel: Int, val codename: String? = null) : Comparable<AndroidMajorVersion> {
+data class AndroidMajorVersion @JvmOverloads constructor(val apiLevel: Int, val codename: String? = null) :
+  Comparable<AndroidMajorVersion> {
 
-  @JvmOverloads
-  constructor(apiLevel: AndroidApiLevel, codename: String? = null): this(apiLevel.majorVersion, codename)
+  @JvmOverloads constructor(apiLevel: AndroidApiLevel, codename: String? = null) : this(apiLevel.majorVersion, codename)
 
   val apiString
     get() = codename ?: apiLevel.toString()

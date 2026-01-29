@@ -18,39 +18,30 @@ package com.android.prefs
 
 import java.nio.file.Path
 
-/**
- * A provider of locations for android tools
- */
+/** A provider of locations for android tools */
 interface AndroidLocationsProvider {
 
-    /**
-     * The location of the .android folder
-     *
-     * This creates the folder if it's missing
-     *
-     * To query the AVD Folder, use [avdLocation] as it could be be overridden
-     */
-    @get:Throws(AndroidLocationsException::class)
-    val prefsLocation: Path
+  /**
+   * The location of the .android folder
+   *
+   * This creates the folder if it's missing
+   *
+   * To query the AVD Folder, use [avdLocation] as it could be be overridden
+   */
+  @get:Throws(AndroidLocationsException::class) val prefsLocation: Path
 
-    /**
-     * The location of the AVD folder.
-     */
-    @get:Throws(AndroidLocationsException::class)
-    val avdLocation: Path
+  /** The location of the AVD folder. */
+  @get:Throws(AndroidLocationsException::class) val avdLocation: Path
 
-    /**
-     * The location of the managed devices avd folder.
-     */
-    @get:Throws(AndroidLocationsException::class)
-    val gradleAvdLocation: Path
+  /** The location of the managed devices avd folder. */
+  @get:Throws(AndroidLocationsException::class) val gradleAvdLocation: Path
 
-    /**
-     * The root folder where the android folder will be located
-     *
-     * This is NOT the .android folder. Use [prefsLocation]
-     *
-     * To query the AVD Folder, use [avdLocation] as it could be overridden
-     */
-    val userHomeLocation: Path
+  /**
+   * The root folder where the android folder will be located
+   *
+   * This is NOT the .android folder. Use [prefsLocation]
+   *
+   * To query the AVD Folder, use [avdLocation] as it could be overridden
+   */
+  val userHomeLocation: Path
 }

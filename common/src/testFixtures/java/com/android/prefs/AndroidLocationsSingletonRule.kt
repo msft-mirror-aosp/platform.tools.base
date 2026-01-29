@@ -16,32 +16,28 @@
 package com.android.prefs
 
 import com.android.utils.EnvironmentProvider
-import org.junit.rules.ExternalResource
 import java.nio.file.FileSystem
 import java.nio.file.Files
+import org.junit.rules.ExternalResource
 
-/**
- * Initial implementation of a rule that should allow [AndroidLocationsSingleton] to refer to an
- * in-memory filesystem during tests.
- */
+/** Initial implementation of a rule that should allow [AndroidLocationsSingleton] to refer to an in-memory filesystem during tests. */
 class AndroidLocationsSingletonRule(private val fileSystem: FileSystem) : ExternalResource() {
 
-    private var prevAndroidUserHome: String? = null
+  private var prevAndroidUserHome: String? = null
 
-    override fun before() {
-        EnvironmentProvider.DIRECT.fileSystemOverrideForTests = fileSystem
-        val androidHome = fileSystem.rootDirectories.first().resolve("home/user/.android")
-        prevAndroidUserHome = System.getProperty(AbstractAndroidLocations.ANDROID_USER_HOME)
-        System.setProperty(AbstractAndroidLocations.ANDROID_USER_HOME, androidHome.toString())
-        Files.createDirectories(androidHome)
-        AndroidLocationsSingleton.resetPathsForTest()
-    }
+  override fun before() {
+    EnvironmentProvider.DIRECT.fileSystemOverrideForTests = fileSystem
+    val androidHome = fileSystem.rootDirectories.first().resolve("home/user/.android")
+    prevAndroidUserHome = System.getProperty(AbstractAndroidLocations.ANDROID_USER_HOME)
+    System.setProperty(AbstractAndroidLocations.ANDROID_USER_HOME, androidHome.toString())
+    Files.createDirectories(androidHome)
+    AndroidLocationsSingleton.resetPathsForTest()
+  }
 
-    override fun after() {
-        EnvironmentProvider.DIRECT.fileSystemOverrideForTests = null
-        prevAndroidUserHome?.let {
-            System.setProperty(AbstractAndroidLocations.ANDROID_USER_HOME, it)
-        } ?: System.clearProperty(AbstractAndroidLocations.ANDROID_USER_HOME)
-        AndroidLocationsSingleton.resetPathsForTest()
-    }
+  override fun after() {
+    EnvironmentProvider.DIRECT.fileSystemOverrideForTests = null
+    prevAndroidUserHome?.let { System.setProperty(AbstractAndroidLocations.ANDROID_USER_HOME, it) }
+      ?: System.clearProperty(AbstractAndroidLocations.ANDROID_USER_HOME)
+    AndroidLocationsSingleton.resetPathsForTest()
+  }
 }

@@ -20,17 +20,17 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class JavaVersionUtilTest {
-    @Test
-    fun testClassVersionToJdk() {
-        assertEquals("1.5", classVersionToJdk(49));
-        assertEquals("1.6", classVersionToJdk(50));
-        assertEquals("1.7", classVersionToJdk(51));
-        assertEquals("1.8", classVersionToJdk(52));
-        assertEquals("1.4", classVersionToJdk(48));
-        assertEquals("1.3", classVersionToJdk(47));
-        assertEquals("1.2", classVersionToJdk(46));
-        assertEquals("1.1", classVersionToJdk(45));
-        assertEquals("9", classVersionToJdk(53));
-        assertEquals("11", classVersionToJdk(55));
-    }
+  @Test
+  fun testClassVersionToJdk() {
+    assertEquals("1.5", classVersionToJdk(49))
+    assertEquals("1.6", classVersionToJdk(50))
+    assertEquals("1.7", classVersionToJdk(51))
+    assertEquals("1.8", classVersionToJdk(52))
+    assertEquals("1.4", classVersionToJdk(48))
+    assertEquals("1.3", classVersionToJdk(47))
+    assertEquals("1.2", classVersionToJdk(46))
+    assertEquals("1.1", classVersionToJdk(45))
+    assertEquals("9", classVersionToJdk(53))
+    assertEquals("11", classVersionToJdk(55))
+  }
 }

@@ -24,11 +24,7 @@ import com.android.utils.StdLogger
  *
  * This is to be used in stand alone tools command line tools or Studio.
  *
- * This should not be used in the Android Gradle Plugin. See the special implementation
- * of [AbstractAndroidLocations] for AGP.
+ * This should not be used in the Android Gradle Plugin. See the special implementation of [AbstractAndroidLocations] for AGP.
  */
-object AndroidLocationsSingleton: AbstractAndroidLocations(
-        environmentProvider = EnvironmentProvider.DIRECT,
-        logger = StdLogger(StdLogger.Level.VERBOSE),
-        silent = true
-)
+object AndroidLocationsSingleton :
+  AbstractAndroidLocations(environmentProvider = EnvironmentProvider.DIRECT, logger = StdLogger(StdLogger.Level.VERBOSE), silent = true)

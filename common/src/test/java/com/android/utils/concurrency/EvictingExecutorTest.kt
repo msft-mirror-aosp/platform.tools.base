@@ -22,51 +22,51 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class EvictingExecutorTest {
-    @Test
-    fun testQueueing() {
-        val testExecutor = OnDemandExecutorService()
-        var evictingExecutor = EvictingExecutor(testExecutor, 1)
+  @Test
+  fun testQueueing() {
+    val testExecutor = OnDemandExecutorService()
+    var evictingExecutor = EvictingExecutor(testExecutor, 1)
 
-        var result = 0
+    var result = 0
 
-        // One element queueing
-        evictingExecutor.execute { result++ }
-        evictingExecutor.execute { result++ }
-        evictingExecutor.execute { result++ }
-        assertEquals(1, testExecutor.queueSize)
-        testExecutor.runAll()
-        // Only one task was executed
-        assertEquals(1, result)
+    // One element queueing
+    evictingExecutor.execute { result++ }
+    evictingExecutor.execute { result++ }
+    evictingExecutor.execute { result++ }
+    assertEquals(1, testExecutor.queueSize)
+    testExecutor.runAll()
+    // Only one task was executed
+    assertEquals(1, result)
 
-        result = 0
-        evictingExecutor = EvictingExecutor(testExecutor, 2)
-        evictingExecutor.execute { result++ }
-        evictingExecutor.execute { result++ }
-        evictingExecutor.execute { result++ }
-        assertEquals(2, testExecutor.queueSize)
-        testExecutor.runAll()
-        assertEquals(2, result)
-        assertFalse(evictingExecutor.isShutdown)
-        assertFalse(evictingExecutor.isTerminated)
-    }
+    result = 0
+    evictingExecutor = EvictingExecutor(testExecutor, 2)
+    evictingExecutor.execute { result++ }
+    evictingExecutor.execute { result++ }
+    evictingExecutor.execute { result++ }
+    assertEquals(2, testExecutor.queueSize)
+    testExecutor.runAll()
+    assertEquals(2, result)
+    assertFalse(evictingExecutor.isShutdown)
+    assertFalse(evictingExecutor.isTerminated)
+  }
 
-    @Test
-    fun testShutdownNow() {
-        val testExecutor = OnDemandExecutorService()
-        val evictingExecutor = EvictingExecutor(testExecutor, 10)
+  @Test
+  fun testShutdownNow() {
+    val testExecutor = OnDemandExecutorService()
+    val evictingExecutor = EvictingExecutor(testExecutor, 10)
 
-        var result = 0
+    var result = 0
 
-        evictingExecutor.execute { result++ }
-        evictingExecutor.execute { result++ }
-        evictingExecutor.execute { result++ }
-        testExecutor.run(1)
-        assertEquals(2, testExecutor.queueSize)
-        // At least two tasks must be in the queue
-        assertTrue(evictingExecutor.shutdownNow().size > 2)
-        assertTrue(evictingExecutor.isShutdown)
-        assertTrue(evictingExecutor.isTerminated)
-        assertTrue(testExecutor.isShutdown)
-        assertTrue(testExecutor.isTerminated)
-    }
+    evictingExecutor.execute { result++ }
+    evictingExecutor.execute { result++ }
+    evictingExecutor.execute { result++ }
+    testExecutor.run(1)
+    assertEquals(2, testExecutor.queueSize)
+    // At least two tasks must be in the queue
+    assertTrue(evictingExecutor.shutdownNow().size > 2)
+    assertTrue(evictingExecutor.isShutdown)
+    assertTrue(evictingExecutor.isTerminated)
+    assertTrue(testExecutor.isShutdown)
+    assertTrue(testExecutor.isTerminated)
+  }
 }
